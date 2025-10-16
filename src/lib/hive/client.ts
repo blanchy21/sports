@@ -1,19 +1,23 @@
 import { Client } from '@hiveio/dhive';
 import { HiveAccount, HivePost, HiveComment, HiveResourceCredit } from './types';
 
-// Hive node endpoints - using multiple reliable nodes for better performance
+// Hive node endpoints - using most reliable nodes first
 const HIVE_NODES = [
   'https://api.hive.blog',           // @blocktrades - most reliable
-  'https://anyx.io',                 // @anyx - very fast and reliable
-  'https://rpc.ausbit.dev',          // @ausbitbank - community favorite
   'https://api.openhive.network',    // @gtg - established node
   'https://hive-api.arcange.eu',     // @arcange - reliable European node
+  'https://api.deathwing.me',        // @deathwing - backup node
+  'https://api.c0ff33a.uk'           // @c0ff33a - backup node
+];
+
+// Additional nodes to test (commented out until verified)
+const ADDITIONAL_NODES = [
+  'https://anyx.io',                 // @anyx - very fast and reliable
+  'https://rpc.ausbit.dev',          // @ausbitbank - community favorite
   'https://rpc.mahdiyari.info',      // @mahdiyari - fast response times
   'https://api.hive.blue',           // @guiltyparties - good performance
   'https://techcoderx.com',          // @techcoderx - reliable node
-  'https://hive.roelandp.nl',        // @roelandp - European node
-  'https://api.deathwing.me',        // @deathwing - backup node
-  'https://api.c0ff33a.uk'           // @c0ff33a - backup node
+  'https://hive.roelandp.nl'         // @roelandp - European node
 ];
 
 // Sportsblock configuration
@@ -69,12 +73,38 @@ export async function checkNodeHealth(node: string): Promise<boolean> {
   try {
     console.log(`[checkNodeHealth] Testing node: ${node}`);
     const client = createHiveClient(node);
-    await client.database.getDynamicGlobalProperties();
-    console.log(`[checkNodeHealth] Node ${node} is responsive`);
+    
+    // Test with a simple API call
+    const result = await client.database.getDynamicGlobalProperties();
+    console.log(`[checkNodeHealth] Node ${node} is responsive:`, !!result);
     return true;
   } catch (error) {
-    console.warn(`[checkNodeHealth] Node ${node} is not responsive:`, error);
+    console.warn(`[checkNodeHealth] Node ${node} is not responsive:`, error.message);
     return false;
+  }
+}
+
+// Test a specific node with detailed debugging
+export async function testNodeDetailed(node: string): Promise<{ success: boolean; error?: string; responseTime?: number }> {
+  const startTime = Date.now();
+  try {
+    console.log(`[testNodeDetailed] Testing ${node}...`);
+    const client = createHiveClient(node);
+    
+    // Test basic connectivity
+    const props = await client.database.getDynamicGlobalProperties();
+    console.log(`[testNodeDetailed] Basic connectivity OK:`, !!props);
+    
+    // Test account lookup
+    const accounts = await client.database.getAccounts(['blanchy']);
+    console.log(`[testNodeDetailed] Account lookup OK:`, accounts.length > 0);
+    
+    const responseTime = Date.now() - startTime;
+    return { success: true, responseTime };
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error(`[testNodeDetailed] ${node} failed:`, error.message);
+    return { success: false, error: error.message, responseTime };
   }
 }
 
@@ -108,6 +138,46 @@ export async function getBestHiveNode(): Promise<string> {
   return bestNode;
 }
 
+// Test additional nodes and return working ones
+export async function testAdditionalNodes(): Promise<string[]> {
+  console.log(`[testAdditionalNodes] Testing ${ADDITIONAL_NODES.length} additional nodes...`);
+  
+  const workingNodes: string[] = [];
+  
+  for (const node of ADDITIONAL_NODES) {
+    const result = await testNodeDetailed(node);
+    if (result.success) {
+      workingNodes.push(node);
+      console.log(`[testAdditionalNodes] ✅ ${node} is working (${result.responseTime}ms)`);
+    } else {
+      console.log(`[testAdditionalNodes] ❌ ${node} failed: ${result.error}`);
+    }
+  }
+  
+  return workingNodes;
+}
+
+// Debug function to test all nodes (can be called from browser console)
+export async function debugAllNodes(): Promise<void> {
+  console.log('🔍 Testing all Hive nodes...');
+  
+  // Test primary nodes
+  console.log('\n📋 Testing primary nodes:');
+  for (const node of HIVE_NODES) {
+    const result = await testNodeDetailed(node);
+    console.log(`${result.success ? '✅' : '❌'} ${node}: ${result.success ? `${result.responseTime}ms` : result.error}`);
+  }
+  
+  // Test additional nodes
+  console.log('\n📋 Testing additional nodes:');
+  for (const node of ADDITIONAL_NODES) {
+    const result = await testNodeDetailed(node);
+    console.log(`${result.success ? '✅' : '❌'} ${node}: ${result.success ? `${result.responseTime}ms` : result.error}`);
+  }
+  
+  console.log('\n✅ Node testing complete!');
+}
+
 // Initialize client with best available node
 export async function initializeHiveClient(): Promise<Client> {
   const bestNode = await getBestHiveNode();
@@ -118,6 +188,12 @@ export async function initializeHiveClient(): Promise<Client> {
 
 // Export the main client instance
 export const client = getHiveClient();
+
+// Make debug function available globally for testing
+if (typeof window !== 'undefined') {
+  (window as any).debugHiveNodes = debugAllNodes;
+  (window as any).testHiveNode = testNodeDetailed;
+}
 
 // Utility functions for common operations
 export async function getAccountInfo(username: string): Promise<HiveAccount | null> {
