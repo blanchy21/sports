@@ -44,8 +44,6 @@ export function getHiveClient(): Client {
       timeout: 15000, // 15 seconds for better reliability
       failoverThreshold: 2, // Switch nodes after 2 failures
       consoleOnFailover: true,
-      retries: 3, // Retry failed requests
-      retryDelay: 1000, // 1 second delay between retries
     });
   }
   return hiveClient;
@@ -63,8 +61,6 @@ export function createHiveClient(node?: string): Client {
     timeout: 15000, // 15 seconds for better reliability
     failoverThreshold: 2, // Switch nodes after 2 failures
     consoleOnFailover: true,
-    retries: 3, // Retry failed requests
-    retryDelay: 1000, // 1 second delay between retries
   });
 }
 
@@ -79,7 +75,7 @@ export async function checkNodeHealth(node: string): Promise<boolean> {
     console.log(`[checkNodeHealth] Node ${node} is responsive:`, !!result);
     return true;
   } catch (error) {
-    console.warn(`[checkNodeHealth] Node ${node} is not responsive:`, error.message);
+    console.warn(`[checkNodeHealth] Node ${node} is not responsive:`, error instanceof Error ? error.message : String(error));
     return false;
   }
 }
@@ -103,8 +99,9 @@ export async function testNodeDetailed(node: string): Promise<{ success: boolean
     return { success: true, responseTime };
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    console.error(`[testNodeDetailed] ${node} failed:`, error.message);
-    return { success: false, error: error.message, responseTime };
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[testNodeDetailed] ${node} failed:`, errorMessage);
+    return { success: false, error: errorMessage, responseTime };
   }
 }
 
@@ -119,7 +116,7 @@ export async function getBestHiveNode(): Promise<string> {
         await checkNodeHealth(node);
         const responseTime = Date.now() - startTime;
         return { node, responseTime, healthy: true };
-      } catch (error) {
+      } catch {
         const responseTime = Date.now() - startTime;
         return { node, responseTime, healthy: false };
       }
@@ -191,8 +188,8 @@ export const client = getHiveClient();
 
 // Make debug function available globally for testing
 if (typeof window !== 'undefined') {
-  (window as any).debugHiveNodes = debugAllNodes;
-  (window as any).testHiveNode = testNodeDetailed;
+  (window as Window & { debugHiveNodes?: typeof debugAllNodes; testHiveNode?: typeof testNodeDetailed }).debugHiveNodes = debugAllNodes;
+  (window as Window & { debugHiveNodes?: typeof debugAllNodes; testHiveNode?: typeof testNodeDetailed }).testHiveNode = testNodeDetailed;
 }
 
 // Utility functions for common operations
@@ -236,7 +233,7 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
         console.log(`[getAccountInfo] No account found in HTTP response from ${node}`);
       }
     } catch (error) {
-      console.warn(`[getAccountInfo] HTTP request failed for ${node}:`, error.message);
+      console.warn(`[getAccountInfo] HTTP request failed for ${node}:`, error instanceof Error ? error.message : String(error));
       continue;
     }
   }
@@ -257,7 +254,7 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
       
       const getAccountsPromise = client.call('condenser_api', 'get_accounts', [[username]]);
       
-      const accounts = await Promise.race([getAccountsPromise, timeoutPromise]) as any[];
+      const accounts = await Promise.race([getAccountsPromise, timeoutPromise]) as unknown[];
       console.log(`[getAccountInfo] Received ${accounts.length} accounts from ${node}`);
       
       if (accounts.length > 0) {
@@ -267,7 +264,7 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
         console.log(`[getAccountInfo] No accounts found for ${username} on ${node}`);
       }
     } catch (error) {
-      console.warn(`[getAccountInfo] dhive failed with node ${node}:`, error.message);
+      console.warn(`[getAccountInfo] dhive failed with node ${node}:`, error instanceof Error ? error.message : String(error));
       continue;
     }
   }

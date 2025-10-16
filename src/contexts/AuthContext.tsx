@@ -113,10 +113,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             ...basicUser,
             reputation: accountData.reputation,
             reputationFormatted: accountData.reputationFormatted,
+            // Liquid balances
+            liquidHiveBalance: accountData.liquidHiveBalance,
+            liquidHbdBalance: accountData.liquidHbdBalance,
+            // Savings balances
+            savingsHiveBalance: accountData.savingsHiveBalance,
+            savingsHbdBalance: accountData.savingsHbdBalance,
+            // Combined balances (for backward compatibility)
             hiveBalance: accountData.hiveBalance,
             hbdBalance: accountData.hbdBalance,
             hivePower: accountData.hivePower,
             rcPercentage: accountData.resourceCredits,
+            // Savings data
+            savingsApr: accountData.savingsApr,
+            pendingWithdrawals: accountData.pendingWithdrawals,
             hiveProfile: accountData.profile,
             hiveStats: accountData.stats,
             // Use Hive profile image as avatar if available

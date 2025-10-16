@@ -110,19 +110,32 @@ export default function ProfilePage() {
                       <span className="font-bold">{user.hiveStats?.postCount || 0}</span>
                       <span className="text-muted-foreground ml-1">Posts</span>
                     </div>
-                    {authType === "hive" && (
-                      <>
-                        <div>
-                          <span className="font-bold">{user.hiveBalance?.toFixed(3) || 0}</span>
-                          <span className="text-muted-foreground ml-1">HIVE</span>
-                        </div>
-                        <div>
-                          <span className="font-bold">{user.hbdBalance?.toFixed(2) || 0}</span>
-                          <span className="text-muted-foreground ml-1">HBD</span>
-                        </div>
-                      </>
-                    )}
                   </div>
+
+                  {/* Debug section - remove this after testing */}
+                  <div className="mt-4 p-4 bg-gray-100 rounded-lg text-sm">
+                    <h4 className="font-bold mb-2">Debug Info:</h4>
+                    <p>Hive Stats: {JSON.stringify(user.hiveStats, null, 2)}</p>
+                    <p>Liquid HIVE: {user.liquidHiveBalance}</p>
+                    <p>Liquid HBD: {user.liquidHbdBalance}</p>
+                    <p>Savings HIVE: {user.savingsHiveBalance}</p>
+                    <p>Savings HBD: {user.savingsHbdBalance}</p>
+                    <p>Savings APR: {user.savingsApr}</p>
+                    <p>Pending Withdrawals: {user.pendingWithdrawals?.length || 0}</p>
+                  </div>
+
+                  {authType === "hive" && (
+                    <div className="flex items-center space-x-4 mt-4">
+                      <div>
+                        <span className="font-bold">{user.hiveBalance?.toFixed(3) || 0}</span>
+                        <span className="text-muted-foreground ml-1">HIVE</span>
+                      </div>
+                      <div>
+                        <span className="font-bold">{user.hbdBalance?.toFixed(2) || 0}</span>
+                        <span className="text-muted-foreground ml-1">HBD</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               

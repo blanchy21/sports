@@ -1,3 +1,5 @@
+import { HiveAccount } from '../lib/hive/types';
+
 export interface User {
   id: string;
   username: string;
@@ -8,12 +10,30 @@ export interface User {
   hiveUsername?: string;
   reputation?: number;
   reputationFormatted?: string;
+  // Liquid balances
+  liquidHiveBalance?: number;
+  liquidHbdBalance?: number;
+  // Savings balances
+  savingsHiveBalance?: number;
+  savingsHbdBalance?: number;
+  // Combined balances (for backward compatibility)
   hiveBalance?: number;
   hbdBalance?: number; // Hive Backed Dollars
   hivePower?: number; // HIVE POWER
   sbBalance?: number; // Sports Bucks
   rcBalance?: number; // Resource Credits
   rcPercentage?: number;
+  // Savings data
+  savingsApr?: number; // HBD savings interest rate
+  pendingWithdrawals?: Array<{
+    id: string;
+    amount: string;
+    to: string;
+    memo: string;
+    requestId: number;
+    from: string;
+    timestamp: string;
+  }>;
   // Hive profile fields
   hiveProfile?: {
     name?: string;
@@ -342,3 +362,35 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     color: "bg-purple-500",
   },
 ];
+
+export interface HiveAuthUser {
+  username: string;
+  isAuthenticated: boolean;
+  account?: HiveAccount;
+}
+
+export interface CryptoPriceData {
+  bitcoin: {
+    usd: number;
+    usd_24h_change?: number;
+    market_cap?: number;
+  };
+  hive: {
+    usd: number;
+    usd_24h_change?: number;
+  };
+  hive_dollar: {
+    usd: number;
+    usd_24h_change?: number;
+  };
+}
+
+export interface PriceContextType {
+  bitcoinPrice: number | null;
+  hivePrice: number | null;
+  hbdPrice: number | null;
+  isLoading: boolean;
+  error: string | null;
+  lastUpdated: Date | null;
+  refreshPrices: () => Promise<void>;
+}

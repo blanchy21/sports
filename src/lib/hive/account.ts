@@ -20,12 +20,30 @@ export interface UserAccountData {
   username: string;
   reputation: number;
   reputationFormatted: string;
+  // Liquid balances
+  liquidHiveBalance: number;
+  liquidHbdBalance: number;
+  // Savings balances
+  savingsHiveBalance: number;
+  savingsHbdBalance: number;
+  // Combined balances (for backward compatibility)
   hiveBalance: number;
   hbdBalance: number;
   hivePower: number;
   resourceCredits: number;
   resourceCreditsFormatted: string;
   hasEnoughRC: boolean;
+  // Savings data
+  savingsApr?: number;
+  pendingWithdrawals?: Array<{
+    id: string;
+    amount: string;
+    to: string;
+    memo: string;
+    requestId: number;
+    from: string;
+    timestamp: string;
+  }>;
   profile: {
     name?: string;
     about?: string;
@@ -68,7 +86,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       console.log(`[fetchUserAccount] Account info received:`, account);
     } catch (error) {
       console.error(`[fetchUserAccount] Failed to get account info:`, error);
-      throw new Error(`Failed to fetch account info for ${username}: ${error.message}`);
+      throw new Error(`Failed to fetch account info for ${username}: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     if (!account) {
@@ -91,8 +109,38 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       followStats = await getUserFollowStats(username);
       console.log(`[fetchUserAccount] Follow stats received:`, followStats);
     } catch (error) {
-      console.warn(`[fetchUserAccount] Failed to get follow stats:`, error);
+      console.warn(`[fetchUserAccount] Failed to get follow stats:`, error instanceof Error ? error.message : String(error));
       // Continue without follow stats
+    }
+
+    // Try to get HBD savings APR (optional)
+    let savingsApr = 0;
+    try {
+      console.log(`[fetchUserAccount] Fetching HBD savings APR...`);
+      savingsApr = await getHbdSavingsApr();
+      console.log(`[fetchUserAccount] HBD savings APR received:`, savingsApr);
+    } catch (error) {
+      console.warn(`[fetchUserAccount] Failed to get HBD savings APR:`, error);
+      // Continue without APR data
+    }
+
+    // Try to get pending withdrawals (optional)
+    let pendingWithdrawals: Array<{
+      id: string;
+      amount: string;
+      to: string;
+      memo: string;
+      requestId: number;
+      from: string;
+      timestamp: string;
+    }> = [];
+    try {
+      console.log(`[fetchUserAccount] Fetching pending withdrawals...`);
+      pendingWithdrawals = await getPendingWithdrawals(username);
+      console.log(`[fetchUserAccount] Pending withdrawals received:`, pendingWithdrawals);
+    } catch (error) {
+      console.warn(`[fetchUserAccount] Failed to get pending withdrawals:`, error);
+      // Continue without withdrawal data
     }
 
     if (!account) {
@@ -134,12 +182,22 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       username: account.name,
       reputation,
       reputationFormatted: formatReputation(reputation),
+      // Liquid balances
+      liquidHiveBalance: hiveAsset.amount,
+      liquidHbdBalance: hbdAsset.amount,
+      // Savings balances
+      savingsHiveBalance: savingsHiveAsset.amount,
+      savingsHbdBalance: savingsHbdAsset.amount,
+      // Combined balances (for backward compatibility)
       hiveBalance: hiveAsset.amount + savingsHiveAsset.amount,
       hbdBalance: hbdAsset.amount + savingsHbdAsset.amount,
       hivePower,
       resourceCredits: rcPercentage,
       resourceCreditsFormatted: rc ? formatResourceCredits(rc) : '0%',
       hasEnoughRC: rc ? hasEnoughRC(rc) : false,
+      // Savings data
+      savingsApr,
+      pendingWithdrawals,
       profile: {
         name: profile.name,
         about: profile.about,
@@ -269,22 +327,12 @@ export async function getUserFollowStats(username: string): Promise<{
     console.log(`[getUserFollowStats] Fetching follow stats for: ${username}`);
     const client = getHiveClient();
     
-    // Use the correct Hive API methods for follow counts
-    const [followersResult, followingResult] = await Promise.allSettled([
-      client.database.call('condenser_api.get_follow_count', [username]),
-      client.database.call('condenser_api.get_follow_count', [username])
-    ]);
+    // Use the correct Hive API method for follow counts
+    const result = await client.call('condenser_api', 'get_follow_count', [username]);
+    console.log(`[getUserFollowStats] Raw follow stats result:`, result);
 
-    let followers = 0;
-    let following = 0;
-
-    if (followersResult.status === 'fulfilled' && followersResult.value) {
-      followers = followersResult.value.follower_count || 0;
-    }
-
-    if (followingResult.status === 'fulfilled' && followingResult.value) {
-      following = followingResult.value.following_count || 0;
-    }
+    const followers = result.follower_count || 0;
+    const following = result.following_count || 0;
 
     console.log(`[getUserFollowStats] Follow stats: ${followers} followers, ${following} following`);
     
@@ -295,6 +343,85 @@ export async function getUserFollowStats(username: string): Promise<{
   } catch (error) {
     console.error('Error fetching follow stats:', error);
     return null;
+  }
+}
+
+/**
+ * Fetch HBD savings APR from global properties
+ * @returns HBD savings interest rate as percentage
+ */
+export async function getHbdSavingsApr(): Promise<number> {
+  try {
+    console.log(`[getHbdSavingsApr] Fetching HBD savings APR...`);
+    const client = getHiveClient();
+    const globalProps = await client.database.getDynamicGlobalProperties();
+    const apr = (globalProps.hbd_interest_rate || 0) / 100; // Convert from basis points to percentage
+    console.log(`[getHbdSavingsApr] HBD savings APR: ${apr}%`);
+    return apr;
+  } catch (error) {
+    console.error('Error fetching HBD savings APR:', error);
+    return 0;
+  }
+}
+
+/**
+ * Fetch pending withdrawal operations for a user
+ * @param username - Hive username
+ * @returns Array of pending withdrawal operations
+ */
+export async function getPendingWithdrawals(username: string): Promise<Array<{
+  id: string;
+  amount: string;
+  to: string;
+  memo: string;
+  requestId: number;
+  from: string;
+  timestamp: string;
+}>> {
+  try {
+    console.log(`[getPendingWithdrawals] Fetching pending withdrawals for: ${username}`);
+    const client = getHiveClient();
+    
+    // Get account history to find withdrawal operations
+    const history = await client.call('condenser_api', 'get_account_history', [
+      username,
+      -1,
+      100 // Get last 100 operations
+    ]);
+    
+    const withdrawals: Array<{
+      id: string;
+      amount: string;
+      to: string;
+      memo: string;
+      requestId: number;
+      from: string;
+      timestamp: string;
+    }> = [];
+    
+    // Filter for transfer_from_savings operations (pending withdrawals)
+    for (const [, operation] of history) {
+      if (operation[1] && operation[1].op && operation[1].op[0] === 'transfer_from_savings') {
+        const op = operation[1].op[1];
+        if (op.from === username) {
+          withdrawals.push({
+            id: `${username}-${operation[0]}`,
+            amount: op.amount,
+            to: op.to,
+            memo: op.memo || '',
+            requestId: operation[0],
+            from: op.from,
+            timestamp: operation[1].timestamp
+          });
+        }
+      }
+    }
+    
+    console.log(`[getPendingWithdrawals] Found ${withdrawals.length} pending withdrawals`);
+    return withdrawals;
+  } catch (error) {
+    console.error('Error fetching pending withdrawals:', error);
+    return [];
   }
 }
 
