@@ -23,6 +23,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true); // Toggle between login and signup
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [hiveUsername, setHiveUsername] = useState("");
+  const [showHiveUsernameInput, setShowHiveUsernameInput] = useState(false);
   
   // Form state for email login/signup
   const [email, setEmail] = useState("");
@@ -32,6 +34,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [subscribeNewsletter, setSubscribeNewsletter] = useState(false);
 
   const handleHiveKeychainLogin = async () => {
+    // First, ask for the Hive username
+    if (!hiveUsername.trim()) {
+      setShowHiveUsernameInput(true);
+      return;
+    }
+
     setIsConnecting(true);
     setErrorMessage(null);
     
@@ -52,33 +60,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         console.log("requestLogin available:", typeof keychain.requestLogin);
         console.log("requestSignBuffer available:", typeof keychain.requestSignBuffer);
         
-        // Check if user is already logged in
-        if (keychain.isLoggedIn && keychain.isLoggedIn()) {
-          const currentUser = keychain.getCurrentUser && keychain.getCurrentUser();
-          if (currentUser?.username) {
-            console.log("User already logged in:", currentUser.username);
-            await loginWithHiveUser(currentUser.username);
-            onClose();
-            setIsConnecting(false);
-            return;
-          }
-        }
-        
-        // The best approach is to use requestSignBuffer but with proper account selection
-        // Hive Keychain should show account selection in the popup
-        console.log("Using requestSignBuffer method with account selection");
+        // Use the provided username in the request
+        console.log("Using requestSignBuffer method for username:", hiveUsername);
         
         keychain.requestSignBuffer(
-          "sportsblock",
-          "Login to Sportsblock - Select your account (blanchy)",
+          hiveUsername.trim(), // Use the actual username instead of "sportsblock"
+          `Login to Sportsblock as @${hiveUsername.trim()}`,
           "Posting",
           async (response: { success: boolean; data?: { username: string }; error?: string }) => {
             if (response.success && response.data?.username) {
               console.log("Hive Keychain login successful:", response.data);
               
-              // Verify the username is what we expect
-              if (response.data.username === "sportsblock") {
-                setErrorMessage("Please select your personal account (blanchy) in the Hive Keychain popup, not the 'sportsblock' account.");
+              // Verify the username matches what was requested
+              if (response.data.username !== hiveUsername.trim()) {
+                setErrorMessage(`Expected username ${hiveUsername.trim()} but got ${response.data.username}. Please try again.`);
                 setIsConnecting(false);
                 return;
               }
@@ -165,9 +160,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  // Clear error message when modal opens/closes or mode changes
+  // Clear error message and username input when modal opens/closes or mode changes
   React.useEffect(() => {
     setErrorMessage(null);
+    setHiveUsername("");
+    setShowHiveUsernameInput(false);
   }, [isOpen, isLoginMode]);
 
   if (!isOpen) return null;
@@ -325,6 +322,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </div>
             )}
 
+            {/* Hive Username Input */}
+            {showHiveUsernameInput && (
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-medium text-sm text-blue-800 mb-2">Enter your Hive username</h4>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={hiveUsername}
+                    onChange={(e) => setHiveUsername(e.target.value)}
+                    placeholder="Enter your Hive username (e.g., blanchy)"
+                    className="flex-1 px-3 py-2 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyPress={(e) => e.key === 'Enter' && handleHiveKeychainLogin()}
+                  />
+                  <Button
+                    onClick={handleHiveKeychainLogin}
+                    disabled={!hiveUsername.trim()}
+                    size="sm"
+                    className="px-4"
+                  >
+                    Continue
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  This will open Hive Keychain to sign in as @{hiveUsername || "your-username"}
+                </p>
+              </div>
+            )}
+
             {/* Alternative Auth Buttons */}
             <div className="space-y-3">
               <Button
@@ -411,13 +436,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             {/* Account Selection Instructions */}
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-start space-x-3">
-                <div className="w-5 h-5 text-yellow-600 mt-0.5">⚠️</div>
+                <div className="w-5 h-5 text-green-600 mt-0.5">✓</div>
                 <div>
-                  <h4 className="font-medium text-sm text-yellow-800">Account Selection</h4>
-                  <p className="text-xs text-yellow-700 mb-2">
-                    When the Hive Keychain popup appears, make sure to select your personal account (blanchy) from the dropdown, not the &quot;sportsblock&quot; account.
+                  <h4 className="font-medium text-sm text-green-800">How it works</h4>
+                  <p className="text-xs text-green-700 mb-2">
+                    Enter your Hive username first, then Hive Keychain will open to sign in with that specific account. No more confusion about which account to select!
                   </p>
                 </div>
               </div>
