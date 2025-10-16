@@ -95,8 +95,8 @@ export async function testNodeDetailed(node: string): Promise<{ success: boolean
     const props = await client.database.getDynamicGlobalProperties();
     console.log(`[testNodeDetailed] Basic connectivity OK:`, !!props);
     
-    // Test account lookup
-    const accounts = await client.database.getAccounts(['blanchy']);
+    // Test account lookup using condenser_api
+    const accounts = await client.call('condenser_api', 'get_accounts', [['blanchy']]);
     console.log(`[testNodeDetailed] Account lookup OK:`, accounts.length > 0);
     
     const responseTime = Date.now() - startTime;
@@ -213,7 +213,7 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
         },
         body: JSON.stringify({
           jsonrpc: '2.0',
-          method: 'database_api.get_accounts',
+          method: 'condenser_api.get_accounts',
           params: [[username]],
           id: 1
         }),
@@ -255,7 +255,7 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
         setTimeout(() => reject(new Error('getAccounts timeout after 8 seconds')), 8000);
       });
       
-      const getAccountsPromise = client.database.getAccounts([username]);
+      const getAccountsPromise = client.call('condenser_api', 'get_accounts', [[username]]);
       
       const accounts = await Promise.race([getAccountsPromise, timeoutPromise]) as any[];
       console.log(`[getAccountInfo] Received ${accounts.length} accounts from ${node}`);
