@@ -31,8 +31,8 @@ let hiveClient: Client | null = null;
 export function getHiveClient(): Client {
   if (!hiveClient) {
     hiveClient = new Client(HIVE_NODES, {
-      timeout: 30000,
-      failoverThreshold: 5,
+      timeout: 10000, // Reduced to 10 seconds
+      failoverThreshold: 3, // Reduced failover threshold
       consoleOnFailover: true,
     });
   }
@@ -48,8 +48,8 @@ export function getRandomHiveNode(): string {
 export function createHiveClient(node?: string): Client {
   const nodes = node ? [node] : HIVE_NODES;
   return new Client(nodes, {
-    timeout: 30000,
-    failoverThreshold: 5,
+    timeout: 10000, // Reduced to 10 seconds
+    failoverThreshold: 3, // Reduced failover threshold
     consoleOnFailover: true,
   });
 }
@@ -97,16 +97,23 @@ export const client = getHiveClient();
 
 // Utility functions for common operations
 export async function getAccountInfo(username: string): Promise<HiveAccount | null> {
-  try {
-    console.log(`[getAccountInfo] Fetching account info for: ${username}`);
-    const client = getHiveClient();
-    const accounts = await client.database.getAccounts([username]);
-    console.log(`[getAccountInfo] Received ${accounts.length} accounts`);
-    return (accounts[0] as unknown as HiveAccount) || null;
-  } catch (error) {
-    console.error('Error fetching account info:', error);
-    throw error;
+  console.log(`[getAccountInfo] Fetching account info for: ${username}`);
+  
+  // Try each node individually for better reliability
+  for (const node of HIVE_NODES) {
+    try {
+      console.log(`[getAccountInfo] Trying node: ${node}`);
+      const client = createHiveClient(node);
+      const accounts = await client.database.getAccounts([username]);
+      console.log(`[getAccountInfo] Received ${accounts.length} accounts from ${node}`);
+      return (accounts[0] as unknown as HiveAccount) || null;
+    } catch (error) {
+      console.warn(`[getAccountInfo] Failed with node ${node}:`, error.message);
+      continue;
+    }
   }
+  
+  throw new Error(`Failed to fetch account info from all Hive nodes`);
 }
 
 export async function getPost(author: string, permlink: string): Promise<HivePost | null> {

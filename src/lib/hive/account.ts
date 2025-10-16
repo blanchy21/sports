@@ -57,28 +57,43 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
   try {
     console.log(`[fetchUserAccount] Starting fetch for username: ${username}`);
     
-    // Add timeout wrapper for the API calls
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('API call timeout after 15 seconds')), 15000);
-    });
+    // Try to get account info first with a shorter timeout
+    let account = null;
+    let rc = null;
+    let followStats = null;
 
-    const apiCallPromise = Promise.all([
-      getAccountInfo(username),
-      getResourceCredits(username)
-    ]);
+    try {
+      console.log(`[fetchUserAccount] Fetching account info...`);
+      account = await getAccountInfo(username);
+      console.log(`[fetchUserAccount] Account info received:`, account);
+    } catch (error) {
+      console.error(`[fetchUserAccount] Failed to get account info:`, error);
+      throw new Error(`Failed to fetch account info for ${username}: ${error.message}`);
+    }
 
-    const [account, rc, followStats] = await Promise.race([
-      Promise.all([
-        getAccountInfo(username),
-        getResourceCredits(username),
-        getUserFollowStats(username)
-      ]),
-      timeoutPromise
-    ]) as [any, any, any];
+    if (!account) {
+      throw new Error(`Account ${username} not found`);
+    }
 
-    console.log(`[fetchUserAccount] Account data received:`, account);
-    console.log(`[fetchUserAccount] Resource credits received:`, rc);
-    console.log(`[fetchUserAccount] Follow stats received:`, followStats);
+    // Try to get resource credits (optional)
+    try {
+      console.log(`[fetchUserAccount] Fetching resource credits...`);
+      rc = await getResourceCredits(username);
+      console.log(`[fetchUserAccount] Resource credits received:`, rc);
+    } catch (error) {
+      console.warn(`[fetchUserAccount] Failed to get resource credits:`, error);
+      // Continue without RC data
+    }
+
+    // Try to get follow stats (optional)
+    try {
+      console.log(`[fetchUserAccount] Fetching follow stats...`);
+      followStats = await getUserFollowStats(username);
+      console.log(`[fetchUserAccount] Follow stats received:`, followStats);
+    } catch (error) {
+      console.warn(`[fetchUserAccount] Failed to get follow stats:`, error);
+      // Continue without follow stats
+    }
 
     if (!account) {
       console.error(`[fetchUserAccount] Account ${username} not found`);
