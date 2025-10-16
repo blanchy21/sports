@@ -57,13 +57,28 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
   try {
     console.log(`[fetchUserAccount] Starting fetch for username: ${username}`);
     
-    const [account, rc] = await Promise.all([
+    // Add timeout wrapper for the API calls
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('API call timeout after 15 seconds')), 15000);
+    });
+
+    const apiCallPromise = Promise.all([
       getAccountInfo(username),
       getResourceCredits(username)
     ]);
 
+    const [account, rc, followStats] = await Promise.race([
+      Promise.all([
+        getAccountInfo(username),
+        getResourceCredits(username),
+        getUserFollowStats(username)
+      ]),
+      timeoutPromise
+    ]) as [any, any, any];
+
     console.log(`[fetchUserAccount] Account data received:`, account);
     console.log(`[fetchUserAccount] Resource credits received:`, rc);
+    console.log(`[fetchUserAccount] Follow stats received:`, followStats);
 
     if (!account) {
       console.error(`[fetchUserAccount] Account ${username} not found`);
@@ -122,6 +137,8 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
         postCount: account.post_count || 0,
         commentCount: account.comment_count || 0,
         voteCount: account.lifetime_vote_count || 0,
+        followers: followStats?.followers || 0,
+        following: followStats?.following || 0,
       },
       createdAt: new Date(account.created),
       lastPost: account.last_post ? new Date(account.last_post) : undefined,
@@ -225,20 +242,41 @@ export async function userExists(username: string): Promise<boolean> {
 }
 
 /**
- * Get user's followers and following (requires additional API call)
+ * Get user's followers and following counts
  * @param username - Hive username
  * @returns Followers and following counts
  */
-export async function getUserFollowStats(_username: string): Promise<{
+export async function getUserFollowStats(username: string): Promise<{
   followers: number;
   following: number;
 } | null> {
   try {
-    // Note: This requires additional API endpoints that may not be available on all nodes
-    // For now, we'll return null and implement this when needed
-    // This would typically use the follow API or social API
-    console.log(`Follow stats requested for: ${_username}`);
-    return null;
+    console.log(`[getUserFollowStats] Fetching follow stats for: ${username}`);
+    const client = getHiveClient();
+    
+    // Use the correct Hive API methods for follow counts
+    const [followersResult, followingResult] = await Promise.allSettled([
+      client.database.call('condenser_api.get_follow_count', [username]),
+      client.database.call('condenser_api.get_follow_count', [username])
+    ]);
+
+    let followers = 0;
+    let following = 0;
+
+    if (followersResult.status === 'fulfilled' && followersResult.value) {
+      followers = followersResult.value.follower_count || 0;
+    }
+
+    if (followingResult.status === 'fulfilled' && followingResult.value) {
+      following = followingResult.value.following_count || 0;
+    }
+
+    console.log(`[getUserFollowStats] Follow stats: ${followers} followers, ${following} following`);
+    
+    return {
+      followers,
+      following
+    };
   } catch (error) {
     console.error('Error fetching follow stats:', error);
     return null;

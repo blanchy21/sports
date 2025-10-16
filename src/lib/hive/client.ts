@@ -98,8 +98,10 @@ export const client = getHiveClient();
 // Utility functions for common operations
 export async function getAccountInfo(username: string): Promise<HiveAccount | null> {
   try {
+    console.log(`[getAccountInfo] Fetching account info for: ${username}`);
     const client = getHiveClient();
     const accounts = await client.database.getAccounts([username]);
+    console.log(`[getAccountInfo] Received ${accounts.length} accounts`);
     return (accounts[0] as unknown as HiveAccount) || null;
   } catch (error) {
     console.error('Error fetching account info:', error);
@@ -131,8 +133,10 @@ export async function getComments(author: string, permlink: string, limit = 20):
 
 export async function getResourceCredits(username: string): Promise<HiveResourceCredit | null> {
   try {
+    console.log(`[getResourceCredits] Fetching RC for: ${username}`);
     const client = getHiveClient();
     const rc = await client.rc.call('get_resource_credits', [username]);
+    console.log(`[getResourceCredits] Received RC data:`, rc);
     return rc || null;
   } catch (error) {
     console.error('Error fetching resource credits:', error);
