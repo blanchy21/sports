@@ -199,17 +199,60 @@ if (typeof window !== 'undefined') {
 export async function getAccountInfo(username: string): Promise<HiveAccount | null> {
   console.log(`[getAccountInfo] Fetching account info for: ${username}`);
   
-  // Try each node individually for better reliability
+  // Try direct HTTP requests first (more reliable than dhive library)
+  console.log(`[getAccountInfo] Trying direct HTTP requests first...`);
   for (let i = 0; i < HIVE_NODES.length; i++) {
     const node = HIVE_NODES[i];
     try {
-      console.log(`[getAccountInfo] Trying node ${i + 1}/${HIVE_NODES.length}: ${node}`);
+      console.log(`[getAccountInfo] HTTP request to node ${i + 1}/${HIVE_NODES.length}: ${node}`);
+      
+      const response = await fetch(node, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'database_api.get_accounts',
+          params: [[username]],
+          id: 1
+        }),
+        signal: AbortSignal.timeout(8000) // 8 second timeout
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log(`[getAccountInfo] HTTP response from ${node}:`, data);
+      
+      if (data.result && data.result.length > 0) {
+        console.log(`[getAccountInfo] Success with HTTP! Account data:`, data.result[0]);
+        return data.result[0] as HiveAccount;
+      } else if (data.error) {
+        console.warn(`[getAccountInfo] API error from ${node}:`, data.error);
+      } else {
+        console.log(`[getAccountInfo] No account found in HTTP response from ${node}`);
+      }
+    } catch (error) {
+      console.warn(`[getAccountInfo] HTTP request failed for ${node}:`, error.message);
+      continue;
+    }
+  }
+  
+  // Fallback to dhive library if HTTP requests fail
+  console.log(`[getAccountInfo] HTTP requests failed, trying dhive library...`);
+  for (let i = 0; i < HIVE_NODES.length; i++) {
+    const node = HIVE_NODES[i];
+    try {
+      console.log(`[getAccountInfo] dhive client to node ${i + 1}/${HIVE_NODES.length}: ${node}`);
       const client = createHiveClient(node);
       console.log(`[getAccountInfo] Client created, calling getAccounts...`);
       
       // Add a timeout wrapper for the getAccounts call
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('getAccounts timeout after 10 seconds')), 10000);
+        setTimeout(() => reject(new Error('getAccounts timeout after 8 seconds')), 8000);
       });
       
       const getAccountsPromise = client.database.getAccounts([username]);
@@ -218,53 +261,18 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
       console.log(`[getAccountInfo] Received ${accounts.length} accounts from ${node}`);
       
       if (accounts.length > 0) {
-        console.log(`[getAccountInfo] Success! Account data:`, accounts[0]);
+        console.log(`[getAccountInfo] Success with dhive! Account data:`, accounts[0]);
         return (accounts[0] as unknown as HiveAccount) || null;
       } else {
         console.log(`[getAccountInfo] No accounts found for ${username} on ${node}`);
       }
     } catch (error) {
-      console.warn(`[getAccountInfo] Failed with node ${node}:`, error.message);
-      console.warn(`[getAccountInfo] Error details:`, error);
+      console.warn(`[getAccountInfo] dhive failed with node ${node}:`, error.message);
       continue;
     }
   }
   
-  // If all nodes fail, try a direct HTTP request as fallback
-  console.log(`[getAccountInfo] All nodes failed, trying direct HTTP request...`);
-  try {
-    const response = await fetch('https://api.hive.blog', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'database_api.get_accounts',
-        params: [[username]],
-        id: 1
-      }),
-      signal: AbortSignal.timeout(10000) // 10 second timeout
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log(`[getAccountInfo] Direct HTTP response:`, data);
-    
-    if (data.result && data.result.length > 0) {
-      console.log(`[getAccountInfo] Success with direct HTTP! Account data:`, data.result[0]);
-      return data.result[0] as HiveAccount;
-    } else {
-      console.log(`[getAccountInfo] No account found in HTTP response`);
-    }
-  } catch (error) {
-    console.warn(`[getAccountInfo] Direct HTTP request failed:`, error);
-  }
-  
-  throw new Error(`Failed to fetch account info from all Hive nodes and direct HTTP`);
+  throw new Error(`Failed to fetch account info from all Hive nodes using both HTTP and dhive`);
 }
 
 export async function getPost(author: string, permlink: string): Promise<HivePost | null> {
