@@ -55,12 +55,18 @@ export interface UserAccountData {
  */
 export async function fetchUserAccount(username: string): Promise<UserAccountData | null> {
   try {
+    console.log(`[fetchUserAccount] Starting fetch for username: ${username}`);
+    
     const [account, rc] = await Promise.all([
       getAccountInfo(username),
       getResourceCredits(username)
     ]);
 
+    console.log(`[fetchUserAccount] Account data received:`, account);
+    console.log(`[fetchUserAccount] Resource credits received:`, rc);
+
     if (!account) {
+      console.error(`[fetchUserAccount] Account ${username} not found`);
       throw new Error(`Account ${username} not found`);
     }
 
@@ -71,8 +77,11 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     const savingsHbdAsset = parseAsset(account.savings_sbd_balance);
 
     // Parse profile metadata
+    console.log(`[fetchUserAccount] Raw json_metadata:`, account.json_metadata);
     const profileMetadata = parseJsonMetadata(account.json_metadata) as HiveProfileMetadata;
+    console.log(`[fetchUserAccount] Parsed profile metadata:`, profileMetadata);
     const profile = profileMetadata.profile || {};
+    console.log(`[fetchUserAccount] Profile data:`, profile);
 
     // Calculate HIVE POWER from vesting shares
     let hivePower = 0;

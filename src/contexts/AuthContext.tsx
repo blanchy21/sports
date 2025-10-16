@@ -96,45 +96,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Fetch full account data in the background
       console.log("Fetching Hive account data for:", hiveUsername);
-      const accountData = await fetchUserAccount(hiveUsername);
-      if (accountData) {
+      try {
+        const accountData = await fetchUserAccount(hiveUsername);
         console.log("Hive account data loaded:", accountData);
         
-        // Update hiveUser with account data
-        const updatedHiveUser = {
-          ...newHiveUser,
-          account: accountData as unknown as HiveAccount,
-        };
-        setHiveUser(updatedHiveUser);
+        if (accountData) {
+          // Update hiveUser with account data
+          const updatedHiveUser = {
+            ...newHiveUser,
+            account: accountData as unknown as HiveAccount,
+          };
+          setHiveUser(updatedHiveUser);
 
-        // Update the main user object with Hive profile data
-        const updatedUser = {
-          ...basicUser,
-          reputation: accountData.reputation,
-          reputationFormatted: accountData.reputationFormatted,
-          hiveBalance: accountData.hiveBalance,
-          hbdBalance: accountData.hbdBalance,
-          hivePower: accountData.hivePower,
-          rcPercentage: accountData.resourceCredits,
-          hiveProfile: accountData.profile,
-          hiveStats: accountData.stats,
-          // Use Hive profile image as avatar if available
-          avatar: accountData.profile.profileImage,
-          displayName: accountData.profile.name || hiveUsername,
-          bio: accountData.profile.about,
-        };
-        setUser(updatedUser);
+          // Update the main user object with Hive profile data
+          const updatedUser = {
+            ...basicUser,
+            reputation: accountData.reputation,
+            reputationFormatted: accountData.reputationFormatted,
+            hiveBalance: accountData.hiveBalance,
+            hbdBalance: accountData.hbdBalance,
+            hivePower: accountData.hivePower,
+            rcPercentage: accountData.resourceCredits,
+            hiveProfile: accountData.profile,
+            hiveStats: accountData.stats,
+            // Use Hive profile image as avatar if available
+            avatar: accountData.profile.profileImage,
+            displayName: accountData.profile.name || hiveUsername,
+            bio: accountData.profile.about,
+          };
+          setUser(updatedUser);
 
-        console.log("Updated user with Hive profile data:", updatedUser);
+          console.log("Updated user with Hive profile data:", updatedUser);
 
-        // Save updated state to localStorage
-        localStorage.setItem("authState", JSON.stringify({
-          user: updatedUser,
-          authType: "hive",
-          hiveUser: updatedHiveUser,
-        }));
-      } else {
-        console.log("No account data found for:", hiveUsername);
+          // Save updated state to localStorage
+          localStorage.setItem("authState", JSON.stringify({
+            user: updatedUser,
+            authType: "hive",
+            hiveUser: updatedHiveUser,
+          }));
+        } else {
+          console.log("No account data found for:", hiveUsername);
+        }
+      } catch (profileError) {
+        console.error("Error fetching Hive account data:", profileError);
+        // Keep the basic user even if profile loading fails
       }
     } catch (error) {
       console.error("Error logging in with Hive user:", error);
