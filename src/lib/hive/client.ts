@@ -1,13 +1,19 @@
 import { Client } from '@hiveio/dhive';
 import { HiveAccount, HivePost, HiveComment, HiveResourceCredit } from './types';
 
-// Hive node endpoints - using multiple for reliability
+// Hive node endpoints - using multiple reliable nodes for better performance
 const HIVE_NODES = [
-  'https://api.hive.blog',
-  'https://api.deathwing.me',
-  'https://api.openhive.network',
-  'https://hive-api.arcange.eu',
-  'https://api.c0ff33a.uk'
+  'https://api.hive.blog',           // @blocktrades - most reliable
+  'https://anyx.io',                 // @anyx - very fast and reliable
+  'https://rpc.ausbit.dev',          // @ausbitbank - community favorite
+  'https://api.openhive.network',    // @gtg - established node
+  'https://hive-api.arcange.eu',     // @arcange - reliable European node
+  'https://rpc.mahdiyari.info',      // @mahdiyari - fast response times
+  'https://api.hive.blue',           // @guiltyparties - good performance
+  'https://techcoderx.com',          // @techcoderx - reliable node
+  'https://hive.roelandp.nl',        // @roelandp - European node
+  'https://api.deathwing.me',        // @deathwing - backup node
+  'https://api.c0ff33a.uk'           // @c0ff33a - backup node
 ];
 
 // Sportsblock configuration
@@ -31,9 +37,11 @@ let hiveClient: Client | null = null;
 export function getHiveClient(): Client {
   if (!hiveClient) {
     hiveClient = new Client(HIVE_NODES, {
-      timeout: 10000, // Reduced to 10 seconds
-      failoverThreshold: 3, // Reduced failover threshold
+      timeout: 15000, // 15 seconds for better reliability
+      failoverThreshold: 2, // Switch nodes after 2 failures
       consoleOnFailover: true,
+      retries: 3, // Retry failed requests
+      retryDelay: 1000, // 1 second delay between retries
     });
   }
   return hiveClient;
@@ -48,9 +56,11 @@ export function getRandomHiveNode(): string {
 export function createHiveClient(node?: string): Client {
   const nodes = node ? [node] : HIVE_NODES;
   return new Client(nodes, {
-    timeout: 10000, // Reduced to 10 seconds
-    failoverThreshold: 3, // Reduced failover threshold
+    timeout: 15000, // 15 seconds for better reliability
+    failoverThreshold: 2, // Switch nodes after 2 failures
     consoleOnFailover: true,
+    retries: 3, // Retry failed requests
+    retryDelay: 1000, // 1 second delay between retries
   });
 }
 
@@ -68,22 +78,34 @@ export async function checkNodeHealth(node: string): Promise<boolean> {
   }
 }
 
-// Get the best available Hive node
+// Get the best available Hive node based on performance
 export async function getBestHiveNode(): Promise<string> {
-  const healthChecks = await Promise.allSettled(
-    HIVE_NODES.map(node => checkNodeHealth(node))
+  console.log(`[getBestHiveNode] Testing ${HIVE_NODES.length} nodes for performance...`);
+  
+  const performanceTests = await Promise.allSettled(
+    HIVE_NODES.map(async (node) => {
+      const startTime = Date.now();
+      try {
+        await checkNodeHealth(node);
+        const responseTime = Date.now() - startTime;
+        return { node, responseTime, healthy: true };
+      } catch (error) {
+        const responseTime = Date.now() - startTime;
+        return { node, responseTime, healthy: false };
+      }
+    })
   );
-
-  for (let i = 0; i < healthChecks.length; i++) {
-    const result = healthChecks[i];
-    if (result.status === 'fulfilled' && result.value) {
-      return HIVE_NODES[i];
-    }
-  }
-
-  // Fallback to first node if all fail
-  console.warn('All Hive nodes appear to be down, using fallback');
-  return HIVE_NODES[0];
+  
+  const results = performanceTests
+    .map((result) => result.status === 'fulfilled' ? result.value : null)
+    .filter((result): result is NonNullable<typeof result> => result !== null)
+    .filter(result => result.healthy)
+    .sort((a, b) => a.responseTime - b.responseTime);
+  
+  const bestNode = results[0]?.node || HIVE_NODES[0];
+  console.log(`[getBestHiveNode] Best node: ${bestNode} (${results[0]?.responseTime}ms)`);
+  
+  return bestNode;
 }
 
 // Initialize client with best available node
@@ -111,7 +133,7 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
       
       // Add a timeout wrapper for the getAccounts call
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('getAccounts timeout after 5 seconds')), 5000);
+        setTimeout(() => reject(new Error('getAccounts timeout after 10 seconds')), 10000);
       });
       
       const getAccountsPromise = client.database.getAccounts([username]);
