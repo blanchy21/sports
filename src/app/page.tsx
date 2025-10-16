@@ -192,10 +192,10 @@ export default function LandingPage() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Why Sports Arena?
+              Why Sportsblock?
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              We created Sports Arena because we were tired of scrolling through pain, suffering, 
+              We created Sportsblock because we were tired of scrolling through pain, suffering, 
               political propaganda, and religious debates just to read about sports.
             </p>
           </motion.div>

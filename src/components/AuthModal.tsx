@@ -18,10 +18,11 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const { login } = useAuth();
+  const { login, loginWithHiveUser } = useAuth();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true); // Toggle between login and signup
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Form state for email login/signup
   const [email, setEmail] = useState("");
@@ -32,51 +33,85 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   const handleHiveKeychainLogin = async () => {
     setIsConnecting(true);
+    setErrorMessage(null);
+    
     try {
       // Check if Hive Keychain is available
       if (typeof window !== "undefined" && (window as unknown as { hive_keychain?: unknown }).hive_keychain) {
-        const keychain = (window as unknown as { hive_keychain: { requestSignBuffer: (app: string, message: string, key: string, callback: (response: { success: boolean; data?: { username: string }; error?: string }) => void) => void } }).hive_keychain;
+        const keychain = (window as unknown as { 
+          hive_keychain: { 
+            requestSignBuffer: (app: string, message: string, key: string, callback: (response: { success: boolean; data?: { username: string; message: string }; error?: string }) => void) => void;
+            isLoggedIn: () => boolean;
+            getCurrentUser: () => { username: string } | null;
+            requestLogin: (callback: (response: { success: boolean; data?: { username: string; message: string }; error?: string }) => void) => void;
+          } 
+        }).hive_keychain;
         
-        // Request login
+        // Debug: Log available methods
+        console.log("Hive Keychain methods:", Object.keys(keychain));
+        console.log("requestLogin available:", typeof keychain.requestLogin);
+        console.log("requestSignBuffer available:", typeof keychain.requestSignBuffer);
+        
+        // Check if user is already logged in
+        if (keychain.isLoggedIn && keychain.isLoggedIn()) {
+          const currentUser = keychain.getCurrentUser && keychain.getCurrentUser();
+          if (currentUser?.username) {
+            console.log("User already logged in:", currentUser.username);
+            await loginWithHiveUser(currentUser.username);
+            onClose();
+            setIsConnecting(false);
+            return;
+          }
+        }
+        
+        // The best approach is to use requestSignBuffer but with proper account selection
+        // Hive Keychain should show account selection in the popup
+        console.log("Using requestSignBuffer method with account selection");
+        
         keychain.requestSignBuffer(
-          "sportsarena",
-          "Login to Sports Arena",
+          "sportsblock",
+          "Login to Sportsblock - Select your account (blanchy)",
           "Posting",
-          (response: { success: boolean; data?: { username: string }; error?: string }) => {
-            if (response.success) {
-              // Create user object
-              const user = {
-                id: response.data?.username || "",
-                username: response.data?.username || "",
-                displayName: response.data?.username || "",
-                isHiveAuth: true,
-                hiveUsername: response.data?.username || "",
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              };
+          async (response: { success: boolean; data?: { username: string }; error?: string }) => {
+            if (response.success && response.data?.username) {
+              console.log("Hive Keychain login successful:", response.data);
               
-              login(user, "hive");
-              onClose();
+              // Verify the username is what we expect
+              if (response.data.username === "sportsblock") {
+                setErrorMessage("Please select your personal account (blanchy) in the Hive Keychain popup, not the 'sportsblock' account.");
+                setIsConnecting(false);
+                return;
+              }
+              
+              try {
+                await loginWithHiveUser(response.data.username);
+                onClose();
+              } catch (profileError) {
+                console.error("Error loading user profile:", profileError);
+                setErrorMessage("Login successful but failed to load profile data. Please try again.");
+              }
             } else {
               console.error("Keychain login failed:", response.error);
+              setErrorMessage("Login failed: " + (response.error || "Unknown error"));
             }
             setIsConnecting(false);
           }
         );
       } else {
         // Keychain not available, show download prompt
-        alert("Hive Keychain not found. Please install it first.");
+        setErrorMessage("Hive Keychain not found. Please install the Hive Keychain browser extension first.");
         setIsConnecting(false);
       }
     } catch (error) {
       console.error("Error connecting to Hive Keychain:", error);
+      setErrorMessage("Error connecting to Hive Keychain: " + error);
       setIsConnecting(false);
     }
   };
 
   const handleHiveSignerLogin = () => {
     // Redirect to Hive Signer OAuth
-    const signerUrl = `https://hivesigner.com/oauth2/authorize?client_id=sportsarena&redirect_uri=${encodeURIComponent(window.location.origin + "/auth/callback")}&scope=vote,comment,offline`;
+    const signerUrl = `https://hivesigner.com/oauth2/authorize?client_id=sportsblock&redirect_uri=${encodeURIComponent(window.location.origin + "/auth/callback")}&scope=vote,comment,offline`;
     window.open(signerUrl, "_blank");
   };
 
@@ -130,6 +165,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
+  // Clear error message when modal opens/closes or mode changes
+  React.useEffect(() => {
+    setErrorMessage(null);
+  }, [isOpen, isLoginMode]);
+
   if (!isOpen) return null;
 
   return (
@@ -138,7 +178,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold">
-            {isLoginMode ? "Login to Sports Arena" : "Join Sports Arena"}
+            {isLoginMode ? "Login to Sportsblock" : "Join Sportsblock"}
           </h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5" />
@@ -149,7 +189,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           {/* Left Column - Email Login/Signup */}
           <div className="p-8">
             <h3 className="text-xl font-semibold mb-2">
-              {isLoginMode ? "Login with Email" : "Join Sports Arena"}
+              {isLoginMode ? "Login with Email" : "Join Sportsblock"}
             </h3>
             
             {/* Social Proof - only for signup */}
@@ -272,24 +312,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               Or {isLoginMode ? "login" : "sign up"} with
             </h3>
 
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 text-sm">{errorMessage}</p>
+                <button
+                  onClick={() => setErrorMessage(null)}
+                  className="text-red-600 hover:text-red-800 text-xs mt-1 underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
             {/* Alternative Auth Buttons */}
             <div className="space-y-3">
               <Button
                 onClick={handleHiveKeychainLogin}
                 disabled={isConnecting}
-                className="w-full py-3 flex items-center justify-start space-x-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700"
+                className="w-full py-3 flex items-center justify-start space-x-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 disabled:opacity-50"
               >
                 <div className="w-8 h-8 flex items-center justify-center">
                   <Image 
-                    src="/hiveauth-logo.svg" 
-                    alt="HiveAuth" 
+                    src="/hive-keychain-logo.svg" 
+                    alt="Hive Keychain" 
                     width={32}
                     height={32}
                     className="w-8 h-8 object-contain"
                   />
                 </div>
                 <span className="font-medium">
-                  {isLoginMode ? "Login" : "Sign up"} with HiveAuth
+                  {isConnecting ? "Connecting..." : `${isLoginMode ? "Login" : "Sign up"} with Hive Keychain`}
                 </span>
               </Button>
 
@@ -332,7 +385,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
             {/* Benefits */}
             <div className="mt-8 p-4 bg-white rounded-lg border border-gray-200">
-              <h4 className="font-semibold mb-3">Why choose Hive Auth?</h4>
+              <h4 className="font-semibold mb-3">Why choose Hive Keychain?</h4>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 text-sm">
                   <CheckCircle className="h-4 w-4 text-green-500" />
@@ -348,7 +401,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 </div>
                 <div className="flex items-center space-x-2 text-sm">
                   <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Secure wallet with account selection</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
                   <span>No middleman fees</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Account Selection Instructions */}
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <div className="w-5 h-5 text-yellow-600 mt-0.5">⚠️</div>
+                <div>
+                  <h4 className="font-medium text-sm text-yellow-800">Account Selection</h4>
+                  <p className="text-xs text-yellow-700 mb-2">
+                    When the Hive Keychain popup appears, make sure to select your personal account (blanchy) from the dropdown, not the &quot;sportsblock&quot; account.
+                  </p>
                 </div>
               </div>
             </div>
@@ -360,10 +430,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 <div>
                   <h4 className="font-medium text-sm text-blue-800">Don&apos;t have Hive Keychain?</h4>
                   <p className="text-xs text-blue-600 mb-2">
-                    Install the browser extension to connect your Hive account.
+                    Install the browser extension to connect your Hive account. You&apos;ll be able to choose which account to sign in with.
                   </p>
-                  <Button variant="outline" size="sm" className="text-xs bg-white border-blue-300 text-blue-700 hover:bg-blue-50">
-                    Download Keychain
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs bg-white border-blue-300 text-blue-700 hover:bg-blue-50"
+                    onClick={() => window.open('https://chrome.google.com/webstore/detail/hive-keychain/poipeahgbjcobddaglhciijbnfkmemoh', '_blank')}
+                  >
+                    Download Hive Keychain
                   </Button>
                 </div>
               </div>

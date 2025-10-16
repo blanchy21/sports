@@ -49,7 +49,7 @@ export const TopNavigation: React.FC = () => {
           <div className="w-80 pl-6">
             <Link href="/" className="flex items-center" suppressHydrationWarning>
               <div className="text-4xl font-bold text-white">
-                Sports Arena
+                Sportsblock
               </div>
             </Link>
           </div>

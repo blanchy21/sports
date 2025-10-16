@@ -3,11 +3,12 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Sports Arena - Where Sports Meets Blockchain",
+  title: "Sportsblock - Where Sports Meets Blockchain",
   description: "Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.",
   keywords: ["sports", "blogging", "blockchain", "hive", "crypto", "rewards"],
 };
@@ -22,7 +23,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider>
           <AuthProvider>
-            {children}
+            <ToastProvider>
+              {children}
+            </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

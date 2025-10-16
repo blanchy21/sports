@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/Button";
 import { Video, Play, Eye, Clock } from "lucide-react";
@@ -66,10 +67,11 @@ export default function VideosPage() {
         {/* Featured Video */}
         <div className="bg-card border rounded-lg overflow-hidden">
           <div className="aspect-video relative">
-            <img
+            <Image
               src={mockVideos[0].thumbnail}
               alt={mockVideos[0].title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
               <Button size="lg" className="rounded-full w-16 h-16">
@@ -98,10 +100,11 @@ export default function VideosPage() {
           {mockVideos.slice(1).map((video) => (
             <div key={video.id} className="bg-card border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
               <div className="aspect-video relative">
-                <img
+                <Image
                   src={video.thumbnail}
                   alt={video.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <Button size="sm" className="rounded-full w-12 h-12">

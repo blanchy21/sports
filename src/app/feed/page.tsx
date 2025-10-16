@@ -9,6 +9,8 @@ import { Plus, TrendingUp, Users, Award } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Post, SPORT_CATEGORIES } from "@/types";
+import { fetchSportsblockPosts, SportsblockPost } from "@/lib/hive/content";
+import { formatAsset, calculatePendingPayout } from "@/lib/hive/utils";
 
 // Mock data for development
 const mockPosts: Post[] = [
@@ -108,6 +110,9 @@ export default function FeedPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [selectedSport, setSelectedSport] = React.useState<string>("");
+  const [posts, setPosts] = React.useState<SportsblockPost[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -115,6 +120,11 @@ export default function FeedPage() {
       router.push("/");
     }
   }, [user, router]);
+
+  // Load posts from Hive blockchain
+  React.useEffect(() => {
+    loadPosts();
+  }, [selectedSport]);
 
   // Listen for sport filter changes from the navigation
   React.useEffect(() => {
@@ -135,13 +145,35 @@ export default function FeedPage() {
     };
   }, []);
 
+  const loadPosts = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const result = await fetchSportsblockPosts({
+        sportCategory: selectedSport || undefined,
+        limit: 20,
+        sort: 'created',
+      });
+      
+      setPosts(result.posts);
+    } catch (err) {
+      console.error('Error loading posts:', err);
+      setError('Failed to load posts. Please try again later.');
+      // Fallback to mock data
+      setPosts(mockPosts as unknown as SportsblockPost[]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Filter posts based on selected sport
   const filteredPosts = React.useMemo(() => {
     if (!selectedSport) {
-      return mockPosts;
+      return posts;
     }
-    return mockPosts.filter(post => post.sport.id === selectedSport);
-  }, [selectedSport]);
+    return posts.filter(post => post.sportCategory === selectedSport);
+  }, [posts, selectedSport]);
 
   // Get the selected sport name for display
   const selectedSportName = React.useMemo(() => {
@@ -231,9 +263,38 @@ export default function FeedPage() {
           </div>
           
           <div className="space-y-6">
-            {filteredPosts.length > 0 ? (
+            {isLoading ? (
+              // Loading skeleton
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-card border rounded-lg p-6 animate-pulse">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-300 rounded w-1/4 mb-2"></div>
+                      <div className="h-3 bg-gray-300 rounded w-1/3"></div>
+                    </div>
+                  </div>
+                  <div className="h-6 bg-gray-300 rounded w-3/4 mb-3"></div>
+                  <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+                </div>
+              ))
+            ) : error ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">⚠️</div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  Error Loading Posts
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                  {error}
+                </p>
+                <Button onClick={loadPosts}>
+                  Try Again
+                </Button>
+              </div>
+            ) : filteredPosts.length > 0 ? (
               filteredPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
+                <PostCard key={`${post.author}/${post.permlink}`} post={post as unknown as Post} />
               ))
             ) : (
               <div className="text-center py-12">

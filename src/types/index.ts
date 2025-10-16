@@ -7,9 +7,30 @@ export interface User {
   isHiveAuth: boolean;
   hiveUsername?: string;
   reputation?: number;
+  reputationFormatted?: string;
   hiveBalance?: number;
+  hbdBalance?: number; // Hive Backed Dollars
+  hivePower?: number; // HIVE POWER
   sbBalance?: number; // Sports Bucks
-  rcBalance?: number;
+  rcBalance?: number; // Resource Credits
+  rcPercentage?: number;
+  // Hive profile fields
+  hiveProfile?: {
+    name?: string;
+    about?: string;
+    location?: string;
+    website?: string;
+    coverImage?: string;
+    profileImage?: string;
+  };
+  // Hive account stats
+  hiveStats?: {
+    postCount: number;
+    commentCount: number;
+    voteCount: number;
+    followers?: number;
+    following?: number;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +48,10 @@ export interface Post {
   isDraft: boolean;
   hivePostId?: string;
   hiveUrl?: string;
+  author_permlink?: string; // For Hive posts
+  permlink?: string; // For Hive posts
+  pendingPayout?: number; // Hive pending payout
+  netVotes?: number; // Hive net votes
   upvotes: number;
   comments: number;
   readTime: number;

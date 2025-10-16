@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { MessageSquare, Reply, ThumbsUp } from "lucide-react";
 
@@ -92,9 +93,11 @@ export default function RepliesPage() {
           {mockReplies.map((reply) => (
             <div key={reply.id} className="bg-card border rounded-lg p-5 hover:shadow-md transition-shadow">
               <div className="flex items-start space-x-4">
-                <img
+                <Image
                   src={reply.replier.avatar}
                   alt={reply.replier.username}
+                  width={40}
+                  height={40}
                   className="w-10 h-10 rounded-full"
                 />
                 
@@ -139,7 +142,7 @@ export default function RepliesPage() {
             </div>
             <h2 className="text-xl font-semibold mb-2">No replies yet</h2>
             <p className="text-muted-foreground">
-              When people reply to your posts, they'll appear here
+              When people reply to your posts, they&apos;ll appear here
             </p>
           </div>
         )}

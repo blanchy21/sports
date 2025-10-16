@@ -1,6 +1,7 @@
-import type { NextConfig } from "next";
+// Temporarily comment out NextConfig type import to fix module resolution
+// import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   images: {
     remotePatterns: [
       {
@@ -10,6 +11,19 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  serverExternalPackages: ['@hiveio/dhive'],
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+      };
+    }
+    return config;
   },
 };
 

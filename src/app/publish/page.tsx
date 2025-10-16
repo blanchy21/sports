@@ -32,6 +32,8 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import dynamic from "next/dynamic";
+import { publishPost, canUserPost, validatePostData } from "@/lib/hive/posting";
+import { PostData } from "@/lib/hive/posting";
 
 // Import emoji picker dynamically to avoid SSR issues
 const EmojiPicker = dynamic(
@@ -40,7 +42,7 @@ const EmojiPicker = dynamic(
 );
 
 export default function PublishPage() {
-  const { user, authType } = useAuth();
+  const { user, authType, hiveUser } = useAuth();
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -51,6 +53,9 @@ export default function PublishPage() {
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [imageAlt, setImageAlt] = useState("");
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [rcStatus, setRcStatus] = useState<{canPost: boolean; rcPercentage: number; message?: string} | null>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const emojiButtonRef = React.useRef<HTMLButtonElement>(null);
 
@@ -60,6 +65,24 @@ export default function PublishPage() {
       router.push("/");
     }
   }, [user, router]);
+
+  // Check RC status for Hive users
+  React.useEffect(() => {
+    if (hiveUser?.username && authType === "hive") {
+      checkRCStatus();
+    }
+  }, [hiveUser, authType]);
+
+  const checkRCStatus = async () => {
+    if (!hiveUser?.username) return;
+    
+    try {
+      const status = await canUserPost(hiveUser.username);
+      setRcStatus(status);
+    } catch (error) {
+      console.error("Error checking RC status:", error);
+    }
+  };
 
   // Markdown formatting helpers
   const insertMarkdown = (before: string, after: string = "", placeholder: string = "") => {
@@ -160,19 +183,80 @@ export default function PublishPage() {
   }, [showEmojiPicker]);
 
   const handleSaveDraft = () => {
-    // TODO: Implement draft saving
-    console.log("Saving draft...");
-  };
-
-  const handlePublish = () => {
-    // TODO: Implement publishing to Hive
-    console.log("Publishing post...", {
+    // Save draft to localStorage for soft auth users
+    const draft = {
       title,
       content,
       sport: selectedSport,
-      tags: tags.split(',').map(t => t.trim()),
-      authType
-    });
+      tags,
+      imageUrl,
+      imageAlt,
+      createdAt: new Date().toISOString(),
+    };
+    
+    const existingDrafts = JSON.parse(localStorage.getItem('drafts') || '[]');
+    existingDrafts.push(draft);
+    localStorage.setItem('drafts', JSON.stringify(existingDrafts));
+    
+    alert('Draft saved successfully!');
+  };
+
+  const handlePublish = async () => {
+    if (!user) return;
+    
+    setPublishError(null);
+    setIsPublishing(true);
+
+    try {
+      // Validate post data
+      const postData: PostData = {
+        title: title.trim(),
+        body: content.trim(),
+        sportCategory: selectedSport,
+        tags: tags.split(',').map(t => t.trim()).filter(t => t.length > 0),
+        featuredImage: imageUrl || undefined,
+        author: hiveUser?.username || user.username,
+      };
+
+      const validation = validatePostData(postData);
+      if (!validation.isValid) {
+        setPublishError(validation.errors.join(', '));
+        return;
+      }
+
+      if (authType === "hive" && hiveUser?.username) {
+        // Check if user has posting key available
+        if (!hiveUser.postingKey) {
+          setPublishError("Posting key not available. Please connect with Hive Keychain.");
+          return;
+        }
+
+        // Check RC status
+        if (rcStatus && !rcStatus.canPost) {
+          setPublishError(rcStatus.message || "Insufficient Resource Credits to post.");
+          return;
+        }
+
+        // Publish to Hive blockchain
+        const result = await publishPost(postData, hiveUser.postingKey);
+        
+        if (result.success) {
+          alert(`Post published successfully! View on Hive: ${result.url}`);
+          router.push('/feed');
+        } else {
+          setPublishError(result.error || "Failed to publish post");
+        }
+      } else {
+        // For soft auth users, save as draft and prompt to connect Hive
+        handleSaveDraft();
+        alert("Post saved as draft. Connect with Hive Keychain to publish to the blockchain and earn rewards!");
+      }
+    } catch (error) {
+      console.error("Error publishing post:", error);
+      setPublishError("An unexpected error occurred while publishing.");
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   if (!user) {
@@ -239,7 +323,7 @@ export default function PublishPage() {
             <Button
               size="sm"
               onClick={handlePublish}
-              disabled={!title || !content || !selectedSport}
+              disabled={!title || !content || !selectedSport || isPublishing || (authType === "hive" && rcStatus && !rcStatus.canPost) || false}
               className={cn(
                 "min-w-[140px]",
                 authType === "hive" 
@@ -248,7 +332,12 @@ export default function PublishPage() {
               )}
             >
               <Send className="h-4 w-4 mr-2" />
-              {authType === "hive" ? "Publish to Hive" : "Publish"}
+              {isPublishing 
+                ? "Publishing..." 
+                : authType === "hive" 
+                  ? "Publish to Hive" 
+                  : "Save Draft"
+              }
             </Button>
           </div>
         </div>
@@ -301,6 +390,60 @@ export default function PublishPage() {
                     </h4>
                     <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
                       Posts won&apos;t earn rewards or be published to the blockchain. Connect with Hive Keychain to unlock full features.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* RC Status */}
+            {authType === "hive" && rcStatus && (
+              <div className={cn(
+                "rounded-lg p-3",
+                rcStatus.canPost 
+                  ? "bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800"
+                  : "bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800"
+              )}>
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className={cn(
+                    "h-4 w-4 mt-0.5",
+                    rcStatus.canPost ? "text-green-600" : "text-red-600"
+                  )} />
+                  <div>
+                    <h4 className={cn(
+                      "font-medium text-sm",
+                      rcStatus.canPost 
+                        ? "text-green-800 dark:text-green-200"
+                        : "text-red-800 dark:text-red-200"
+                    )}>
+                      Resource Credits: {rcStatus.rcPercentage.toFixed(1)}%
+                    </h4>
+                    {rcStatus.message && (
+                      <p className={cn(
+                        "text-xs mt-1",
+                        rcStatus.canPost 
+                          ? "text-green-700 dark:text-green-300"
+                          : "text-red-700 dark:text-red-300"
+                      )}>
+                        {rcStatus.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Publish Error */}
+            {publishError && (
+              <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-red-800 dark:text-red-200 text-sm">
+                      Publishing Error
+                    </h4>
+                    <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+                      {publishError}
                     </p>
                   </div>
                 </div>
