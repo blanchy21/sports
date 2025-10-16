@@ -71,6 +71,7 @@ export default function VideosPage() {
               src={mockVideos[0].thumbnail}
               alt={mockVideos[0].title}
               fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 60vw, 50vw"
               className="object-cover"
             />
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
@@ -104,6 +105,7 @@ export default function VideosPage() {
                   src={video.thumbnail}
                   alt={video.title}
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="object-cover"
                 />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">

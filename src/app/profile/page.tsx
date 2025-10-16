@@ -36,6 +36,7 @@ export default function ProfilePage() {
                 src={user.hiveProfile.coverImage}
                 alt="Cover"
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
                 className="object-cover"
               />
             )}

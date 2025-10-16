@@ -141,6 +141,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
                 src={(isHivePost ? post.img_url : post.featuredImage)!}
                 alt={post.title}
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-cover hover:scale-105 transition-transform duration-200"
               />
             </div>

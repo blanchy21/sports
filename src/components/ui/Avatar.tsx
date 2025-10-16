@@ -38,6 +38,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
             src={src}
             alt={alt || "Avatar"}
             fill
+            sizes="(max-width: 768px) 24px, (max-width: 1200px) 32px, 48px"
             className="object-cover"
             onError={handleImageError}
           />
