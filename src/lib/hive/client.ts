@@ -111,7 +111,7 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
       
       // Add a timeout wrapper for the getAccounts call
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('getAccounts timeout after 8 seconds')), 8000);
+        setTimeout(() => reject(new Error('getAccounts timeout after 5 seconds')), 5000);
       });
       
       const getAccountsPromise = client.database.getAccounts([username]);
@@ -145,15 +145,22 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
         method: 'database_api.get_accounts',
         params: [[username]],
         id: 1
-      })
+      }),
+      signal: AbortSignal.timeout(10000) // 10 second timeout
     });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
     
     const data = await response.json();
     console.log(`[getAccountInfo] Direct HTTP response:`, data);
     
     if (data.result && data.result.length > 0) {
-      console.log(`[getAccountInfo] Success with direct HTTP!`);
+      console.log(`[getAccountInfo] Success with direct HTTP! Account data:`, data.result[0]);
       return data.result[0] as HiveAccount;
+    } else {
+      console.log(`[getAccountInfo] No account found in HTTP response`);
     }
   } catch (error) {
     console.warn(`[getAccountInfo] Direct HTTP request failed:`, error);
