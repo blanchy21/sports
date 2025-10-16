@@ -108,8 +108,17 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
       console.log(`[getAccountInfo] Trying node ${i + 1}/${HIVE_NODES.length}: ${node}`);
       const client = createHiveClient(node);
       console.log(`[getAccountInfo] Client created, calling getAccounts...`);
-      const accounts = await client.database.getAccounts([username]);
+      
+      // Add a timeout wrapper for the getAccounts call
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('getAccounts timeout after 8 seconds')), 8000);
+      });
+      
+      const getAccountsPromise = client.database.getAccounts([username]);
+      
+      const accounts = await Promise.race([getAccountsPromise, timeoutPromise]) as any[];
       console.log(`[getAccountInfo] Received ${accounts.length} accounts from ${node}`);
+      
       if (accounts.length > 0) {
         console.log(`[getAccountInfo] Success! Account data:`, accounts[0]);
         return (accounts[0] as unknown as HiveAccount) || null;
@@ -123,7 +132,34 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
     }
   }
   
-  throw new Error(`Failed to fetch account info from all Hive nodes`);
+  // If all nodes fail, try a direct HTTP request as fallback
+  console.log(`[getAccountInfo] All nodes failed, trying direct HTTP request...`);
+  try {
+    const response = await fetch('https://api.hive.blog', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'database_api.get_accounts',
+        params: [[username]],
+        id: 1
+      })
+    });
+    
+    const data = await response.json();
+    console.log(`[getAccountInfo] Direct HTTP response:`, data);
+    
+    if (data.result && data.result.length > 0) {
+      console.log(`[getAccountInfo] Success with direct HTTP!`);
+      return data.result[0] as HiveAccount;
+    }
+  } catch (error) {
+    console.warn(`[getAccountInfo] Direct HTTP request failed:`, error);
+  }
+  
+  throw new Error(`Failed to fetch account info from all Hive nodes and direct HTTP`);
 }
 
 export async function getPost(author: string, permlink: string): Promise<HivePost | null> {
