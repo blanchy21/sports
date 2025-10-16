@@ -57,11 +57,13 @@ export function createHiveClient(node?: string): Client {
 // Check if Hive node is responsive
 export async function checkNodeHealth(node: string): Promise<boolean> {
   try {
+    console.log(`[checkNodeHealth] Testing node: ${node}`);
     const client = createHiveClient(node);
     await client.database.getDynamicGlobalProperties();
+    console.log(`[checkNodeHealth] Node ${node} is responsive`);
     return true;
   } catch (error) {
-    console.warn(`Node ${node} is not responsive:`, error);
+    console.warn(`[checkNodeHealth] Node ${node} is not responsive:`, error);
     return false;
   }
 }
@@ -100,15 +102,23 @@ export async function getAccountInfo(username: string): Promise<HiveAccount | nu
   console.log(`[getAccountInfo] Fetching account info for: ${username}`);
   
   // Try each node individually for better reliability
-  for (const node of HIVE_NODES) {
+  for (let i = 0; i < HIVE_NODES.length; i++) {
+    const node = HIVE_NODES[i];
     try {
-      console.log(`[getAccountInfo] Trying node: ${node}`);
+      console.log(`[getAccountInfo] Trying node ${i + 1}/${HIVE_NODES.length}: ${node}`);
       const client = createHiveClient(node);
+      console.log(`[getAccountInfo] Client created, calling getAccounts...`);
       const accounts = await client.database.getAccounts([username]);
       console.log(`[getAccountInfo] Received ${accounts.length} accounts from ${node}`);
-      return (accounts[0] as unknown as HiveAccount) || null;
+      if (accounts.length > 0) {
+        console.log(`[getAccountInfo] Success! Account data:`, accounts[0]);
+        return (accounts[0] as unknown as HiveAccount) || null;
+      } else {
+        console.log(`[getAccountInfo] No accounts found for ${username} on ${node}`);
+      }
     } catch (error) {
       console.warn(`[getAccountInfo] Failed with node ${node}:`, error.message);
+      console.warn(`[getAccountInfo] Error details:`, error);
       continue;
     }
   }
