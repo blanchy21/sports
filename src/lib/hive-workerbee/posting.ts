@@ -366,17 +366,30 @@ export async function canUserPost(username: string): Promise<{
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const rc = await makeHiveApiCall<Record<string, unknown>>('rc_api', 'get_resource_credits', [username]);
+    // Use condenser_api.get_account to get account info including RC
+    const account = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_account', [username]);
     
-    if (!rc) {
+    if (!account) {
       return {
         canPost: false,
         rcPercentage: 0,
-        message: 'Unable to fetch Resource Credits'
+        message: 'Unable to fetch account information'
       };
     }
 
-    const rcPercentage = (parseFloat((rc as { rc_manabar: { current_mana: string } }).rc_manabar.current_mana) / parseFloat((rc as { max_rc: string }).max_rc)) * 100;
+    // Extract RC information from account data
+    const rc_manabar = account.rc_manabar as { current_mana: string } | undefined;
+    const max_rc = account.max_rc as string | undefined;
+    
+    if (!rc_manabar || !max_rc) {
+      return {
+        canPost: false,
+        rcPercentage: 0,
+        message: 'Resource Credits information not available'
+      };
+    }
+
+    const rcPercentage = (parseFloat(rc_manabar.current_mana) / parseFloat(max_rc)) * 100;
     
     // Users typically need at least 10% RC to post
     if (rcPercentage < 10) {
