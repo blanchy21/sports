@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Cache for price data to avoid excessive API calls
 interface PriceCache {
-  data: any | null;
+  data: {
+    bitcoin?: { usd: number; usd_24h_change?: number; market_cap?: number };
+    ethereum?: { usd: number; usd_24h_change?: number; market_cap?: number };
+    hive?: { usd: number; usd_24h_change?: number };
+    hive_dollar?: { usd: number; usd_24h_change?: number };
+  } | null;
   timestamp: number;
   expiresAt: number;
 }
@@ -90,22 +95,26 @@ export async function GET(request: NextRequest) {
       };
     } else {
       // Fetch all prices
-      const [bitcoinResponse, hiveResponse] = await Promise.all([
+      const [bitcoinResponse, hiveResponse, ethereumResponse] = await Promise.all([
         fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_market_cap=true', {
           headers: { 'Accept': 'application/json', 'User-Agent': 'Sportsblock/1.0' }
         }),
         fetch('https://api.coingecko.com/api/v3/simple/price?ids=hive,hive_dollar&vs_currencies=usd&include_24hr_change=true', {
           headers: { 'Accept': 'application/json', 'User-Agent': 'Sportsblock/1.0' }
+        }),
+        fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true&include_market_cap=true', {
+          headers: { 'Accept': 'application/json', 'User-Agent': 'Sportsblock/1.0' }
         })
       ]);
 
-      if (!bitcoinResponse.ok || !hiveResponse.ok) {
-        throw new Error(`CoinGecko API error: Bitcoin ${bitcoinResponse.status}, HIVE/HBD ${hiveResponse.status}`);
+      if (!bitcoinResponse.ok || !hiveResponse.ok || !ethereumResponse.ok) {
+        throw new Error(`CoinGecko API error: Bitcoin ${bitcoinResponse.status}, HIVE/HBD ${hiveResponse.status}, Ethereum ${ethereumResponse.status}`);
       }
 
-      const [bitcoinResult, hiveResult] = await Promise.all([
+      const [bitcoinResult, hiveResult, ethereumResult] = await Promise.all([
         bitcoinResponse.json(),
-        hiveResponse.json()
+        hiveResponse.json(),
+        ethereumResponse.json()
       ]);
 
       priceData = {
@@ -113,6 +122,11 @@ export async function GET(request: NextRequest) {
           usd: bitcoinResult.bitcoin?.usd || 0,
           usd_24h_change: bitcoinResult.bitcoin?.usd_24h_change,
           market_cap: bitcoinResult.bitcoin?.usd_market_cap,
+        },
+        ethereum: {
+          usd: ethereumResult.ethereum?.usd || 0,
+          usd_24h_change: ethereumResult.ethereum?.usd_24h_change,
+          market_cap: ethereumResult.ethereum?.usd_market_cap,
         },
         hive: {
           usd: hiveResult.hive?.usd || 0,

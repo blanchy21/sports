@@ -139,10 +139,10 @@ function calculateReputation(reputation: string | number): number {
   const neg = reputation < 0;
   if (neg) reputation = -reputation;
   
-  // Hive reputation calculation: log10(reputation) * 9 + 25
+  // Correct Hive reputation calculation: (log10(reputation) - 9) * 9 + 25
   let rep = Math.log10(reputation);
   console.log(`[calculateReputation] log10(${reputation}) = ${rep}`);
-  rep = rep * 9 + 25;
+  rep = (rep - 9) * 9 + 25;
   console.log(`[calculateReputation] Final calculation: ${rep} (negative: ${neg})`);
   
   return neg ? -rep : rep;
@@ -266,9 +266,9 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
 
     // Parse balances
     const hiveAsset = parseAsset(accountData.balance as string);
-    const hbdAsset = parseAsset(accountData.sbd_balance as string);
+    const hbdAsset = parseAsset(accountData.hbd_balance as string);
     const savingsHiveAsset = parseAsset(accountData.savings_balance as string);
-    const savingsHbdAsset = parseAsset(accountData.savings_sbd_balance as string);
+    const savingsHbdAsset = parseAsset(accountData.savings_hbd_balance as string);
 
     // Parse profile metadata from both json_metadata and posting_json_metadata
     console.log(`[WorkerBee fetchUserAccount] Raw json_metadata:`, accountData.json_metadata);
@@ -321,6 +321,18 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     }
     
     console.log(`[WorkerBee fetchUserAccount] Raw reputation for ${username}:`, rawReputation, 'Type:', typeof rawReputation);
+    
+    // Debug: Show what raw value would produce the expected vs actual reputation
+    if (rawReputation && rawReputation !== 0 && rawReputation !== '0') {
+      const calculated = calculateReputation(rawReputation);
+      console.log(`[WorkerBee fetchUserAccount] DEBUG: Raw ${rawReputation} → Calculated ${calculated}`);
+      
+      // If the calculated reputation seems too high, let's check if we need to adjust the formula
+      if (calculated > 100) {
+        console.log(`[WorkerBee fetchUserAccount] WARNING: Calculated reputation ${calculated} seems unusually high`);
+        console.log(`[WorkerBee fetchUserAccount] Expected range: 25-100 for most users`);
+      }
+    }
     
     // Handle case where reputation is 0 or undefined
     let reputation: number;
@@ -406,9 +418,9 @@ export async function fetchUserBalances(username: string): Promise<{
 
     const accountData = account[0];
     const hiveAsset = parseAsset(accountData.balance as string);
-    const hbdAsset = parseAsset(accountData.sbd_balance as string);
+    const hbdAsset = parseAsset(accountData.hbd_balance as string);
     const savingsHiveAsset = parseAsset(accountData.savings_balance as string);
-    const savingsHbdAsset = parseAsset(accountData.savings_sbd_balance as string);
+    const savingsHbdAsset = parseAsset(accountData.savings_hbd_balance as string);
 
     let hivePower = 0;
     if (accountData.vesting_shares) {

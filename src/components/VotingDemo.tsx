@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Mock post data for demonstration
-const mockPost = {
+// Demo post data - in a real app this would come from the blockchain
+const demoPost = {
   author: "demo_user",
   permlink: "demo-post-about-sports",
   net_votes: 42,
@@ -66,20 +66,20 @@ export const VotingDemo: React.FC = () => {
           <div className="border rounded-lg p-4 space-y-4">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
-                <h3 className="font-semibold text-lg">{mockPost.title}</h3>
+                <h3 className="font-semibold text-lg">{demoPost.title}</h3>
                 <p className="text-muted-foreground text-sm">
-                  by @{mockPost.author} • {new Date(mockPost.created).toLocaleDateString()}
+                  by @{demoPost.author} • {new Date(demoPost.created).toLocaleDateString()}
                 </p>
-                <p className="text-sm">{mockPost.body}</p>
+                <p className="text-sm">{demoPost.body}</p>
               </div>
-              <Badge variant="outline">{mockPost.sportCategory}</Badge>
+              <Badge variant="outline">{demoPost.sportCategory}</Badge>
             </div>
             
             <div className="flex items-center justify-between pt-4 border-t">
               <VoteButton
-                author={mockPost.author}
-                permlink={mockPost.permlink}
-                voteCount={mockPost.net_votes}
+                author={demoPost.author}
+                permlink={demoPost.permlink}
+                voteCount={demoPost.net_votes}
                 onVoteSuccess={(result) => {
                   console.log("Vote successful:", result);
                 }}
@@ -88,7 +88,7 @@ export const VotingDemo: React.FC = () => {
                 }}
               />
               <div className="text-sm text-muted-foreground">
-                Pending: {mockPost.pending_payout_value}
+                Pending: {demoPost.pending_payout_value}
               </div>
             </div>
           </div>
@@ -107,20 +107,20 @@ export const VotingDemo: React.FC = () => {
           <div className="border rounded-lg p-4 space-y-4">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
-                <h3 className="font-semibold text-lg">{mockPost.title}</h3>
+                <h3 className="font-semibold text-lg">{demoPost.title}</h3>
                 <p className="text-muted-foreground text-sm">
-                  by @{mockPost.author} • {new Date(mockPost.created).toLocaleDateString()}
+                  by @{demoPost.author} • {new Date(demoPost.created).toLocaleDateString()}
                 </p>
-                <p className="text-sm">{mockPost.body}</p>
+                <p className="text-sm">{demoPost.body}</p>
               </div>
-              <Badge variant="outline">{mockPost.sportCategory}</Badge>
+              <Badge variant="outline">{demoPost.sportCategory}</Badge>
             </div>
             
             <div className="flex items-center justify-between pt-4 border-t">
               <SimpleVoteButton
-                author={mockPost.author}
-                permlink={mockPost.permlink}
-                voteCount={mockPost.net_votes}
+                author={demoPost.author}
+                permlink={demoPost.permlink}
+                voteCount={demoPost.net_votes}
                 onVoteSuccess={(result) => {
                   console.log("Simple vote successful:", result);
                 }}
@@ -129,7 +129,7 @@ export const VotingDemo: React.FC = () => {
                 }}
               />
               <div className="text-sm text-muted-foreground">
-                Pending: {mockPost.pending_payout_value}
+                Pending: {demoPost.pending_payout_value}
               </div>
             </div>
           </div>

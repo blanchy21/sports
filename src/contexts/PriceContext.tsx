@@ -12,6 +12,7 @@ interface PriceProviderProps {
 
 export function PriceProvider({ children }: PriceProviderProps) {
   const [bitcoinPrice, setBitcoinPrice] = useState<number | null>(null);
+  const [ethereumPrice, setEthereumPrice] = useState<number | null>(null);
   const [hivePrice, setHivePrice] = useState<number | null>(null);
   const [hbdPrice, setHbdPrice] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,12 +28,14 @@ export function PriceProvider({ children }: PriceProviderProps) {
       const priceData = await fetchAllPrices();
       
       setBitcoinPrice(priceData.bitcoin.usd);
+      setEthereumPrice(priceData.ethereum.usd);
       setHivePrice(priceData.hive.usd);
       setHbdPrice(priceData.hive_dollar.usd);
       setLastUpdated(new Date());
       
       console.log('[PriceContext] Prices updated:', {
         bitcoin: priceData.bitcoin.usd,
+        ethereum: priceData.ethereum.usd,
         hive: priceData.hive.usd,
         hbd: priceData.hive_dollar.usd
       });
@@ -51,6 +54,7 @@ export function PriceProvider({ children }: PriceProviderProps) {
     if (cachedPrices) {
       console.log('[PriceContext] Loading cached prices on mount');
       setBitcoinPrice(cachedPrices.bitcoin.usd);
+      setEthereumPrice(cachedPrices.ethereum.usd);
       setHivePrice(cachedPrices.hive.usd);
       setHbdPrice(cachedPrices.hive_dollar.usd);
       setLastUpdated(new Date());
@@ -75,6 +79,7 @@ export function PriceProvider({ children }: PriceProviderProps) {
 
   const value: PriceContextType = {
     bitcoinPrice,
+    ethereumPrice,
     hivePrice,
     hbdPrice,
     isLoading,

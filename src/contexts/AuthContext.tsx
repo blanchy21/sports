@@ -156,10 +156,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error("Error fetching Hive account data:", profileError);
         // Keep the basic user even if profile loading fails
       }
-    } catch (error) {
-      console.error("Error logging in with Hive user:", error);
-      // Keep the basic user even if profile loading fails
-    }
+      } catch (error) {
+        console.error("Error logging in with Hive user:", error);
+        // Keep the basic user even if profile loading fails
+      }
   };
 
   const loginWithAioha = async (loginResult?: any) => {
@@ -371,10 +371,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               ...user,
               reputation: accountData.reputation,
               reputationFormatted: accountData.reputationFormatted,
+              // Liquid balances
+              liquidHiveBalance: accountData.liquidHiveBalance,
+              liquidHbdBalance: accountData.liquidHbdBalance,
+              // Savings balances
+              savingsHiveBalance: accountData.savingsHiveBalance,
+              savingsHbdBalance: accountData.savingsHbdBalance,
+              // Combined balances (for backward compatibility)
               hiveBalance: accountData.hiveBalance,
               hbdBalance: accountData.hbdBalance,
               hivePower: accountData.hivePower,
               rcPercentage: accountData.resourceCredits,
+              // Savings data
+              savingsApr: accountData.savingsApr,
+              pendingWithdrawals: accountData.pendingWithdrawals,
               hiveProfile: accountData.profile,
               hiveStats: accountData.stats,
               // Use Hive profile image as avatar if available

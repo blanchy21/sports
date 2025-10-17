@@ -1,55 +1,58 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { FileEdit, Edit, Trash2, Calendar, AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { FileEdit, Edit, Trash2, Calendar, AlertCircle, Loader2 } from "lucide-react";
 
-// Mock draft posts
-const mockDrafts = [
-  {
-    id: "1",
-    title: "Football Strategy: The Evolution of the Spread Offense",
-    content: "The spread offense has revolutionized modern football...",
-    excerpt: "Explore how the spread offense has changed the game and why it's become the dominant offensive scheme.",
-    sport: "Football",
-    tags: ["football", "strategy", "spread-offense"],
-    updatedAt: "2 days ago",
-    wordCount: 1247,
-  },
-  {
-    id: "2",
-    title: "Tennis Serve: Mastering the Kick Serve",
-    content: "The kick serve is one of the most effective weapons...",
-    excerpt: "Learn the technique and timing needed to master the kick serve in tennis.",
-    sport: "Tennis",
-    tags: ["tennis", "serve", "technique"],
-    updatedAt: "5 days ago",
-    wordCount: 892,
-  },
-  {
-    id: "3",
-    title: "Golf Course Management: Playing Smart",
-    content: "Course management is often overlooked by amateur golfers...",
-    excerpt: "Discover the strategic thinking that separates good golfers from great ones.",
-    sport: "Golf",
-    tags: ["golf", "strategy", "course-management"],
-    updatedAt: "1 week ago",
-    wordCount: 1563,
-  },
-];
+interface Draft {
+  id: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  sport: string;
+  tags: string[];
+  updatedAt: string;
+  wordCount: number;
+}
 
 export default function DraftsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load drafts from localStorage (in a real app, this would be from a database)
+  const loadDrafts = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // In a real app, this would be an API call
+      const savedDrafts = localStorage.getItem('drafts');
+      if (savedDrafts) {
+        const parsedDrafts = JSON.parse(savedDrafts);
+        setDrafts(parsedDrafts);
+      } else {
+        setDrafts([]);
+      }
+    } catch (err) {
+      console.error('Error loading drafts:', err);
+      setError('Failed to load drafts. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Redirect if not authenticated
-  React.useEffect(() => {
+  useEffect(() => {
     if (!user) {
       router.push("/");
+    } else {
+      loadDrafts();
     }
   }, [user, router]);
 
@@ -79,7 +82,7 @@ export default function DraftsPage() {
             <FileEdit className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold">Drafts</h1>
             <span className="text-sm text-muted-foreground">
-              ({mockDrafts.length} saved)
+              ({drafts.length} saved)
             </span>
           </div>
           
@@ -90,9 +93,19 @@ export default function DraftsPage() {
         </div>
 
         {/* Drafts List */}
-        {mockDrafts.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2 text-muted-foreground">Loading drafts...</span>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button onClick={loadDrafts}>Try Again</Button>
+          </div>
+        ) : drafts.length > 0 ? (
           <div className="space-y-4">
-            {mockDrafts.map((draft) => (
+            {drafts.map((draft) => (
               <div key={draft.id} className="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -159,10 +172,10 @@ export default function DraftsPage() {
         )}
 
         {/* Load More */}
-        {mockDrafts.length > 0 && (
+        {drafts.length > 0 && (
           <div className="text-center">
-            <Button variant="outline" size="lg">
-              Load More Drafts
+            <Button variant="outline" size="lg" onClick={loadDrafts}>
+              Refresh Drafts
             </Button>
           </div>
         )}

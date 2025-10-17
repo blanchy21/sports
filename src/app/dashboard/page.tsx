@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
@@ -14,12 +14,16 @@ import {
   Calendar,
   Award,
   BarChart3,
-  FileText
+  FileText,
+  RefreshCw,
+  AlertCircle
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, authType } = useAuth();
+  const { user, authType, refreshHiveAccount } = useAuth();
   const router = useRouter();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -27,6 +31,23 @@ export default function DashboardPage() {
       router.push("/");
     }
   }, [user, router]);
+
+  const handleRefreshData = async () => {
+    if (authType !== "hive") return;
+    
+    setIsRefreshing(true);
+    setRefreshError(null);
+    
+    try {
+      await refreshHiveAccount();
+      console.log("Dashboard data refreshed successfully");
+    } catch (error) {
+      console.error("Error refreshing dashboard data:", error);
+      setRefreshError("Failed to refresh data. Please try again.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   if (!user) {
     return (
@@ -41,79 +62,99 @@ export default function DashboardPage() {
     );
   }
 
-  // Mock stats
-  const stats = [
+  // Real stats from Hive API data
+  const stats: Array<{
+    title: string;
+    value: string;
+    icon: React.ComponentType<{ className?: string }>;
+    change: string;
+    changeType: "positive" | "negative" | "neutral";
+  }> = [
     {
       title: "Total Posts",
-      value: "12",
+      value: user.hiveStats?.postCount?.toString() || "0",
       icon: FileText,
-      change: "+2 this week",
-      changeType: "positive" as const,
+      change: "From Hive blockchain",
+      changeType: "neutral",
     },
     {
-      title: "Total Views",
-      value: "2.3K",
-      icon: Eye,
-      change: "+156 this week",
-      changeType: "positive" as const,
-    },
-    {
-      title: "Total Upvotes",
-      value: "89",
-      icon: Heart,
-      change: "+12 this week",
-      changeType: "positive" as const,
-    },
-    {
-      title: "Comments",
-      value: "34",
+      title: "Total Comments",
+      value: user.hiveStats?.commentCount?.toString() || "0",
       icon: MessageCircle,
-      change: "+5 this week",
-      changeType: "positive" as const,
+      change: "From Hive blockchain",
+      changeType: "neutral",
+    },
+    {
+      title: "Total Votes",
+      value: user.hiveStats?.voteCount?.toString() || "0",
+      icon: Heart,
+      change: "From Hive blockchain",
+      changeType: "neutral",
+    },
+    {
+      title: "Followers",
+      value: user.hiveStats?.followers?.toString() || "0",
+      icon: Eye,
+      change: "From Hive blockchain",
+      changeType: "neutral",
     },
   ];
 
-  const rewardsStats = authType === "hive" ? [
+  const rewardsStats: Array<{
+    title: string;
+    value: string;
+    icon: React.ComponentType<{ className?: string }>;
+    change: string;
+    changeType: "positive" | "negative" | "neutral";
+  }> = authType === "hive" ? [
     {
-      title: "Hive Rewards",
-      value: "45.67 HIVE",
+      title: "Liquid HIVE",
+      value: `${user.liquidHiveBalance?.toFixed(3) || "0.000"} HIVE`,
       icon: DollarSign,
-      change: "+12.34 this week",
-      changeType: "positive" as const,
+      change: "Liquid balance",
+      changeType: "neutral",
     },
     {
-      title: "HBD Rewards",
-      value: "23.45 HBD",
+      title: "Liquid HBD",
+      value: `${user.liquidHbdBalance?.toFixed(3) || "0.000"} HBD`,
       icon: DollarSign,
-      change: "+8.21 this week",
-      changeType: "positive" as const,
+      change: "Liquid balance",
+      changeType: "neutral",
+    },
+    {
+      title: "HIVE Power",
+      value: `${user.hivePower?.toFixed(3) || "0.000"} HP`,
+      icon: Award,
+      change: "Staked HIVE",
+      changeType: "neutral",
+    },
+    {
+      title: "Resource Credits",
+      value: `${user.rcPercentage?.toFixed(1) || "0.0"}%`,
+      icon: BarChart3,
+      change: "Available RC",
+      changeType: "neutral",
     },
   ] : [];
 
-  const recentPosts = [
+  // Recent posts - placeholder for now (would need posts API implementation)
+  const recentPosts = user.hiveStats?.postCount && user.hiveStats.postCount > 0 ? [
     {
-      id: "1",
-      title: "Basketball Training Fundamentals",
-      views: 456,
-      upvotes: 23,
-      comments: 8,
-      publishedAt: "2 days ago",
+      id: "placeholder",
+      title: "Your Hive posts will appear here",
+      views: 0,
+      upvotes: 0,
+      comments: 0,
+      publishedAt: "Coming soon",
     },
+  ] : [
     {
-      id: "2",
-      title: "Soccer Tactics Analysis",
-      views: 789,
-      upvotes: 45,
-      comments: 12,
-      publishedAt: "5 days ago",
-    },
-    {
-      id: "3",
-      title: "Tennis Mental Game",
-      views: 234,
-      upvotes: 18,
-      comments: 5,
-      publishedAt: "1 week ago",
+      id: "no-posts",
+      title: "No posts yet - start creating content!",
+      views: 0,
+      upvotes: 0,
+      comments: 0,
+      publishedAt: "Create your first post",
     },
   ];
 
@@ -140,10 +181,31 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
-          <Button onClick={() => router.push("/publish")}>
-            Create Post
-          </Button>
+          <div className="flex items-center space-x-2">
+            {authType === "hive" && (
+              <Button
+                variant="outline"
+                onClick={handleRefreshData}
+                disabled={isRefreshing}
+                className="flex items-center space-x-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </Button>
+            )}
+            <Button onClick={() => router.push("/publish")}>
+              Create Post
+            </Button>
+          </div>
         </div>
+
+        {/* Error Message */}
+        {refreshError && (
+          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-red-600" />
+            <span className="text-red-800 dark:text-red-200">{refreshError}</span>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -156,7 +218,8 @@ export default function DashboardPage() {
                     <p className="text-sm text-muted-foreground">{stat.title}</p>
                     <p className="text-2xl font-bold">{stat.value}</p>
                     <p className={`text-xs ${
-                      stat.changeType === "positive" ? "text-green-600" : "text-red-600"
+                      stat.changeType === "positive" ? "text-green-600" : 
+                      stat.changeType === "negative" ? "text-red-600" : "text-muted-foreground"
                     }`}>
                       {stat.change}
                     </p>
@@ -176,10 +239,10 @@ export default function DashboardPage() {
             <div className="flex items-center space-x-2 mb-4">
               <DollarSign className="h-5 w-5 text-green-600" />
               <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
-                Blockchain Rewards
+                Hive Account Balances
               </h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {rewardsStats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
@@ -247,10 +310,10 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-3">
               {[
-                { action: "Post published", target: "Basketball Training Fundamentals", time: "2 days ago" },
-                { action: "Received upvote", target: "Soccer Tactics Analysis", time: "3 days ago" },
-                { action: "New comment", target: "Tennis Mental Game", time: "4 days ago" },
-                { action: "Post published", target: "Baseball Analytics Guide", time: "1 week ago" },
+                { action: "Account created", target: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Unknown", time: "Account age" },
+                { action: "Last post", target: user.hiveStats?.postCount ? `${user.hiveStats.postCount} posts` : "No posts yet", time: user.lastPost ? new Date(user.lastPost).toLocaleDateString() : "Never" },
+                { action: "Last vote", target: user.hiveStats?.voteCount ? `${user.hiveStats.voteCount} total votes` : "No votes yet", time: user.lastVote ? new Date(user.lastVote).toLocaleDateString() : "Never" },
+                { action: "Reputation", target: user.reputationFormatted || "25.00", time: "Current reputation" },
               ].map((activity, index) => (
                 <div key={index} className="flex items-start space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>

@@ -35,7 +35,7 @@ const navigationItems = [
   { href: "/drafts", icon: FileEdit, label: "Drafts", requireAuth: false },
   { href: "/replies", icon: MessageSquare, label: "Replies", requireAuth: false },
   { href: "/profile", icon: User, label: "Profile", requireAuth: false },
-  { href: "/monetisation", icon: DollarSign, label: "Monetisation", requireAuth: false },
+  { href: "/wallet", icon: DollarSign, label: "Wallet", requireAuth: false },
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", requireAuth: false },
 ];
 

@@ -51,6 +51,11 @@ export interface User {
     followers?: number;
     following?: number;
   };
+  // Additional Hive account data
+  lastPost?: Date;
+  lastVote?: Date;
+  canVote?: boolean;
+  votingPower?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -375,6 +380,11 @@ export interface CryptoPriceData {
     usd_24h_change?: number;
     market_cap?: number;
   };
+  ethereum: {
+    usd: number;
+    usd_24h_change?: number;
+    market_cap?: number;
+  };
   hive: {
     usd: number;
     usd_24h_change?: number;
@@ -387,6 +397,7 @@ export interface CryptoPriceData {
 
 export interface PriceContextType {
   bitcoinPrice: number | null;
+  ethereumPrice: number | null;
   hivePrice: number | null;
   hbdPrice: number | null;
   isLoading: boolean;
