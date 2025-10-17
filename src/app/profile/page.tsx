@@ -76,20 +76,26 @@ export default function ProfilePage() {
                   />
                 </div>
                 
-                <div className="mt-4">
-                  <h1 className="text-2xl font-bold">{user.displayName || user.username}</h1>
-                  <p className="text-muted-foreground">@{user.username}</p>
-                  
-                  {authType === "hive" && (
-                    <div className="flex items-center space-x-1 mt-1">
-                      <span className="text-sm text-green-600 font-medium">✓ Hive Authenticated</span>
-                      {user.reputationFormatted && (
-                        <span className="text-sm text-muted-foreground">
-                          • Rep: {user.reputationFormatted}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                <div className="mt-4 flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h1 className="text-3xl font-bold text-foreground">{user.displayName || user.username}</h1>
+                    {authType === "hive" && (
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-xs font-medium text-green-700 dark:text-green-400">Hive</span>
+                        </div>
+                        {user.reputationFormatted && (
+                          <div className="bg-blue-100 dark:bg-blue-900/20 px-2 py-1 rounded-full">
+                            <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                              Rep: {user.reputationFormatted}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-lg text-muted-foreground mb-2">@{user.username}</p>
                   
                   {/* Error Display */}
                   {refreshError && (
@@ -107,58 +113,130 @@ export default function ProfilePage() {
                     </div>
                   )}
 
-                  <div className="flex items-center space-x-4 mt-3 text-sm text-muted-foreground">
+                  {/* Profile Details */}
+                  <div className="mt-4 space-y-3">
                     {user.hiveProfile?.location && (
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="h-4 w-4" />
-                        <span>{user.hiveProfile.location}</span>
+                      <div className="flex items-center space-x-3 text-sm">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-foreground">{user.hiveProfile.location}</span>
                       </div>
                     )}
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>Joined {user.createdAt instanceof Date ? user.createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown'}</span>
+                    
+                    <div className="flex items-center space-x-3 text-sm">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-foreground">
+                        Joined {user.createdAt instanceof Date ? user.createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown'}
+                      </span>
                     </div>
-                    {/* Debug info - remove in production */}
-                    {process.env.NODE_ENV === 'development' && (
-                      <div className="text-xs text-gray-500">
-                        Debug: createdAt type: {typeof user.createdAt}, value: {JSON.stringify(user.createdAt)}
-                      </div>
-                    )}
+                    
                     {user.hiveProfile?.website && (
-                      <div className="flex items-center space-x-1">
-                        <LinkIcon className="h-4 w-4" />
-                        <a href={user.hiveProfile.website} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                      <div className="flex items-center space-x-3 text-sm">
+                        <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                        <a 
+                          href={user.hiveProfile.website} 
+                          className="text-primary hover:underline transition-colors" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                        >
                           {user.hiveProfile.website.replace(/^https?:\/\//, '')}
                         </a>
                       </div>
                     )}
                   </div>
                   
-                  <p className="mt-4 text-base max-w-2xl">
-                    {user.bio || user.hiveProfile?.about || "No bio available."}
-                  </p>
+                  {/* Bio Section */}
+                  <div className="mt-6">
+                    <p className="text-base leading-relaxed text-foreground max-w-2xl">
+                      {user.bio || user.hiveProfile?.about || "No bio available."}
+                    </p>
+                  </div>
                   
-                  <div className="flex items-center space-x-4 mt-4">
-                    <div>
-                      <span className="font-bold">
-                        {isRefreshing ? '...' : (user.hiveStats?.following || 0)}
-                      </span>
-                      <span className="text-muted-foreground ml-1">Following</span>
+                  {/* Stats Section */}
+                  <div className="flex items-center space-x-6 mt-6 pt-4 border-t border-border">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-foreground">
+                        {isRefreshing ? '...' : (user.hiveStats?.following || 0).toLocaleString()}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Following</div>
                     </div>
-                    <div>
-                      <span className="font-bold">
-                        {isRefreshing ? '...' : (user.hiveStats?.followers || 0)}
-                      </span>
-                      <span className="text-muted-foreground ml-1">Followers</span>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-foreground">
+                        {isRefreshing ? '...' : (user.hiveStats?.followers || 0).toLocaleString()}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Followers</div>
                     </div>
-                    <div>
-                      <span className="font-bold">
-                        {isRefreshing ? '...' : (user.hiveStats?.postCount || 0)}
-                      </span>
-                      <span className="text-muted-foreground ml-1">Posts</span>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-foreground">
+                        {isRefreshing ? '...' : (user.hiveStats?.postCount || 0).toLocaleString()}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Posts</div>
                     </div>
                   </div>
 
+                  {/* Wallet Section - Only show for Hive users */}
+                  {authType === "hive" && (user.hiveBalance || user.hbdBalance || user.hivePower) && (
+                    <div className="mt-6 pt-4 border-t border-border">
+                      <h3 className="text-lg font-semibold text-foreground mb-4">Wallet</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {user.hiveBalance && (
+                          <div className="bg-card border rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm text-muted-foreground">HIVE</div>
+                                <div className="text-xl font-bold text-foreground">
+                                  {user.hiveBalance}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  ${user.liquidHiveBalance || '0.000'} liquid
+                                </div>
+                              </div>
+                              <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
+                                <span className="text-orange-600 dark:text-orange-400 text-sm font-bold">H</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {user.hbdBalance && (
+                          <div className="bg-card border rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm text-muted-foreground">HBD</div>
+                                <div className="text-xl font-bold text-foreground">
+                                  {user.hbdBalance}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  ${user.liquidHbdBalance || '0.000'} liquid
+                                </div>
+                              </div>
+                              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                                <span className="text-green-600 dark:text-green-400 text-sm font-bold">$</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {user.hivePower && (
+                          <div className="bg-card border rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm text-muted-foreground">Hive Power</div>
+                                <div className="text-xl font-bold text-foreground">
+                                  {user.hivePower}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Staked for voting power
+                                </div>
+                              </div>
+                              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                                <span className="text-blue-600 dark:text-blue-400 text-sm font-bold">⚡</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                 </div>
               </div>
@@ -189,8 +267,8 @@ export default function ProfilePage() {
 
         {/* Tabs */}
         <div className="bg-card border rounded-lg">
-          <div className="flex items-center border-b px-4">
-            <button className="px-4 py-3 border-b-2 border-primary text-primary font-medium">
+          <div className="flex items-center border-b border-border px-6">
+            <button className="px-4 py-3 border-b-2 border-primary text-primary font-medium transition-colors">
               Posts
             </button>
             <button className="px-4 py-3 text-muted-foreground hover:text-foreground transition-colors">
