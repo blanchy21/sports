@@ -428,7 +428,7 @@ export default function LandingPage() {
               Ready to Join the Arena?
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Choose your way to get started. Connect with Hive blockchain for full earning potential, 
+              Connect with Hive blockchain using any wallet for full earning potential, 
               or use email/Google for instant access.
             </p>
           </motion.div>
@@ -469,6 +469,10 @@ export default function LandingPage() {
                     <CheckCircle className="h-4 w-4 text-green-500" />
                     <span>Full community access</span>
                   </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Multiple wallet support</span>
+                  </div>
                 </div>
 
                 <Button 
@@ -482,12 +486,12 @@ export default function LandingPage() {
                 </Button>
 
                 <p className="text-xs text-muted-foreground mt-3 text-center">
-                  Requires Hive Keychain or Hive Signer
+                  Supports Keychain, HiveSigner, HiveAuth, Ledger & more
                 </p>
               </div>
             </motion.div>
 
-            {/* Hivesigner Card */}
+            {/* Hive Wallets Card */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -500,15 +504,15 @@ export default function LandingPage() {
               
               <div className="relative">
                 <Shield className="h-10 w-10 text-red-500 mb-3" />
-                <h3 className="text-xl font-bold mb-2">Hivesigner</h3>
+                <h3 className="text-xl font-bold mb-2">Hive Wallets</h3>
                 <p className="text-muted-foreground mb-4 text-sm">
-                  Easy web-based authentication for Hive blockchain access.
+                  Connect with any Hive wallet for seamless authentication.
                 </p>
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>No extension required</span>
+                    <span>Multiple wallet options</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <CheckCircle className="h-4 w-4 text-green-500" />
@@ -527,12 +531,12 @@ export default function LandingPage() {
                   onClick={() => setIsAuthModalOpen(true)}
                 >
                   <Shield className="h-4 w-4 mr-2" />
-                  Connect with Hivesigner
+                  Choose Wallet
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
 
                 <p className="text-xs text-muted-foreground mt-3 text-center">
-                  Web-based Hive authentication
+                  Keychain, HiveSigner, HiveAuth, Ledger, Peak Vault
                 </p>
               </div>
             </motion.div>

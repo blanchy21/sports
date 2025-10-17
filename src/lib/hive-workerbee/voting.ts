@@ -1,4 +1,5 @@
 import { initializeWorkerBeeClient } from './client';
+import { aioha } from '@/lib/aioha/config';
 
 // Helper function to make direct HTTP calls to Hive API
 // WorkerBee is designed for event-driven automation, not direct API calls
@@ -60,22 +61,22 @@ function getUserVote(post: any, voter: string): HiveVote | null {
 }
 
 /**
- * Cast a vote on a post or comment using WorkerBee
+ * Cast a vote on a post or comment using Aioha
  * @param voteData - Vote data
- * @param postingKey - User's posting private key
  * @returns Vote result
  */
-export async function castVote(voteData: VoteData, postingKey: string): Promise<VoteResult> {
+export async function castVote(voteData: VoteData): Promise<VoteResult> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
-    
+    if (!aioha) {
+      throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
+    }
+
     // Validate vote weight (0-100)
     if (voteData.weight < 0 || voteData.weight > 100) {
       throw new Error('Vote weight must be between 0 and 100');
     }
 
-    // Create vote operation using Wax
+    // Create vote operation
     const operation = {
       voter: voteData.voter,
       author: voteData.author,
@@ -83,18 +84,15 @@ export async function castVote(voteData: VoteData, postingKey: string): Promise<
       weight: voteData.weight * 100, // Convert to 0-10000 scale
     };
 
-    // Initialize WorkerBee client for broadcasting
-    const client = await initializeWorkerBeeClient();
-    
-    // Broadcast the transaction using WorkerBee
-    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
+    // Use Aioha to sign and broadcast the transaction
+    const result = await aioha.signAndBroadcastTx([operation], 'posting');
 
     return {
       success: true,
-      transactionId: result.id,
+      transactionId: 'id' in result ? result.id : undefined,
     };
   } catch (error) {
-    console.error('Error casting vote with WorkerBee:', error);
+    console.error('Error casting vote with Aioha:', error);
     
     return {
       success: false,
@@ -104,13 +102,12 @@ export async function castVote(voteData: VoteData, postingKey: string): Promise<
 }
 
 /**
- * Remove a vote (set weight to 0) using WorkerBee
+ * Remove a vote (set weight to 0) using Aioha
  * @param voteData - Vote data (weight will be set to 0)
- * @param postingKey - User's posting private key
  * @returns Vote result
  */
-export async function removeVote(voteData: Omit<VoteData, 'weight'>, postingKey: string): Promise<VoteResult> {
-  return castVote({ ...voteData, weight: 0 }, postingKey);
+export async function removeVote(voteData: Omit<VoteData, 'weight'>): Promise<VoteResult> {
+  return castVote({ ...voteData, weight: 0 });
 }
 
 /**
@@ -349,16 +346,12 @@ export function getHiveSignerVoteUrl(voteData: VoteData): string {
 }
 
 /**
- * Batch vote on multiple posts using WorkerBee
+ * Batch vote on multiple posts using Aioha
  * @param votes - Array of vote data
- * @param postingKey - User's posting private key
  * @returns Vote results
  */
-export async function batchVote(votes: VoteData[], postingKey: string): Promise<VoteResult[]> {
+export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
-    
     // Create multiple vote operations
     const operations = votes.map(vote => ({
       voter: vote.voter,
@@ -367,18 +360,15 @@ export async function batchVote(votes: VoteData[], postingKey: string): Promise<
       weight: vote.weight * 100,
     }));
 
-    // Initialize WorkerBee client for broadcasting
-    const client = await initializeWorkerBeeClient();
-    
-    // Broadcast all operations in a single transaction using WorkerBee
-    const result = await client.chain.broadcast.sendOperations(operations as any[], postingKey);
+    // Use Aioha to sign and broadcast all operations in a single transaction
+    const result = await aioha.signAndBroadcastTx(operations, 'posting');
 
     return votes.map(() => ({
       success: true,
-      transactionId: result.id,
+      transactionId: 'id' in result ? result.id : undefined,
     }));
   } catch (error) {
-    console.error('Error batch voting with WorkerBee:', error);
+    console.error('Error batch voting with Aioha:', error);
     
     return votes.map(() => ({
       success: false,

@@ -238,7 +238,7 @@ export default function PublishPage() {
         }
 
         // Publish to Hive blockchain
-        const result = await publishPost(postData, hiveUser.postingKey);
+        const result = await publishPost(postData);
         
         if (result.success) {
           alert(`Post published successfully! View on Hive: ${result.url}`);

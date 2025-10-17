@@ -84,7 +84,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
 
   // Cast an upvote
   const upvote = useCallback(async (): Promise<VoteResult> => {
-    if (!hiveUser?.username || !hiveUser.postingKey || authType !== 'hive') {
+    if (!hiveUser?.username || authType !== 'hive') {
       return {
         success: false,
         error: 'Authentication required for voting',
@@ -104,7 +104,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
         weight: optimalWeight,
       };
 
-      const result = await castVote(voteData, hiveUser.postingKey);
+      const result = await castVote(voteData);
       
       if (result.success) {
         // Refresh vote state after successful vote
@@ -126,7 +126,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
 
   // Cast a downvote (negative weight)
   const downvote = useCallback(async (): Promise<VoteResult> => {
-    if (!hiveUser?.username || !hiveUser.postingKey || authType !== 'hive') {
+    if (!hiveUser?.username || authType !== 'hive') {
       return {
         success: false,
         error: 'Authentication required for voting',
@@ -146,7 +146,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
         weight: -optimalWeight, // Negative weight for downvote
       };
 
-      const result = await castVote(voteData, hiveUser.postingKey);
+      const result = await castVote(voteData);
       
       if (result.success) {
         // Refresh vote state after successful vote
@@ -168,7 +168,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
 
   // Remove a vote (set weight to 0)
   const removeVoteAction = useCallback(async (): Promise<VoteResult> => {
-    if (!hiveUser?.username || !hiveUser.postingKey || authType !== 'hive') {
+    if (!hiveUser?.username || authType !== 'hive') {
       return {
         success: false,
         error: 'Authentication required for voting',
@@ -184,7 +184,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
         permlink,
       };
 
-      const result = await removeVote(voteData, hiveUser.postingKey);
+      const result = await removeVote(voteData);
       
       if (result.success) {
         // Refresh vote state after successful vote removal

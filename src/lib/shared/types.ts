@@ -291,9 +291,13 @@ export interface SportsblockPost extends HivePost {
 
 export interface HiveAuthUser {
   username: string;
-  postingKey?: string;
-  activeKey?: string;
+  postingKey?: string; // Deprecated: Aioha manages keys internally
+  activeKey?: string; // Deprecated: Aioha manages keys internally
   isAuthenticated: boolean;
   account?: HiveAccount;
   resourceCredits?: HiveResourceCredit;
+  // Aioha-specific properties
+  provider?: string; // 'keychain', 'hivesigner', 'hiveauth', 'ledger', 'peakvault'
+  aiohaUserId?: string; // Aioha's internal user ID
+  sessionId?: string; // Aioha session identifier
 }

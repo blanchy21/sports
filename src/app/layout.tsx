@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AiohaProvider } from "@/contexts/AiohaProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PriceProvider } from "@/contexts/PriceContext";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -23,13 +24,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider>
-          <AuthProvider>
-            <PriceProvider>
-              <ToastProvider>
-                {children}
-              </ToastProvider>
-            </PriceProvider>
-          </AuthProvider>
+          <AiohaProvider>
+            <AuthProvider>
+              <PriceProvider>
+                <ToastProvider>
+                  {children}
+                </ToastProvider>
+              </PriceProvider>
+            </AuthProvider>
+          </AiohaProvider>
         </ThemeProvider>
       </body>
     </html>

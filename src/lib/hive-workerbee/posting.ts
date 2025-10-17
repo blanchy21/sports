@@ -1,4 +1,5 @@
 import { initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
+import { aioha } from '@/lib/aioha/config';
 
 // Helper function to make direct HTTP calls to Hive API
 // WorkerBee is designed for event-driven automation, not direct API calls
@@ -77,16 +78,16 @@ function parseJsonMetadata(jsonMetadata: string): any {
 }
 
 /**
- * Publish a post to the Hive blockchain using WorkerBee
+ * Publish a post to the Hive blockchain using Aioha
  * @param postData - Post data to publish
- * @param postingKey - User's posting private key
  * @returns Publish result
  */
-export async function publishPost(postData: PostData, postingKey: string): Promise<PublishResult> {
+export async function publishPost(postData: PostData): Promise<PublishResult> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
-    
+    if (!aioha) {
+      throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
+    }
+
     // Generate unique permlink
     const permlink = generateUniquePermlink(postData.title);
     
@@ -110,7 +111,7 @@ export async function publishPost(postData: PostData, postingKey: string): Promi
       Object.assign(metadata, additionalMetadata);
     }
 
-    // Create the post operation using Wax
+    // Create the post operation
     const operation = {
       parent_author: postData.parentAuthor || '',
       parent_permlink: postData.parentPermlink || SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
@@ -133,24 +134,21 @@ export async function publishPost(postData: PostData, postingKey: string): Promi
       ]
     };
 
-    // Initialize WorkerBee client for broadcasting
-    const client = await initializeWorkerBeeClient();
-    
-    // Broadcast the transaction using WorkerBee
-    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
+    // Use Aioha to sign and broadcast the transaction
+    const result = await aioha.signAndBroadcastTx([operation], 'posting');
     
     // Generate post URL
     const url = `https://hive.blog/@${postData.author}/${permlink}`;
 
     return {
       success: true,
-      transactionId: result.id,
+      transactionId: 'id' in result ? result.id : undefined,
       author: postData.author,
       permlink,
       url,
     };
   } catch (error) {
-    console.error('Error publishing post with WorkerBee:', error);
+    console.error('Error publishing post with Aioha:', error);
     
     return {
       success: false,
@@ -160,9 +158,8 @@ export async function publishPost(postData: PostData, postingKey: string): Promi
 }
 
 /**
- * Publish a comment/reply to an existing post using WorkerBee
+ * Publish a comment/reply to an existing post using Aioha
  * @param commentData - Comment data
- * @param postingKey - User's posting private key
  * @returns Publish result
  */
 export async function publishComment(
@@ -172,13 +169,13 @@ export async function publishComment(
     parentAuthor: string;
     parentPermlink: string;
     jsonMetadata?: string;
-  },
-  postingKey: string
+  }
 ): Promise<PublishResult> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
-    
+    if (!aioha) {
+      throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
+    }
+
     // Generate permlink for comment (timestamp-based)
     const timestamp = Date.now();
     const permlink = `re-${commentData.parentAuthor}-${commentData.parentPermlink}-${timestamp}`;
@@ -196,7 +193,7 @@ export async function publishComment(
       Object.assign(metadata, additionalMetadata);
     }
 
-    // Create the comment operation using Wax
+    // Create the comment operation
     const operation = {
       parent_author: commentData.parentAuthor,
       parent_permlink: commentData.parentPermlink,
@@ -211,24 +208,21 @@ export async function publishComment(
       allow_curation_rewards: true,
     };
 
-    // Initialize WorkerBee client for broadcasting
-    const client = await initializeWorkerBeeClient();
-    
-    // Broadcast the transaction using WorkerBee
-    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
+    // Use Aioha to sign and broadcast the transaction
+    const result = await aioha.signAndBroadcastTx([operation], 'posting');
     
     // Generate comment URL
     const url = `https://hive.blog/@${commentData.author}/${permlink}`;
 
     return {
       success: true,
-      transactionId: result.id,
+      transactionId: 'id' in result ? result.id : undefined,
       author: commentData.author,
       permlink,
       url,
     };
   } catch (error) {
-    console.error('Error publishing comment with WorkerBee:', error);
+    console.error('Error publishing comment with Aioha:', error);
     
     return {
       success: false,
@@ -300,7 +294,7 @@ export async function updatePost(
 
     return {
       success: true,
-      transactionId: result.id,
+      transactionId: 'id' in result ? result.id : undefined,
       author: updateData.author,
       permlink: updateData.permlink,
       url: `https://hive.blog/@${updateData.author}/${updateData.permlink}`,
