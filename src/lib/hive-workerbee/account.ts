@@ -123,10 +123,17 @@ export interface UserAccountData {
 
 // Utility functions (simplified versions for WorkerBee implementation)
 function calculateReputation(reputation: string | number): number {
+  console.log(`[calculateReputation] Input reputation:`, reputation, 'Type:', typeof reputation);
+  
   if (typeof reputation === 'string') {
     reputation = parseInt(reputation);
+    console.log(`[calculateReputation] Parsed reputation:`, reputation);
   }
-  if (reputation === 0) return 25;
+  
+  if (reputation === 0) {
+    console.log(`[calculateReputation] Reputation is 0, returning default 25`);
+    return 25;
+  }
   
   // Use the correct Hive reputation formula
   const neg = reputation < 0;
@@ -134,7 +141,9 @@ function calculateReputation(reputation: string | number): number {
   
   // Hive reputation calculation: log10(reputation) * 9 + 25
   let rep = Math.log10(reputation);
+  console.log(`[calculateReputation] log10(${reputation}) = ${rep}`);
   rep = rep * 9 + 25;
+  console.log(`[calculateReputation] Final calculation: ${rep} (negative: ${neg})`);
   
   return neg ? -rep : rep;
 }
@@ -193,6 +202,14 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
 
     const accountData = account[0] as Record<string, unknown>;
     console.log(`[WorkerBee fetchUserAccount] Account info received:`, accountData);
+    console.log(`[WorkerBee fetchUserAccount] Available fields:`, Object.keys(accountData));
+    console.log(`[WorkerBee fetchUserAccount] Reputation field:`, accountData.reputation);
+    console.log(`[WorkerBee fetchUserAccount] All reputation-related fields:`, {
+      reputation: accountData.reputation,
+      rep: accountData.rep,
+      reputation_score: accountData.reputation_score,
+      rep_score: accountData.rep_score
+    });
     console.log(`[WorkerBee fetchUserAccount] Created date info:`, {
       created: accountData.created,
       createdType: typeof accountData.created,
@@ -200,9 +217,22 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     });
 
     // Get resource credits - skip RC for now due to API issues
-    let rc = null;
+    const rc = null;
     console.log(`[WorkerBee fetchUserAccount] Skipping resource credits fetch due to API compatibility issues`);
     // TODO: Implement alternative RC fetching method when API is fixed
+
+    // Get reputation using the correct API method
+    let accountReputation = null;
+    try {
+      console.log(`[WorkerBee fetchUserAccount] Fetching reputation...`);
+      const reputationResult = await makeHiveApiCall<Array<{account: string; reputation: string}>>('condenser_api', 'get_account_reputations', [username, 1]);
+      if (reputationResult && reputationResult.length > 0) {
+        accountReputation = reputationResult[0];
+        console.log(`[WorkerBee fetchUserAccount] Reputation data received:`, accountReputation);
+      }
+    } catch (error) {
+      console.warn(`[WorkerBee fetchUserAccount] Failed to get reputation:`, error);
+    }
 
     // Get follow stats
     let followStats = null;
@@ -277,13 +307,30 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     }
 
     // Calculate Resource Credits percentage
-    const rcPercentage = rc && (rc as any).rc_manabar && (rc as any).max_rc
-      ? (parseFloat((rc as { rc_manabar: { current_mana: string } }).rc_manabar.current_mana) / parseFloat((rc as { max_rc: string }).max_rc)) * 100 
+    const rcPercentage = rc && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).rc_manabar && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).max_rc
+      ? (parseFloat((rc as unknown as { rc_manabar: { current_mana: string }; max_rc: string }).rc_manabar.current_mana) / parseFloat((rc as unknown as { rc_manabar: { current_mana: string }; max_rc: string }).max_rc)) * 100 
       : 0;
-    const rawReputation = accountData.reputation as string | number;
+    // Use reputation from the dedicated API call if available, otherwise fall back to account data
+    let rawReputation: string | number;
+    if (accountReputation && accountReputation.reputation) {
+      rawReputation = accountReputation.reputation;
+      console.log(`[WorkerBee fetchUserAccount] Using reputation from get_account_reputations API:`, rawReputation);
+    } else {
+      rawReputation = accountData.reputation as string | number;
+      console.log(`[WorkerBee fetchUserAccount] Using reputation from get_accounts API:`, rawReputation);
+    }
+    
     console.log(`[WorkerBee fetchUserAccount] Raw reputation for ${username}:`, rawReputation, 'Type:', typeof rawReputation);
-    const reputation = calculateReputation(rawReputation);
-    console.log(`[WorkerBee fetchUserAccount] Calculated reputation for ${username}:`, reputation);
+    
+    // Handle case where reputation is 0 or undefined
+    let reputation: number;
+    if (!rawReputation || rawReputation === 0 || rawReputation === '0') {
+      console.log(`[WorkerBee fetchUserAccount] Reputation is 0/undefined, using default value of 25`);
+      reputation = 25; // Default reputation for new accounts
+    } else {
+      reputation = calculateReputation(rawReputation);
+    }
+    console.log(`[WorkerBee fetchUserAccount] Final reputation for ${username}:`, reputation);
 
     return {
       username: accountData.name as string,
@@ -373,8 +420,8 @@ export async function fetchUserBalances(username: string): Promise<{
       );
     }
 
-    const rcPercentage = rc && (rc as any).rc_manabar && (rc as any).max_rc
-      ? (parseFloat((rc as { rc_manabar: { current_mana: string } }).rc_manabar.current_mana) / parseFloat((rc as { max_rc: string }).max_rc)) * 100 
+    const rcPercentage = rc && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).rc_manabar && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).max_rc
+      ? (parseFloat((rc as unknown as { rc_manabar: { current_mana: string }; max_rc: string }).rc_manabar.current_mana) / parseFloat((rc as unknown as { rc_manabar: { current_mana: string }; max_rc: string }).max_rc)) * 100 
       : 0;
 
     return {
