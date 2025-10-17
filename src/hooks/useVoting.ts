@@ -8,7 +8,7 @@ import {
   calculateOptimalVoteWeight,
   VoteData,
   VoteResult 
-} from '@/lib/hive/voting';
+} from '@/lib/hive-workerbee/voting';
 import { HiveVote } from '@/lib/hive/types';
 
 export interface VoteState {

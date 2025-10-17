@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Heart, ChevronUp, ChevronDown, Loader2 } from "lucide-react";
 import { useVoting } from "@/hooks/useVoting";
 import { cn } from "@/lib/utils";
-import { VoteResult } from "@/lib/hive/voting";
+import { VoteResult } from "@/lib/hive-workerbee/voting";
 
 interface VoteButtonProps {
   author: string;

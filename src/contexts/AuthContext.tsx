@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { AuthState, AuthType, User } from "@/types";
 import { HiveAuthUser, HiveAccount } from "@/lib/hive/types";
-import { fetchUserAccount } from "@/lib/hive/account";
+import { fetchUserAccount } from "@/lib/hive-workerbee/account";
 
 const AuthContext = createContext<AuthState & {
   login: (user: User, authType: AuthType) => void;

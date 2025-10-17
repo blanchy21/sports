@@ -32,8 +32,8 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import dynamic from "next/dynamic";
-import { publishPost, canUserPost, validatePostData } from "@/lib/hive/posting";
-import { PostData } from "@/lib/hive/posting";
+import { publishPost, canUserPost, validatePostData } from "@/lib/hive-workerbee/posting";
+import { PostData } from "@/lib/hive-workerbee/posting";
 
 // Import emoji picker dynamically to avoid SSR issues
 const EmojiPicker = dynamic(

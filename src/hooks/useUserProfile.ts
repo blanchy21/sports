@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchUserProfileBasic } from '@/lib/hive/account';
+import { fetchUserProfile } from '@/lib/hive-workerbee/account';
 
 interface UserProfile {
   username: string;
@@ -38,12 +38,21 @@ export const useUserProfile = (username: string | null) => {
       setError(null);
       
       try {
-        const profileData = await fetchUserProfileBasic(username);
+        const profileData = await fetchUserProfile(username);
         console.log('Profile data received for:', username, profileData);
         if (profileData) {
+          // Map the profile data to our expected format
+          const mappedProfile: UserProfile = {
+            username: username,
+            displayName: profileData.name,
+            avatar: profileData.profileImage,
+            reputation: 0, // Will be updated when full account data is fetched
+            reputationFormatted: '0' // Will be updated when full account data is fetched
+          };
+          
           // Cache the profile
-          profileCache.set(username, profileData);
-          setProfile(profileData);
+          profileCache.set(username, mappedProfile);
+          setProfile(mappedProfile);
         } else {
           console.log('No profile data found for:', username);
           setError('Profile not found');

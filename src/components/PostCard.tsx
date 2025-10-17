@@ -11,7 +11,7 @@ import { Post } from "@/types";
 import { cn, formatDate, formatReadTime, truncateText } from "@/lib/utils";
 import { calculatePendingPayout, formatAsset } from "@/lib/hive/utils";
 import { SportsblockPost } from "@/lib/hive/types";
-import { VoteResult } from "@/lib/hive/voting";
+import { VoteResult } from "@/lib/hive-workerbee/voting";
 import { useToast, toast } from "@/components/ui/Toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
 

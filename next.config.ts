@@ -12,7 +12,13 @@ const nextConfig = {
       },
     ],
   },
-  serverExternalPackages: ['@hiveio/dhive'],
+  serverExternalPackages: ['@hiveio/dhive', '@hiveio/workerbee', '@hiveio/wax'],
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
   webpack: (config: any, { isServer }: { isServer: boolean }) => {
     if (!isServer) {
       config.resolve.fallback = {

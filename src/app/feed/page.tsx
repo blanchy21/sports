@@ -9,7 +9,7 @@ import { Plus, TrendingUp, Users, Award } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Post, SPORT_CATEGORIES } from "@/types";
-import { fetchSportsblockPosts, SportsblockPost } from "@/lib/hive/content";
+import { fetchSportsblockPosts, SportsblockPost } from "@/lib/hive-workerbee/content";
 import { formatAsset, calculatePendingPayout } from "@/lib/hive/utils";
 
 // Mock data for development
