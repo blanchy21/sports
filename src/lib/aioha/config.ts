@@ -1,8 +1,7 @@
 import { initAioha } from '@aioha/aioha';
 
-// Type for Aioha instance - simplified to avoid type conflicts
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AiohaInstance = any;
+// Type for Aioha instance - using unknown for better type safety
+type AiohaInstance = unknown;
 
 // Aioha configuration for Sportsblock
 export const aiohaConfig = {

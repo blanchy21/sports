@@ -1,9 +1,51 @@
 import { initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
 
+// Types for Hive API responses (unused but kept for future use)
+// interface HiveApiResponse<T = unknown> {
+//   id: number;
+//   result: T;
+//   error?: {
+//     code: number;
+//     message: string;
+//   };
+// }
+
+interface HiveVote {
+  voter: string;
+  weight: number;
+  rshares: string;
+  percent: number;
+  reputation: string;
+  time: string;
+}
+
+interface HivePost {
+  id: number;
+  author: string;
+  permlink: string;
+  title: string;
+  body: string;
+  json_metadata: string;
+  created: string;
+  last_update: string;
+  depth: number;
+  children: number;
+  net_votes: number;
+  active_votes: HiveVote[];
+  pending_payout_value: string;
+  total_pending_payout_value: string;
+  curator_payout_value: string;
+  author_payout_value: string;
+  max_accepted_payout: string;
+  percent_hbd: number;
+  parent_author: string;
+  parent_permlink: string;
+  author_reputation: string;
+}
+
 // Helper function to make direct HTTP calls to Hive API
 // WorkerBee is designed for event-driven automation, not direct API calls
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function makeHiveApiCall(api: string, method: string, params: any[] = []): Promise<any> {
+async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
   const response = await fetch('https://api.hive.blog', {
     method: 'POST',
     headers: {
@@ -37,7 +79,7 @@ async function makeHiveApiCall(api: string, method: string, params: any[] = []):
 
 // Types matching the original content.ts interface
 export interface SportsblockPost {
-  id: string;
+  id: number;
   author: string;
   permlink: string;
   title: string;
@@ -47,7 +89,7 @@ export interface SportsblockPost {
   depth: number;
   children: number;
   net_votes: number;
-  active_votes: any[];
+  active_votes: HiveVote[];
   pending_payout_value: string;
   total_pending_payout_value: string;
   curator_payout_value: string;
@@ -74,7 +116,7 @@ export interface HiveComment {
   depth: number;
   children: number;
   net_votes: number;
-  active_votes: any[];
+  active_votes: HiveVote[];
   pending_payout_value: string;
   total_pending_payout_value: string;
   curator_payout_value: string;
@@ -105,7 +147,7 @@ export interface ContentResult {
 }
 
 // Utility functions
-function parseJsonMetadata(jsonMetadata: string): any {
+function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
   try {
     return JSON.parse(jsonMetadata || '{}');
   } catch {
@@ -113,19 +155,20 @@ function parseJsonMetadata(jsonMetadata: string): any {
   }
 }
 
-function isSportsblockPost(post: any): boolean {
+function isSportsblockPost(post: HivePost): boolean {
   const metadata = parseJsonMetadata(post.json_metadata);
-  return metadata.tags?.includes('sportsblock') || 
-         metadata.tags?.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME) ||
+  const tags = metadata.tags as string[] | undefined;
+  return tags?.includes('sportsblock') || 
+         tags?.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME) ||
          post.parent_permlink === SPORTS_ARENA_CONFIG.COMMUNITY_NAME;
 }
 
-function getSportCategory(post: any): string | null {
+function getSportCategory(post: HivePost): string | null {
   const metadata = parseJsonMetadata(post.json_metadata);
-  return metadata.sport_category || null;
+  return (metadata.sport_category as string) || null;
 }
 
-function calculatePendingPayout(post: any): number {
+function calculatePendingPayout(post: HivePost | SportsblockPost): number {
   return parseFloat(post.pending_payout_value || '0');
 }
 
@@ -140,37 +183,37 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
     await initializeWorkerBeeClient();
 
     const limit = Math.min(filters.limit || 20, 100); // Max 100 posts per request
-    let posts: any[] = [];
+    let posts: HivePost[] = [];
     
     if (filters.author) {
       // Fetch posts by specific author
-      const accountPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_author_before_date', [
+      const accountPosts = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_discussions_by_author_before_date', [
         filters.author,
         filters.before || '',
         '',
         limit
       ]);
-      posts = accountPosts || [];
+      posts = (accountPosts || []) as unknown as HivePost[];
     } else {
       // Fetch posts from Sportsblock community
       // Use the community ID instead of name
-      const communityPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_created', [
+      const communityPosts = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_discussions_by_created', [
         {
           tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
           limit: limit
         }
       ]);
-      posts = communityPosts || [];
+      posts = (communityPosts || []) as unknown as HivePost[];
     }
 
     // Filter to only Sportsblock posts
     const sportsblockPosts: SportsblockPost[] = posts
       .filter(isSportsblockPost)
-      .map((post: any) => ({
+      .map((post: HivePost) => ({
         ...post,
         sportCategory: getSportCategory(post) || undefined,
         isSportsblockPost: true,
-      }));
+      } as unknown as SportsblockPost));
 
     // Apply additional filters
     let filteredPosts = sportsblockPosts;
@@ -184,12 +227,13 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
     if (filters.tag) {
       filteredPosts = filteredPosts.filter(post => {
         const metadata = parseJsonMetadata(post.json_metadata);
-        return metadata.tags?.includes(filters.tag!);
+        const tags = metadata.tags as string[] | undefined;
+        return tags?.includes(filters.tag!);
       });
     }
 
     // Sort posts
-    filteredPosts = sortPosts(filteredPosts, filters.sort || 'created');
+    filteredPosts = sortPosts(filteredPosts, filters.sort || 'created') as SportsblockPost[];
 
     // Determine if there are more posts
     const hasMore = filteredPosts.length === limit;
@@ -220,20 +264,20 @@ export async function fetchTrendingPosts(limit: number = 20): Promise<Sportsbloc
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const trendingPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_trending', [
+    const trendingPosts = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_discussions_by_trending', [
       {
         tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
         limit
       }
     ]);
 
-    return (trendingPosts || [])
+    return ((trendingPosts || []) as unknown as HivePost[])
       .filter(isSportsblockPost)
-      .map((post: any) => ({
+      .map((post: HivePost) => ({
         ...post,
         sportCategory: getSportCategory(post) || undefined,
         isSportsblockPost: true,
-      }));
+      } as unknown as SportsblockPost));
   } catch (error) {
     console.error('Error fetching trending posts with WorkerBee:', error);
     throw error;
@@ -250,20 +294,20 @@ export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const hotPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_hot', [
+    const hotPosts = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_discussions_by_hot', [
       {
         tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
         limit
       }
     ]);
 
-    return (hotPosts || [])
+    return ((hotPosts || []) as unknown as HivePost[])
       .filter(isSportsblockPost)
-      .map((post: any) => ({
+      .map((post: HivePost) => ({
         ...post,
         sportCategory: getSportCategory(post) || undefined,
         isSportsblockPost: true,
-      }));
+      } as unknown as SportsblockPost));
   } catch (error) {
     console.error('Error fetching hot posts with WorkerBee:', error);
     throw error;
@@ -281,17 +325,17 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    const post = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [author, permlink]);
     
-    if (!post || !isSportsblockPost(post)) {
+    if (!post || !isSportsblockPost(post as unknown as HivePost)) {
       return null;
     }
 
     return {
-      ...post,
-      sportCategory: getSportCategory(post),
+      ...(post as unknown as HivePost),
+      sportCategory: getSportCategory(post as unknown as HivePost),
       isSportsblockPost: true,
-    };
+    } as unknown as SportsblockPost;
   } catch (error) {
     console.error('Error fetching post with WorkerBee:', error);
     return null;
@@ -310,9 +354,9 @@ export async function fetchComments(author: string, permlink: string, limit: num
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const comments = await makeHiveApiCall('condenser_api', 'get_content_replies', [author, permlink, limit]);
+    const comments = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_content_replies', [author, permlink, limit]);
     
-    return comments || [];
+    return (comments || []) as unknown as HiveComment[];
   } catch (error) {
     console.error('Error fetching comments with WorkerBee:', error);
     throw error;
@@ -331,13 +375,13 @@ export async function searchPosts(query: string, filters: ContentFilters = {}): 
     const allPosts = await fetchSportsblockPosts({ ...filters, limit: 100 });
     
     const searchTerms = query.toLowerCase().split(' ');
-    const searchResults = allPosts.posts.filter(post => {
+    const searchResults = (allPosts.posts as unknown as HivePost[]).filter(post => {
       const searchableText = `${post.title} ${post.body}`.toLowerCase();
       return searchTerms.some(term => searchableText.includes(term));
     });
 
     return {
-      posts: searchResults,
+      posts: searchResults as unknown as SportsblockPost[],
       hasMore: false,
     };
   } catch (error) {
@@ -400,10 +444,11 @@ export async function getPopularTags(limit: number = 20): Promise<Array<{ tag: s
     
     const tagCount: Record<string, number> = {};
     
-    posts.posts.forEach((post: any) => {
+    (posts.posts as unknown as HivePost[]).forEach((post: HivePost) => {
       const metadata = parseJsonMetadata(post.json_metadata);
-      if (metadata.tags) {
-        metadata.tags.forEach((tag: string) => {
+      const tags = metadata.tags as string[] | undefined;
+      if (tags) {
+        tags.forEach((tag: string) => {
           if (tag !== 'sportsblock' && tag !== SPORTS_ARENA_CONFIG.COMMUNITY_NAME) {
             tagCount[tag] = (tagCount[tag] || 0) + 1;
           }
@@ -436,8 +481,8 @@ export async function getCommunityStats(): Promise<{
     // For now, return mock data - implement with actual Hivemind API later
     const recentPosts = await fetchSportsblockPosts({ limit: 100 });
     
-    const authors = new Set(recentPosts.posts.map(post => post.author));
-    const totalRewards = recentPosts.posts.reduce((sum, post) => {
+    const authors = new Set((recentPosts.posts as unknown as HivePost[]).map(post => post.author));
+    const totalRewards = (recentPosts.posts as unknown as HivePost[]).reduce((sum, post) => {
       return sum + calculatePendingPayout(post);
     }, 0);
 
@@ -471,7 +516,7 @@ export async function getCommunityStats(): Promise<{
 export async function getRelatedPosts(post: SportsblockPost, limit: number = 5): Promise<SportsblockPost[]> {
   try {
     const metadata = parseJsonMetadata(post.json_metadata);
-    const tags = metadata.tags || [];
+    const tags = (metadata.tags as string[]) || [];
     
     // Fetch posts with similar tags or sport category
     const relatedPosts = await fetchSportsblockPosts({
@@ -480,11 +525,11 @@ export async function getRelatedPosts(post: SportsblockPost, limit: number = 5):
     });
 
     // Filter out the original post and rank by similarity
-    const filtered = relatedPosts.posts
+    const filtered = (relatedPosts.posts as unknown as HivePost[])
       .filter(p => p.id !== post.id)
       .map(p => {
         const pMetadata = parseJsonMetadata(p.json_metadata);
-        const pTags = pMetadata.tags || [];
+        const pTags = (pMetadata.tags as string[]) || [];
         
         // Calculate similarity score
         const commonTags = tags.filter((tag: string) => pTags.includes(tag)).length;
@@ -496,7 +541,7 @@ export async function getRelatedPosts(post: SportsblockPost, limit: number = 5):
       .slice(0, limit)
       .map(item => item.post);
 
-    return filtered;
+    return filtered as unknown as SportsblockPost[];
   } catch (error) {
     console.error('Error fetching related posts with WorkerBee:', error);
     return [];
@@ -509,7 +554,7 @@ export async function getRelatedPosts(post: SportsblockPost, limit: number = 5):
  * @param sortBy - Sort criteria
  * @returns Sorted posts
  */
-function sortPosts(posts: SportsblockPost[], sortBy: string): SportsblockPost[] {
+function sortPosts(posts: (HivePost | SportsblockPost)[], sortBy: string): (HivePost | SportsblockPost)[] {
   switch (sortBy) {
     case 'trending':
       return posts.sort((a, b) => {

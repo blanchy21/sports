@@ -1,17 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { MapPin, Calendar, Link as LinkIcon, Edit, Settings } from "lucide-react";
+import { MapPin, Calendar, Link as LinkIcon, Edit, Settings, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
-  const { user, authType } = useAuth();
+  const { user, authType, refreshHiveAccount } = useAuth();
   const router = useRouter();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -19,6 +21,23 @@ export default function ProfilePage() {
       router.push("/");
     }
   }, [user, router]);
+
+  const handleRefreshProfile = async () => {
+    if (authType !== "hive") return;
+    
+    setIsRefreshing(true);
+    setRefreshError(null);
+    
+    try {
+      await refreshHiveAccount();
+      console.log("Profile refreshed successfully");
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+      setRefreshError("Failed to refresh profile data. Please try again.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   if (!user) {
     return null; // Will redirect
@@ -72,6 +91,22 @@ export default function ProfilePage() {
                     </div>
                   )}
                   
+                  {/* Error Display */}
+                  {refreshError && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-2">
+                      <AlertCircle className="h-4 w-4 text-red-500 mt-0.5" />
+                      <div>
+                        <p className="text-red-800 text-sm">{refreshError}</p>
+                        <button
+                          onClick={() => setRefreshError(null)}
+                          className="text-red-600 hover:text-red-800 text-xs mt-1 underline"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center space-x-4 mt-3 text-sm text-muted-foreground">
                     {user.hiveProfile?.location && (
                       <div className="flex items-center space-x-1">
@@ -105,15 +140,21 @@ export default function ProfilePage() {
                   
                   <div className="flex items-center space-x-4 mt-4">
                     <div>
-                      <span className="font-bold">{user.hiveStats?.following || 0}</span>
+                      <span className="font-bold">
+                        {isRefreshing ? '...' : (user.hiveStats?.following || 0)}
+                      </span>
                       <span className="text-muted-foreground ml-1">Following</span>
                     </div>
                     <div>
-                      <span className="font-bold">{user.hiveStats?.followers || 0}</span>
+                      <span className="font-bold">
+                        {isRefreshing ? '...' : (user.hiveStats?.followers || 0)}
+                      </span>
                       <span className="text-muted-foreground ml-1">Followers</span>
                     </div>
                     <div>
-                      <span className="font-bold">{user.hiveStats?.postCount || 0}</span>
+                      <span className="font-bold">
+                        {isRefreshing ? '...' : (user.hiveStats?.postCount || 0)}
+                      </span>
                       <span className="text-muted-foreground ml-1">Posts</span>
                     </div>
                   </div>
@@ -146,6 +187,17 @@ export default function ProfilePage() {
               </div>
               
               <div className="flex items-center space-x-2">
+                {authType === "hive" && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleRefreshProfile}
+                    disabled={isRefreshing}
+                    className="flex items-center space-x-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+                  </Button>
+                )}
                 <Button variant="outline" className="flex items-center space-x-2">
                   <Edit className="h-4 w-4" />
                   <span>Edit Profile</span>

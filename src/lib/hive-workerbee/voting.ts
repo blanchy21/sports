@@ -1,10 +1,19 @@
 import { initializeWorkerBeeClient } from './client';
 import { aioha } from '@/lib/aioha/config';
 
+// Types for Hive API responses
+interface HiveApiResponse<T = unknown> {
+  id: number;
+  result: T;
+  error?: {
+    code: number;
+    message: string;
+  };
+}
+
 // Helper function to make direct HTTP calls to Hive API
 // WorkerBee is designed for event-driven automation, not direct API calls
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function makeHiveApiCall(api: string, method: string, params: any[] = []): Promise<any> {
+async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
   const response = await fetch('https://api.hive.blog', {
     method: 'POST',
     headers: {
@@ -22,7 +31,7 @@ async function makeHiveApiCall(api: string, method: string, params: any[] = []):
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   
-  const result = await response.json();
+  const result: HiveApiResponse<T> = await response.json();
   
   if (result.error) {
     throw new Error(`API error: ${result.error.message}`);
@@ -55,7 +64,7 @@ export interface HiveVote {
 }
 
 // Utility functions
-function getUserVote(post: any, voter: string): HiveVote | null {
+function getUserVote(post: { active_votes?: HiveVote[] }, voter: string): HiveVote | null {
   if (!post.active_votes) return null;
   return post.active_votes.find((vote: HiveVote) => vote.voter === voter) || null;
 }
@@ -85,11 +94,11 @@ export async function castVote(voteData: VoteData): Promise<VoteResult> {
     };
 
     // Use Aioha to sign and broadcast the transaction
-    const result = await aioha.signAndBroadcastTx([operation], 'posting');
+    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx([operation], 'posting');
 
     return {
       success: true,
-      transactionId: 'id' in result ? result.id : undefined,
+      transactionId: (result as any)?.id || 'unknown',
     };
   } catch (error) {
     console.error('Error casting vote with Aioha:', error);
@@ -122,7 +131,7 @@ export async function checkUserVote(author: string, permlink: string, voter: str
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    const post = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [author, permlink]);
     
     if (!post) return null;
     
@@ -144,11 +153,11 @@ export async function getPostVotes(author: string, permlink: string): Promise<Hi
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    const post = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [author, permlink]);
     
-    if (!post || !post.active_votes) return [];
+    if (!post || !(post as { active_votes?: HiveVote[] }).active_votes) return [];
     
-    return post.active_votes;
+    return (post as { active_votes: HiveVote[] }).active_votes;
   } catch (error) {
     console.error('Error fetching post votes with WorkerBee:', error);
     return [];
@@ -165,11 +174,11 @@ export async function getUserVotingPower(username: string): Promise<number> {
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]);
+    const account = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_accounts', [[username]]);
     
     if (!account || account.length === 0) return 0;
     
-    return account[0].voting_power / 100; // Convert from 0-10000 to 0-100
+    return ((account[0] as { voting_power: number }).voting_power / 100); // Convert from 0-10000 to 0-100
   } catch (error) {
     console.error('Error fetching voting power with WorkerBee:', error);
     return 0;
@@ -223,7 +232,7 @@ export async function getVoteStats(author: string, permlink: string): Promise<{
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    const post = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [author, permlink]);
     
     if (!post) {
       return {
@@ -237,7 +246,7 @@ export async function getVoteStats(author: string, permlink: string): Promise<{
       };
     }
 
-    const votes = post.active_votes || [];
+    const votes = (post as { active_votes?: HiveVote[] }).active_votes || [];
     const upvotes = votes.filter((vote: HiveVote) => vote.weight > 0).length;
     const downvotes = votes.filter((vote: HiveVote) => vote.weight < 0).length;
     const totalWeight = votes.reduce((sum: number, vote: HiveVote) => sum + Math.abs(vote.weight), 0);
@@ -247,10 +256,10 @@ export async function getVoteStats(author: string, permlink: string): Promise<{
       totalVotes: votes.length,
       upvotes,
       downvotes,
-      netVotes: post.net_votes || 0,
+      netVotes: (post as { net_votes?: number }).net_votes || 0,
       totalWeight,
       averageWeight,
-      pendingPayout: parseFloat(post.pending_payout_value || '0'),
+      pendingPayout: parseFloat((post as { pending_payout_value?: string }).pending_payout_value || '0'),
     };
   } catch (error) {
     console.error('Error fetching vote stats with WorkerBee:', error);
@@ -361,11 +370,11 @@ export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
     }));
 
     // Use Aioha to sign and broadcast all operations in a single transaction
-    const result = await aioha.signAndBroadcastTx(operations, 'posting');
+    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(operations, 'posting');
 
     return votes.map(() => ({
       success: true,
-      transactionId: 'id' in result ? result.id : undefined,
+      transactionId: (result as any)?.id || 'unknown',
     }));
   } catch (error) {
     console.error('Error batch voting with Aioha:', error);
@@ -389,12 +398,12 @@ export async function getVoteHistory(author: string, permlink: string, limit: nu
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    const post = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [author, permlink]);
     
-    if (!post || !post.active_votes) return [];
+    if (!post || !(post as { active_votes?: HiveVote[] }).active_votes) return [];
     
     // Sort by timestamp (newest first) and limit
-    return post.active_votes
+    return (post as { active_votes: HiveVote[] }).active_votes
       .sort((a: HiveVote, b: HiveVote) => new Date(b.time).getTime() - new Date(a.time).getTime())
       .slice(0, limit);
   } catch (error) {

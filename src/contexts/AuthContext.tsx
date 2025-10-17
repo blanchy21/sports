@@ -185,8 +185,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Try to get user data from Aioha (for existing sessions)
         try {
           // Check if Aioha has a getUser method or similar
-          if (typeof aioha.getUser === 'function') {
-            userData = await aioha.getUser();
+          if (typeof (aioha as any).getUser === 'function') {
+            userData = await (aioha as any).getUser();
             console.log("Got user data from Aioha:", userData);
           } else {
             // If no getUser method, try to get from Aioha's internal state
@@ -322,7 +322,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Logout from Aioha if user was authenticated via Aioha
     if (hiveUser?.provider && aioha) {
       try {
-        await aioha.logout();
+        await (aioha as any).logout();
       } catch (error) {
         console.error("Error logging out from Aioha:", error);
       }

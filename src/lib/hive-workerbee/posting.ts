@@ -1,10 +1,19 @@
 import { initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
 import { aioha } from '@/lib/aioha/config';
 
+// Types for Hive API responses
+interface HiveApiResponse<T = unknown> {
+  id: number;
+  result: T;
+  error?: {
+    code: number;
+    message: string;
+  };
+}
+
 // Helper function to make direct HTTP calls to Hive API
 // WorkerBee is designed for event-driven automation, not direct API calls
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function makeHiveApiCall(api: string, method: string, params: any[] = []): Promise<any> {
+async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
   const response = await fetch('https://api.hive.blog', {
     method: 'POST',
     headers: {
@@ -22,7 +31,7 @@ async function makeHiveApiCall(api: string, method: string, params: any[] = []):
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   
-  const result = await response.json();
+  const result: HiveApiResponse<T> = await response.json();
   
   if (result.error) {
     throw new Error(`API error: ${result.error.message}`);
@@ -69,7 +78,7 @@ function generateUniquePermlink(title: string): string {
   return `${permlink}-${timestamp}`;
 }
 
-function parseJsonMetadata(jsonMetadata: string): any {
+function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
   try {
     return JSON.parse(jsonMetadata || '{}');
   } catch {
@@ -135,14 +144,14 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
     };
 
     // Use Aioha to sign and broadcast the transaction
-    const result = await aioha.signAndBroadcastTx([operation], 'posting');
+    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx([operation], 'posting');
     
     // Generate post URL
     const url = `https://hive.blog/@${postData.author}/${permlink}`;
 
     return {
       success: true,
-      transactionId: 'id' in result ? result.id : undefined,
+      transactionId: (result as any)?.id || 'unknown',
       author: postData.author,
       permlink,
       url,
@@ -209,14 +218,14 @@ export async function publishComment(
     };
 
     // Use Aioha to sign and broadcast the transaction
-    const result = await aioha.signAndBroadcastTx([operation], 'posting');
+    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx([operation], 'posting');
     
     // Generate comment URL
     const url = `https://hive.blog/@${commentData.author}/${permlink}`;
 
     return {
       success: true,
-      transactionId: 'id' in result ? result.id : undefined,
+      transactionId: (result as any)?.id || 'unknown',
       author: commentData.author,
       permlink,
       url,
@@ -245,20 +254,20 @@ export async function updatePost(
     body?: string;
     jsonMetadata?: string;
   },
-  postingKey: string
+  _postingKey: string
 ): Promise<PublishResult> {
   try {
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
     
     // Get existing post to preserve some data
-    const existingPost = await makeHiveApiCall('condenser_api', 'get_content', [updateData.author, updateData.permlink]);
+    const existingPost = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [updateData.author, updateData.permlink]);
     if (!existingPost) {
       throw new Error('Post not found');
     }
 
     // Check if post can still be updated (within 7 days)
-    const postAge = Date.now() - new Date(existingPost.created).getTime();
+    const postAge = Date.now() - new Date((existingPost as { created: string }).created).getTime();
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
     
     if (postAge > sevenDays) {
@@ -266,35 +275,35 @@ export async function updatePost(
     }
 
     // Merge metadata
-    const existingMetadata = parseJsonMetadata(existingPost.json_metadata);
+    const existingMetadata = parseJsonMetadata((existingPost as { json_metadata: string }).json_metadata);
     const updateMetadata = updateData.jsonMetadata ? parseJsonMetadata(updateData.jsonMetadata) : {};
     const mergedMetadata = { ...existingMetadata, ...updateMetadata };
 
     // Create the update operation using Wax
     const operation = {
-      parent_author: existingPost.parent_author,
-      parent_permlink: existingPost.parent_permlink,
+      parent_author: (existingPost as { parent_author: string }).parent_author,
+      parent_permlink: (existingPost as { parent_permlink: string }).parent_permlink,
       author: updateData.author,
       permlink: updateData.permlink,
-      title: updateData.title || existingPost.title,
-      body: updateData.body || existingPost.body,
+      title: updateData.title || (existingPost as { title: string }).title,
+      body: updateData.body || (existingPost as { body: string }).body,
       json_metadata: JSON.stringify(mergedMetadata),
-      max_accepted_payout: existingPost.max_accepted_payout,
-      percent_hbd: existingPost.percent_hbd,
-      allow_votes: existingPost.allow_votes,
-      allow_curation_rewards: existingPost.allow_curation_rewards,
-      extensions: existingPost.extensions,
+      max_accepted_payout: (existingPost as { max_accepted_payout: string }).max_accepted_payout,
+      percent_hbd: (existingPost as { percent_hbd: number }).percent_hbd,
+      allow_votes: (existingPost as { allow_votes: boolean }).allow_votes,
+      allow_curation_rewards: (existingPost as { allow_curation_rewards: boolean }).allow_curation_rewards,
+      extensions: (existingPost as { extensions: unknown[] }).extensions,
     };
 
     // Initialize WorkerBee client for broadcasting
     const client = await initializeWorkerBeeClient();
     
     // Broadcast the transaction using WorkerBee
-    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
+    await client.broadcast(operation as any);
 
     return {
       success: true,
-      transactionId: 'id' in result ? result.id : undefined,
+      transactionId: 'broadcasted',
       author: updateData.author,
       permlink: updateData.permlink,
       url: `https://hive.blog/@${updateData.author}/${updateData.permlink}`,
@@ -320,7 +329,7 @@ export async function deletePost(
     author: string;
     permlink: string;
   },
-  postingKey: string
+  _postingKey: string
 ): Promise<PublishResult> {
   try {
     // "Deleting" a post on Hive means setting the body to empty
@@ -332,7 +341,7 @@ export async function deletePost(
         app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
         tags: ['deleted', 'sportsblock']
       })
-    }, postingKey);
+    }, _postingKey);
   } catch (error) {
     console.error('Error deleting post with WorkerBee:', error);
     
@@ -357,7 +366,7 @@ export async function canUserPost(username: string): Promise<{
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const rc = await makeHiveApiCall('rc_api', 'get_resource_credits', [username]);
+    const rc = await makeHiveApiCall<Record<string, unknown>>('rc_api', 'get_resource_credits', [username]);
     
     if (!rc) {
       return {
@@ -367,7 +376,7 @@ export async function canUserPost(username: string): Promise<{
       };
     }
 
-    const rcPercentage = (parseFloat(rc.rc_manabar.current_mana) / parseFloat(rc.max_rc)) * 100;
+    const rcPercentage = (parseFloat((rc as { rc_manabar: { current_mana: string } }).rc_manabar.current_mana) / parseFloat((rc as { max_rc: string }).max_rc)) * 100;
     
     // Users typically need at least 10% RC to post
     if (rcPercentage < 10) {

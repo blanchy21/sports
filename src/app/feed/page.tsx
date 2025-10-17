@@ -10,7 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Post, SPORT_CATEGORIES } from "@/types";
 import { fetchSportsblockPosts, SportsblockPost } from "@/lib/hive-workerbee/content";
-import { formatAsset, calculatePendingPayout } from "@/lib/shared/utils";
 
 // No mock data needed - using real Hive blockchain content
 
@@ -28,38 +27,7 @@ export default function FeedPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Redirect if not authenticated
-  React.useEffect(() => {
-    if (!user) {
-      router.push("/");
-    }
-  }, [user, router]);
-
-  // Load posts from Hive blockchain
-  React.useEffect(() => {
-    loadPosts();
-  }, [selectedSport]);
-
-  // Listen for sport filter changes from the navigation
-  React.useEffect(() => {
-    const handleSportFilterChange = (event: CustomEvent) => {
-      setSelectedSport(event.detail);
-    };
-
-    // Load saved sport filter from localStorage
-    const savedSport = localStorage.getItem('selectedSport');
-    if (savedSport) {
-      setSelectedSport(savedSport);
-    }
-
-    window.addEventListener('sportFilterChanged', handleSportFilterChange as EventListener);
-    
-    return () => {
-      window.removeEventListener('sportFilterChanged', handleSportFilterChange as EventListener);
-    };
-  }, []);
-
-  const loadPosts = async () => {
+  const loadPosts = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
@@ -79,7 +47,38 @@ export default function FeedPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedSport]);
+
+  // Redirect if not authenticated
+  React.useEffect(() => {
+    if (!user) {
+      router.push("/");
+    }
+  }, [user, router]);
+
+  // Load posts from Hive blockchain
+  React.useEffect(() => {
+    loadPosts();
+  }, [selectedSport, loadPosts]);
+
+  // Listen for sport filter changes from the navigation
+  React.useEffect(() => {
+    const handleSportFilterChange = (event: CustomEvent) => {
+      setSelectedSport(event.detail);
+    };
+
+    // Load saved sport filter from localStorage
+    const savedSport = localStorage.getItem('selectedSport');
+    if (savedSport) {
+      setSelectedSport(savedSport);
+    }
+
+    window.addEventListener('sportFilterChanged', handleSportFilterChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('sportFilterChanged', handleSportFilterChange as EventListener);
+    };
+  }, []);
 
   // Filter posts based on selected sport
   const filteredPosts = React.useMemo(() => {

@@ -142,7 +142,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     
     try {
       // Check available providers first
-      const availableProviders = aioha.getProviders();
+      const availableProviders = (aioha as { getProviders: () => unknown[] }).getProviders();
       console.log("Available providers:", availableProviders);
       
       // Map provider string to Providers enum
@@ -186,20 +186,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       
       // Use Aioha's proper login method according to documentation
       console.log(`Calling aioha.login with ${provider} and username: ${usernameToUse || 'auto-select'}...`);
-      const result = await aioha.login(providerEnum, usernameToUse, {
+      const result = await (aioha as { login: (provider: unknown, username: string, options: unknown) => Promise<unknown> }).login(providerEnum, usernameToUse, {
         msg: 'Login to Sportsblock',
         keyType: KeyTypes.Posting
       });
       console.log("Aioha login result:", result);
       
-      if (result && result.success && result.username) {
+      if (result && (result as { success?: boolean }).success && (result as { username?: string }).username) {
         console.log("Aioha login successful, processing...");
         await loginWithAioha(result);
         setSelectedProvider(null);
         setHiveUsername("");
         onClose();
         router.push('/feed');
-      } else if (result && result.errorCode === 4901) {
+      } else if (result && (result as { errorCode?: number }).errorCode === 4901) {
         // User is already logged in, process existing session
         console.log("User already logged in, processing existing session...");
         try {
@@ -213,7 +213,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           setErrorMessage("Session processing failed: " + (sessionError instanceof Error ? sessionError.message : "Unknown error"));
         }
       } else {
-        throw new Error(result?.error || "Invalid authentication result");
+        throw new Error((result as { error?: string })?.error || "Invalid authentication result");
       }
     } catch (error) {
       console.error("Aioha login failed:", error);
@@ -237,11 +237,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     try {
       // Use Aioha's account discovery feature according to documentation
       console.log("Calling aioha.discoverAccounts...");
-      const result = await aioha.discoverAccounts();
+      const result = await (aioha as { discoverAccounts: () => Promise<unknown> }).discoverAccounts();
       console.log("Account discovery result:", result);
       
-      if (result && result.success && result.accounts && result.accounts.length > 0) {
-        setDiscoveredAccounts(result.accounts);
+      if (result && (result as { success?: boolean }).success && (result as { accounts?: unknown[] }).accounts && (result as { accounts: unknown[] }).accounts.length > 0) {
+        setDiscoveredAccounts((result as { accounts: { username: string; provider: string; balance?: string }[] }).accounts);
         setShowAccountDiscovery(true);
       } else {
         setErrorMessage("No accounts discovered. Please try a different wallet or check your connection.");
@@ -288,19 +288,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       }
       
       // Login with the selected account using Aioha's proper API
-      const result = await aioha.login(providerEnum, account.username, {
+      const result = await (aioha as { login: (provider: unknown, username: string, options: unknown) => Promise<unknown> }).login(providerEnum, account.username, {
         msg: 'Login to Sportsblock',
         keyType: KeyTypes.Posting
       });
       console.log("Account login result:", result);
       
-          if (result && result.success && result.username) {
+          if (result && (result as { success?: boolean }).success && (result as { username?: string }).username) {
             console.log("Account login successful, processing...");
             await loginWithAioha(result);
             setShowAccountDiscovery(false);
             onClose();
             router.push('/feed');
-          } else if (result && result.errorCode === 4901) {
+          } else if (result && (result as { errorCode?: number }).errorCode === 4901) {
             // User is already logged in, process existing session
             console.log("User already logged in, processing existing session...");
             try {
@@ -313,7 +313,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               setErrorMessage("Session processing failed: " + (sessionError instanceof Error ? sessionError.message : "Unknown error"));
             }
           } else {
-            throw new Error(result?.error || "Invalid authentication result");
+            throw new Error((result as { error?: string })?.error || "Invalid authentication result");
           }
     } catch (error) {
       console.error("Account login failed:", error);
@@ -328,7 +328,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (!aioha || !isInitialized) return;
     
     try {
-      const providers = aioha.getProviders();
+      const providers = (aioha as { getProviders: () => unknown[] }).getProviders();
       console.log("Available Aioha providers:", providers);
       
       // Map provider enums to strings for easier handling
@@ -389,16 +389,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     };
 
     // Listen for Aioha events according to EIP-1193 style API
-    aioha.on('connect', handleAuthSuccess);
-    aioha.on('disconnect', () => {
+    (aioha as { on: (event: string, handler: (...args: unknown[]) => void) => void }).on('connect', handleAuthSuccess);
+    (aioha as { on: (event: string, handler: (...args: unknown[]) => void) => void }).on('disconnect', () => {
       console.log("Aioha disconnected");
     });
-    aioha.on('error', handleAuthError);
+    (aioha as { on: (event: string, handler: (error: unknown) => void) => void }).on('error', handleAuthError);
 
     return () => {
-      aioha.off('connect', handleAuthSuccess);
-      aioha.off('disconnect');
-      aioha.off('error', handleAuthError);
+      (aioha as { off: (event: string, handler?: (...args: unknown[]) => void) => void }).off('connect', handleAuthSuccess);
+      (aioha as { off: (event: string) => void }).off('disconnect');
+      (aioha as { off: (event: string, handler: (error: unknown) => void) => void }).off('error', handleAuthError);
     };
   }, [aioha, isInitialized, loginWithAioha, onClose, router]);
 
@@ -969,7 +969,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       </div>
 
       {/* Aioha Authentication Modal - Shows all wallet options */}
-      {showAiohaModal && isInitialized && aioha && (
+      {showAiohaModal && isInitialized && (
         <AiohaModal
           onClose={() => {
             console.log("Aioha modal closed");

@@ -6,7 +6,7 @@ import { aioha } from '@/lib/aioha/config';
 
 // Aioha context type
 interface AiohaContextType {
-  aioha: any | null;
+  aioha: unknown | null;
   isInitialized: boolean;
   error: string | null;
 }
@@ -27,7 +27,7 @@ interface AiohaProviderProps {
 }
 
 export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
-  const [aiohaInstance, setAiohaInstance] = useState<any | null>(null);
+  const [aiohaInstance, setAiohaInstance] = useState<unknown | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,8 +60,8 @@ export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
 
   return (
     <AiohaContext.Provider value={contextValue}>
-      {aiohaInstance && (
-        <AiohaUIProvider aioha={aiohaInstance}>
+      {!!aiohaInstance && (
+        <AiohaUIProvider aioha={aiohaInstance as any}>
           {children}
         </AiohaUIProvider>
       )}

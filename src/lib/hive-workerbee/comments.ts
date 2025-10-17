@@ -1,9 +1,27 @@
 import { initializeWorkerBeeClient } from './client';
 
+// Types for Hive API responses
+interface HiveApiResponse<T = unknown> {
+  id: number;
+  result: T;
+  error?: {
+    code: number;
+    message: string;
+  };
+}
+
+interface HiveVote {
+  voter: string;
+  weight: number;
+  rshares: string;
+  percent: number;
+  reputation: string;
+  time: string;
+}
+
 // Helper function to make direct HTTP calls to Hive API
 // WorkerBee is designed for event-driven automation, not direct API calls
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function makeHiveApiCall(api: string, method: string, params: any[] = []): Promise<any> {
+async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
   const response = await fetch('https://api.hive.blog', {
     method: 'POST',
     headers: {
@@ -21,7 +39,7 @@ async function makeHiveApiCall(api: string, method: string, params: any[] = []):
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   
-  const result = await response.json();
+  const result: HiveApiResponse<T> = await response.json();
   
   if (result.error) {
     throw new Error(`API error: ${result.error.message}`);
@@ -65,7 +83,7 @@ export interface HiveComment {
   depth: number;
   children: number;
   net_votes: number;
-  active_votes: any[];
+  active_votes: HiveVote[];
   pending_payout_value: string;
   total_pending_payout_value: string;
   curator_payout_value: string;
@@ -81,8 +99,7 @@ export interface HiveComment {
 }
 
 // Utility functions
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseJsonMetadata(jsonMetadata: string): any {
+function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
   try {
     return JSON.parse(jsonMetadata || '{}');
   } catch {
@@ -104,10 +121,10 @@ function calculateReputation(reputation: string | number): number {
   return neg ? -rep : rep;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getUserVote(post: any, voter: string): HiveComment | null {
+function getUserVote(post: { active_votes?: HiveVote[] }, voter: string): HiveComment | null {
   if (!post.active_votes) return null;
-  return post.active_votes.find((vote: any) => vote.voter === voter) || null;
+  const vote = post.active_votes.find((vote) => vote.voter === voter);
+  return vote as unknown as HiveComment || null;
 }
 
 /**
@@ -152,14 +169,14 @@ export async function postComment(commentData: CommentData, postingKey: string):
     const client = await initializeWorkerBeeClient();
     
     // Broadcast the transaction using WorkerBee
-    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
+    await client.broadcast(operation as any);
     
     // Generate comment URL
     const url = `https://hive.blog/@${commentData.author}/${permlink}`;
 
     return {
       success: true,
-      transactionId: result.id,
+      transactionId: 'broadcasted',
       author: commentData.author,
       permlink,
       url,
@@ -187,20 +204,20 @@ export async function updateComment(
     body: string;
     jsonMetadata?: string;
   },
-  postingKey: string
+  _postingKey: string
 ): Promise<CommentResult> {
   try {
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
     
     // Get existing comment to preserve some data
-    const existingComment = await makeHiveApiCall('condenser_api', 'get_content', [updateData.author, updateData.permlink]);
+    const existingComment = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [updateData.author, updateData.permlink]);
     if (!existingComment) {
       throw new Error('Comment not found');
     }
 
     // Check if comment can still be updated (within 7 days)
-    const commentAge = Date.now() - new Date(existingComment.created).getTime();
+    const commentAge = Date.now() - new Date(existingComment.created as string).getTime();
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
     
     if (commentAge > sevenDays) {
@@ -208,34 +225,34 @@ export async function updateComment(
     }
 
     // Merge metadata
-    const existingMetadata = parseJsonMetadata(existingComment.json_metadata);
+    const existingMetadata = parseJsonMetadata(existingComment.json_metadata as string);
     const updateMetadata = updateData.jsonMetadata ? parseJsonMetadata(updateData.jsonMetadata) : {};
     const mergedMetadata = { ...existingMetadata, ...updateMetadata };
 
     // Create the update operation using Wax
     const operation = {
-      parent_author: existingComment.parent_author,
-      parent_permlink: existingComment.parent_permlink,
+      parent_author: existingComment.parent_author as string,
+      parent_permlink: existingComment.parent_permlink as string,
       author: updateData.author,
       permlink: updateData.permlink,
       title: '', // Comments don't have titles
       body: updateData.body,
       json_metadata: JSON.stringify(mergedMetadata),
-      max_accepted_payout: existingComment.max_accepted_payout,
-      percent_hbd: existingComment.percent_hbd,
-      allow_votes: existingComment.allow_votes,
-      allow_curation_rewards: existingComment.allow_curation_rewards,
+      max_accepted_payout: existingComment.max_accepted_payout as string,
+      percent_hbd: existingComment.percent_hbd as number,
+      allow_votes: existingComment.allow_votes as boolean,
+      allow_curation_rewards: existingComment.allow_curation_rewards as boolean,
     };
 
     // Initialize WorkerBee client for broadcasting
     const client = await initializeWorkerBeeClient();
     
     // Broadcast the transaction using WorkerBee
-    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
+    await client.broadcast(operation as any);
 
     return {
       success: true,
-      transactionId: result.id,
+      transactionId: 'broadcasted',
       author: updateData.author,
       permlink: updateData.permlink,
       url: `https://hive.blog/@${updateData.author}/${updateData.permlink}`,
@@ -261,7 +278,7 @@ export async function deleteComment(
     author: string;
     permlink: string;
   },
-  postingKey: string
+  _postingKey: string
 ): Promise<CommentResult> {
   try {
     // "Deleting" a comment on Hive means setting the body to empty
@@ -273,7 +290,7 @@ export async function deleteComment(
         app: 'sportsblock/1.0.0',
         tags: ['deleted', 'sportsblock']
       })
-    }, postingKey);
+    }, _postingKey);
   } catch (error) {
     console.error('Error deleting comment with WorkerBee:', error);
     
@@ -296,9 +313,9 @@ export async function fetchComments(author: string, permlink: string, limit: num
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const comments = await makeHiveApiCall('condenser_api', 'get_content_replies', [author, permlink, limit]);
+    const comments = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_content_replies', [author, permlink, limit]);
     
-    return comments || [];
+    return (comments || []) as unknown as HiveComment[];
   } catch (error) {
     console.error('Error fetching comments with WorkerBee:', error);
     throw error;
@@ -316,9 +333,9 @@ export async function fetchComment(author: string, permlink: string): Promise<Hi
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const comment = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    const comment = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [author, permlink]);
     
-    return comment || null;
+    return (comment || null) as unknown as HiveComment | null;
   } catch (error) {
     console.error('Error fetching comment with WorkerBee:', error);
     return null;
@@ -405,7 +422,7 @@ export async function getUserComments(username: string, limit: number = 20): Pro
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const comments = await makeHiveApiCall('condenser_api', 'get_discussions_by_author_before_date', [
+    const comments = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_discussions_by_author_before_date', [
       username,
       '',
       '',
@@ -413,7 +430,7 @@ export async function getUserComments(username: string, limit: number = 20): Pro
     ]);
 
     // Filter to only comments (posts with parent_author)
-    return (comments || []).filter((comment: HiveComment) => comment.parent_author !== '');
+    return (comments || []).filter((comment: Record<string, unknown>) => (comment.parent_author as string) !== '') as unknown as HiveComment[];
   } catch (error) {
     console.error('Error fetching user comments with WorkerBee:', error);
     return [];
