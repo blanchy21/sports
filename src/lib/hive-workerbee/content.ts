@@ -1,6 +1,8 @@
 import { initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
 
 // Helper function to make direct HTTP calls to Hive API
+// WorkerBee is designed for event-driven automation, not direct API calls
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function makeHiveApiCall(api: string, method: string, params: any[] = []): Promise<any> {
   const response = await fetch('https://api.hive.blog', {
     method: 'POST',
@@ -22,6 +24,11 @@ async function makeHiveApiCall(api: string, method: string, params: any[] = []):
   const result = await response.json();
   
   if (result.error) {
+    console.error('Hive API Error Details:', {
+      method: `${api}.${method}`,
+      params: params,
+      error: result.error
+    });
     throw new Error(`API error: ${result.error.message}`);
   }
   
@@ -146,12 +153,13 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       posts = accountPosts || [];
     } else {
       // Fetch posts from Sportsblock community
-      const communityPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_created', [{
-        tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-        limit,
-        start_author: filters.before ? filters.before.split('/')[0] : undefined,
-        start_permlink: filters.before ? filters.before.split('/')[1] : undefined,
-      }]);
+      // Use the community ID instead of name
+      const communityPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_created', [
+        {
+          tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
+          limit: limit
+        }
+      ]);
       posts = communityPosts || [];
     }
 
@@ -212,10 +220,12 @@ export async function fetchTrendingPosts(limit: number = 20): Promise<Sportsbloc
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const trendingPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_trending', [{
-      tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-      limit,
-    }]);
+    const trendingPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_trending', [
+      {
+        tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
+        limit
+      }
+    ]);
 
     return (trendingPosts || [])
       .filter(isSportsblockPost)
@@ -240,10 +250,12 @@ export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    const hotPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_hot', [{
-      tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-      limit,
-    }]);
+    const hotPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_hot', [
+      {
+        tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
+        limit
+      }
+    ]);
 
     return (hotPosts || [])
       .filter(isSportsblockPost)

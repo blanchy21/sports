@@ -1,6 +1,8 @@
 import { initializeWorkerBeeClient } from './client';
 
 // Helper function to make direct HTTP calls to Hive API
+// WorkerBee is designed for event-driven automation, not direct API calls
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function makeHiveApiCall(api: string, method: string, params: any[] = []): Promise<any> {
   const response = await fetch('https://api.hive.blog', {
     method: 'POST',
@@ -100,10 +102,13 @@ function formatReputation(reputation: number): string {
 }
 
 function parseAsset(assetString: string): { amount: number; symbol: string } {
+  if (!assetString || typeof assetString !== 'string') {
+    return { amount: 0, symbol: 'HIVE' };
+  }
   const [amount, symbol] = assetString.split(' ');
   return {
-    amount: parseFloat(amount),
-    symbol: symbol
+    amount: parseFloat(amount || '0'),
+    symbol: symbol || 'HIVE'
   };
 }
 
@@ -115,6 +120,7 @@ function vestingSharesToHive(vestingShares: string, totalVestingShares: string, 
   return (vestingSharesFloat / totalVestingSharesFloat) * totalVestingFundHiveFloat;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseJsonMetadata(jsonMetadata: string): any {
   try {
     return JSON.parse(jsonMetadata || '{}');
@@ -145,13 +151,20 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
 
     const accountData = account[0];
     console.log(`[WorkerBee fetchUserAccount] Account info received:`, accountData);
+    console.log(`[WorkerBee fetchUserAccount] Created date info:`, {
+      created: accountData.created,
+      createdType: typeof accountData.created,
+      isValidDate: accountData.created ? !isNaN(new Date(accountData.created).getTime()) : false
+    });
 
     // Get resource credits
     let rc = null;
     try {
       console.log(`[WorkerBee fetchUserAccount] Fetching resource credits...`);
-      rc = await makeHiveApiCall('rc_api', 'get_resource_credits', [username]);
-      console.log(`[WorkerBee fetchUserAccount] Resource credits received:`, rc);
+      const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [username]);
+      console.log(`[WorkerBee fetchUserAccount] Resource credits received:`, rcResult);
+      // find_rc_accounts returns an array, we need the first account
+      rc = rcResult && rcResult.rc_accounts && rcResult.rc_accounts.length > 0 ? rcResult.rc_accounts[0] : null;
     } catch (error) {
       console.warn(`[WorkerBee fetchUserAccount] Failed to get resource credits:`, error);
     }
@@ -198,7 +211,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     let globalProps = null;
     try {
       globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties');
-    } catch (error) {
+    } catch {
       console.warn('Failed to get global properties for HIVE POWER calculation');
     }
 
@@ -213,7 +226,9 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     }
 
     // Calculate Resource Credits percentage
-    const rcPercentage = rc ? (parseFloat(rc.rc_manabar.current_mana) / parseFloat(rc.max_rc)) * 100 : 0;
+    const rcPercentage = rc 
+      ? (parseFloat(rc.rc_manabar.current_mana) / parseFloat(rc.max_rc)) * 100 
+      : 0;
     const reputation = calculateReputation(accountData.reputation);
 
     return {
@@ -251,7 +266,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
         followers: followStats?.followers || 0,
         following: followStats?.following || 0,
       },
-      createdAt: new Date(accountData.created),
+      createdAt: accountData.created ? new Date(accountData.created) : new Date(),
       lastPost: accountData.last_post ? new Date(accountData.last_post) : undefined,
       lastVote: accountData.last_vote_time ? new Date(accountData.last_vote_time) : undefined,
       canVote: accountData.can_vote || false,
@@ -281,7 +296,9 @@ export async function fetchUserBalances(username: string): Promise<{
     // Get account and RC data in parallel
     const [account, rc] = await Promise.all([
       makeHiveApiCall('condenser_api', 'get_accounts', [[username]]),
-      makeHiveApiCall('rc_api', 'get_resource_credits', [username]).catch(() => null)
+      makeHiveApiCall('rc_api', 'find_rc_accounts', [username]).then(result => 
+        result && result.rc_accounts && result.rc_accounts.length > 0 ? result.rc_accounts[0] : null
+      ).catch(() => null)
     ]);
 
     if (!account || account.length === 0) return null;
@@ -302,7 +319,9 @@ export async function fetchUserBalances(username: string): Promise<{
       );
     }
 
-    const rcPercentage = rc ? (parseFloat(rc.rc_manabar.current_mana) / parseFloat(rc.max_rc)) * 100 : 0;
+    const rcPercentage = rc 
+      ? (parseFloat(rc.rc_manabar.current_mana) / parseFloat(rc.max_rc)) * 100 
+      : 0;
 
     return {
       hiveBalance: hiveAsset.amount + savingsHiveAsset.amount,
@@ -504,8 +523,11 @@ export async function updateUserProfile(
       active: accountData.active,
     };
 
+    // Initialize WorkerBee client for broadcasting
+    const client = await initializeWorkerBeeClient();
+    
     // Broadcast transaction using WorkerBee
-    const result = await client.broadcast(operation, postingKey);
+    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
     
     return { success: true, transactionId: result.id };
   } catch (error) {

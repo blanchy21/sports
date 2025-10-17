@@ -1,4 +1,4 @@
-import { HiveAccount } from '../lib/hive/types';
+import { HiveAccount } from '../lib/shared/types';
 
 export interface User {
   id: string;

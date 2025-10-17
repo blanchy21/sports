@@ -81,8 +81,14 @@ export default function ProfilePage() {
                     )}
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-4 w-4" />
-                      <span>Joined {user.createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                      <span>Joined {user.createdAt instanceof Date ? user.createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown'}</span>
                     </div>
+                    {/* Debug info - remove in production */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <div className="text-xs text-gray-500">
+                        Debug: createdAt type: {typeof user.createdAt}, value: {JSON.stringify(user.createdAt)}
+                      </div>
+                    )}
                     {user.hiveProfile?.website && (
                       <div className="flex items-center space-x-1">
                         <LinkIcon className="h-4 w-4" />
@@ -172,36 +178,19 @@ export default function ProfilePage() {
           {/* Posts Content */}
           <div className="p-6">
             <div className="space-y-4">
-              {[1, 2, 3].map((post) => (
-                <div key={post} className="border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer">
-                  <div className="flex items-start space-x-4">
-                    <Image
-                      src={`https://images.unsplash.com/photo-${1546519638 + post}-68e109498ffc?w=120&h=80&fit=crop`}
-                      alt="Post thumbnail"
-                      width={128}
-                      height={80}
-                      className="w-32 h-20 object-cover rounded-md"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold hover:text-primary transition-colors">
-                        The Evolution of Basketball: From Naismith to the Modern NBA
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        Explore the fascinating journey of basketball from its humble beginnings to becoming one of the world&apos;s most popular sports.
-                      </p>
-                      <div className="flex items-center space-x-4 mt-2 text-xs text-muted-foreground">
-                        <span>Jan 15, 2024</span>
-                        <span>•</span>
-                        <span>5 min read</span>
-                        <span>•</span>
-                        <span>247 likes</span>
-                        <span>•</span>
-                        <span>23 comments</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📝</div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  No posts yet
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                  Start sharing your sports insights and connect with the community!
+                </p>
+                <Button onClick={() => router.push("/publish")}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Create Your First Post
+                </Button>
+              </div>
             </div>
             
             <div className="text-center mt-6">

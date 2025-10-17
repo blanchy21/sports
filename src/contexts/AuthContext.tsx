@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { AuthState, AuthType, User } from "@/types";
-import { HiveAuthUser, HiveAccount } from "@/lib/hive/types";
+import { HiveAuthUser, HiveAccount } from "@/lib/shared/types";
 import { fetchUserAccount } from "@/lib/hive-workerbee/account";
 
 const AuthContext = createContext<AuthState & {
@@ -133,6 +133,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             avatar: accountData.profile.profileImage,
             displayName: accountData.profile.name || hiveUsername,
             bio: accountData.profile.about,
+            // Use the actual Hive account creation date
+            createdAt: accountData.createdAt,
           };
           setUser(updatedUser);
 
@@ -211,6 +213,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               avatar: accountData.profile.profileImage || user.avatar,
               displayName: accountData.profile.name || user.displayName,
               bio: accountData.profile.about || user.bio,
+              // Use the actual Hive account creation date
+              createdAt: accountData.createdAt,
             };
             updateUser(updatedUser);
           }

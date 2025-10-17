@@ -1,6 +1,8 @@
 import { initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
 
 // Helper function to make direct HTTP calls to Hive API
+// WorkerBee is designed for event-driven automation, not direct API calls
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function makeHiveApiCall(api: string, method: string, params: any[] = []): Promise<any> {
   const response = await fetch('https://api.hive.blog', {
     method: 'POST',
@@ -131,8 +133,11 @@ export async function publishPost(postData: PostData, postingKey: string): Promi
       ]
     };
 
+    // Initialize WorkerBee client for broadcasting
+    const client = await initializeWorkerBeeClient();
+    
     // Broadcast the transaction using WorkerBee
-    const result = await client.broadcast(operation, postingKey);
+    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
     
     // Generate post URL
     const url = `https://hive.blog/@${postData.author}/${permlink}`;
@@ -206,8 +211,11 @@ export async function publishComment(
       allow_curation_rewards: true,
     };
 
+    // Initialize WorkerBee client for broadcasting
+    const client = await initializeWorkerBeeClient();
+    
     // Broadcast the transaction using WorkerBee
-    const result = await client.broadcast(operation, postingKey);
+    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
     
     // Generate comment URL
     const url = `https://hive.blog/@${commentData.author}/${permlink}`;
@@ -284,8 +292,11 @@ export async function updatePost(
       extensions: existingPost.extensions,
     };
 
+    // Initialize WorkerBee client for broadcasting
+    const client = await initializeWorkerBeeClient();
+    
     // Broadcast the transaction using WorkerBee
-    const result = await client.broadcast(operation, postingKey);
+    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
 
     return {
       success: true,

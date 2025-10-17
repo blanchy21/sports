@@ -9,7 +9,7 @@ import {
   VoteData,
   VoteResult 
 } from '@/lib/hive-workerbee/voting';
-import { HiveVote } from '@/lib/hive/types';
+import { HiveVote } from '@/lib/shared/types';
 
 export interface VoteState {
   isVoting: boolean;

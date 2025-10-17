@@ -26,7 +26,7 @@ const topAuthors = [
     id: 1,
     username: "sports_analyst",
     displayName: "Alex Morgan",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=100&h=100&fit=crop&crop=face",
+    avatar: null, // Will use fallback avatar
     posts: 342,
     followers: "12.5K",
   },
@@ -34,7 +34,7 @@ const topAuthors = [
     id: 2,
     username: "basketball_guru",
     displayName: "Jordan Smith",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+    avatar: null, // Will use fallback avatar
     posts: 289,
     followers: "10.2K",
   },
@@ -42,7 +42,7 @@ const topAuthors = [
     id: 3,
     username: "soccer_insider",
     displayName: "Emma Wilson",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+    avatar: null, // Will use fallback avatar
     posts: 256,
     followers: "9.8K",
   },
@@ -125,13 +125,11 @@ export const RightSidebar: React.FC = () => {
                 key={author.id}
                 className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer"
               >
-                <Image
-                  src={author.avatar}
-                  alt={author.displayName}
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-primary font-semibold text-sm">
+                    {author.displayName.charAt(0)}
+                  </span>
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm truncate">
                     {author.displayName}

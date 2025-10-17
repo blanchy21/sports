@@ -202,7 +202,7 @@ export function isSportsblockPost(post: any): boolean {
   }
   
   // Check for Sportsblock community tag
-  if (post.category === 'hive-113896' || metadata.community === 'hive-113896') {
+  if (post.category === 'hive-115814' || metadata.community === 'hive-115814') {
     return true;
   }
   

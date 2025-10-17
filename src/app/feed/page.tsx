@@ -10,95 +10,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Post, SPORT_CATEGORIES } from "@/types";
 import { fetchSportsblockPosts, SportsblockPost } from "@/lib/hive-workerbee/content";
-import { formatAsset, calculatePendingPayout } from "@/lib/hive/utils";
+import { formatAsset, calculatePendingPayout } from "@/lib/shared/utils";
 
-// Mock data for development
-const mockPosts: Post[] = [
-  {
-    id: "1",
-    title: "The Evolution of Basketball: From Naismith to the Modern NBA",
-    content: "Basketball has evolved tremendously since Dr. James Naismith invented the game in 1891...",
-    excerpt: "Explore the fascinating journey of basketball from its humble beginnings to becoming one of the world's most popular sports.",
-    author: {
-      id: "1",
-      username: "basketball_historian",
-      displayName: "Sarah Johnson",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=100&h=100&fit=crop&crop=face",
-      isHiveAuth: true,
-      hiveUsername: "basketball_historian",
-      createdAt: new Date("2023-01-01"),
-      updatedAt: new Date(),
-    },
-    featuredImage: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&h=400&fit=crop",
-    sport: SPORT_CATEGORIES.find(s => s.id === "basketball") || SPORT_CATEGORIES[0],
-    tags: ["basketball", "history", "NBA", "evolution"],
-    isPublished: true,
-    isDraft: false,
-    hivePostId: "hive_post_1",
-    hiveUrl: "https://hive.blog/@basketball_historian/evolution-basketball",
-    upvotes: 247,
-    comments: 23,
-    readTime: 8,
-    createdAt: new Date("2024-01-15"),
-    updatedAt: new Date("2024-01-15"),
-    publishedAt: new Date("2024-01-15"),
-  },
-  {
-    id: "2",
-    title: "Soccer Tactics: The Rise of the False 9 Position",
-    content: "The false 9 position has revolutionized modern soccer tactics...",
-    excerpt: "Learn how the false 9 position has changed the game and why it's become essential for top teams worldwide.",
-    author: {
-      id: "2",
-      username: "soccer_tactician",
-      displayName: "Miguel Rodriguez",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-      isHiveAuth: true,
-      hiveUsername: "soccer_tactician",
-      createdAt: new Date("2023-02-01"),
-      updatedAt: new Date(),
-    },
-    featuredImage: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&h=400&fit=crop",
-    sport: SPORT_CATEGORIES.find(s => s.id === "football") || SPORT_CATEGORIES[0],
-    tags: ["soccer", "tactics", "false9", "football"],
-    isPublished: true,
-    isDraft: false,
-    hivePostId: "hive_post_2",
-    hiveUrl: "https://hive.blog/@soccer_tactician/false9-tactics",
-    upvotes: 189,
-    comments: 31,
-    readTime: 6,
-    createdAt: new Date("2024-01-14"),
-    updatedAt: new Date("2024-01-14"),
-    publishedAt: new Date("2024-01-14"),
-  },
-  {
-    id: "3",
-    title: "Tennis Mental Game: Staying Focused Under Pressure",
-    content: "The mental aspect of tennis is often overlooked but crucial for success...",
-    excerpt: "Discover the psychological techniques used by top tennis players to maintain focus and composure during high-pressure moments.",
-    author: {
-      id: "3",
-      username: "tennis_psychologist",
-      displayName: "Dr. Emma Chen",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-      isHiveAuth: false,
-      createdAt: new Date("2023-03-01"),
-      updatedAt: new Date(),
-    },
-    featuredImage: "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&h=400&fit=crop",
-    sport: SPORT_CATEGORIES.find(s => s.id === "tennis") || SPORT_CATEGORIES[0],
-    tags: ["tennis", "psychology", "mental-game", "focus"],
-    isPublished: true,
-    isDraft: false,
-    upvotes: 156,
-    comments: 19,
-    readTime: 5,
-    createdAt: new Date("2024-01-13"),
-    updatedAt: new Date("2024-01-13"),
-    publishedAt: new Date("2024-01-13"),
-  },
-];
+// No mock data needed - using real Hive blockchain content
 
 const stats = [
   { label: "Posts Today", value: "47", icon: TrendingUp },
@@ -160,8 +74,8 @@ export default function FeedPage() {
     } catch (err) {
       console.error('Error loading posts:', err);
       setError('Failed to load posts. Please try again later.');
-      // Fallback to mock data
-      setPosts(mockPosts as unknown as SportsblockPost[]);
+      // No fallback to mock data - show empty state instead
+      setPosts([]);
     } finally {
       setIsLoading(false);
     }

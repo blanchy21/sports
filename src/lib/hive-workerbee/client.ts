@@ -13,9 +13,9 @@ const HIVE_NODES = [
 export const SPORTS_ARENA_CONFIG = {
   APP_NAME: 'sportsblock',
   APP_VERSION: '1.0.0',
-  COMMUNITY_ID: 'hive-113896',
+  COMMUNITY_ID: 'hive-115814',
   COMMUNITY_NAME: 'sportsblock',
-  TAGS: ['sportsblock', 'hive-113896'],
+  TAGS: ['sportsblock', 'hive-115814'],
   DEFAULT_BENEFICIARIES: [
     {
       account: 'sportsblock',

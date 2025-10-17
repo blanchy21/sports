@@ -1,6 +1,8 @@
 import { initializeWorkerBeeClient } from './client';
 
 // Helper function to make direct HTTP calls to Hive API
+// WorkerBee is designed for event-driven automation, not direct API calls
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function makeHiveApiCall(api: string, method: string, params: any[] = []): Promise<any> {
   const response = await fetch('https://api.hive.blog', {
     method: 'POST',
@@ -79,6 +81,7 @@ export interface HiveComment {
 }
 
 // Utility functions
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseJsonMetadata(jsonMetadata: string): any {
   try {
     return JSON.parse(jsonMetadata || '{}');
@@ -101,6 +104,7 @@ function calculateReputation(reputation: string | number): number {
   return neg ? -rep : rep;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getUserVote(post: any, voter: string): HiveComment | null {
   if (!post.active_votes) return null;
   return post.active_votes.find((vote: any) => vote.voter === voter) || null;
@@ -144,8 +148,11 @@ export async function postComment(commentData: CommentData, postingKey: string):
       allow_curation_rewards: true,
     };
 
+    // Initialize WorkerBee client for broadcasting
+    const client = await initializeWorkerBeeClient();
+    
     // Broadcast the transaction using WorkerBee
-    const result = await client.broadcast(operation, postingKey);
+    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
     
     // Generate comment URL
     const url = `https://hive.blog/@${commentData.author}/${permlink}`;
@@ -220,8 +227,11 @@ export async function updateComment(
       allow_curation_rewards: existingComment.allow_curation_rewards,
     };
 
+    // Initialize WorkerBee client for broadcasting
+    const client = await initializeWorkerBeeClient();
+    
     // Broadcast the transaction using WorkerBee
-    const result = await client.broadcast(operation, postingKey);
+    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
 
     return {
       success: true,

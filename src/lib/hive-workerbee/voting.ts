@@ -1,6 +1,8 @@
 import { initializeWorkerBeeClient } from './client';
 
 // Helper function to make direct HTTP calls to Hive API
+// WorkerBee is designed for event-driven automation, not direct API calls
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function makeHiveApiCall(api: string, method: string, params: any[] = []): Promise<any> {
   const response = await fetch('https://api.hive.blog', {
     method: 'POST',
@@ -81,8 +83,11 @@ export async function castVote(voteData: VoteData, postingKey: string): Promise<
       weight: voteData.weight * 100, // Convert to 0-10000 scale
     };
 
+    // Initialize WorkerBee client for broadcasting
+    const client = await initializeWorkerBeeClient();
+    
     // Broadcast the transaction using WorkerBee
-    const result = await client.broadcast(operation, postingKey);
+    const result = await client.chain.broadcast.sendOperations([operation as any], postingKey);
 
     return {
       success: true,
@@ -362,8 +367,11 @@ export async function batchVote(votes: VoteData[], postingKey: string): Promise<
       weight: vote.weight * 100,
     }));
 
+    // Initialize WorkerBee client for broadcasting
+    const client = await initializeWorkerBeeClient();
+    
     // Broadcast all operations in a single transaction using WorkerBee
-    const result = await client.broadcast(operations, postingKey);
+    const result = await client.chain.broadcast.sendOperations(operations as any[], postingKey);
 
     return votes.map(() => ({
       success: true,
