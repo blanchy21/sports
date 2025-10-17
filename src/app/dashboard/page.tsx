@@ -175,8 +175,8 @@ export default function DashboardPage() {
               <p className="text-muted-foreground">@{user.username}</p>
               {authType === "hive" && (
                 <div className="flex items-center space-x-1 mt-1">
-                  <Award className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-green-600">Hive Authenticated</span>
+                  <Award className="h-4 w-4 text-orange-500" />
+                  <span className="text-sm text-orange-600 font-medium">Hive Authenticated</span>
                 </div>
               )}
             </div>
@@ -235,10 +235,10 @@ export default function DashboardPage() {
 
         {/* Rewards Stats (Hive users only) */}
         {rewardsStats.length > 0 && (
-          <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-6">
+          <div className="bg-gradient-to-r from-orange-500 to-yellow-500 rounded-lg p-6">
             <div className="flex items-center space-x-2 mb-4">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
+              <DollarSign className="h-5 w-5 text-white" />
+              <h3 className="text-lg font-semibold text-white">
                 Hive Account Balances
               </h3>
             </div>
@@ -246,15 +246,15 @@ export default function DashboardPage() {
               {rewardsStats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={index} className="bg-white dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                  <div key={index} className="bg-white dark:bg-orange-900 border border-orange-200 dark:border-orange-700 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-green-700 dark:text-green-300">{stat.title}</p>
-                        <p className="text-xl font-bold text-green-800 dark:text-green-200">{stat.value}</p>
-                        <p className="text-xs text-green-600 dark:text-green-400">{stat.change}</p>
+                        <p className="text-sm text-orange-700 dark:text-orange-300 font-medium">{stat.title}</p>
+                        <p className="text-xl font-bold text-orange-900 dark:text-orange-100">{stat.value}</p>
+                        <p className="text-xs text-orange-600 dark:text-orange-400">{stat.change}</p>
                       </div>
-                      <div className="p-2 bg-green-100 dark:bg-green-800 rounded-lg">
-                        <Icon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <div className="p-2 bg-orange-100 dark:bg-orange-800 rounded-lg">
+                        <Icon className="h-5 w-5 text-orange-600 dark:text-orange-300" />
                       </div>
                     </div>
                   </div>

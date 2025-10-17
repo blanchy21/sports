@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { 
   Home, 
@@ -47,7 +48,14 @@ export const TopNavigation: React.FC = () => {
         <div className="relative flex h-full items-center">
           {/* Left - Logo (positioned over left sidebar) */}
           <div className="w-80 pl-6">
-            <Link href="/" className="flex items-center" suppressHydrationWarning>
+            <Link href="/" className="flex items-center space-x-3" suppressHydrationWarning>
+              <Image
+                src="/sportsblock-logo.png"
+                alt="SportsBlock Logo"
+                width={72}
+                height={72}
+                className="w-18 h-18"
+              />
               <div className="text-4xl font-bold text-white">
                 Sportsblock
               </div>
