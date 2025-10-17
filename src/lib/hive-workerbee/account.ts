@@ -127,12 +127,15 @@ function calculateReputation(reputation: string | number): number {
     reputation = parseInt(reputation);
   }
   if (reputation === 0) return 25;
+  
+  // Use the correct Hive reputation formula
   const neg = reputation < 0;
   if (neg) reputation = -reputation;
+  
+  // Hive reputation calculation: log10(reputation) * 9 + 25
   let rep = Math.log10(reputation);
-  rep = Math.max(rep - 9, 0);
-  if (rep < 0) rep = 0;
   rep = rep * 9 + 25;
+  
   return neg ? -rep : rep;
 }
 
@@ -277,7 +280,10 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     const rcPercentage = rc && (rc as any).rc_manabar && (rc as any).max_rc
       ? (parseFloat((rc as { rc_manabar: { current_mana: string } }).rc_manabar.current_mana) / parseFloat((rc as { max_rc: string }).max_rc)) * 100 
       : 0;
-    const reputation = calculateReputation(accountData.reputation as string | number);
+    const rawReputation = accountData.reputation as string | number;
+    console.log(`[WorkerBee fetchUserAccount] Raw reputation for ${username}:`, rawReputation, 'Type:', typeof rawReputation);
+    const reputation = calculateReputation(rawReputation);
+    console.log(`[WorkerBee fetchUserAccount] Calculated reputation for ${username}:`, reputation);
 
     return {
       username: accountData.name as string,
