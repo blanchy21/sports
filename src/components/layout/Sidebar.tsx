@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -43,7 +43,12 @@ export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { user } = useAuth();
   const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const profileTriggerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-80 lg:fixed lg:inset-y-0 lg:pt-24 lg:pb-4 lg:overflow-y-auto lg:border-r bg-background">
@@ -55,7 +60,7 @@ export const Sidebar: React.FC = () => {
             if (item.requireAuth && !user) return null;
 
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = isClient && pathname === item.href;
 
             return (
               <Link

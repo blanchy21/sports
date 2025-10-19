@@ -68,29 +68,17 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
-  // Only use webpack config when not using Turbopack
-  ...(process.env.TURBOPACK !== '1' && {
-    webpack: (config: any, { isServer }: { isServer: boolean }) => {
-      if (!isServer) {
-        config.resolve.fallback = {
-          ...config.resolve.fallback,
-          fs: false,
-          net: false,
-          tls: false,
-          crypto: false,
-        };
-      }
-      return config;
-    },
-  }),
-  // Turbopack configuration
-  turbopack: {
-    resolveAlias: {
-      fs: false,
-      net: false,
-      tls: false,
-      crypto: false,
-    },
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+      };
+    }
+    return config;
   },
 };
 

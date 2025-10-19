@@ -166,8 +166,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
       </div>
 
       {/* Content */}
-      <Link href={isHivePost ? `/post/${post.author}/${post.permlink}` : `/post/${post.id}`}>
-        <div className="p-4 space-y-3 cursor-pointer">
+      <div 
+        className="p-4 space-y-3 cursor-pointer"
+        onClick={() => {
+          const url = isHivePost ? `/post/${post.author}/${post.permlink}` : `/post/${post.id}`;
+          window.location.href = url;
+        }}
+      >
           {(() => {
             // For Hive posts, extract image from markdown body
             if (isHivePost) {
@@ -181,6 +186,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover hover:scale-105 transition-transform duration-200"
+                      priority
                     />
                   </div>
                 );
@@ -212,6 +218,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
                   components={{
                     img: () => null, // Hide images in preview
                     p: ({ children }) => <p className="text-muted-foreground text-sm">{children}</p>,
+                    a: ({ children }) => <span className="text-muted-foreground text-sm">{children}</span>, // Convert links to spans
                   }}
                 >
                   {truncateText(post.body, 200)}
@@ -243,7 +250,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
             </div>
           )}
         </div>
-      </Link>
 
       {/* Footer */}
       <div className="px-4 py-3 border-t bg-muted/30">

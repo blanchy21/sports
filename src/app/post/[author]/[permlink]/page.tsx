@@ -41,7 +41,7 @@ export default function PostDetailPage() {
       try {
         const postData = await fetchPost(author, permlink);
         if (postData) {
-          setPost(postData);
+          setPost(postData as SportsblockPost);
         } else {
           setError("Post not found");
         }
