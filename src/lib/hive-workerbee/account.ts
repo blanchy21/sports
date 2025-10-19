@@ -257,7 +257,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       if (!rc) {
         try {
           console.log(`[WorkerBee fetchUserAccount] Trying rc_api.find_rc_accounts with different format...`);
-          const rcResult = await makeHiveApiCall<Record<string, unknown>>('rc_api', 'find_rc_accounts', { accounts: [username] });
+          const rcResult = await makeHiveApiCall<Record<string, unknown>>('rc_api', 'find_rc_accounts', [username]);
           console.log(`[WorkerBee fetchUserAccount] rc_api response:`, rcResult);
           
           if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {

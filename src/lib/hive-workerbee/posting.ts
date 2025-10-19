@@ -424,7 +424,7 @@ export async function canUserPost(username: string): Promise<{
       // Try rc_api with different parameter format
       try {
         console.log(`[canUserPost] Trying rc_api.find_rc_accounts with different format...`);
-        const rcResult = await makeHiveApiCall<Record<string, unknown>>('rc_api', 'find_rc_accounts', { accounts: [username] });
+        const rcResult = await makeHiveApiCall<Record<string, unknown>>('rc_api', 'find_rc_accounts', [username]);
         console.log(`[canUserPost] rc_api response:`, rcResult);
         
         if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {
