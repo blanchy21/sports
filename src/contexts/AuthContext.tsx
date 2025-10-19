@@ -214,7 +214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   console.log("Using stored user data:", userData);
                 }
               } catch (parseError) {
-                console.log("Could not parse stored auth data");
+                console.log("Could not parse stored auth data:", parseError);
               }
             }
           }

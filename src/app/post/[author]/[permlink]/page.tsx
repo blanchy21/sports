@@ -9,13 +9,14 @@ import { VoteButton } from "@/components/VoteButton";
 import { ArrowLeft, MessageCircle, Bookmark, Share, Calendar, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { fetchPost } from "@/lib/hive-workerbee/content";
-import { SportsblockPost } from "@/lib/shared/types";
+import { SportsblockPost } from "@/lib/hive-workerbee/content";
 import { calculatePendingPayout, formatAsset } from "@/lib/shared/utils";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useModal } from "@/components/modals/ModalProvider";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { cn, formatDate, formatReadTime } from "@/lib/utils";
+import Image from "next/image";
+import { formatDate, formatReadTime } from "@/lib/utils";
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -41,7 +42,7 @@ export default function PostDetailPage() {
       try {
         const postData = await fetchPost(author, permlink);
         if (postData) {
-          setPost(postData as SportsblockPost);
+          setPost(postData);
         } else {
           setError("Post not found");
         }
@@ -190,10 +191,13 @@ export default function PostDetailPage() {
             remarkPlugins={[remarkGfm]}
             components={{
               img: ({ src, alt }) => (
-                <img
-                  src={src}
-                  alt={alt}
+                <Image
+                  src={String(src || '')}
+                  alt={String(alt || '')}
+                  width={700}
+                  height={400}
                   className="rounded-lg shadow-md my-4 max-w-full h-auto"
+                  style={{ maxWidth: '100%', height: 'auto' }}
                 />
               ),
               p: ({ children }) => <p className="mb-4 leading-relaxed">{children}</p>,
