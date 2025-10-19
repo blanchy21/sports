@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { MessageCircle, Bookmark, MapPin } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
@@ -123,12 +122,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2">
-              <Link 
-                href={`/user/${getAuthorName()}`}
-                className="text-sm font-medium hover:underline"
+              <span 
+                className="text-sm font-medium hover:underline cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.location.href = `/user/${getAuthorName()}`;
+                }}
               >
                 @{getAuthorName()}
-              </Link>
+              </span>
               <span className="text-muted-foreground">•</span>
               <span className="text-sm text-muted-foreground">
                 {formatDate(isHivePost ? new Date(post.created) : (post.publishedAt || post.createdAt))}

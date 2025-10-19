@@ -60,7 +60,7 @@ export const Sidebar: React.FC = () => {
             if (item.requireAuth && !user) return null;
 
             const Icon = item.icon;
-            const isActive = isClient && pathname === item.href;
+            const isActive = isClient ? pathname === item.href : false;
 
             return (
               <Link
