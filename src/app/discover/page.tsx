@@ -6,7 +6,8 @@ import { PostCard } from "@/components/PostCard";
 import { Button } from "@/components/ui/Button";
 import { Compass, TrendingUp, Loader2 } from "lucide-react";
 import { SPORT_CATEGORIES } from "@/types";
-import { fetchSportsblockPosts, SportsblockPost } from "@/lib/hive-workerbee/content";
+import { fetchSportsblockPosts } from "@/lib/hive-workerbee/content";
+import { SportsblockPost } from "@/lib/shared/types";
 
 export default function DiscoverPage() {
   const [selectedSport, setSelectedSport] = useState<string>("all");
@@ -25,7 +26,7 @@ export default function DiscoverPage() {
         sort: 'trending', // Use trending sort for discover page
       });
       
-      setPosts(result.posts);
+      setPosts(result.posts as unknown as SportsblockPost[]);
     } catch (err) {
       console.error('Error loading posts:', err);
       setError('Failed to load posts. Please try again.');
@@ -92,7 +93,7 @@ export default function DiscoverPage() {
           ) : posts.length > 0 ? (
             <div className="space-y-6">
               {posts.map((post) => (
-                <PostCard key={`${post.author}-${post.permlink}`} post={post as any} />
+                <PostCard key={`${post.author}-${post.permlink}`} post={post} />
               ))}
             </div>
           ) : (

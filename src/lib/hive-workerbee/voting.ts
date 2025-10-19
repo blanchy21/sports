@@ -98,7 +98,7 @@ export async function castVote(voteData: VoteData): Promise<VoteResult> {
 
     return {
       success: true,
-      transactionId: (result as any)?.id || 'unknown',
+      transactionId: (result as { id?: string })?.id || 'unknown',
     };
   } catch (error) {
     console.error('Error casting vote with Aioha:', error);
@@ -374,7 +374,7 @@ export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
 
     return votes.map(() => ({
       success: true,
-      transactionId: (result as any)?.id || 'unknown',
+      transactionId: (result as { id?: string })?.id || 'unknown',
     }));
   } catch (error) {
     console.error('Error batch voting with Aioha:', error);

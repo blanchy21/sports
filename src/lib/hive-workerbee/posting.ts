@@ -151,7 +151,7 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
 
     return {
       success: true,
-      transactionId: (result as any)?.id || 'unknown',
+      transactionId: (result as { id?: string })?.id || 'unknown',
       author: postData.author,
       permlink,
       url,
@@ -225,7 +225,7 @@ export async function publishComment(
 
     return {
       success: true,
-      transactionId: (result as any)?.id || 'unknown',
+      transactionId: (result as { id?: string })?.id || 'unknown',
       author: commentData.author,
       permlink,
       url,

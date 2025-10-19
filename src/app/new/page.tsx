@@ -5,7 +5,8 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { PostCard } from "@/components/PostCard";
 import { Button } from "@/components/ui/Button";
 import { Clock, Filter, Loader2 } from "lucide-react";
-import { fetchSportsblockPosts, SportsblockPost } from "@/lib/hive-workerbee/content";
+import { fetchSportsblockPosts } from "@/lib/hive-workerbee/content";
+import { SportsblockPost } from "@/lib/shared/types";
 
 export default function NewPostsPage() {
   const [posts, setPosts] = useState<SportsblockPost[]>([]);
@@ -24,7 +25,7 @@ export default function NewPostsPage() {
         sort: 'created',
       });
       
-      setPosts(result.posts);
+      setPosts(result.posts as unknown as SportsblockPost[]);
     } catch (err) {
       console.error('Error loading posts:', err);
       setError('Failed to load posts. Please try again.');
@@ -69,7 +70,7 @@ export default function NewPostsPage() {
         ) : posts.length > 0 ? (
           <div className="space-y-6">
             {posts.map((post) => (
-              <PostCard key={`${post.author}-${post.permlink}`} post={post as any} />
+              <PostCard key={`${post.author}-${post.permlink}`} post={post} />
             ))}
           </div>
         ) : (

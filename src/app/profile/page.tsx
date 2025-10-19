@@ -9,7 +9,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { getUserPosts, SportsblockPost } from "@/lib/hive-workerbee/content";
+import { getUserPosts } from "@/lib/hive-workerbee/content";
+import { SportsblockPost } from "@/lib/shared/types";
 
 export default function ProfilePage() {
   const { user, authType, refreshHiveAccount } = useAuth();
@@ -35,7 +36,7 @@ export default function ProfilePage() {
     
     try {
       const posts = await getUserPosts(user.username, 20);
-      setUserPosts(posts);
+      setUserPosts(posts as unknown as SportsblockPost[]);
     } catch (error) {
       console.error("Error loading user posts:", error);
       setPostsError("Failed to load posts. Please try again.");
@@ -264,7 +265,7 @@ export default function ProfilePage() {
             ) : userPosts.length > 0 ? (
               <div className="space-y-6">
                 {userPosts.map((post) => (
-                  <PostCard key={`${post.author}-${post.permlink}`} post={post as any} />
+                  <PostCard key={`${post.author}-${post.permlink}`} post={post} />
                 ))}
               </div>
             ) : (
