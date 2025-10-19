@@ -1,19 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { MapPin, Calendar, Link as LinkIcon, Edit, Settings, RefreshCw, AlertCircle } from "lucide-react";
+import { MapPin, Calendar, Link as LinkIcon, Edit, Settings, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
+import { PostCard } from "@/components/PostCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { getUserPosts, SportsblockPost } from "@/lib/hive-workerbee/content";
 
 export default function ProfilePage() {
   const { user, authType, refreshHiveAccount } = useAuth();
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [userPosts, setUserPosts] = useState<SportsblockPost[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+  const [postsError, setPostsError] = useState<string | null>(null);
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -21,6 +26,23 @@ export default function ProfilePage() {
       router.push("/");
     }
   }, [user, router]);
+
+  const loadUserPosts = React.useCallback(async () => {
+    if (!user?.username) return;
+    
+    setIsLoadingPosts(true);
+    setPostsError(null);
+    
+    try {
+      const posts = await getUserPosts(user.username, 20);
+      setUserPosts(posts);
+    } catch (error) {
+      console.error("Error loading user posts:", error);
+      setPostsError("Failed to load posts. Please try again.");
+    } finally {
+      setIsLoadingPosts(false);
+    }
+  }, [user?.username]);
 
   const handleRefreshProfile = async () => {
     if (authType !== "hive") return;
@@ -38,6 +60,13 @@ export default function ProfilePage() {
       setIsRefreshing(false);
     }
   };
+
+  // Load user posts when component mounts
+  useEffect(() => {
+    if (user?.username) {
+      loadUserPosts();
+    }
+  }, [user?.username, loadUserPosts]);
 
   if (!user) {
     return null; // Will redirect
@@ -220,7 +249,25 @@ export default function ProfilePage() {
           
           {/* Posts Content */}
           <div className="p-6">
-            <div className="space-y-4">
+            {isLoadingPosts ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2 text-muted-foreground">Loading posts...</span>
+              </div>
+            ) : postsError ? (
+              <div className="text-center py-12">
+                <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Error loading posts</h3>
+                <p className="text-muted-foreground mb-4">{postsError}</p>
+                <Button onClick={loadUserPosts}>Try Again</Button>
+              </div>
+            ) : userPosts.length > 0 ? (
+              <div className="space-y-6">
+                {userPosts.map((post) => (
+                  <PostCard key={`${post.author}-${post.permlink}`} post={post as any} />
+                ))}
+              </div>
+            ) : (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📝</div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -234,11 +281,16 @@ export default function ProfilePage() {
                   Create Your First Post
                 </Button>
               </div>
-            </div>
+            )}
             
-            <div className="text-center mt-6">
-              <Button variant="outline">Load More Posts</Button>
-            </div>
+            {userPosts.length > 0 && (
+              <div className="text-center mt-6">
+                <Button variant="outline" onClick={loadUserPosts}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Posts
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
