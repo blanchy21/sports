@@ -6,6 +6,8 @@ import { AiohaProvider } from "@/contexts/AiohaProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PriceProvider } from "@/contexts/PriceContext";
 import { ToastProvider } from "@/components/ui/Toast";
+import { QueryClientProvider } from "@/lib/react-query/QueryClientProvider";
+import { ModalProvider } from "@/components/modals/ModalProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,17 +25,21 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider>
-          <AiohaProvider>
-            <AuthProvider>
-              <PriceProvider>
-                <ToastProvider>
-                  {children}
-                </ToastProvider>
-              </PriceProvider>
-            </AuthProvider>
-          </AiohaProvider>
-        </ThemeProvider>
+        <QueryClientProvider>
+          <ThemeProvider>
+            <AiohaProvider>
+              <AuthProvider>
+                <PriceProvider>
+                  <ToastProvider>
+                    <ModalProvider>
+                      {children}
+                    </ModalProvider>
+                  </ToastProvider>
+                </PriceProvider>
+              </AuthProvider>
+            </AiohaProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );

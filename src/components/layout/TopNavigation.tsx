@@ -12,7 +12,8 @@ import {
   Settings,
   Moon,
   Sun,
-  Zap
+  Zap,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
@@ -89,6 +90,19 @@ export const TopNavigation: React.FC = () => {
             suppressHydrationWarning
           >
             <LayoutDashboard className="h-8 w-8" />
+          </Link>
+
+          <Link 
+            href="/communities" 
+            className={cn(
+              "flex items-center justify-center w-16 h-16 rounded-lg transition-all duration-200",
+              pathname === "/communities" 
+                ? "bg-white text-primary shadow-md" 
+                : "text-white/90 hover:bg-white/20 hover:text-white"
+            )}
+            suppressHydrationWarning
+          >
+            <Users className="h-8 w-8" />
           </Link>
 
           {/* Sports Filter Button */}

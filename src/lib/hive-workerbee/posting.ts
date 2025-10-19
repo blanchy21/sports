@@ -366,8 +366,9 @@ export async function canUserPost(username: string): Promise<{
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
 
-    // Use condenser_api.get_account to get account info including RC
-    const account = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_account', [username]);
+    // Use condenser_api.get_accounts to get account info including RC
+    const accountResult = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_accounts', [[username]]);
+    const account = accountResult && accountResult.length > 0 ? accountResult[0] : null;
     
     if (!account) {
       return {
@@ -382,6 +383,74 @@ export async function canUserPost(username: string): Promise<{
     const max_rc = account.max_rc as string | undefined;
     
     if (!rc_manabar || !max_rc) {
+      // Debug: Log all available fields in account data
+      console.log(`[canUserPost] Available account fields:`, Object.keys(account));
+      console.log(`[canUserPost] RC-related fields:`, {
+        rc_manabar: account.rc_manabar,
+        max_rc: account.max_rc,
+        rc_manabar_type: typeof account.rc_manabar,
+        max_rc_type: typeof account.max_rc
+      });
+      
+      // Try to get RC data using condenser_api.get_account (singular)
+      try {
+        console.log(`[canUserPost] Trying condenser_api.get_account for RC data...`);
+        const accountWithRc = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_account', [username]);
+        console.log(`[canUserPost] get_account response fields:`, Object.keys(accountWithRc));
+        
+        if (accountWithRc && accountWithRc.rc_manabar && accountWithRc.max_rc) {
+          const rcManabar = accountWithRc.rc_manabar as { current_mana: string };
+          const maxRc = accountWithRc.max_rc as string;
+          const rcPercentage = (parseFloat(rcManabar.current_mana) / parseFloat(maxRc)) * 100;
+          console.log(`[canUserPost] RC from get_account: ${rcPercentage.toFixed(2)}%`);
+          
+          if (rcPercentage < 10) {
+            return {
+              canPost: false,
+              rcPercentage,
+              message: `Insufficient Resource Credits: ${rcPercentage.toFixed(1)}% (need at least 10%)`
+            };
+          }
+
+          return {
+            canPost: true,
+            rcPercentage,
+          };
+        }
+      } catch (getAccountError) {
+        console.warn('Failed to fetch RC from get_account:', getAccountError);
+      }
+      
+      // Try rc_api with different parameter format
+      try {
+        console.log(`[canUserPost] Trying rc_api.find_rc_accounts with different format...`);
+        const rcResult = await makeHiveApiCall<Record<string, unknown>>('rc_api', 'find_rc_accounts', { accounts: [username] });
+        console.log(`[canUserPost] rc_api response:`, rcResult);
+        
+        if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {
+          const rcData = rcResult.rc_accounts[0] as { rc_manabar?: { current_mana: string }; max_rc?: string };
+          if (rcData.rc_manabar && rcData.max_rc) {
+            const rcPercentage = (parseFloat(rcData.rc_manabar.current_mana) / parseFloat(rcData.max_rc)) * 100;
+            console.log(`[canUserPost] RC from rc_api: ${rcPercentage.toFixed(2)}%`);
+            
+            if (rcPercentage < 10) {
+              return {
+                canPost: false,
+                rcPercentage,
+                message: `Insufficient Resource Credits: ${rcPercentage.toFixed(1)}% (need at least 10%)`
+              };
+            }
+
+            return {
+              canPost: true,
+              rcPercentage,
+            };
+          }
+        }
+      } catch (rcApiError) {
+        console.warn('Failed to fetch RC from rc_api:', rcApiError);
+      }
+      
       return {
         canPost: false,
         rcPercentage: 0,

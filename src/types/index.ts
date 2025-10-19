@@ -405,3 +405,37 @@ export interface PriceContextType {
   lastUpdated: Date | null;
   refreshPrices: () => Promise<void>;
 }
+
+// Community types
+export interface Community {
+  id: string;
+  name: string;
+  title: string;
+  about: string;
+  description: string;
+  subscribers: number;
+  posts: number;
+  created: string;
+  avatar?: string;
+  coverImage?: string;
+  team: CommunityMember[];
+}
+
+export interface CommunityMember {
+  username: string;
+  role: 'admin' | 'moderator' | 'member';
+  joinedAt: string;
+}
+
+export interface FollowRelationship {
+  follower: string;
+  following: string;
+  followedAt: string;
+}
+
+// Modal types
+export interface ModalState {
+  isOpen: boolean;
+  type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | null;
+  data: Record<string, unknown> | null;
+}

@@ -14,14 +14,25 @@ import { SportsblockPost } from "@/lib/shared/types";
 import { VoteResult } from "@/lib/hive-workerbee/voting";
 import { useToast, toast } from "@/components/ui/Toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useModal } from "@/components/modals/ModalProvider";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface PostCardProps {
   post: Post | SportsblockPost;
   className?: string;
 }
 
+// Utility function to extract the first image URL from markdown content
+const extractFirstImageUrl = (markdown: string): string | null => {
+  const imageRegex = /!\[.*?\]\((.*?)\)/;
+  const match = markdown.match(imageRegex);
+  return match ? match[1] : null;
+};
+
 export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
   const { addToast } = useToast();
+  const { openModal } = useModal();
   const isHivePost = 'isSportsblockPost' in post;
   const pendingPayout = isHivePost ? calculatePendingPayout(post) : 0;
 
@@ -70,8 +81,30 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
   };
 
   const handleComment = () => {
-    // TODO: Implement comment functionality
-    console.log("Commenting on post:", isHivePost ? `${post.author}/${post.permlink}` : post.id);
+    if (isHivePost) {
+      openModal('comments', {
+        author: post.author,
+        permlink: post.permlink,
+      });
+    } else {
+      console.log("Commenting on post:", post.id);
+    }
+  };
+
+  const handleUpvoteList = () => {
+    if (isHivePost) {
+      openModal('upvoteList', {
+        author: post.author,
+        permlink: post.permlink,
+        voteCount: post.net_votes || 0,
+      });
+    }
+  };
+
+  const handleUserProfile = (username: string) => {
+    openModal('userProfile', {
+      username: username,
+    });
   };
 
   return (
@@ -79,15 +112,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center space-x-3">
-          <Link href={`/user/${getAuthorName()}`}>
+          <button onClick={() => handleUserProfile(getAuthorName())}>
             <Avatar
               src={getAuthorAvatar()}
               fallback={getAuthorName()}
               alt={getAuthorDisplayName()}
               size="sm"
-              className={isProfileLoading ? "animate-pulse" : ""}
+              className={isProfileLoading ? "animate-pulse" : "hover:opacity-80 transition-opacity cursor-pointer"}
             />
-          </Link>
+          </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2">
               <Link 
@@ -135,25 +168,60 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
       {/* Content */}
       <Link href={isHivePost ? `/post/${post.author}/${post.permlink}` : `/post/${post.id}`}>
         <div className="p-4 space-y-3 cursor-pointer">
-          {(isHivePost ? post.img_url : post.featuredImage) && (
-            <div className="aspect-video w-full overflow-hidden rounded-md relative">
-              <Image
-                src={(isHivePost ? post.img_url : post.featuredImage)!}
-                alt={post.title}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover hover:scale-105 transition-transform duration-200"
-              />
-            </div>
-          )}
+          {(() => {
+            // For Hive posts, extract image from markdown body
+            if (isHivePost) {
+              const imageUrl = extractFirstImageUrl(post.body);
+              if (imageUrl) {
+                return (
+                  <div className="aspect-video w-full overflow-hidden rounded-md relative">
+                    <Image
+                      src={imageUrl}
+                      alt={post.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover hover:scale-105 transition-transform duration-200"
+                    />
+                  </div>
+                );
+              }
+            } else if (post.featuredImage) {
+              return (
+                <div className="aspect-video w-full overflow-hidden rounded-md relative">
+                  <Image
+                    src={post.featuredImage}
+                    alt={post.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover hover:scale-105 transition-transform duration-200"
+                  />
+                </div>
+              );
+            }
+            return null;
+          })()}
           
           <div>
             <h2 className="text-lg font-semibold line-clamp-2 hover:text-primary transition-colors">
               {post.title}
             </h2>
-            <p className="text-muted-foreground text-sm mt-2 line-clamp-3">
-              {truncateText(isHivePost ? post.body.substring(0, 150) : post.excerpt, 150)}
-            </p>
+            <div className="text-muted-foreground text-sm mt-2 line-clamp-3">
+              {isHivePost ? (
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    img: () => null, // Hide images in preview
+                    p: ({ children }) => <p className="text-muted-foreground text-sm">{children}</p>,
+                  }}
+                >
+                  {truncateText(post.body, 200)}
+                </ReactMarkdown>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  {truncateText(post.excerpt, 150)}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Tags */}
@@ -183,13 +251,21 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
           <div className="flex items-center space-x-4">
             {/* Voting Section */}
             {isHivePost ? (
-              <VoteButton
-                author={post.author}
-                permlink={post.permlink}
-                voteCount={post.net_votes || 0}
-                onVoteSuccess={handleVoteSuccess}
-                onVoteError={handleVoteError}
-              />
+              <div className="flex items-center space-x-1">
+                <VoteButton
+                  author={post.author}
+                  permlink={post.permlink}
+                  voteCount={post.net_votes || 0}
+                  onVoteSuccess={handleVoteSuccess}
+                  onVoteError={handleVoteError}
+                />
+                <button
+                  onClick={handleUpvoteList}
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  ({post.net_votes || 0})
+                </button>
+              </div>
             ) : (
               <Button
                 variant="ghost"

@@ -34,26 +34,63 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'files.peakd.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'files.ecency.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'files.3speak.tv',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'files.dtube.tv',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   serverExternalPackages: ['@hiveio/dhive', '@hiveio/workerbee', '@hiveio/wax'],
   typescript: {
     ignoreBuildErrors: false,
+    tsconfigPath: './tsconfig.json',
   },
   eslint: {
     ignoreDuringBuilds: false,
   },
-  webpack: (config: any, { isServer }: { isServer: boolean }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
-      };
-    }
-    return config;
+  // Only use webpack config when not using Turbopack
+  ...(process.env.TURBOPACK !== '1' && {
+    webpack: (config: any, { isServer }: { isServer: boolean }) => {
+      if (!isServer) {
+        config.resolve.fallback = {
+          ...config.resolve.fallback,
+          fs: false,
+          net: false,
+          tls: false,
+          crypto: false,
+        };
+      }
+      return config;
+    },
+  }),
+  // Turbopack configuration
+  turbopack: {
+    resolveAlias: {
+      fs: false,
+      net: false,
+      tls: false,
+      crypto: false,
+    },
   },
 };
 

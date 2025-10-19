@@ -216,10 +216,59 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       isValidDate: accountData.created ? !isNaN(new Date(accountData.created as string).getTime()) : false
     });
 
-    // Get resource credits - skip RC for now due to API issues
-    const rc = null;
-    console.log(`[WorkerBee fetchUserAccount] Skipping resource credits fetch due to API compatibility issues`);
-    // TODO: Implement alternative RC fetching method when API is fixed
+    // Debug: Log all available fields in account data
+    console.log(`[WorkerBee fetchUserAccount] Available account fields:`, Object.keys(accountData));
+    console.log(`[WorkerBee fetchUserAccount] RC-related fields:`, {
+      rc_manabar: accountData.rc_manabar,
+      max_rc: accountData.max_rc,
+      rc_manabar_type: typeof accountData.rc_manabar,
+      max_rc_type: typeof accountData.max_rc
+    });
+
+    // Get resource credits - try multiple approaches
+    let rc = null;
+    
+    // First try: Check if account data already includes RC information
+    if (accountData.rc_manabar && accountData.max_rc) {
+      console.log(`[WorkerBee fetchUserAccount] RC data found in account data`);
+      rc = {
+        rc_manabar: accountData.rc_manabar,
+        max_rc: accountData.max_rc
+      };
+    } else {
+      // Try to get RC data using condenser_api.get_account (singular)
+      try {
+        console.log(`[WorkerBee fetchUserAccount] Trying condenser_api.get_account for RC data...`);
+        const accountWithRc = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_account', [username]);
+        console.log(`[WorkerBee fetchUserAccount] get_account response fields:`, Object.keys(accountWithRc));
+        
+        if (accountWithRc && accountWithRc.rc_manabar && accountWithRc.max_rc) {
+          console.log(`[WorkerBee fetchUserAccount] RC data found in get_account`);
+          rc = {
+            rc_manabar: accountWithRc.rc_manabar,
+            max_rc: accountWithRc.max_rc
+          };
+        }
+      } catch (getAccountError) {
+        console.warn(`[WorkerBee fetchUserAccount] Failed to get RC data from get_account:`, getAccountError);
+      }
+      
+      // If still no RC data found, try rc_api with different parameter format
+      if (!rc) {
+        try {
+          console.log(`[WorkerBee fetchUserAccount] Trying rc_api.find_rc_accounts with different format...`);
+          const rcResult = await makeHiveApiCall<Record<string, unknown>>('rc_api', 'find_rc_accounts', { accounts: [username] });
+          console.log(`[WorkerBee fetchUserAccount] rc_api response:`, rcResult);
+          
+          if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {
+            rc = rcResult.rc_accounts[0] as Record<string, unknown>;
+            console.log(`[WorkerBee fetchUserAccount] RC data received from rc_api:`, rc);
+          }
+        } catch (rcApiError) {
+          console.warn(`[WorkerBee fetchUserAccount] Failed to get RC data from rc_api:`, rcApiError);
+        }
+      }
+    }
 
     // Get reputation using the correct API method
     let accountReputation = null;
@@ -307,9 +356,24 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     }
 
     // Calculate Resource Credits percentage
-    const rcPercentage = rc && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).rc_manabar && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).max_rc
-      ? (parseFloat((rc as unknown as { rc_manabar: { current_mana: string }; max_rc: string }).rc_manabar.current_mana) / parseFloat((rc as unknown as { rc_manabar: { current_mana: string }; max_rc: string }).max_rc)) * 100 
-      : 0;
+    // First try to get RC from the dedicated rc_api call
+    let rcPercentage = 0;
+    if (rc && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).rc_manabar && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).max_rc) {
+      const rcData = rc as unknown as { rc_manabar: { current_mana: string }; max_rc: string };
+      rcPercentage = (parseFloat(rcData.rc_manabar.current_mana) / parseFloat(rcData.max_rc)) * 100;
+      console.log(`[WorkerBee fetchUserAccount] RC from rc_api: ${rcPercentage.toFixed(2)}%`);
+    } else {
+      // Fallback: try to get RC from account data directly
+      const accountRcManabar = accountData.rc_manabar as { current_mana: string } | undefined;
+      const accountMaxRc = accountData.max_rc as string | undefined;
+      
+      if (accountRcManabar && accountMaxRc) {
+        rcPercentage = (parseFloat(accountRcManabar.current_mana) / parseFloat(accountMaxRc)) * 100;
+        console.log(`[WorkerBee fetchUserAccount] RC from account data: ${rcPercentage.toFixed(2)}%`);
+      } else {
+        console.log(`[WorkerBee fetchUserAccount] No RC data available from either source`);
+      }
+    }
     // Use reputation from the dedicated API call if available, otherwise fall back to account data
     let rawReputation: string | number;
     if (accountReputation && accountReputation.reputation) {
