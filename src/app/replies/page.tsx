@@ -27,7 +27,7 @@ export default function RepliesPage() {
       parentPermlink: comment.parent_permlink,
       body: comment.body,
       created: comment.created,
-      netVotes: comment.net_votes,
+      netVotes: comment.net_votes || 0,
       isNew: false,
     }));
 
@@ -165,7 +165,7 @@ export default function RepliesPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold">
-                  {allReplies.reduce((sum, r) => sum + r.netVotes, 0)}
+                  {allReplies.reduce((sum, r) => sum + (r.netVotes || 0), 0)}
                 </div>
                 <div className="text-sm text-muted-foreground">Total Votes</div>
               </div>
@@ -240,7 +240,7 @@ export default function RepliesPage() {
                               <div className="flex items-center space-x-4">
                                 <button className="flex items-center space-x-1 text-sm text-muted-foreground hover:text-primary transition-colors">
                                   <ThumbsUp className="h-4 w-4" />
-                                  <span>{reply.netVotes}</span>
+                                  <span>{reply.netVotes || 0}</span>
                                 </button>
                                 
                                 <button className="flex items-center space-x-1 text-sm text-muted-foreground hover:text-primary transition-colors">
