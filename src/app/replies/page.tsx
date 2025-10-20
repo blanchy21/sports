@@ -11,7 +11,7 @@ import { formatDistanceToNow } from "date-fns";
 
 export default function RepliesPage() {
   const { user, isClient } = useAuth();
-  const { data: comments, isLoading, error } = useUserComments(user?.username || '', 50);
+  const { data: comments, isLoading, error } = useUserComments(user?.username || '', 20);
   const { replies: realtimeReplies, isConnected, error: realtimeError } = useRealtimeReplies();
 
   // Combine static comments with real-time replies

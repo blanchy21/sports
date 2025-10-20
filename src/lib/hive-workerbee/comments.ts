@@ -409,18 +409,22 @@ export async function getCommentStats(author: string, permlink: string): Promise
  */
 export async function getUserComments(username: string, limit: number = 20): Promise<HiveComment[]> {
   try {
-    console.log(`[getUserComments] Fetching comments for user: ${username}`);
+    console.log(`[getUserComments] Fetching comments for user: ${username} (requested limit: ${limit})`);
     
     // Get Wax client
     const wax = await getWaxClient();
 
     // Use get_discussions_by_comments to get recent comments
     // This method is specifically designed for comments and doesn't require date parameters
+    // Ensure limit is within valid range (1-20) for get_discussions_by_comments
+    const validLimit = Math.min(Math.max(limit, 1), 20);
+    console.log(`[getUserComments] Using valid limit: ${validLimit} (max allowed: 20)`);
+    
     const params = [
       {
         start_author: username,
         start_permlink: '',
-        limit: limit,
+        limit: validLimit,
         truncate_body: 0
       }
     ];
