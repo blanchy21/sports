@@ -22,7 +22,8 @@ async function makeHiveApiCall<T = unknown>(api: string, method: string, params:
   const result = await response.json();
   
   if (result.error) {
-    throw new Error(`API error: ${result.error.message}`);
+    console.error('API Error Details:', result.error);
+    throw new Error(`API error: ${result.error.message || JSON.stringify(result.error)}`);
   }
   
   return result.result;
@@ -415,14 +416,18 @@ export async function getUserComments(username: string, limit: number = 20): Pro
 
     // Use get_discussions_by_comments to get recent comments
     // This method is specifically designed for comments and doesn't require date parameters
-    const comments = await makeHiveApiCall('condenser_api', 'get_discussions_by_comments', [
+    const params = [
       {
         start_author: username,
         start_permlink: '',
         limit: limit,
         truncate_body: 0
       }
-    ]) as any[];
+    ];
+    
+    console.log(`[getUserComments] API call parameters:`, params);
+    
+    const comments = await makeHiveApiCall('condenser_api', 'get_discussions_by_comments', params) as any[];
 
     console.log(`[getUserComments] Found ${comments?.length || 0} comments for user ${username}`);
 
@@ -441,6 +446,7 @@ export async function getUserComments(username: string, limit: number = 20): Pro
     return userComments;
   } catch (error) {
     console.error('Error fetching user comments with WorkerBee:', error);
+    console.error('Error details:', error);
     return [];
   }
 }
