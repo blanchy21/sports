@@ -41,14 +41,9 @@ const navigationItems = [
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, isClient } = useAuth();
   const [showProfilePopup, setShowProfilePopup] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const profileTriggerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-80 lg:fixed lg:inset-y-0 lg:pt-24 lg:pb-4 lg:overflow-y-auto lg:border-r bg-background">
@@ -83,7 +78,7 @@ export const Sidebar: React.FC = () => {
         </nav>
 
         {/* User Profile Section at Bottom */}
-        {user && (
+        {isClient && user && (
           <div className="p-4 border-t">
           <div 
             ref={profileTriggerRef}
@@ -110,7 +105,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Profile Popup */}
-      {user && (
+      {isClient && user && (
         <UserProfilePopup
           isOpen={showProfilePopup}
           onClose={() => setShowProfilePopup(false)}

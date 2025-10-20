@@ -52,6 +52,14 @@ export function getWaxFromWorkerBee(client: InstanceType<typeof WorkerBee>): IHi
 }
 
 /**
+ * Get WorkerBee client for real-time monitoring
+ * @returns WorkerBee client instance
+ */
+export function getWorkerBeeForMonitoring(): InstanceType<typeof WorkerBee> {
+  return getWorkerBeeClient();
+}
+
+/**
  * Initialize WorkerBee client and start listening
  * @returns Promise that resolves when client is ready
  */

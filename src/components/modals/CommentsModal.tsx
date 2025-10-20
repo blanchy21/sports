@@ -1,11 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useComments } from "@/lib/react-query/queries/useComments";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { X, MessageCircle, Send } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/Toast";
+import { publishComment } from "@/lib/hive-workerbee/posting";
+import { useInvalidateComments } from "@/lib/react-query/queries/useComments";
+import { useAioha } from "@/contexts/AiohaProvider";
 
 interface CommentsModalProps {
   isOpen: boolean;
@@ -16,8 +21,123 @@ interface CommentsModalProps {
 export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, data }) => {
   const author = data?.author as string;
   const permlink = data?.permlink as string;
+  const { user, hiveUser, authType } = useAuth();
+  const { addToast } = useToast();
+  const { invalidatePostComments } = useInvalidateComments();
+  const { aioha, isInitialized, error: aiohaError } = useAioha();
+  
+  const [commentText, setCommentText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { data: comments, isLoading, error } = useComments(author || '', permlink || '', 50);
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('CommentsModal - Debug Info:', {
+      author,
+      permlink,
+      comments: comments?.length || 0,
+      isLoading,
+      error,
+      commentsData: comments,
+      aiohaStatus: {
+        isInitialized,
+        hasAioha: !!aioha,
+        aiohaError,
+        aiohaMethods: aioha ? Object.keys(aioha as object) : []
+      }
+    });
+  }, [author, permlink, comments, isLoading, error, isInitialized, aioha, aiohaError]);
+
+  const handleSubmitComment = async () => {
+    if (!commentText.trim()) {
+      addToast({
+        title: "Comment Required",
+        description: "Please enter a comment",
+        type: "error"
+      });
+      return;
+    }
+
+    if (!user) {
+      addToast({
+        title: "Authentication Required",
+        description: "Please sign in to comment",
+        type: "error"
+      });
+      return;
+    }
+
+    if (authType !== "hive" || !hiveUser?.username) {
+      addToast({
+        title: "Hive Authentication Required",
+        description: "Hive authentication required for commenting",
+        type: "error"
+      });
+      return;
+    }
+
+    if (!isInitialized || !aioha) {
+      addToast({
+        title: "Aioha Not Ready",
+        description: "Aioha authentication is not ready. Please wait a moment and try again.",
+        type: "error"
+      });
+      return;
+    }
+
+    if (aiohaError) {
+      addToast({
+        title: "Aioha Error",
+        description: `Aioha authentication error: ${aiohaError}`,
+        type: "error"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const commentData = {
+        author: hiveUser.username,
+        body: commentText.trim(),
+        parentAuthor: author,
+        parentPermlink: permlink,
+        jsonMetadata: JSON.stringify({
+          app: 'sportsblock/1.0.0',
+          format: 'markdown'
+        })
+      };
+
+      const result = await publishComment(commentData, aioha);
+
+      if (result.success) {
+        addToast({
+          title: "Success",
+          description: "Comment posted successfully!",
+          type: "success"
+        });
+        setCommentText("");
+        // Invalidate comments to refresh the list
+        invalidatePostComments(author, permlink);
+      } else {
+        addToast({
+          title: "Comment Failed",
+          description: `Failed to post comment: ${result.error}`,
+          type: "error"
+        });
+      }
+    } catch (error) {
+      console.error("Error posting comment:", error);
+      addToast({
+        title: "Comment Failed",
+        description: "Failed to post comment. Please try again.",
+        type: "error"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -79,36 +199,47 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
             </div>
           ) : comments && comments.length > 0 ? (
             <div className="space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex space-x-3">
-                  <Avatar
-                    fallback={comment.author}
-                    alt={comment.author}
-                    size="sm"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="font-medium text-sm">@{comment.author}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(new Date(comment.created))}
-                      </span>
-                    </div>
-                    <div className="prose prose-sm max-w-none">
-                      <p className="text-sm text-foreground whitespace-pre-wrap">
-                        {comment.body}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-4 mt-2">
-                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                        Reply
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                        Vote ({comment.net_votes})
-                      </Button>
+              {comments.map((comment) => {
+                const isNestedReply = comment.parent_author !== author;
+                return (
+                  <div 
+                    key={comment.id} 
+                    className={`flex space-x-3 ${isNestedReply ? 'ml-8 border-l-2 border-gray-200 pl-4' : ''}`}
+                  >
+                    <Avatar
+                      fallback={comment.author}
+                      alt={comment.author}
+                      size="sm"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="font-medium text-sm">@{comment.author}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(new Date(comment.created))}
+                        </span>
+                        {isNestedReply && (
+                          <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                            Reply to @{comment.parent_author}
+                          </span>
+                        )}
+                      </div>
+                      <div className="prose prose-sm max-w-none">
+                        <p className="text-sm text-foreground whitespace-pre-wrap">
+                          {comment.body}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-4 mt-2">
+                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                          Reply
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                          Vote ({comment.net_votes})
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -127,20 +258,34 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         <div className="p-6 border-t">
           <div className="flex space-x-3">
             <Avatar
-              fallback="U"
-              alt="You"
+              fallback={user?.username?.[0] || "U"}
+              alt={user?.username || "You"}
               size="sm"
             />
             <div className="flex-1">
               <textarea
-                placeholder="Write a comment..."
+                placeholder="Write a comment... (Ctrl+Enter to submit)"
                 className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
                 rows={3}
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    handleSubmitComment();
+                  }
+                }}
+                disabled={isSubmitting}
               />
             </div>
-            <Button size="sm" className="self-end">
+            <Button 
+              size="sm" 
+              className="self-end"
+              onClick={handleSubmitComment}
+              disabled={isSubmitting || !commentText.trim()}
+            >
               <Send className="h-4 w-4 mr-2" />
-              Comment
+              {isSubmitting ? "Posting..." : "Comment"}
             </Button>
           </div>
         </div>

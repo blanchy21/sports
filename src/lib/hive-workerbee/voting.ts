@@ -1,18 +1,6 @@
-import { initializeWorkerBeeClient } from './client';
-import { aioha } from '@/lib/aioha/config';
-
-// Types for Hive API responses
-interface HiveApiResponse<T = unknown> {
-  id: number;
-  result: T;
-  error?: {
-    code: number;
-    message: string;
-  };
-}
+import { getWaxClient } from './client';
 
 // Helper function to make direct HTTP calls to Hive API
-// WorkerBee is designed for event-driven automation, not direct API calls
 async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
   const response = await fetch('https://api.hive.blog', {
     method: 'POST',
@@ -31,7 +19,7 @@ async function makeHiveApiCall<T = unknown>(api: string, method: string, params:
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   
-  const result: HiveApiResponse<T> = await response.json();
+  const result = await response.json();
   
   if (result.error) {
     throw new Error(`API error: ${result.error.message}`);
@@ -39,6 +27,7 @@ async function makeHiveApiCall<T = unknown>(api: string, method: string, params:
   
   return result.result;
 }
+import { aioha } from '@/lib/aioha/config';
 
 // Types matching the original voting.ts interface
 export interface VoteResult {
@@ -94,7 +83,13 @@ export async function castVote(voteData: VoteData): Promise<VoteResult> {
     };
 
     // Use Aioha to sign and broadcast the transaction
-    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx([operation], 'posting');
+    // Aioha expects operations in a specific format - each operation should be an array
+    // Format: [operation_type, operation_data]
+    const operations = [
+      ['vote', operation]
+    ];
+    
+    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(operations, 'posting');
 
     return {
       success: true,
@@ -128,10 +123,10 @@ export async function removeVote(voteData: Omit<VoteData, 'weight'>): Promise<Vo
  */
 export async function checkUserVote(author: string, permlink: string, voter: string): Promise<HiveVote | null> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const post = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [author, permlink]);
+    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
     
     if (!post) return null;
     
@@ -143,17 +138,17 @@ export async function checkUserVote(author: string, permlink: string, voter: str
 }
 
 /**
- * Get all votes for a post/comment using WorkerBee
+ * Get all votes for a post/comment using WorkerBee/Wax
  * @param author - Post author
  * @param permlink - Post permlink
  * @returns Array of votes
  */
 export async function getPostVotes(author: string, permlink: string): Promise<HiveVote[]> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const post = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [author, permlink]);
+    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
     
     if (!post || !(post as { active_votes?: HiveVote[] }).active_votes) return [];
     
@@ -165,16 +160,16 @@ export async function getPostVotes(author: string, permlink: string): Promise<Hi
 }
 
 /**
- * Get user's voting power using WorkerBee
+ * Get user's voting power using WorkerBee/Wax
  * @param username - Username
  * @returns Voting power percentage (0-100)
  */
 export async function getUserVotingPower(username: string): Promise<number> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const account = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_accounts', [[username]]);
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
     
     if (!account || account.length === 0) return 0;
     
@@ -214,7 +209,7 @@ export async function calculateOptimalVoteWeight(username: string, lastVoteTime?
 }
 
 /**
- * Get vote statistics for a post using WorkerBee
+ * Get vote statistics for a post using WorkerBee/Wax
  * @param author - Post author
  * @param permlink - Post permlink
  * @returns Vote statistics
@@ -229,10 +224,10 @@ export async function getVoteStats(author: string, permlink: string): Promise<{
   pendingPayout: number;
 }> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const post = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [author, permlink]);
+    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
     
     if (!post) {
       return {
@@ -276,7 +271,7 @@ export async function getVoteStats(author: string, permlink: string): Promise<{
 }
 
 /**
- * Get recent votes by a user using WorkerBee
+ * Get recent votes by a user using WorkerBee/Wax
  * @param username - Username
  * @param limit - Number of votes to fetch
  * @returns Recent votes
@@ -301,7 +296,7 @@ export async function getUserRecentVotes(username: string, limit: number = 20): 
 }
 
 /**
- * Check if user can vote (voting power, rate limits, etc.) using WorkerBee
+ * Check if user can vote (voting power, rate limits, etc.) using WorkerBee/Wax
  * @param username - Username
  * @returns Voting eligibility info
  */
@@ -361,13 +356,18 @@ export function getHiveSignerVoteUrl(voteData: VoteData): string {
  */
 export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
   try {
-    // Create multiple vote operations
-    const operations = votes.map(vote => ({
-      voter: vote.voter,
-      author: vote.author,
-      permlink: vote.permlink,
-      weight: vote.weight * 100,
-    }));
+    // Create multiple vote operations in Aioha format
+    // Aioha expects operations in a specific format - each operation should be an array
+    // Format: [operation_type, operation_data]
+    const operations = votes.map(vote => [
+      'vote',
+      {
+        voter: vote.voter,
+        author: vote.author,
+        permlink: vote.permlink,
+        weight: vote.weight * 100,
+      }
+    ]);
 
     // Use Aioha to sign and broadcast all operations in a single transaction
     const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(operations, 'posting');
@@ -395,10 +395,10 @@ export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
  */
 export async function getVoteHistory(author: string, permlink: string, limit: number = 50): Promise<HiveVote[]> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const post = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [author, permlink]);
+    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
     
     if (!post || !(post as { active_votes?: HiveVote[] }).active_votes) return [];
     

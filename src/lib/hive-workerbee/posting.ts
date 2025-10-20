@@ -1,18 +1,6 @@
-import { initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
-import { aioha } from '@/lib/aioha/config';
-
-// Types for Hive API responses
-interface HiveApiResponse<T = unknown> {
-  id: number;
-  result: T;
-  error?: {
-    code: number;
-    message: string;
-  };
-}
+import { getWaxClient, SPORTS_ARENA_CONFIG, initializeWorkerBeeClient } from './client';
 
 // Helper function to make direct HTTP calls to Hive API
-// WorkerBee is designed for event-driven automation, not direct API calls
 async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
   const response = await fetch('https://api.hive.blog', {
     method: 'POST',
@@ -31,7 +19,7 @@ async function makeHiveApiCall<T = unknown>(api: string, method: string, params:
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   
-  const result: HiveApiResponse<T> = await response.json();
+  const result = await response.json();
   
   if (result.error) {
     throw new Error(`API error: ${result.error.message}`);
@@ -39,6 +27,7 @@ async function makeHiveApiCall<T = unknown>(api: string, method: string, params:
   
   return result.result;
 }
+import { aioha } from '@/lib/aioha/config';
 // import { Wax } from '@hiveio/wax'; // Not needed for basic posting operations
 
 // Types matching the original posting.ts interface
@@ -93,9 +82,15 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
  */
 export async function publishPost(postData: PostData): Promise<PublishResult> {
   try {
+    console.log('[publishPost] Starting post publication:', postData);
+    
     if (!aioha) {
+      console.error('[publishPost] Aioha is not available:', aioha);
       throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
     }
+
+    console.log('[publishPost] Aioha instance:', aioha);
+    console.log('[publishPost] Aioha methods:', Object.keys(aioha as object));
 
     // Generate unique permlink
     const permlink = generateUniquePermlink(postData.title);
@@ -144,7 +139,31 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
     };
 
     // Use Aioha to sign and broadcast the transaction
-    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx([operation], 'posting');
+    // Aioha expects operations in a specific format - each operation should be an array
+    // Format: [operation_type, operation_data]
+    const operations = [
+      ['post', operation]
+    ];
+    
+    console.log('[publishPost] Operations array:', operations);
+    
+    // Check if signAndBroadcastTx method exists
+    if (typeof (aioha as any)?.signAndBroadcastTx !== 'function') {
+      console.error('[publishPost] signAndBroadcastTx method not available on Aioha instance');
+      throw new Error("Aioha signAndBroadcastTx method is not available. Please check your authentication.");
+    }
+
+    // Use Aioha to sign and broadcast the transaction
+    console.log('[publishPost] Attempting to sign and broadcast transaction...');
+    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(operations, 'posting');
+    
+    console.log('[publishPost] Broadcast result:', result);
+    
+    // Check if the result indicates success
+    if (!result || (result as any)?.error) {
+      console.error('[publishPost] Transaction failed:', result);
+      throw new Error(`Transaction failed: ${(result as any)?.error || 'Unknown error'}`);
+    }
     
     // Generate post URL
     const url = `https://hive.blog/@${postData.author}/${permlink}`;
@@ -169,6 +188,7 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
 /**
  * Publish a comment/reply to an existing post using Aioha
  * @param commentData - Comment data
+ * @param aiohaInstance - Aioha instance (optional, will use default if not provided)
  * @returns Publish result
  */
 export async function publishComment(
@@ -178,16 +198,28 @@ export async function publishComment(
     parentAuthor: string;
     parentPermlink: string;
     jsonMetadata?: string;
-  }
+  },
+  aiohaInstance?: unknown
 ): Promise<PublishResult> {
   try {
-    if (!aioha) {
+    console.log('[publishComment] Starting comment publication:', commentData);
+    
+    // Use provided instance or fall back to default
+    const aiohaToUse = aiohaInstance || (await import('@/lib/aioha/config')).aioha;
+    
+    if (!aiohaToUse) {
+      console.error('[publishComment] Aioha is not available:', aiohaToUse);
       throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
     }
+
+    console.log('[publishComment] Aioha instance:', aiohaToUse);
+    console.log('[publishComment] Aioha methods:', Object.keys(aiohaToUse as object));
 
     // Generate permlink for comment (timestamp-based)
     const timestamp = Date.now();
     const permlink = `re-${commentData.parentAuthor}-${commentData.parentPermlink}-${timestamp}`;
+    
+    console.log('[publishComment] Generated permlink:', permlink);
     
     // Build JSON metadata for comment
     const metadata = {
@@ -217,8 +249,46 @@ export async function publishComment(
       allow_curation_rewards: true,
     };
 
+    console.log('[publishComment] Operation to broadcast:', operation);
+
+    // Check if signAndBroadcastTx method exists
+    if (typeof (aiohaToUse as any)?.signAndBroadcastTx !== 'function') {
+      console.error('[publishComment] signAndBroadcastTx method not available on Aioha instance');
+      throw new Error("Aioha signAndBroadcastTx method is not available. Please check your authentication.");
+    }
+
     // Use Aioha to sign and broadcast the transaction
-    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx([operation], 'posting');
+    console.log('[publishComment] Attempting to sign and broadcast transaction...');
+    
+    // Aioha expects operations in a specific format - each operation should be an array
+    // Format: [operation_type, operation_data]
+    const operations = [
+      ['comment', {
+        parent_author: commentData.parentAuthor,
+        parent_permlink: commentData.parentPermlink,
+        author: commentData.author,
+        permlink,
+        title: '', // Comments don't have titles
+        body: commentData.body,
+        json_metadata: JSON.stringify(metadata),
+        max_accepted_payout: '1000000.000 HBD',
+        percent_hbd: 10000,
+        allow_votes: true,
+        allow_curation_rewards: true,
+      }]
+    ];
+    
+    console.log('[publishComment] Operations array:', operations);
+    
+    const result = await (aiohaToUse as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(operations, 'posting');
+    
+    console.log('[publishComment] Broadcast result:', result);
+    
+    // Check if the result indicates success
+    if (!result || (result as any)?.error) {
+      console.error('[publishComment] Transaction failed:', result);
+      throw new Error(`Transaction failed: ${(result as any)?.error || 'Unknown error'}`);
+    }
     
     // Generate comment URL
     const url = `https://hive.blog/@${commentData.author}/${permlink}`;
@@ -257,11 +327,11 @@ export async function updatePost(
   _postingKey: string
 ): Promise<PublishResult> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
     
     // Get existing post to preserve some data
-    const existingPost = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [updateData.author, updateData.permlink]);
+    const existingPost = await makeHiveApiCall('condenser_api', 'get_content', [updateData.author, updateData.permlink]);
     if (!existingPost) {
       throw new Error('Post not found');
     }
@@ -363,11 +433,11 @@ export async function canUserPost(username: string): Promise<{
   message?: string;
 }> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
     // Use condenser_api.get_accounts to get account info including RC
-    const accountResult = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_accounts', [[username]]);
+    const accountResult = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
     const account = accountResult && accountResult.length > 0 ? accountResult[0] : null;
     
     if (!account) {
@@ -395,7 +465,7 @@ export async function canUserPost(username: string): Promise<{
       // Try to get RC data using condenser_api.get_account (singular)
       try {
         console.log(`[canUserPost] Trying condenser_api.get_account for RC data...`);
-        const accountWithRc = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_account', [username]);
+        const accountWithRc = await makeHiveApiCall('condenser_api', 'get_account', [username]) as any;
         console.log(`[canUserPost] get_account response fields:`, Object.keys(accountWithRc));
         
         if (accountWithRc && accountWithRc.rc_manabar && accountWithRc.max_rc) {
@@ -424,11 +494,11 @@ export async function canUserPost(username: string): Promise<{
       // Try rc_api with different parameter format
       try {
         console.log(`[canUserPost] Trying rc_api.find_rc_accounts with different format...`);
-        const rcResult = await makeHiveApiCall<Record<string, unknown>>('rc_api', 'find_rc_accounts', [username]);
+        const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [username]);
         console.log(`[canUserPost] rc_api response:`, rcResult);
         
-        if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {
-          const rcData = rcResult.rc_accounts[0] as { rc_manabar?: { current_mana: string }; max_rc?: string };
+        if (rcResult && (rcResult as any).rc_accounts && Array.isArray((rcResult as any).rc_accounts) && (rcResult as any).rc_accounts.length > 0) {
+          const rcData = (rcResult as any).rc_accounts[0] as { rc_manabar?: { current_mana: string }; max_rc?: string };
           if (rcData.rc_manabar && rcData.max_rc) {
             const rcPercentage = (parseFloat(rcData.rc_manabar.current_mana) / parseFloat(rcData.max_rc)) * 100;
             console.log(`[canUserPost] RC from rc_api: ${rcPercentage.toFixed(2)}%`);

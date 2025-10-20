@@ -36,6 +36,7 @@ export const queryKeys = {
     all: ['comments'] as const,
     lists: () => [...queryKeys.comments.all, 'list'] as const,
     list: (postId: string) => [...queryKeys.comments.lists(), postId] as const,
+    user: (username: string) => [...queryKeys.comments.all, 'user', username] as const,
   },
   users: {
     all: ['users'] as const,

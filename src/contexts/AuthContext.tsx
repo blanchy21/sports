@@ -15,6 +15,7 @@ const AuthContext = createContext<AuthState & {
   hiveUser: HiveAuthUser | null;
   setHiveUser: (hiveUser: HiveAuthUser | null) => void;
   refreshHiveAccount: () => Promise<void>;
+  isClient: boolean;
 } | undefined>(undefined);
 
 export const useAuth = () => {
@@ -34,9 +35,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [authType, setAuthType] = useState<AuthType>("guest");
   const [isLoading, setIsLoading] = useState(true);
   const [hiveUser, setHiveUser] = useState<HiveAuthUser | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const { aioha, isInitialized } = useAioha();
 
   useEffect(() => {
+    // Mark as client-side
+    setIsClient(true);
+    
     // Check for existing auth state in localStorage
     const savedAuth = localStorage.getItem("authState");
     if (savedAuth) {
@@ -416,6 +421,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     hiveUser,
     setHiveUser,
     refreshHiveAccount,
+    isClient,
   };
 
   return (

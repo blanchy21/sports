@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AiohaProvider } from "@/contexts/AiohaProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PriceProvider } from "@/contexts/PriceContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ToastProvider } from "@/components/ui/Toast";
 import { QueryClientProvider } from "@/lib/react-query/QueryClientProvider";
 import { ModalProvider } from "@/components/modals/ModalProvider";
@@ -29,13 +30,15 @@ export default function RootLayout({
           <ThemeProvider>
             <AiohaProvider>
               <AuthProvider>
-                <PriceProvider>
-                  <ToastProvider>
-                    <ModalProvider>
-                      {children}
-                    </ModalProvider>
-                  </ToastProvider>
-                </PriceProvider>
+                <NotificationProvider>
+                  <PriceProvider>
+                    <ToastProvider>
+                      <ModalProvider>
+                        {children}
+                      </ModalProvider>
+                    </ToastProvider>
+                  </PriceProvider>
+                </NotificationProvider>
               </AuthProvider>
             </AiohaProvider>
           </ThemeProvider>

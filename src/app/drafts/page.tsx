@@ -126,7 +126,7 @@ export default function DraftsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {draft.tags.map((tag) => (
+                      {Array.isArray(draft.tags) && draft.tags.map((tag) => (
                         <span
                           key={tag}
                           className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground"

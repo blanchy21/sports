@@ -1,0 +1,194 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { useRealtime, useNewPosts, useNewVotes, useNewComments } from '@/hooks/useRealtime';
+import { RealtimeEvent } from '@/lib/hive-workerbee/realtime';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Activity, MessageCircle, Heart, Zap } from 'lucide-react';
+
+interface RealtimeFeedProps {
+  className?: string;
+}
+
+export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
+  const [events, setEvents] = useState<RealtimeEvent[]>([]);
+  const [isMonitoring, setIsMonitoring] = useState(false);
+  const { startMonitoring, stopMonitoring, getStatus } = useRealtime();
+
+  // Monitor new posts
+  useNewPosts((event) => {
+    console.log('[RealtimeFeed] New post:', event);
+    setEvents(prev => [event, ...prev.slice(0, 49)]); // Keep last 50 events
+  }, isMonitoring);
+
+  // Monitor new votes
+  useNewVotes((event) => {
+    console.log('[RealtimeFeed] New vote:', event);
+    setEvents(prev => [event, ...prev.slice(0, 49)]);
+  }, isMonitoring);
+
+  // Monitor new comments
+  useNewComments((event) => {
+    console.log('[RealtimeFeed] New comment:', event);
+    setEvents(prev => [event, ...prev.slice(0, 49)]);
+  }, isMonitoring);
+
+  // Check monitoring status on mount
+  useEffect(() => {
+    const status = getStatus();
+    setIsMonitoring(status.isRunning);
+  }, [getStatus]);
+
+  const handleStartMonitoring = async () => {
+    try {
+      await startMonitoring();
+      setIsMonitoring(true);
+    } catch (error) {
+      console.error('Failed to start monitoring:', error);
+    }
+  };
+
+  const handleStopMonitoring = async () => {
+    try {
+      await stopMonitoring();
+      setIsMonitoring(false);
+    } catch (error) {
+      console.error('Failed to stop monitoring:', error);
+    }
+  };
+
+  const clearEvents = () => {
+    setEvents([]);
+  };
+
+  const formatTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString();
+  };
+
+  const getEventIcon = (event: RealtimeEvent) => {
+    switch (event.type) {
+      case 'new_post':
+        return <Activity className="h-4 w-4 text-blue-500" />;
+      case 'new_vote':
+        return <Heart className="h-4 w-4 text-red-500" />;
+      case 'new_comment':
+        return <MessageCircle className="h-4 w-4 text-green-500" />;
+      default:
+        return <Zap className="h-4 w-4 text-yellow-500" />;
+    }
+  };
+
+  const getEventColor = (event: RealtimeEvent) => {
+    switch (event.type) {
+      case 'new_post':
+        return 'bg-blue-50 border-blue-200';
+      case 'new_vote':
+        return 'bg-red-50 border-red-200';
+      case 'new_comment':
+        return 'bg-green-50 border-green-200';
+      default:
+        return 'bg-gray-50 border-gray-200';
+    }
+  };
+
+  return (
+    <div className={`space-y-4 ${className}`}>
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Zap className="h-5 w-5" />
+            Real-time Activity
+          </h3>
+          <div className="flex items-center gap-2">
+            <Badge variant={isMonitoring ? 'default' : 'secondary'}>
+              {isMonitoring ? 'Live' : 'Stopped'}
+            </Badge>
+            {isMonitoring ? (
+              <Button onClick={handleStopMonitoring} variant="outline" size="sm">
+                Stop
+              </Button>
+            ) : (
+              <Button onClick={handleStartMonitoring} size="sm">
+                Start
+              </Button>
+            )}
+            {events.length > 0 && (
+              <Button onClick={clearEvents} variant="outline" size="sm">
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {events.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            {isMonitoring ? 'Waiting for activity...' : 'Start monitoring to see real-time activity'}
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {events.map((event, index) => (
+              <div
+                key={index}
+                className={`p-3 rounded-lg border ${getEventColor(event)}`}
+              >
+                <div className="flex items-start gap-3">
+                  {getEventIcon(event)}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className="text-xs">
+                        {event.type.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                      <span className="text-xs text-gray-500">
+                        {formatTime('created' in event.data ? event.data.created : event.data.timestamp || new Date().toISOString())}
+                      </span>
+                    </div>
+                    
+                    {event.type === 'new_post' && (
+                      <div>
+                        <p className="font-medium text-sm">
+                          New post by @{event.data.author}
+                        </p>
+                        <p className="text-sm text-gray-600 truncate">
+                          {event.data.title}
+                        </p>
+                        {event.data.sportCategory && (
+                          <Badge variant="secondary" className="text-xs mt-1">
+                            {event.data.sportCategory}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    
+                    {event.type === 'new_vote' && (
+                      <div>
+                        <p className="font-medium text-sm">
+                          @{event.data.voter} voted on @{event.data.author}&apos;s post
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Weight: {event.data.weight}%
+                        </p>
+                      </div>
+                    )}
+                    
+                    {event.type === 'new_comment' && (
+                      <div>
+                        <p className="font-medium text-sm">
+                          New comment by @{event.data.author}
+                        </p>
+                        <p className="text-sm text-gray-600 truncate">
+                          {event.data.body}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+};

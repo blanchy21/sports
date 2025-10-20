@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -19,17 +19,22 @@ import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { AuthModal } from "@/components/AuthModal";
 import { SportsFilterPopup } from "@/components/SportsFilterPopup";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { cn } from "@/lib/utils";
 
 export const TopNavigation: React.FC = () => {
   const pathname = usePathname();
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { unreadCount } = useNotifications();
   const [showSportsPopup, setShowSportsPopup] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [selectedSport, setSelectedSport] = useState<string>("");
+  const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const handleToggleTheme = () => {
     toggleTheme();
@@ -133,9 +138,28 @@ export const TopNavigation: React.FC = () => {
 
           {user ? (
             <>
-              <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 hover:text-white w-16 h-16">
-                <Bell className="h-8 w-8" />
-              </Button>
+              <div className="relative">
+                <Button 
+                  ref={notificationButtonRef}
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="text-white/90 hover:bg-white/20 hover:text-white w-16 h-16 relative"
+                >
+                  <Bell className="h-8 w-8" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Button>
+                
+                <NotificationDropdown
+                  isOpen={showNotifications}
+                  onClose={() => setShowNotifications(false)}
+                  triggerRef={notificationButtonRef}
+                />
+              </div>
               
               <Link href="/publish" suppressHydrationWarning>
                 <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 hover:text-white w-16 h-16">

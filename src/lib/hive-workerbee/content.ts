@@ -1,14 +1,57 @@
-import { initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
+import { getWaxClient, SPORTS_ARENA_CONFIG } from './client';
 
-// Types for Hive API responses (unused but kept for future use)
-// interface HiveApiResponse<T = unknown> {
-//   id: number;
-//   result: T;
-//   error?: {
-//     code: number;
-//     message: string;
-//   };
-// }
+// Helper function to make direct HTTP calls to Hive API
+// This provides better error handling and fallback options
+async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
+  // List of Hive API nodes to try in order
+  const apiNodes = [
+    'https://api.hive.blog',
+    'https://api.deathwing.me',
+    'https://api.openhive.network',
+    'https://hive-api.arcange.eu'
+  ];
+
+  let lastError: Error | null = null;
+
+  for (const nodeUrl of apiNodes) {
+    try {
+      console.log(`[Hive API] Trying ${nodeUrl} for ${api}.${method}`);
+      
+      const response = await fetch(nodeUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: `${api}.${method}`,
+          params: params,
+          id: Math.floor(Math.random() * 1000000)
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status} from ${nodeUrl}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.error) {
+        throw new Error(`API error from ${nodeUrl}: ${result.error.message}`);
+      }
+      
+      console.log(`[Hive API] Success with ${nodeUrl} for ${api}.${method}`);
+      return result.result;
+    } catch (error) {
+      console.warn(`[Hive API] Failed with ${nodeUrl}:`, error);
+      lastError = error as Error;
+      // Continue to next node
+    }
+  }
+
+  // If all nodes failed, throw the last error
+  throw new Error(`All Hive API nodes failed. Last error: ${lastError?.message}`);
+}
 
 interface HiveVote {
   voter: string;
@@ -41,40 +84,6 @@ interface HivePost {
   parent_author: string;
   parent_permlink: string;
   author_reputation: string;
-}
-
-// Helper function to make direct HTTP calls to Hive API
-// WorkerBee is designed for event-driven automation, not direct API calls
-async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
-  const response = await fetch('https://api.hive.blog', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      method: `${api}.${method}`,
-      params: params,
-      id: Math.floor(Math.random() * 1000000)
-    })
-  });
-  
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  
-  const result = await response.json();
-  
-  if (result.error) {
-    console.error('Hive API Error Details:', {
-      method: `${api}.${method}`,
-      params: params,
-      error: result.error
-    });
-    throw new Error(`API error: ${result.error.message}`);
-  }
-  
-  return result.result;
 }
 
 // Types matching the original content.ts interface
@@ -173,21 +182,21 @@ function calculatePendingPayout(post: HivePost | SportsblockPost): number {
 }
 
 /**
- * Fetch posts from Sportsblock community using WorkerBee
+ * Fetch posts from Sportsblock community using WorkerBee/Wax
  * @param filters - Content filters
  * @returns Filtered posts
  */
 export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promise<ContentResult> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
     const limit = Math.min(filters.limit || 20, 100); // Max 100 posts per request
     let posts: HivePost[] = [];
     
     if (filters.author) {
       // Fetch posts by specific author
-      const accountPosts = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_discussions_by_author_before_date', [
+      const accountPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_author_before_date', [
         filters.author,
         filters.before || '',
         '',
@@ -196,10 +205,10 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       posts = (accountPosts || []) as unknown as HivePost[];
     } else {
       // Fetch posts from Sportsblock community
-      // Use the community ID instead of name
-      const communityPosts = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_discussions_by_created', [
+      // Use the community name instead of ID for get_discussions_by_created
+      const communityPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_created', [
         {
-          tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
+          tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
           limit: limit
         }
       ]);
@@ -255,18 +264,18 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
 }
 
 /**
- * Fetch trending posts from Sportsblock using WorkerBee
+ * Fetch trending posts from Sportsblock using WorkerBee/Wax
  * @param limit - Number of posts to fetch
  * @returns Trending posts
  */
 export async function fetchTrendingPosts(limit: number = 20): Promise<SportsblockPost[]> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const trendingPosts = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_discussions_by_trending', [
+    const trendingPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_trending', [
       {
-        tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
+        tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
         limit
       }
     ]);
@@ -285,18 +294,18 @@ export async function fetchTrendingPosts(limit: number = 20): Promise<Sportsbloc
 }
 
 /**
- * Fetch hot posts from Sportsblock using WorkerBee
+ * Fetch hot posts from Sportsblock using WorkerBee/Wax
  * @param limit - Number of posts to fetch
  * @returns Hot posts
  */
 export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost[]> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const hotPosts = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_discussions_by_hot', [
+    const hotPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_hot', [
       {
-        tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
+        tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
         limit
       }
     ]);
@@ -315,17 +324,17 @@ export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost
 }
 
 /**
- * Fetch a single post by author and permlink using WorkerBee
+ * Fetch a single post by author and permlink using WorkerBee/Wax
  * @param author - Post author
  * @param permlink - Post permlink
  * @returns Post data
  */
 export async function fetchPost(author: string, permlink: string): Promise<SportsblockPost | null> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const post = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [author, permlink]);
+    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
     
     if (!post || !isSportsblockPost(post as unknown as HivePost)) {
       return null;
@@ -343,7 +352,7 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
 }
 
 /**
- * Fetch comments for a post using WorkerBee
+ * Fetch comments for a post using WorkerBee/Wax
  * @param author - Post author
  * @param permlink - Post permlink
  * @param limit - Number of comments to fetch
@@ -351,12 +360,42 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
  */
 export async function fetchComments(author: string, permlink: string, limit: number = 20): Promise<HiveComment[]> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
-
-    const comments = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_content_replies', [author, permlink, limit]);
+    console.log(`[fetchComments] Fetching comments for ${author}/${permlink}`);
     
-    return (comments || []) as unknown as HiveComment[];
+    // Get Wax client
+    const wax = await getWaxClient();
+
+    // First, get direct replies to the post
+    const directReplies = await makeHiveApiCall('condenser_api', 'get_content_replies', [author, permlink]);
+    
+    console.log(`[fetchComments] Direct replies:`, Array.isArray(directReplies) ? directReplies.length : 0);
+    
+    if (!Array.isArray(directReplies) || directReplies.length === 0) {
+      return [];
+    }
+
+    // Now get nested replies for each direct reply
+    const allComments: unknown[] = [...directReplies];
+    
+    for (const reply of directReplies) {
+      try {
+        console.log(`[fetchComments] Fetching nested replies for ${reply.author}/${reply.permlink}`);
+        const nestedReplies = await makeHiveApiCall('condenser_api', 'get_content_replies', [reply.author, reply.permlink]);
+        
+        if (Array.isArray(nestedReplies) && nestedReplies.length > 0) {
+          console.log(`[fetchComments] Found ${nestedReplies.length} nested replies for ${reply.author}/${reply.permlink}`);
+          allComments.push(...nestedReplies);
+        }
+      } catch (error) {
+        console.warn(`[fetchComments] Error fetching nested replies for ${reply.author}/${reply.permlink}:`, error);
+        // Continue with other replies even if one fails
+      }
+    }
+    
+    console.log(`[fetchComments] Total comments found:`, allComments.length);
+    console.log(`[fetchComments] All comments:`, allComments);
+    
+    return allComments as unknown as HiveComment[];
   } catch (error) {
     console.error('Error fetching comments with WorkerBee:', error);
     throw error;

@@ -1,23 +1,6 @@
-import { initializeWorkerBeeClient } from './client';
+import { getWaxClient } from './client';
 
-// Types for Hive API responses (unused but kept for future use)
-// interface HiveApiResponse<T = unknown> {
-//   id: number;
-//   result: T;
-//   error?: {
-//     code: number;
-//     message: string;
-//   };
-// }
-
-interface VestingDelegation {
-  delegator: string;
-  delegatee: string;
-  vesting_shares: string;
-  min_delegation_time: string;
-}
-
-// Helper function to make direct HTTP calls to Hive API with fallback nodes
+// Helper function to make direct HTTP calls to Hive API
 // This provides better error handling and fallback options
 async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
   // List of Hive API nodes to try in order
@@ -68,6 +51,13 @@ async function makeHiveApiCall<T = unknown>(api: string, method: string, params:
 
   // If all nodes failed, throw the last error
   throw new Error(`All Hive API nodes failed. Last error: ${lastError?.message}`);
+}
+
+interface VestingDelegation {
+  delegator: string;
+  delegatee: string;
+  vesting_shares: string;
+  min_delegation_time: string;
 }
 
 // Types matching the original account.ts interface
@@ -181,7 +171,7 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
 }
 
 /**
- * Fetch complete user account data using WorkerBee
+ * Fetch complete user account data using WorkerBee/Wax
  * @param username - Hive username
  * @returns Complete user account data
  */
@@ -189,12 +179,12 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
   try {
     console.log(`[WorkerBee fetchUserAccount] Starting fetch for username: ${username}`);
     
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Initialize WorkerBee client and get Wax instance
+    const wax = await getWaxClient();
     
-    // Get account info using direct HTTP calls (WorkerBee's Wax API is complex, so we use direct calls)
+    // Get account info using Wax API
     console.log(`[WorkerBee fetchUserAccount] Fetching account info...`);
-    const account = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_accounts', [[username]]);
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
     
     if (!account || account.length === 0) {
       throw new Error(`Account ${username} not found`);
@@ -203,78 +193,25 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     const accountData = account[0] as Record<string, unknown>;
     console.log(`[WorkerBee fetchUserAccount] Account info received:`, accountData);
     console.log(`[WorkerBee fetchUserAccount] Available fields:`, Object.keys(accountData));
-    console.log(`[WorkerBee fetchUserAccount] Reputation field:`, accountData.reputation);
-    console.log(`[WorkerBee fetchUserAccount] All reputation-related fields:`, {
-      reputation: accountData.reputation,
-      rep: accountData.rep,
-      reputation_score: accountData.reputation_score,
-      rep_score: accountData.rep_score
-    });
-    console.log(`[WorkerBee fetchUserAccount] Created date info:`, {
-      created: accountData.created,
-      createdType: typeof accountData.created,
-      isValidDate: accountData.created ? !isNaN(new Date(accountData.created as string).getTime()) : false
-    });
 
-    // Debug: Log all available fields in account data
-    console.log(`[WorkerBee fetchUserAccount] Available account fields:`, Object.keys(accountData));
-    console.log(`[WorkerBee fetchUserAccount] RC-related fields:`, {
-      rc_manabar: accountData.rc_manabar,
-      max_rc: accountData.max_rc,
-      rc_manabar_type: typeof accountData.rc_manabar,
-      max_rc_type: typeof accountData.max_rc
-    });
-
-    // Get resource credits - try multiple approaches
+    // Get resource credits using Wax API
     let rc = null;
-    
-    // First try: Check if account data already includes RC information
-    if (accountData.rc_manabar && accountData.max_rc) {
-      console.log(`[WorkerBee fetchUserAccount] RC data found in account data`);
-      rc = {
-        rc_manabar: accountData.rc_manabar,
-        max_rc: accountData.max_rc
-      };
-    } else {
-      // Try to get RC data using condenser_api.get_account (singular)
-      try {
-        console.log(`[WorkerBee fetchUserAccount] Trying condenser_api.get_account for RC data...`);
-        const accountWithRc = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_account', [username]);
-        console.log(`[WorkerBee fetchUserAccount] get_account response fields:`, Object.keys(accountWithRc));
-        
-        if (accountWithRc && accountWithRc.rc_manabar && accountWithRc.max_rc) {
-          console.log(`[WorkerBee fetchUserAccount] RC data found in get_account`);
-          rc = {
-            rc_manabar: accountWithRc.rc_manabar,
-            max_rc: accountWithRc.max_rc
-          };
-        }
-      } catch (getAccountError) {
-        console.warn(`[WorkerBee fetchUserAccount] Failed to get RC data from get_account:`, getAccountError);
+    try {
+      console.log(`[WorkerBee fetchUserAccount] Fetching RC data...`);
+      const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [username]) as any;
+      if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {
+        rc = rcResult.rc_accounts[0] as Record<string, unknown>;
+        console.log(`[WorkerBee fetchUserAccount] RC data received:`, rc);
       }
-      
-      // If still no RC data found, try rc_api with different parameter format
-      if (!rc) {
-        try {
-          console.log(`[WorkerBee fetchUserAccount] Trying rc_api.find_rc_accounts with different format...`);
-          const rcResult = await makeHiveApiCall<Record<string, unknown>>('rc_api', 'find_rc_accounts', [username]);
-          console.log(`[WorkerBee fetchUserAccount] rc_api response:`, rcResult);
-          
-          if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {
-            rc = rcResult.rc_accounts[0] as Record<string, unknown>;
-            console.log(`[WorkerBee fetchUserAccount] RC data received from rc_api:`, rc);
-          }
-        } catch (rcApiError) {
-          console.warn(`[WorkerBee fetchUserAccount] Failed to get RC data from rc_api:`, rcApiError);
-        }
-      }
+    } catch (rcError) {
+      console.warn(`[WorkerBee fetchUserAccount] Failed to get RC data:`, rcError);
     }
 
-    // Get reputation using the correct API method
+    // Get reputation using Wax API
     let accountReputation = null;
     try {
       console.log(`[WorkerBee fetchUserAccount] Fetching reputation...`);
-      const reputationResult = await makeHiveApiCall<Array<{account: string; reputation: string}>>('condenser_api', 'get_account_reputations', [username, 1]);
+      const reputationResult = await makeHiveApiCall('condenser_api', 'get_account_reputations', [username, 1]) as any[];
       if (reputationResult && reputationResult.length > 0) {
         accountReputation = reputationResult[0];
         console.log(`[WorkerBee fetchUserAccount] Reputation data received:`, accountReputation);
@@ -283,11 +220,11 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       console.warn(`[WorkerBee fetchUserAccount] Failed to get reputation:`, error);
     }
 
-    // Get follow stats
+    // Get follow stats using Wax API
     let followStats = null;
     try {
       console.log(`[WorkerBee fetchUserAccount] Fetching follow stats...`);
-      const followResult = await makeHiveApiCall<{follower_count: number; following_count: number}>('condenser_api', 'get_follow_count', [username]);
+      const followResult = await makeHiveApiCall('condenser_api', 'get_follow_count', [username]) as any;
       followStats = {
         followers: followResult.follower_count || 0,
         following: followResult.following_count || 0
@@ -295,18 +232,14 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       console.log(`[WorkerBee fetchUserAccount] Follow stats received:`, followStats);
     } catch (error) {
       console.warn(`[WorkerBee fetchUserAccount] Failed to get follow stats:`, error);
-      // Set default values if follow stats fail
-      followStats = {
-        followers: 0,
-        following: 0
-      };
+      followStats = { followers: 0, following: 0 };
     }
 
-    // Get HBD savings APR
+    // Get HBD savings APR using Wax API
     let savingsApr = 0;
     try {
       console.log(`[WorkerBee fetchUserAccount] Fetching HBD savings APR...`);
-      const globalProps = await makeHiveApiCall<{hbd_interest_rate: number}>('condenser_api', 'get_dynamic_global_properties');
+      const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as any;
       savingsApr = (globalProps.hbd_interest_rate || 0) / 100;
       console.log(`[WorkerBee fetchUserAccount] HBD savings APR received:`, savingsApr);
     } catch (error) {
@@ -337,10 +270,10 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     
     console.log(`[WorkerBee fetchUserAccount] Merged profile data:`, profile);
 
-    // Get global properties for HIVE POWER calculation
+    // Get global properties for HIVE POWER calculation using Wax API
     let globalProps = null;
     try {
-      globalProps = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_dynamic_global_properties');
+      globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as any;
     } catch {
       console.warn('Failed to get global properties for HIVE POWER calculation');
     }
@@ -456,7 +389,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
 }
 
 /**
- * Fetch user balances only (lightweight) using WorkerBee
+ * Fetch user balances only (lightweight) using WorkerBee/Wax
  * @param username - Hive username
  * @returns User balances
  */
@@ -467,13 +400,13 @@ export async function fetchUserBalances(username: string): Promise<{
   resourceCredits: number;
 } | null> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
     // Get account and RC data in parallel
     const [account, rc] = await Promise.all([
-      makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_accounts', [[username]]),
-      makeHiveApiCall<{rc_accounts: Array<Record<string, unknown>>}>('rc_api', 'find_rc_accounts', [username]).then(result => 
+      makeHiveApiCall('condenser_api', 'get_accounts', [[username]]).then((result: any) => result as any[]),
+      makeHiveApiCall('rc_api', 'find_rc_accounts', [username]).then((result: any) =>
         result && result.rc_accounts && result.rc_accounts.length > 0 ? result.rc_accounts[0] as Record<string, unknown> : null
       ).catch(() => null)
     ]);
@@ -488,7 +421,7 @@ export async function fetchUserBalances(username: string): Promise<{
 
     let hivePower = 0;
     if (accountData.vesting_shares) {
-      const globalProps = await makeHiveApiCall<{total_vesting_shares: string; total_vesting_fund_hive: string}>('condenser_api', 'get_dynamic_global_properties');
+      const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as any;
       hivePower = vestingSharesToHive(
         accountData.vesting_shares as string,
         globalProps.total_vesting_shares,
@@ -513,7 +446,7 @@ export async function fetchUserBalances(username: string): Promise<{
 }
 
 /**
- * Fetch user profile metadata only using WorkerBee
+ * Fetch user profile metadata only using WorkerBee/Wax
  * @param username - Hive username
  * @returns User profile data
  */
@@ -526,10 +459,10 @@ export async function fetchUserProfile(username: string): Promise<{
   profileImage?: string;
 } | null> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const account = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_accounts', [[username]]);
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
     if (!account || account.length === 0) return null;
 
     const accountData = account[0];
@@ -542,16 +475,16 @@ export async function fetchUserProfile(username: string): Promise<{
 }
 
 /**
- * Check if user exists on Hive blockchain using WorkerBee
+ * Check if user exists on Hive blockchain using WorkerBee/Wax
  * @param username - Username to check
  * @returns True if user exists
  */
 export async function userExists(username: string): Promise<boolean> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const account = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_accounts', [[username]]);
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
     return account && account.length > 0;
   } catch {
     return false;
@@ -559,7 +492,7 @@ export async function userExists(username: string): Promise<boolean> {
 }
 
 /**
- * Get user's followers and following counts using WorkerBee
+ * Get user's followers and following counts using WorkerBee/Wax
  * @param username - Hive username
  * @returns Followers and following counts
  */
@@ -569,14 +502,14 @@ export async function getUserFollowStats(username: string): Promise<{
 } | null> {
   try {
     console.log(`[WorkerBee getUserFollowStats] Fetching follow stats for: ${username}`);
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const result = await makeHiveApiCall('condenser_api', 'get_follow_count', [username]);
+    const result = await makeHiveApiCall('condenser_api', 'get_follow_count', [username]) as any;
     console.log(`[WorkerBee getUserFollowStats] Raw follow stats result:`, result);
 
-    const followers = (result as { follower_count?: number }).follower_count || 0;
-    const following = (result as { following_count?: number }).following_count || 0;
+    const followers = result.follower_count || 0;
+    const following = result.following_count || 0;
 
     console.log(`[WorkerBee getUserFollowStats] Follow stats: ${followers} followers, ${following} following`);
     
@@ -591,16 +524,16 @@ export async function getUserFollowStats(username: string): Promise<{
 }
 
 /**
- * Fetch HBD savings APR from global properties using WorkerBee
+ * Fetch HBD savings APR from global properties using WorkerBee/Wax
  * @returns HBD savings interest rate as percentage
  */
 export async function getHbdSavingsApr(): Promise<number> {
   try {
     console.log(`[WorkerBee getHbdSavingsApr] Fetching HBD savings APR...`);
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
-    const globalProps = await makeHiveApiCall<{hbd_interest_rate: number}>('condenser_api', 'get_dynamic_global_properties');
+    const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as any;
     const apr = (globalProps.hbd_interest_rate || 0) / 100;
     console.log(`[WorkerBee getHbdSavingsApr] HBD savings APR: ${apr}%`);
     return apr;
@@ -611,7 +544,7 @@ export async function getHbdSavingsApr(): Promise<number> {
 }
 
 /**
- * Get user's delegation information using WorkerBee
+ * Get user's delegation information using WorkerBee/Wax
  * @param username - Hive username
  * @returns Delegation info
  */
@@ -620,14 +553,14 @@ export async function getUserDelegations(username: string): Promise<{
   given: Array<{ delegatee: string; vesting_shares: string; min_delegation_time: string }>;
 } | null> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
 
     // Get received delegations
-    const receivedDelegations = await makeHiveApiCall('condenser_api', 'get_vesting_delegations', [username, '', 100]);
+    const receivedDelegations = await makeHiveApiCall('condenser_api', 'get_vesting_delegations', [username, '', 100]) as any[];
     
     // Get given delegations (expiring delegations)
-    const givenDelegations = await makeHiveApiCall('condenser_api', 'get_expiring_vesting_delegations', [username, new Date().toISOString(), 100]);
+    const givenDelegations = await makeHiveApiCall('condenser_api', 'get_expiring_vesting_delegations', [username, new Date().toISOString(), 100]) as any[];
 
     return {
       received: (receivedDelegations as VestingDelegation[]).map((d) => ({
@@ -648,7 +581,7 @@ export async function getUserDelegations(username: string): Promise<{
 }
 
 /**
- * Update user profile metadata using WorkerBee
+ * Update user profile metadata using WorkerBee/Wax
  * @param username - Username
  * @param profileData - Profile data to update
  * @param postingKey - User's posting key
@@ -667,14 +600,14 @@ export async function updateUserProfile(
   postingKey: string
 ): Promise<{ success: boolean; transactionId?: string; error?: string }> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    // Get Wax client
+    const wax = await getWaxClient();
     
     // Note: postingKey parameter is required for actual transaction signing
     console.log('Profile update for user:', username, 'with posting key:', postingKey ? 'provided' : 'missing');
 
     // Get current account to preserve existing metadata
-    const account = await makeHiveApiCall<Array<Record<string, unknown>>>('condenser_api', 'get_accounts', [[username]]);
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
     if (!account || account.length === 0) throw new Error('Account not found');
 
     const accountData = account[0];
@@ -703,9 +636,6 @@ export async function updateUserProfile(
       active: accountData.active,
     };
 
-    // Initialize WorkerBee client for broadcasting
-    await initializeWorkerBeeClient();
-    
     // Broadcast transaction using WorkerBee
     // Note: This is a placeholder - actual broadcasting would require proper transaction formatting
     console.log('Profile update operation prepared:', operation);
