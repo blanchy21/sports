@@ -581,6 +581,253 @@ export async function getUserDelegations(username: string): Promise<{
 }
 
 /**
+ * Get account transaction history using WorkerBee/Wax
+ * @param username - Hive username
+ * @param limit - Number of operations to fetch (default: 50)
+ * @param start - Starting operation ID (optional)
+ * @returns Array of account operations
+ */
+export async function getAccountHistory(
+  username: string, 
+  limit: number = 50, 
+  start?: number
+): Promise<Array<{
+  id: number;
+  timestamp: string;
+  type: string;
+  operation: any;
+  blockNumber: number;
+  transactionId: string;
+}> | null> {
+  try {
+    console.log(`[WorkerBee getAccountHistory] Fetching history for: ${username}, limit: ${limit}, start: ${start}`);
+    
+    // Get account history using Hive API
+    const history = await makeHiveApiCall('condenser_api', 'get_account_history', [
+      username, 
+      start || -1, 
+      limit
+    ]) as Array<[number, any]>;
+    
+    console.log(`[WorkerBee getAccountHistory] Raw history received:`, history?.length || 0, 'operations');
+    
+    if (!history || !Array.isArray(history)) {
+      console.log(`[WorkerBee getAccountHistory] No history found for ${username}`);
+      return [];
+    }
+
+    // Transform the history data to a more usable format
+    const operations = history.map(([id, operationData]) => {
+      const { timestamp, op } = operationData;
+      const [operationType, operationDetails] = op;
+      
+      return {
+        id,
+        timestamp,
+        type: operationType,
+        operation: operationDetails,
+        blockNumber: operationData.block,
+        transactionId: operationData.trx_id
+      };
+    });
+
+    console.log(`[WorkerBee getAccountHistory] Processed ${operations.length} operations for ${username}`);
+    return operations;
+  } catch (error) {
+    console.error('Error fetching account history with WorkerBee:', error);
+    return null;
+  }
+}
+
+/**
+ * Convert VESTS to HIVE equivalent using current global properties
+ * @param vestingShares - VESTS amount as string
+ * @returns HIVE equivalent as number
+ */
+async function convertVestsToHive(vestingShares: string): Promise<number> {
+  try {
+    // Get global properties for conversion
+    const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as any;
+    return vestingSharesToHive(
+      vestingShares,
+      globalProps.total_vesting_shares,
+      globalProps.total_vesting_fund_hive
+    );
+  } catch (error) {
+    console.error('Error converting VESTS to HIVE:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get recent operations for an account using WorkerBee/Wax
+ * @param username - Hive username
+ * @param limit - Number of recent operations to fetch (default: 500)
+ * @returns Array of recent account operations
+ */
+export async function getRecentOperations(
+  username: string, 
+  limit: number = 500
+): Promise<Array<{
+  id: number;
+  timestamp: string;
+  type: string;
+  operation: any;
+  blockNumber: number;
+  transactionId: string;
+  description: string;
+}> | null> {
+  try {
+    console.log(`[WorkerBee getRecentOperations] Fetching recent operations for: ${username}`);
+    
+    const operations = await getAccountHistory(username, limit);
+    if (!operations) return null;
+
+    // Define monetary operation types (transactions that involve actual money/assets changes)
+    const monetaryOperationTypes = [
+      'transfer',                    // HIVE/HBD transfers
+      'claim_reward_balance',        // Claiming rewards (actual wallet balance change) - shows final claimed amounts
+      'author_reward',               // Author rewards (actual balance change) - contains actual payout amounts
+      'comment_reward',              // Comment rewards (actual balance change)
+      'producer_reward',             // Block producer rewards (actual balance change)
+      'fill_convert_request',        // HBD conversion (actual balance change)
+      'fill_order',                  // Market orders (actual balance change)
+      'fill_vesting_withdraw',       // Power down withdrawals (actual balance change)
+      'fill_transfer_from_savings',  // Savings withdrawals (actual balance change)
+      'delegate_vesting_shares',     // HP delegations (has monetary value)
+      'return_vesting_delegation',   // Return HP delegations (actual balance change)
+      'power_up',                    // Buying HP (monetary - actual balance change)
+      'power_down',                  // Selling HP (monetary - actual balance change)
+      'transfer_to_vesting',         // Converting HIVE to HP (actual balance change)
+      'transfer_to_savings',         // Moving to savings (actual balance change)
+      'transfer_from_savings',       // Moving from savings (actual balance change)
+      'cancel_transfer_from_savings', // Cancel savings withdrawal
+      'set_withdraw_vesting_route',  // Set power down route
+      'escrow_transfer',             // Escrow transfers (actual balance change)
+      'escrow_release',              // Escrow releases (actual balance change)
+      'escrow_dispute',              // Escrow disputes
+      'escrow_approve',              // Escrow approvals
+      'convert',                     // HBD conversion requests
+      'collateralized_convert',      // Collateralized conversions
+      'recurrent_transfer',          // Recurring transfers (actual balance change)
+      'fill_recurrent_transfer',     // Recurring transfer fills (actual balance change)
+      // Note: Removed 'curation_reward' to avoid double counting with 'claim_reward_balance'
+      // Note: Removed 'comment_payout_update' as it doesn't contain actual payout amounts
+      // Note: Removed 'effective_comment_vote' as it shows potential payouts, not actual claimed rewards
+    ];
+
+    // Filter for monetary operations only
+    const monetaryOperations = operations.filter(op => 
+      monetaryOperationTypes.includes(op.type)
+    );
+
+    console.log(`[WorkerBee getRecentOperations] Filtered ${monetaryOperations.length} monetary operations from ${operations.length} total operations for ${username}`);
+
+    // Process operations to add human-readable descriptions
+    const processedOperations = await Promise.all(monetaryOperations.map(async (op) => {
+      let description = `${op.type}`;
+      
+      // Add more descriptive text based on operation type
+      switch (op.type) {
+        case 'transfer':
+          description = `Transfer ${op.operation.amount} from ${op.operation.from} to ${op.operation.to}`;
+          break;
+        case 'claim_reward_balance':
+          const rewards = [];
+          if (op.operation.reward_hive && op.operation.reward_hive !== '0.000 HIVE') {
+            rewards.push(op.operation.reward_hive);
+          }
+          if (op.operation.reward_hbd && op.operation.reward_hbd !== '0.000 HBD') {
+            rewards.push(op.operation.reward_hbd);
+          }
+          if (op.operation.reward_vests && op.operation.reward_vests !== '0.000000 VESTS') {
+            // Convert VESTS to HIVE equivalent
+            const hiveAmount = await convertVestsToHive(op.operation.reward_vests);
+            rewards.push(`${hiveAmount.toFixed(3)} HIVE`);
+          }
+          description = rewards.length > 0 ? `Claimed rewards: ${rewards.join(', ')}` : 'Claimed rewards';
+          break;
+        case 'fill_convert_request':
+          description = `Converted ${op.operation.amount_in} to ${op.operation.amount_out}`;
+          break;
+        case 'fill_order':
+          description = `Market order: ${op.operation.current_pays} for ${op.operation.open_pays}`;
+          break;
+        case 'fill_vesting_withdraw':
+          description = `Power down withdrawal: ${op.operation.deposited}`;
+          break;
+        case 'fill_transfer_from_savings':
+          description = `Savings withdrawal: ${op.operation.amount}`;
+          break;
+        case 'delegate_vesting_shares':
+          description = `Delegated ${op.operation.vesting_shares} to ${op.operation.delegatee}`;
+          break;
+        case 'return_vesting_delegation':
+          description = `Returned delegation: ${op.operation.vesting_shares}`;
+          break;
+        case 'power_up':
+          description = `Powered up ${op.operation.vesting_shares}`;
+          break;
+        case 'power_down':
+          description = `Started power down: ${op.operation.vesting_shares}`;
+          break;
+        case 'transfer_to_vesting':
+          description = `Converted ${op.operation.amount} to HP`;
+          break;
+        case 'transfer_to_savings':
+          description = `Transferred ${op.operation.amount} to savings`;
+          break;
+        case 'transfer_from_savings':
+          description = `Withdrew ${op.operation.amount} from savings`;
+          break;
+        case 'cancel_transfer_from_savings':
+          description = `Cancelled savings withdrawal`;
+          break;
+        case 'set_withdraw_vesting_route':
+          description = `Set power down route to ${op.operation.to_account}`;
+          break;
+        case 'producer_reward':
+          // Convert VESTS to HIVE equivalent
+          const producerHiveAmount = await convertVestsToHive(op.operation.vesting_shares);
+          description = `Block producer reward: ${producerHiveAmount.toFixed(3)} HIVE`;
+          break;
+        case 'author_reward':
+          description = `Author reward: ${op.operation.hbd_payout}, ${op.operation.hive_payout}`;
+          break;
+        case 'comment_reward':
+          description = `Comment reward: ${op.operation.hbd_payout}, ${op.operation.hive_payout}`;
+          break;
+        case 'escrow_transfer':
+          description = `Escrow transfer: ${op.operation.amount}`;
+          break;
+        case 'escrow_release':
+          description = `Escrow release: ${op.operation.amount}`;
+          break;
+        case 'convert':
+          description = `Conversion request: ${op.operation.amount}`;
+          break;
+        case 'recurrent_transfer':
+          description = `Recurring transfer: ${op.operation.amount}`;
+          break;
+        default:
+          description = op.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      }
+
+      return {
+        ...op,
+        description
+      };
+    }));
+
+    console.log(`[WorkerBee getRecentOperations] Processed ${processedOperations.length} monetary operations for ${username}`);
+    return processedOperations;
+  } catch (error) {
+    console.error('Error fetching recent operations with WorkerBee:', error);
+    return null;
+  }
+}
+
+/**
  * Update user profile metadata using WorkerBee/Wax
  * @param username - Username
  * @param profileData - Profile data to update

@@ -1,0 +1,1811 @@
+
+> sports@0.1.0 dev
+> next dev --turbopack --port 3000
+
+   ▲ Next.js 15.5.4 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.51:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+   Using tsconfig file: ./tsconfig.json
+ ✓ Ready in 729ms
+ ⚠ Webpack is configured while Turbopack is not, which may cause problems.
+ ⚠ See instructions if you need to configure Turbopack:
+  https://nextjs.org/docs/app/api-reference/next-config-js/turbopack
+
+ ○ Compiling /api/hive/account/history ...
+ ✓ Compiled /api/hive/account/history in 688ms
+[API] Fetching transaction history for blanchy, limit: 5
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 5, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 5 operations
+[WorkerBee getAccountHistory] Processed 5 operations for blanchy
+[WorkerBee getRecentOperations] Processed 5 recent operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=5 200 in 1503ms
+ ○ Compiling /wallet ...
+(node:73516) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ Compiled /wallet in 2.6s
+ GET /wallet 200 in 2862ms
+[API] Fetching transaction history for gtg, limit: 3
+[WorkerBee getRecentOperations] Fetching recent operations for: gtg
+[WorkerBee getAccountHistory] Fetching history for: gtg, limit: 3, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 3 operations
+[WorkerBee getAccountHistory] Processed 3 operations for gtg
+[WorkerBee getRecentOperations] Processed 3 recent operations for gtg
+[API] Successfully fetched 3 operations for gtg
+ GET /api/hive/account/history?username=gtg&limit=3 200 in 682ms
+ GET /wallet 200 in 200ms
+ ○ Compiling /favicon.ico ...
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 594ms
+[API] Fetching fresh price data for type: all
+[API] Fetching fresh price data for type: all
+[API] Fetching fresh price data for type: all
+[API] Price data fetched and cached: {
+  bitcoin: {
+    usd: 110795,
+    usd_24h_change: 1.863908898444351,
+    market_cap: 2209216703699.5166
+  },
+  ethereum: {
+    usd: 3979.68,
+    usd_24h_change: -0.3501017613735851,
+    market_cap: 480555621170.1562
+  },
+  hive: { usd: 0.141716, usd_24h_change: -0.9328973084448409 },
+  hive_dollar: { usd: 1.003, usd_24h_change: 6.522248277658418 }
+}
+ GET /api/crypto/prices?type=all 200 in 794ms
+[API] Price data fetched and cached: {
+  bitcoin: {
+    usd: 110795,
+    usd_24h_change: 1.863908898444351,
+    market_cap: 2209216703699.5166
+  },
+  ethereum: {
+    usd: 3979.68,
+    usd_24h_change: -0.3501017613735851,
+    market_cap: 480555621170.1562
+  },
+  hive: { usd: 0.141716, usd_24h_change: -0.9328973084448409 },
+  hive_dollar: { usd: 1.003, usd_24h_change: 6.522248277658418 }
+}
+ GET /api/crypto/prices?type=all 200 in 776ms
+[API] Error fetching cryptocurrency prices: Error: CoinGecko API error: Bitcoin 429, HIVE/HBD 429, Ethereum 429
+    at GET (src/app/api/crypto/prices/route.ts:111:15)
+  109 |
+  110 |       if (!bitcoinResponse.ok || !hiveResponse.ok || !ethereumResponse.ok) {
+> 111 |         throw new Error(`CoinGecko API error: Bitcoin ${bitcoinResponse.status}, HIVE/HBD ${hiveResponse.status}, Ethereum ${ethereumResponse.status}`);
+      |               ^
+  112 |       }
+  113 |
+  114 |       const [bitcoinResult, hiveResult, ethereumResult] = await Promise.all([
+[API] Returning expired cached data due to error
+ GET /api/crypto/prices?type=all 200 in 635ms
+ ✓ Compiled /favicon.ico in 1277ms
+ GET / 200 in 1174ms
+ GET / 200 in 1158ms
+ GET / 200 in 1034ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 282ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Processed 20 recent operations for blanchy
+[API] Successfully fetched 20 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 927ms
+ ○ Compiling /feed ...
+ ✓ Compiled /feed in 767ms
+ GET /feed 200 in 815ms
+ GET /feed 200 in 835ms
+ GET /wallet 200 in 59ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 257ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Processed 20 recent operations for blanchy
+[API] Successfully fetched 20 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 367ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Processed 20 recent operations for blanchy
+[API] Successfully fetched 20 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 662ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Processed 20 recent operations for blanchy
+[API] Successfully fetched 20 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 696ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 93ms
+ GET /wallet 200 in 1104ms
+ GET / 200 in 84ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 249ms
+ GET / 200 in 121ms
+ GET / 200 in 127ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 251ms
+ GET /feed 200 in 91ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 298ms
+ GET /feed 200 in 105ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 305ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 346ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 237ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 12 monetary operations from 20 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 12 monetary operations for blanchy
+[API] Successfully fetched 12 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 857ms
+ ✓ Compiled in 170ms
+ ✓ Compiled in 81ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 12 monetary operations from 20 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 12 monetary operations for blanchy
+[API] Successfully fetched 12 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 656ms
+ GET /wallet 200 in 76ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 12 monetary operations from 20 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 12 monetary operations for blanchy
+[API] Successfully fetched 12 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 718ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 12 monetary operations from 20 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 12 monetary operations for blanchy
+[API] Successfully fetched 12 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 720ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 12 monetary operations from 20 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 12 monetary operations for blanchy
+[API] Successfully fetched 12 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 692ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 197ms
+ GET /wallet 200 in 490ms
+ GET / 200 in 109ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 280ms
+ GET / 200 in 142ms
+ GET / 200 in 149ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 276ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 312ms
+ GET /feed 200 in 101ms
+ GET /feed 200 in 114ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 324ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 330ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 308ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 769ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 111ms
+ GET /feed 200 in 459ms
+ GET / 200 in 198ms
+ GET / 200 in 170ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 344ms
+ GET / 200 in 70ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 378ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 274ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 260ms
+ GET /feed 200 in 189ms
+ GET /feed 200 in 193ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 365ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 333ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 237ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 682ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 649ms
+ GET /wallet 200 in 58ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 773ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 775ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 312ms
+ ⨯ [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection: [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection:  [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection: [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection:  [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection: [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection:  [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection: [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection:  [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection: [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection:  [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection: [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection:  [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection: [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection:  [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection: [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection:  [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection: [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection:  [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection: [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection:  [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+[Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection: [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ⨯ unhandledRejection:  [Error: Failed to load chunk server/chunks/ssr/[root-of-the-server]__78862a2c._.js from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/wallet/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/src/app/favicon.ico.mjs { IMAGE => \"[project]/src/app/favicon.ico (static in ecmascript)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/src/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/src/app/wallet/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>] {
+  digest: '3015800628',
+  page: '/wallet',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__78862a2c._.js:868)
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 6.8s
+ GET /wallet 500 in 8452ms
+ GET /favicon.ico 200 in 553ms
+ ⨯ Error: Failed to load chunk server/chunks/[root-of-the-server]__2853ccb9._.js from runtime for chunk server/app/api/hive/account/history/route.js
+    at Object.<anonymous> (.next/server/app/api/hive/account/history/route.js:3:3) {
+  page: '/api/hive/account/history',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/[root-of-the-server]__2853ccb9._.js:730)
+      at Object.<anonymous> (.next/server/app/api/hive/account/history/route.js:3:3)
+}
+ GET /api/hive/account/history?username=blanchy&limit=10 500 in 439ms
+ ⨯ Error: Failed to load chunk server/chunks/[root-of-the-server]__2853ccb9._.js from runtime for chunk server/app/api/hive/account/history/route.js
+    at Object.<anonymous> (.next/server/app/api/hive/account/history/route.js:3:3) {
+  page: '/api/hive/account/history',
+  [cause]: SyntaxError: await is only valid in async functions and the top level bodies of modules
+      at <unknown> (.next/server/chunks/[root-of-the-server]__2853ccb9._.js:730)
+      at Object.<anonymous> (.next/server/app/api/hive/account/history/route.js:3:3)
+}
+ GET /api/hive/account/history?username=blanchy&limit=5 500 in 282ms
+[API] Fetching transaction history for blanchy, limit: 5
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 5, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 5 operations
+[WorkerBee getAccountHistory] Processed 5 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 1 monetary operations from 5 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 1 monetary operations for blanchy
+[API] Successfully fetched 1 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=5 200 in 785ms
+ ⨯ ./src/lib/hive-workerbee/account.ts:824:7
+Parsing ecmascript source code failed
+[0m [90m 822 |[39m         description
+ [90m 823 |[39m       }[33m;[39m
+[31m[1m>[22m[39m[90m 824 |[39m     })[33m;[39m
+ [90m     |[39m       [31m[1m^[22m[39m
+ [90m 825 |[39m
+ [90m 826 |[39m     console[33m.[39mlog([32m`[WorkerBee getRecentOperations] Processed ${processedOperations.length} monetary operations for ${username}`[39m)[33m;[39m
+ [90m 827 |[39m     [36mreturn[39m processedOperations[33m;[39m[0m
+
+Expected ',', got ';'
+
+Import trace:
+  App Route:
+    ./src/lib/hive-workerbee/account.ts
+    ./src/app/api/hive/account/history/route.ts
+
+
+
+./src/lib/hive-workerbee/account.ts
+Code generation for chunk item errored
+An error occurred while generating the chunk item [project]/src/lib/hive-workerbee/account.ts [app-route] (ecmascript)
+
+Caused by:
+- CJS module can't be async.
+
+Debug info:
+- An error occurred while generating the chunk item [project]/src/lib/hive-workerbee/account.ts [app-route] (ecmascript)
+- Execution of *EcmascriptChunkItemContent::module_factory failed
+- Execution of <ModuleChunkItem as EcmascriptChunkItem>::content_with_async_module_info failed
+- Execution of EcmascriptChunkItemContent::new failed
+- CJS module can't be async.
+
+Import trace:
+  App Route:
+    ./src/lib/hive-workerbee/account.ts
+    ./src/app/api/hive/account/history/route.ts
+
+
+ GET /api/hive/account/history?username=blanchy&limit=10 500 in 243ms
+ ⨯ ./src/lib/hive-workerbee/account.ts:824:7
+Parsing ecmascript source code failed
+[0m [90m 822 |[39m         description
+ [90m 823 |[39m       }[33m;[39m
+[31m[1m>[22m[39m[90m 824 |[39m     })[33m;[39m
+ [90m     |[39m       [31m[1m^[22m[39m
+ [90m 825 |[39m
+ [90m 826 |[39m     console[33m.[39mlog([32m`[WorkerBee getRecentOperations] Processed ${processedOperations.length} monetary operations for ${username}`[39m)[33m;[39m
+ [90m 827 |[39m     [36mreturn[39m processedOperations[33m;[39m[0m
+
+Expected ',', got ';'
+
+Import trace:
+  App Route:
+    ./src/lib/hive-workerbee/account.ts
+    ./src/app/api/hive/account/history/route.ts
+
+
+
+./src/lib/hive-workerbee/account.ts
+Code generation for chunk item errored
+An error occurred while generating the chunk item [project]/src/lib/hive-workerbee/account.ts [app-route] (ecmascript)
+
+Caused by:
+- CJS module can't be async.
+
+Debug info:
+- An error occurred while generating the chunk item [project]/src/lib/hive-workerbee/account.ts [app-route] (ecmascript)
+- Execution of *EcmascriptChunkItemContent::module_factory failed
+- Execution of <ModuleChunkItem as EcmascriptChunkItem>::content_with_async_module_info failed
+- Execution of EcmascriptChunkItemContent::new failed
+- CJS module can't be async.
+
+Import trace:
+  App Route:
+    ./src/lib/hive-workerbee/account.ts
+    ./src/app/api/hive/account/history/route.ts
+
+
+ GET /api/hive/account/history?username=blanchy&limit=5 500 in 36ms
+ ✓ Compiled in 41ms
+[API] Fetching transaction history for blanchy, limit: 5
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 5, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ ✓ Compiled /wallet in 273ms
+ GET /wallet 200 in 571ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 5 operations
+[WorkerBee getAccountHistory] Processed 5 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 1 monetary operations from 5 total operations for blanchy
+[WorkerBee getRecentOperations] Processed 1 monetary operations for blanchy
+[API] Successfully fetched 1 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=5 200 in 993ms
+ ✓ Compiled / in 18ms
+ GET / 200 in 67ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 245ms
+ GET / 200 in 116ms
+ GET / 200 in 115ms
+ ✓ Compiled /feed in 23ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 249ms
+ GET /feed 200 in 64ms
+ GET /feed 200 in 70ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 272ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 307ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 260ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 235ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 278ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 827ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 463ms
+ GET /wallet 200 in 42ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 267ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1073ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1121ms
+ GET /wallet 200 in 101ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 416ms
+ GET / 200 in 227ms
+ GET / 200 in 211ms
+ GET / 200 in 130ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 392ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 379ms
+ GET /feed 200 in 55ms
+ GET /feed 200 in 54ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 303ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 263ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 237ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1089ms
+ GET /wallet 200 in 42ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 451ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 770ms
+ ✓ Compiled in 79ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /wallet 200 in 526ms
+ GET / 200 in 119ms
+ GET / 200 in 109ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 264ms
+ GET / 200 in 115ms
+[API] Fetching fresh price data for type: all
+[API] Fetching fresh price data for type: all
+[API] Fetching fresh price data for type: all
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Price data fetched and cached: {
+  bitcoin: {
+    usd: 110604,
+    usd_24h_change: 1.7484153248286278,
+    market_cap: 2205797464435.1465
+  },
+  ethereum: {
+    usd: 3977.36,
+    usd_24h_change: -0.3570230615205181,
+    market_cap: 480309496609.6837
+  },
+  hive: { usd: 0.141247, usd_24h_change: -1.2747886275902673 },
+  hive_dollar: { usd: 1.001, usd_24h_change: 6.543535658346087 }
+}
+ GET /api/crypto/prices?type=all 200 in 637ms
+[API] Price data fetched and cached: {
+  bitcoin: {
+    usd: 110604,
+    usd_24h_change: 1.7484153248286278,
+    market_cap: 2205797464435.1465
+  },
+  ethereum: {
+    usd: 3977.36,
+    usd_24h_change: -0.3570230615205181,
+    market_cap: 480309496609.6837
+  },
+  hive: { usd: 0.141247, usd_24h_change: -1.2747886275902673 },
+  hive_dollar: { usd: 1.001, usd_24h_change: 6.543535658346087 }
+}
+ GET /api/crypto/prices?type=all 200 in 604ms
+[API] Error fetching cryptocurrency prices: Error: CoinGecko API error: Bitcoin 429, HIVE/HBD 429, Ethereum 429
+    at GET (src/app/api/crypto/prices/route.ts:111:15)
+  109 |
+  110 |       if (!bitcoinResponse.ok || !hiveResponse.ok || !ethereumResponse.ok) {
+> 111 |         throw new Error(`CoinGecko API error: Bitcoin ${bitcoinResponse.status}, HIVE/HBD ${hiveResponse.status}, Ethereum ${ethereumResponse.status}`);
+      |               ^
+  112 |       }
+  113 |
+  114 |       const [bitcoinResult, hiveResult, ethereumResult] = await Promise.all([
+[API] Returning expired cached data due to error
+ GET /api/crypto/prices?type=all 200 in 636ms
+ GET /feed 200 in 654ms
+ GET /feed 200 in 624ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 352ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 323ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1372ms
+ GET /wallet 200 in 47ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1107ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1132ms
+[API] Fetching transaction history for blanchy, limit: 10
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 10, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 10 operations
+[WorkerBee getAccountHistory] Processed 10 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 5 monetary operations from 10 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[WorkerBee getRecentOperations] Processed 5 monetary operations for blanchy
+[API] Successfully fetched 5 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=10 200 in 1140ms
+[API] Fetching transaction history for blanchy, limit: 5
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 5, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 5 operations
+[WorkerBee getAccountHistory] Processed 5 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 1 monetary operations from 5 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_content
+[Hive API] Success with https://api.hive.blog for condenser_api.get_content
+[WorkerBee getRecentOperations] Processed 1 monetary operations for blanchy
+[API] Successfully fetched 1 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=5 200 in 796ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 0ms
+ GET /wallet 200 in 477ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 377ms
+ GET / 200 in 660ms
+ GET / 200 in 630ms
+ GET / 200 in 626ms
+ GET /feed 200 in 59ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 842ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 794ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 557ms
+ GET /feed 200 in 89ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 323ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 319ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1201ms
+ GET /wallet 200 in 46ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 755ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 788ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 35ms
+ GET /wallet 200 in 277ms
+ GET / 200 in 218ms
+ GET / 200 in 197ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 446ms
+ GET / 200 in 95ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 396ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 370ms
+ GET /feed 200 in 90ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 283ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ GET /feed 200 in 205ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 327ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 296ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1260ms
+ GET /wallet 200 in 27ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 765ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 770ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1073ms
+ GET /wallet 200 in 177ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 328ms
+ GET / 200 in 166ms
+ GET / 200 in 154ms
+ GET / 200 in 150ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 327ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 311ms
+ GET /feed 200 in 46ms
+ GET /feed 200 in 46ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 300ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 289ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 264ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 285ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1153ms
+ GET /wallet 200 in 58ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 782ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 791ms
+ ✓ Compiled in 143ms
+ ✓ Compiled in 244ms
+ ✓ Compiled in 132ms
+ ✓ Compiled in 119ms
+ ✓ Compiled in 79ms
+ GET /wallet 200 in 365ms
+ GET /wallet 200 in 88ms
+ GET / 200 in 159ms
+ GET / 200 in 185ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 433ms
+ GET / 200 in 123ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 333ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 306ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 280ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ GET /feed 200 in 228ms
+ GET /feed 200 in 225ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 378ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 275ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1174ms
+ GET /feed 200 in 215ms
+ GET / 200 in 113ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 260ms
+ GET / 200 in 105ms
+ GET / 200 in 88ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 295ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 285ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 242ms
+ GET /feed 200 in 126ms
+ GET /feed 200 in 126ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 258ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 234ms
+ GET /wallet 200 in 69ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1125ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1131ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 77ms
+ GET /wallet 200 in 404ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 312ms
+ GET / 200 in 123ms
+ GET / 200 in 138ms
+ GET / 200 in 136ms
+ GET /feed 200 in 50ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 288ms
+ GET /feed 200 in 75ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 304ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 301ms
+[API] Fetching transaction history for blanchy, limit: 20
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 20, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 281ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 272ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 20 operations
+[WorkerBee getAccountHistory] Processed 20 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 20 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=20 200 in 1163ms
+ ✓ Compiled in 115ms
+[API] Fetching transaction history for blanchy, limit: 100
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 100, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 100 operations
+[WorkerBee getAccountHistory] Processed 100 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 4 monetary operations from 100 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 4 monetary operations for blanchy
+[API] Successfully fetched 4 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=100 200 in 1192ms
+[API] Fetching transaction history for blanchy, limit: 100
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 100, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 100 operations
+[WorkerBee getAccountHistory] Processed 100 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 4 monetary operations from 100 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 4 monetary operations for blanchy
+[API] Successfully fetched 4 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=100 200 in 1164ms
+ GET /wallet 200 in 147ms
+[API] Fetching transaction history for blanchy, limit: 100
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 100, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Fetching transaction history for blanchy, limit: 100
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 100, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 100 operations
+[WorkerBee getAccountHistory] Processed 100 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 4 monetary operations from 100 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 100 operations
+[WorkerBee getAccountHistory] Processed 100 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 4 monetary operations from 100 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 4 monetary operations for blanchy
+[API] Successfully fetched 4 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=100 200 in 1146ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 4 monetary operations for blanchy
+[API] Successfully fetched 4 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=100 200 in 1208ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 31ms
+ GET /wallet 200 in 915ms
+ GET / 200 in 108ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 242ms
+ GET / 200 in 145ms
+ GET / 200 in 144ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 277ms
+ GET /feed 200 in 71ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 303ms
+ GET /feed 200 in 104ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 305ms
+[API] Fetching transaction history for blanchy, limit: 100
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 100, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 360ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 300ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 100 operations
+[WorkerBee getAccountHistory] Processed 100 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 100 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=100 200 in 1217ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 42ms
+ GET /feed 200 in 632ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 307ms
+ GET / 200 in 251ms
+ GET / 200 in 203ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 563ms
+ GET / 200 in 356ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 508ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 621ms
+ GET /feed 200 in 175ms
+ GET /feed 200 in 165ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 307ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 366ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 260ms
+[API] Fetching transaction history for blanchy, limit: 100
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 100, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 100 operations
+[WorkerBee getAccountHistory] Processed 100 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 100 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=100 200 in 1170ms
+[API] Fetching transaction history for blanchy, limit: 100
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 100, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 100 operations
+[WorkerBee getAccountHistory] Processed 100 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 2 monetary operations from 100 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 2 monetary operations for blanchy
+[API] Successfully fetched 2 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=100 200 in 1171ms
+ ✓ Compiled in 45ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /feed 200 in 846ms
+ GET / 200 in 147ms
+ GET / 200 in 148ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 249ms
+ GET / 200 in 82ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 306ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 284ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 253ms
+ GET /feed 200 in 143ms
+ GET /feed 200 in 130ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 311ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 296ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 226ms
+[API] Fetching transaction history for blanchy, limit: 200
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 200, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 200 operations
+[WorkerBee getAccountHistory] Processed 200 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 3 monetary operations from 200 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 3 monetary operations for blanchy
+[API] Successfully fetched 3 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=200 200 in 1220ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 75ms
+ GET /feed 200 in 559ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 446ms
+ GET / 200 in 671ms
+ GET / 200 in 661ms
+ GET / 200 in 75ms
+[API] Fetching fresh price data for type: all
+[API] Fetching fresh price data for type: all
+[API] Fetching fresh price data for type: all
+[API] Price data fetched and cached: {
+  bitcoin: {
+    usd: 110469,
+    usd_24h_change: 1.5087729947639896,
+    market_cap: 2204204895056.305
+  },
+  ethereum: {
+    usd: 3975.17,
+    usd_24h_change: -0.5663067736574339,
+    market_cap: 480057110642.5784
+  },
+  hive: { usd: 0.141159, usd_24h_change: -1.371662066197427 },
+  hive_dollar: { usd: 1.001, usd_24h_change: 6.527967806773277 }
+}
+ GET /api/crypto/prices?type=all 200 in 1081ms
+[API] Price data fetched and cached: {
+  bitcoin: {
+    usd: 110469,
+    usd_24h_change: 1.5087729947639896,
+    market_cap: 2204204895056.305
+  },
+  ethereum: {
+    usd: 3975.17,
+    usd_24h_change: -0.5663067736574339,
+    market_cap: 480057110642.5784
+  },
+  hive: { usd: 0.141159, usd_24h_change: -1.371662066197427 },
+  hive_dollar: { usd: 1.001, usd_24h_change: 6.527967806773277 }
+}
+ GET /api/crypto/prices?type=all 200 in 579ms
+[API] Error fetching cryptocurrency prices: Error: CoinGecko API error: Bitcoin 429, HIVE/HBD 429, Ethereum 429
+    at GET (src/app/api/crypto/prices/route.ts:111:15)
+  109 |
+  110 |       if (!bitcoinResponse.ok || !hiveResponse.ok || !ethereumResponse.ok) {
+> 111 |         throw new Error(`CoinGecko API error: Bitcoin ${bitcoinResponse.status}, HIVE/HBD ${hiveResponse.status}, Ethereum ${ethereumResponse.status}`);
+      |               ^
+  112 |       }
+  113 |
+  114 |       const [bitcoinResult, hiveResult, ethereumResult] = await Promise.all([
+[API] Returning expired cached data due to error
+ GET /api/crypto/prices?type=all 200 in 474ms
+ GET /feed 200 in 329ms
+ GET /feed 200 in 320ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 376ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 334ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 235ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 28ms
+ GET /feed 200 in 573ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 826ms
+ GET / 200 in 753ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 873ms
+ GET / 200 in 858ms
+ GET / 200 in 371ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 608ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 410ms
+ GET /feed 200 in 156ms
+ GET /feed 200 in 148ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 298ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 223ms
+[API] Fetching transaction history for blanchy, limit: 200
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 200, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 200 operations
+[WorkerBee getAccountHistory] Processed 200 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 3 monetary operations from 200 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 3 monetary operations for blanchy
+[API] Successfully fetched 3 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=200 200 in 1228ms
+[API] Fetching transaction history for blanchy, limit: 200
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 200, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 200 operations
+[WorkerBee getAccountHistory] Processed 200 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 3 monetary operations from 200 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 3 monetary operations for blanchy
+[API] Successfully fetched 3 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=200 200 in 1236ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/lib/hive-workerbee/account.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 31ms
+ GET /feed 200 in 567ms
+ GET / 200 in 237ms
+ GET / 200 in 224ms
+ GET / 200 in 63ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 422ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 423ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 307ms
+ GET /feed 200 in 143ms
+ GET /feed 200 in 135ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 885ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 301ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 240ms
+[API] Fetching transaction history for blanchy, limit: 500
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 500, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 500 operations
+[WorkerBee getAccountHistory] Processed 500 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 23 monetary operations from 500 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 23 monetary operations for blanchy
+[API] Successfully fetched 23 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=500 200 in 1702ms
+[API] Fetching transaction history for blanchy, limit: 500
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 500, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 500 operations
+[WorkerBee getAccountHistory] Processed 500 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 23 monetary operations from 500 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 23 monetary operations for blanchy
+[API] Successfully fetched 23 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=500 200 in 1334ms
+[API] Fetching transaction history for blanchy, limit: 500
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 500, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 500 operations
+[WorkerBee getAccountHistory] Processed 500 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 23 monetary operations from 500 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 23 monetary operations for blanchy
+[API] Successfully fetched 23 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=500 200 in 1271ms
+ GET /wallet 200 in 128ms
+[API] Fetching transaction history for blanchy, limit: 500
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 500, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[API] Fetching transaction history for blanchy, limit: 500
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 500, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 500 operations
+[WorkerBee getAccountHistory] Processed 500 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 23 monetary operations from 500 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 500 operations
+[WorkerBee getAccountHistory] Processed 500 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 23 monetary operations from 500 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 23 monetary operations for blanchy
+[API] Successfully fetched 23 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=500 200 in 1368ms
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 23 monetary operations for blanchy
+[API] Successfully fetched 23 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=500 200 in 1477ms
+ GET / 200 in 66ms
+ GET /feed 200 in 67ms
+ GET /feed 200 in 68ms
+ ○ Compiling /discover ...
+ ✓ Compiled /discover in 536ms
+ GET /discover 200 in 569ms
+ GET / 200 in 59ms
+ GET /feed 200 in 62ms
+ GET /feed 200 in 63ms
+ ✓ Compiled /dashboard in 353ms
+ GET /dashboard 200 in 397ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 511ms
+ GET / 200 in 69ms
+ GET /feed 200 in 69ms
+ GET /feed 200 in 66ms

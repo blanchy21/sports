@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { 
   Wallet, 
@@ -12,7 +12,11 @@ import {
   Activity,
   BarChart3,
   Eye,
-  EyeOff
+  EyeOff,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  ArrowRightLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,13 +29,49 @@ import {
   calculateUSDValue
 } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+
+interface TransactionOperation {
+  id: number;
+  timestamp: string;
+  type: string;
+  operation: Record<string, unknown>;
+  blockNumber: number;
+  transactionId: string;
+  description: string;
+}
 
 export default function WalletPage() {
   const { user, isAuthenticated, authType } = useAuth();
   const { bitcoinPrice, ethereumPrice, hivePrice, hbdPrice, isLoading: pricesLoading, error: priceError, lastUpdated, refreshPrices } = usePriceContext();
   const router = useRouter();
   const [showBalances, setShowBalances] = useState(true);
+  const [transactions, setTransactions] = useState<TransactionOperation[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [transactionsError, setTransactionsError] = useState<string | null>(null);
+
+  // Function to fetch transaction history
+  const fetchTransactions = useCallback(async () => {
+    if (!user?.username) return;
+    
+    setTransactionsLoading(true);
+    setTransactionsError(null);
+    
+    try {
+            const response = await fetch(`/api/hive/account/history?username=${user.username}&limit=500`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setTransactions(data.operations || []);
+      } else {
+        setTransactionsError(data.error || 'Failed to fetch transactions');
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      setTransactionsError('Failed to fetch transactions');
+    } finally {
+      setTransactionsLoading(false);
+    }
+  }, [user?.username]);
 
   // Redirect if not authenticated or not a Hive user
   useEffect(() => {
@@ -39,6 +79,53 @@ export default function WalletPage() {
       router.push("/");
     }
   }, [isAuthenticated, authType, user, router]);
+
+  // Fetch transactions when user is available
+  useEffect(() => {
+    if (user?.username && isAuthenticated && authType === "hive") {
+      fetchTransactions();
+    }
+  }, [user?.username, isAuthenticated, authType, fetchTransactions]);
+
+  // Helper function to get icon for transaction type
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'transfer':
+        return <ArrowRightLeft className="h-4 w-4" />;
+      case 'vote':
+        return <TrendingUp className="h-4 w-4" />;
+      case 'comment':
+        return <Activity className="h-4 w-4" />;
+      case 'account_update':
+        return <Wallet className="h-4 w-4" />;
+      case 'account_create':
+        return <TrendingUp className="h-4 w-4" />;
+      case 'power_up':
+        return <TrendingUp className="h-4 w-4" />;
+      case 'power_down':
+        return <TrendingDown className="h-4 w-4" />;
+      case 'delegate_vesting_shares':
+        return <ArrowRightLeft className="h-4 w-4" />;
+      default:
+        return <Activity className="h-4 w-4" />;
+    }
+  };
+
+  // Helper function to format transaction timestamp
+  const formatTransactionTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
 
   if (!isAuthenticated || authType !== "hive" || !user) {
     return (
@@ -296,11 +383,16 @@ export default function WalletPage() {
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold flex items-center">
               <Activity className="h-5 w-5 mr-2" />
-              Recent Transactions
+              Recent Monetary Transactions
             </h3>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4 mr-1" />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={fetchTransactions}
+                disabled={transactionsLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${transactionsLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
               <Button variant="outline" size="sm">
@@ -311,15 +403,66 @@ export default function WalletPage() {
           </div>
           
           <div className="space-y-4">
-            {/* Placeholder for transaction list */}
-            <div className="text-center py-12 text-muted-foreground">
-              <Activity className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium">No transactions yet</p>
-              <p className="text-sm">Your transaction history will appear here</p>
-              <p className="text-xs mt-2 opacity-75">
-                Transactions include transfers, votes, posts, and other Hive activities
-              </p>
-            </div>
+            {transactionsLoading ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <RefreshCw className="h-8 w-8 mx-auto mb-4 animate-spin" />
+                <p className="text-lg font-medium">Loading transactions...</p>
+                <p className="text-sm">Fetching your transaction history</p>
+              </div>
+            ) : transactionsError ? (
+              <div className="text-center py-12 text-red-500">
+                <Activity className="h-8 w-8 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium">Error loading transactions</p>
+                <p className="text-sm">{transactionsError}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={fetchTransactions}
+                  className="mt-4"
+                >
+                  Try Again
+                </Button>
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Activity className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium">No monetary transactions yet</p>
+                <p className="text-sm">Your monetary transaction history will appear here</p>
+                <p className="text-xs mt-2 opacity-75">
+                  Shows transfers, rewards, payouts, and other monetary activities
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {transactions.map((transaction) => (
+                  <div 
+                    key={transaction.id}
+                    className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border hover:bg-muted/70 transition-colors"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        {getTransactionIcon(transaction.type)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{transaction.description}</p>
+                        <p className="text-xs text-muted-foreground flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {formatTransactionTime(transaction.timestamp)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">
+                        Block #{transaction.blockNumber}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        {transaction.transactionId.slice(0, 8)}...
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -43,7 +43,13 @@ export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { user, isClient } = useAuth();
   const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const profileTriggerRef = useRef<HTMLDivElement>(null);
+
+  // Ensure hydration is complete before showing active states
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-80 lg:fixed lg:inset-y-0 lg:pt-24 lg:pb-4 lg:overflow-y-auto lg:border-r bg-background">
@@ -55,7 +61,7 @@ export const Sidebar: React.FC = () => {
             if (item.requireAuth && !user) return null;
 
             const Icon = item.icon;
-            const isActive = isClient ? pathname === item.href : false;
+            const isActive = isHydrated && pathname === item.href;
 
             return (
               <Link
@@ -78,7 +84,7 @@ export const Sidebar: React.FC = () => {
         </nav>
 
         {/* User Profile Section at Bottom */}
-        {isClient && user && (
+        {isHydrated && user && (
           <div className="p-4 border-t">
           <div 
             ref={profileTriggerRef}
@@ -105,7 +111,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Profile Popup */}
-      {isClient && user && (
+      {isHydrated && user && (
         <UserProfilePopup
           isOpen={showProfilePopup}
           onClose={() => setShowProfilePopup(false)}
