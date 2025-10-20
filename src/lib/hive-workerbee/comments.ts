@@ -413,29 +413,32 @@ export async function getUserComments(username: string, limit: number = 20): Pro
     // Get Wax client
     const wax = await getWaxClient();
 
-    // Use get_discussions_by_author_before_date to get all posts by user
-    const posts = await makeHiveApiCall('condenser_api', 'get_discussions_by_author_before_date', [
-      username,
-      '',
-      '',
-      limit * 2 // Get more posts to filter for comments
+    // Use get_discussions_by_comments to get recent comments
+    // This method is specifically designed for comments and doesn't require date parameters
+    const comments = await makeHiveApiCall('condenser_api', 'get_discussions_by_comments', [
+      {
+        start_author: username,
+        start_permlink: '',
+        limit: limit,
+        truncate_body: 0
+      }
     ]) as any[];
 
-    console.log(`[getUserComments] Found ${posts?.length || 0} posts for user ${username}`);
+    console.log(`[getUserComments] Found ${comments?.length || 0} comments for user ${username}`);
 
-    if (!posts || posts.length === 0) {
-      console.log(`[getUserComments] No posts found for user ${username}`);
+    if (!comments || comments.length === 0) {
+      console.log(`[getUserComments] No comments found for user ${username}`);
       return [];
     }
 
-    // Filter to only comments (posts with parent_author)
-    const comments = (posts || []).filter((post: Record<string, unknown>) => {
-      const parentAuthor = post.parent_author as string;
-      return parentAuthor && parentAuthor !== '';
+    // Filter to only comments by the specific user (in case there are replies to their comments)
+    const userComments = (comments || []).filter((comment: Record<string, unknown>) => {
+      const author = comment.author as string;
+      return author === username;
     }) as unknown as HiveComment[];
 
-    console.log(`[getUserComments] Found ${comments.length} comments for user ${username}`);
-    return comments.slice(0, limit); // Limit the results
+    console.log(`[getUserComments] Found ${userComments.length} comments by user ${username}`);
+    return userComments;
   } catch (error) {
     console.error('Error fetching user comments with WorkerBee:', error);
     return [];
