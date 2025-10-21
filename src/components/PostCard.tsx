@@ -14,6 +14,7 @@ import { VoteResult } from "@/lib/hive-workerbee/voting";
 import { useToast, toast } from "@/components/ui/Toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useModal } from "@/components/modals/ModalProvider";
+import { useBookmarks } from "@/hooks/useBookmarks";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -32,6 +33,7 @@ const extractFirstImageUrl = (markdown: string): string | null => {
 export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
   const { addToast } = useToast();
   const { openModal } = useModal();
+  const { toggleBookmark, isBookmarked } = useBookmarks();
   const isHivePost = 'isSportsblockPost' in post;
   const pendingPayout = isHivePost ? calculatePendingPayout(post) : 0;
 
@@ -74,9 +76,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
     addToast(toast.error("Vote Failed", error));
   };
 
-  const handleBookmark = () => {
-    // TODO: Implement bookmark functionality
-    console.log("Bookmarking post:", isHivePost ? `${post.author}/${post.permlink}` : post.id);
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the post click
+    toggleBookmark(post);
   };
 
   const handleComment = () => {
@@ -301,9 +303,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
             variant="ghost"
             size="sm"
             onClick={handleBookmark}
-            className="text-muted-foreground hover:text-yellow-500"
+            className={`text-muted-foreground hover:text-yellow-500 ${
+              isBookmarked(post) ? 'text-yellow-500' : ''
+            }`}
           >
-            <Bookmark className="h-4 w-4" />
+            <Bookmark className={`h-4 w-4 ${isBookmarked(post) ? 'fill-current' : ''}`} />
           </Button>
         </div>
       </div>

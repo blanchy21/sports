@@ -1,59 +1,69 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PostCard } from "@/components/PostCard";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Bookmark, Search, Filter, AlertCircle, Loader2 } from "lucide-react";
-import { Post } from "@/types";
+import { Bookmark, Search, AlertCircle, Loader2, Trash2 } from "lucide-react";
+import { useBookmarks } from "@/hooks/useBookmarks";
+import { BookmarkItem } from "@/stores/bookmarkStore";
 
 export default function BookmarksPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [bookmarks, setBookmarks] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { getUserBookmarks, clearAllBookmarks, isLoading, error } = useBookmarks();
+  const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Load bookmarks from localStorage (in a real app, this would be from a database)
-  const loadBookmarks = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // In a real app, this would be an API call
-      const savedBookmarks = localStorage.getItem('bookmarks');
-      if (savedBookmarks) {
-        const parsedBookmarks = JSON.parse(savedBookmarks);
-        setBookmarks(parsedBookmarks);
-      } else {
-        setBookmarks([]);
+  // Load bookmarks from the store
+  const loadBookmarks = useCallback(() => {
+    const userBookmarks = getUserBookmarks();
+    setBookmarks(userBookmarks);
+  }, [getUserBookmarks]);
+
+  // Filter and sort bookmarks
+  const filteredAndSortedBookmarks = bookmarks
+    .filter(bookmark => {
+      const post = bookmark.post;
+      const isHivePost = 'isSportsblockPost' in post;
+      const title = (post.title as string).toLowerCase();
+      const content = isHivePost ? (post.body as string).toLowerCase() : (post.excerpt as string).toLowerCase();
+      const tags = (post.tags as string[]) || [];
+      
+      return title.includes(searchQuery.toLowerCase()) ||
+             content.includes(searchQuery.toLowerCase()) ||
+             tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.bookmarkedAt).getTime() - new Date(a.bookmarkedAt).getTime();
+        case 'oldest':
+          return new Date(a.bookmarkedAt).getTime() - new Date(b.bookmarkedAt).getTime();
+        case 'title':
+          return (a.post.title as string).localeCompare(b.post.title as string);
+        default:
+          return 0;
       }
-    } catch (err) {
-      console.error('Error loading bookmarks:', err);
-      setError('Failed to load bookmarks. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    });
 
-  // Filter bookmarks based on search query
-  const filteredBookmarks = bookmarks.filter(bookmark =>
-    bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    bookmark.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    bookmark.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
-  // Redirect if not authenticated
+  // Load bookmarks when user changes
   useEffect(() => {
-    if (!user) {
-      router.push("/");
-    } else {
+    if (user) {
       loadBookmarks();
     }
-  }, [user, router]);
+  }, [user, loadBookmarks]);
+
+  // Handle clear all bookmarks
+  const handleClearAll = async () => {
+    await clearAllBookmarks();
+    setBookmarks([]);
+    setShowClearConfirm(false);
+  };
 
   if (!user) {
     return (
@@ -96,10 +106,28 @@ export default function BookmarksPage() {
                 className="pl-10 pr-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
+            
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'title')}
+              className="px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="title">Title A-Z</option>
+            </select>
+
+            {bookmarks.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowClearConfirm(true)}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear All
+              </Button>
+            )}
           </div>
         </div>
 
@@ -114,10 +142,10 @@ export default function BookmarksPage() {
             <p className="text-red-500 mb-4">{error}</p>
             <Button onClick={loadBookmarks}>Try Again</Button>
           </div>
-        ) : filteredBookmarks.length > 0 ? (
+        ) : filteredAndSortedBookmarks.length > 0 ? (
           <div className="space-y-6">
-            {filteredBookmarks.map((post) => (
-              <PostCard key={post.id} post={post} />
+            {filteredAndSortedBookmarks.map((bookmark) => (
+              <PostCard key={bookmark.id} post={bookmark.post as any} />
             ))}
           </div>
         ) : searchQuery ? (
@@ -144,12 +172,30 @@ export default function BookmarksPage() {
           </div>
         )}
 
-        {/* Load More */}
-        {filteredBookmarks.length > 0 && (
-          <div className="text-center">
-            <Button variant="outline" size="lg" onClick={loadBookmarks}>
-              Refresh Bookmarks
-            </Button>
+        {/* Clear All Confirmation Modal */}
+        {showClearConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+              <h3 className="text-lg font-semibold mb-2">Clear All Bookmarks</h3>
+              <p className="text-muted-foreground mb-4">
+                Are you sure you want to remove all {bookmarks.length} bookmarks? This action cannot be undone.
+              </p>
+              <div className="flex space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowClearConfirm(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleClearAll}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                >
+                  Clear All
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </div>

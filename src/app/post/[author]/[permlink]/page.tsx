@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/Button";
 import { VoteButton } from "@/components/VoteButton";
 import { ArrowLeft, MessageCircle, Bookmark, Share, Calendar, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { fetchPost } from "@/lib/hive-workerbee/content";
-import { SportsblockPost } from "@/lib/hive-workerbee/content";
+import { fetchPost, SportsblockPost } from "@/lib/hive-workerbee/content";
 import { calculatePendingPayout, formatAsset } from "@/lib/shared/utils";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useModal } from "@/components/modals/ModalProvider";
+import { useBookmarks } from "@/hooks/useBookmarks";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Image from "next/image";
@@ -22,6 +22,7 @@ export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { openModal } = useModal();
+  const { toggleBookmark, isBookmarked } = useBookmarks();
   const [post, setPost] = useState<SportsblockPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +75,9 @@ export default function PostDetailPage() {
   };
 
   const handleBookmark = () => {
-    console.log("Bookmarking post:", `${post!.author}/${post!.permlink}`);
+    if (post) {
+      toggleBookmark(post);
+    }
   };
 
   const handleShare = () => {
@@ -251,10 +254,12 @@ export default function PostDetailPage() {
               <Button
                 variant="ghost"
                 onClick={handleBookmark}
-                className="flex items-center space-x-2"
+                className={`flex items-center space-x-2 ${
+                  post && isBookmarked(post) ? 'text-yellow-500' : ''
+                }`}
               >
-                <Bookmark className="h-4 w-4" />
-                <span>Bookmark</span>
+                <Bookmark className={`h-4 w-4 ${post && isBookmarked(post) ? 'fill-current' : ''}`} />
+                <span>{post && isBookmarked(post) ? 'Bookmarked' : 'Bookmark'}</span>
               </Button>
 
               <Button
