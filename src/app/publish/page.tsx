@@ -342,24 +342,25 @@ export default function PublishPage() {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top Bar */}
-      <div className="border-b bg-card">
+      <div className="border-b bg-gradient-to-r from-japanese-laurel to-maximum-yellow shadow-lg">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push("/feed")}
+              className="text-white hover:bg-white/20 hover:text-white"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
-            <div className="border-l h-6" />
+            <div className="border-l border-white/30 h-6" />
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Post Title..."
-              className="text-xl font-semibold bg-transparent border-none outline-none w-96 placeholder:text-muted-foreground"
+              className="text-xl font-semibold bg-transparent border-none outline-none w-96 placeholder:text-white/70 text-white"
             />
           </div>
 
@@ -368,6 +369,7 @@ export default function PublishPage() {
               variant="ghost"
               size="sm"
               onClick={() => setShowSettings(!showSettings)}
+              className="text-white hover:bg-white/20 hover:text-white"
             >
               <Settings className="h-4 w-4 mr-2" />
               Settings
@@ -378,6 +380,7 @@ export default function PublishPage() {
               size="sm"
               onClick={handleSaveDraft}
               disabled={!title || !content}
+              className="border-white/30 text-white hover:bg-white/20 hover:text-white"
             >
               <Save className="h-4 w-4 mr-2" />
               Save Draft
@@ -389,10 +392,10 @@ export default function PublishPage() {
               onClick={handlePublish}
               disabled={!title || !content || !selectedSport || isPublishing || (authType === "hive" && rcStatus && !rcStatus.canPost) || false}
               className={cn(
-                "min-w-[140px]",
+                "min-w-[140px] text-white font-semibold",
                 authType === "hive" 
-                  ? "bg-accent hover:bg-accent/90" 
-                  : "bg-japanese-laurel hover:bg-japanese-laurel/90"
+                  ? "bg-eerie-black hover:bg-eerie-black/90 shadow-lg" 
+                  : "bg-cosmic-latte text-japanese-laurel hover:bg-cosmic-latte/90 shadow-lg"
               )}
             >
               <Send className="h-4 w-4 mr-2" />
@@ -408,15 +411,15 @@ export default function PublishPage() {
 
         {/* Settings Panel */}
         {showSettings && (
-          <div className="border-t bg-background px-6 py-4 space-y-4">
+          <div className="border-t bg-gradient-to-r from-cosmic-latte to-white px-6 py-4 space-y-4 shadow-lg">
             <div className="grid grid-cols-2 gap-4">
               {/* Sport Selection */}
               <div>
-                <label className="block text-sm font-medium mb-2">Sport Category</label>
+                <label className="block text-sm font-medium mb-2 text-japanese-laurel">Sport Category</label>
                 <select
                   value={selectedSport}
                   onChange={(e) => setSelectedSport(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 border-2 border-japanese-laurel/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-maximum-yellow focus:border-japanese-laurel"
                 >
                   <option value="">Select a sport</option>
                   {SPORT_CATEGORIES.map((sport) => (
@@ -429,15 +432,15 @@ export default function PublishPage() {
 
               {/* Tags */}
               <div>
-                <label className="block text-sm font-medium mb-2">Tags</label>
+                <label className="block text-sm font-medium mb-2 text-japanese-laurel">Tags</label>
                 <div className="relative">
-                  <TagIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <TagIcon className="absolute left-3 top-2.5 h-4 w-4 text-japanese-laurel" />
                   <input
                     type="text"
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
                     placeholder="basketball, NBA, analysis"
-                    className="w-full pl-10 pr-3 py-2 border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full pl-10 pr-3 py-2 border-2 border-japanese-laurel/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-maximum-yellow focus:border-japanese-laurel"
                   />
                 </div>
               </div>
@@ -521,19 +524,19 @@ export default function PublishPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left: Markdown Editor */}
         <div className="w-1/2 flex flex-col border-r">
-          <div className="border-b bg-card">
-            <div className="flex items-center justify-between px-4 py-2 border-b">
-              <h3 className="font-medium text-sm">Editor</h3>
+          <div className="border-b bg-gradient-to-r from-japanese-laurel to-japanese-laurel/80">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-white/20">
+              <h3 className="font-medium text-sm text-white">Editor</h3>
             </div>
             
             {/* Formatting Toolbar */}
-            <div className="flex items-center gap-1 px-4 py-2 flex-wrap">
+            <div className="flex items-center gap-1 px-4 py-2 flex-wrap bg-white/10">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={formatBold}
                 title="Bold (Ctrl+B)"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
               >
                 <Bold className="h-4 w-4" />
               </Button>
@@ -543,7 +546,7 @@ export default function PublishPage() {
                 size="sm"
                 onClick={formatItalic}
                 title="Italic (Ctrl+I)"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
               >
                 <Italic className="h-4 w-4" />
               </Button>
@@ -553,7 +556,7 @@ export default function PublishPage() {
                 size="sm"
                 onClick={formatUnderline}
                 title="Underline"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
               >
                 <UnderlineIcon className="h-4 w-4" />
               </Button>
@@ -563,19 +566,19 @@ export default function PublishPage() {
                 size="sm"
                 onClick={formatStrikethrough}
                 title="Strikethrough"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
               >
                 <Strikethrough className="h-4 w-4" />
               </Button>
 
-              <div className="w-px h-6 bg-border mx-1" />
+              <div className="w-px h-6 bg-white/30 mx-1" />
 
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => formatHeading(1)}
                 title="Heading 1"
-                className="h-8 px-2 text-xs font-bold"
+                className="h-8 px-2 text-xs font-bold text-white hover:bg-white/20 hover:text-white"
               >
                 H1
               </Button>
@@ -585,7 +588,7 @@ export default function PublishPage() {
                 size="sm"
                 onClick={() => formatHeading(2)}
                 title="Heading 2"
-                className="h-8 px-2 text-xs font-bold"
+                className="h-8 px-2 text-xs font-bold text-white hover:bg-white/20 hover:text-white"
               >
                 H2
               </Button>
@@ -595,19 +598,19 @@ export default function PublishPage() {
                 size="sm"
                 onClick={() => formatHeading(3)}
                 title="Heading 3"
-                className="h-8 px-2 text-xs font-bold"
+                className="h-8 px-2 text-xs font-bold text-white hover:bg-white/20 hover:text-white"
               >
                 H3
               </Button>
 
-              <div className="w-px h-6 bg-border mx-1" />
+              <div className="w-px h-6 bg-white/30 mx-1" />
 
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={formatBulletList}
                 title="Bullet List"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -617,7 +620,7 @@ export default function PublishPage() {
                 size="sm"
                 onClick={formatNumberedList}
                 title="Numbered List"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
               >
                 <ListOrdered className="h-4 w-4" />
               </Button>
@@ -627,7 +630,7 @@ export default function PublishPage() {
                 size="sm"
                 onClick={formatQuote}
                 title="Quote"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
               >
                 <Quote className="h-4 w-4" />
               </Button>
@@ -637,19 +640,19 @@ export default function PublishPage() {
                 size="sm"
                 onClick={formatCode}
                 title="Code"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
               >
                 <Code className="h-4 w-4" />
               </Button>
 
-              <div className="w-px h-6 bg-border mx-1" />
+              <div className="w-px h-6 bg-white/30 mx-1" />
 
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={insertLink}
                 title="Insert Link"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
               >
                 <LinkIcon className="h-4 w-4" />
               </Button>
@@ -659,7 +662,7 @@ export default function PublishPage() {
                 size="sm"
                 onClick={insertImage}
                 title="Upload Image"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
               >
                 <Upload className="h-4 w-4" />
               </Button>
@@ -671,7 +674,7 @@ export default function PublishPage() {
                   size="sm"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   title="Insert Emoji"
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
                 >
                   <Smile className="h-4 w-4" />
                 </Button>
@@ -683,14 +686,14 @@ export default function PublishPage() {
                 )}
               </div>
 
-              <div className="w-px h-6 bg-border mx-1" />
+              <div className="w-px h-6 bg-white/30 mx-1" />
 
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleUndo}
                 title="Undo (Ctrl+Z)"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
               >
                 <Undo className="h-4 w-4" />
               </Button>
@@ -725,11 +728,11 @@ export default function PublishPage() {
         </div>
 
         {/* Right: Preview */}
-        <div className="w-1/2 flex flex-col bg-card">
-          <div className="border-b px-6 py-3 bg-card">
+        <div className="w-1/2 flex flex-col bg-gradient-to-br from-cosmic-latte to-white">
+          <div className="border-b px-6 py-3 bg-gradient-to-r from-maximum-yellow to-maximum-yellow/80">
             <div className="flex items-center space-x-2">
-              <Eye className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-medium text-sm">Preview</h3>
+              <Eye className="h-4 w-4 text-japanese-laurel" />
+              <h3 className="font-medium text-sm text-japanese-laurel">Preview</h3>
             </div>
           </div>
           <div className="flex-1 overflow-auto px-6 py-4">
@@ -754,9 +757,9 @@ export default function PublishPage() {
       {/* Image Upload Dialog */}
       {showImageDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card border rounded-lg p-6 w-full max-w-md mx-4">
+          <div className="bg-gradient-to-br from-cosmic-latte to-white border-2 border-japanese-laurel/30 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Insert Image</h3>
+              <h3 className="text-lg font-semibold text-japanese-laurel">Insert Image</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -765,7 +768,7 @@ export default function PublishPage() {
                   setImageUrl("");
                   setImageAlt("");
                 }}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-japanese-laurel hover:bg-japanese-laurel/10"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -773,7 +776,7 @@ export default function PublishPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-sm font-medium mb-2 text-japanese-laurel">
                   Image URL
                 </label>
                 <input
@@ -781,13 +784,13 @@ export default function PublishPage() {
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 border-2 border-japanese-laurel/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-maximum-yellow focus:border-japanese-laurel"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-sm font-medium mb-2 text-japanese-laurel">
                   Description (Alt Text)
                 </label>
                 <input
@@ -795,13 +798,13 @@ export default function PublishPage() {
                   value={imageAlt}
                   onChange={(e) => setImageAlt(e.target.value)}
                   placeholder="Describe the image"
-                  className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 border-2 border-japanese-laurel/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-maximum-yellow focus:border-japanese-laurel"
                 />
               </div>
 
               {imageUrl && (
-                <div className="border rounded-lg p-2 bg-muted">
-                  <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+                <div className="border-2 border-japanese-laurel/30 rounded-lg p-2 bg-white/50">
+                  <p className="text-xs text-japanese-laurel mb-2 font-medium">Preview:</p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imageUrl}
@@ -822,13 +825,14 @@ export default function PublishPage() {
                     setImageUrl("");
                     setImageAlt("");
                   }}
+                  className="border-japanese-laurel/30 text-japanese-laurel hover:bg-japanese-laurel/10"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleImageInsert}
                   disabled={!imageUrl}
-                  className="bg-primary hover:bg-primary/90"
+                  className="bg-japanese-laurel hover:bg-japanese-laurel/90 text-white font-semibold shadow-lg"
                 >
                   <ImageIcon className="h-4 w-4 mr-2" />
                   Insert Image

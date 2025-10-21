@@ -121,12 +121,21 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     const initializeRealtime = async () => {
       try {
         const workerBee = getWorkerBeeClient();
+        
+        // Start the WorkerBee client if not already running
+        if (!workerBee.running) {
+          await workerBee.start();
+          console.log('[NotificationContext] WorkerBee client started');
+        }
+        
         setIsRealtimeActive(true);
 
         // Monitor comments on user's posts
+        console.log('[NotificationContext] Setting up comment monitoring for user:', user.username);
         commentSubscription = workerBee.observe.onComments().subscribe({
           next: (data) => {
             try {
+              console.log('[NotificationContext] Comment data received:', data);
               // Handle WorkerBee data structure
               if (data && data.comments) {
                 const comments = Array.isArray(data.comments) ? data.comments : [];
@@ -135,6 +144,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
                   
                   // Only notify if it's a comment on the user's posts
                   if (operation && operation.parent_author === user.username) {
+                    console.log('[NotificationContext] Adding comment notification for:', operation.author);
                     addNotification({
                       type: 'comment',
                       title: 'New Comment',
@@ -160,9 +170,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         });
 
         // Monitor votes on user's posts
+        console.log('[NotificationContext] Setting up vote monitoring for user:', user.username);
         voteSubscription = workerBee.observe.onVotes().subscribe({
           next: (data) => {
             try {
+              console.log('[NotificationContext] Vote data received:', data);
               // Handle WorkerBee data structure
               if (data && data.votes) {
                 const votes = Array.isArray(data.votes) ? data.votes : [];
@@ -171,6 +183,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
                   
                   // Only notify if it's a vote on the user's posts
                   if (operation && operation.author === user.username) {
+                    console.log('[NotificationContext] Adding vote notification for:', operation.voter);
                     addNotification({
                       type: 'vote',
                       title: 'New Vote',

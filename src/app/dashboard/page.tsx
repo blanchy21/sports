@@ -242,6 +242,7 @@ export default function DashboardPage() {
           })}
         </div>
 
+
         {/* Rewards Stats (Hive users only) */}
         {rewardsStats.length > 0 && (
           <div className="bg-gradient-to-r from-japanese-laurel to-maximum-yellow rounded-lg p-6">
