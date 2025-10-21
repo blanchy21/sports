@@ -2,10 +2,11 @@
 
 import React from "react";
 import { Button } from "@/components/ui/Button";
-import { Heart, ChevronUp, ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useVoting } from "@/hooks/useVoting";
 import { cn } from "@/lib/utils";
 import { VoteResult } from "@/lib/hive-workerbee/voting";
+import { StarVoteButton } from "@/components/StarVoteButton";
 
 interface VoteButtonProps {
   author: string;
@@ -55,15 +56,7 @@ export const VoteButton: React.FC<VoteButtonProps> = ({
     }
   };
 
-  const handleUpvote = () => {
-    if (voteState.hasVoted && voteState.userVote?.weight && voteState.userVote.weight > 0) {
-      // Already upvoted, remove vote
-      handleVote('remove');
-    } else {
-      // Upvote
-      handleVote('upvote');
-    }
-  };
+  // Star voting is handled by StarVoteButton component
 
   const handleDownvote = () => {
     if (voteState.hasVoted && voteState.userVote?.weight && voteState.userVote.weight < 0) {
@@ -76,40 +69,20 @@ export const VoteButton: React.FC<VoteButtonProps> = ({
   };
 
   // Determine button states
-  const isUpvoted = voteState.hasVoted && voteState.userVote?.weight && voteState.userVote.weight > 0;
   const isDownvoted = voteState.hasVoted && voteState.userVote?.weight && voteState.userVote.weight < 0;
   const isDisabled = voteState.isVoting || !voteState.canVote;
 
   return (
     <div className={cn("flex items-center space-x-1", className)}>
-      {/* Upvote Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleUpvote}
-        disabled={isDisabled}
-        className={cn(
-          "flex items-center space-x-1 h-8 px-2",
-          isUpvoted
-            ? "text-accent hover:text-accent/80 bg-accent/10 hover:bg-accent/20"
-            : "text-muted-foreground hover:text-accent",
-          isDisabled && "opacity-50 cursor-not-allowed"
-        )}
-        title={
-          !voteState.canVote
-            ? "Insufficient voting power or not authenticated"
-            : isUpvoted
-            ? "Remove upvote"
-            : "Upvote this post"
-        }
-      >
-        {voteState.isVoting ? (
-          <Loader2 className="h-3 w-3 animate-spin" />
-        ) : (
-          <ChevronUp className={cn("h-3 w-3", isUpvoted && "fill-current")} />
-        )}
-        <span className="text-xs font-medium">{voteCount}</span>
-      </Button>
+      {/* Star Rating for Upvote */}
+      <StarVoteButton
+        author={author}
+        permlink={permlink}
+        voteCount={voteCount}
+        onVoteSuccess={onVoteSuccess}
+        onVoteError={onVoteError}
+        className="flex-shrink-0"
+      />
 
       {/* Downvote Button */}
       <Button
@@ -135,27 +108,12 @@ export const VoteButton: React.FC<VoteButtonProps> = ({
         <ChevronDown className={cn("h-3 w-3", isDownvoted && "fill-current")} />
       </Button>
 
-      {/* Voting Power Indicator */}
-      {voteState.canVote && (
-        <div className="ml-2 text-xs text-muted-foreground">
-          <div className="flex items-center space-x-1">
-            <Heart className="h-3 w-3" />
-            <span>{voteState.votingPower.toFixed(1)}%</span>
-          </div>
-        </div>
-      )}
-
-      {/* Error Display */}
-      {voteState.error && (
-        <div className="ml-2 text-xs text-red-600">
-          {voteState.error}
-        </div>
-      )}
+      {/* Voting power and error display are now handled by StarVoteButton */}
     </div>
   );
 };
 
-// Alternative simpler vote button for mobile or compact views
+// Alternative simpler vote button for mobile or compact views - now uses star rating
 export const SimpleVoteButton: React.FC<VoteButtonProps> = ({
   author,
   permlink,
@@ -164,50 +122,14 @@ export const SimpleVoteButton: React.FC<VoteButtonProps> = ({
   onVoteSuccess,
   onVoteError,
 }) => {
-  const { voteState, upvote, checkVoteStatus } = useVoting(author, permlink);
-
-  React.useEffect(() => {
-    checkVoteStatus(author, permlink);
-  }, [checkVoteStatus, author, permlink]);
-
-  const handleVote = async () => {
-    const result = await upvote(author, permlink);
-    
-    if (result.success) {
-      onVoteSuccess?.(result);
-    } else {
-      onVoteError?.(result.error || 'Vote failed');
-    }
-  };
-
-  const isUpvoted = voteState.hasVoted && voteState.userVote?.weight && voteState.userVote.weight > 0;
-  const isDisabled = voteState.isVoting || !voteState.canVote;
-
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={handleVote}
-      disabled={isDisabled}
-      className={cn(
-        "flex items-center space-x-1 text-muted-foreground hover:text-red-500",
-        isUpvoted && "text-red-500",
-        className
-      )}
-      title={
-        !voteState.canVote
-          ? "Insufficient voting power or not authenticated"
-          : isUpvoted
-          ? "Remove vote"
-          : "Upvote this post"
-      }
-    >
-      {voteState.isVoting ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        <Heart className={cn("h-4 w-4", isUpvoted && "fill-current")} />
-      )}
-      <span>{voteCount}</span>
-    </Button>
+    <StarVoteButton
+      author={author}
+      permlink={permlink}
+      voteCount={voteCount}
+      onVoteSuccess={onVoteSuccess}
+      onVoteError={onVoteError}
+      className={className}
+    />
   );
 };

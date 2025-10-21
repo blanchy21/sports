@@ -25,6 +25,8 @@ export interface UseVotingReturn {
   voteState: VoteState;
   upvote: (author: string, permlink: string) => Promise<VoteResult>;
   downvote: (author: string, permlink: string) => Promise<VoteResult>;
+  starVote: (author: string, permlink: string, stars: number) => Promise<VoteResult>;
+  commentVote: (author: string, permlink: string, weight: number) => Promise<VoteResult>;
   removeVoteAction: (author: string, permlink: string) => Promise<VoteResult>;
   checkVoteStatus: (author: string, permlink: string) => Promise<void>;
   refreshVoteState: () => Promise<void>;
@@ -166,6 +168,103 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
     }
   }, [author, permlink, hiveUser, authType, checkVoteStatus]);
 
+  // Cast a star-based vote (1-5 stars = 20%-100% weight)
+  const starVote = useCallback(async (author: string, permlink: string, stars: number): Promise<VoteResult> => {
+    if (!hiveUser?.username || authType !== 'hive') {
+      return {
+        success: false,
+        error: 'Authentication required for voting',
+      };
+    }
+
+    // Validate stars input (0-5)
+    if (stars < 0 || stars > 5) {
+      return {
+        success: false,
+        error: 'Stars must be between 0 and 5',
+      };
+    }
+
+    setVoteState(prev => ({ ...prev, isVoting: true, error: null }));
+
+    try {
+      // Convert stars to vote weight percentage (1 star = 20%, 5 stars = 100%)
+      const voteWeightPercentage = stars * 20;
+      
+      const voteData: VoteData = {
+        voter: hiveUser.username,
+        author,
+        permlink,
+        weight: voteWeightPercentage,
+      };
+
+      const result = await castVote(voteData);
+      
+      if (result.success) {
+        // Refresh vote state after successful vote
+        await checkVoteStatus();
+      }
+      
+      setVoteState(prev => ({ ...prev, isVoting: false }));
+      return result;
+    } catch (error) {
+      console.error('Error casting star vote:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to cast vote';
+      setVoteState(prev => ({ ...prev, isVoting: false, error: errorMessage }));
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }, [hiveUser, authType, checkVoteStatus]);
+
+  // Cast a comment vote with fixed weight (typically 20% for comments)
+  const commentVote = useCallback(async (author: string, permlink: string, weight: number): Promise<VoteResult> => {
+    if (!hiveUser?.username || authType !== 'hive') {
+      return {
+        success: false,
+        error: 'Authentication required for voting',
+      };
+    }
+
+    // Validate weight (0-100)
+    if (weight < 0 || weight > 100) {
+      return {
+        success: false,
+        error: 'Vote weight must be between 0 and 100',
+      };
+    }
+
+    setVoteState(prev => ({ ...prev, isVoting: true, error: null }));
+
+    try {
+      const voteData: VoteData = {
+        voter: hiveUser.username,
+        author,
+        permlink,
+        weight,
+      };
+
+      const result = await castVote(voteData);
+      
+      if (result.success) {
+        // Refresh vote state after successful vote
+        await checkVoteStatus();
+      }
+      
+      setVoteState(prev => ({ ...prev, isVoting: false }));
+      return result;
+    } catch (error) {
+      console.error('Error casting comment vote:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to cast vote';
+      setVoteState(prev => ({ ...prev, isVoting: false, error: errorMessage }));
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }, [hiveUser, authType, checkVoteStatus]);
+
   // Remove a vote (set weight to 0)
   const removeVoteAction = useCallback(async (): Promise<VoteResult> => {
     if (!hiveUser?.username || authType !== 'hive') {
@@ -213,6 +312,8 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
     voteState,
     upvote,
     downvote,
+    starVote,
+    commentVote,
     removeVoteAction,
     checkVoteStatus,
     refreshVoteState,

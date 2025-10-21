@@ -7,10 +7,11 @@ import { Avatar } from "@/components/ui/Avatar";
 import { X, MessageCircle, Send } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/ui/Toast";
+import { useToast, toast } from "@/components/ui/Toast";
 import { publishComment } from "@/lib/hive-workerbee/posting";
 import { useInvalidateComments } from "@/lib/react-query/queries/useComments";
 import { useAioha } from "@/contexts/AiohaProvider";
+import { CommentVoteButton } from "@/components/CommentVoteButton";
 
 interface CommentsModalProps {
   isOpen: boolean;
@@ -232,9 +233,19 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                         <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
                           Reply
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                          Vote ({comment.net_votes})
-                        </Button>
+                        <CommentVoteButton
+                          author={comment.author}
+                          permlink={comment.permlink}
+                          voteCount={comment.net_votes || 0}
+                          onVoteSuccess={(result) => {
+                            console.log("Comment vote successful:", result);
+                            addToast(toast.success("Comment Voted!", "Your vote has been recorded on the blockchain."));
+                          }}
+                          onVoteError={(error) => {
+                            console.error("Comment vote error:", error);
+                            addToast(toast.error("Vote Failed", error));
+                          }}
+                        />
                       </div>
                     </div>
                   </div>

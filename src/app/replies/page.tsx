@@ -8,6 +8,7 @@ import { useUserComments } from "@/lib/react-query/queries/useComments";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRealtimeReplies } from "@/hooks/useRealtimeReplies";
 import { formatDistanceToNow } from "date-fns";
+import { CommentVoteButton } from "@/components/CommentVoteButton";
 
 export default function RepliesPage() {
   const { user, isClient } = useAuth();
@@ -238,10 +239,17 @@ export default function RepliesPage() {
                               <p className="text-foreground mb-3 whitespace-pre-wrap">{reply.body}</p>
                               
                               <div className="flex items-center space-x-4">
-                                <button className="flex items-center space-x-1 text-sm text-muted-foreground hover:text-primary transition-colors">
-                                  <ThumbsUp className="h-4 w-4" />
-                                  <span>{reply.netVotes || 0}</span>
-                                </button>
+                                <CommentVoteButton
+                                  author={reply.author}
+                                  permlink={reply.permlink}
+                                  voteCount={reply.netVotes || 0}
+                                  onVoteSuccess={(result) => {
+                                    console.log("Reply vote successful:", result);
+                                  }}
+                                  onVoteError={(error) => {
+                                    console.error("Reply vote error:", error);
+                                  }}
+                                />
                                 
                                 <button className="flex items-center space-x-1 text-sm text-muted-foreground hover:text-primary transition-colors">
                                   <Reply className="h-4 w-4" />

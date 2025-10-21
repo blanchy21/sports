@@ -2,8 +2,10 @@
 
 import React from "react";
 import { VoteButton, SimpleVoteButton } from "@/components/VoteButton";
+import { CommentVoteButton } from "@/components/CommentVoteButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Demo post data - in a real app this would come from the blockchain
@@ -81,10 +83,10 @@ export const VotingDemo: React.FC = () => {
                 permlink={demoPost.permlink}
                 voteCount={demoPost.net_votes}
                 onVoteSuccess={(result) => {
-                  console.log("Vote successful:", result);
+                  console.log("Star vote successful:", result);
                 }}
                 onVoteError={(error) => {
-                  console.error("Vote error:", error);
+                  console.error("Star vote error:", error);
                 }}
               />
               <div className="text-sm text-muted-foreground">
@@ -136,6 +138,50 @@ export const VotingDemo: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Demo Comment with Comment Voting */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Comment Voting Interface</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Simple 20% vote system for comments - click to vote, click again to remove
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="border rounded-lg p-4 space-y-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                <span className="text-xs font-medium">JD</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="font-medium text-sm">@demo_user</span>
+                  <span className="text-xs text-muted-foreground">2 hours ago</span>
+                </div>
+                <p className="text-sm text-foreground mb-3">
+                  Great analysis! I completely agree with your points about the team&apos;s performance this season.
+                </p>
+                <div className="flex items-center space-x-4">
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                    Reply
+                  </Button>
+                  <CommentVoteButton
+                    author="demo_user"
+                    permlink="demo-comment-123"
+                    voteCount={5}
+                    onVoteSuccess={(result) => {
+                      console.log("Demo comment vote successful:", result);
+                    }}
+                    onVoteError={(error) => {
+                      console.error("Demo comment vote error:", error);
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Features List */}
       <Card>
         <CardHeader>
@@ -146,7 +192,9 @@ export const VotingDemo: React.FC = () => {
             <div className="space-y-2">
               <h4 className="font-medium">Core Functionality</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Upvote posts with optimal vote weight</li>
+                <li>• 5-star rating system for posts (1 star = 20% vote weight)</li>
+                <li>• Simple 20% voting for comments</li>
+                <li>• Hover preview and click to confirm for posts</li>
                 <li>• Downvote posts (negative weight)</li>
                 <li>• Remove existing votes</li>
                 <li>• Real-time vote count updates</li>
