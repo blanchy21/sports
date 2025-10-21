@@ -218,8 +218,8 @@ export default function WalletPage() {
         <div className="bg-card border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="p-3 bg-orange-500/10 rounded-lg">
-                <Coins className="h-6 w-6 text-orange-500" />
+              <div className="p-3 bg-maximum-yellow/10 rounded-lg">
+                <Coins className="h-6 w-6 text-maximum-yellow" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">HIVE</h3>
@@ -278,8 +278,8 @@ export default function WalletPage() {
         <div className="bg-card border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="p-3 bg-green-500/10 rounded-lg">
-                <DollarSign className="h-6 w-6 text-green-500" />
+              <div className="p-3 bg-japanese-laurel/10 rounded-lg">
+                <DollarSign className="h-6 w-6 text-japanese-laurel" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">HBD</h3>
@@ -333,7 +333,7 @@ export default function WalletPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Bitcoin */}
           {bitcoinPrice && (
-            <div className="bg-gradient-to-r from-orange-500 to-yellow-500 rounded-lg p-6 text-white">
+            <div className="bg-gradient-to-r from-japanese-laurel to-maximum-yellow rounded-lg p-6 text-white">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <Bitcoin className="h-8 w-8" />
@@ -356,7 +356,7 @@ export default function WalletPage() {
 
           {/* Ethereum */}
           {ethereumPrice && (
-            <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg p-6 text-white">
+            <div className="bg-gradient-to-r from-japanese-laurel to-maximum-yellow rounded-lg p-6 text-white">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <Coins className="h-8 w-8" />

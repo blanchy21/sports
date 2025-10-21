@@ -218,7 +218,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                           {formatDate(new Date(comment.created))}
                         </span>
                         {isNestedReply && (
-                          <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                          <span className="text-xs text-maximum-yellow bg-maximum-yellow/20 px-2 py-1 rounded">
                             Reply to @{comment.parent_author}
                           </span>
                         )}

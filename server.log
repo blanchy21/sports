@@ -1809,3 +1809,202 @@ Import trace:
  GET / 200 in 69ms
  GET /feed 200 in 69ms
  GET /feed 200 in 66ms
+ ✓ Compiled in 352ms
+(node:86142) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ Compiled in 328ms
+ ✓ Compiled in 236ms
+ ✓ Compiled in 156ms
+ ✓ Compiled in 78ms
+ ✓ Compiled in 131ms
+ ✓ Compiled in 130ms
+ ✓ Compiled in 167ms
+ ✓ Compiled in 5ms
+ ✓ Compiled in 438ms
+ ✓ Compiled in 0ms
+ ✓ Compiled in 132ms
+ ✓ Compiled in 91ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/components/ui/Toast.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 82ms
+ GET /feed 200 in 518ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 605ms
+ GET / 200 in 1356ms
+ GET / 200 in 1330ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 1365ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 1512ms
+ GET / 200 in 693ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 815ms
+ ✓ Compiled in 692ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/components/ui/Toast.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /feed 200 in 508ms
+ GET /feed 200 in 656ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 626ms
+ GET / 200 in 688ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 271ms
+ GET /feed 200 in 106ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 257ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 309ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 297ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 299ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 243ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 293ms
+ ✓ Compiled in 889ms
+ ✓ Compiled in 358ms
+ ✓ Compiled in 134ms
+ ✓ Compiled in 129ms
+ ✓ Compiled in 90ms
+ GET /feed 200 in 417ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 275ms
+ GET / 200 in 138ms
+ GET / 200 in 127ms
+ GET / 200 in 49ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 287ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 313ms
+[API] Returning cached price data
+ GET /api/crypto/prices?type=all 200 in 245ms
+ GET /feed 200 in 86ms
+ GET /feed 200 in 88ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 293ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 303ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 239ms
+ GET / 200 in 50ms
+ GET /feed 200 in 103ms
+ GET /feed 200 in 104ms
+ ✓ Compiled /new in 487ms
+ GET /new 200 in 518ms
+ GET /discover 200 in 103ms
+ GET /feed 200 in 58ms
+ ✓ Compiled /videos in 390ms
+ GET /videos 200 in 421ms
+ ✓ Compiled /shorts in 293ms
+ GET /shorts 200 in 323ms
+ GET / 200 in 71ms
+ GET /feed 200 in 42ms
+ GET /feed 200 in 38ms
+ GET /new 200 in 65ms
+ GET /discover 200 in 63ms
+ GET / 200 in 62ms
+ GET /feed 200 in 47ms
+ GET /feed 200 in 36ms
+ GET /videos 200 in 52ms
+ GET / 200 in 62ms
+ GET /feed 200 in 45ms
+ GET /feed 200 in 29ms
+ GET /videos 200 in 51ms
+ GET / 200 in 60ms
+ GET /feed 200 in 45ms
+ GET /feed 200 in 35ms
+ GET /wallet 200 in 129ms
+[API] Fetching transaction history for blanchy, limit: 500
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 500, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 500 operations
+[WorkerBee getAccountHistory] Processed 500 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 23 monetary operations from 500 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 23 monetary operations for blanchy
+[API] Successfully fetched 23 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=500 200 in 1499ms
+[API] Fetching transaction history for blanchy, limit: 500
+[WorkerBee getRecentOperations] Fetching recent operations for: blanchy
+[WorkerBee getAccountHistory] Fetching history for: blanchy, limit: 500, start: undefined
+[Hive API] Trying https://api.hive.blog for condenser_api.get_account_history
+[Hive API] Success with https://api.hive.blog for condenser_api.get_account_history
+[WorkerBee getAccountHistory] Raw history received: 500 operations
+[WorkerBee getAccountHistory] Processed 500 operations for blanchy
+[WorkerBee getRecentOperations] Filtered 23 monetary operations from 500 total operations for blanchy
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Trying https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[Hive API] Success with https://api.hive.blog for condenser_api.get_dynamic_global_properties
+[WorkerBee getRecentOperations] Processed 23 monetary operations for blanchy
+[API] Successfully fetched 23 operations for blanchy
+ GET /api/hive/account/history?username=blanchy&limit=500 200 in 640ms
+ GET / 200 in 56ms
+ GET /feed 200 in 38ms
+ GET /feed 200 in 27ms
+ GET /new 200 in 99ms
+ ✓ Compiled /publish in 413ms
+ GET /publish 200 in 481ms
+ GET / 200 in 64ms
+ GET /feed 200 in 47ms
+ GET /feed 200 in 30ms
+ GET /new 200 in 64ms
+ ✓ Compiled in 414ms
+(node:87862) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ Compiled in 1631ms
+ ✓ Compiled in 143ms
+ ✓ Compiled in 106ms
+ ✓ Compiled in 91ms
+ ✓ Compiled in 64ms
+ ✓ Compiled in 211ms

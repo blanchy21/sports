@@ -76,7 +76,7 @@ export const TopNavigation: React.FC = () => {
             className={cn(
               "flex items-center justify-center w-16 h-16 rounded-lg transition-all duration-200",
               pathname === "/" 
-                ? "bg-white text-primary shadow-md" 
+                ? "bg-card text-primary shadow-md" 
                 : "text-white/90 hover:bg-white/20 hover:text-white"
             )}
             suppressHydrationWarning
@@ -89,7 +89,7 @@ export const TopNavigation: React.FC = () => {
             className={cn(
               "flex items-center justify-center w-16 h-16 rounded-lg transition-all duration-200",
               pathname === "/dashboard" 
-                ? "bg-white text-primary shadow-md" 
+                ? "bg-card text-primary shadow-md" 
                 : "text-white/90 hover:bg-white/20 hover:text-white"
             )}
             suppressHydrationWarning
@@ -102,7 +102,7 @@ export const TopNavigation: React.FC = () => {
             className={cn(
               "flex items-center justify-center w-16 h-16 rounded-lg transition-all duration-200",
               pathname === "/communities" 
-                ? "bg-white text-primary shadow-md" 
+                ? "bg-card text-primary shadow-md" 
                 : "text-white/90 hover:bg-white/20 hover:text-white"
             )}
             suppressHydrationWarning
@@ -186,14 +186,14 @@ export const TopNavigation: React.FC = () => {
                 variant="outline" 
                 size="sm"
                 onClick={() => setShowAuthModal(true)}
-                className="border-white bg-white text-green-600 hover:bg-white/90 hover:text-green-700 font-medium"
+                className="border-white bg-white text-japanese-laurel hover:bg-white/90 hover:text-japanese-laurel/80 font-medium"
               >
                 Sign In
               </Button>
               <Button 
                 size="sm"
                 onClick={() => setShowAuthModal(true)}
-                className="bg-white text-green-600 hover:bg-white/90 font-medium"
+                className="bg-white text-japanese-laurel hover:bg-white/90 font-medium"
               >
                 Get Started
               </Button>

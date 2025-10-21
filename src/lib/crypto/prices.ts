@@ -20,7 +20,6 @@ let priceCache: PriceCache = {
  */
 export async function fetchBitcoinPrice(): Promise<number> {
   try {
-    console.log('[fetchBitcoinPrice] Fetching Bitcoin price...');
     
     const response = await fetch('/api/crypto/prices?type=bitcoin', {
       method: 'GET',
@@ -34,7 +33,6 @@ export async function fetchBitcoinPrice(): Promise<number> {
     }
 
     const result = await response.json();
-    console.log('[fetchBitcoinPrice] Bitcoin price data:', result);
     
     if (!result.success) {
       throw new Error(result.error || 'Failed to fetch Bitcoin price');
@@ -58,7 +56,6 @@ export async function fetchHivePrices(): Promise<{
   hbd24hChange?: number;
 }> {
   try {
-    console.log('[fetchHivePrices] Fetching HIVE and HBD prices...');
     
     const response = await fetch('/api/crypto/prices?type=hive', {
       method: 'GET',
@@ -72,7 +69,6 @@ export async function fetchHivePrices(): Promise<{
     }
 
     const result = await response.json();
-    console.log('[fetchHivePrices] HIVE/HBD price data:', result);
     
     if (!result.success) {
       throw new Error(result.error || 'Failed to fetch HIVE/HBD prices');
@@ -99,11 +95,9 @@ export async function fetchAllPrices(): Promise<CryptoPriceData> {
     // Check if we have valid cached data
     const now = Date.now();
     if (priceCache.data && now < priceCache.expiresAt) {
-      console.log('[fetchAllPrices] Using cached price data');
       return priceCache.data;
     }
 
-    console.log('[fetchAllPrices] Fetching fresh price data...');
     
     // Fetch all prices from our API route
     const response = await fetch('/api/crypto/prices?type=all', {
@@ -133,7 +127,6 @@ export async function fetchAllPrices(): Promise<CryptoPriceData> {
       expiresAt: now + CACHE_DURATION
     };
 
-    console.log('[fetchAllPrices] Price data fetched and cached:', priceData);
     return priceData;
   } catch (error) {
     console.error('[fetchAllPrices] Error fetching all prices:', error);

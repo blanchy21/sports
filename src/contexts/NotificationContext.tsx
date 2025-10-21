@@ -198,7 +198,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         // Monitor new posts in sportsblock community
         // Note: onPostsWithTags might not be available, so we'll skip this for now
         // and focus on comments and votes which are more reliable
-        console.log('Real-time monitoring initialized for comments and votes');
 
       } catch (error) {
         console.error('Error initializing real-time monitoring:', error);

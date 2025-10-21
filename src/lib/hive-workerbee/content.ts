@@ -1,4 +1,5 @@
 import { getWaxClient, SPORTS_ARENA_CONFIG } from './client';
+import { SPORT_CATEGORIES } from '@/types';
 
 // Helper function to make direct HTTP calls to Hive API
 // This provides better error handling and fallback options
@@ -174,7 +175,30 @@ function isSportsblockPost(post: HivePost): boolean {
 
 function getSportCategory(post: HivePost): string | null {
   const metadata = parseJsonMetadata(post.json_metadata);
-  return (metadata.sport_category as string) || null;
+  
+  // First check if sport_category is explicitly set in metadata
+  if (metadata.sport_category) {
+    return metadata.sport_category as string;
+  }
+  
+  // If not, check tags array for sport names
+  const tags = metadata.tags as string[] | undefined;
+  if (tags) {
+    // Check if any tag matches a sport category
+    for (const tag of tags) {
+      // Check against known sport categories
+      const sportCategory = SPORT_CATEGORIES.find(sport => 
+        sport.id === tag || 
+        sport.name.toLowerCase() === tag.toLowerCase() ||
+        sport.slug === tag
+      );
+      if (sportCategory) {
+        return sportCategory.id;
+      }
+    }
+  }
+  
+  return null;
 }
 
 function calculatePendingPayout(post: HivePost | SportsblockPost): number {

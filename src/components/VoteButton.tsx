@@ -91,8 +91,8 @@ export const VoteButton: React.FC<VoteButtonProps> = ({
         className={cn(
           "flex items-center space-x-1 h-8 px-2",
           isUpvoted
-            ? "text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100"
-            : "text-muted-foreground hover:text-green-600",
+            ? "text-accent hover:text-accent/80 bg-accent/10 hover:bg-accent/20"
+            : "text-muted-foreground hover:text-accent",
           isDisabled && "opacity-50 cursor-not-allowed"
         )}
         title={

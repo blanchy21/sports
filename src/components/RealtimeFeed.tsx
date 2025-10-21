@@ -70,11 +70,11 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
   const getEventIcon = (event: RealtimeEvent) => {
     switch (event.type) {
       case 'new_post':
-        return <Activity className="h-4 w-4 text-blue-500" />;
+        return <Activity className="h-4 w-4 text-maximum-yellow" />;
       case 'new_vote':
         return <Heart className="h-4 w-4 text-red-500" />;
       case 'new_comment':
-        return <MessageCircle className="h-4 w-4 text-green-500" />;
+        return <MessageCircle className="h-4 w-4 text-accent" />;
       default:
         return <Zap className="h-4 w-4 text-yellow-500" />;
     }
@@ -83,11 +83,11 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
   const getEventColor = (event: RealtimeEvent) => {
     switch (event.type) {
       case 'new_post':
-        return 'bg-blue-50 border-blue-200';
+        return 'bg-maximum-yellow/10 border-maximum-yellow/20';
       case 'new_vote':
         return 'bg-red-50 border-red-200';
       case 'new_comment':
-        return 'bg-green-50 border-green-200';
+        return 'bg-accent/10 border-accent/20';
       default:
         return 'bg-gray-50 border-gray-200';
     }

@@ -89,28 +89,28 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
   const getIcon = () => {
     switch (toast.type) {
       case "success":
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
+        return <CheckCircle className="h-5 w-5 text-accent" />;
       case "error":
         return <AlertCircle className="h-5 w-5 text-red-600" />;
       case "warning":
         return <AlertTriangle className="h-5 w-5 text-yellow-600" />;
       case "info":
       default:
-        return <Info className="h-5 w-5 text-blue-600" />;
+        return <Info className="h-5 w-5 text-maximum-yellow" />;
     }
   };
 
   const getBackgroundColor = () => {
     switch (toast.type) {
       case "success":
-        return "bg-green-50 border-green-200";
+        return "bg-accent/10 border-accent/20";
       case "error":
         return "bg-red-50 border-red-200";
       case "warning":
         return "bg-yellow-50 border-yellow-200";
       case "info":
       default:
-        return "bg-blue-50 border-blue-200";
+        return "bg-maximum-yellow/10 border-maximum-yellow/20";
     }
   };
 

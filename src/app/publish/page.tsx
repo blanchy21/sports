@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { 
   ArrowLeft,
   Eye,
@@ -44,6 +44,7 @@ const EmojiPicker = dynamic(
 export default function PublishPage() {
   const { user, authType, hiveUser } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedSport, setSelectedSport] = useState("");
@@ -66,14 +67,55 @@ export default function PublishPage() {
     }
   }, [user, router]);
 
-  // Check RC status for Hive users
+  // Load draft if draft ID is provided in URL
   React.useEffect(() => {
-    if (hiveUser?.username && authType === "hive") {
-      checkRCStatus();
+    const draftId = searchParams.get('draft');
+    
+    if (draftId && user) {
+      // Add a small delay to ensure the component is fully mounted
+      setTimeout(() => {
+        loadDraft(draftId);
+      }, 100);
     }
-  }, [hiveUser, authType]);
+  }, [searchParams, user]);
 
-  const checkRCStatus = async () => {
+  const loadDraft = (draftId: string) => {
+    try {
+      const savedDrafts = localStorage.getItem('drafts');
+      
+      if (savedDrafts) {
+        const parsedDrafts = JSON.parse(savedDrafts);
+        
+        // Try to find by ID first
+        let draft = parsedDrafts.find((d: { id?: string }) => d.id === draftId);
+        
+        // If not found by ID, try to find by index (for old drafts without IDs)
+        if (!draft) {
+          // The draft ID format is "draft-timestamp-index", so we can extract the index
+          const match = draftId.match(/draft-(\d+)-(\d+)/);
+          if (match) {
+            const index = parseInt(match[2]);
+            if (index >= 0 && index < parsedDrafts.length) {
+              draft = parsedDrafts[index];
+            }
+          }
+        }
+        
+        if (draft) {
+          setTitle(draft.title || '');
+          setContent(draft.content || '');
+          setSelectedSport(draft.sport || '');
+          setTags(Array.isArray(draft.tags) ? draft.tags.join(', ') : (draft.tags || ''));
+          setImageUrl(draft.imageUrl || '');
+          setImageAlt(draft.imageAlt || '');
+        }
+      }
+    } catch (err) {
+      console.error('Error loading draft:', err);
+    }
+  };
+
+  const checkRCStatus = React.useCallback(async () => {
     if (!hiveUser?.username) return;
     
     try {
@@ -82,7 +124,14 @@ export default function PublishPage() {
     } catch (error) {
       console.error("Error checking RC status:", error);
     }
-  };
+  }, [hiveUser?.username]);
+
+  // Check RC status for Hive users
+  React.useEffect(() => {
+    if (hiveUser?.username && authType === "hive") {
+      checkRCStatus();
+    }
+  }, [hiveUser, authType, checkRCStatus]);
 
   // Markdown formatting helpers
   const insertMarkdown = (before: string, after: string = "", placeholder: string = "") => {
@@ -183,22 +232,36 @@ export default function PublishPage() {
   }, [showEmojiPicker]);
 
   const handleSaveDraft = () => {
-    // Save draft to localStorage for soft auth users
-    const draft = {
+    const draftId = searchParams.get('draft');
+    const existingDrafts = JSON.parse(localStorage.getItem('drafts') || '[]');
+    
+    const draftData = {
+      id: draftId || Date.now().toString(), // Use existing ID or generate new one
       title,
       content,
+      excerpt: content.substring(0, 150) + (content.length > 150 ? '...' : ''), // Create excerpt
       sport: selectedSport,
-      tags,
+      tags: tags.split(',').map(t => t.trim()).filter(t => t.length > 0),
       imageUrl,
       imageAlt,
-      createdAt: new Date().toISOString(),
+      createdAt: draftId ? existingDrafts.find((d: { id: string; createdAt?: string }) => d.id === draftId)?.createdAt || new Date().toISOString() : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      wordCount: content.split(/\s+/).filter(word => word.length > 0).length,
     };
     
-    const existingDrafts = JSON.parse(localStorage.getItem('drafts') || '[]');
-    existingDrafts.push(draft);
-    localStorage.setItem('drafts', JSON.stringify(existingDrafts));
-    
-    alert('Draft saved successfully!');
+    if (draftId) {
+      // Update existing draft
+      const updatedDrafts = existingDrafts.map((draft: { id: string }) => 
+        draft.id === draftId ? draftData : draft
+      );
+      localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
+      alert('Draft updated successfully!');
+    } else {
+      // Create new draft
+      existingDrafts.push(draftData);
+      localStorage.setItem('drafts', JSON.stringify(existingDrafts));
+      alert('Draft saved successfully!');
+    }
   };
 
   const handlePublish = async () => {
@@ -319,6 +382,7 @@ export default function PublishPage() {
               <Save className="h-4 w-4 mr-2" />
               Save Draft
             </Button>
+
             
             <Button
               size="sm"
@@ -327,8 +391,8 @@ export default function PublishPage() {
               className={cn(
                 "min-w-[140px]",
                 authType === "hive" 
-                  ? "bg-green-600 hover:bg-green-700" 
-                  : "bg-orange-600 hover:bg-orange-700"
+                  ? "bg-accent hover:bg-accent/90" 
+                  : "bg-japanese-laurel hover:bg-japanese-laurel/90"
               )}
             >
               <Send className="h-4 w-4 mr-2" />
@@ -381,14 +445,14 @@ export default function PublishPage() {
 
             {/* Auth Warning */}
             {authType !== "hive" && (
-              <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+              <div className="bg-maximum-yellow/10 dark:bg-maximum-yellow/20 border border-maximum-yellow/20 dark:border-maximum-yellow/40 rounded-lg p-3">
                 <div className="flex items-start space-x-2">
-                  <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5" />
+                  <AlertCircle className="h-4 w-4 text-maximum-yellow mt-0.5" />
                   <div>
-                    <h4 className="font-medium text-orange-800 dark:text-orange-200 text-sm">
+                    <h4 className="font-medium text-maximum-yellow dark:text-maximum-yellow text-sm">
                       Guest Mode
                     </h4>
-                    <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                    <p className="text-xs text-maximum-yellow dark:text-maximum-yellow mt-1">
                       Posts won&apos;t earn rewards or be published to the blockchain. Connect with Hive Keychain to unlock full features.
                     </p>
                   </div>
@@ -401,19 +465,19 @@ export default function PublishPage() {
               <div className={cn(
                 "rounded-lg p-3",
                 rcStatus.canPost 
-                  ? "bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800"
+                  ? "bg-accent/10 dark:bg-accent/20 border border-accent/20 dark:border-accent/40"
                   : "bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800"
               )}>
                 <div className="flex items-start space-x-2">
                   <AlertCircle className={cn(
                     "h-4 w-4 mt-0.5",
-                    rcStatus.canPost ? "text-green-600" : "text-red-600"
+                    rcStatus.canPost ? "text-accent" : "text-red-600"
                   )} />
                   <div>
                     <h4 className={cn(
                       "font-medium text-sm",
                       rcStatus.canPost 
-                        ? "text-green-800 dark:text-green-200"
+                        ? "text-accent-foreground dark:text-accent-foreground"
                         : "text-red-800 dark:text-red-200"
                     )}>
                       Resource Credits: {rcStatus.rcPercentage.toFixed(1)}%
@@ -422,7 +486,7 @@ export default function PublishPage() {
                       <p className={cn(
                         "text-xs mt-1",
                         rcStatus.canPost 
-                          ? "text-green-700 dark:text-green-300"
+                          ? "text-accent-foreground/80 dark:text-accent-foreground/80"
                           : "text-red-700 dark:text-red-300"
                       )}>
                         {rcStatus.message}

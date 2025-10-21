@@ -111,13 +111,13 @@ export default function ProfilePage() {
                     <h1 className="text-3xl font-bold text-foreground">{user.displayName || user.username}</h1>
                     {authType === "hive" && (
                       <div className="flex items-center space-x-2">
-                        <div className="flex items-center space-x-1 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span className="text-xs font-medium text-green-700 dark:text-green-400">Hive</span>
+                        <div className="flex items-center space-x-1 bg-accent/20 dark:bg-accent/20 px-2 py-1 rounded-full">
+                          <div className="w-2 h-2 bg-accent rounded-full"></div>
+                          <span className="text-xs font-medium text-accent-foreground dark:text-accent-foreground">Hive</span>
                         </div>
                         {user.reputationFormatted && (
-                          <div className="bg-blue-100 dark:bg-blue-900/20 px-2 py-1 rounded-full">
-                            <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                          <div className="bg-maximum-yellow/20 dark:bg-maximum-yellow/20 px-2 py-1 rounded-full">
+                            <span className="text-xs font-medium text-maximum-yellow dark:text-maximum-yellow">
                               Rep: {user.reputationFormatted}
                             </span>
                           </div>

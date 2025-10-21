@@ -158,7 +158,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
             )}
             {isHivePost && pendingPayout > 0 && (
               <div className="flex items-center space-x-1 mt-1">
-                <span className="text-xs text-green-600 font-medium">
+                <span className="text-xs text-accent font-medium">
                   💰 {formatAsset(pendingPayout, 'HIVE', 3)} pending
                 </span>
               </div>
@@ -290,7 +290,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
               variant="ghost"
               size="sm"
               onClick={handleComment}
-              className="flex items-center space-x-1 text-muted-foreground hover:text-blue-500"
+              className="flex items-center space-x-1 text-muted-foreground hover:text-maximum-yellow"
             >
               <MessageCircle className="h-4 w-4" />
               <span>{isHivePost ? post.children : post.comments}</span>

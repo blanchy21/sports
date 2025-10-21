@@ -10,10 +10,10 @@ export const RealtimeStatus: React.FC = () => {
   return (
     <div className="flex items-center space-x-2 text-sm">
       {isRealtimeActive ? (
-        <div className="flex items-center space-x-1 text-green-600">
+        <div className="flex items-center space-x-1 text-accent">
           <Wifi className="h-4 w-4" />
           <span>Live</span>
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
         </div>
       ) : (
         <div className="flex items-center space-x-1 text-gray-500">
@@ -23,7 +23,7 @@ export const RealtimeStatus: React.FC = () => {
       )}
       
       {unreadCount > 0 && (
-        <div className="flex items-center space-x-1 text-blue-600">
+        <div className="flex items-center space-x-1 text-maximum-yellow">
           <Bell className="h-4 w-4" />
           <span>{unreadCount}</span>
         </div>

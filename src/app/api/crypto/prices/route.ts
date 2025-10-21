@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
     // Check if we have valid cached data
     const now = Date.now();
     if (priceCache.data && now < priceCache.expiresAt) {
-      console.log('[API] Returning cached price data');
       return NextResponse.json({
         success: true,
         data: priceCache.data,
@@ -35,8 +34,6 @@ export async function GET(request: NextRequest) {
         timestamp: priceCache.timestamp
       });
     }
-
-    console.log(`[API] Fetching fresh price data for type: ${type}`);
     
     let priceData;
     
@@ -146,7 +143,6 @@ export async function GET(request: NextRequest) {
       expiresAt: now + CACHE_DURATION
     };
 
-    console.log('[API] Price data fetched and cached:', priceData);
     
     return NextResponse.json({
       success: true,

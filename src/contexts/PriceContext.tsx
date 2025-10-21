@@ -24,7 +24,6 @@ export function PriceProvider({ children }: PriceProviderProps) {
       setIsLoading(true);
       setError(null);
       
-      console.log('[PriceContext] Refreshing cryptocurrency prices...');
       const priceData = await fetchAllPrices();
       
       setBitcoinPrice(priceData.bitcoin.usd);
@@ -32,13 +31,6 @@ export function PriceProvider({ children }: PriceProviderProps) {
       setHivePrice(priceData.hive.usd);
       setHbdPrice(priceData.hive_dollar.usd);
       setLastUpdated(new Date());
-      
-      console.log('[PriceContext] Prices updated:', {
-        bitcoin: priceData.bitcoin.usd,
-        ethereum: priceData.ethereum.usd,
-        hive: priceData.hive.usd,
-        hbd: priceData.hive_dollar.usd
-      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error('[PriceContext] Error refreshing prices:', errorMessage);
@@ -68,7 +60,6 @@ export function PriceProvider({ children }: PriceProviderProps) {
 
     // Set up interval for auto-refresh
     const interval = setInterval(() => {
-      console.log('[PriceContext] Auto-refreshing prices...');
       refreshPrices();
     }, 10 * 60 * 1000); // 10 minutes
 

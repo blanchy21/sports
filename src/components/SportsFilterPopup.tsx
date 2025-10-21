@@ -83,7 +83,7 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
               transform: 'translateX(-50%)'
             }}
           >
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700">
+            <div className="bg-card dark:bg-card rounded-2xl shadow-2xl border border-border">
               {/* Header */}
               <div className="bg-gradient-to-r from-primary to-teal-600 px-8 py-6 relative">
                 <button
@@ -120,7 +120,7 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
                             "hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]",
                             isSelected
                               ? "border-primary bg-primary/5 shadow-md"
-                              : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary/50"
+                              : "border-border bg-card hover:border-primary/50"
                           )}
                           whileHover={{ y: -2 }}
                           whileTap={{ scale: 0.98 }}

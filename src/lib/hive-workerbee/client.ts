@@ -68,7 +68,6 @@ export async function initializeWorkerBeeClient(): Promise<InstanceType<typeof W
   
   if (!client.running) {
     await client.start();
-    console.log('WorkerBee client initialized and started');
   }
   
   return client;

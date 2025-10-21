@@ -10,6 +10,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // New palette colors
+        'cosmic-latte': '#FFFBEB',
+        'maximum-yellow': '#F1BE49',
+        'japanese-laurel': '#317039',
+        'eerie-black': '#1F1F1F',
+        // Theme colors
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

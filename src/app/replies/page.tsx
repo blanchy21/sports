@@ -107,11 +107,11 @@ export default function RepliesPage() {
                       <span>Replies</span>
                       {isConnected && (
                         <div className="flex items-center space-x-2 ml-4">
-                          <div className="flex items-center space-x-1 text-green-600">
+                          <div className="flex items-center space-x-1 text-accent">
                             <Wifi className="h-4 w-4" />
                             <span className="text-sm font-medium">Live</span>
                           </div>
-                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
                         </div>
                       )}
                     </h1>
@@ -135,7 +135,7 @@ export default function RepliesPage() {
                 <div className="text-2xl font-bold">{allReplies.length}</div>
                 <div className="text-sm text-muted-foreground">Total Comments</div>
                 {realtimeReplies.length > 0 && (
-                  <div className="text-xs text-green-600 flex items-center">
+                  <div className="text-xs text-accent flex items-center">
                     <Zap className="h-3 w-3 mr-1" />
                     {realtimeReplies.length} live
                   </div>
@@ -200,7 +200,7 @@ export default function RepliesPage() {
                           key={`${reply.author}/${reply.permlink}`} 
                           className={`bg-card border rounded-lg p-5 hover:shadow-md transition-all duration-300 ${
                             reply.isNew 
-                              ? 'border-green-300 bg-green-50/50 shadow-lg animate-pulse' 
+                              ? 'border-accent/30 bg-accent/10 shadow-lg animate-pulse' 
                               : 'hover:shadow-md'
                           }`}
                         >
@@ -223,7 +223,7 @@ export default function RepliesPage() {
                                 <span className="text-muted-foreground">•</span>
                                 <span className="text-sm text-muted-foreground">{formatTimestamp(reply.created)}</span>
                                 {reply.isNew && (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 font-medium">
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-accent/20 text-accent-foreground font-medium">
                                     <Zap className="h-3 w-3 mr-1" />
                                     New
                                   </span>

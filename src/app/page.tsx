@@ -24,11 +24,11 @@ import { AuthModal } from "@/components/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
 
 const sports = [
-  { name: "Football", image: "/football.jpg", color: "from-green-500/80 to-green-700/80" },
-  { name: "Tennis", image: "/tennis.jpg", color: "from-yellow-500/80 to-orange-600/80" },
+  { name: "Football", image: "/football.jpg", color: "from-japanese-laurel/80 to-japanese-laurel/60" },
+  { name: "Tennis", image: "/tennis.jpg", color: "from-maximum-yellow/80 to-japanese-laurel/80" },
   { name: "Rugby", image: "/rugby.jpg", color: "from-red-500/80 to-red-700/80" },
   { name: "Golf", image: "/golf.jpg", color: "from-emerald-500/80 to-teal-600/80" },
-  { name: "American Football", image: "/american-football.jpg", color: "from-blue-500/80 to-indigo-700/80" },
+  { name: "American Football", image: "/american-football.jpg", color: "from-maximum-yellow/80 to-japanese-laurel/80" },
 ];
 
 export default function LandingPage() {
@@ -92,7 +92,7 @@ export default function LandingPage() {
           >
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
               Your Escape to Pure
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-maximum-yellow">
                 Sports Content
               </span>
             </h1>
@@ -220,7 +220,7 @@ export default function LandingPage() {
                 icon: Shield,
                 title: "Your Safe Space",
                 description: "A dedicated platform where sports fans can share, discuss, and celebrate without interference.",
-                color: "text-blue-500",
+                color: "text-maximum-yellow",
                 delay: 0.6
               }
             ].map((item, index) => (
@@ -274,8 +274,8 @@ export default function LandingPage() {
               className="space-y-6"
             >
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-green-500/10 rounded-lg">
-                  <DollarSign className="h-6 w-6 text-green-500" />
+                <div className="p-3 bg-japanese-laurel/10 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-japanese-laurel" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Earn $0.50 to $200+ Per Post</h3>
@@ -287,8 +287,8 @@ export default function LandingPage() {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-blue-500/10 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-blue-500" />
+                <div className="p-3 bg-maximum-yellow/10 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-maximum-yellow" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">No Premium Required</h3>
@@ -318,7 +318,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-2xl p-8 border-2 border-primary/30"
+              className="bg-gradient-to-br from-primary/20 to-maximum-yellow/20 rounded-2xl p-8 border-2 border-primary/30"
             >
               <div className="text-center mb-6">
                 <h3 className="text-2xl font-bold mb-2">Example Earnings</h3>
@@ -327,7 +327,7 @@ export default function LandingPage() {
               
               {[
                 { engagement: "Low", upvotes: "10-20", earnings: "$0.50 - $2", color: "bg-yellow-500" },
-                { engagement: "Medium", upvotes: "50-100", earnings: "$5 - $20", color: "bg-orange-500" },
+                { engagement: "Medium", upvotes: "50-100", earnings: "$5 - $20", color: "bg-maximum-yellow" },
                 { engagement: "High", upvotes: "200-500", earnings: "$30 - $80", color: "bg-red-500" },
                 { engagement: "Viral", upvotes: "1000+", earnings: "$100 - $200+", color: "bg-purple-500" }
               ].map((tier, index) => (
@@ -346,7 +346,7 @@ export default function LandingPage() {
                       <div className="text-sm text-muted-foreground">{tier.upvotes} upvotes</div>
                     </div>
                   </div>
-                  <div className="text-lg font-bold text-green-500">{tier.earnings}</div>
+                  <div className="text-lg font-bold text-japanese-laurel">{tier.earnings}</div>
                 </motion.div>
               ))}
             </motion.div>
@@ -415,7 +415,7 @@ export default function LandingPage() {
       </section>
 
       {/* Authentication CTA Section */}
-      <section className="py-24 px-6 bg-gradient-to-br from-primary/10 via-blue-500/10 to-purple-500/10">
+      <section className="py-24 px-6 bg-gradient-to-br from-primary/10 via-maximum-yellow/10 to-accent/10">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -458,19 +458,19 @@ export default function LandingPage() {
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-accent" />
                     <span>Earn crypto rewards</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-accent" />
                     <span>Vote on content</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-accent" />
                     <span>Full community access</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-accent" />
                     <span>Multiple wallet support</span>
                   </div>
                 </div>
@@ -511,15 +511,15 @@ export default function LandingPage() {
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-accent" />
                     <span>Multiple wallet options</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-accent" />
                     <span>Earn crypto rewards</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-accent" />
                     <span>Full platform access</span>
                   </div>
                 </div>
@@ -550,10 +550,10 @@ export default function LandingPage() {
               whileHover={{ y: -10 }}
               className="bg-card border rounded-2xl p-6 relative overflow-hidden group"
             >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500" />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-maximum-yellow/10 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500" />
               
               <div className="relative">
-                <User className="h-10 w-10 text-blue-500 mb-3" />
+                <User className="h-10 w-10 text-maximum-yellow mb-3" />
                 <h3 className="text-xl font-bold mb-2">Email & Google</h3>
                 <p className="text-muted-foreground mb-4 text-sm">
                   Quick signup with email or Google account for instant access.
@@ -561,15 +561,15 @@ export default function LandingPage() {
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-accent" />
                     <span>Instant access</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-accent" />
                     <span>Read and create posts</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-accent" />
                     <span>Upgrade to Hive later</span>
                   </div>
                 </div>

@@ -23,7 +23,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
       case 'admin':
         return <Crown className="h-4 w-4 text-yellow-500" />;
       case 'moderator':
-        return <Shield className="h-4 w-4 text-blue-500" />;
+        return <Shield className="h-4 w-4 text-maximum-yellow" />;
       default:
         return <User className="h-4 w-4 text-muted-foreground" />;
     }
@@ -34,7 +34,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
       case 'admin':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'moderator':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+        return 'bg-maximum-yellow/20 text-maximum-yellow dark:bg-maximum-yellow/20 dark:text-maximum-yellow';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
@@ -163,7 +163,7 @@ const getRoleColor = (role: string) => {
     case 'admin':
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
     case 'moderator':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      return 'bg-maximum-yellow/20 text-maximum-yellow dark:bg-maximum-yellow/20 dark:text-maximum-yellow';
     default:
       return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
   }

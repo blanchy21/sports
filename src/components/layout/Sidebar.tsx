@@ -41,12 +41,12 @@ const navigationItems = [
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const { user, isClient } = useAuth();
+  const { user } = useAuth();
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const profileTriggerRef = useRef<HTMLDivElement>(null);
 
-  // Ensure hydration is complete before showing active states
+  // Ensure hydration is complete before showing user profile
   useEffect(() => {
     setIsHydrated(true);
   }, []);
@@ -61,7 +61,8 @@ export const Sidebar: React.FC = () => {
             if (item.requireAuth && !user) return null;
 
             const Icon = item.icon;
-            const isActive = isHydrated && pathname === item.href;
+            // Use pathname directly for active state to avoid hydration mismatch
+            const isActive = pathname === item.href;
 
             return (
               <Link
@@ -69,10 +70,8 @@ export const Sidebar: React.FC = () => {
                 href={item.href}
                 className={cn(
                   "flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors",
-                  isActive && item.featured
-                    ? "bg-gradient-to-r from-primary via-teal-500 to-cyan-500 text-white"
-                    : isActive
-                    ? "bg-primary text-primary-foreground"
+                  isActive
+                    ? "bg-gradient-to-r from-japanese-laurel via-maximum-yellow to-japanese-laurel text-white"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >

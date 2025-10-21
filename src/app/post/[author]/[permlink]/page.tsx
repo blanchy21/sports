@@ -167,14 +167,14 @@ export default function PostDetailPage() {
               </div>
               {post.sportCategory && (
                 <div className="mt-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-maximum-yellow/20 text-maximum-yellow">
                     {post.sportCategory}
                   </span>
                 </div>
               )}
               {pendingPayout > 0 && (
                 <div className="mt-2">
-                  <span className="text-sm text-green-600 font-medium">
+                  <span className="text-sm text-accent font-medium">
                     💰 {formatAsset(pendingPayout, 'HIVE', 3)} pending
                   </span>
                 </div>

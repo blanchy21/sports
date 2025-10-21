@@ -24,6 +24,7 @@ export default function DraftsPage() {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null);
 
   // Load drafts from localStorage (in a real app, this would be from a database)
   const loadDrafts = async () => {
@@ -35,7 +36,26 @@ export default function DraftsPage() {
       const savedDrafts = localStorage.getItem('drafts');
       if (savedDrafts) {
         const parsedDrafts = JSON.parse(savedDrafts);
-        setDrafts(parsedDrafts);
+        // Ensure all drafts have required fields and unique IDs
+        const validDrafts = parsedDrafts.map((draft: Record<string, unknown>, index: number) => ({
+          id: (draft.id as string) || `draft-${Date.now()}-${index}`,
+          title: (draft.title as string) || 'Untitled Draft',
+          content: (draft.content as string) || '',
+          excerpt: (draft.excerpt as string) || ((draft.content as string) ? (draft.content as string).substring(0, 150) + ((draft.content as string).length > 150 ? '...' : '') : ''),
+          sport: (draft.sport as string) || '',
+          tags: Array.isArray(draft.tags) ? draft.tags as string[] : ((draft.tags as string) ? (draft.tags as string).split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0) : []),
+          updatedAt: (draft.updatedAt as string) || (draft.createdAt as string) || new Date().toISOString(),
+          wordCount: (draft.wordCount as number) || ((draft.content as string) ? (draft.content as string).split(/\s+/).filter((word: string) => word.length > 0).length : 0),
+        }));
+        
+        // Update localStorage with the corrected drafts (in case some were missing IDs)
+        const needsUpdate = parsedDrafts.some((draft: Record<string, unknown>) => !draft.id);
+        if (needsUpdate) {
+          console.log('Updating drafts in localStorage with missing IDs...');
+          localStorage.setItem('drafts', JSON.stringify(validDrafts));
+        }
+        
+        setDrafts(validDrafts);
       } else {
         setDrafts([]);
       }
@@ -44,6 +64,30 @@ export default function DraftsPage() {
       setError('Failed to load drafts. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Delete a draft
+  const handleDeleteDraft = async (draftId: string) => {
+    if (!confirm('Are you sure you want to delete this draft? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingDraftId(draftId);
+    
+    try {
+      const savedDrafts = localStorage.getItem('drafts');
+      if (savedDrafts) {
+        const parsedDrafts = JSON.parse(savedDrafts);
+        const updatedDrafts = parsedDrafts.filter((draft: Record<string, unknown>) => draft.id !== draftId);
+        localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
+        setDrafts(updatedDrafts);
+      }
+    } catch (err) {
+      console.error('Error deleting draft:', err);
+      setError('Failed to delete draft. Please try again.');
+    } finally {
+      setDeletingDraftId(null);
     }
   };
 
@@ -150,8 +194,14 @@ export default function DraftsPage() {
                       variant="outline"
                       size="sm"
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleDeleteDraft(draft.id)}
+                      disabled={deletingDraftId === draft.id}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {deletingDraftId === draft.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>

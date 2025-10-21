@@ -51,13 +51,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'comment':
-        return <MessageSquare className="h-4 w-4 text-blue-500" />;
+        return <MessageSquare className="h-4 w-4 text-maximum-yellow" />;
       case 'vote':
-        return <ThumbsUp className="h-4 w-4 text-green-500" />;
+        return <ThumbsUp className="h-4 w-4 text-accent" />;
       case 'post':
         return <FileText className="h-4 w-4 text-purple-500" />;
       case 'mention':
-        return <AtSign className="h-4 w-4 text-orange-500" />;
+        return <AtSign className="h-4 w-4 text-maximum-yellow" />;
       default:
         return <Bell className="h-4 w-4 text-gray-500" />;
     }
@@ -66,13 +66,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const getNotificationColor = (type: string) => {
     switch (type) {
       case 'comment':
-        return 'bg-blue-50 border-blue-200';
+        return 'bg-maximum-yellow/10 border-maximum-yellow/20';
       case 'vote':
-        return 'bg-green-50 border-green-200';
+        return 'bg-accent/10 border-accent/20';
       case 'post':
         return 'bg-purple-50 border-purple-200';
       case 'mention':
-        return 'bg-orange-50 border-orange-200';
+        return 'bg-maximum-yellow/10 border-maximum-yellow/20';
       default:
         return 'bg-gray-50 border-gray-200';
     }
@@ -83,7 +83,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-hidden"
+      className="absolute right-0 top-full mt-2 w-96 bg-card border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-hidden"
     >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-gray-50">
@@ -93,8 +93,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             <h3 className="font-semibold text-gray-900">Notifications</h3>
             {isRealtimeActive && (
               <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-green-600">Live</span>
+                <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
+                <span className="text-xs text-accent">Live</span>
               </div>
             )}
           </div>
@@ -143,7 +143,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               <div
                 key={notification.id}
                 className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                  !notification.read ? 'bg-blue-50/50' : ''
+                  !notification.read ? 'bg-maximum-yellow/10' : ''
                 }`}
                 onClick={() => markAsRead(notification.id)}
               >
@@ -158,7 +158,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                         {notification.title}
                       </h4>
                       {!notification.read && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-maximum-yellow rounded-full"></div>
                       )}
                     </div>
                     
