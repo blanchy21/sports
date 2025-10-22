@@ -169,6 +169,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loginWithAioha = async (loginResult?: any) => {
     console.log("loginWithAioha called, isInitialized:", isInitialized, "aioha:", !!aioha);
+    console.log("loginWithAioha loginResult:", loginResult);
+    
     if (!isInitialized || !aioha) {
       console.error("Aioha not initialized");
       throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
@@ -186,6 +188,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           sessionId: loginResult.sessionId,
         };
         console.log("Using login result data:", userData);
+      } else if (loginResult && loginResult.username) {
+        // Handle case where loginResult has username but no success flag
+        userData = {
+          username: loginResult.username,
+          id: loginResult.username,
+          sessionId: loginResult.sessionId,
+        };
+        console.log("Using login result data (no success flag):", userData);
       } else {
         // Try to get user data from Aioha (for existing sessions)
         try {
@@ -198,14 +208,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // This is a fallback for when user is already logged in
             console.log("Aioha getUser not available, checking for existing session...");
             
-            // For now, we'll create a fallback user - in a real implementation,
-            // you'd need to check Aioha's documentation for how to get current user
-            userData = {
-              username: "hiveuser", // This should be replaced with actual username
-              id: "hiveuser",
-            };
-            
-            // Try to get username from localStorage or other persistent storage
+            // Try to get username from localStorage or other persistent storage first
             const storedAuth = localStorage.getItem("authState");
             if (storedAuth) {
               try {
@@ -217,19 +220,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     sessionId: parsed.hiveUser.sessionId,
                   };
                   console.log("Using stored user data:", userData);
+                } else {
+                  throw new Error("No stored username found");
                 }
               } catch (parseError) {
                 console.log("Could not parse stored auth data:", parseError);
+                throw new Error("No valid stored auth data");
               }
+            } else {
+              throw new Error("No stored auth data");
             }
           }
         } catch (getUserError) {
           console.log("Could not get user data from Aioha:", getUserError);
-          // Create a fallback user data object
-          userData = {
-            username: "hiveuser", // Fallback username
-            id: "hiveuser",
-          };
+          // If we can't get user data from any source, throw an error instead of using fallback
+          throw new Error("Unable to determine username from Aioha authentication. Please try logging in again.");
         }
       }
       

@@ -191,8 +191,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         keyType: KeyTypes.Posting
       });
       console.log("Aioha login result:", result);
+      console.log("Aioha login result type:", typeof result);
+      console.log("Aioha login result keys:", result ? Object.keys(result) : 'null');
+      if (result && typeof result === 'object') {
+        const resultObj = result as { success?: boolean; username?: string; error?: string; errorCode?: number };
+        console.log("Aioha login result success:", resultObj.success);
+        console.log("Aioha login result username:", resultObj.username);
+        console.log("Aioha login result error:", resultObj.error);
+        console.log("Aioha login result errorCode:", resultObj.errorCode);
+      }
       
-      if (result && (result as { success?: boolean }).success && (result as { username?: string }).username) {
+      if (result && (result as { username?: string }).username && 
+          ((result as { success?: boolean }).success !== false)) {
         console.log("Aioha login successful, processing...");
         await loginWithAioha(result);
         setSelectedProvider(null);
@@ -294,7 +304,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       });
       console.log("Account login result:", result);
       
-          if (result && (result as { success?: boolean }).success && (result as { username?: string }).username) {
+          if (result && (result as { username?: string }).username && 
+              ((result as { success?: boolean }).success !== false)) {
             console.log("Account login successful, processing...");
             await loginWithAioha(result);
             setShowAccountDiscovery(false);
@@ -328,13 +339,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (!aioha || !isInitialized) return;
     
     try {
+      // First, let's explore what methods are available on the Aioha instance
+      console.log("Aioha instance methods:", Object.getOwnPropertyNames(aioha));
+      console.log("Aioha instance prototype methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(aioha)));
+      
       const providers = (aioha as { getProviders: () => unknown[] }).getProviders();
+      console.log("Raw providers from Aioha:", providers);
+      
+      // Check if providers have additional information
+      if (Array.isArray(providers)) {
+        providers.forEach((provider, index) => {
+          console.log(`Provider ${index}:`, provider);
+          if (typeof provider === 'object' && provider !== null) {
+            console.log(`Provider ${index} properties:`, Object.keys(provider));
+          }
+        });
+      }
       
       // Map provider enums to strings for easier handling
       const providerStrings = providers.map((provider: unknown) => {
         // Type assertion to handle provider comparison
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const providerValue = provider as any;
+        console.log("Processing provider:", providerValue, "Type:", typeof providerValue);
         switch (providerValue) {
           case Providers.Keychain:
             return 'keychain';
@@ -347,10 +374,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           case Providers.PeakVault:
             return 'peakvault';
           default:
+            console.log("Unknown provider type:", providerValue);
             return String(provider);
         }
       });
       
+      console.log("Mapped provider strings:", providerStrings);
       setAvailableProviders(providerStrings);
     } catch (error) {
       console.error("Error getting available providers:", error);
@@ -467,10 +496,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-background rounded-xl shadow-2xl w-full max-w-4xl mx-auto">
+      <div className="bg-background rounded-xl shadow-2xl w-full max-w-4xl mx-auto max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-2xl font-bold">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="text-xl font-bold">
             {isLoginMode ? "Login to Sportsblock" : "Join Sportsblock"}
           </h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
@@ -480,25 +509,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
         <div className="grid md:grid-cols-2 gap-0">
           {/* Left Column - Email Login/Signup */}
-          <div className="p-8">
-            <h3 className="text-xl font-semibold mb-2">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-2">
               {isLoginMode ? "Login with Email" : "Join Sportsblock"}
             </h3>
             
             {/* Social Proof - only for signup */}
             {!isLoginMode && (
-              <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 mb-6">
+              <div className="bg-accent/10 border border-accent/20 rounded-lg p-2 mb-4">
                 <p className="text-accent-foreground text-sm font-medium">🎉 47 new members joined this week</p>
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border-0 border-b-2 border-gray-300 focus:border-primary focus:outline-none bg-transparent"
+                  className="w-full px-3 py-2 border-0 border-b-2 border-gray-300 focus:border-primary focus:outline-none bg-transparent"
                   placeholder="Email or username"
                 />
               </div>
@@ -508,15 +537,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border-0 border-b-2 border-gray-300 focus:border-primary focus:outline-none bg-transparent pr-12"
+                  className="w-full px-3 py-2 border-0 border-b-2 border-gray-300 focus:border-primary focus:outline-none bg-transparent pr-10"
                   placeholder="Password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
 
@@ -527,7 +556,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-4 py-3 border-0 border-b-2 border-gray-300 focus:border-primary focus:outline-none bg-transparent"
+                    className="w-full px-3 py-2 border-0 border-b-2 border-gray-300 focus:border-primary focus:outline-none bg-transparent"
                     placeholder="Choose a username"
                   />
                 </div>
@@ -535,38 +564,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
               {/* Terms and newsletter only for signup */}
               {!isLoginMode && (
-                <div className="space-y-3">
-                  <label className="flex items-start space-x-3">
+                <div className="space-y-2">
+                  <label className="flex items-start space-x-2">
                     <input
                       type="checkbox"
                       checked={acceptTerms}
                       onChange={(e) => setAcceptTerms(e.target.checked)}
                       className="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                     />
-                    <span className="text-sm text-gray-600">
+                    <span className="text-xs text-gray-600">
                       I have read and accept the{" "}
                       <a href="#" className="text-primary hover:underline">terms of service</a> and{" "}
                       <a href="#" className="text-primary hover:underline">privacy policy</a>.
                     </span>
                   </label>
 
-                  <label className="flex items-start space-x-3">
+                  <label className="flex items-start space-x-2">
                     <input
                       type="checkbox"
                       checked={subscribeNewsletter}
                       onChange={(e) => setSubscribeNewsletter(e.target.checked)}
                       className="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                     />
-                    <span className="text-sm text-gray-600">
+                    <span className="text-xs text-gray-600">
                       Optional: Subscribe to our newsletter for sports updates and earning tips.
                     </span>
                   </label>
 
                   {/* reCAPTCHA placeholder */}
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <input type="checkbox" className="h-4 w-4" />
-                      <span className="text-sm">I&apos;m not a robot</span>
+                      <input type="checkbox" className="h-3 w-3" />
+                      <span className="text-xs">I&apos;m not a robot</span>
                     </div>
                     <div className="text-xs text-gray-500">
                       <div className="flex items-center space-x-1">
@@ -582,7 +611,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
               <Button
                 onClick={isLoginMode ? handleEmailLogin : handleEmailSignup}
-                className="w-full py-4 text-lg font-semibold bg-primary hover:bg-primary/90"
+                className="w-full py-3 text-base font-semibold bg-primary hover:bg-primary/90"
               >
                 {isLoginMode ? "LOGIN" : "SIGN UP"}
               </Button>
@@ -600,14 +629,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Right Column - Alternative Login/Signup Methods */}
-          <div className="p-8 bg-gray-50/50">
-            <h3 className="text-xl font-semibold mb-6">
+          <div className="p-6 bg-gray-50/50">
+            <h3 className="text-lg font-semibold mb-4">
               Or {isLoginMode ? "login" : "sign up"} with
             </h3>
 
             {/* Error Message */}
             {errorMessage && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-800 text-sm">{errorMessage}</p>
                 <button
                   onClick={() => setErrorMessage(null)}
@@ -620,7 +649,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
             {/* Hive Username Input */}
             {showHiveUsernameInput && (
-              <div className="mb-4 p-4 bg-maximum-yellow/10 border border-maximum-yellow/20 rounded-lg">
+              <div className="mb-3 p-3 bg-maximum-yellow/10 border border-maximum-yellow/20 rounded-lg">
                 <h4 className="font-medium text-sm text-maximum-yellow mb-2">Enter your Hive username</h4>
                 <div className="flex space-x-2">
                   <input
@@ -635,31 +664,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     onClick={handleHiveKeychainLogin}
                     disabled={!hiveUsername.trim()}
                     size="sm"
-                    className="px-4"
+                    className="px-3"
                   >
                     Continue
                   </Button>
                 </div>
-                <p className="text-xs text-maximum-yellow mt-2">
+                <p className="text-xs text-maximum-yellow mt-1">
                   This will open Hive Keychain to sign in as @{hiveUsername || "your-username"}
                 </p>
               </div>
             )}
 
             {/* Aioha Authentication Section */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="text-center">
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                <h4 className="text-base font-semibold text-gray-800 mb-1">
                   Connect with Hive Blockchain
                 </h4>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-xs text-gray-600 mb-3">
                   Choose your preferred wallet to access the Hive ecosystem
                 </p>
               </div>
 
               {/* Username Input for Keychain/HiveAuth */}
               {selectedProvider && (selectedProvider === 'keychain' || selectedProvider === 'hiveauth') && (
-                <div className="mb-4 p-4 bg-maximum-yellow/10 border border-maximum-yellow/20 rounded-lg">
+                <div className="mb-3 p-3 bg-maximum-yellow/10 border border-maximum-yellow/20 rounded-lg">
                   <h4 className="font-medium text-sm text-maximum-yellow mb-2">
                     Enter your Hive username for {selectedProvider === 'keychain' ? 'Hive Keychain' : 'HiveAuth'}
                   </h4>
@@ -676,12 +705,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       onClick={() => handleAiohaLogin(selectedProvider)}
                       disabled={!hiveUsername.trim() || isConnecting}
                       size="sm"
-                      className="px-4"
+                      className="px-3"
                     >
                       {isConnecting ? "Connecting..." : "Continue"}
                     </Button>
                   </div>
-                  <p className="text-xs text-maximum-yellow mt-2">
+                  <p className="text-xs text-maximum-yellow mt-1">
                     This will open {selectedProvider === 'keychain' ? 'Hive Keychain' : 'HiveAuth'} to sign in as @{hiveUsername || "your-username"}
                   </p>
                   <button
@@ -698,22 +727,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               )}
 
               {/* Wallet Provider Buttons */}
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 gap-2">
                 {/* Hive Keychain */}
                 {availableProviders.includes('keychain') && (
               <Button
                     onClick={() => handleAiohaLogin('keychain')}
                 disabled={isConnecting}
-                className="w-full py-3 flex items-center justify-start space-x-3 bg-card border border-border hover:bg-muted text-foreground disabled:opacity-50"
+                className="w-full py-2 flex items-center justify-start space-x-3 bg-card border border-border hover:bg-muted text-foreground disabled:opacity-50"
               >
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <Image 
-                    src="/hive-keychain-logo.svg" 
-                    alt="Hive Keychain" 
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 object-contain"
-                  />
+                <div className="w-8 h-8 flex items-center justify-center bg-red-600 rounded text-white font-bold text-sm">
+                  🔑
                 </div>
                     <div className="text-left">
                       <div className="font-medium">Hive Keychain</div>
@@ -727,17 +750,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <Button
                     onClick={() => handleAiohaLogin('hivesigner')}
                     disabled={isConnecting}
-                    className="w-full py-3 flex items-center justify-start space-x-3 bg-card border border-border hover:bg-muted text-foreground disabled:opacity-50"
+                    className="w-full py-2 flex items-center justify-start space-x-3 bg-card border border-border hover:bg-muted text-foreground disabled:opacity-50"
               >
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <Image 
-                    src="/hivesigner-logo.svg" 
-                        alt="HiveSigner" 
-                        width={32}
-                        height={32}
-                        className="w-8 h-8 object-contain"
-                      />
-                    </div>
+                <div className="w-8 h-8 flex items-center justify-center bg-blue-600 rounded text-white font-bold text-sm">
+                  🌐
+                </div>
                     <div className="text-left">
                       <div className="font-medium">HiveSigner</div>
                       <div className="text-xs text-gray-500">Web Wallet</div>
@@ -750,17 +767,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <Button
                     onClick={() => handleAiohaLogin('hiveauth')}
                     disabled={isConnecting}
-                    className="w-full py-3 flex items-center justify-start space-x-3 bg-card border border-border hover:bg-muted text-foreground disabled:opacity-50"
+                    className="w-full py-2 flex items-center justify-start space-x-3 bg-card border border-border hover:bg-muted text-foreground disabled:opacity-50"
                   >
-                    <div className="w-8 h-8 flex items-center justify-center">
-                      <Image 
-                        src="/hiveauth-logo.svg" 
-                        alt="HiveAuth" 
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 object-contain"
-                  />
-                </div>
+                    <div className="w-8 h-8 flex items-center justify-center bg-green-600 rounded text-white font-bold text-sm">
+                      📱
+                    </div>
                     <div className="text-left">
                       <div className="font-medium">HiveAuth</div>
                       <div className="text-xs text-gray-500">Mobile App</div>
@@ -773,12 +784,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <Button
                     onClick={() => handleAiohaLogin('ledger')}
                     disabled={isConnecting}
-                    className="w-full py-3 flex items-center justify-start space-x-3 bg-card border border-border hover:bg-muted text-foreground disabled:opacity-50"
+                    className="w-full py-2 flex items-center justify-start space-x-3 bg-card border border-border hover:bg-muted text-foreground disabled:opacity-50"
                   >
-                    <div className="w-8 h-8 flex items-center justify-center">
-                      <div className="w-8 h-8 bg-gray-800 rounded flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">L</span>
-                      </div>
+                    <div className="w-8 h-8 flex items-center justify-center bg-gray-800 rounded text-white font-bold text-sm">
+                      🔒
                     </div>
                     <div className="text-left">
                       <div className="font-medium">Ledger</div>
@@ -792,12 +801,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <Button
                     onClick={() => handleAiohaLogin('peakvault')}
                     disabled={isConnecting}
-                    className="w-full py-3 flex items-center justify-start space-x-3 bg-card border border-border hover:bg-muted text-foreground disabled:opacity-50"
+                    className="w-full py-2 flex items-center justify-start space-x-3 bg-card border border-border hover:bg-muted text-foreground disabled:opacity-50"
                   >
-                    <div className="w-8 h-8 flex items-center justify-center">
-                      <div className="w-8 h-8 bg-maximum-yellow rounded flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">P</span>
-                      </div>
+                    <div className="w-8 h-8 flex items-center justify-center bg-yellow-500 rounded text-white font-bold text-sm">
+                      ⛰️
                     </div>
                     <div className="text-left">
                       <div className="font-medium">Peak Vault</div>
@@ -827,12 +834,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </div>
 
               {/* Account Discovery Section */}
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <div className="text-center mb-4">
-                  <h5 className="text-sm font-medium text-gray-700 mb-2">
+              <div className="mt-4 pt-3 border-t border-gray-200">
+                <div className="text-center mb-3">
+                  <h5 className="text-sm font-medium text-gray-700 mb-1">
                     Multi-Account Discovery
                   </h5>
-                  <p className="text-xs text-gray-500 mb-3">
+                  <p className="text-xs text-gray-500 mb-2">
                     Discover and connect multiple Hive accounts from your wallets
                   </p>
                   <Button
@@ -882,16 +889,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
               <Button
                 onClick={handleGoogleLogin}
-                className="w-full py-3 flex items-center justify-start space-x-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700"
+                className="w-full py-2 flex items-center justify-start space-x-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700"
               >
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <Image 
-                    src="/google-logo.svg" 
-                    alt="Google" 
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 object-contain"
-                  />
+                <div className="w-8 h-8 flex items-center justify-center bg-blue-500 rounded text-white font-bold text-sm">
+                  G
                 </div>
                 <span className="font-medium">
                   {isLoginMode ? "Login" : "Sign up"} with Google
@@ -900,57 +901,57 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             {/* Benefits */}
-            <div className="mt-8 p-4 bg-card rounded-lg border border-border">
-              <h4 className="font-semibold mb-3">Why choose Hive Blockchain?</h4>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-accent" />
+            <div className="mt-4 p-3 bg-card rounded-lg border border-border">
+              <h4 className="font-semibold mb-2 text-sm">Why choose Hive Blockchain?</h4>
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2 text-xs">
+                  <CheckCircle className="h-3 w-3 text-accent" />
                   <span>Multi-wallet support (Keychain, HiveSigner, HiveAuth, Ledger, Peak Vault)</span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-accent" />
+                <div className="flex items-center space-x-2 text-xs">
+                  <CheckCircle className="h-3 w-3 text-accent" />
                   <span>Account discovery and multi-user authentication</span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-accent" />
+                <div className="flex items-center space-x-2 text-xs">
+                  <CheckCircle className="h-3 w-3 text-accent" />
                   <span>Earn crypto rewards for quality content</span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-accent" />
+                <div className="flex items-center space-x-2 text-xs">
+                  <CheckCircle className="h-3 w-3 text-accent" />
                   <span>Vote and participate in governance</span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-accent" />
+                <div className="flex items-center space-x-2 text-xs">
+                  <CheckCircle className="h-3 w-3 text-accent" />
                   <span>Decentralized and censorship-resistant</span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-accent" />
+                <div className="flex items-center space-x-2 text-xs">
+                  <CheckCircle className="h-3 w-3 text-accent" />
                   <span>No middleman fees</span>
                 </div>
               </div>
             </div>
 
             {/* Account Selection Instructions */}
-            <div className="mt-4 p-3 bg-accent/10 border border-accent/20 rounded-lg">
-              <div className="flex items-start space-x-3">
-                <div className="w-5 h-5 text-accent mt-0.5">✓</div>
+            <div className="mt-3 p-2 bg-accent/10 border border-accent/20 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <div className="w-4 h-4 text-accent mt-0.5 text-sm">✓</div>
                 <div>
-                  <h4 className="font-medium text-sm text-accent-foreground">How it works</h4>
-                  <p className="text-xs text-accent-foreground/80 mb-2">
-                    Enter your Hive username first, then Hive Keychain will open to sign in with that specific account. No more confusion about which account to select!
+                  <h4 className="font-medium text-xs text-accent-foreground">How it works</h4>
+                  <p className="text-xs text-accent-foreground/80">
+                    Enter your Hive username first, then Hive Keychain will open to sign in with that specific account.
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Download Keychain */}
-            <div className="mt-4 p-3 bg-maximum-yellow/10 border border-maximum-yellow/20 rounded-lg">
-              <div className="flex items-start space-x-3">
-                <Download className="h-5 w-5 text-maximum-yellow mt-0.5" />
+            <div className="mt-3 p-2 bg-maximum-yellow/10 border border-maximum-yellow/20 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <Download className="h-4 w-4 text-maximum-yellow mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-sm text-maximum-yellow">Don&apos;t have Hive Keychain?</h4>
-                  <p className="text-xs text-maximum-yellow mb-2">
-                    Install the browser extension to connect your Hive account. You&apos;ll be able to choose which account to sign in with.
+                  <h4 className="font-medium text-xs text-maximum-yellow">Don&apos;t have Hive Keychain?</h4>
+                  <p className="text-xs text-maximum-yellow mb-1">
+                    Install the browser extension to connect your Hive account.
                   </p>
                   <Button 
                     variant="outline" 
@@ -975,7 +976,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             setShowAiohaModal(false);
             setIsConnecting(false);
           }}
-          loginOptions={{}}
+          loginOptions={{
+            // Let's see what options AiohaModal accepts
+            providers: availableProviders,
+            // Check if there are any logo-related options
+          }}
         />
       )}
     </div>
