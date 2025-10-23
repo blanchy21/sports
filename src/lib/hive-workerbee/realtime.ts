@@ -1,4 +1,4 @@
-import { initializeWorkerBeeClient, getWorkerBeeClient } from './client';
+import { getWorkerBeeClient } from './client';
 import { SPORTS_ARENA_CONFIG } from './client';
 
 // Real-time event types

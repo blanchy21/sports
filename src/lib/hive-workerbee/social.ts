@@ -76,7 +76,7 @@ export async function unfollowUser(username: string, follower: string): Promise<
  * @param follower - Username of the potential follower
  * @returns Following status
  */
-export async function isFollowingUser(username: string, follower: string): Promise<boolean> {
+export async function isFollowingUser(_username: string, _follower: string): Promise<boolean> {
   try {
     await initializeWorkerBeeClient();
 
@@ -186,7 +186,7 @@ export async function fetchFollowing(username: string, filters: SocialFilters = 
  * @param username - Username to get count for
  * @returns Follower count
  */
-export async function getFollowerCount(username: string): Promise<number> {
+export async function getFollowerCount(_username: string): Promise<number> {
   try {
     await initializeWorkerBeeClient();
 
@@ -204,7 +204,7 @@ export async function getFollowerCount(username: string): Promise<number> {
  * @param username - Username to get count for
  * @returns Following count
  */
-export async function getFollowingCount(username: string): Promise<number> {
+export async function getFollowingCount(_username: string): Promise<number> {
   try {
     await initializeWorkerBeeClient();
 

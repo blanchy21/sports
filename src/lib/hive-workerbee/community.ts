@@ -235,7 +235,7 @@ export async function unsubscribeFromCommunity(communityId: string, username: st
  * @param username - Username to check
  * @returns Subscription status
  */
-export async function isSubscribedToCommunity(communityId: string, username: string): Promise<boolean> {
+export async function isSubscribedToCommunity(communityId: string, _username: string): Promise<boolean> {
   try {
     await initializeWorkerBeeClient();
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { AuthState, AuthType, User } from "@/types";
 import { HiveAuthUser, HiveAccount } from "@/lib/shared/types";
 import { fetchUserAccount } from "@/lib/hive-workerbee/account";
@@ -107,6 +107,9 @@ interface AiohaInstanceWithState extends AiohaInstance {
       session_id?: string;
     };
   };
+  // Additional methods that might exist
+  getUser?: () => Promise<unknown>;
+  auth?: unknown;
 }
 
 const AuthContext = createContext<AuthState & {
@@ -511,19 +514,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         try {
           // Check if Aioha has a getUser method or similar
-          if (typeof (aioha as any).getUser === 'function') {
-            userData = await (aioha as any).getUser();
+          if (typeof (aioha as AiohaInstanceWithState).getUser === 'function') {
+            userData = await (aioha as AiohaInstanceWithState).getUser!();
             console.log("Got user data from Aioha getUser():", userData);
           } else {
             // If no getUser method, try to get from Aioha's internal state
             console.log("Aioha getUser not available, checking for existing session...");
             console.log("Aioha internal state:", {
-              user: (aioha as any).user,
-              currentUser: (aioha as any).currentUser,
-              username: (aioha as any).username,
-              account: (aioha as any).account,
-              session: (aioha as any).session,
-              auth: (aioha as any).auth,
+              user: (aioha as AiohaInstanceWithState).user,
+              currentUser: (aioha as AiohaInstanceWithState).currentUser,
+              username: (aioha as AiohaInstanceWithState).username,
+              account: (aioha as AiohaInstanceWithState).account,
+              session: (aioha as AiohaInstanceWithState).session,
+              auth: (aioha as AiohaInstanceWithState).auth,
             });
             
             // Try to get username from localStorage or other persistent storage first
@@ -598,16 +601,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
       
-      if (userData && userData.username) {
+      if (userData && (userData as Record<string, unknown>).username) {
         console.log("Aioha user authenticated:", userData);
         
         // Create basic user object
         const basicUser: User = {
-          id: userData.username,
-          username: userData.username,
-          displayName: userData.username,
+          id: (userData as Record<string, unknown>).username as string,
+          username: (userData as Record<string, unknown>).username as string,
+          displayName: (userData as Record<string, unknown>).username as string,
           isHiveAuth: true,
-          hiveUsername: userData.username,
+          hiveUsername: (userData as Record<string, unknown>).username as string,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -618,17 +621,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Create Hive user object with Aioha metadata
         const newHiveUser: HiveAuthUser = {
-          username: userData.username,
+          username: (userData as Record<string, unknown>).username as string,
           isAuthenticated: true,
           provider: loginResult?.provider || 'aioha',
-          aiohaUserId: userData.id ? String(userData.id) : undefined,
-          sessionId: userData.sessionId ? String(userData.sessionId) : undefined,
+          aiohaUserId: (userData as Record<string, unknown>).id ? String((userData as Record<string, unknown>).id) : undefined,
+          sessionId: (userData as Record<string, unknown>).sessionId ? String((userData as Record<string, unknown>).sessionId) : undefined,
         };
         setHiveUser(newHiveUser);
 
         // Fetch full account data in the background
         try {
-          const accountData = await fetchUserAccount(userData.username);
+          const accountData = await fetchUserAccount((userData as Record<string, unknown>).username as string);
           
           if (accountData) {
             // Update hiveUser with account data
@@ -661,7 +664,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               hiveStats: accountData.stats,
               // Use Hive profile image as avatar if available
               avatar: accountData.profile.profileImage,
-              displayName: accountData.profile.name || userData.username,
+              displayName: accountData.profile.name || (userData as Record<string, unknown>).username as string,
               bio: accountData.profile.about,
               // Use the actual Hive account creation date
               createdAt: accountData.createdAt,
@@ -791,7 +794,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const updateUser = (userUpdate: Partial<User>) => {
+  const updateUser = useCallback((userUpdate: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...userUpdate };
       setUser(updatedUser);
@@ -808,9 +811,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     }
-  };
+  }, [user]);
 
-  const refreshHiveAccount = async () => {
+  const refreshHiveAccount = useCallback(async () => {
     if (hiveUser?.username) {
       try {
         const accountData = await fetchUserAccount(hiveUser.username);
@@ -858,7 +861,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error("Error refreshing Hive account:", error);
       }
     }
-  };
+  }, [hiveUser, user, updateUser]);
 
   const value = {
     user,

@@ -53,7 +53,7 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
         <UpvoteListModal 
           isOpen={modals.upvoteList.isOpen}
           onClose={() => closeModal('upvoteList')}
-          data={modals.upvoteList.data}
+          _data={modals.upvoteList.data}
         />
       )}
       

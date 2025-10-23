@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { User } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { 
@@ -63,9 +64,11 @@ export const AccountBadge: React.FC<AccountBadgeProps> = ({
       {/* Avatar */}
       <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold ${size === 'sm' ? 'w-6 h-6 text-xs' : size === 'lg' ? 'w-10 h-10 text-lg' : ''}`}>
         {user.avatar ? (
-          <img 
+          <Image 
             src={user.avatar} 
             alt={user.displayName || user.username}
+            width={size === 'sm' ? 24 : size === 'lg' ? 40 : 32}
+            height={size === 'sm' ? 24 : size === 'lg' ? 40 : 32}
             className="w-full h-full rounded-full object-cover"
           />
         ) : (
