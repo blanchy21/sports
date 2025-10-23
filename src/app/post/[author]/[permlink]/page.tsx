@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
-import { VoteButton } from "@/components/VoteButton";
+import { StarVoteButton } from "@/components/StarVoteButton";
 import { ArrowLeft, MessageCircle, Bookmark, Share, Calendar, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { fetchPost } from "@/lib/hive-workerbee/content";
@@ -231,7 +231,7 @@ export default function PostDetailPage() {
             <div className="flex items-center space-x-6">
               {/* Voting Section */}
               <div className="flex items-center space-x-2">
-                <VoteButton
+                <StarVoteButton
                   author={post.author}
                   permlink={post.permlink}
                   voteCount={post.net_votes || 0}

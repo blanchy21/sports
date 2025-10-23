@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useCommunities } from "@/lib/react-query/queries/useCommunity";
 import { useCommunityStore } from "@/stores/communityStore";
 import { Button } from "@/components/ui/Button";

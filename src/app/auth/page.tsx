@@ -19,6 +19,22 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Import the AiohaLoginResult type
+interface AiohaLoginResult {
+  user?: {
+    username?: string;
+    account?: any;
+    session?: string;
+  };
+  username?: string;
+  account?: any;
+  session?: string;
+  provider?: string;
+  aiohaUserId?: string;
+  sessionId?: string;
+  errorCode?: number;
+}
+
 // Type definitions for better type safety
 interface AiohaProvider {
   getProviders: () => ProviderValue[];
@@ -114,7 +130,7 @@ export default function AuthPage() {
       setErrorMessage(null);
 
       try {
-        await loginWithAioha(event);
+        await loginWithAioha(event as AiohaLoginResult);
         console.log("Aioha login successful, redirecting to feed");
         setShowAiohaModal(false);
         router.push('/feed');

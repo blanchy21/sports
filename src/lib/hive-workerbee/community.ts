@@ -1,33 +1,5 @@
-import { initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
+import { initializeWorkerBeeClient } from './client';
 import { Community, CommunityMember } from '@/types';
-
-// Helper function to make direct HTTP calls to Hive API
-async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
-  const response = await fetch('https://api.hive.blog', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      method: `${api}.${method}`,
-      params: params,
-      id: Math.floor(Math.random() * 1000000)
-    })
-  });
-  
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  
-  const result = await response.json();
-  
-  if (result.error) {
-    throw new Error(`API error: ${result.error.message}`);
-  }
-  
-  return result.result;
-}
 
 export interface CommunityFilters {
   search?: string;

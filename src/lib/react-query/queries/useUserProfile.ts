@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
 import { getFollowerCount, getFollowingCount, isFollowingUser } from '@/lib/hive-workerbee/social';

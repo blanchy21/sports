@@ -1,6 +1,15 @@
 import { SPORTS_ARENA_CONFIG, initializeWorkerBeeClient } from './client';
+import { makeHiveApiCall } from './api';
+import { HiveAccount } from '../shared/types';
 
 // Type definitions for better type safety
+interface HiveAccountWithRC extends HiveAccount {
+  rc_manabar?: {
+    current_mana: string;
+    last_update_time: number;
+  };
+  max_rc?: string;
+}
 interface AiohaInstance {
   signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
 }
@@ -11,17 +20,6 @@ interface BroadcastResult {
   [key: string]: unknown;
 }
 
-
-interface HiveAccount {
-  name?: string;
-  rc_manabar?: {
-    current_mana: string;
-    last_update_time: number;
-  };
-  max_rc?: string;
-  [key: string]: unknown;
-}
-
 interface RcResult {
   rc_accounts?: Array<{
     rc_manabar?: { current_mana: string };
@@ -29,33 +27,6 @@ interface RcResult {
   }>;
 }
 
-// Helper function to make direct HTTP calls to Hive API
-async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
-  const response = await fetch('https://api.hive.blog', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      method: `${api}.${method}`,
-      params: params,
-      id: Math.floor(Math.random() * 1000000)
-    })
-  });
-  
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  
-  const result = await response.json();
-  
-  if (result.error) {
-    throw new Error(`API error: ${result.error.message}`);
-  }
-  
-  return result.result;
-}
 import { aioha } from '@/lib/aioha/config';
 // import { Wax } from '@hiveio/wax'; // Not needed for basic posting operations
 
@@ -461,7 +432,7 @@ export async function canUserPost(username: string): Promise<{
   try {
 
     // Use condenser_api.get_accounts to get account info including RC
-    const accountResult = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
+    const accountResult = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountWithRC[];
     const account = accountResult && accountResult.length > 0 ? accountResult[0] : null;
     
     if (!account) {
@@ -489,7 +460,7 @@ export async function canUserPost(username: string): Promise<{
       // Try to get RC data using condenser_api.get_account (singular)
       try {
         console.log(`[canUserPost] Trying condenser_api.get_account for RC data...`);
-        const accountWithRc = await makeHiveApiCall('condenser_api', 'get_account', [username]) as HiveAccount;
+        const accountWithRc = await makeHiveApiCall('condenser_api', 'get_account', [username]) as HiveAccountWithRC;
         console.log(`[canUserPost] get_account response fields:`, Object.keys(accountWithRc));
         
         if (accountWithRc && accountWithRc.rc_manabar && accountWithRc.max_rc) {

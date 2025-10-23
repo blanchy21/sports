@@ -7,10 +7,92 @@ import { fetchUserAccount } from "@/lib/hive-workerbee/account";
 import { useAioha } from "@/contexts/AiohaProvider";
 import { AuthUser, FirebaseAuth } from "@/lib/firebase/auth";
 
+// Aioha login result type
+interface AiohaLoginResult {
+  user?: {
+    username?: string;
+    name?: string;
+    account?: HiveAccount;
+    session?: string;
+  };
+  username?: string;
+  name?: string;
+  id?: string;
+  account?: HiveAccount;
+  session?: string;
+  session_id?: string;
+  provider?: string;
+  aiohaUserId?: string;
+  sessionId?: string;
+  errorCode?: number;
+  data?: {
+    username?: string;
+    name?: string;
+  };
+  result?: {
+    username?: string;
+    name?: string;
+  };
+  auth?: {
+    username?: string;
+    name?: string;
+  };
+  profile?: {
+    name?: string;
+    username?: string;
+  };
+  identity?: {
+    name?: string;
+    username?: string;
+  };
+  accountData?: {
+    name?: string;
+    username?: string;
+  };
+}
+
+// Aioha instance type
+interface AiohaInstance {
+  user?: {
+    username?: string;
+    account?: HiveAccount;
+    session?: string;
+    sessionId?: string;
+    session_id?: string;
+  };
+  currentUser?: {
+    username?: string;
+    account?: HiveAccount;
+    session?: string;
+    sessionId?: string;
+    session_id?: string;
+  };
+  username?: string;
+  account?: HiveAccount;
+  session?: string;
+  sessionId?: string;
+  session_id?: string;
+  currentProvider?: string;
+  providers?: Record<string, {
+    user?: {
+      username?: string;
+      sessionId?: string;
+      session_id?: string;
+    };
+    username?: string;
+    sessionId?: string;
+    session_id?: string;
+    account?: {
+      name?: string;
+    };
+  }>;
+  errorCode?: number;
+}
+
 const AuthContext = createContext<AuthState & {
   login: (user: User, authType: AuthType) => void;
   loginWithHiveUser: (hiveUsername: string) => Promise<void>;
-  loginWithAioha: (loginResult?: any) => Promise<void>;
+  loginWithAioha: (loginResult?: AiohaLoginResult) => Promise<void>;
   loginWithFirebase: (authUser: AuthUser) => void;
   logout: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
@@ -196,7 +278,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
   };
 
-  const loginWithAioha = async (loginResult?: any) => {
+  const loginWithAioha = async (loginResult?: AiohaLoginResult) => {
     console.log("loginWithAioha called, isInitialized:", isInitialized, "aioha:", !!aioha);
     console.log("loginWithAioha loginResult:", loginResult);
     
@@ -219,36 +301,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // After delay, check Aioha instance again
         console.log("Aioha instance after delay:");
-        console.log("- aioha.user:", (aioha as any).user);
-        console.log("- aioha.currentUser:", (aioha as any).currentUser);
-        console.log("- aioha.username:", (aioha as any).username);
-        console.log("- aioha.account:", (aioha as any).account);
-        console.log("- aioha.session:", (aioha as any).session);
-        console.log("- aioha.state:", (aioha as any).state);
-        console.log("- aioha._state:", (aioha as any)._state);
+        const aiohaInstance = aioha as AiohaInstance;
+        console.log("- aioha.user:", aiohaInstance.user);
+        console.log("- aioha.currentUser:", aiohaInstance.currentUser);
+        console.log("- aioha.username:", aiohaInstance.username);
+        console.log("- aioha.account:", aiohaInstance.account);
+        console.log("- aioha.session:", aiohaInstance.session);
+        console.log("- aioha.state:", (aioha as AiohaInstance & { state?: unknown }).state);
+        console.log("- aioha._state:", (aioha as AiohaInstance & { _state?: unknown })._state);
         
         // Try to get user data from Aioha instance after delay
         if (!userData) {
           console.log("Trying to get user data from Aioha instance after delay...");
-          if ((aioha as any).user && (aioha as any).user.username) {
+          if (aiohaInstance.user && aiohaInstance.user.username) {
             userData = {
-              username: (aioha as any).user.username,
-              id: (aioha as any).user.username,
-              sessionId: (aioha as any).user.sessionId || (aioha as any).user.session_id,
+              username: aiohaInstance.user.username,
+              id: aiohaInstance.user.username,
+              sessionId: aiohaInstance.user.sessionId || (aiohaInstance.user as { session_id?: string }).session_id,
             };
             console.log("Found user data in Aioha instance after delay:", userData);
-          } else if ((aioha as any).currentUser && (aioha as any).currentUser.username) {
+          } else if (aiohaInstance.currentUser && aiohaInstance.currentUser.username) {
             userData = {
-              username: (aioha as any).currentUser.username,
-              id: (aioha as any).currentUser.username,
-              sessionId: (aioha as any).currentUser.sessionId || (aioha as any).currentUser.session_id,
+              username: aiohaInstance.currentUser.username,
+              id: aiohaInstance.currentUser.username,
+              sessionId: aiohaInstance.currentUser.sessionId || (aiohaInstance.currentUser as { session_id?: string }).session_id,
             };
             console.log("Found currentUser data in Aioha instance after delay:", userData);
-          } else if ((aioha as any).username) {
+          } else if (aiohaInstance.username) {
             userData = {
-              username: (aioha as any).username,
-              id: (aioha as any).username,
-              sessionId: (aioha as any).sessionId || (aioha as any).session_id,
+              username: aiohaInstance.username,
+              id: aiohaInstance.username,
+              sessionId: aiohaInstance.sessionId || (aiohaInstance as { session_id?: string }).session_id,
             };
             console.log("Found direct username in Aioha instance after delay:", userData);
           }
@@ -260,14 +343,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Handle special case where user is already logged in (errorCode 4901)
         if (loginResult.errorCode === 4901) {
           console.log("Handling 'already logged in' case...");
-          console.log("Current provider:", (aioha as any).currentProvider);
+          const aiohaInstance = aioha as AiohaInstance;
+          console.log("Current provider:", aiohaInstance.currentProvider);
           
           // For already logged in case, we need to get user data from the current provider
           try {
             // Get the current provider instance
-            const currentProvider = (aioha as any).currentProvider;
-            if (currentProvider && (aioha as any).providers && (aioha as any).providers[currentProvider]) {
-              const providerInstance = (aioha as any).providers[currentProvider];
+            const currentProvider = aiohaInstance.currentProvider;
+            if (currentProvider && aiohaInstance.providers && aiohaInstance.providers[currentProvider]) {
+              const providerInstance = aiohaInstance.providers[currentProvider];
               console.log("Provider instance:", providerInstance);
               console.log("Provider instance properties:", Object.keys(providerInstance));
               
@@ -297,7 +381,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.log("No user data found in provider instance, trying other methods...");
                 
                 // Try to get from Aioha's internal state more comprehensively
-                const aiohaState = (aioha as any).state || (aioha as any)._state;
+                const aiohaState = (aioha as AiohaInstance & { state?: { user?: { username?: string; sessionId?: string; session_id?: string } }; _state?: { user?: { username?: string; sessionId?: string; session_id?: string } } }).state || (aioha as AiohaInstance & { state?: { user?: { username?: string; sessionId?: string; session_id?: string } }; _state?: { user?: { username?: string; sessionId?: string; session_id?: string } } })._state;
                 if (aiohaState && aiohaState.user && aiohaState.user.username) {
                   userData = {
                     username: aiohaState.user.username,
@@ -305,11 +389,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     sessionId: aiohaState.user.sessionId || aiohaState.user.session_id,
                   };
                   console.log("Found user data in Aioha state for already logged in case:", userData);
-                } else if (aiohaState && aiohaState.currentUser && aiohaState.currentUser.username) {
+                } else if (aiohaState && (aiohaState as any).currentUser && (aiohaState as any).currentUser.username) {
                   userData = {
-                    username: aiohaState.currentUser.username,
-                    id: aiohaState.currentUser.username,
-                    sessionId: aiohaState.currentUser.sessionId || aiohaState.currentUser.session_id,
+                    username: (aiohaState as any).currentUser.username,
+                    id: (aiohaState as any).currentUser.username,
+                    sessionId: (aiohaState as any).currentUser.sessionId || (aiohaState as any).currentUser.session_id,
                   };
                   console.log("Found currentUser data in Aioha state for already logged in case:", userData);
                 } else {
@@ -329,7 +413,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           loginResult.username,
           loginResult.name,
           loginResult.account?.name,
-          loginResult.account?.username,
           loginResult.user?.username,
           loginResult.user?.name,
           loginResult.data?.username,

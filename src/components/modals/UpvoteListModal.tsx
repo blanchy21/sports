@@ -2,9 +2,9 @@
 
 import React from "react";
 import { Avatar } from "@/components/ui/Avatar";
-import { Button } from "@/components/ui/Button";
-import { X, Heart, TrendingUp } from "lucide-react";
+import { Heart, TrendingUp } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { BaseModal } from "@/components/ui/BaseModal";
 
 interface UpvoteListModalProps {
   isOpen: boolean;
@@ -54,53 +54,38 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
   const totalVotes = mockVotes.length;
   const totalWeight = mockVotes.reduce((sum, vote) => sum + vote.weight, 0);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative bg-background border rounded-lg shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center space-x-2">
-            <Heart className="h-5 w-5 text-red-500" />
-            <h2 className="text-xl font-semibold">Upvotes</h2>
-            <span className="text-sm text-muted-foreground">
-              ({totalVotes})
-            </span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <div className="flex items-center space-x-2">
+          <Heart className="h-5 w-5 text-red-500" />
+          <span>Upvotes</span>
+          <span className="text-sm text-muted-foreground">
+            ({totalVotes})
+          </span>
         </div>
-
-        {/* Stats */}
-        <div className="p-6 border-b bg-muted/30">
-          <div className="flex items-center justify-between">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-500">{totalVotes}</div>
-              <div className="text-sm text-muted-foreground">Total Votes</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{totalWeight / 100}%</div>
-              <div className="text-sm text-muted-foreground">Total Weight</div>
-            </div>
+      }
+      size="md"
+      className="max-h-[80vh] flex flex-col"
+    >
+      {/* Stats */}
+      <div className="p-6 border-b bg-muted/30">
+        <div className="flex items-center justify-between">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-500">{totalVotes}</div>
+            <div className="text-sm text-muted-foreground">Total Votes</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold">{totalWeight / 100}%</div>
+            <div className="text-sm text-muted-foreground">Total Weight</div>
           </div>
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
           {mockVotes.length > 0 ? (
             <div className="space-y-4">
               {mockVotes.map((vote, index) => (
@@ -156,7 +141,6 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 };

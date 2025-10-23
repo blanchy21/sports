@@ -2,7 +2,19 @@
 // import type { NextConfig } from "next";
 
 const nextConfig = {
+  // Performance optimizations
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', '@tanstack/react-query'],
+  },
+  // Bundle optimization
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  // Image optimization
   images: {
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 60,
     remotePatterns: [
       {
         protocol: 'https',
@@ -68,8 +80,12 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
-  webpack: (config: unknown, { isServer }: { isServer: boolean }) => {
-    const webpackConfig = config as { resolve: { fallback: Record<string, unknown> } };
+  webpack: (config: unknown, { isServer, dev }: { isServer: boolean; dev: boolean }) => {
+    const webpackConfig = config as { 
+      resolve: { fallback: Record<string, unknown> };
+      optimization: { splitChunks: any };
+    };
+    
     if (!isServer) {
       webpackConfig.resolve.fallback = {
         ...webpackConfig.resolve.fallback,
@@ -79,6 +95,41 @@ const nextConfig = {
         crypto: false,
       };
     }
+
+    // Bundle optimization
+    if (!dev && !isServer) {
+      webpackConfig.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10,
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 5,
+            reuseExistingChunk: true,
+          },
+          hive: {
+            test: /[\\/]node_modules[\\/](@hiveio|@aioha)[\\/]/,
+            name: 'hive-libs',
+            chunks: 'all',
+            priority: 15,
+          },
+          ui: {
+            test: /[\\/]node_modules[\\/](lucide-react|@radix-ui)[\\/]/,
+            name: 'ui-libs',
+            chunks: 'all',
+            priority: 12,
+          },
+        },
+      };
+    }
+
     return config;
   },
 };

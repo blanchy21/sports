@@ -5,7 +5,7 @@ import Image from "next/image";
 import { MessageCircle, Bookmark, MapPin } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
-import { VoteButton } from "@/components/VoteButton";
+import { StarVoteButton } from "@/components/StarVoteButton";
 import { Post } from "@/types";
 import { cn, formatDate, formatReadTime, truncateText } from "@/lib/utils";
 import { calculatePendingPayout, formatAsset } from "@/lib/shared/utils";
@@ -262,7 +262,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
             {/* Voting Section */}
             {isHivePost ? (
               <div className="flex items-center space-x-1">
-                <VoteButton
+                <StarVoteButton
                   author={post.author}
                   permlink={post.permlink}
                   voteCount={post.net_votes || 0}

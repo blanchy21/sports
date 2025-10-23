@@ -4,7 +4,6 @@ import React from "react";
 import { User } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { 
-  Shield, 
   Zap, 
   User as UserIcon,
   Crown,

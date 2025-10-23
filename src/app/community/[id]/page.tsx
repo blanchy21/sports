@@ -4,12 +4,12 @@ import React from "react";
 import { useParams } from "next/navigation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { CommunityDetail } from "@/components/community/CommunityDetail";
-import { useAuthStore } from "@/stores/authStore";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function CommunityPage() {
   const params = useParams();
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const router = useRouter();
   const communityId = params.id as string;
 

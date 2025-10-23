@@ -3,11 +3,11 @@
 import React from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { CommunitiesList } from "@/components/community/CommunitiesList";
-import { useAuthStore } from "@/stores/authStore";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function CommunitiesPage() {
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const router = useRouter();
 
   // Redirect if not authenticated

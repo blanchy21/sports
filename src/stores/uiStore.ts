@@ -31,7 +31,7 @@ interface UIActions {
   toggleRightSidebar: () => void;
 }
 
-export const useUIStore = create<UIState & UIActions>((set, get) => ({
+export const useUIStore = create<UIState & UIActions>((set) => ({
   // State
   modals: {
     comments: { isOpen: false, type: null, data: null },
@@ -72,7 +72,7 @@ export const useUIStore = create<UIState & UIActions>((set, get) => ({
   },
 
   closeAllModals: () => {
-    set(state => ({
+    set(() => ({
       modals: {
         comments: { isOpen: false, type: null, data: null },
         upvoteList: { isOpen: false, type: null, data: null },

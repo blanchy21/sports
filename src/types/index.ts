@@ -1,4 +1,7 @@
-import { HiveAccount } from '../lib/shared/types';
+import { HiveAccount, HiveAuthUser } from '../lib/shared/types';
+
+// Re-export shared types for convenience
+export type { HiveAccount, HiveAuthUser };
 
 export interface User {
   id: string;
@@ -368,11 +371,6 @@ export const SPORT_CATEGORIES: SportCategory[] = [
   },
 ];
 
-export interface HiveAuthUser {
-  username: string;
-  isAuthenticated: boolean;
-  account?: HiveAccount;
-}
 
 export interface CryptoPriceData {
   bitcoin: {

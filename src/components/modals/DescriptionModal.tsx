@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { X, Save, Edit3 } from "lucide-react";
+import { Save, Edit3 } from "lucide-react";
+import { BaseModal } from "@/components/ui/BaseModal";
 
 interface DescriptionModalProps {
   isOpen: boolean;
@@ -26,36 +27,20 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({ isOpen, onCl
     setIsEditing(false);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative bg-background border rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center space-x-2">
-            <Edit3 className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Edit Description</h2>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <div className="flex items-center space-x-2">
+          <Edit3 className="h-5 w-5" />
+          <span>Edit Description</span>
         </div>
-
-        {/* Content */}
-        <div className="flex-1 p-6">
+      }
+      size="lg"
+      className="max-h-[80vh] flex flex-col"
+    >
+      <div className="flex-1 p-6">
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -107,7 +92,6 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({ isOpen, onCl
             </Button>
           )}
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 };

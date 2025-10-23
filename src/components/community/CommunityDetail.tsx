@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { useCommunity, useIsSubscribedToCommunity, useSubscribeToCommunity, useUnsubscribeFromCommunity } from "@/lib/react-query/queries/useCommunity";
-import { useAuthStore } from "@/stores/authStore";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
@@ -15,7 +15,7 @@ interface CommunityDetailProps {
 }
 
 export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, className }) => {
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const { data: community, isLoading, error } = useCommunity(communityId);
   const { data: isSubscribed } = useIsSubscribedToCommunity(communityId, user?.hiveUsername || '');
   const subscribeMutation = useSubscribeToCommunity();

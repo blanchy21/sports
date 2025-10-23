@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -41,7 +41,7 @@ const EmojiPicker = dynamic(
   { ssr: false }
 );
 
-export default function PublishPage() {
+function PublishPageContent() {
   const { user, authType, hiveUser } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -843,5 +843,13 @@ export default function PublishPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PublishPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PublishPageContent />
+    </Suspense>
   );
 }

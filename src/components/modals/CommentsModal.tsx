@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useComments } from "@/lib/react-query/queries/useComments";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { X, MessageCircle, Send } from "lucide-react";
+import { MessageCircle, Send } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast, toast } from "@/components/ui/Toast";
@@ -12,6 +12,7 @@ import { publishComment } from "@/lib/hive-workerbee/posting";
 import { useInvalidateComments } from "@/lib/react-query/queries/useComments";
 import { useAioha } from "@/contexts/AiohaProvider";
 import { CommentVoteButton } from "@/components/CommentVoteButton";
+import { BaseModal } from "@/components/ui/BaseModal";
 
 interface CommentsModalProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
   const [commentText, setCommentText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { data: comments, isLoading, error } = useComments(author || '', permlink || '', 50);
+  const { data: comments, isLoading, error } = useComments(author || '', permlink || '');
 
   // Debug logging
   React.useEffect(() => {
@@ -140,41 +141,25 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative bg-background border rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center space-x-2">
-            <MessageCircle className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Comments</h2>
-            {comments && (
-              <span className="text-sm text-muted-foreground">
-                ({comments.length})
-              </span>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <div className="flex items-center space-x-2">
+          <MessageCircle className="h-5 w-5" />
+          <span>Comments</span>
+          {comments && (
+            <span className="text-sm text-muted-foreground">
+              ({comments.length})
+            </span>
+          )}
         </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+      }
+      size="lg"
+      className="max-h-[80vh] flex flex-col"
+    >
+      <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -266,41 +251,40 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         </div>
 
         {/* Comment Input */}
-        <div className="p-6 border-t">
-          <div className="flex space-x-3">
-            <Avatar
-              fallback={user?.username?.[0] || "U"}
-              alt={user?.username || "You"}
-              size="sm"
+        <div className="border-t p-6">
+        <div className="flex space-x-3">
+          <Avatar
+            fallback={user?.username?.[0] || "U"}
+            alt={user?.username || "You"}
+            size="sm"
+          />
+          <div className="flex-1">
+            <textarea
+              placeholder="Write a comment... (Ctrl+Enter to submit)"
+              className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              rows={3}
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault();
+                  handleSubmitComment();
+                }
+              }}
+              disabled={isSubmitting}
             />
-            <div className="flex-1">
-              <textarea
-                placeholder="Write a comment... (Ctrl+Enter to submit)"
-                className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                rows={3}
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    handleSubmitComment();
-                  }
-                }}
-                disabled={isSubmitting}
-              />
-            </div>
-            <Button 
-              size="sm" 
-              className="self-end"
-              onClick={handleSubmitComment}
-              disabled={isSubmitting || !commentText.trim()}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {isSubmitting ? "Posting..." : "Comment"}
-            </Button>
           </div>
+          <Button 
+            size="sm" 
+            className="self-end"
+            onClick={handleSubmitComment}
+            disabled={isSubmitting || !commentText.trim()}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {isSubmitting ? "Posting..." : "Comment"}
+          </Button>
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 };

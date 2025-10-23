@@ -4,8 +4,9 @@ import React from "react";
 import { useUserProfile, useUserFollowerCount, useUserFollowingCount } from "@/lib/react-query/queries/useUserProfile";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { X, Users, UserPlus, UserMinus, Mail, Calendar, MapPin, Link as LinkIcon } from "lucide-react";
+import { UserPlus, Calendar, MapPin, Link as LinkIcon } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { BaseModal } from "@/components/ui/BaseModal";
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -19,33 +20,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const { data: followerCount } = useUserFollowerCount(username || '');
   const { data: followingCount } = useUserFollowingCount(username || '');
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative bg-background border rounded-lg shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold">User Profile</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="User Profile"
+      size="md"
+      className="max-h-[80vh] flex flex-col"
+    >
+      <div className="flex-1 overflow-y-auto p-6">
           {isLoading ? (
             <div className="space-y-4 animate-pulse">
               <div className="flex items-center space-x-4">
@@ -183,7 +166,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
             </Button>
           )}
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 };

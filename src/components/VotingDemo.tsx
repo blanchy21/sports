@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { VoteButton, SimpleVoteButton } from "@/components/VoteButton";
+import { StarVoteButton } from "@/components/StarVoteButton";
 import { CommentVoteButton } from "@/components/CommentVoteButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -78,7 +78,7 @@ export const VotingDemo: React.FC = () => {
             </div>
             
             <div className="flex items-center justify-between pt-4 border-t">
-              <VoteButton
+              <StarVoteButton
                 author={demoPost.author}
                 permlink={demoPost.permlink}
                 voteCount={demoPost.net_votes}
@@ -100,9 +100,9 @@ export const VotingDemo: React.FC = () => {
       {/* Demo Post with Simple Voting Interface */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Simple Voting Interface</CardTitle>
+          <CardTitle className="text-lg">Star Voting Interface</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Compact voting interface suitable for mobile or space-constrained layouts
+            Star-based voting interface with 1-5 star rating system
           </p>
         </CardHeader>
         <CardContent>
@@ -119,7 +119,7 @@ export const VotingDemo: React.FC = () => {
             </div>
             
             <div className="flex items-center justify-between pt-4 border-t">
-              <SimpleVoteButton
+              <StarVoteButton
                 author={demoPost.author}
                 permlink={demoPost.permlink}
                 voteCount={demoPost.net_votes}

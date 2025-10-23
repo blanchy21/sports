@@ -1,82 +1,5 @@
 
 // Type definitions for better type safety
-interface HiveAccountData {
-  id?: number;
-  name?: string;
-  owner?: {
-    weight_threshold: number;
-    account_auths: string[][];
-    key_auths: string[][];
-  };
-  active?: {
-    weight_threshold: number;
-    account_auths: string[][];
-    key_auths: string[][];
-  };
-  posting?: {
-    weight_threshold: number;
-    account_auths: string[][];
-    key_auths: string[][];
-  };
-  memo_key?: string;
-  json_metadata?: string;
-  posting_json_metadata?: string;
-  proxy?: string;
-  last_owner_update?: string;
-  last_account_update?: string;
-  created?: string;
-  mined?: boolean;
-  recovery_account?: string;
-  last_account_recovery?: string;
-  reset_account?: string;
-  comment_count?: number;
-  lifetime_vote_count?: number;
-  post_count?: number;
-  can_vote?: boolean;
-  voting_manabar?: {
-    current_mana: string;
-    last_update_time: number;
-  };
-  voting_power?: number;
-  balance?: string;
-  savings_balance?: string;
-  hbd_balance?: string;
-  hbd_seconds?: string;
-  hbd_seconds_last_update?: string;
-  hbd_last_interest_payment?: string;
-  savings_hbd_balance?: string;
-  savings_hbd_seconds?: string;
-  savings_hbd_seconds_last_update?: string;
-  savings_hbd_last_interest_payment?: string;
-  savings_withdraw_requests?: number;
-  reward_hbd_balance?: string;
-  reward_hive_balance?: string;
-  reward_vesting_balance?: string;
-  reward_vesting_hive?: string;
-  vesting_shares?: string;
-  delegated_vesting_shares?: string;
-  received_vesting_shares?: string;
-  vesting_withdraw_rate?: string;
-  next_vesting_withdrawal?: string;
-  withdrawn?: string;
-  to_withdraw?: string;
-  withdraw_routes?: number;
-  curation_rewards?: string;
-  posting_rewards?: string;
-  proxied_vsf_votes?: string[];
-  witnesses_voted_for?: number;
-  average_bandwidth?: string;
-  lifetime_bandwidth?: string;
-  last_bandwidth_update?: string;
-  last_market_bandwidth_update?: string;
-  last_post?: string;
-  last_root_post?: string;
-  last_vote_time?: string;
-  post_bandwidth?: string;
-  pending_claimed_accounts?: number;
-  pending_transactions?: number;
-  [key: string]: unknown;
-}
 
 interface RcAccountData {
   account?: string;
@@ -140,58 +63,9 @@ interface HiveTransaction {
   trx_id: string;
 }
 
-// Helper function to make direct HTTP calls to Hive API
-// This provides better error handling and fallback options
-async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
-  // List of Hive API nodes to try in order
-  const apiNodes = [
-    'https://api.hive.blog',
-    'https://api.deathwing.me',
-    'https://api.openhive.network',
-    'https://hive-api.arcange.eu'
-  ];
-
-  let lastError: Error | null = null;
-
-  for (const nodeUrl of apiNodes) {
-    try {
-      console.log(`[Hive API] Trying ${nodeUrl} for ${api}.${method}`);
-      
-      const response = await fetch(nodeUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: `${api}.${method}`,
-          params: params,
-          id: Math.floor(Math.random() * 1000000)
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status} from ${nodeUrl}`);
-      }
-      
-      const result = await response.json();
-      
-      if (result.error) {
-        throw new Error(`API error from ${nodeUrl}: ${result.error.message}`);
-      }
-      
-      console.log(`[Hive API] Success with ${nodeUrl} for ${api}.${method}`);
-      return result.result;
-    } catch (error) {
-      console.warn(`[Hive API] Failed with ${nodeUrl}:`, error);
-      lastError = error as Error;
-      // Continue to next node
-    }
-  }
-
-  // If all nodes failed, throw the last error
-  throw new Error(`All Hive API nodes failed. Last error: ${lastError?.message}`);
-}
+import { makeHiveApiCall } from './api';
+import { HiveAccount } from '../shared/types';
+import { calculateReputation } from '../shared/utils';
 
 interface VestingDelegation {
   delegator: string;
@@ -252,31 +126,6 @@ export interface UserAccountData {
 }
 
 // Utility functions (simplified versions for WorkerBee implementation)
-function calculateReputation(reputation: string | number): number {
-  console.log(`[calculateReputation] Input reputation:`, reputation, 'Type:', typeof reputation);
-  
-  if (typeof reputation === 'string') {
-    reputation = parseInt(reputation);
-    console.log(`[calculateReputation] Parsed reputation:`, reputation);
-  }
-  
-  if (reputation === 0) {
-    console.log(`[calculateReputation] Reputation is 0, returning default 25`);
-    return 25;
-  }
-  
-  // Use the correct Hive reputation formula
-  const neg = reputation < 0;
-  if (neg) reputation = -reputation;
-  
-  // Correct Hive reputation calculation: (log10(reputation) - 9) * 9 + 25
-  let rep = Math.log10(reputation);
-  console.log(`[calculateReputation] log10(${reputation}) = ${rep}`);
-  rep = (rep - 9) * 9 + 25;
-  console.log(`[calculateReputation] Final calculation: ${rep} (negative: ${neg})`);
-  
-  return neg ? -rep : rep;
-}
 
 function formatReputation(reputation: number): string {
   if (reputation < 0) return `${reputation.toFixed(2)}`;
@@ -319,7 +168,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
   try {
     
     // Get account info using Wax API
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountData[];
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
     
     if (!account || account.length === 0) {
       throw new Error(`Account ${username} not found`);
@@ -555,7 +404,7 @@ export async function fetchUserBalances(username: string): Promise<{
   try {
     // Get account and RC data in parallel
     const [account, rc] = await Promise.all([
-      makeHiveApiCall('condenser_api', 'get_accounts', [[username]]).then((result: unknown) => result as HiveAccountData[]),
+      makeHiveApiCall('condenser_api', 'get_accounts', [[username]]).then((result: unknown) => result as HiveAccount[]),
       makeHiveApiCall('rc_api', 'find_rc_accounts', [username]).then((result: unknown) => {
         const rcResult = result as { rc_accounts?: RcAccountData[] };
         return rcResult && rcResult.rc_accounts && rcResult.rc_accounts.length > 0 ? rcResult.rc_accounts[0] : null;
@@ -625,7 +474,7 @@ export async function fetchUserProfile(username: string): Promise<{
 } | null> {
   try {
 
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountData[];
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
     if (!account || account.length === 0) return null;
 
     const accountData = account[0];
@@ -645,7 +494,7 @@ export async function fetchUserProfile(username: string): Promise<{
 export async function userExists(username: string): Promise<boolean> {
   try {
 
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountData[];
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
     return account && account.length > 0;
   } catch {
     return false;
@@ -1071,7 +920,7 @@ export async function updateUserProfile(
     console.log('Profile update for user:', username, 'with posting key:', postingKey ? 'provided' : 'missing');
 
     // Get current account to preserve existing metadata
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountData[];
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
     if (!account || account.length === 0) throw new Error('Account not found');
 
     const accountData = account[0];

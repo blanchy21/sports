@@ -9,6 +9,7 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ToastProvider } from "@/components/ui/Toast";
 import { QueryClientProvider } from "@/lib/react-query/QueryClientProvider";
 import { ModalProvider } from "@/components/modals/ModalProvider";
+import { ServiceWorkerInitializer } from "@/components/ServiceWorkerInitializer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,6 +35,7 @@ export default function RootLayout({
                   <PriceProvider>
                     <ToastProvider>
                       <ModalProvider>
+                        <ServiceWorkerInitializer />
                         {children}
                       </ModalProvider>
                     </ToastProvider>
