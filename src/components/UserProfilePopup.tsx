@@ -24,6 +24,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
   const { user, logout, updateUser } = useAuth();
   const popupRef = useRef<HTMLDivElement>(null);
   const [isRefreshingRC, setIsRefreshingRC] = useState(false);
+  const hasRefreshedRef = useRef(false);
 
   // Close popup when clicking outside
   useEffect(() => {
@@ -53,12 +54,14 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
   };
 
   const handleRefreshRC = useCallback(async () => {
-    if (!user?.username) return;
+    if (!user?.username || isRefreshingRC) return; // Prevent concurrent calls
     
+    console.log(`[UserProfilePopup] Refreshing RC for ${user.username}...`);
     setIsRefreshingRC(true);
     try {
       const accountData = await fetchUserAccount(user.username);
       if (accountData) {
+        console.log(`[UserProfilePopup] RC data received: ${accountData.resourceCredits.toFixed(2)}%`);
         updateUser({
           rcPercentage: accountData.resourceCredits,
           rcBalance: accountData.resourceCredits, // Assuming RC balance is the same as percentage for now
@@ -69,14 +72,35 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
     } finally {
       setIsRefreshingRC(false);
     }
-  }, [user?.username, updateUser]);
+  }, [user?.username, updateUser, isRefreshingRC]);
 
-  // If RC percentage is not available, try to refresh it
-  useEffect(() => {
-    if (isOpen && user && user.rcPercentage === undefined) {
+  // Stable refresh function that doesn't change on every render
+  const refreshRC = useCallback(() => {
+    if (user?.username && !isRefreshingRC && !hasRefreshedRef.current) {
+      hasRefreshedRef.current = true;
       handleRefreshRC();
     }
-  }, [isOpen, user, handleRefreshRC]);
+  }, [user?.username, isRefreshingRC, handleRefreshRC]);
+
+  // Always refresh RC data when popup opens to ensure we have the latest data
+  useEffect(() => {
+    if (isOpen && user) {
+      // Add a small delay to prevent rapid successive calls
+      const timeoutId = setTimeout(() => {
+        refreshRC();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isOpen, user, refreshRC]);
+
+  // Reset refreshing state when popup closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsRefreshingRC(false);
+      hasRefreshedRef.current = false;
+    }
+  }, [isOpen]);
 
   if (!isOpen || !user) return null;
 

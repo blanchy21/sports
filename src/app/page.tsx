@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { 
@@ -20,7 +20,7 @@ import {
   User
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { AuthModal } from "@/components/AuthModal";
+// Removed AuthModal import - now using /auth page
 import { useAuth } from "@/contexts/AuthContext";
 
 const sports = [
@@ -34,7 +34,7 @@ const sports = [
 export default function LandingPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  // Removed AuthModal state - now using /auth page
   const { scrollY } = useScroll();
   
   // Call hooks before any conditional returns
@@ -116,7 +116,7 @@ export default function LandingPage() {
             <Button 
               size="lg" 
               className="text-lg px-8 py-6 group"
-              onClick={() => setIsAuthModalOpen(true)}
+              onClick={() => router.push('/auth')}
             >
               Get Started
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -125,7 +125,7 @@ export default function LandingPage() {
               size="lg" 
               variant="outline"
               className="text-lg px-8 py-6 bg-white/10 border-white/30 text-white hover:bg-white/20"
-              onClick={() => setIsAuthModalOpen(true)}
+              onClick={() => router.push('/auth')}
             >
               Sign In
             </Button>
@@ -478,7 +478,7 @@ export default function LandingPage() {
                 <Button 
                   className="w-full group"
                   size="sm"
-                  onClick={() => setIsAuthModalOpen(true)}
+                  onClick={() => router.push('/auth')}
                 >
                   <Key className="h-4 w-4 mr-2" />
                   Connect with Hive
@@ -528,7 +528,7 @@ export default function LandingPage() {
                   variant="outline"
                   className="w-full group"
                   size="sm"
-                  onClick={() => setIsAuthModalOpen(true)}
+                  onClick={() => router.push('/auth')}
                 >
                   <Shield className="h-4 w-4 mr-2" />
                   Choose Wallet
@@ -578,7 +578,7 @@ export default function LandingPage() {
                   variant="outline"
                   className="w-full group"
                   size="sm"
-                  onClick={() => setIsAuthModalOpen(true)}
+                  onClick={() => router.push('/auth')}
                 >
                   <User className="h-4 w-4 mr-2" />
                   Sign up with Email
@@ -612,7 +612,7 @@ export default function LandingPage() {
           <Button 
             size="lg" 
             className="text-lg px-8 py-6"
-            onClick={() => setIsAuthModalOpen(true)}
+            onClick={() => router.push('/auth')}
           >
             Get Started Now
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -621,7 +621,7 @@ export default function LandingPage() {
       </section>
 
       {/* Auth Modal */}
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      {/* AuthModal removed - now using /auth page */}
     </div>
   );
 }

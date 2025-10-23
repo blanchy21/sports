@@ -286,76 +286,40 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       );
     }
 
-    // Calculate Resource Credits percentage using voting_manabar
+    // Calculate Resource Credits percentage using the proper rc_api
     let rcPercentage = 0;
     
-    // Get global properties for current time
-    const globalPropsForRC = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as any;
-    const currentTime = Math.floor(new Date(globalPropsForRC.time).getTime() / 1000);
-    
-    // Calculate RC using voting_manabar (which contains RC data)
-    const votingManabar = accountData.voting_manabar as { current_mana: string; last_update_time: number } | undefined;
-    const downvoteManabar = accountData.downvote_manabar as { current_mana: string; last_update_time: number } | undefined;
-    
-    // Also check for direct RC fields that might be available
-    const votingManabarCurrentMana = accountData.voting_manabar_current_mana as string | undefined;
-    const votingManabarLastUpdateTime = accountData.voting_manabar_last_update_time as number | undefined;
-    
-    console.log(`[WorkerBee fetchUserAccount] RC Calculation Debug:`);
-    console.log(`  - voting_manabar:`, votingManabar);
-    console.log(`  - voting_manabar_current_mana:`, votingManabarCurrentMana);
-    console.log(`  - voting_manabar_last_update_time:`, votingManabarLastUpdateTime);
-    
-    
-    // Try to get RC data from either nested object or direct fields
-    let currentMana: string | undefined;
-    let lastUpdateTime: number | undefined;
-    
-    if (votingManabar && votingManabar.current_mana && votingManabar.last_update_time) {
-      currentMana = votingManabar.current_mana;
-      lastUpdateTime = votingManabar.last_update_time;
-    } else if (votingManabarCurrentMana && votingManabarLastUpdateTime) {
-      currentMana = votingManabarCurrentMana;
-      lastUpdateTime = votingManabarLastUpdateTime;
-    }
-    
-    if (currentMana && lastUpdateTime) {
-      console.log(`[WorkerBee fetchUserAccount] RC data found, calculating...`);
-      // Calculate total VESTS (vesting shares)
-      const vestingShares = parseFloat(accountData.vesting_shares as string || '0');
-      const receivedVestingShares = parseFloat(accountData.received_vesting_shares as string || '0');
-      const delegatedVestingShares = parseFloat(accountData.delegated_vesting_shares as string || '0');
-      const totalVests = vestingShares + receivedVestingShares - delegatedVestingShares;
+    try {
+      // Use the dedicated RC API for accurate RC calculation
+      const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [username]) as any;
+      console.log(`[WorkerBee fetchUserAccount] RC API response:`, rcResult);
       
-      // Calculate max mana (RC) - this is the maximum RC the account can have
-      const maxMana = totalVests * 1000000;
-      
-      // Calculate elapsed time since last update (in seconds)
-      const elapsed = currentTime - lastUpdateTime;
-      
-      // Calculate current mana (RC) with proper regeneration
-      // RC regenerates at 20% per day, so it takes 5 days (432000 seconds) to fully regenerate
-      let calculatedCurrentMana = parseFloat(currentMana) + (elapsed * maxMana / 432000);
-      
-      // Cap at max mana (can't exceed 100%)
-      if (calculatedCurrentMana > maxMana) {
-        calculatedCurrentMana = maxMana;
-      }
-      
-      // Calculate percentage
-      rcPercentage = (calculatedCurrentMana / maxMana) * 100;
-      
-      
-      // For high HP accounts, if RC is significantly low, assume it should be close to 100%
-      // This handles cases where the API data might be stale or the time calculation is off
-      if (totalVests > 1000000 && rcPercentage < 80) {
-        console.log(`[WorkerBee fetchUserAccount] High HP account (${totalVests.toFixed(0)} VESTS) with low RC (${rcPercentage.toFixed(2)}%), setting to 100%`);
+      if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {
+        const rcData = rcResult.rc_accounts[0] as { rc_manabar?: { current_mana: string }; max_rc?: string };
+        
+        if (rcData.rc_manabar && rcData.max_rc) {
+          const currentMana = parseFloat(rcData.rc_manabar.current_mana);
+          const maxRc = parseFloat(rcData.max_rc);
+          
+          if (maxRc > 0) {
+            rcPercentage = (currentMana / maxRc) * 100;
+            console.log(`[WorkerBee fetchUserAccount] RC from rc_api: ${rcPercentage.toFixed(2)}% (${currentMana.toLocaleString()} / ${maxRc.toLocaleString()})`);
+          } else {
+            console.log(`[WorkerBee fetchUserAccount] Max RC is 0, setting RC to 100%`);
+            rcPercentage = 100;
+          }
+        } else {
+          console.log(`[WorkerBee fetchUserAccount] RC data structure invalid, setting RC to 100%`);
+          rcPercentage = 100;
+        }
+      } else {
+        console.log(`[WorkerBee fetchUserAccount] No RC data from rc_api, setting RC to 100%`);
         rcPercentage = 100;
       }
-    } else {
-      console.log(`[WorkerBee fetchUserAccount] No RC data available - currentMana: ${currentMana}, lastUpdateTime: ${lastUpdateTime}`);
-      console.log(`[WorkerBee fetchUserAccount] Setting RC to 100% for high HP account as fallback`);
-      rcPercentage = 100; // Set to 100% as fallback for high HP accounts
+    } catch (rcError) {
+      console.warn(`[WorkerBee fetchUserAccount] Failed to fetch RC from rc_api:`, rcError);
+      console.log(`[WorkerBee fetchUserAccount] Setting RC to 100% as fallback`);
+      rcPercentage = 100;
     }
     // Use reputation from the dedicated API call if available, otherwise fall back to account data
     let rawReputation: string | number;
@@ -481,9 +445,23 @@ export async function fetchUserBalances(username: string): Promise<{
       );
     }
 
-    const rcPercentage = rc && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).rc_manabar && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).max_rc
-      ? (parseFloat((rc as unknown as { rc_manabar: { current_mana: string }; max_rc: string }).rc_manabar.current_mana) / parseFloat((rc as unknown as { rc_manabar: { current_mana: string }; max_rc: string }).max_rc)) * 100 
-      : 0;
+    // Calculate RC percentage using the proper rc_api data
+    let rcPercentage = 0;
+    if (rc && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).rc_manabar && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).max_rc) {
+      const rcData = rc as unknown as { rc_manabar: { current_mana: string }; max_rc: string };
+      const currentMana = parseFloat(rcData.rc_manabar.current_mana);
+      const maxRc = parseFloat(rcData.max_rc);
+      
+      if (maxRc > 0) {
+        rcPercentage = (currentMana / maxRc) * 100;
+        console.log(`[WorkerBee fetchUserBalances] RC: ${rcPercentage.toFixed(2)}% (${currentMana.toLocaleString()} / ${maxRc.toLocaleString()})`);
+      } else {
+        rcPercentage = 100;
+      }
+    } else {
+      console.log(`[WorkerBee fetchUserBalances] No RC data available, setting to 100%`);
+      rcPercentage = 100;
+    }
 
     return {
       hiveBalance: hiveAsset.amount + savingsHiveAsset.amount,

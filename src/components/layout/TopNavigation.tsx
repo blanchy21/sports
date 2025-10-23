@@ -3,7 +3,7 @@
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   Home, 
   LayoutDashboard, 
@@ -20,6 +20,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { AuthModal } from "@/components/AuthModal";
 import { SportsFilterPopup } from "@/components/SportsFilterPopup";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
+import { UpgradePrompt } from "@/components/AccountBadge";
+import { UpgradeFlow } from "@/components/UpgradeFlow";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -27,12 +29,15 @@ import { cn } from "@/lib/utils";
 
 export const TopNavigation: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { unreadCount } = useNotifications();
   const [showSportsPopup, setShowSportsPopup] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showUpgradeFlow, setShowUpgradeFlow] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [selectedSport, setSelectedSport] = useState<string>("");
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -173,26 +178,39 @@ export const TopNavigation: React.FC = () => {
                 </Button>
               </div>
 
-              <Avatar
-                src={user.avatar}
-                fallback={user.username}
-                alt={user.displayName || user.username}
-                size="lg"
-              />
+              <div className="flex items-center space-x-3">
+                <Link href="/profile" suppressHydrationWarning className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                  <Avatar
+                    src={user.avatar}
+                    fallback={user.username}
+                    alt={user.displayName || user.username}
+                    size="lg"
+                    className="w-12 h-12"
+                  />
+                  <div className="flex flex-col">
+                    <div className="text-white font-semibold text-lg">
+                      {user.displayName || user.username}
+                    </div>
+                    <div className="text-white/70 text-sm">
+                      @{user.username}
+                    </div>
+                  </div>
+                </Link>
+              </div>
             </>
           ) : (
             <>
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => setShowAuthModal(true)}
+                onClick={() => router.push('/auth')}
                 className="border-white bg-white text-japanese-laurel hover:bg-white/90 hover:text-japanese-laurel/80 font-medium"
               >
                 Sign In
               </Button>
               <Button 
                 size="sm"
-                onClick={() => setShowAuthModal(true)}
+                onClick={() => router.push('/auth')}
                 className="bg-white text-japanese-laurel hover:bg-white/90 font-medium"
               >
                 Get Started
@@ -214,6 +232,25 @@ export const TopNavigation: React.FC = () => {
         onSportSelect={handleSportSelect}
         selectedSport={selectedSport}
       />
+
+      <UpgradeFlow
+        isOpen={showUpgradeFlow}
+        onClose={() => setShowUpgradeFlow(false)}
+      />
+
+      {/* Upgrade Prompt for soft users */}
+      {user && !user.isHiveAuth && showUpgradePrompt && (
+        <div className="fixed top-20 right-4 z-40 max-w-sm">
+          <UpgradePrompt
+            user={user}
+            onUpgrade={() => {
+              setShowUpgradePrompt(false);
+              setShowUpgradeFlow(true);
+            }}
+            onDismiss={() => setShowUpgradePrompt(false)}
+          />
+        </div>
+      )}
     </header>
   );
 };

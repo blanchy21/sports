@@ -10,14 +10,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Post, SPORT_CATEGORIES } from "@/types";
 import { fetchSportsblockPosts, SportsblockPost } from "@/lib/hive-workerbee/content";
+import { getAnalyticsData, CommunityStats } from "@/lib/hive-workerbee/analytics";
 
 // No mock data needed - using real Hive blockchain content
-
-const stats = [
-  { label: "Posts Today", value: "47", icon: TrendingUp },
-  { label: "Active Users", value: "2.3K", icon: Users },
-  { label: "Total Rewards", value: "$1.2K", icon: Award },
-];
 
 export default function FeedPage() {
   const { user } = useAuth();
@@ -26,26 +21,88 @@ export default function FeedPage() {
   const [posts, setPosts] = React.useState<SportsblockPost[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [communityStats, setCommunityStats] = React.useState<CommunityStats>({
+    totalPosts: 0,
+    totalAuthors: 0,
+    totalRewards: 0,
+    activeToday: 0,
+  });
+  const [statsLoading, setStatsLoading] = React.useState(true);
+  const [statsError, setStatsError] = React.useState<string | null>(null);
+
+  // Utility function to format numbers
+  const formatNumber = (num: number): string => {
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+  };
+
+  // Utility function to format currency
+  const formatCurrency = (amount: number): string => {
+    if (amount >= 1000) {
+      return '$' + (amount / 1000).toFixed(1) + 'K';
+    }
+    return '$' + amount.toFixed(2);
+  };
+
+  // Dynamic stats based on real data
+  const stats = React.useMemo(() => [
+    { 
+      label: "Posts Today", 
+      value: statsLoading ? "..." : formatNumber(communityStats.activeToday), 
+      icon: TrendingUp 
+    },
+    { 
+      label: "Active Users", 
+      value: statsLoading ? "..." : formatNumber(communityStats.totalAuthors), 
+      icon: Users 
+    },
+    { 
+      label: "Total Rewards", 
+      value: statsLoading ? "..." : formatCurrency(communityStats.totalRewards), 
+      icon: Award 
+    },
+  ], [communityStats, statsLoading]);
 
   const loadPosts = React.useCallback(async () => {
     setIsLoading(true);
+    setStatsLoading(true);
     setError(null);
+    setStatsError(null);
     
     try {
       const result = await fetchSportsblockPosts({
         sportCategory: selectedSport || undefined,
-        limit: 20,
+        limit: 100, // Get more posts for better analytics
         sort: 'created',
       });
       
       setPosts(result.posts);
+      
+      // Calculate analytics data from all posts (not filtered by sport)
+      try {
+        const allPostsResult = await fetchSportsblockPosts({
+          limit: 100,
+          sort: 'created',
+        });
+        
+        const analytics = getAnalyticsData(allPostsResult.posts);
+        setCommunityStats(analytics.communityStats);
+      } catch (analyticsError) {
+        console.error('Error calculating analytics:', analyticsError);
+        setStatsError('Failed to load statistics');
+        // Keep default stats values
+      }
     } catch (err) {
       console.error('Error loading posts:', err);
       setError('Failed to load posts. Please try again later.');
+      setStatsError('Failed to load statistics');
       // No fallback to mock data - show empty state instead
       setPosts([]);
     } finally {
       setIsLoading(false);
+      setStatsLoading(false);
     }
   }, [selectedSport]);
 
@@ -141,7 +198,15 @@ export default function FeedPage() {
                     <Icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold">{stat.value}</div>
+                    <div className="text-2xl font-bold">
+                      {statsLoading ? (
+                        <div className="h-8 w-16 bg-gray-300 dark:bg-gray-600 rounded animate-pulse"></div>
+                      ) : statsError ? (
+                        <span className="text-red-500 text-lg">Error</span>
+                      ) : (
+                        stat.value
+                      )}
+                    </div>
                     <div className="text-sm text-muted-foreground">{stat.label}</div>
                   </div>
                 </div>
