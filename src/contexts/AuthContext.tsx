@@ -87,6 +87,26 @@ interface AiohaInstance {
     };
   }>;
   errorCode?: number;
+  // Additional properties that might exist
+  [key: string]: unknown;
+}
+
+// Extended Aioha instance with state properties
+interface AiohaInstanceWithState extends AiohaInstance {
+  state?: {
+    user?: {
+      username?: string;
+      sessionId?: string;
+      session_id?: string;
+    };
+  };
+  _state?: {
+    user?: {
+      username?: string;
+      sessionId?: string;
+      session_id?: string;
+    };
+  };
 }
 
 const AuthContext = createContext<AuthState & {
@@ -381,7 +401,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.log("No user data found in provider instance, trying other methods...");
                 
                 // Try to get from Aioha's internal state more comprehensively
-                const aiohaState = (aioha as AiohaInstance & { state?: { user?: { username?: string; sessionId?: string; session_id?: string } }; _state?: { user?: { username?: string; sessionId?: string; session_id?: string } } }).state || (aioha as AiohaInstance & { state?: { user?: { username?: string; sessionId?: string; session_id?: string } }; _state?: { user?: { username?: string; sessionId?: string; session_id?: string } } })._state;
+                const aiohaWithState = aioha as AiohaInstanceWithState;
+                const aiohaState = aiohaWithState.state || aiohaWithState._state;
                 if (aiohaState && aiohaState.user && aiohaState.user.username) {
                   userData = {
                     username: aiohaState.user.username,
@@ -389,11 +410,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     sessionId: aiohaState.user.sessionId || aiohaState.user.session_id,
                   };
                   console.log("Found user data in Aioha state for already logged in case:", userData);
-                } else if (aiohaState && (aiohaState as any).currentUser && (aiohaState as any).currentUser.username) {
+                } else if (aiohaState && typeof aiohaState === 'object' && 'currentUser' in aiohaState && aiohaState.currentUser && typeof aiohaState.currentUser === 'object' && 'username' in aiohaState.currentUser && aiohaState.currentUser.username) {
                   userData = {
-                    username: (aiohaState as any).currentUser.username,
-                    id: (aiohaState as any).currentUser.username,
-                    sessionId: (aiohaState as any).currentUser.sessionId || (aiohaState as any).currentUser.session_id,
+                    username: aiohaState.currentUser.username,
+                    id: aiohaState.currentUser.username,
+                    sessionId: ('sessionId' in aiohaState.currentUser ? aiohaState.currentUser.sessionId : undefined) || ('session_id' in aiohaState.currentUser ? aiohaState.currentUser.session_id : undefined),
                   };
                   console.log("Found currentUser data in Aioha state for already logged in case:", userData);
                 } else {
@@ -456,28 +477,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (aioha) {
           console.log("Aioha instance properties:");
           Object.keys(aioha).forEach(key => {
-            console.log(`- aioha.${key}:`, (aioha as any)[key]);
+            console.log(`- aioha.${key}:`, (aioha as Record<string, unknown>)[key]);
           });
           
           // Try to find user data in any of the Aioha properties
           console.log("Searching for user data in all Aioha properties...");
           for (const key of Object.keys(aioha)) {
-            const value = (aioha as any)[key];
+            const value = (aioha as Record<string, unknown>)[key];
             if (value && typeof value === 'object') {
+              const objValue = value as Record<string, unknown>;
               // Check if this property contains user data
-              if (value.username || value.name || value.user || value.account) {
+              if (objValue.username || objValue.name || objValue.user || objValue.account) {
                 console.log(`Found potential user data in aioha.${key}:`, value);
                 
                 // Try to extract username from this property
-                const potentialUsername = value.username || value.name || 
-                  value.user?.username || value.user?.name ||
-                  value.account?.name || value.account?.username;
+                const potentialUsername = objValue.username || objValue.name || 
+                  (objValue.user as Record<string, unknown>)?.username || (objValue.user as Record<string, unknown>)?.name ||
+                  (objValue.account as Record<string, unknown>)?.name || (objValue.account as Record<string, unknown>)?.username;
                 
                 if (potentialUsername) {
                   userData = {
                     username: potentialUsername,
                     id: potentialUsername,
-                    sessionId: value.sessionId || value.session_id || value.id,
+                    sessionId: objValue.sessionId || objValue.session_id || objValue.id,
                   };
                   console.log(`Successfully extracted user data from aioha.${key}:`, userData);
                   break; // Exit the loop once we find user data

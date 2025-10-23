@@ -18,7 +18,7 @@ export const usePerformance = (componentName: string) => {
     const startTime = performance.now();
     
     // Monitor memory usage if available
-    const memoryInfo = (performance as any).memory;
+    const memoryInfo = (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory;
     const initialMemory = memoryInfo?.usedJSHeapSize || 0;
 
     // Monitor network requests

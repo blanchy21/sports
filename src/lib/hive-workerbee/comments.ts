@@ -133,7 +133,7 @@ export async function postComment(commentData: CommentData, _postingKey: string)
     const client = await initializeWorkerBeeClient();
     
     // Broadcast the transaction using WorkerBee
-    await client.broadcast(operation as unknown as any);
+    await client.broadcast(operation as any);
     
     // Generate comment URL
     const url = `https://hive.blog/@${commentData.author}/${permlink}`;
@@ -208,7 +208,7 @@ export async function updateComment(
     const client = await initializeWorkerBeeClient();
     
     // Broadcast the transaction using WorkerBee
-    await client.broadcast(operation as unknown as any);
+    await client.broadcast(operation as any);
 
     return {
       success: true,

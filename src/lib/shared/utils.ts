@@ -91,7 +91,7 @@ export function formatAsset(amount: number, symbol: string, decimals: number = 3
  * @param post - Hive post object
  * @returns Pending payout amount
  */
-export function calculatePendingPayout(post: any): number {
+export function calculatePendingPayout(post: { pending_payout_value?: string }): number {
   if (!post.pending_payout_value) return 0;
   
   const asset = parseAsset(post.pending_payout_value);
@@ -103,7 +103,7 @@ export function calculatePendingPayout(post: any): number {
  * @param post - Hive post object
  * @returns True if post is still earning rewards
  */
-export function isInPayoutWindow(post: any): boolean {
+export function isInPayoutWindow(post: { cashout_time?: string }): boolean {
   if (!post.cashout_time) return false;
   
   const cashoutTime = new Date(post.cashout_time);
@@ -117,7 +117,7 @@ export function isInPayoutWindow(post: any): boolean {
  * @param post - Hive post object
  * @returns Time until payout in milliseconds
  */
-export function getTimeUntilPayout(post: any): number {
+export function getTimeUntilPayout(post: { cashout_time?: string }): number {
   if (!post.cashout_time) return 0;
   
   const cashoutTime = new Date(post.cashout_time);
@@ -168,10 +168,10 @@ export function calculateVoteWeight(rshares: string, totalVotingWeight: string):
  * @param username - Username to check
  * @returns Vote object if user voted, null otherwise
  */
-export function getUserVote(post: any, username: string): any {
+export function getUserVote(post: { active_votes?: Array<{ voter: string; [key: string]: unknown }> }, username: string): { voter: string; [key: string]: unknown } | null {
   if (!post.active_votes) return null;
   
-  return post.active_votes.find((vote: any) => vote.voter === username) || null;
+  return post.active_votes.find((vote) => vote.voter === username) || null;
 }
 
 /**
@@ -179,7 +179,7 @@ export function getUserVote(post: any, username: string): any {
  * @param jsonMetadata - JSON metadata string
  * @returns Parsed metadata object
  */
-export function parseJsonMetadata(jsonMetadata: string): any {
+export function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
   try {
     return jsonMetadata ? JSON.parse(jsonMetadata) : {};
   } catch (error) {
@@ -193,8 +193,8 @@ export function parseJsonMetadata(jsonMetadata: string): any {
  * @param post - Hive post object
  * @returns True if post is from Sportsblock
  */
-export function isSportsblockPost(post: any): boolean {
-  const metadata = parseJsonMetadata(post.json_metadata);
+export function isSportsblockPost(post: { json_metadata?: string; category?: string }): boolean {
+  const metadata = parseJsonMetadata(post.json_metadata || '');
   
   // Check for Sportsblock app tag
   if (metadata.app === 'sportsblock/1.0.0' || metadata.app === 'sportsblock') {
@@ -207,7 +207,7 @@ export function isSportsblockPost(post: any): boolean {
   }
   
   // Check for Sportsblock tags
-  if (metadata.tags && metadata.tags.includes('sportsblock')) {
+  if (metadata.tags && Array.isArray(metadata.tags) && metadata.tags.includes('sportsblock')) {
     return true;
   }
   
@@ -219,9 +219,9 @@ export function isSportsblockPost(post: any): boolean {
  * @param post - Hive post object
  * @returns Sport category ID or null
  */
-export function getSportCategory(post: any): string | null {
-  const metadata = parseJsonMetadata(post.json_metadata);
-  return metadata.sport_category || null;
+export function getSportCategory(post: { json_metadata?: string }): string | null {
+  const metadata = parseJsonMetadata(post.json_metadata || '');
+  return (metadata.sport_category as string) || null;
 }
 
 /**
@@ -229,7 +229,7 @@ export function getSportCategory(post: any): string | null {
  * @param rc - Resource Credits object
  * @returns RC percentage (0-100)
  */
-export function calculateRCPercentage(rc: any): number {
+export function calculateRCPercentage(rc: { rc_manabar?: { current_mana: string }; max_rc?: string }): number {
   if (!rc || !rc.rc_manabar || !rc.max_rc) return 0;
   
   const current = parseFloat(rc.rc_manabar.current_mana);
@@ -258,7 +258,7 @@ export function formatResourceCredits(rc: any): string {
  * @param threshold - Minimum RC percentage needed (default: 10%)
  * @returns True if user has enough RC
  */
-export function hasEnoughRC(rc: any, threshold: number = 10): boolean {
+export function hasEnoughRC(rc: { rc_manabar?: { current_mana: string }; max_rc?: string }, threshold: number = 10): boolean {
   return calculateRCPercentage(rc) >= threshold;
 }
 
@@ -371,7 +371,7 @@ export class HiveError extends Error {
   constructor(
     message: string,
     public code?: string,
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
     this.name = 'HiveError';

@@ -11,7 +11,8 @@ import {
   limit, 
   startAfter,
   where,
-  serverTimestamp 
+  serverTimestamp,
+  DocumentSnapshot
 } from 'firebase/firestore';
 import { db } from './config';
 import { SoftPost } from '@/types/auth';
@@ -88,7 +89,7 @@ export class FirebasePosts {
     }
   }
 
-  static async getAllPosts(postsLimit: number = 20, lastDoc?: any): Promise<SoftPost[]> {
+  static async getAllPosts(postsLimit: number = 20, lastDoc?: DocumentSnapshot): Promise<SoftPost[]> {
     try {
       let q = query(
         collection(db, 'soft_posts'),
