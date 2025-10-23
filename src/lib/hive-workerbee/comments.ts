@@ -1,7 +1,10 @@
 import { initializeWorkerBeeClient } from './client';
 import { makeHiveApiCall } from './api';
+import type { ITransaction } from "@hiveio/wax";
 
 // Type definitions for better type safety
+
+
 
 interface HiveVote {
   voter: string;
@@ -133,7 +136,7 @@ export async function postComment(commentData: CommentData, _postingKey: string)
     const client = await initializeWorkerBeeClient();
     
     // Broadcast the transaction using WorkerBee
-    await client.broadcast(operation as any);
+    await client.broadcast(operation as unknown as ITransaction);
     
     // Generate comment URL
     const url = `https://hive.blog/@${commentData.author}/${permlink}`;
@@ -208,7 +211,7 @@ export async function updateComment(
     const client = await initializeWorkerBeeClient();
     
     // Broadcast the transaction using WorkerBee
-    await client.broadcast(operation as any);
+    await client.broadcast(operation as unknown as ITransaction);
 
     return {
       success: true,

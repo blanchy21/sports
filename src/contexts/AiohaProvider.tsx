@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AiohaProvider as AiohaUIProvider } from '@aioha/react-ui';
 import { aioha } from '@/lib/aioha/config';
 
+
 // Aioha context type
 interface AiohaContextType {
   aioha: unknown | null;
@@ -61,7 +62,7 @@ export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
   return (
     <AiohaContext.Provider value={contextValue}>
       {!!aiohaInstance && (
-        <AiohaUIProvider aioha={aiohaInstance as unknown as any}>
+        <AiohaUIProvider aioha={aiohaInstance as any}> {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
           {children}
         </AiohaUIProvider>
       )}

@@ -245,7 +245,7 @@ export function calculateRCPercentage(rc: { rc_manabar?: { current_mana: string 
  * @param rc - Resource Credits object
  * @returns Formatted RC string
  */
-export function formatResourceCredits(rc: any): string {
+export function formatResourceCredits(rc: { rc_manabar?: { current_mana: string }; max_rc?: string }): string {
   if (!rc || !rc.rc_manabar || !rc.max_rc) return '0%';
   
   const percentage = calculateRCPercentage(rc);

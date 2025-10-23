@@ -18,16 +18,17 @@ import {
   Star
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { HiveAccount } from "@/lib/shared/types";
 
 // Import the AiohaLoginResult type
 interface AiohaLoginResult {
   user?: {
     username?: string;
-    account?: any;
+    account?: HiveAccount;
     session?: string;
   };
   username?: string;
-  account?: any;
+  account?: HiveAccount;
   session?: string;
   provider?: string;
   aiohaUserId?: string;

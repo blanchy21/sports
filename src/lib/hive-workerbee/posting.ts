@@ -1,6 +1,7 @@
 import { SPORTS_ARENA_CONFIG, initializeWorkerBeeClient } from './client';
 import { makeHiveApiCall } from './api';
 import { HiveAccount } from '../shared/types';
+import type { ITransaction } from "@hiveio/wax";
 
 // Type definitions for better type safety
 interface HiveAccountWithRC extends HiveAccount {
@@ -19,6 +20,8 @@ interface BroadcastResult {
   id?: string;
   [key: string]: unknown;
 }
+
+
 
 interface RcResult {
   rc_accounts?: Array<{
@@ -366,7 +369,7 @@ export async function updatePost(
     const client = await initializeWorkerBeeClient();
     
     // Broadcast the transaction using WorkerBee
-    await client.broadcast(operation as unknown as any);
+    await client.broadcast(operation as unknown as ITransaction);
 
     return {
       success: true,

@@ -1,5 +1,6 @@
 import { getWorkerBeeClient } from './client';
 import { SPORTS_ARENA_CONFIG } from './client';
+import type { IStartConfiguration } from "@hiveio/workerbee";
 
 // Real-time event types
 export interface RealtimePostEvent {
@@ -42,9 +43,87 @@ export type RealtimeEvent = RealtimePostEvent | RealtimeVoteEvent | RealtimeComm
 // Event callback type
 export type RealtimeEventCallback = (event: RealtimeEvent) => void;
 
+// WorkerBee client type - flexible interface to match actual WorkerBee
+export type WorkerBeeClient = {
+  start: (config: IStartConfiguration) => Promise<void>;
+  stop: () => void | Promise<void>;
+  observe: {
+    onPostsWithTags: (tags: string[]) => {
+      subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => void;
+    };
+    onVotes: () => {
+      subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => void;
+    };
+    onComments: () => {
+      subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => void;
+    };
+  };
+  chain?: unknown;
+  [key: string]: unknown; // Allow additional properties
+};
+
+// Hive blockchain data types
+export interface HiveBlockData {
+  block_id: string;
+  previous: string;
+  timestamp: string;
+  witness: string;
+  transaction_merkle_root: string;
+  extensions: unknown[];
+  witness_signature: string;
+  transactions: HiveTransaction[];
+}
+
+export interface HiveTransaction {
+  ref_block_num: number;
+  ref_block_prefix: number;
+  expiration: string;
+  operations: HiveOperation[];
+  extensions: unknown[];
+  signatures: string[];
+}
+
+export interface HiveOperation {
+  type: string;
+  value: {
+    author?: string;
+    permlink?: string;
+    title?: string;
+    body?: string;
+    json_metadata?: string;
+    parent_author?: string;
+    parent_permlink?: string;
+    voter?: string;
+    weight?: number;
+    [key: string]: unknown;
+  };
+}
+
+// WebSocket error type
+export interface WebSocketError {
+  code: number;
+  message: string;
+  reason?: string;
+  type?: string;
+}
+
+// Stream data types
+export interface StreamData {
+  type: string;
+  data: {
+    block?: HiveBlockData;
+    transaction?: HiveTransaction;
+    operation?: HiveOperation;
+    [key: string]: unknown;
+  };
+}
+
+// Error handler type
+export type ErrorHandler = (error: WebSocketError | Error) => void;
+
 // Real-time monitoring class
 export class RealtimeMonitor {
-  private client: any = null;
+  private client: unknown = null;
   private isRunning = false;
   private callbacks: RealtimeEventCallback[] = [];
 
@@ -80,34 +159,34 @@ export class RealtimeMonitor {
 
     try {
       // Start monitoring for new posts in Sportsblock community
-      this.client.observe.onPostsWithTags([SPORTS_ARENA_CONFIG.COMMUNITY_ID, 'sportsblock']).subscribe({
-        next: (data: any) => {
+      (this.client as { observe: { onPostsWithTags: (tags: string[]) => { subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => void } } }).observe.onPostsWithTags([SPORTS_ARENA_CONFIG.COMMUNITY_ID, 'sportsblock']).subscribe({
+        next: (data: StreamData) => {
           console.log('[RealtimeMonitor] New post detected:', data);
           this.handleNewPost(data);
         },
-        error: (error: any) => {
+        error: (error: WebSocketError) => {
           console.error('[RealtimeMonitor] Post monitoring error:', error);
         }
       });
 
       // Start monitoring for votes on Sportsblock posts
-      this.client.observe.onVotes().subscribe({
-        next: (data: any) => {
+      (this.client as { observe: { onVotes: () => { subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => void } } }).observe.onVotes().subscribe({
+        next: (data: StreamData) => {
           console.log('[RealtimeMonitor] New vote detected:', data);
           this.handleNewVote(data);
         },
-        error: (error: any) => {
+        error: (error: WebSocketError) => {
           console.error('[RealtimeMonitor] Vote monitoring error:', error);
         }
       });
 
       // Start monitoring for comments on Sportsblock posts
-      this.client.observe.onComments().subscribe({
-        next: (data: any) => {
+      (this.client as { observe: { onComments: () => { subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => void } } }).observe.onComments().subscribe({
+        next: (data: StreamData) => {
           console.log('[RealtimeMonitor] New comment detected:', data);
           this.handleNewComment(data);
         },
-        error: (error: any) => {
+        error: (error: WebSocketError) => {
           console.error('[RealtimeMonitor] Comment monitoring error:', error);
         }
       });
@@ -130,8 +209,8 @@ export class RealtimeMonitor {
     }
 
     try {
-      if (this.client && this.client.stop) {
-        await this.client.stop();
+      if (this.client && typeof (this.client as { stop?: () => void | Promise<void> }).stop === 'function') {
+        await (this.client as { stop: () => void | Promise<void> }).stop();
       }
       this.isRunning = false;
       console.log('[RealtimeMonitor] Real-time monitoring stopped');
@@ -173,13 +252,13 @@ export class RealtimeMonitor {
   /**
    * Handle new post event
    */
-  private handleNewPost(data: any): void {
+  private handleNewPost(data: StreamData): void {
     try {
-      const post = data.post || data;
+      const post = (data.data as { post?: { json_metadata?: string; [key: string]: unknown } })?.post || data.data as { json_metadata?: string; [key: string]: unknown };
       
       // Check if it's a Sportsblock post
-      const metadata = JSON.parse(post.json_metadata || '{}');
-      const tags = metadata.tags || [];
+      const metadata = JSON.parse((post as { json_metadata?: string }).json_metadata || '{}');
+      const tags = (metadata as { tags?: string[] }).tags || [];
       
       if (!tags.includes('sportsblock') && !tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME)) {
         return; // Not a Sportsblock post
@@ -188,12 +267,12 @@ export class RealtimeMonitor {
       const event: RealtimePostEvent = {
         type: 'new_post',
         data: {
-          author: post.author,
-          permlink: post.permlink,
-          title: post.title,
-          body: post.body,
-          created: post.created,
-          sportCategory: metadata.sport_category
+          author: (post as { author?: string }).author || '',
+          permlink: (post as { permlink?: string }).permlink || '',
+          title: (post as { title?: string }).title || '',
+          body: (post as { body?: string }).body || '',
+          created: (post as { created?: string }).created || new Date().toISOString(),
+          sportCategory: (metadata as { sport_category?: string }).sport_category
         }
       };
 
@@ -206,9 +285,9 @@ export class RealtimeMonitor {
   /**
    * Handle new vote event
    */
-  private handleNewVote(data: any): void {
+  private handleNewVote(data: StreamData): void {
     try {
-      const vote = data.vote || data;
+      const vote = (data.data as { vote?: { voter?: string; author?: string; permlink?: string; weight?: number; time?: string; [key: string]: unknown } })?.vote || data.data as { voter?: string; author?: string; permlink?: string; weight?: number; time?: string; [key: string]: unknown };
       
       // Check if it's a vote on a Sportsblock post
       // This would require checking the post's tags, which might need additional API calls
@@ -217,11 +296,11 @@ export class RealtimeMonitor {
       const event: RealtimeVoteEvent = {
         type: 'new_vote',
         data: {
-          voter: vote.voter,
-          author: vote.author,
-          permlink: vote.permlink,
-          weight: vote.weight,
-          timestamp: vote.time || new Date().toISOString()
+          voter: (vote as { voter?: string }).voter || '',
+          author: (vote as { author?: string }).author || '',
+          permlink: (vote as { permlink?: string }).permlink || '',
+          weight: (vote as { weight?: number }).weight || 0,
+          timestamp: (vote as { time?: string }).time || new Date().toISOString()
         }
       };
 
@@ -234,9 +313,9 @@ export class RealtimeMonitor {
   /**
    * Handle new comment event
    */
-  private handleNewComment(data: any): void {
+  private handleNewComment(data: StreamData): void {
     try {
-      const comment = data.comment || data;
+      const comment = (data.data as { comment?: { author?: string; permlink?: string; parent_author?: string; parent_permlink?: string; body?: string; created?: string; [key: string]: unknown } })?.comment || data.data as { author?: string; permlink?: string; parent_author?: string; parent_permlink?: string; body?: string; created?: string; [key: string]: unknown };
       
       // Check if it's a comment on a Sportsblock post
       // This would require checking the parent post's tags
@@ -245,12 +324,12 @@ export class RealtimeMonitor {
       const event: RealtimeCommentEvent = {
         type: 'new_comment',
         data: {
-          author: comment.author,
-          permlink: comment.permlink,
-          parentAuthor: comment.parent_author,
-          parentPermlink: comment.parent_permlink,
-          body: comment.body,
-          created: comment.created
+          author: (comment as { author?: string }).author || '',
+          permlink: (comment as { permlink?: string }).permlink || '',
+          parentAuthor: (comment as { parent_author?: string }).parent_author || '',
+          parentPermlink: (comment as { parent_permlink?: string }).parent_permlink || '',
+          body: (comment as { body?: string }).body || '',
+          created: (comment as { created?: string }).created || new Date().toISOString()
         }
       };
 
