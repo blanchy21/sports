@@ -136,7 +136,7 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
                 No Upvotes Yet
               </h3>
               <p className="text-gray-500 dark:text-gray-400">
-                This post hasn't received any upvotes yet.
+                This post hasn&apos;t received any upvotes yet.
               </p>
             </div>
           )}
