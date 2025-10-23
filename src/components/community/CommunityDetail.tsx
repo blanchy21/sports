@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { Users, FileText, Calendar, Settings, Plus } from "lucide-react";
-import { Community } from "@/types";
 
 interface CommunityDetailProps {
   communityId: string;
@@ -59,7 +58,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
           Community Not Found
         </h3>
         <p className="text-gray-500 dark:text-gray-400">
-          The community you're looking for doesn't exist or has been removed.
+          The community you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
       </div>
     );

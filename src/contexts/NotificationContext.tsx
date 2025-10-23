@@ -58,7 +58,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (savedNotifications) {
       try {
         const parsed = JSON.parse(savedNotifications);
-        const notificationsWithDates = parsed.map((n: any) => ({
+        const notificationsWithDates = parsed.map((n: Omit<Notification, 'timestamp'> & { timestamp: string }) => ({
           ...n,
           timestamp: new Date(n.timestamp)
         }));
@@ -115,8 +115,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       return;
     }
 
-    let commentSubscription: any;
-    let voteSubscription: any;
+    let commentSubscription: { unsubscribe: () => void } | null = null;
+    let voteSubscription: { unsubscribe: () => void } | null = null;
 
     const initializeRealtime = async () => {
       try {
@@ -139,7 +139,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
               // Handle WorkerBee data structure
               if (data && data.comments) {
                 const comments = Array.isArray(data.comments) ? data.comments : [];
-                comments.forEach((comment: any) => {
+                comments.forEach((comment: { operation?: { parent_author?: string; author?: string; permlink?: string; parent_permlink?: string } }) => {
                   const operation = comment.operation;
                   
                   // Only notify if it's a comment on the user's posts
@@ -178,7 +178,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
               // Handle WorkerBee data structure
               if (data && data.votes) {
                 const votes = Array.isArray(data.votes) ? data.votes : [];
-                votes.forEach((vote: any) => {
+                votes.forEach((vote: { operation?: { voter?: string; author?: string; permlink?: string; weight?: number } }) => {
                   const operation = vote.operation;
                   
                   // Only notify if it's a vote on the user's posts

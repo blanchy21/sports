@@ -1,4 +1,144 @@
-import { getWaxClient } from './client';
+
+// Type definitions for better type safety
+interface HiveAccountData {
+  id?: number;
+  name?: string;
+  owner?: {
+    weight_threshold: number;
+    account_auths: string[][];
+    key_auths: string[][];
+  };
+  active?: {
+    weight_threshold: number;
+    account_auths: string[][];
+    key_auths: string[][];
+  };
+  posting?: {
+    weight_threshold: number;
+    account_auths: string[][];
+    key_auths: string[][];
+  };
+  memo_key?: string;
+  json_metadata?: string;
+  posting_json_metadata?: string;
+  proxy?: string;
+  last_owner_update?: string;
+  last_account_update?: string;
+  created?: string;
+  mined?: boolean;
+  recovery_account?: string;
+  last_account_recovery?: string;
+  reset_account?: string;
+  comment_count?: number;
+  lifetime_vote_count?: number;
+  post_count?: number;
+  can_vote?: boolean;
+  voting_manabar?: {
+    current_mana: string;
+    last_update_time: number;
+  };
+  voting_power?: number;
+  balance?: string;
+  savings_balance?: string;
+  hbd_balance?: string;
+  hbd_seconds?: string;
+  hbd_seconds_last_update?: string;
+  hbd_last_interest_payment?: string;
+  savings_hbd_balance?: string;
+  savings_hbd_seconds?: string;
+  savings_hbd_seconds_last_update?: string;
+  savings_hbd_last_interest_payment?: string;
+  savings_withdraw_requests?: number;
+  reward_hbd_balance?: string;
+  reward_hive_balance?: string;
+  reward_vesting_balance?: string;
+  reward_vesting_hive?: string;
+  vesting_shares?: string;
+  delegated_vesting_shares?: string;
+  received_vesting_shares?: string;
+  vesting_withdraw_rate?: string;
+  next_vesting_withdrawal?: string;
+  withdrawn?: string;
+  to_withdraw?: string;
+  withdraw_routes?: number;
+  curation_rewards?: string;
+  posting_rewards?: string;
+  proxied_vsf_votes?: string[];
+  witnesses_voted_for?: number;
+  average_bandwidth?: string;
+  lifetime_bandwidth?: string;
+  last_bandwidth_update?: string;
+  last_market_bandwidth_update?: string;
+  last_post?: string;
+  last_root_post?: string;
+  last_vote_time?: string;
+  post_bandwidth?: string;
+  pending_claimed_accounts?: number;
+  pending_transactions?: number;
+  [key: string]: unknown;
+}
+
+interface RcAccountData {
+  account?: string;
+  rc_manabar?: {
+    current_mana: string;
+    last_update_time: number;
+  };
+  max_rc?: string;
+  delegated_rc?: string;
+  received_delegated_rc?: string;
+  [key: string]: unknown;
+}
+
+interface ReputationData {
+  account?: string;
+  reputation?: string;
+  [key: string]: unknown;
+}
+
+interface FollowCountData {
+  account?: string;
+  follower_count?: number;
+  following_count?: number;
+  [key: string]: unknown;
+}
+
+interface GlobalProperties {
+  total_vesting_fund_hive?: string;
+  total_vesting_shares?: string;
+  hbd_interest_rate?: number;
+  [key: string]: unknown;
+}
+
+interface VestingDelegation {
+  id?: number;
+  delegator: string;
+  delegatee: string;
+  vesting_shares: string;
+  min_delegation_time: string;
+  [key: string]: unknown;
+}
+
+interface HivePost {
+  author?: string;
+  permlink?: string;
+  created?: string;
+  children?: number;
+  net_votes?: number;
+  [key: string]: unknown;
+}
+
+interface HiveOperation {
+  type?: string;
+  [key: string]: unknown;
+}
+
+interface HiveTransaction {
+  timestamp: string;
+  op: [string, HiveOperation];
+  block: number;
+  trx_id: string;
+}
 
 // Helper function to make direct HTTP calls to Hive API
 // This provides better error handling and fallback options
@@ -178,17 +318,14 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
 export async function fetchUserAccount(username: string): Promise<UserAccountData | null> {
   try {
     
-    // Initialize WorkerBee client and get Wax instance
-    const wax = await getWaxClient();
-    
     // Get account info using Wax API
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountData[];
     
     if (!account || account.length === 0) {
       throw new Error(`Account ${username} not found`);
     }
 
-    const accountData = account[0] as Record<string, unknown>;
+    const accountData = account[0];
     
     // Debug: Log specific fields we're interested in
 
@@ -197,7 +334,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     // Get reputation using Wax API
     let accountReputation = null;
     try {
-      const reputationResult = await makeHiveApiCall('condenser_api', 'get_account_reputations', [username, 1]) as any[];
+      const reputationResult = await makeHiveApiCall('condenser_api', 'get_account_reputations', [username, 1]) as ReputationData[];
       if (reputationResult && reputationResult.length > 0) {
         accountReputation = reputationResult[0];
       }
@@ -208,7 +345,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     // Get follow stats using Wax API
     let followStats = null;
     try {
-      const followResult = await makeHiveApiCall('condenser_api', 'get_follow_count', [username]) as any;
+      const followResult = await makeHiveApiCall('condenser_api', 'get_follow_count', [username]) as FollowCountData;
       followStats = {
         followers: followResult.follower_count || 0,
         following: followResult.following_count || 0
@@ -221,7 +358,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     // Get HBD savings APR using Wax API
     let savingsApr = 0;
     try {
-      const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as any;
+      const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
       savingsApr = (globalProps.hbd_interest_rate || 0) / 100;
     } catch (error) {
       console.warn(`[WorkerBee fetchUserAccount] Failed to get HBD savings APR:`, error);
@@ -271,7 +408,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     // Get global properties for HIVE POWER calculation using Wax API
     let globalProps = null;
     try {
-      globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as any;
+      globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
     } catch {
       console.warn('Failed to get global properties for HIVE POWER calculation');
     }
@@ -291,7 +428,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     
     try {
       // Use the dedicated RC API for accurate RC calculation
-      const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [username]) as any;
+      const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [username]) as { rc_accounts?: RcAccountData[] };
       console.log(`[WorkerBee fetchUserAccount] RC API response:`, rcResult);
       
       if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {
@@ -416,15 +553,13 @@ export async function fetchUserBalances(username: string): Promise<{
   resourceCredits: number;
 } | null> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
-
     // Get account and RC data in parallel
     const [account, rc] = await Promise.all([
-      makeHiveApiCall('condenser_api', 'get_accounts', [[username]]).then((result: any) => result as any[]),
-      makeHiveApiCall('rc_api', 'find_rc_accounts', [username]).then((result: any) =>
-        result && result.rc_accounts && result.rc_accounts.length > 0 ? result.rc_accounts[0] as Record<string, unknown> : null
-      ).catch(() => null)
+      makeHiveApiCall('condenser_api', 'get_accounts', [[username]]).then((result: unknown) => result as HiveAccountData[]),
+      makeHiveApiCall('rc_api', 'find_rc_accounts', [username]).then((result: unknown) => {
+        const rcResult = result as { rc_accounts?: RcAccountData[] };
+        return rcResult && rcResult.rc_accounts && rcResult.rc_accounts.length > 0 ? rcResult.rc_accounts[0] : null;
+      }).catch(() => null)
     ]);
 
     if (!account || account.length === 0) return null;
@@ -437,20 +572,20 @@ export async function fetchUserBalances(username: string): Promise<{
 
     let hivePower = 0;
     if (accountData.vesting_shares) {
-      const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as any;
+      const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
       hivePower = vestingSharesToHive(
         accountData.vesting_shares as string,
-        globalProps.total_vesting_shares,
-        globalProps.total_vesting_fund_hive
+        globalProps.total_vesting_shares || '0',
+        globalProps.total_vesting_fund_hive || '0'
       );
     }
 
     // Calculate RC percentage using the proper rc_api data
     let rcPercentage = 0;
-    if (rc && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).rc_manabar && (rc as unknown as { rc_manabar?: { current_mana: string }; max_rc?: string }).max_rc) {
-      const rcData = rc as unknown as { rc_manabar: { current_mana: string }; max_rc: string };
-      const currentMana = parseFloat(rcData.rc_manabar.current_mana);
-      const maxRc = parseFloat(rcData.max_rc);
+    if (rc && rc.rc_manabar && rc.max_rc) {
+      const rcData = rc;
+      const currentMana = parseFloat(rcData.rc_manabar!.current_mana);
+      const maxRc = parseFloat(rcData.max_rc!);
       
       if (maxRc > 0) {
         rcPercentage = (currentMana / maxRc) * 100;
@@ -489,10 +624,8 @@ export async function fetchUserProfile(username: string): Promise<{
   profileImage?: string;
 } | null> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountData[];
     if (!account || account.length === 0) return null;
 
     const accountData = account[0];
@@ -511,10 +644,8 @@ export async function fetchUserProfile(username: string): Promise<{
  */
 export async function userExists(username: string): Promise<boolean> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountData[];
     return account && account.length > 0;
   } catch {
     return false;
@@ -532,10 +663,8 @@ export async function getUserFollowStats(username: string): Promise<{
 } | null> {
   try {
     console.log(`[WorkerBee getUserFollowStats] Fetching follow stats for: ${username}`);
-    // Get Wax client
-    const wax = await getWaxClient();
 
-    const result = await makeHiveApiCall('condenser_api', 'get_follow_count', [username]) as any;
+    const result = await makeHiveApiCall('condenser_api', 'get_follow_count', [username]) as FollowCountData;
     console.log(`[WorkerBee getUserFollowStats] Raw follow stats result:`, result);
 
     const followers = result.follower_count || 0;
@@ -560,10 +689,8 @@ export async function getUserFollowStats(username: string): Promise<{
 export async function getHbdSavingsApr(): Promise<number> {
   try {
     console.log(`[WorkerBee getHbdSavingsApr] Fetching HBD savings APR...`);
-    // Get Wax client
-    const wax = await getWaxClient();
 
-    const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as any;
+    const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
     const apr = (globalProps.hbd_interest_rate || 0) / 100;
     console.log(`[WorkerBee getHbdSavingsApr] HBD savings APR: ${apr}%`);
     return apr;
@@ -583,14 +710,12 @@ export async function getUserDelegations(username: string): Promise<{
   given: Array<{ delegatee: string; vesting_shares: string; min_delegation_time: string }>;
 } | null> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
     // Get received delegations
-    const receivedDelegations = await makeHiveApiCall('condenser_api', 'get_vesting_delegations', [username, '', 100]) as any[];
+    const receivedDelegations = await makeHiveApiCall('condenser_api', 'get_vesting_delegations', [username, '', 100]) as VestingDelegation[];
     
     // Get given delegations (expiring delegations)
-    const givenDelegations = await makeHiveApiCall('condenser_api', 'get_expiring_vesting_delegations', [username, new Date().toISOString(), 100]) as any[];
+    const givenDelegations = await makeHiveApiCall('condenser_api', 'get_expiring_vesting_delegations', [username, new Date().toISOString(), 100]) as VestingDelegation[];
 
     return {
       received: (receivedDelegations as VestingDelegation[]).map((d) => ({
@@ -625,7 +750,7 @@ export async function getAccountHistory(
   id: number;
   timestamp: string;
   type: string;
-  operation: any;
+  operation: HiveOperation;
   blockNumber: number;
   transactionId: string;
 }> | null> {
@@ -637,7 +762,7 @@ export async function getAccountHistory(
       username, 
       start || -1, 
       limit
-    ]) as Array<[number, any]>;
+    ]) as Array<[number, HiveTransaction]>;
     
     console.log(`[WorkerBee getAccountHistory] Raw history received:`, history?.length || 0, 'operations');
     
@@ -677,11 +802,11 @@ export async function getAccountHistory(
 async function convertVestsToHive(vestingShares: string): Promise<number> {
   try {
     // Get global properties for conversion
-    const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as any;
+    const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
     return vestingSharesToHive(
       vestingShares,
-      globalProps.total_vesting_shares,
-      globalProps.total_vesting_fund_hive
+      globalProps.total_vesting_shares || '0',
+      globalProps.total_vesting_fund_hive || '0'
     );
   } catch (error) {
     console.error('Error converting VESTS to HIVE:', error);
@@ -702,7 +827,7 @@ export async function getRecentOperations(
   id: number;
   timestamp: string;
   type: string;
-  operation: any;
+  operation: HiveOperation;
   blockNumber: number;
   transactionId: string;
   description: string;
@@ -770,7 +895,7 @@ export async function getRecentOperations(
           if (op.operation.reward_hbd && op.operation.reward_hbd !== '0.000 HBD') {
             rewards.push(op.operation.reward_hbd);
           }
-          if (op.operation.reward_vests && op.operation.reward_vests !== '0.000000 VESTS') {
+          if (op.operation.reward_vests && typeof op.operation.reward_vests === 'string' && op.operation.reward_vests !== '0.000000 VESTS') {
             // Convert VESTS to HIVE equivalent
             const hiveAmount = await convertVestsToHive(op.operation.reward_vests);
             rewards.push(`${hiveAmount.toFixed(3)} HIVE`);
@@ -818,8 +943,12 @@ export async function getRecentOperations(
           break;
         case 'producer_reward':
           // Convert VESTS to HIVE equivalent
-          const producerHiveAmount = await convertVestsToHive(op.operation.vesting_shares);
-          description = `Block producer reward: ${producerHiveAmount.toFixed(3)} HIVE`;
+          if (op.operation.vesting_shares && typeof op.operation.vesting_shares === 'string') {
+            const producerHiveAmount = await convertVestsToHive(op.operation.vesting_shares);
+            description = `Block producer reward: ${producerHiveAmount.toFixed(3)} HIVE`;
+          } else {
+            description = 'Block producer reward';
+          }
           break;
         case 'author_reward':
           description = `Author reward: ${op.operation.hbd_payout}, ${op.operation.hive_payout}`;
@@ -875,7 +1004,7 @@ async function calculateUserStats(username: string): Promise<{
       '', // before date (empty for most recent)
       '', // before permlink (empty for most recent)
       100 // limit to 100 posts for calculation
-    ]) as any[];
+    ]) as HivePost[];
     
     console.log(`[WorkerBee calculateUserStats] Found ${posts.length} posts for ${username}`);
     
@@ -892,7 +1021,7 @@ async function calculateUserStats(username: string): Promise<{
         const comments = await makeHiveApiCall('condenser_api', 'get_content_replies', [
           post.author,
           post.permlink
-        ]) as any[];
+        ]) as HivePost[];
         
         if (Array.isArray(comments)) {
           totalComments += comments.length;
@@ -937,14 +1066,12 @@ export async function updateUserProfile(
   postingKey: string
 ): Promise<{ success: boolean; transactionId?: string; error?: string }> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
     
     // Note: postingKey parameter is required for actual transaction signing
     console.log('Profile update for user:', username, 'with posting key:', postingKey ? 'provided' : 'missing');
 
     // Get current account to preserve existing metadata
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountData[];
     if (!account || account.length === 0) throw new Error('Account not found');
 
     const accountData = account[0];

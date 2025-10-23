@@ -68,10 +68,11 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
-  webpack: (config: any, { isServer }: { isServer: boolean }) => {
+  webpack: (config: unknown, { isServer }: { isServer: boolean }) => {
+    const webpackConfig = config as { resolve: { fallback: Record<string, unknown> } };
     if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
+      webpackConfig.resolve.fallback = {
+        ...webpackConfig.resolve.fallback,
         fs: false,
         net: false,
         tls: false,

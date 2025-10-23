@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { VoteButton } from "@/components/VoteButton";
 import { ArrowLeft, MessageCircle, Bookmark, Share, Calendar, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { fetchPost, SportsblockPost } from "@/lib/hive-workerbee/content";
+import { fetchPost } from "@/lib/hive-workerbee/content";
+import { SportsblockPost } from "@/lib/shared/types";
 import { calculatePendingPayout, formatAsset } from "@/lib/shared/utils";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useModal } from "@/components/modals/ModalProvider";
@@ -43,7 +44,7 @@ export default function PostDetailPage() {
       try {
         const postData = await fetchPost(author, permlink);
         if (postData) {
-          setPost(postData);
+          setPost(postData as unknown as SportsblockPost);
         } else {
           setError("Post not found");
         }

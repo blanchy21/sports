@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PostCard } from "@/components/PostCard";
+import { Post } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -145,7 +146,7 @@ export default function BookmarksPage() {
         ) : filteredAndSortedBookmarks.length > 0 ? (
           <div className="space-y-6">
             {filteredAndSortedBookmarks.map((bookmark) => (
-              <PostCard key={bookmark.id} post={bookmark.post as any} />
+              <PostCard key={bookmark.id} post={bookmark.post as Post} />
             ))}
           </div>
         ) : searchQuery ? (

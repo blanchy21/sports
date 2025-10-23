@@ -1,4 +1,3 @@
-import { getWaxClient } from './client';
 
 // Helper function to make direct HTTP calls to Hive API
 async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
@@ -123,8 +122,6 @@ export async function removeVote(voteData: Omit<VoteData, 'weight'>): Promise<Vo
  */
 export async function checkUserVote(author: string, permlink: string, voter: string): Promise<HiveVote | null> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
     const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
     
@@ -145,8 +142,6 @@ export async function checkUserVote(author: string, permlink: string, voter: str
  */
 export async function getPostVotes(author: string, permlink: string): Promise<HiveVote[]> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
     const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
     
@@ -166,10 +161,8 @@ export async function getPostVotes(author: string, permlink: string): Promise<Hi
  */
 export async function getUserVotingPower(username: string): Promise<number> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
+    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as Array<{ voting_power: number }>;
     
     if (!account || account.length === 0) return 0;
     
@@ -224,8 +217,6 @@ export async function getVoteStats(author: string, permlink: string): Promise<{
   pendingPayout: number;
 }> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
     const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
     
@@ -395,8 +386,6 @@ export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
  */
 export async function getVoteHistory(author: string, permlink: string, limit: number = 50): Promise<HiveVote[]> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
     const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
     

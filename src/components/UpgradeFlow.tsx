@@ -42,7 +42,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
     try {
       const providers = (aioha as { getProviders: () => unknown[] }).getProviders();
       const providerStrings = providers.map((provider: unknown) => {
-        const providerValue = provider as number;
+        const providerValue = provider as Providers;
         switch (providerValue) {
           case Providers.Keychain:
             return 'keychain';

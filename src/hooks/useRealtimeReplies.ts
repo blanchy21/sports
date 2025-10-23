@@ -16,6 +16,10 @@ export interface RealtimeReply {
   isNew: boolean;
 }
 
+interface Subscription {
+  unsubscribe: () => void;
+}
+
 export const useRealtimeReplies = () => {
   const [replies, setReplies] = useState<RealtimeReply[]>([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -49,8 +53,8 @@ export const useRealtimeReplies = () => {
       return;
     }
 
-    let commentSubscription: any;
-    let voteSubscription: any;
+    let commentSubscription: Subscription | null = null;
+    let voteSubscription: Subscription | null = null;
 
     const initializeRealtime = async () => {
       try {
@@ -66,7 +70,7 @@ export const useRealtimeReplies = () => {
               if (data && data.comments) {
                 const comments = Array.isArray(data.comments) ? data.comments : [];
                 if (comments.length > 0) {
-                  comments.forEach((comment: any) => {
+                  comments.forEach((comment: { operation: { author: string; permlink: string; body: string; created: string; net_votes: number; parent_author: string; parent_permlink: string }; timestamp: string }) => {
                     const operation = comment.operation;
                     if (operation) {
                       addReply({
@@ -103,7 +107,7 @@ export const useRealtimeReplies = () => {
               if (data && data.votes) {
                 const votes = Array.isArray(data.votes) ? data.votes : [];
                 if (votes.length > 0) {
-                  votes.forEach((vote: any) => {
+                  votes.forEach((vote: { operation: { author: string; permlink: string; weight: number } }) => {
                     const operation = vote.operation;
                     if (operation && operation.author === user.username) {
                       updateReplyVotes(operation.permlink, operation.weight || 0);

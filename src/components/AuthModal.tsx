@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { 
   X, 
@@ -976,11 +975,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             setShowAiohaModal(false);
             setIsConnecting(false);
           }}
-          loginOptions={{
-            // Let's see what options AiohaModal accepts
-            providers: availableProviders,
-            // Check if there are any logo-related options
-          }}
+          loginOptions={{}}
         />
       )}
     </div>

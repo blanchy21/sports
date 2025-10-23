@@ -1,4 +1,4 @@
-import { getWaxClient, SPORTS_ARENA_CONFIG } from './client';
+import { SPORTS_ARENA_CONFIG } from './client';
 import { SPORT_CATEGORIES } from '@/types';
 
 // Helper function to make direct HTTP calls to Hive API
@@ -212,8 +212,6 @@ function calculatePendingPayout(post: HivePost | SportsblockPost): number {
  */
 export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promise<ContentResult> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
     const limit = Math.min(filters.limit || 20, 100); // Max 100 posts per request
     let posts: HivePost[] = [];
@@ -294,8 +292,6 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
  */
 export async function fetchTrendingPosts(limit: number = 20): Promise<SportsblockPost[]> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
     const trendingPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_trending', [
       {
@@ -324,8 +320,6 @@ export async function fetchTrendingPosts(limit: number = 20): Promise<Sportsbloc
  */
 export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost[]> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
     const hotPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_hot', [
       {
@@ -355,8 +349,6 @@ export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost
  */
 export async function fetchPost(author: string, permlink: string): Promise<SportsblockPost | null> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
     const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
     
@@ -382,12 +374,10 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
  * @param limit - Number of comments to fetch
  * @returns Comments
  */
-export async function fetchComments(author: string, permlink: string, limit: number = 20): Promise<HiveComment[]> {
+export async function fetchComments(author: string, permlink: string): Promise<HiveComment[]> {
   try {
     console.log(`[fetchComments] Fetching comments for ${author}/${permlink}`);
     
-    // Get Wax client
-    const wax = await getWaxClient();
 
     // First, get direct replies to the post
     const directReplies = await makeHiveApiCall('condenser_api', 'get_content_replies', [author, permlink]);

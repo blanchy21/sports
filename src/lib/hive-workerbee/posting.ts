@@ -1,4 +1,33 @@
-import { getWaxClient, SPORTS_ARENA_CONFIG, initializeWorkerBeeClient } from './client';
+import { SPORTS_ARENA_CONFIG, initializeWorkerBeeClient } from './client';
+
+// Type definitions for better type safety
+interface AiohaInstance {
+  signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
+}
+
+interface BroadcastResult {
+  error?: string;
+  id?: string;
+  [key: string]: unknown;
+}
+
+
+interface HiveAccount {
+  name?: string;
+  rc_manabar?: {
+    current_mana: string;
+    last_update_time: number;
+  };
+  max_rc?: string;
+  [key: string]: unknown;
+}
+
+interface RcResult {
+  rc_accounts?: Array<{
+    rc_manabar?: { current_mana: string };
+    max_rc?: string;
+  }>;
+}
 
 // Helper function to make direct HTTP calls to Hive API
 async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
@@ -148,21 +177,21 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
     console.log('[publishPost] Operations array:', operations);
     
     // Check if signAndBroadcastTx method exists
-    if (typeof (aioha as any)?.signAndBroadcastTx !== 'function') {
+    if (typeof (aioha as AiohaInstance)?.signAndBroadcastTx !== 'function') {
       console.error('[publishPost] signAndBroadcastTx method not available on Aioha instance');
       throw new Error("Aioha signAndBroadcastTx method is not available. Please check your authentication.");
     }
 
     // Use Aioha to sign and broadcast the transaction
     console.log('[publishPost] Attempting to sign and broadcast transaction...');
-    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(operations, 'posting');
+    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
     
     console.log('[publishPost] Broadcast result:', result);
     
     // Check if the result indicates success
-    if (!result || (result as any)?.error) {
+    if (!result || (result as BroadcastResult)?.error) {
       console.error('[publishPost] Transaction failed:', result);
-      throw new Error(`Transaction failed: ${(result as any)?.error || 'Unknown error'}`);
+      throw new Error(`Transaction failed: ${(result as BroadcastResult)?.error || 'Unknown error'}`);
     }
     
     // Generate post URL
@@ -252,7 +281,7 @@ export async function publishComment(
     console.log('[publishComment] Operation to broadcast:', operation);
 
     // Check if signAndBroadcastTx method exists
-    if (typeof (aiohaToUse as any)?.signAndBroadcastTx !== 'function') {
+    if (typeof (aiohaToUse as AiohaInstance)?.signAndBroadcastTx !== 'function') {
       console.error('[publishComment] signAndBroadcastTx method not available on Aioha instance');
       throw new Error("Aioha signAndBroadcastTx method is not available. Please check your authentication.");
     }
@@ -280,14 +309,14 @@ export async function publishComment(
     
     console.log('[publishComment] Operations array:', operations);
     
-    const result = await (aiohaToUse as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(operations, 'posting');
+    const result = await (aiohaToUse as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
     
     console.log('[publishComment] Broadcast result:', result);
     
     // Check if the result indicates success
-    if (!result || (result as any)?.error) {
+    if (!result || (result as BroadcastResult)?.error) {
       console.error('[publishComment] Transaction failed:', result);
-      throw new Error(`Transaction failed: ${(result as any)?.error || 'Unknown error'}`);
+      throw new Error(`Transaction failed: ${(result as BroadcastResult)?.error || 'Unknown error'}`);
     }
     
     // Generate comment URL
@@ -324,11 +353,8 @@ export async function updatePost(
     body?: string;
     jsonMetadata?: string;
   },
-  _postingKey: string
-): Promise<PublishResult> {
+  _postingKey: string): Promise<PublishResult> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
     
     // Get existing post to preserve some data
     const existingPost = await makeHiveApiCall('condenser_api', 'get_content', [updateData.author, updateData.permlink]);
@@ -369,7 +395,7 @@ export async function updatePost(
     const client = await initializeWorkerBeeClient();
     
     // Broadcast the transaction using WorkerBee
-    await client.broadcast(operation as any);
+    await client.broadcast(operation as unknown as any);
 
     return {
       success: true,
@@ -433,11 +459,9 @@ export async function canUserPost(username: string): Promise<{
   message?: string;
 }> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
 
     // Use condenser_api.get_accounts to get account info including RC
-    const accountResult = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as any[];
+    const accountResult = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
     const account = accountResult && accountResult.length > 0 ? accountResult[0] : null;
     
     if (!account) {
@@ -465,7 +489,7 @@ export async function canUserPost(username: string): Promise<{
       // Try to get RC data using condenser_api.get_account (singular)
       try {
         console.log(`[canUserPost] Trying condenser_api.get_account for RC data...`);
-        const accountWithRc = await makeHiveApiCall('condenser_api', 'get_account', [username]) as any;
+        const accountWithRc = await makeHiveApiCall('condenser_api', 'get_account', [username]) as HiveAccount;
         console.log(`[canUserPost] get_account response fields:`, Object.keys(accountWithRc));
         
         if (accountWithRc && accountWithRc.rc_manabar && accountWithRc.max_rc) {
@@ -497,9 +521,9 @@ export async function canUserPost(username: string): Promise<{
         const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [username]);
         console.log(`[canUserPost] rc_api response:`, rcResult);
         
-        if (rcResult && (rcResult as any).rc_accounts && Array.isArray((rcResult as any).rc_accounts) && (rcResult as any).rc_accounts.length > 0) {
-          const rcData = (rcResult as any).rc_accounts[0] as { rc_manabar?: { current_mana: string }; max_rc?: string };
-          if (rcData.rc_manabar && rcData.max_rc) {
+        if (rcResult && (rcResult as RcResult).rc_accounts && Array.isArray((rcResult as RcResult).rc_accounts) && (rcResult as RcResult).rc_accounts!.length > 0) {
+          const rcData = (rcResult as RcResult).rc_accounts![0];
+          if (rcData && rcData.rc_manabar && rcData.max_rc) {
             const rcPercentage = (parseFloat(rcData.rc_manabar.current_mana) / parseFloat(rcData.max_rc)) * 100;
             console.log(`[canUserPost] RC from rc_api: ${rcPercentage.toFixed(2)}%`);
             

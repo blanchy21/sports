@@ -4,7 +4,7 @@ import React from "react";
 import { useCommunity } from "@/lib/react-query/queries/useCommunity";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
-import { Users, FileText, Calendar, Globe, Mail } from "lucide-react";
+import { Users, FileText, Calendar, Globe } from "lucide-react";
 
 interface CommunityAboutProps {
   communityId: string;
@@ -37,7 +37,7 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
           Community Not Found
         </h3>
         <p className="text-gray-500 dark:text-gray-400">
-          The community you're looking for doesn't exist or has been removed.
+          The community you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
       </div>
     );

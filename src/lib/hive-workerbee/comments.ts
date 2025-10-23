@@ -1,4 +1,7 @@
-import { getWaxClient, initializeWorkerBeeClient } from './client';
+import { initializeWorkerBeeClient } from './client';
+
+// Type definitions for better type safety
+
 
 // Helper function to make direct HTTP calls to Hive API
 async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
@@ -123,7 +126,7 @@ function getUserVote(post: { active_votes?: HiveVote[] }, voter: string): HiveCo
  * @param postingKey - User's posting private key
  * @returns Comment result
  */
-export async function postComment(commentData: CommentData, postingKey: string): Promise<CommentResult> {
+export async function postComment(commentData: CommentData, _postingKey: string): Promise<CommentResult> {
   try {
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
@@ -159,7 +162,7 @@ export async function postComment(commentData: CommentData, postingKey: string):
     const client = await initializeWorkerBeeClient();
     
     // Broadcast the transaction using WorkerBee
-    await client.broadcast(operation as any);
+    await client.broadcast(operation as unknown as any);
     
     // Generate comment URL
     const url = `https://hive.blog/@${commentData.author}/${permlink}`;
@@ -194,14 +197,10 @@ export async function updateComment(
     body: string;
     jsonMetadata?: string;
   },
-  _postingKey: string
-): Promise<CommentResult> {
+  _postingKey: string): Promise<CommentResult> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
-    
     // Get existing comment to preserve some data
-    const existingComment = await makeHiveApiCall('condenser_api', 'get_content', [updateData.author, updateData.permlink]) as any;
+    const existingComment = await makeHiveApiCall('condenser_api', 'get_content', [updateData.author, updateData.permlink]) as HiveComment;
     if (!existingComment) {
       throw new Error('Comment not found');
     }
@@ -238,7 +237,7 @@ export async function updateComment(
     const client = await initializeWorkerBeeClient();
     
     // Broadcast the transaction using WorkerBee
-    await client.broadcast(operation as any);
+    await client.broadcast(operation as unknown as any);
 
     return {
       success: true,
@@ -268,8 +267,7 @@ export async function deleteComment(
     author: string;
     permlink: string;
   },
-  _postingKey: string
-): Promise<CommentResult> {
+  _postingKey: string): Promise<CommentResult> {
   try {
     // "Deleting" a comment on Hive means setting the body to empty
     return await updateComment({
@@ -298,11 +296,8 @@ export async function deleteComment(
  * @param limit - Number of comments to fetch
  * @returns Array of comments
  */
-export async function fetchComments(author: string, permlink: string, limit: number = 100): Promise<HiveComment[]> {
+export async function fetchComments(author: string, permlink: string): Promise<HiveComment[]> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
-
     const comments = await makeHiveApiCall('condenser_api', 'get_content_replies', [author, permlink]);
     
     return (comments || []) as unknown as HiveComment[];
@@ -320,9 +315,6 @@ export async function fetchComments(author: string, permlink: string, limit: num
  */
 export async function fetchComment(author: string, permlink: string): Promise<HiveComment | null> {
   try {
-    // Get Wax client
-    const wax = await getWaxClient();
-
     const comment = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
     
     return (comment || null) as unknown as HiveComment | null;
@@ -376,7 +368,7 @@ export async function getCommentStats(author: string, permlink: string): Promise
   pendingPayout: number;
 }> {
   try {
-    const comments = await fetchComments(author, permlink, 1000);
+    const comments = await fetchComments(author, permlink);
     
     const uniqueAuthors = new Set(comments.map(c => c.author)).size;
     const totalReplies = comments.filter(c => c.depth > 0).length;
@@ -411,9 +403,6 @@ export async function getUserComments(username: string, limit: number = 20): Pro
   try {
     console.log(`[getUserComments] Fetching comments for user: ${username} (requested limit: ${limit})`);
     
-    // Get Wax client
-    const wax = await getWaxClient();
-
     // Use get_discussions_by_comments to get recent comments
     // This method is specifically designed for comments and doesn't require date parameters
     // Ensure limit is within valid range (1-20) for get_discussions_by_comments
@@ -431,7 +420,7 @@ export async function getUserComments(username: string, limit: number = 20): Pro
     
     console.log(`[getUserComments] API call parameters:`, params);
     
-    const comments = await makeHiveApiCall('condenser_api', 'get_discussions_by_comments', params) as any[];
+    const comments = await makeHiveApiCall('condenser_api', 'get_discussions_by_comments', params) as HiveComment[];
 
     console.log(`[getUserComments] Found ${comments?.length || 0} comments for user ${username}`);
 
@@ -441,10 +430,9 @@ export async function getUserComments(username: string, limit: number = 20): Pro
     }
 
     // Filter to only comments by the specific user (in case there are replies to their comments)
-    const userComments = (comments || []).filter((comment: Record<string, unknown>) => {
-      const author = comment.author as string;
-      return author === username;
-    }) as unknown as HiveComment[];
+    const userComments = (comments || []).filter((comment: HiveComment) => {
+      return comment.author === username;
+    });
 
     console.log(`[getUserComments] Found ${userComments.length} comments by user ${username}`);
     return userComments;
@@ -464,7 +452,7 @@ export async function getUserComments(username: string, limit: number = 20): Pro
  */
 export async function hasUserCommented(author: string, permlink: string, username: string): Promise<boolean> {
   try {
-    const comments = await fetchComments(author, permlink, 100);
+    const comments = await fetchComments(author, permlink);
     return comments.some(comment => comment.author === username);
   } catch (error) {
     console.error('Error checking user comments with WorkerBee:', error);
@@ -551,7 +539,7 @@ export function filterComments(comments: HiveComment[], filters: {
  */
 export async function getCommentThread(author: string, permlink: string): Promise<HiveComment[]> {
   try {
-    const comments = await fetchComments(author, permlink, 100);
+    const comments = await fetchComments(author, permlink);
     
     // Filter to get all replies to this specific comment
     return comments.filter(comment => 

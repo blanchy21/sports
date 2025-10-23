@@ -3,6 +3,40 @@ import { AuthUser } from '@/lib/firebase/auth'
 // Enhanced auth types that support both Hive and Firebase authentication
 export type AuthType = 'hive' | 'soft' | 'guest'
 
+export interface PendingWithdrawal {
+  id: string;
+  amount: string;
+  asset: string;
+  created: string;
+  [key: string]: unknown;
+}
+
+export interface HiveProfile {
+  name?: string;
+  about?: string;
+  location?: string;
+  website?: string;
+  cover_image?: string;
+  profile_image?: string;
+  [key: string]: unknown;
+}
+
+export interface HiveStats {
+  posts?: number;
+  comments?: number;
+  followers?: number;
+  following?: number;
+  reputation?: number;
+  [key: string]: unknown;
+}
+
+export interface AiohaLoginResult {
+  username?: string;
+  success?: boolean;
+  error?: string;
+  [key: string]: unknown;
+}
+
 export interface User {
   id: string
   username: string
@@ -27,9 +61,9 @@ export interface User {
   hivePower?: number
   rcPercentage?: number
   savingsApr?: number
-  pendingWithdrawals?: any[]
-  hiveProfile?: any
-  hiveStats?: any
+  pendingWithdrawals?: PendingWithdrawal[]
+  hiveProfile?: HiveProfile
+  hiveStats?: HiveStats
 }
 
 export interface AuthState {
@@ -43,7 +77,7 @@ export interface AuthState {
 export interface AuthActions {
   login: (user: User, authType: AuthType) => void
   loginWithHiveUser: (hiveUsername: string) => Promise<void>
-  loginWithAioha: (loginResult?: any) => Promise<void>
+  loginWithAioha: (loginResult?: AiohaLoginResult) => Promise<void>
   loginWithSupabase: (authUser: AuthUser) => void
   logout: () => Promise<void>
   updateUser: (user: Partial<User>) => void
@@ -51,14 +85,6 @@ export interface AuthActions {
 }
 
 // Aioha-specific types
-export interface AiohaLoginResult {
-  success: boolean
-  username: string
-  sessionId?: string
-  provider?: string
-  error?: string
-  errorCode?: number
-}
 
 export interface AiohaProvider {
   name: string

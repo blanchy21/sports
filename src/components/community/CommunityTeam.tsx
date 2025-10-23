@@ -16,39 +16,6 @@ interface CommunityTeamProps {
 export const CommunityTeam: React.FC<CommunityTeamProps> = ({ communityId, className }) => {
   const { data: community, isLoading, error } = useCommunity(communityId);
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Crown className="h-5 w-5 text-yellow-500" />;
-      case 'moderator':
-        return <Shield className="h-5 w-5 text-maximum-yellow" />;
-      default:
-        return <User className="h-5 w-5 text-muted-foreground" />;
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'moderator':
-        return 'bg-maximum-yellow/20 text-maximum-yellow dark:bg-maximum-yellow/20 dark:text-maximum-yellow';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-    }
-  };
-
-  const getRoleDescription = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'Community administrator with full control';
-      case 'moderator':
-        return 'Community moderator with content management rights';
-      default:
-        return 'Community member';
-    }
-  };
-
   if (isLoading) {
     return (
       <div className={`space-y-4 ${className}`}>

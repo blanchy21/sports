@@ -5,7 +5,7 @@ import { SportsblockPost } from '@/lib/shared/types';
 
 export interface BookmarkItem {
   id: string;
-  post: Post | SportsblockPost | any; // Allow flexible post types
+  post: Post | SportsblockPost | Record<string, unknown>; // Allow flexible post types
   bookmarkedAt: Date;
   userId: string;
 }
@@ -17,7 +17,7 @@ interface BookmarkState {
 }
 
 interface BookmarkActions {
-  addBookmark: (post: Post | SportsblockPost | any, userId: string) => void;
+  addBookmark: (post: Post | SportsblockPost | Record<string, unknown>, userId: string) => void;
   removeBookmark: (postId: string, userId: string) => void;
   isBookmarked: (postId: string, userId: string) => boolean;
   getBookmarks: (userId: string) => BookmarkItem[];
@@ -37,7 +37,7 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
       // Actions
       addBookmark: (post, userId) => {
         const { bookmarks } = get();
-        const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : post.id;
+        const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
         
         // Check if already bookmarked
         const existingBookmark = bookmarks.find(

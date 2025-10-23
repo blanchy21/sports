@@ -18,6 +18,21 @@ import {
   Star
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Type definitions for better type safety
+interface AiohaProvider {
+  getProviders: () => ProviderValue[];
+}
+
+interface ProviderValue {
+  toString(): string;
+  [key: string]: unknown;
+}
+
+interface LoginOptions {
+  msg: string;
+  keyType: KeyTypes;
+}
 import { useAioha } from "@/contexts/AiohaProvider";
 import { AiohaModal } from "@aioha/react-ui";
 import { Providers, KeyTypes } from "@aioha/aioha";
@@ -54,9 +69,9 @@ export default function AuthPage() {
     if (!aioha || !isInitialized) return;
     
     try {
-      const providers = (aioha as { getProviders: () => unknown[] }).getProviders();
-      const providerStrings = providers.map((provider: unknown) => {
-        const providerValue = provider as any;
+      const providers = (aioha as AiohaProvider).getProviders();
+      const providerStrings = providers.map((provider: ProviderValue) => {
+        const providerValue = provider as unknown as Providers;
         switch (providerValue) {
           case Providers.Keychain:
             return 'keychain';
@@ -216,7 +231,7 @@ export default function AuthPage() {
           providerEnum = Providers.PeakVault;
           break;
         case 'metamasksnap':
-          providerEnum = 'metamasksnap' as any;
+          providerEnum = Providers.MetaMaskSnap;
           break;
         default:
           throw new Error(`Unknown provider: ${provider}`);
@@ -231,10 +246,10 @@ export default function AuthPage() {
         usernameToUse = hiveUsername.trim();
       }
       
-      const result = await (aioha as { login: (provider: unknown, username: string, options: unknown) => Promise<unknown> }).login(providerEnum, usernameToUse, {
+      const result = await (aioha as { login: (provider: Providers, username: string, options: LoginOptions) => Promise<unknown> }).login(providerEnum, usernameToUse, {
         msg: 'Login to Sportsblock',
         keyType: KeyTypes.Posting
-      } as any);
+      });
       
       console.log("Aioha login result:", JSON.stringify(result, null, 2));
       console.log("Result type:", typeof result);

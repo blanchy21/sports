@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast, toast } from '@/components/ui/Toast';
 
 // Type for posts that can be bookmarked (both regular posts and Hive posts)
-type BookmarkablePost = Post | SportsblockPost | any;
+type BookmarkablePost = Post | SportsblockPost;
 
 export const useBookmarks = () => {
   const { user } = useAuth();
@@ -34,7 +34,7 @@ export const useBookmarks = () => {
       setLoading(true);
       setError(null);
       
-      const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : post.id;
+      const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
       
       // Check if already bookmarked
       if (storeIsBookmarked(postId, user.id)) {
@@ -63,7 +63,7 @@ export const useBookmarks = () => {
       setLoading(true);
       setError(null);
       
-      const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : post.id;
+      const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
       storeRemoveBookmark(postId, user.id);
       addToast(toast.success("Removed", "Post removed from your bookmarks."));
     } catch (err) {
@@ -81,7 +81,7 @@ export const useBookmarks = () => {
       return;
     }
 
-    const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : post.id;
+    const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
     
     if (storeIsBookmarked(postId, user.id)) {
       await removeBookmark(post);
@@ -92,7 +92,7 @@ export const useBookmarks = () => {
 
   const isBookmarked = useCallback((post: BookmarkablePost) => {
     if (!user) return false;
-    const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : post.id;
+    const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
     return storeIsBookmarked(postId, user.id);
   }, [user, storeIsBookmarked]);
 

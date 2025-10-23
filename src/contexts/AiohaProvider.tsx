@@ -61,7 +61,7 @@ export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
   return (
     <AiohaContext.Provider value={contextValue}>
       {!!aiohaInstance && (
-        <AiohaUIProvider aioha={aiohaInstance as any}>
+        <AiohaUIProvider aioha={aiohaInstance as unknown as any}>
           {children}
         </AiohaUIProvider>
       )}

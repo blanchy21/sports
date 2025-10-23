@@ -18,28 +18,6 @@ interface CommunityMembersProps {
 export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId, className }) => {
   const { data: members, isLoading, error } = useCommunityMembers(communityId, 50);
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Crown className="h-4 w-4 text-yellow-500" />;
-      case 'moderator':
-        return <Shield className="h-4 w-4 text-maximum-yellow" />;
-      default:
-        return <User className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'moderator':
-        return 'bg-maximum-yellow/20 text-maximum-yellow dark:bg-maximum-yellow/20 dark:text-maximum-yellow';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-    }
-  };
-
   if (isLoading) {
     return (
       <div className={`space-y-4 ${className}`}>
@@ -99,7 +77,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
             No Members Yet
           </h3>
           <p className="text-gray-500 dark:text-gray-400">
-            This community doesn't have any members yet.
+            This community doesn&apos;t have any members yet.
           </p>
         </div>
       )}
