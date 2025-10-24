@@ -97,10 +97,9 @@ function getUserVote(post: { active_votes?: HiveVote[] }, voter: string): HiveCo
 /**
  * Post a comment/reply to a post or another comment using WorkerBee
  * @param commentData - Comment data
- * @param postingKey - User's posting private key
  * @returns Comment result
  */
-export async function postComment(commentData: CommentData, _postingKey: string): Promise<CommentResult> {
+export async function postComment(commentData: CommentData): Promise<CommentResult> {
   try {
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
@@ -161,7 +160,6 @@ export async function postComment(commentData: CommentData, _postingKey: string)
 /**
  * Update an existing comment using WorkerBee
  * @param updateData - Update data
- * @param postingKey - User's posting private key
  * @returns Update result
  */
 export async function updateComment(
@@ -170,8 +168,7 @@ export async function updateComment(
     permlink: string;
     body: string;
     jsonMetadata?: string;
-  },
-  _postingKey: string): Promise<CommentResult> {
+  }): Promise<CommentResult> {
   try {
     // Get existing comment to preserve some data
     const existingComment = await makeHiveApiCall('condenser_api', 'get_content', [updateData.author, updateData.permlink]) as HiveComment;
@@ -233,15 +230,13 @@ export async function updateComment(
 /**
  * Delete a comment (set body to empty) using WorkerBee
  * @param deleteData - Delete data
- * @param postingKey - User's posting private key
  * @returns Delete result
  */
 export async function deleteComment(
   deleteData: {
     author: string;
     permlink: string;
-  },
-  _postingKey: string): Promise<CommentResult> {
+  }): Promise<CommentResult> {
   try {
     // "Deleting" a comment on Hive means setting the body to empty
     return await updateComment({
@@ -252,7 +247,7 @@ export async function deleteComment(
         app: 'sportsblock/1.0.0',
         tags: ['deleted', 'sportsblock']
       })
-    }, _postingKey);
+    });
   } catch (error) {
     console.error('Error deleting comment with WorkerBee:', error);
     

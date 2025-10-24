@@ -371,7 +371,6 @@ export function withErrorHandling<T extends unknown[], R>(
 ): (...args: T) => Promise<R> {
   return async (...args: T): Promise<R> => {
     const startTime = Date.now();
-    let errorId: string | undefined;
 
     try {
       const result = await fn(...args);
@@ -418,7 +417,7 @@ export function withErrorHandling<T extends unknown[], R>(
         }
       }
 
-      errorId = globalMonitor.logError(
+      globalMonitor.logError(
         errorType,
         error instanceof Error ? error.message : String(error),
         severity,

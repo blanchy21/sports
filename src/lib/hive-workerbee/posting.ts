@@ -316,7 +316,6 @@ export async function publishComment(
 /**
  * Update an existing post using WorkerBee
  * @param updateData - Update data
- * @param postingKey - User's posting private key
  * @returns Update result
  */
 export async function updatePost(
@@ -326,8 +325,7 @@ export async function updatePost(
     title?: string;
     body?: string;
     jsonMetadata?: string;
-  },
-  _postingKey: string): Promise<PublishResult> {
+  }): Promise<PublishResult> {
   try {
     
     // Get existing post to preserve some data
@@ -391,15 +389,13 @@ export async function updatePost(
 /**
  * Delete a post (only possible within 7 days, sets body to empty) using WorkerBee
  * @param deleteData - Delete data
- * @param postingKey - User's posting private key
  * @returns Delete result
  */
 export async function deletePost(
   deleteData: {
     author: string;
     permlink: string;
-  },
-  _postingKey: string
+  }
 ): Promise<PublishResult> {
   try {
     // "Deleting" a post on Hive means setting the body to empty
@@ -411,7 +407,7 @@ export async function deletePost(
         app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
         tags: ['deleted', 'sportsblock']
       })
-    }, _postingKey);
+    });
   } catch (error) {
     console.error('Error deleting post with WorkerBee:', error);
     
