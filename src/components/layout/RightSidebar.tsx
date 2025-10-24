@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { TrendingUp, Users, Calendar, Trophy, Star, AlertCircle } from "lucide-react";
+import { TrendingUp, Users, Calendar, Trophy, Star, AlertCircle, RefreshCw } from "lucide-react";
 import { fetchSportsblockPosts } from "@/lib/hive-workerbee/content";
 import { 
   getAnalyticsData, 
@@ -10,13 +10,7 @@ import {
   TopAuthor, 
   CommunityStats 
 } from "@/lib/hive-workerbee/analytics";
-
-// Keep only the upcoming events as hardcoded
-const upcomingEvents = [
-  { id: 1, name: "NBA Playoffs", date: "April 15, 2024", icon: "🏀" },
-  { id: 2, name: "Champions League Final", date: "May 28, 2024", icon: "⚽" },
-  { id: 3, name: "Wimbledon", date: "July 1, 2024", icon: "🎾" },
-];
+import { useRealtimeEvents } from "@/hooks/useUpcomingEvents";
 
 export const RightSidebar: React.FC = () => {
   // State for dynamic data
@@ -33,6 +27,16 @@ export const RightSidebar: React.FC = () => {
   // Loading and error states
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Real-time events data
+  const { 
+    events: upcomingEvents, 
+    isLoading: eventsLoading, 
+    error: eventsError, 
+    refreshEvents, 
+    isRefreshing,
+    lastUpdated 
+  } = useRealtimeEvents({ limit: 5 });
 
   // Fetch posts and calculate analytics
   useEffect(() => {
@@ -211,26 +215,64 @@ export const RightSidebar: React.FC = () => {
 
         {/* Upcoming Events */}
         <div className="bg-card border rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-4">
-            <Calendar className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-base">Upcoming Events</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-base">Upcoming Events</h3>
+            </div>
+            <button
+              onClick={refreshEvents}
+              disabled={isRefreshing}
+              className="p-1 hover:bg-accent rounded-md transition-colors disabled:opacity-50"
+              title="Refresh events"
+            >
+              <RefreshCw className={`h-4 w-4 text-muted-foreground ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
           </div>
-          <div className="space-y-3">
-            {upcomingEvents.map((event) => (
-              <div
-                key={event.id}
-                className="flex items-start space-x-3 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer"
-              >
-                <div className="text-2xl">{event.icon}</div>
-                <div className="flex-1">
-                  <div className="font-medium text-sm">{event.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {event.date}
+          
+          {eventsLoading ? (
+            <LoadingSkeleton />
+          ) : eventsError ? (
+            <div className="flex items-center space-x-2 text-muted-foreground">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">Unable to load events</span>
+            </div>
+          ) : upcomingEvents.length > 0 ? (
+            <>
+              <div className="space-y-3">
+                {upcomingEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className="flex items-start space-x-3 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                  >
+                    <div className="text-2xl">{event.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">{event.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(event.date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </div>
+                      {event.teams && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {event.teams.home} vs {event.teams.away}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+              {lastUpdated && (
+                <div className="text-xs text-muted-foreground mt-3 pt-2 border-t">
+                  Last updated: {lastUpdated.toLocaleTimeString()}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground">No upcoming events found</div>
+          )}
         </div>
 
         {/* Stats Card */}

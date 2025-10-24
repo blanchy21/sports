@@ -431,6 +431,30 @@ export interface FollowRelationship {
   followedAt: string;
 }
 
+// Sports Events types
+export interface SportsEvent {
+  id: string;
+  name: string;
+  date: string;
+  icon: string;
+  sport: string;
+  league?: string;
+  teams?: {
+    home: string;
+    away: string;
+  };
+  venue?: string;
+  status: 'upcoming' | 'live' | 'finished';
+}
+
+export interface EventsApiResponse {
+  success: boolean;
+  data: SportsEvent[];
+  cached: boolean;
+  timestamp: number;
+  error?: string;
+}
+
 // Modal types
 export interface ModalState {
   isOpen: boolean;
