@@ -16,7 +16,8 @@ import {
   Zap,
   User,
   DollarSign,
-  BookOpen
+  BookOpen,
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +38,7 @@ const navigationItems = [
   { href: "/profile", icon: User, label: "Profile", requireAuth: false },
   { href: "/wallet", icon: DollarSign, label: "Wallet", requireAuth: false },
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", requireAuth: false },
+  { href: "/monitoring", icon: BarChart3, label: "Monitoring", requireAuth: false },
 ];
 
 export const Sidebar: React.FC = () => {

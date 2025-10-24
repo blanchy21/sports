@@ -66,6 +66,7 @@ interface HiveTransaction {
 import { makeHiveApiCall } from './api';
 import { HiveAccount } from '../shared/types';
 import { calculateReputation } from '../shared/utils';
+import { getAccountOptimized, getContentOptimized } from './optimization';
 
 interface VestingDelegation {
   delegator: string;
@@ -167,23 +168,23 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
 export async function fetchUserAccount(username: string): Promise<UserAccountData | null> {
   try {
     
-    // Get account info using Wax API
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
+    // Get account info using optimized caching
+    const account = await getAccountOptimized(username);
     
-    if (!account || account.length === 0) {
+    if (!account) {
       throw new Error(`Account ${username} not found`);
     }
 
-    const accountData = account[0];
+    const accountData = account;
     
     // Debug: Log specific fields we're interested in
 
     // RC will be calculated directly from account data using voting_manabar
 
-    // Get reputation using Wax API
+    // Get reputation using optimized caching
     let accountReputation = null;
     try {
-      const reputationResult = await makeHiveApiCall('condenser_api', 'get_account_reputations', [username, 1]) as ReputationData[];
+      const reputationResult = await getContentOptimized('get_account_reputations', [username, 1]) as ReputationData[];
       if (reputationResult && reputationResult.length > 0) {
         accountReputation = reputationResult[0];
       }
@@ -191,10 +192,10 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       console.warn(`[WorkerBee fetchUserAccount] Failed to get reputation:`, error);
     }
 
-    // Get follow stats using Wax API
+    // Get follow stats using optimized caching
     let followStats = null;
     try {
-      const followResult = await makeHiveApiCall('condenser_api', 'get_follow_count', [username]) as FollowCountData;
+      const followResult = await getContentOptimized('get_follow_count', [username]) as FollowCountData;
       followStats = {
         followers: followResult.follower_count || 0,
         following: followResult.following_count || 0
@@ -204,10 +205,10 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       followStats = { followers: 0, following: 0 };
     }
 
-    // Get HBD savings APR using Wax API
+    // Get HBD savings APR using optimized caching
     let savingsApr = 0;
     try {
-      const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
+      const globalProps = await getContentOptimized('get_dynamic_global_properties', []) as GlobalProperties;
       savingsApr = (globalProps.hbd_interest_rate || 0) / 100;
     } catch (error) {
       console.warn(`[WorkerBee fetchUserAccount] Failed to get HBD savings APR:`, error);
@@ -402,18 +403,18 @@ export async function fetchUserBalances(username: string): Promise<{
   resourceCredits: number;
 } | null> {
   try {
-    // Get account and RC data in parallel
+    // Get account and RC data in parallel using optimized caching
     const [account, rc] = await Promise.all([
-      makeHiveApiCall('condenser_api', 'get_accounts', [[username]]).then((result: unknown) => result as HiveAccount[]),
-      makeHiveApiCall('rc_api', 'find_rc_accounts', [username]).then((result: unknown) => {
+      getAccountOptimized(username),
+      getContentOptimized('rc_api', ['find_rc_accounts', [username]]).then((result: unknown) => {
         const rcResult = result as { rc_accounts?: RcAccountData[] };
         return rcResult && rcResult.rc_accounts && rcResult.rc_accounts.length > 0 ? rcResult.rc_accounts[0] : null;
       }).catch(() => null)
     ]);
 
-    if (!account || account.length === 0) return null;
+    if (!account) return null;
 
-    const accountData = account[0];
+    const accountData = account;
     const hiveAsset = parseAsset(accountData.balance as string);
     const hbdAsset = parseAsset(accountData.hbd_balance as string);
     const savingsHiveAsset = parseAsset(accountData.savings_balance as string);
@@ -474,10 +475,10 @@ export async function fetchUserProfile(username: string): Promise<{
 } | null> {
   try {
 
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
-    if (!account || account.length === 0) return null;
+    const account = await getAccountOptimized(username);
+    if (!account) return null;
 
-    const accountData = account[0];
+    const accountData = account;
     const profileMetadata = parseJsonMetadata(accountData.json_metadata as string);
     return profileMetadata.profile || {};
   } catch (error) {

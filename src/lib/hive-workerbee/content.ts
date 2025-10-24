@@ -1,6 +1,7 @@
 import { SPORTS_ARENA_CONFIG } from './client';
 import { SPORT_CATEGORIES } from '@/types';
 import { makeHiveApiCall } from './api';
+import { getContentOptimized } from './optimization';
 
 interface HiveVote {
   voter: string;
@@ -165,8 +166,8 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
     let posts: HivePost[] = [];
     
     if (filters.author) {
-      // Fetch posts by specific author
-      const accountPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_author_before_date', [
+      // Fetch posts by specific author using optimized caching
+      const accountPosts = await getContentOptimized('get_discussions_by_author_before_date', [
         filters.author,
         filters.before || '',
         '',
@@ -174,14 +175,12 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       ]);
       posts = (accountPosts || []) as unknown as HivePost[];
     } else {
-      // Fetch posts from Sportsblock community
+      // Fetch posts from Sportsblock community using optimized caching
       // Use the community name instead of ID for get_discussions_by_created
-      const communityPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_created', [
-        {
-          tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-          limit: limit
-        }
-      ]);
+      const communityPosts = await getContentOptimized('get_discussions_by_created', [{
+        tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+        limit: limit
+      }]);
       posts = (communityPosts || []) as unknown as HivePost[];
     }
 

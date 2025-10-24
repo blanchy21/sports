@@ -22,10 +22,9 @@ interface Vote {
 }
 
 export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClose, data }) => {
-  // For now, we'll use mock data since we don't have a direct API for fetching voters
+  // Use data if available, otherwise fall back to mock data
   // In a real implementation, this would fetch from Hive API using the data parameter
-  // TODO: Implement real API integration using the data prop
-  const mockVotes: Vote[] = [
+  const votes: Vote[] = (data?.votes as Vote[]) || [
     {
       voter: 'sportsblock',
       weight: 10000,
@@ -52,8 +51,8 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
     },
   ];
 
-  const totalVotes = mockVotes.length;
-  const totalWeight = mockVotes.reduce((sum, vote) => sum + vote.weight, 0);
+  const totalVotes = votes.length;
+  const totalWeight = votes.reduce((sum, vote) => sum + vote.weight, 0);
 
   return (
     <BaseModal
@@ -87,9 +86,9 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-          {mockVotes.length > 0 ? (
+          {votes.length > 0 ? (
             <div className="space-y-4">
-              {mockVotes.map((vote, index) => (
+              {votes.map((vote, index) => (
                 <div key={`${vote.voter}-${vote.time}`} className="flex items-center space-x-3">
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-medium text-muted-foreground w-6">

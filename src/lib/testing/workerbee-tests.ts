@@ -6,10 +6,10 @@
  */
 
 import { initializeWorkerBeeClient } from '../hive-workerbee/client';
-import { fetchUserAccount, getUserVotingPower, getUserRC } from '../hive-workerbee/account';
+import { fetchUserAccount } from '../hive-workerbee/account';
 import { fetchSportsblockPosts, searchPosts } from '../hive-workerbee/content';
 import { publishPost, canUserPost } from '../hive-workerbee/posting';
-import { castVote, getUserVotes } from '../hive-workerbee/voting';
+import { castVote, getUserVotingPower, getUserRecentVotes } from '../hive-workerbee/voting';
 import { postComment, fetchComments } from '../hive-workerbee/comments';
 
 // Test configuration
@@ -99,11 +99,11 @@ export async function testAccountOperations(): Promise<TestResult[]> {
     }),
     
     runTest('Get User RC', async () => {
-      const rc = await getUserRC(TEST_USERNAME);
-      if (!rc) {
-        throw new Error('Failed to fetch RC data');
+      const account = await fetchUserAccount(TEST_USERNAME);
+      if (!account) {
+        throw new Error('Failed to fetch account data');
       }
-      return rc;
+      return { percentage: account.resourceCredits };
     })
   ];
   
@@ -155,7 +155,7 @@ export async function testPostingOperations(): Promise<TestResult[]> {
 export async function testVotingOperations(): Promise<TestResult[]> {
   const tests = [
     runTest('Get User Votes', async () => {
-      const votes = await getUserVotes(TEST_USERNAME, 10);
+      const votes = await getUserRecentVotes(TEST_USERNAME, 10);
       return votes;
     })
   ];

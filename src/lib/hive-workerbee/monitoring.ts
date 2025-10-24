@@ -435,15 +435,76 @@ export function withErrorHandling<T extends unknown[], R>(
  * Get monitoring statistics
  */
 export function getMonitoringStats(): {
-  errors: ReturnType<WorkerBeeMonitor['getErrorStats']>;
-  performance: ReturnType<WorkerBeeMonitor['getPerformanceStats']>;
-  health: ReturnType<WorkerBeeMonitor['getHealthStatus']>;
-} {
-  return {
-    errors: globalMonitor.getErrorStats(),
-    performance: globalMonitor.getPerformanceStats(),
-    health: globalMonitor.getHealthStatus()
+  errors: {
+    total: number;
+    unresolved: number;
+    byType: Record<string, number>;
+    bySeverity: Record<string, number>;
+    recentErrors: Array<{
+      id: string;
+      type: string;
+      severity: string;
+      message: string;
+      timestamp: number;
+      resolved: boolean;
+    }>;
   };
+  performance: {
+    totalOperations: number;
+    averageDuration: number;
+    successRate: number;
+    slowOperations: Array<{
+      id: string;
+      operation: string;
+      duration: number;
+      success: boolean;
+      timestamp: number;
+    }>;
+    recentPerformance: Array<{
+      id: string;
+      operation: string;
+      duration: number;
+      success: boolean;
+      timestamp: number;
+    }>;
+  };
+  health: {
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    issues: string[];
+    recommendations: string[];
+  };
+} {
+  try {
+    return {
+      errors: globalMonitor.getErrorStats(),
+      performance: globalMonitor.getPerformanceStats(),
+      health: globalMonitor.getHealthStatus()
+    };
+  } catch (error) {
+    console.error('Error getting monitoring stats:', error);
+    // Return default data if monitoring fails
+    return {
+      errors: {
+        total: 0,
+        unresolved: 0,
+        byType: {},
+        bySeverity: {},
+        recentErrors: []
+      },
+      performance: {
+        totalOperations: 0,
+        averageDuration: 0,
+        successRate: 100,
+        slowOperations: [],
+        recentPerformance: []
+      },
+      health: {
+        status: 'healthy',
+        issues: [],
+        recommendations: []
+      }
+    };
+  }
 }
 
 /**

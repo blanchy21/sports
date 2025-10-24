@@ -76,7 +76,9 @@ class WorkerBeeOptimizer {
     // Implement LRU eviction if cache is full
     if (this.cache.size >= this.MAX_CACHE_SIZE) {
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey) {
+        this.cache.delete(firstKey);
+      }
     }
     
     this.cache.set(key, {
@@ -105,33 +107,11 @@ class WorkerBeeOptimizer {
     this.batchQueue = [];
     this.batchTimer = null;
 
-    try {
-      const client = getWorkerBeeClient();
-      const wax = client.chain;
-      
-      // Process batch requests
-      const promises = batch.map(async (request) => {
-        try {
-          const startTime = Date.now();
-          const result = await wax.call(request.method, request.params);
-          const responseTime = Date.now() - startTime;
-          
-          this.responseTimes.push(responseTime);
-          this.updateMetrics();
-          
-          request.resolve(result);
-        } catch (error) {
-          request.reject(error instanceof Error ? error : new Error(String(error)));
-        }
-      });
-
-      await Promise.all(promises);
-    } catch (error) {
-      // Reject all requests in batch
-      batch.forEach(request => {
-        request.reject(error instanceof Error ? error : new Error(String(error)));
-      });
-    }
+    // Temporarily disable batch processing to prevent API errors
+    // TODO: Implement proper batch processing when needed
+    batch.forEach(request => {
+      request.reject(new Error('Batch processing temporarily disabled'));
+    });
   }
 
   /**
@@ -309,14 +289,21 @@ const globalOptimizer = new WorkerBeeOptimizer();
  * Get optimized account data
  */
 export async function getAccountOptimized(username: string): Promise<HiveAccount | null> {
-  return globalOptimizer.fetchAccountOptimized(username);
+  // Temporarily disable optimization to prevent API errors
+  // TODO: Re-enable when batch processing is fixed
+  const { makeHiveApiCall } = await import('./api');
+  const accounts = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
+  return accounts && accounts.length > 0 ? accounts[0] : null;
 }
 
 /**
  * Get optimized content data
  */
 export async function getContentOptimized(method: string, params: unknown[]): Promise<unknown> {
-  return globalOptimizer.fetchContentOptimized(method, params);
+  // Temporarily disable optimization to prevent API errors
+  // TODO: Re-enable when batch processing is fixed
+  const { makeHiveApiCall } = await import('./api');
+  return makeHiveApiCall('condenser_api', method, params);
 }
 
 /**
@@ -330,14 +317,34 @@ export function clearOptimizationCache(): void {
  * Get performance metrics
  */
 export function getOptimizationMetrics(): PerformanceMetrics {
-  return globalOptimizer.getMetrics();
+  try {
+    return globalOptimizer.getMetrics();
+  } catch (error) {
+    console.error('Error getting optimization metrics:', error);
+    return {
+      requestCount: 0,
+      averageResponseTime: 0,
+      cacheHitRate: 0,
+      errorRate: 0,
+      lastUpdated: Date.now()
+    };
+  }
 }
 
 /**
  * Get cache statistics
  */
 export function getCacheStatistics(): { size: number; maxSize: number; hitRate: number } {
-  return globalOptimizer.getCacheStats();
+  try {
+    return globalOptimizer.getCacheStats();
+  } catch (error) {
+    console.error('Error getting cache statistics:', error);
+    return {
+      size: 0,
+      maxSize: 1000,
+      hitRate: 0
+    };
+  }
 }
 
 /**
@@ -366,7 +373,9 @@ export class ConnectionPool {
     if (this.connections.size >= this.maxConnections) {
       // Remove oldest connection
       const firstKey = this.connections.keys().next().value;
-      this.connections.delete(firstKey);
+      if (firstKey) {
+        this.connections.delete(firstKey);
+      }
     }
 
     try {
@@ -401,3 +410,4 @@ export class ConnectionPool {
       maxConnections: this.maxConnections
     };
   }
+}

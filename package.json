@@ -8,12 +8,16 @@
     "build": "next build --turbopack",
     "start": "next start --port 3000",
     "lint": "eslint",
-    "test:workerbee": "node scripts/test-workerbee.js",
-    "test:workerbee:account": "node scripts/test-workerbee.js account",
-    "test:workerbee:content": "node scripts/test-workerbee.js content",
-    "test:workerbee:posting": "node scripts/test-workerbee.js posting",
-    "test:workerbee:voting": "node scripts/test-workerbee.js voting",
-    "test:workerbee:comments": "node scripts/test-workerbee.js comments"
+    "test:workerbee": "npx tsx scripts/test-workerbee.ts",
+    "test:workerbee:account": "npx tsx scripts/test-workerbee.ts account",
+    "test:workerbee:content": "npx tsx scripts/test-workerbee.ts content",
+    "test:workerbee:posting": "npx tsx scripts/test-workerbee.ts posting",
+    "test:workerbee:voting": "npx tsx scripts/test-workerbee.ts voting",
+    "test:workerbee:comments": "npx tsx scripts/test-workerbee.ts comments",
+    "benchmark:workerbee": "npx tsx scripts/benchmark-workerbee.ts",
+    "test:optimizations": "npx tsx scripts/test-optimizations.ts",
+    "monitor:workerbee": "npx tsx scripts/monitor-workerbee.ts",
+    "monitor:workerbee:watch": "npx tsx scripts/monitor-workerbee.ts continuous"
   },
   "dependencies": {
     "@aioha/aioha": "^1.8.0",
@@ -52,6 +56,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   }
 }
