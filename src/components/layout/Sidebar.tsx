@@ -71,7 +71,7 @@ export const Sidebar: React.FC = () => {
                 className={cn(
                   "flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors",
                   isActive
-                    ? "bg-gradient-to-r from-japanese-laurel via-maximum-yellow to-japanese-laurel text-white"
+                    ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >

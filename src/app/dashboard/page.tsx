@@ -184,8 +184,8 @@ export default function DashboardPage() {
               <p className="text-muted-foreground">@{user.username}</p>
               {authType === "hive" && (
                 <div className="flex items-center space-x-1 mt-1">
-                  <Award className="h-4 w-4 text-maximum-yellow" />
-                  <span className="text-sm text-maximum-yellow font-medium">Hive Authenticated</span>
+                  <Award className="h-4 w-4 text-accent" />
+                  <span className="text-sm text-accent font-medium">Hive Authenticated</span>
                 </div>
               )}
             </div>
@@ -245,7 +245,7 @@ export default function DashboardPage() {
 
         {/* Rewards Stats (Hive users only) */}
         {rewardsStats.length > 0 && (
-          <div className="bg-gradient-to-r from-japanese-laurel to-maximum-yellow rounded-lg p-6">
+          <div className="bg-gradient-to-r from-primary to-accent rounded-lg p-6">
             <div className="flex items-center space-x-2 mb-4">
               <DollarSign className="h-5 w-5 text-white" />
               <h3 className="text-lg font-semibold text-white">
@@ -256,15 +256,15 @@ export default function DashboardPage() {
               {rewardsStats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={index} className="bg-card border border-border rounded-lg p-4">
+                  <div key={index} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-japanese-laurel dark:text-japanese-laurel font-medium">{stat.title}</p>
-                        <p className="text-xl font-bold text-japanese-laurel dark:text-japanese-laurel">{stat.value}</p>
-                        <p className="text-xs text-japanese-laurel dark:text-japanese-laurel">{stat.change}</p>
+                        <p className="text-sm text-white font-medium">{stat.title}</p>
+                        <p className="text-xl font-bold text-white">{stat.value}</p>
+                        <p className="text-xs text-white">{stat.change}</p>
                       </div>
-                      <div className="p-2 bg-japanese-laurel/10 dark:bg-japanese-laurel/20 rounded-lg">
-                        <Icon className="h-5 w-5 text-japanese-laurel dark:text-japanese-laurel" />
+                      <div className="p-2 bg-white/20 rounded-lg">
+                        <Icon className="h-5 w-5 text-white" />
                       </div>
                     </div>
                   </div>

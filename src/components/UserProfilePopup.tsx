@@ -129,15 +129,15 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
                 size="lg"
               />
               {/* Reputation Badge */}
-              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-r from-primary to-teal-600 border-2 border-white rounded-full flex items-center justify-center shadow-md">
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-r from-primary to-bright-cobalt border-2 border-white rounded-full flex items-center justify-center shadow-md">
                 <span className="text-[10px] font-bold text-white">{(user.reputation || 0).toFixed(1)}</span>
               </div>
             </div>
             <div>
-              <div className="font-semibold text-gray-900 text-base">
+              <div className="font-semibold text-foreground text-base">
                 {user.displayName || user.username}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 @{user.username}
               </div>
             </div>
@@ -146,15 +146,15 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
           {/* Hive Resources */}
           <div className="flex space-x-2 mb-5">
             {/* HIVE */}
-            <div className="flex-1 bg-gradient-to-br from-japanese-laurel to-primary border border-japanese-laurel rounded-lg px-3 py-2.5 text-center shadow-sm">
-              <div className="text-xs text-white font-semibold">{user.hiveBalance || 0} HIVE</div>
+            <div className="flex-1 bg-gradient-to-br from-primary to-primary/80 border border-primary rounded-lg px-3 py-2.5 text-center shadow-sm">
+              <div className="text-xs text-primary-foreground font-semibold">{user.hiveBalance || 0} HIVE</div>
             </div>
             {/* SB (Sports Bucks) */}
-            <div className="flex-1 bg-gradient-to-br from-japanese-laurel to-maximum-yellow border border-japanese-laurel rounded-lg px-3 py-2.5 text-center shadow-sm">
-              <div className="text-xs text-white font-semibold">{user.sbBalance || 0} SB</div>
+            <div className="flex-1 bg-gradient-to-br from-accent to-accent/80 border border-accent rounded-lg px-3 py-2.5 text-center shadow-sm">
+              <div className="text-xs text-primary-foreground font-semibold">{user.sbBalance || 0} SB</div>
             </div>
             {/* RC */}
-            <div className="flex-1 bg-gradient-to-br from-maximum-yellow to-japanese-laurel border border-maximum-yellow rounded-lg px-3 py-2.5 text-center shadow-sm relative">
+            <div className="flex-1 bg-gradient-to-br from-bright-cobalt to-primary border border-bright-cobalt rounded-lg px-3 py-2.5 text-center shadow-sm relative">
               <button
                 onClick={handleRefreshRC}
                 disabled={isRefreshingRC}
@@ -163,14 +163,14 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
               >
                 <RefreshCw className={`w-3 h-3 text-white ${isRefreshingRC ? 'animate-spin' : ''}`} />
               </button>
-              <div className="text-xs text-white font-semibold">
+              <div className="text-xs text-primary-foreground font-semibold">
                 RC
                 {user.rcPercentage !== undefined ? (
-                  <div className="text-xs text-white/80 font-normal">
+                  <div className="text-xs text-primary-foreground/80 font-normal">
                     {user.rcPercentage.toFixed(1)}%
                   </div>
                 ) : (
-                  <div className="text-xs text-white/80 font-normal">
+                  <div className="text-xs text-primary-foreground/80 font-normal">
                     Resource Credits information not available
                   </div>
                 )}
@@ -181,36 +181,36 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
           {/* Menu Items */}
           <div className="space-y-1">
             {/* Switch Accounts */}
-            <button className="w-full flex items-center space-x-3 px-3 py-2.5 text-left hover:bg-gray-50 rounded-lg transition-colors">
+            <button className="w-full flex items-center space-x-3 px-3 py-2.5 text-left hover:bg-accent/10 rounded-lg transition-colors">
               <Avatar
                 src={user.avatar}
                 alt={user.displayName || user.username}
                 fallback={user.username}
                 size="sm"
               />
-              <span className="text-gray-700 text-sm font-medium">Switch accounts (1)</span>
+              <span className="text-foreground text-sm font-medium">Switch accounts (1)</span>
             </button>
 
             {/* Add Account */}
-            <button className="w-full flex items-center space-x-3 px-3 py-2.5 text-left hover:bg-gray-50 rounded-lg transition-colors">
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                <UserPlus className="w-4 h-4 text-gray-600" />
+            <button className="w-full flex items-center space-x-3 px-3 py-2.5 text-left hover:bg-accent/10 rounded-lg transition-colors">
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                <UserPlus className="w-4 h-4 text-muted-foreground" />
               </div>
-              <span className="text-gray-700 text-sm font-medium">Add account</span>
+              <span className="text-foreground text-sm font-medium">Add account</span>
             </button>
 
             {/* Divider */}
-            <div className="border-t border-gray-200 my-2" />
+            <div className="border-t border-border my-2" />
 
             {/* Logout */}
             <button 
               onClick={handleLogout}
-              className="w-full flex items-center space-x-3 px-3 py-2.5 text-left hover:bg-red-50 rounded-lg transition-colors group"
+              className="w-full flex items-center space-x-3 px-3 py-2.5 text-left hover:bg-destructive/10 rounded-lg transition-colors group"
             >
-              <div className="w-8 h-8 rounded-full bg-red-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
-                <LogOut className="w-4 h-4 text-red-500" />
+              <div className="w-8 h-8 rounded-full bg-destructive/10 group-hover:bg-destructive/20 flex items-center justify-center transition-colors">
+                <LogOut className="w-4 h-4 text-destructive" />
               </div>
-              <span className="text-red-600 text-sm font-medium">Logout @{user.username}</span>
+              <span className="text-destructive text-sm font-medium">Logout @{user.username}</span>
             </button>
           </div>
         </div>

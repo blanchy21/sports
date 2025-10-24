@@ -234,7 +234,7 @@ export const RightSidebar: React.FC = () => {
         </div>
 
         {/* Stats Card */}
-        <div className="bg-gradient-to-r from-primary via-teal-500 to-cyan-500 rounded-lg p-4 text-white">
+        <div className="bg-gradient-to-r from-primary via-bright-cobalt to-accent rounded-lg p-4 text-white">
           <div className="flex items-center space-x-2 mb-3">
             <Trophy className="h-5 w-5" />
             <h3 className="font-semibold text-base">Community Stats</h3>

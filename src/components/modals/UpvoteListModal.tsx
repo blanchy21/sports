@@ -9,7 +9,7 @@ import { BaseModal } from "@/components/ui/BaseModal";
 interface UpvoteListModalProps {
   isOpen: boolean;
   onClose: () => void;
-  _data?: Record<string, unknown> | null;
+  data?: Record<string, unknown> | null;
 }
 
 interface Vote {
@@ -21,9 +21,10 @@ interface Vote {
   time: string;
 }
 
-export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClose, _data }) => {
+export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClose, data }) => {
   // For now, we'll use mock data since we don't have a direct API for fetching voters
-  // In a real implementation, this would fetch from Hive API
+  // In a real implementation, this would fetch from Hive API using the data parameter
+  // TODO: Implement real API integration using the data prop
   const mockVotes: Vote[] = [
     {
       voter: 'sportsblock',

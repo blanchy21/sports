@@ -54,7 +54,7 @@ export const TopNavigation: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-primary to-teal-600 shadow-md">
+    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-primary to-bright-cobalt shadow-md">
       <div className="h-24">
         <div className="relative flex h-full items-center">
           {/* Left - Logo (positioned over left sidebar) */}
@@ -204,14 +204,14 @@ export const TopNavigation: React.FC = () => {
                 variant="outline" 
                 size="sm"
                 onClick={() => router.push('/auth')}
-                className="border-white bg-white text-japanese-laurel hover:bg-white/90 hover:text-japanese-laurel/80 font-medium"
+                className="border-white bg-white text-primary hover:bg-white/90 hover:text-primary/80 font-medium"
               >
                 Sign In
               </Button>
               <Button 
                 size="sm"
                 onClick={() => router.push('/auth')}
-                className="bg-white text-japanese-laurel hover:bg-white/90 font-medium"
+                className="bg-white text-primary hover:bg-white/90 font-medium"
               >
                 Get Started
               </Button>

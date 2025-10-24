@@ -16,14 +16,14 @@ export const RealtimeStatus: React.FC = () => {
           <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
         </div>
       ) : (
-        <div className="flex items-center space-x-1 text-gray-500">
+        <div className="flex items-center space-x-1 text-muted-foreground">
           <WifiOff className="h-4 w-4" />
           <span>Offline</span>
         </div>
       )}
       
       {unreadCount > 0 && (
-        <div className="flex items-center space-x-1 text-maximum-yellow">
+        <div className="flex items-center space-x-1 text-accent">
           <Bell className="h-4 w-4" />
           <span>{unreadCount}</span>
         </div>

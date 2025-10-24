@@ -84,7 +84,7 @@ export const CommunityTeam: React.FC<CommunityTeamProps> = ({ communityId, class
       {moderators.length > 0 && (
         <div>
           <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
-            <Shield className="h-5 w-5 text-maximum-yellow" />
+            <Shield className="h-5 w-5 text-accent" />
             <span>Moderators ({moderators.length})</span>
           </h3>
           <div className="grid gap-4 md:grid-cols-2">
@@ -139,7 +139,7 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member }) => {
       case 'admin':
         return <Crown className="h-4 w-4 text-yellow-500" />;
       case 'moderator':
-        return <Shield className="h-4 w-4 text-maximum-yellow" />;
+        return <Shield className="h-4 w-4 text-accent" />;
       default:
         return <User className="h-4 w-4 text-muted-foreground" />;
     }
@@ -150,7 +150,7 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member }) => {
       case 'admin':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'moderator':
-        return 'bg-maximum-yellow/20 text-maximum-yellow dark:bg-maximum-yellow/20 dark:text-maximum-yellow';
+        return 'bg-accent/20 text-accent dark:bg-accent/20 dark:text-accent';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }

@@ -197,7 +197,7 @@ export default function WalletPage() {
 
 
         {/* Total Portfolio Value */}
-        <div className="bg-gradient-to-r from-primary via-teal-500 to-cyan-500 rounded-lg p-6 text-white">
+        <div className="bg-gradient-to-r from-primary via-bright-cobalt to-accent rounded-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold mb-2">Total Portfolio Value</h3>
@@ -218,8 +218,8 @@ export default function WalletPage() {
         <div className="bg-card border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="p-3 bg-maximum-yellow/10 rounded-lg">
-                <Coins className="h-6 w-6 text-maximum-yellow" />
+              <div className="p-3 bg-accent/10 rounded-lg">
+                <Coins className="h-6 w-6 text-accent" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">HIVE</h3>
@@ -278,8 +278,8 @@ export default function WalletPage() {
         <div className="bg-card border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="p-3 bg-japanese-laurel/10 rounded-lg">
-                <DollarSign className="h-6 w-6 text-japanese-laurel" />
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <DollarSign className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">HBD</h3>
@@ -333,7 +333,7 @@ export default function WalletPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Bitcoin */}
           {bitcoinPrice && (
-            <div className="bg-gradient-to-r from-japanese-laurel to-maximum-yellow rounded-lg p-6 text-white">
+            <div className="bg-gradient-to-r from-primary to-accent rounded-lg p-6 text-white">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <Bitcoin className="h-8 w-8" />
@@ -356,7 +356,7 @@ export default function WalletPage() {
 
           {/* Ethereum */}
           {ethereumPrice && (
-            <div className="bg-gradient-to-r from-japanese-laurel to-maximum-yellow rounded-lg p-6 text-white">
+            <div className="bg-gradient-to-r from-primary to-accent rounded-lg p-6 text-white">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <Coins className="h-8 w-8" />

@@ -51,13 +51,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'comment':
-        return <MessageSquare className="h-4 w-4 text-maximum-yellow" />;
+        return <MessageSquare className="h-4 w-4 text-accent" />;
       case 'vote':
         return <ThumbsUp className="h-4 w-4 text-accent" />;
       case 'post':
         return <FileText className="h-4 w-4 text-purple-500" />;
       case 'mention':
-        return <AtSign className="h-4 w-4 text-maximum-yellow" />;
+        return <AtSign className="h-4 w-4 text-accent" />;
       default:
         return <Bell className="h-4 w-4 text-gray-500" />;
     }
@@ -66,13 +66,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const getNotificationColor = (type: string) => {
     switch (type) {
       case 'comment':
-        return 'bg-maximum-yellow/10 border-maximum-yellow/20';
+        return 'bg-accent/10 border-accent/20';
       case 'vote':
         return 'bg-accent/10 border-accent/20';
       case 'post':
         return 'bg-purple-50 border-purple-200';
       case 'mention':
-        return 'bg-maximum-yellow/10 border-maximum-yellow/20';
+        return 'bg-accent/10 border-accent/20';
       default:
         return 'bg-gray-50 border-gray-200';
     }
@@ -142,8 +142,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             {notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                  !notification.read ? 'bg-maximum-yellow/10' : ''
+                className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
+                  !notification.read ? 'bg-accent/10' : ''
                 }`}
                 onClick={() => markAsRead(notification.id)}
               >
@@ -158,7 +158,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                         {notification.title}
                       </h4>
                       {!notification.read && (
-                        <div className="w-2 h-2 bg-maximum-yellow rounded-full"></div>
+                        <div className="w-2 h-2 bg-accent rounded-full"></div>
                       )}
                     </div>
                     

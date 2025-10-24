@@ -96,7 +96,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
         return <AlertTriangle className="h-5 w-5 text-yellow-600" />;
       case "info":
       default:
-        return <Info className="h-5 w-5 text-maximum-yellow" />;
+        return <Info className="h-5 w-5 text-accent" />;
     }
   };
 
@@ -110,7 +110,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
         return "bg-yellow-50 border-yellow-200";
       case "info":
       default:
-        return "bg-maximum-yellow/10 border-maximum-yellow/20";
+        return "bg-accent/10 border-accent/20";
     }
   };
 

@@ -134,9 +134,9 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
               <div className="flex items-center space-x-1 text-xs text-gray-500">
                 <span>Protected by reCAPTCHA</span>
                 <div className="flex space-x-1">
-                  <a href="#" className="text-maximum-yellow hover:underline">Privacy</a>
+                  <a href="#" className="text-accent hover:underline">Privacy</a>
                   <span>•</span>
-                  <a href="#" className="text-maximum-yellow hover:underline">Terms</a>
+                  <a href="#" className="text-accent hover:underline">Terms</a>
                 </div>
               </div>
             </div>

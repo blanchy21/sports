@@ -85,7 +85,7 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
           >
             <div className="bg-card dark:bg-card rounded-2xl shadow-2xl border border-border">
               {/* Header */}
-              <div className="bg-gradient-to-r from-primary to-teal-600 px-8 py-6 relative">
+              <div className="bg-gradient-to-r from-primary to-bright-cobalt px-8 py-6 relative">
                 <button
                   onClick={onClose}
                   className="absolute top-4 right-4 p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-all duration-200"
@@ -167,7 +167,7 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
                         )}
 
                         {/* Hover Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-teal-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-xl" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-bright-cobalt/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-xl" />
                       </motion.button>
                     );
                   })}

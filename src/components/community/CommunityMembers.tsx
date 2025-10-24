@@ -141,7 +141,7 @@ const getRoleColor = (role: string) => {
     case 'admin':
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
     case 'moderator':
-      return 'bg-maximum-yellow/20 text-maximum-yellow dark:bg-maximum-yellow/20 dark:text-maximum-yellow';
+      return 'bg-accent/20 text-accent dark:bg-accent/20 dark:text-accent';
     default:
       return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
   }

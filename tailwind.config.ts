@@ -11,10 +11,12 @@ const config: Config = {
     extend: {
       colors: {
         // New palette colors
-        'cosmic-latte': '#FFFBEB',
-        'maximum-yellow': '#F1BE49',
-        'japanese-laurel': '#317039',
-        'eerie-black': '#1F1F1F',
+        'bright-cobalt': '#3C6098',
+        'patience': '#E6DDD6',
+        'silver-bird': '#FBF5F0',
+        'fibonacci-blue': '#112358',
+        'dancing-mist': '#BFC8D8',
+        'aegean-sky': '#E48B59',
         // Theme colors
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -71,7 +73,12 @@ const config: Config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+  plugins: [
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("tailwindcss-animate"), 
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("@tailwindcss/typography")
+  ],
 };
 
 export default config;

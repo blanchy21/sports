@@ -171,7 +171,7 @@ export default function PostDetailPage() {
               </div>
               {post.sportCategory && (
                 <div className="mt-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-maximum-yellow/20 text-maximum-yellow">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-accent/20 text-accent">
                     {post.sportCategory}
                   </span>
                 </div>

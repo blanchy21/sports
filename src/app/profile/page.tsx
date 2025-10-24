@@ -79,7 +79,7 @@ export default function ProfilePage() {
         {/* Profile Header */}
         <div className="bg-card border rounded-lg overflow-hidden">
           {/* Cover Photo */}
-          <div className="h-48 bg-gradient-to-r from-primary via-teal-500 to-cyan-500 relative">
+          <div className="h-48 bg-gradient-to-r from-primary via-bright-cobalt to-accent relative">
             {user.hiveProfile?.coverImage && (
               <Image
                 src={user.hiveProfile.coverImage}
@@ -116,8 +116,8 @@ export default function ProfilePage() {
                           <span className="text-xs font-medium text-accent-foreground dark:text-accent-foreground">Hive</span>
                         </div>
                         {user.reputationFormatted && (
-                          <div className="bg-maximum-yellow/20 dark:bg-maximum-yellow/20 px-2 py-1 rounded-full">
-                            <span className="text-xs font-medium text-maximum-yellow dark:text-maximum-yellow">
+                          <div className="bg-accent/20 dark:bg-accent/20 px-2 py-1 rounded-full">
+                            <span className="text-xs font-medium text-accent dark:text-accent">
                               Rep: {user.reputationFormatted}
                             </span>
                           </div>

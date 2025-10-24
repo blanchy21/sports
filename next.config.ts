@@ -72,7 +72,7 @@ const nextConfig = {
       },
     ],
   },
-  serverExternalPackages: ['@hiveio/dhive', '@hiveio/workerbee', '@hiveio/wax'],
+  serverExternalPackages: ['@hiveio/workerbee', '@hiveio/wax'],
   typescript: {
     ignoreBuildErrors: false,
     tsconfigPath: './tsconfig.json',

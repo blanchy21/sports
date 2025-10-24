@@ -292,7 +292,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
               variant="ghost"
               size="sm"
               onClick={handleComment}
-              className="flex items-center space-x-1 text-muted-foreground hover:text-maximum-yellow"
+              className="flex items-center space-x-1 text-muted-foreground hover:text-accent"
             >
               <MessageCircle className="h-4 w-4" />
               <span>{isHivePost ? post.children : post.comments}</span>

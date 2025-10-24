@@ -121,7 +121,7 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
                       member.role === 'admin' 
                         ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                         : member.role === 'moderator'
-                        ? 'bg-maximum-yellow/20 text-maximum-yellow dark:bg-maximum-yellow/20 dark:text-maximum-yellow'
+                        ? 'bg-accent/20 text-accent dark:bg-accent/20 dark:text-accent'
                         : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                     }`}>
                       {member.role.charAt(0).toUpperCase() + member.role.slice(1)}

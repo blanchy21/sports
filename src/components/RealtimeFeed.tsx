@@ -70,7 +70,7 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
   const getEventIcon = (event: RealtimeEvent) => {
     switch (event.type) {
       case 'new_post':
-        return <Activity className="h-4 w-4 text-maximum-yellow" />;
+        return <Activity className="h-4 w-4 text-accent" />;
       case 'new_vote':
         return <Heart className="h-4 w-4 text-red-500" />;
       case 'new_comment':
@@ -83,13 +83,13 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
   const getEventColor = (event: RealtimeEvent) => {
     switch (event.type) {
       case 'new_post':
-        return 'bg-maximum-yellow/10 border-maximum-yellow/20';
+        return 'bg-aegean-sky/10 border-aegean-sky/20';
       case 'new_vote':
-        return 'bg-red-50 border-red-200';
+        return 'bg-bright-cobalt/10 border-bright-cobalt/20';
       case 'new_comment':
         return 'bg-accent/10 border-accent/20';
       default:
-        return 'bg-gray-50 border-gray-200';
+        return 'bg-muted/10 border-muted/20';
     }
   };
 
@@ -123,7 +123,7 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
         </div>
 
         {events.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             {isMonitoring ? 'Waiting for activity...' : 'Start monitoring to see real-time activity'}
           </div>
         ) : (
@@ -140,7 +140,7 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
                       <Badge variant="outline" className="text-xs">
                         {event.type.replace('_', ' ').toUpperCase()}
                       </Badge>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         {formatTime('created' in event.data ? event.data.created : event.data.timestamp || new Date().toISOString())}
                       </span>
                     </div>
@@ -150,7 +150,7 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
                         <p className="font-medium text-sm">
                           New post by @{event.data.author}
                         </p>
-                        <p className="text-sm text-gray-600 truncate">
+                        <p className="text-sm text-muted-foreground truncate">
                           {event.data.title}
                         </p>
                         {event.data.sportCategory && (
@@ -166,7 +166,7 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
                         <p className="font-medium text-sm">
                           @{event.data.voter} voted on @{event.data.author}&apos;s post
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           Weight: {event.data.weight}%
                         </p>
                       </div>
@@ -177,7 +177,7 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
                         <p className="font-medium text-sm">
                           New comment by @{event.data.author}
                         </p>
-                        <p className="text-sm text-gray-600 truncate">
+                        <p className="text-sm text-muted-foreground truncate">
                           {event.data.body}
                         </p>
                       </div>

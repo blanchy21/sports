@@ -59,7 +59,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     return (
       <div 
         className={cn(
-          'flex items-center justify-center bg-gray-100 text-gray-400',
+          'flex items-center justify-center bg-muted text-muted-foreground',
           className
         )}
         style={{ width, height }}
@@ -76,10 +76,10 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     <div className={cn('relative overflow-hidden', className)}>
       {isLoading && (
         <div 
-          className="absolute inset-0 flex items-center justify-center bg-gray-100 animate-pulse"
+          className="absolute inset-0 flex items-center justify-center bg-muted animate-pulse"
           style={{ width, height }}
         >
-          <div className="text-gray-400">Loading...</div>
+          <div className="text-muted-foreground">Loading...</div>
         </div>
       )}
       

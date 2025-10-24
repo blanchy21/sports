@@ -342,7 +342,7 @@ function PublishPageContent() {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top Bar */}
-      <div className="border-b bg-gradient-to-r from-japanese-laurel to-maximum-yellow shadow-lg">
+      <div className="border-b bg-gradient-to-r from-primary to-accent shadow-lg">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
             <Button
@@ -394,8 +394,8 @@ function PublishPageContent() {
               className={cn(
                 "min-w-[140px] text-white font-semibold",
                 authType === "hive" 
-                  ? "bg-eerie-black hover:bg-eerie-black/90 shadow-lg" 
-                  : "bg-cosmic-latte text-japanese-laurel hover:bg-cosmic-latte/90 shadow-lg"
+                  ? "bg-primary hover:bg-primary/90 shadow-lg" 
+                  : "bg-accent text-primary-foreground hover:bg-accent/90 shadow-lg"
               )}
             >
               <Send className="h-4 w-4 mr-2" />
@@ -411,15 +411,15 @@ function PublishPageContent() {
 
         {/* Settings Panel */}
         {showSettings && (
-          <div className="border-t bg-gradient-to-r from-cosmic-latte to-white px-6 py-4 space-y-4 shadow-lg">
+          <div className="border-t bg-gradient-to-r from-silver-bird to-white px-6 py-4 space-y-4 shadow-lg">
             <div className="grid grid-cols-2 gap-4">
               {/* Sport Selection */}
               <div>
-                <label className="block text-sm font-medium mb-2 text-japanese-laurel">Sport Category</label>
+                <label className="block text-sm font-medium mb-2 text-primary">Sport Category</label>
                 <select
                   value={selectedSport}
                   onChange={(e) => setSelectedSport(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-japanese-laurel/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-maximum-yellow focus:border-japanese-laurel"
+                  className="w-full px-3 py-2 border-2 border-primary/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-primary"
                 >
                   <option value="">Select a sport</option>
                   {SPORT_CATEGORIES.map((sport) => (
@@ -432,15 +432,15 @@ function PublishPageContent() {
 
               {/* Tags */}
               <div>
-                <label className="block text-sm font-medium mb-2 text-japanese-laurel">Tags</label>
+                <label className="block text-sm font-medium mb-2 text-primary">Tags</label>
                 <div className="relative">
-                  <TagIcon className="absolute left-3 top-2.5 h-4 w-4 text-japanese-laurel" />
+                  <TagIcon className="absolute left-3 top-2.5 h-4 w-4 text-primary" />
                   <input
                     type="text"
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
                     placeholder="basketball, NBA, analysis"
-                    className="w-full pl-10 pr-3 py-2 border-2 border-japanese-laurel/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-maximum-yellow focus:border-japanese-laurel"
+                    className="w-full pl-10 pr-3 py-2 border-2 border-primary/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-primary"
                   />
                 </div>
               </div>
@@ -448,14 +448,14 @@ function PublishPageContent() {
 
             {/* Auth Warning */}
             {authType !== "hive" && (
-              <div className="bg-maximum-yellow/10 dark:bg-maximum-yellow/20 border border-maximum-yellow/20 dark:border-maximum-yellow/40 rounded-lg p-3">
+              <div className="bg-accent/10 dark:bg-accent/20 border border-accent/20 dark:border-accent/40 rounded-lg p-3">
                 <div className="flex items-start space-x-2">
-                  <AlertCircle className="h-4 w-4 text-maximum-yellow mt-0.5" />
+                  <AlertCircle className="h-4 w-4 text-accent mt-0.5" />
                   <div>
-                    <h4 className="font-medium text-maximum-yellow dark:text-maximum-yellow text-sm">
+                    <h4 className="font-medium text-accent dark:text-accent text-sm">
                       Guest Mode
                     </h4>
-                    <p className="text-xs text-maximum-yellow dark:text-maximum-yellow mt-1">
+                    <p className="text-xs text-accent dark:text-accent mt-1">
                       Posts won&apos;t earn rewards or be published to the blockchain. Connect with Hive Keychain to unlock full features.
                     </p>
                   </div>
@@ -524,7 +524,7 @@ function PublishPageContent() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left: Markdown Editor */}
         <div className="w-1/2 flex flex-col border-r">
-          <div className="border-b bg-gradient-to-r from-japanese-laurel to-japanese-laurel/80">
+          <div className="border-b bg-gradient-to-r from-primary to-primary/80">
             <div className="flex items-center justify-between px-4 py-2 border-b border-white/20">
               <h3 className="font-medium text-sm text-white">Editor</h3>
             </div>
@@ -728,11 +728,11 @@ function PublishPageContent() {
         </div>
 
         {/* Right: Preview */}
-        <div className="w-1/2 flex flex-col bg-gradient-to-br from-cosmic-latte to-white">
-          <div className="border-b px-6 py-3 bg-gradient-to-r from-maximum-yellow to-maximum-yellow/80">
+        <div className="w-1/2 flex flex-col bg-gradient-to-br from-silver-bird to-white">
+          <div className="border-b px-6 py-3 bg-gradient-to-r from-accent to-accent/80">
             <div className="flex items-center space-x-2">
-              <Eye className="h-4 w-4 text-japanese-laurel" />
-              <h3 className="font-medium text-sm text-japanese-laurel">Preview</h3>
+              <Eye className="h-4 w-4 text-primary-foreground" />
+              <h3 className="font-medium text-sm text-primary-foreground">Preview</h3>
             </div>
           </div>
           <div className="flex-1 overflow-auto px-6 py-4">
@@ -757,9 +757,9 @@ function PublishPageContent() {
       {/* Image Upload Dialog */}
       {showImageDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gradient-to-br from-cosmic-latte to-white border-2 border-japanese-laurel/30 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
+          <div className="bg-gradient-to-br from-silver-bird to-white border-2 border-primary/30 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-japanese-laurel">Insert Image</h3>
+              <h3 className="text-lg font-semibold text-primary">Insert Image</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -768,7 +768,7 @@ function PublishPageContent() {
                   setImageUrl("");
                   setImageAlt("");
                 }}
-                className="h-8 w-8 p-0 text-japanese-laurel hover:bg-japanese-laurel/10"
+                className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -776,7 +776,7 @@ function PublishPageContent() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-japanese-laurel">
+                <label className="block text-sm font-medium mb-2 text-primary">
                   Image URL
                 </label>
                 <input
@@ -784,13 +784,13 @@ function PublishPageContent() {
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 border-2 border-japanese-laurel/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-maximum-yellow focus:border-japanese-laurel"
+                  className="w-full px-3 py-2 border-2 border-primary/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-primary"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-japanese-laurel">
+                <label className="block text-sm font-medium mb-2 text-primary">
                   Description (Alt Text)
                 </label>
                 <input
@@ -798,13 +798,13 @@ function PublishPageContent() {
                   value={imageAlt}
                   onChange={(e) => setImageAlt(e.target.value)}
                   placeholder="Describe the image"
-                  className="w-full px-3 py-2 border-2 border-japanese-laurel/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-maximum-yellow focus:border-japanese-laurel"
+                  className="w-full px-3 py-2 border-2 border-primary/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-primary"
                 />
               </div>
 
               {imageUrl && (
-                <div className="border-2 border-japanese-laurel/30 rounded-lg p-2 bg-white/50">
-                  <p className="text-xs text-japanese-laurel mb-2 font-medium">Preview:</p>
+                <div className="border-2 border-primary/30 rounded-lg p-2 bg-white/50">
+                  <p className="text-xs text-primary mb-2 font-medium">Preview:</p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imageUrl}
@@ -825,14 +825,14 @@ function PublishPageContent() {
                     setImageUrl("");
                     setImageAlt("");
                   }}
-                  className="border-japanese-laurel/30 text-japanese-laurel hover:bg-japanese-laurel/10"
+                  className="border-primary/30 text-primary hover:bg-primary/10"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleImageInsert}
                   disabled={!imageUrl}
-                  className="bg-japanese-laurel hover:bg-japanese-laurel/90 text-white font-semibold shadow-lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg"
                 >
                   <ImageIcon className="h-4 w-4 mr-2" />
                   Insert Image

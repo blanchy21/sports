@@ -83,8 +83,8 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
 
       {/* Hive Username Input */}
       {hiveState.showHiveUsernameInput && (
-        <div className="mb-3 p-3 bg-maximum-yellow/10 border border-maximum-yellow/20 rounded-lg">
-          <h4 className="font-medium text-sm text-maximum-yellow mb-2">
+        <div className="mb-3 p-3 bg-accent/10 border border-accent/20 rounded-lg">
+          <h4 className="font-medium text-sm text-accent mb-2">
             Enter your Hive username for {hiveState.selectedProvider === 'keychain' ? 'Hive Keychain' : 'HiveAuth'}
           </h4>
           <div className="flex space-x-2">
@@ -93,7 +93,7 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
               value={hiveState.hiveUsername}
               onChange={(e) => updateHiveField('hiveUsername', e.target.value)}
               placeholder="Enter your Hive username (e.g., blanchy)"
-              className="flex-1 px-3 py-2 border border-maximum-yellow/30 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-maximum-yellow"
+              className="flex-1 px-3 py-2 border border-accent/30 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               onKeyPress={(e) => e.key === 'Enter' && handleUsernameSubmit()}
             />
             <Button
@@ -105,7 +105,7 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
               Continue
             </Button>
           </div>
-          <p className="text-xs text-maximum-yellow mt-1">
+          <p className="text-xs text-accent mt-1">
             This will open {hiveState.selectedProvider === 'keychain' ? 'Hive Keychain' : 'HiveAuth'} to sign in as @{hiveState.hiveUsername || "your-username"}
           </p>
         </div>

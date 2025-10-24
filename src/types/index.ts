@@ -143,7 +143,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     slug: "american-football",
     icon: "🏈",
     description: "American Football",
-    color: "bg-maximum-yellow",
+    color: "bg-accent",
   },
   {
     id: "football",
@@ -151,7 +151,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     slug: "football",
     icon: "⚽",
     description: "Association Football",
-    color: "bg-japanese-laurel",
+    color: "bg-primary",
   },
   {
     id: "basketball",
@@ -159,7 +159,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     slug: "basketball",
     icon: "🏀",
     description: "Basketball",
-    color: "bg-maximum-yellow",
+    color: "bg-accent",
   },
   {
     id: "baseball",
@@ -167,7 +167,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     slug: "baseball",
     icon: "⚾",
     description: "Baseball",
-    color: "bg-maximum-yellow",
+    color: "bg-accent",
   },
   {
     id: "hockey",
@@ -191,7 +191,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     slug: "golf",
     icon: "⛳",
     description: "Golf",
-    color: "bg-japanese-laurel",
+    color: "bg-primary",
   },
   {
     id: "mma",
@@ -223,7 +223,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     slug: "rugby",
     icon: "🏉",
     description: "Rugby Union & League",
-    color: "bg-japanese-laurel",
+    color: "bg-primary",
   },
   {
     id: "volleyball",
@@ -231,7 +231,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     slug: "volleyball",
     icon: "🏐",
     description: "Volleyball",
-    color: "bg-maximum-yellow",
+    color: "bg-accent",
   },
   {
     id: "badminton",
@@ -247,7 +247,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     slug: "table-tennis",
     icon: "🏓",
     description: "Table Tennis",
-    color: "bg-maximum-yellow",
+    color: "bg-accent",
   },
   {
     id: "swimming",
@@ -255,7 +255,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     slug: "swimming",
     icon: "🏊",
     description: "Swimming",
-    color: "bg-maximum-yellow",
+    color: "bg-accent",
   },
   {
     id: "athletics",
@@ -279,7 +279,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     slug: "skiing",
     icon: "⛷️",
     description: "Skiing & Snowboarding",
-    color: "bg-maximum-yellow",
+    color: "bg-accent",
   },
   {
     id: "surfing",
@@ -335,7 +335,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     slug: "sailing",
     icon: "⛵",
     description: "Sailing",
-    color: "bg-maximum-yellow",
+    color: "bg-accent",
   },
   {
     id: "climbing",

@@ -24,11 +24,11 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 
 const sports = [
-  { name: "Football", image: "/football.jpg", color: "from-japanese-laurel/80 to-japanese-laurel/60" },
-  { name: "Tennis", image: "/tennis.jpg", color: "from-maximum-yellow/80 to-japanese-laurel/80" },
+  { name: "Football", image: "/football.jpg", color: "from-primary/80 to-primary/60" },
+  { name: "Tennis", image: "/tennis.jpg", color: "from-accent/80 to-primary/80" },
   { name: "Rugby", image: "/rugby.jpg", color: "from-red-500/80 to-red-700/80" },
-  { name: "Golf", image: "/golf.jpg", color: "from-emerald-500/80 to-teal-600/80" },
-  { name: "American Football", image: "/american-football.jpg", color: "from-maximum-yellow/80 to-japanese-laurel/80" },
+  { name: "Golf", image: "/golf.jpg", color: "from-dancing-mist/80 to-bright-cobalt/80" },
+  { name: "American Football", image: "/american-football.jpg", color: "from-accent/80 to-primary/80" },
 ];
 
 export default function LandingPage() {
@@ -92,7 +92,7 @@ export default function LandingPage() {
           >
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
               Your Escape to Pure
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-maximum-yellow">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
                 Sports Content
               </span>
             </h1>
@@ -220,7 +220,7 @@ export default function LandingPage() {
                 icon: Shield,
                 title: "Your Safe Space",
                 description: "A dedicated platform where sports fans can share, discuss, and celebrate without interference.",
-                color: "text-maximum-yellow",
+                color: "text-accent",
                 delay: 0.6
               }
             ].map((item, index) => (
@@ -274,8 +274,8 @@ export default function LandingPage() {
               className="space-y-6"
             >
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-japanese-laurel/10 rounded-lg">
-                  <DollarSign className="h-6 w-6 text-japanese-laurel" />
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Earn $0.50 to $200+ Per Post</h3>
@@ -287,8 +287,8 @@ export default function LandingPage() {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-maximum-yellow/10 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-maximum-yellow" />
+                <div className="p-3 bg-accent/10 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-accent" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">No Premium Required</h3>
@@ -318,7 +318,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="bg-gradient-to-br from-primary/20 to-maximum-yellow/20 rounded-2xl p-8 border-2 border-primary/30"
+              className="bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl p-8 border-2 border-primary/30"
             >
               <div className="text-center mb-6">
                 <h3 className="text-2xl font-bold mb-2">Example Earnings</h3>
@@ -327,7 +327,7 @@ export default function LandingPage() {
               
               {[
                 { engagement: "Low", upvotes: "10-20", earnings: "$0.50 - $2", color: "bg-yellow-500" },
-                { engagement: "Medium", upvotes: "50-100", earnings: "$5 - $20", color: "bg-maximum-yellow" },
+                { engagement: "Medium", upvotes: "50-100", earnings: "$5 - $20", color: "bg-accent" },
                 { engagement: "High", upvotes: "200-500", earnings: "$30 - $80", color: "bg-red-500" },
                 { engagement: "Viral", upvotes: "1000+", earnings: "$100 - $200+", color: "bg-purple-500" }
               ].map((tier, index) => (
@@ -346,7 +346,7 @@ export default function LandingPage() {
                       <div className="text-sm text-muted-foreground">{tier.upvotes} upvotes</div>
                     </div>
                   </div>
-                  <div className="text-lg font-bold text-japanese-laurel">{tier.earnings}</div>
+                  <div className="text-lg font-bold text-primary">{tier.earnings}</div>
                 </motion.div>
               ))}
             </motion.div>
@@ -415,7 +415,7 @@ export default function LandingPage() {
       </section>
 
       {/* Authentication CTA Section */}
-      <section className="py-24 px-6 bg-gradient-to-br from-primary/10 via-maximum-yellow/10 to-accent/10">
+      <section className="py-24 px-6 bg-gradient-to-br from-primary/10 via-accent/10 to-accent/10">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -550,10 +550,10 @@ export default function LandingPage() {
               whileHover={{ y: -10 }}
               className="bg-card border rounded-2xl p-6 relative overflow-hidden group"
             >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-maximum-yellow/10 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500" />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500" />
               
               <div className="relative">
-                <User className="h-10 w-10 text-maximum-yellow mb-3" />
+                <User className="h-10 w-10 text-accent mb-3" />
                 <h3 className="text-xl font-bold mb-2">Email & Google</h3>
                 <p className="text-muted-foreground mb-4 text-sm">
                   Quick signup with email or Google account for instant access.
