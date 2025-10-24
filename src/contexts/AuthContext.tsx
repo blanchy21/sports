@@ -371,8 +371,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let userData: AiohaUserData | null = null;
       console.log("Full loginResult object:", JSON.stringify(loginResult, null, 2));
       
-      // Add a small delay to allow Aioha to fully process the login
+      // First, check if the loginResult itself contains user data
       if (loginResult) {
+        console.log("Checking loginResult for user data...");
+        if (loginResult.user && loginResult.user.username) {
+          userData = {
+            username: loginResult.user.username,
+            id: loginResult.user.username,
+            sessionId: loginResult.user.session,
+          };
+          console.log("Found user data in loginResult:", userData);
+        } else if (loginResult.username) {
+          userData = {
+            username: loginResult.username,
+            id: loginResult.username,
+            sessionId: loginResult.session,
+          };
+          console.log("Found username in loginResult:", userData);
+        } else {
+          // Try to find username in any nested property
+          console.log("Searching for username in loginResult properties...");
+          const findUsername = (obj: any, depth = 0): string | null => {
+            if (depth > 3) return null; // Prevent infinite recursion
+            if (typeof obj !== 'object' || obj === null) return null;
+            
+            for (const [key, value] of Object.entries(obj)) {
+              if (key === 'username' && typeof value === 'string' && value.trim()) {
+                return value.trim();
+              }
+              if (typeof value === 'object' && value !== null) {
+                const found = findUsername(value, depth + 1);
+                if (found) return found;
+              }
+            }
+            return null;
+          };
+          
+          const foundUsername = findUsername(loginResult);
+          if (foundUsername) {
+            userData = {
+              username: foundUsername,
+              id: foundUsername,
+              sessionId: loginResult.session,
+            };
+            console.log("Found username in nested loginResult:", userData);
+          }
+        }
+      }
+      
+      // Add a small delay to allow Aioha to fully process the login
+      if (loginResult && !userData) {
         console.log("Waiting for Aioha to process login...");
         await new Promise(resolve => setTimeout(resolve, 100));
         
@@ -653,7 +701,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           } catch (fallbackError) {
             console.log("Fallback user data retrieval failed:", fallbackError);
-            throw new Error("Unable to determine username from Aioha authentication. Please try logging in again.");
+            console.log("Final Aioha state check:");
+            console.log("- aioha object keys:", Object.keys(aioha));
+            console.log("- aioha.user:", (aioha as any).user);
+            console.log("- aioha.currentUser:", (aioha as any).currentUser);
+            console.log("- aioha.username:", (aioha as any).username);
+            console.log("- aioha.account:", (aioha as any).account);
+            console.log("- aioha.session:", (aioha as any).session);
+            console.log("- aioha.auth:", (aioha as any).auth);
+            
+            throw new Error("Unable to determine username from Aioha authentication. This may be due to a temporary issue with the authentication provider. Please try logging in again or use a different authentication method.");
           }
         }
       }
