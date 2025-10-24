@@ -8,9 +8,9 @@
 import { initializeWorkerBeeClient } from '../hive-workerbee/client';
 import { fetchUserAccount } from '../hive-workerbee/account';
 import { fetchSportsblockPosts, searchPosts } from '../hive-workerbee/content';
-import { publishPost, canUserPost } from '../hive-workerbee/posting';
-import { castVote, getUserVotingPower, getUserRecentVotes } from '../hive-workerbee/voting';
-import { postComment, fetchComments } from '../hive-workerbee/comments';
+import { canUserPost } from '../hive-workerbee/posting';
+import { getUserVotingPower, getUserRecentVotes } from '../hive-workerbee/voting';
+import { fetchComments } from '../hive-workerbee/comments';
 
 // Test configuration
 const TEST_USERNAME = 'gtg'; // Using a known active account for testing
