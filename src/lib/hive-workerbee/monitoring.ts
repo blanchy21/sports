@@ -215,7 +215,7 @@ export class WorkerBeeMonitor {
       : 0;
     const successRate = totalOperations > 0 
       ? (recentPerformance.filter(p => p.success).length / totalOperations) * 100 
-      : 0;
+      : 100;
     const slowOperations = recentPerformance
       .filter(p => p.duration > this.alertConfig.performanceThreshold)
       .slice(-10);
