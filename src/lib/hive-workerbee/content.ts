@@ -176,12 +176,60 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       posts = (accountPosts || []) as unknown as HivePost[];
     } else {
       // Fetch posts from Sportsblock community using optimized caching
-      // Use the community name instead of ID for get_discussions_by_created
-      const communityPosts = await getContentOptimized('get_discussions_by_created', [{
-        tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-        limit: limit
-      }]);
-      posts = (communityPosts || []) as unknown as HivePost[];
+      // For pagination, we need to use get_discussions_by_created with proper before date
+      if (filters.before) {
+        // Parse the cursor to get the date from the last post
+        const [author, permlink] = filters.before.split('/');
+        
+        if (author && permlink) {
+          try {
+            // Get the specific post to extract its creation date
+            const postData = await getContentOptimized('get_content', [author, permlink]) as HivePost;
+            
+            if (postData && postData.created) {
+              // Use the post's creation date as the 'before' parameter
+              const beforeDate = postData.created;
+              
+              const communityPosts = await getContentOptimized('get_discussions_by_created', [{
+                tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+                limit: limit,
+                start_author: '',
+                start_permlink: '',
+                before_date: beforeDate
+              }]);
+              posts = (communityPosts || []) as unknown as HivePost[];
+            } else {
+              // Fallback to regular fetch if we can't get the post date
+              const communityPosts = await getContentOptimized('get_discussions_by_created', [{
+                tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+                limit: limit
+              }]);
+              posts = (communityPosts || []) as unknown as HivePost[];
+            }
+          } catch (error) {
+            console.warn('[fetchSportsblockPosts] Error getting post date for pagination, falling back to regular fetch:', error);
+            const communityPosts = await getContentOptimized('get_discussions_by_created', [{
+              tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+              limit: limit
+            }]);
+            posts = (communityPosts || []) as unknown as HivePost[];
+          }
+        } else {
+          // Invalid cursor format, fallback to regular fetch
+          const communityPosts = await getContentOptimized('get_discussions_by_created', [{
+            tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+            limit: limit
+          }]);
+          posts = (communityPosts || []) as unknown as HivePost[];
+        }
+      } else {
+        // First page - use get_discussions_by_created for chronological order
+        const communityPosts = await getContentOptimized('get_discussions_by_created', [{
+          tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+          limit: limit
+        }]);
+        posts = (communityPosts || []) as unknown as HivePost[];
+      }
     }
 
     // Filter to only Sportsblock posts
@@ -214,7 +262,8 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
     filteredPosts = sortPosts(filteredPosts, filters.sort || 'created') as SportsblockPost[];
 
     // Determine if there are more posts
-    const hasMore = filteredPosts.length === limit;
+    // Use the original posts length before filtering to determine hasMore
+    const hasMore = posts.length === limit;
 
     // Generate next cursor for pagination
     const nextCursor = hasMore && filteredPosts.length > 0 

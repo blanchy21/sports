@@ -34,6 +34,22 @@ export interface AiohaLoginResult {
   username?: string;
   success?: boolean;
   error?: string;
+  user?: {
+    username?: string;
+    name?: string;
+    session?: string;
+    sessionId?: string;
+    session_id?: string;
+    [key: string]: unknown;
+  };
+  account?: {
+    name?: string;
+    username?: string;
+    [key: string]: unknown;
+  };
+  session?: string;
+  sessionId?: string;
+  session_id?: string;
   [key: string]: unknown;
 }
 

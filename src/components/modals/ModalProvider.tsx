@@ -6,10 +6,11 @@ import { CommentsModal } from "./CommentsModal";
 import { UpvoteListModal } from "./UpvoteListModal";
 import { DescriptionModal } from "./DescriptionModal";
 import { UserProfileModal } from "./UserProfileModal";
+import { FollowersListModal } from "./FollowersListModal";
 
 interface ModalContextType {
-  openModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile', data?: Record<string, unknown>) => void;
-  closeModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile') => void;
+  openModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'followersList', data?: Record<string, unknown>) => void;
+  closeModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'followersList') => void;
   closeAllModals: () => void;
 }
 
@@ -70,6 +71,14 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
           isOpen={modals.userProfile.isOpen}
           onClose={() => closeModal('userProfile')}
           data={modals.userProfile.data}
+        />
+      )}
+      
+      {modals.followersList.isOpen && (
+        <FollowersListModal 
+          isOpen={modals.followersList.isOpen}
+          onClose={() => closeModal('followersList')}
+          data={modals.followersList.data}
         />
       )}
     </ModalContext.Provider>

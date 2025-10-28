@@ -17,9 +17,10 @@ import {
   User,
   DollarSign,
   BookOpen,
-  BarChart3
+  BarChart3,
+  Users,
+  UserPlus
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserProfilePopup } from "@/components/UserProfilePopup";
 import { Avatar } from "@/components/ui/Avatar";
@@ -36,6 +37,8 @@ const navigationItems = [
   { href: "/drafts", icon: FileEdit, label: "Drafts", requireAuth: false },
   { href: "/replies", icon: MessageSquare, label: "Replies", requireAuth: false },
   { href: "/profile", icon: User, label: "Profile", requireAuth: false },
+  { href: "/followers", icon: Users, label: "Followers", requireAuth: true },
+  { href: "/following", icon: UserPlus, label: "Following", requireAuth: true },
   { href: "/wallet", icon: DollarSign, label: "Wallet", requireAuth: false },
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", requireAuth: false },
   { href: "/monitoring", icon: BarChart3, label: "Monitoring", requireAuth: false },
@@ -48,34 +51,45 @@ export const Sidebar: React.FC = () => {
   const [isHydrated, setIsHydrated] = useState(false);
   const profileTriggerRef = useRef<HTMLDivElement>(null);
 
-  // Ensure hydration is complete before showing user profile
+  // Ensure hydration is complete before showing dynamic content
   useEffect(() => {
     setIsHydrated(true);
   }, []);
 
+  // Use a consistent base className that doesn't change between server/client
+  const getLinkClassName = () => {
+    // Always return the same base classes to prevent hydration mismatch
+    // Active state will be handled by CSS or after hydration
+    return "flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors text-muted-foreground hover:bg-accent hover:text-accent-foreground";
+  };
+
   return (
-    <aside className="hidden lg:flex lg:flex-col lg:w-80 lg:fixed lg:inset-y-0 lg:pt-24 lg:pb-4 lg:overflow-y-auto lg:border-r bg-background">
-      <div className="flex flex-col flex-1 min-h-0">
+    <>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .sidebar-link[data-active="true"] {
+            background-color: hsl(var(--primary)) !important;
+            color: hsl(var(--primary-foreground)) !important;
+          }
+        `
+      }} />
+      <aside className="hidden lg:flex lg:flex-col lg:w-80 lg:fixed lg:inset-y-0 lg:pt-24 lg:pb-4 lg:overflow-y-auto lg:border-r bg-background">
+        <div className="flex flex-col flex-1 min-h-0">
         {/* Navigation */}
         <nav className="flex-1 px-4 py-4 space-y-1">
           {navigationItems.map((item) => {
             // Skip items that require auth if user is not authenticated
+            if (item.requireAuth && !isHydrated) return null;
             if (item.requireAuth && !user) return null;
 
             const Icon = item.icon;
-            // Use pathname directly for active state to avoid hydration mismatch
-            const isActive = pathname === item.href;
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={cn(
-                  "flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
+                className={`sidebar-link ${getLinkClassName()}`}
+                data-active={isHydrated && pathname === item.href ? 'true' : 'false'}
               >
                 <Icon className="mr-3 h-5 w-5" />
                 {item.label}
@@ -119,6 +133,7 @@ export const Sidebar: React.FC = () => {
           triggerRef={profileTriggerRef}
         />
       )}
-    </aside>
+      </aside>
+    </>
   );
 };

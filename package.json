@@ -16,6 +16,7 @@
     "test:workerbee:comments": "npx tsx scripts/test-workerbee.ts comments",
     "benchmark:workerbee": "npx tsx scripts/benchmark-workerbee.ts",
     "test:optimizations": "npx tsx scripts/test-optimizations.ts",
+    "test:node-health": "npx tsx scripts/test-node-health.ts",
     "monitor:workerbee": "npx tsx scripts/monitor-workerbee.ts",
     "monitor:workerbee:watch": "npx tsx scripts/monitor-workerbee.ts continuous"
   },
@@ -42,6 +43,7 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.64.0",
     "react-markdown": "^10.1.0",
+    "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.18",

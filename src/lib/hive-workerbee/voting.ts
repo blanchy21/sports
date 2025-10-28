@@ -1,6 +1,10 @@
 
 import { makeHiveApiCall } from './api';
 import { aioha } from '@/lib/aioha/config';
+import { 
+  createVoteOperation, 
+  getVotingPowerWax
+} from './wax-helpers';
 
 // Types matching the original voting.ts interface
 export interface VoteResult {
@@ -32,7 +36,7 @@ function getUserVote(post: { active_votes?: HiveVote[] }, voter: string): HiveVo
 }
 
 /**
- * Cast a vote on a post or comment using Aioha
+ * Cast a vote on a post or comment using Wax
  * @param voteData - Vote data
  * @returns Vote result
  */
@@ -42,18 +46,15 @@ export async function castVote(voteData: VoteData): Promise<VoteResult> {
       throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
     }
 
-    // Validate vote weight (0-100)
-    if (voteData.weight < 0 || voteData.weight > 100) {
-      throw new Error('Vote weight must be between 0 and 100');
-    }
-
-    // Create vote operation
-    const operation = {
+    // Create vote operation using Wax helpers
+    const operation = createVoteOperation({
       voter: voteData.voter,
       author: voteData.author,
       permlink: voteData.permlink,
-      weight: voteData.weight * 100, // Convert to 0-10000 scale
-    };
+      weight: voteData.weight
+    });
+
+    console.log('[castVote] Wax vote operation created:', operation);
 
     // Use Aioha to sign and broadcast the transaction
     // Aioha expects operations in a specific format - each operation should be an array
@@ -69,7 +70,7 @@ export async function castVote(voteData: VoteData): Promise<VoteResult> {
       transactionId: (result as { id?: string })?.id || 'unknown',
     };
   } catch (error) {
-    console.error('Error casting vote with Aioha:', error);
+    console.error('Error casting vote with Wax:', error);
     
     return {
       success: false,
@@ -129,21 +130,34 @@ export async function getPostVotes(author: string, permlink: string): Promise<Hi
 }
 
 /**
- * Get user's voting power using WorkerBee/Wax
+ * Get user's voting power using Wax
  * @param username - Username
  * @returns Voting power percentage (0-100)
  */
 export async function getUserVotingPower(username: string): Promise<number> {
   try {
-
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as Array<{ voting_power: number }>;
+    console.log(`[getUserVotingPower] Getting voting power for ${username} using Wax`);
     
-    if (!account || account.length === 0) return 0;
+    // Use Wax helpers for voting power
+    const votingPower = await getVotingPowerWax(username);
     
-    return ((account[0] as { voting_power: number }).voting_power / 100); // Convert from 0-10000 to 0-100
+    console.log(`[getUserVotingPower] User ${username} has ${votingPower.toFixed(2)}% voting power`);
+    return votingPower;
   } catch (error) {
-    console.error('Error fetching voting power with WorkerBee:', error);
-    return 0;
+    console.error('Error fetching voting power with Wax:', error);
+    
+    // Fallback to original method if Wax fails
+    try {
+      console.log(`[getUserVotingPower] Falling back to original method`);
+      const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as Array<{ voting_power: number }>;
+      
+      if (!account || account.length === 0) return 0;
+      
+      return ((account[0] as { voting_power: number }).voting_power / 100); // Convert from 0-10000 to 0-100
+    } catch (fallbackError) {
+      console.error('Error in fallback voting power check:', fallbackError);
+      return 0;
+    }
   }
 }
 
@@ -315,34 +329,39 @@ export function getHiveSignerVoteUrl(voteData: VoteData): string {
 }
 
 /**
- * Batch vote on multiple posts using Aioha
+ * Batch vote on multiple posts using Wax
  * @param votes - Array of vote data
  * @returns Vote results
  */
 export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
   try {
-    // Create multiple vote operations in Aioha format
-    // Aioha expects operations in a specific format - each operation should be an array
-    // Format: [operation_type, operation_data]
-    const operations = votes.map(vote => [
-      'vote',
-      {
-        voter: vote.voter,
-        author: vote.author,
-        permlink: vote.permlink,
-        weight: vote.weight * 100,
-      }
-    ]);
+    console.log(`[batchVote] Processing ${votes.length} votes using Wax`);
+    
+    // Create multiple vote operations using Wax helpers
+    const operations = votes.map(vote => createVoteOperation({
+      voter: vote.voter,
+      author: vote.author,
+      permlink: vote.permlink,
+      weight: vote.weight
+    }));
+
+    console.log(`[batchVote] Created ${operations.length} Wax vote operations`);
 
     // Use Aioha to sign and broadcast all operations in a single transaction
-    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(operations, 'posting');
+    // Aioha expects operations in a specific format - each operation should be an array
+    // Format: [operation_type, operation_data]
+    const aiohaOperations = operations.map(op => ['vote', op]);
+    
+    const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(aiohaOperations, 'posting');
+
+    console.log(`[batchVote] Batch vote completed with transaction ID: ${(result as { id?: string })?.id}`);
 
     return votes.map(() => ({
       success: true,
       transactionId: (result as { id?: string })?.id || 'unknown',
     }));
   } catch (error) {
-    console.error('Error batch voting with Aioha:', error);
+    console.error('Error batch voting with Wax:', error);
     
     return votes.map(() => ({
       success: false,

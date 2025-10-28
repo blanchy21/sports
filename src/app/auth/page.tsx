@@ -126,12 +126,37 @@ export default function AuthPage() {
     if (!aioha || !isInitialized) return;
 
     const handleAuthSuccess = async (event: unknown) => {
+      console.log("=== AUTH SUCCESS EVENT DEBUG ===");
       console.log("Aioha authentication successful, processing login...", event);
+      console.log("Event type:", typeof event);
+      console.log("Event keys:", event && typeof event === 'object' ? Object.keys(event) : "Not an object");
+      console.log("Full event structure:", JSON.stringify(event, null, 2));
+      
+      // Additional debugging for Aioha instance state
+      if (aioha) {
+        console.log("Aioha instance state at success event:");
+        console.log("- aioha.user:", (aioha as any).user);
+        console.log("- aioha.currentUser:", (aioha as any).currentUser);
+        console.log("- aioha.username:", (aioha as any).username);
+        console.log("- aioha.account:", (aioha as any).account);
+        console.log("- aioha.session:", (aioha as any).session);
+        console.log("- aioha.auth:", (aioha as any).auth);
+        console.log("- aioha keys:", Object.keys(aioha));
+      }
+      console.log("=== END AUTH SUCCESS DEBUG ===");
+      
       setIsConnecting(true);
       setErrorMessage(null);
 
       try {
-        await loginWithAioha(event as AiohaLoginResult);
+        // Convert the event to AiohaLoginResult format
+        const loginResult: AiohaLoginResult = {
+          ...(event as any),
+          success: true, // Mark as successful since this is a success event
+        };
+        
+        console.log("Converted login result:", loginResult);
+        await loginWithAioha(loginResult);
         console.log("Aioha login successful, redirecting to feed");
         setShowAiohaModal(false);
         router.push('/feed');
@@ -272,10 +297,18 @@ export default function AuthPage() {
       console.log("Result type:", typeof result);
       console.log("Result keys:", result ? Object.keys(result) : "No result");
       
-      if (result && (result as { username?: string }).username && 
-          ((result as { success?: boolean }).success !== false)) {
+      // Convert result to AiohaLoginResult format
+      const loginResult: AiohaLoginResult = {
+        ...(result as any),
+        success: (result as any).success !== false, // Default to true unless explicitly false
+      };
+      
+      console.log("Converted login result:", loginResult);
+      
+      if (result && ((result as any).username || (result as any).user || (result as any).account) && 
+          ((result as any).success !== false)) {
         console.log("Aioha login successful, processing...");
-        await loginWithAioha(result);
+        await loginWithAioha(loginResult);
         setSelectedProvider(null);
         setHiveUsername("");
         router.push('/feed');
@@ -283,7 +316,7 @@ export default function AuthPage() {
         console.log("User already logged in, processing existing session...");
         try {
           // For already logged in case, try to get user data from Aioha instance directly
-          await loginWithAioha(result); // Pass the result even though it has errorCode 4901
+          await loginWithAioha(loginResult); // Pass the converted result even though it has errorCode 4901
           setSelectedProvider(null);
           setHiveUsername("");
           router.push('/feed');

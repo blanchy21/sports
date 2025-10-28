@@ -28,6 +28,10 @@ import {
   getCacheStatistics as getCacheStats,
   clearOptimizationCache as clearOptCache
 } from '@/lib/hive-workerbee/optimization';
+import { 
+  getHiveNodeHealthReport,
+  startHiveNodeHealthMonitoring
+} from '@/lib/hive-workerbee/api';
 
 interface MonitoringData {
   errors: {
@@ -70,9 +74,29 @@ interface MonitoringData {
   };
 }
 
+interface NodeHealthData {
+  totalNodes: number;
+  healthyNodes: number;
+  unhealthyNodes: number;
+  averageLatency: number;
+  bestNode: string;
+  worstNode: string;
+  nodeStatuses: Array<{
+    url: string;
+    isHealthy: boolean;
+    latency: number;
+    lastChecked: number;
+    successRate: number;
+    consecutiveFailures: number;
+    lastError?: string;
+    healthScore: number;
+  }>;
+}
+
 export default function MonitoringPage() {
   const [monitoringData, setMonitoringData] = useState<MonitoringData | null>(null);
   const [cacheStats, setCacheStats] = useState<{ size: number; maxSize: number; hitRate: number } | null>(null);
+  const [nodeHealthData, setNodeHealthData] = useState<NodeHealthData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -82,13 +106,15 @@ export default function MonitoringPage() {
       setIsLoading(true);
       
       // Fetch all monitoring data
-      const [monitoring, cache] = await Promise.all([
+      const [monitoring, cache, nodeHealth] = await Promise.all([
         getMonitoringStats(),
-        getCacheStats()
+        getCacheStats(),
+        Promise.resolve(getHiveNodeHealthReport())
       ]);
 
       setMonitoringData(monitoring);
       setCacheStats(cache);
+      setNodeHealthData(nodeHealth);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching monitoring data:', error);
@@ -99,6 +125,10 @@ export default function MonitoringPage() {
 
   useEffect(() => {
     setIsClient(true);
+    
+    // Start node health monitoring
+    startHiveNodeHealthMonitoring();
+    
     fetchMonitoringData();
     
     // Auto-refresh every 30 seconds
@@ -257,6 +287,73 @@ export default function MonitoringPage() {
                 </ul>
               </div>
             )}
+          </Card>
+        )}
+
+        {/* Node Health Status */}
+        {nodeHealthData && (
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold flex items-center">
+                <Activity className="h-5 w-5 mr-2" />
+                Hive Node Health
+              </h2>
+              <div className="flex items-center space-x-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">{nodeHealthData.healthyNodes}</p>
+                  <p className="text-xs text-muted-foreground">Healthy</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-red-600">{nodeHealthData.unhealthyNodes}</p>
+                  <p className="text-xs text-muted-foreground">Unhealthy</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600">{nodeHealthData.averageLatency.toFixed(0)}ms</p>
+                  <p className="text-xs text-muted-foreground">Avg Latency</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Node Status List */}
+            <div className="space-y-3">
+              {nodeHealthData.nodeStatuses.map((node) => (
+                <div key={node.url} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-3 h-3 rounded-full ${node.isHealthy ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <div>
+                      <p className="font-medium text-sm">{node.url}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Health Score: {node.healthScore.toFixed(0)}% | 
+                        Success Rate: {node.successRate.toFixed(1)}% | 
+                        Latency: {node.latency}ms
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant={node.isHealthy ? 'default' : 'destructive'}>
+                      {node.isHealthy ? 'Healthy' : 'Unhealthy'}
+                    </Badge>
+                    {node.lastError && (
+                      <p className="text-xs text-red-600 mt-1 truncate max-w-48">
+                        {node.lastError}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Best/Worst Node Info */}
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div className="p-3 bg-green-50 rounded-lg">
+                <h4 className="font-medium text-green-800 mb-1">Best Node</h4>
+                <p className="text-sm text-green-700 truncate">{nodeHealthData.bestNode}</p>
+              </div>
+              <div className="p-3 bg-red-50 rounded-lg">
+                <h4 className="font-medium text-red-800 mb-1">Worst Node</h4>
+                <p className="text-sm text-red-700 truncate">{nodeHealthData.worstNode}</p>
+              </div>
+            </div>
           </Card>
         )}
 

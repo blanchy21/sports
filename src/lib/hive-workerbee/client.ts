@@ -75,12 +75,23 @@ export async function initializeWorkerBeeClient(): Promise<InstanceType<typeof W
 
 /**
  * Get Wax instance for building transactions
+ * Enhanced with better error handling and configuration
  * @returns Wax instance
  */
 export async function getWaxClient(): Promise<IHiveChainInterface> {
-  // Initialize WorkerBee client first, then return the wax instance
-  const client = await initializeWorkerBeeClient();
-  return getWaxFromWorkerBee(client);
+  try {
+    console.log('[Wax Client] Initializing Wax client...');
+    
+    // Initialize WorkerBee client first, then return the wax instance
+    const client = await initializeWorkerBeeClient();
+    const wax = getWaxFromWorkerBee(client);
+    
+    console.log('[Wax Client] Wax client initialized successfully');
+    return wax;
+  } catch (error) {
+    console.error('[Wax Client] Failed to initialize Wax client:', error);
+    throw new Error(`Failed to initialize Wax client: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 /**
@@ -116,6 +127,71 @@ export function getHiveNodes(): string[] {
  */
 export function createWorkerBeeClient(options?: IStartConfiguration): InstanceType<typeof WorkerBee> {
   return new WorkerBee(options);
+}
+
+/**
+ * Get Wax configuration options
+ * @returns Wax configuration
+ */
+export function getWaxConfiguration(): {
+  nodes: string[];
+  timeout: number;
+  retries: number;
+} {
+  return {
+    nodes: getHiveNodes(),
+    timeout: 30000, // 30 seconds
+    retries: 3
+  };
+}
+
+/**
+ * Get Wax protocol information
+ * @returns Protocol information
+ */
+export async function getWaxProtocolInfo(): Promise<{
+  version: string;
+  chainId: string;
+  headBlockNumber: number;
+  lastIrreversibleBlockNumber: number;
+}> {
+  try {
+    // Temporarily disable Wax API calls due to requestInterceptor issues
+    throw new Error('Wax API calls temporarily disabled');
+  } catch (error) {
+    console.error('[Wax Client] Failed to get protocol info:', error);
+    return {
+      version: 'unknown',
+      chainId: 'unknown',
+      headBlockNumber: 0,
+      lastIrreversibleBlockNumber: 0
+    };
+  }
+}
+
+/**
+ * Check Wax client health
+ * @returns Health status
+ */
+export async function checkWaxHealth(): Promise<{
+  isHealthy: boolean;
+  latency: number;
+  error?: string;
+}> {
+  const startTime = Date.now();
+  
+  try {
+    // Temporarily disable Wax API calls due to requestInterceptor issues
+    throw new Error('Wax API calls temporarily disabled');
+  } catch (error) {
+    const latency = Date.now() - startTime;
+    
+    return {
+      isHealthy: false,
+      latency,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
 }
 
 // Export the main client instance (lazy initialization)

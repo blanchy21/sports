@@ -371,32 +371,74 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let userData: AiohaUserData | null = null;
       console.log("Full loginResult object:", JSON.stringify(loginResult, null, 2));
       
+      // Enhanced logging to understand the structure
+      if (loginResult) {
+        console.log("=== DETAILED LOGIN RESULT ANALYSIS ===");
+        console.log("loginResult type:", typeof loginResult);
+        console.log("loginResult keys:", Object.keys(loginResult));
+        console.log("loginResult.success:", (loginResult as any).success);
+        console.log("loginResult.username:", loginResult.username);
+        console.log("loginResult.user:", loginResult.user);
+        console.log("loginResult.account:", loginResult.account);
+        console.log("loginResult.session:", loginResult.session);
+        console.log("loginResult.sessionId:", loginResult.sessionId);
+        console.log("loginResult.session_id:", loginResult.session_id);
+        
+        // Log all properties for debugging
+        console.log("All loginResult properties:");
+        Object.entries(loginResult).forEach(([key, value]) => {
+          console.log(`  ${key}:`, value, `(type: ${typeof value})`);
+        });
+        console.log("=== END ANALYSIS ===");
+      }
+      
       // First, check if the loginResult itself contains user data
       if (loginResult) {
         console.log("Checking loginResult for user data...");
-        if (loginResult.user && loginResult.user.username) {
-          userData = {
-            username: loginResult.user.username,
-            id: loginResult.user.username,
-            sessionId: loginResult.user.session,
-          };
-          console.log("Found user data in loginResult:", userData);
-        } else if (loginResult.username) {
-          userData = {
-            username: loginResult.username,
-            id: loginResult.username,
-            sessionId: loginResult.session,
-          };
-          console.log("Found username in loginResult:", userData);
-        } else {
-          // Try to find username in any nested property
+        
+        // Try multiple ways to extract username from the login result
+        let extractedUsername: string | null = null;
+        let extractedSessionId: string | null = null;
+        
+        // Method 1: Direct username property
+        if (loginResult.username && typeof loginResult.username === 'string' && loginResult.username.trim()) {
+          extractedUsername = loginResult.username.trim();
+          console.log("Found direct username:", extractedUsername);
+        }
+        
+        // Method 2: User object with username
+        if (!extractedUsername && loginResult.user) {
+          if (loginResult.user.username && typeof loginResult.user.username === 'string' && loginResult.user.username.trim()) {
+            extractedUsername = loginResult.user.username.trim();
+            extractedSessionId = loginResult.user.session || (loginResult.user as any).sessionId || (loginResult.user as any).session_id;
+            console.log("Found username in user object:", extractedUsername);
+          } else if (loginResult.user.name && typeof loginResult.user.name === 'string' && loginResult.user.name.trim()) {
+            extractedUsername = loginResult.user.name.trim();
+            extractedSessionId = loginResult.user.session || (loginResult.user as any).sessionId || (loginResult.user as any).session_id;
+            console.log("Found name in user object:", extractedUsername);
+          }
+        }
+        
+        // Method 3: Account object
+        if (!extractedUsername && loginResult.account) {
+          if ((loginResult.account as any).username && typeof (loginResult.account as any).username === 'string' && (loginResult.account as any).username.trim()) {
+            extractedUsername = (loginResult.account as any).username.trim();
+            console.log("Found username in account object:", extractedUsername);
+          } else if (loginResult.account.name && typeof loginResult.account.name === 'string' && loginResult.account.name.trim()) {
+            extractedUsername = loginResult.account.name.trim();
+            console.log("Found name in account object:", extractedUsername);
+          }
+        }
+        
+        // Method 4: Deep search for username in any nested property
+        if (!extractedUsername) {
           console.log("Searching for username in loginResult properties...");
           const findUsername = (obj: any, depth = 0): string | null => {
             if (depth > 3) return null; // Prevent infinite recursion
             if (typeof obj !== 'object' || obj === null) return null;
             
             for (const [key, value] of Object.entries(obj)) {
-              if (key === 'username' && typeof value === 'string' && value.trim()) {
+              if ((key === 'username' || key === 'name') && typeof value === 'string' && value.trim()) {
                 return value.trim();
               }
               if (typeof value === 'object' && value !== null) {
@@ -407,15 +449,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             return null;
           };
           
-          const foundUsername = findUsername(loginResult);
-          if (foundUsername) {
-            userData = {
-              username: foundUsername,
-              id: foundUsername,
-              sessionId: loginResult.session,
-            };
-            console.log("Found username in nested loginResult:", userData);
+          extractedUsername = findUsername(loginResult);
+          if (extractedUsername) {
+            console.log("Found username in nested loginResult:", extractedUsername);
           }
+        }
+        
+        // If we found a username, create userData
+        if (extractedUsername) {
+          userData = {
+            username: extractedUsername,
+            id: extractedUsername,
+            sessionId: extractedSessionId || loginResult.session || loginResult.sessionId || loginResult.session_id,
+          };
+          console.log("Successfully extracted user data from loginResult:", userData);
+        } else {
+          console.log("No username found in loginResult, will try other methods...");
+          console.log("This might be a Keychain success response without user data - will try to get from Aioha instance");
         }
       }
       
@@ -611,6 +661,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   break; // Exit the loop once we find user data
                 }
               }
+            }
+          }
+        }
+        
+        // If we still don't have userData and we have a loginResult, try retry mechanism
+        if (loginResult && !userData) {
+          console.log("No user data found in loginResult, attempting retry mechanism...");
+          
+          const maxRetries = 3;
+          const baseDelay = 500; // Start with 500ms
+          
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            const delay = baseDelay * attempt; // Progressive delay: 500ms, 1000ms, 1500ms
+            console.log(`Retry attempt ${attempt}/${maxRetries}: Waiting ${delay}ms for Aioha to process login...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            
+            try {
+              console.log(`Retry attempt ${attempt}: Checking Aioha internal state...`);
+              const aiohaWithUser = aioha as AiohaInstanceWithUser;
+              console.log(`Retry attempt ${attempt}: Aioha.user:`, aiohaWithUser.user);
+              console.log(`Retry attempt ${attempt}: Aioha.currentUser:`, aiohaWithUser.currentUser);
+              console.log(`Retry attempt ${attempt}: Aioha.username:`, aiohaWithUser.username);
+              console.log(`Retry attempt ${attempt}: Aioha.account:`, aiohaWithUser.account);
+              
+              // Try to get user data from Aioha's internal state
+              if (aiohaWithUser.user && aiohaWithUser.user.username) {
+                userData = {
+                  username: aiohaWithUser.user.username,
+                  id: aiohaWithUser.user.username,
+                  sessionId: aiohaWithUser.user.sessionId || aiohaWithUser.user.session_id,
+                };
+                console.log(`Retry attempt ${attempt}: Found user data in Aioha.user:`, userData);
+                break;
+              } else if (aiohaWithUser.currentUser && aiohaWithUser.currentUser.username) {
+                userData = {
+                  username: aiohaWithUser.currentUser.username,
+                  id: aiohaWithUser.currentUser.username,
+                  sessionId: aiohaWithUser.currentUser.sessionId || aiohaWithUser.currentUser.session_id,
+                };
+                console.log(`Retry attempt ${attempt}: Found user data in Aioha.currentUser:`, userData);
+                break;
+              } else if (aiohaWithUser.username) {
+                userData = {
+                  username: aiohaWithUser.username,
+                  id: aiohaWithUser.username,
+                  sessionId: aiohaWithUser.sessionId || aiohaWithUser.session_id,
+                };
+                console.log(`Retry attempt ${attempt}: Found user data in Aioha.username:`, userData);
+                break;
+              } else if (aiohaWithUser.account && aiohaWithUser.account.name) {
+                userData = {
+                  username: aiohaWithUser.account.name,
+                  id: aiohaWithUser.account.name,
+                  sessionId: aiohaWithUser.sessionId || aiohaWithUser.session_id,
+                };
+                console.log(`Retry attempt ${attempt}: Found user data in Aioha.account:`, userData);
+                break;
+              } else {
+                console.log(`Retry attempt ${attempt}: No user data found in Aioha internal state`);
+              }
+            } catch (retryError) {
+              console.log(`Retry attempt ${attempt}: Error checking Aioha state:`, retryError);
             }
           }
         }

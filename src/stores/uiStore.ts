@@ -12,6 +12,7 @@ interface UIState {
     upvoteList: ModalState;
     description: ModalState;
     userProfile: ModalState;
+    followersList: ModalState;
   };
   sidebarOpen: boolean;
   rightSidebarOpen: boolean;
@@ -38,6 +39,7 @@ export const useUIStore = create<UIState & UIActions>((set) => ({
     upvoteList: { isOpen: false, type: null, data: null },
     description: { isOpen: false, type: null, data: null },
     userProfile: { isOpen: false, type: null, data: null },
+    followersList: { isOpen: false, type: null, data: null },
   },
   sidebarOpen: true,
   rightSidebarOpen: true,
@@ -78,6 +80,7 @@ export const useUIStore = create<UIState & UIActions>((set) => ({
         upvoteList: { isOpen: false, type: null, data: null },
         description: { isOpen: false, type: null, data: null },
         userProfile: { isOpen: false, type: null, data: null },
+        followersList: { isOpen: false, type: null, data: null },
       },
     }));
   },

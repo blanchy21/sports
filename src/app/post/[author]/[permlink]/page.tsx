@@ -14,9 +14,6 @@ import { calculatePendingPayout, formatAsset } from "@/lib/shared/utils";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useModal } from "@/components/modals/ModalProvider";
 import { useBookmarks } from "@/hooks/useBookmarks";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import Image from "next/image";
 import { formatDate, formatReadTime } from "@/lib/utils";
 
 export default function PostDetailPage() {
@@ -131,6 +128,11 @@ export default function PostDetailPage() {
 
   const pendingPayout = calculatePendingPayout(post);
 
+  // Debug: Log the post body to see what markdown content looks like
+  console.log('Post body content:', post.body);
+  console.log('Post title:', post.title);
+  console.log('Post author:', post.author);
+
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto p-6">
@@ -191,38 +193,14 @@ export default function PostDetailPage() {
 
         {/* Post Content */}
         <div className="prose prose-lg max-w-none mb-8">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              img: ({ src, alt }) => (
-                <Image
-                  src={String(src || '')}
-                  alt={String(alt || '')}
-                  width={700}
-                  height={400}
-                  className="rounded-lg shadow-md my-4 max-w-full h-auto"
-                  style={{ maxWidth: '100%', height: 'auto' }}
-                />
-              ),
-              p: ({ children }) => <p className="mb-4 leading-relaxed">{children}</p>,
-              h1: ({ children }) => <h1 className="text-2xl font-bold mb-4 mt-6">{children}</h1>,
-              h2: ({ children }) => <h2 className="text-xl font-bold mb-3 mt-5">{children}</h2>,
-              h3: ({ children }) => <h3 className="text-lg font-bold mb-2 mt-4">{children}</h3>,
-              blockquote: ({ children }) => (
-                <blockquote className="border-l-4 border-gray-300 pl-4 italic my-4">
-                  {children}
-                </blockquote>
-              ),
-              code: ({ children }) => (
-                <code className="bg-gray-100 px-1 py-0.5 rounded text-sm">{children}</code>
-              ),
-              pre: ({ children }) => (
-                <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto my-4">{children}</pre>
-              ),
+          <div 
+            dangerouslySetInnerHTML={{ 
+              __html: post.body
+                .replace(/<center>/g, '<div class="text-center my-4">')
+                .replace(/<\/center>/g, '</div>')
+                .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-lg shadow-md my-4" />')
             }}
-          >
-            {post.body}
-          </ReactMarkdown>
+          />
         </div>
 
         {/* Post Footer */}

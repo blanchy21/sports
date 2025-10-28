@@ -103,9 +103,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
   };
 
   const handleUserProfile = (username: string) => {
-    openModal('userProfile', {
-      username: username,
-    });
+    window.location.href = `/user/${username}`;
   };
 
   return (

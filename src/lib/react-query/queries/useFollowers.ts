@@ -8,20 +8,20 @@ import {
   SocialFilters 
 } from '@/lib/hive-workerbee/social';
 
-export function useFollowers(username: string, filters: SocialFilters = {}) {
+export function useFollowers(username: string, filters: SocialFilters = {}, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: [...queryKeys.users.followers(username), filters],
     queryFn: () => fetchFollowers(username, filters),
-    enabled: !!username,
+    enabled: options.enabled !== undefined ? options.enabled : !!username,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
-export function useFollowing(username: string, filters: SocialFilters = {}) {
+export function useFollowing(username: string, filters: SocialFilters = {}, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: [...queryKeys.users.following(username), filters],
     queryFn: () => fetchFollowing(username, filters),
-    enabled: !!username,
+    enabled: options.enabled !== undefined ? options.enabled : !!username,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -38,6 +38,12 @@ export function useFollowUser() {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.following(follower) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(username) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(follower) });
+      
+      // Invalidate the isFollowing check
+      queryClient.invalidateQueries({ 
+        queryKey: queryKeys.users.detail(username),
+        exact: false 
+      });
     },
   });
 }
@@ -54,6 +60,12 @@ export function useUnfollowUser() {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.following(follower) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(username) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(follower) });
+      
+      // Invalidate the isFollowing check
+      queryClient.invalidateQueries({ 
+        queryKey: queryKeys.users.detail(username),
+        exact: false 
+      });
     },
   });
 }

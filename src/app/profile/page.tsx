@@ -183,18 +183,24 @@ export default function ProfilePage() {
                   
                   {/* Stats Section */}
                   <div className="flex items-center space-x-6 mt-6 pt-4 border-t border-border">
-                    <div className="text-center">
+                    <button 
+                      onClick={() => router.push('/following')}
+                      className="text-center hover:opacity-70 transition-opacity cursor-pointer"
+                    >
                       <div className="text-2xl font-bold text-foreground">
                         {isRefreshing ? '...' : (user.hiveStats?.following || 0).toLocaleString()}
                       </div>
                       <div className="text-sm text-muted-foreground">Following</div>
-                    </div>
-                    <div className="text-center">
+                    </button>
+                    <button 
+                      onClick={() => router.push('/followers')}
+                      className="text-center hover:opacity-70 transition-opacity cursor-pointer"
+                    >
                       <div className="text-2xl font-bold text-foreground">
                         {isRefreshing ? '...' : (user.hiveStats?.followers || 0).toLocaleString()}
                       </div>
                       <div className="text-sm text-muted-foreground">Followers</div>
-                    </div>
+                    </button>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-foreground">
                         {isRefreshing ? '...' : (user.hiveStats?.postCount || 0).toLocaleString()}

@@ -5,12 +5,13 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { PostCard } from "@/components/PostCard";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { Plus, TrendingUp, Users, Award } from "lucide-react";
+import { Plus, TrendingUp, Users, Award, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Post, SPORT_CATEGORIES } from "@/types";
 import { fetchSportsblockPosts, SportsblockPost } from "@/lib/hive-workerbee/content";
 import { getAnalyticsData, CommunityStats } from "@/lib/hive-workerbee/analytics";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
 // No mock data needed - using real Hive blockchain content
 
@@ -21,6 +22,9 @@ export default function FeedPage() {
   const [posts, setPosts] = React.useState<SportsblockPost[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [nextCursor, setNextCursor] = React.useState<string | undefined>(undefined);
+  const [hasMore, setHasMore] = React.useState(false);
+  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
   const [communityStats, setCommunityStats] = React.useState<CommunityStats>({
     totalPosts: 0,
     totalAuthors: 0,
@@ -65,46 +69,73 @@ export default function FeedPage() {
     },
   ], [communityStats, statsLoading]);
 
-  const loadPosts = React.useCallback(async () => {
-    setIsLoading(true);
-    setStatsLoading(true);
-    setError(null);
-    setStatsError(null);
+  // Set up infinite scroll
+  useInfiniteScroll({
+    hasMore,
+    isLoading: isLoadingMore,
+    onLoadMore: () => loadPosts(true),
+  });
+
+  const loadPosts = React.useCallback(async (loadMore = false) => {
+    if (loadMore) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+      setStatsLoading(true);
+      setError(null);
+      setStatsError(null);
+    }
     
     try {
       const result = await fetchSportsblockPosts({
         sportCategory: selectedSport || undefined,
-        limit: 100, // Get more posts for better analytics
+        limit: 10, // Show 10 posts initially for better scrolling experience
         sort: 'created',
+        before: loadMore ? nextCursor : undefined,
       });
       
-      setPosts(result.posts);
+      if (loadMore) {
+        // Append new posts to existing ones
+        setPosts(prev => [...prev, ...result.posts]);
+      } else {
+        // Replace posts with new ones
+        setPosts(result.posts);
+      }
+      
+      // Update pagination state
+      setNextCursor(result.nextCursor);
+      setHasMore(result.hasMore);
       
       // Calculate analytics data from all posts (not filtered by sport)
-      try {
-        const allPostsResult = await fetchSportsblockPosts({
-          limit: 100,
-          sort: 'created',
-        });
-        
-        const analytics = getAnalyticsData(allPostsResult.posts);
-        setCommunityStats(analytics.communityStats);
-      } catch (analyticsError) {
-        console.error('Error calculating analytics:', analyticsError);
-        setStatsError('Failed to load statistics');
-        // Keep default stats values
+      if (!loadMore) {
+        try {
+          const allPostsResult = await fetchSportsblockPosts({
+            limit: 100,
+            sort: 'created',
+          });
+          
+          const analytics = getAnalyticsData(allPostsResult.posts);
+          setCommunityStats(analytics.communityStats);
+        } catch (analyticsError) {
+          console.error('Error calculating analytics:', analyticsError);
+          setStatsError('Failed to load statistics');
+          // Keep default stats values
+        }
       }
     } catch (err) {
       console.error('Error loading posts:', err);
       setError('Failed to load posts. Please try again later.');
       setStatsError('Failed to load statistics');
       // No fallback to mock data - show empty state instead
-      setPosts([]);
+      if (!loadMore) {
+        setPosts([]);
+      }
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
       setStatsLoading(false);
     }
-  }, [selectedSport]);
+  }, [selectedSport, nextCursor]);
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -122,12 +153,18 @@ export default function FeedPage() {
   React.useEffect(() => {
     const handleSportFilterChange = (event: CustomEvent) => {
       setSelectedSport(event.detail);
+      // Reset pagination when sport filter changes
+      setNextCursor(undefined);
+      setHasMore(false);
     };
 
     // Load saved sport filter from localStorage
     const savedSport = localStorage.getItem('selectedSport');
     if (savedSport) {
       setSelectedSport(savedSport);
+      // Reset pagination when loading saved filter
+      setNextCursor(undefined);
+      setHasMore(false);
     }
 
     window.addEventListener('sportFilterChanged', handleSportFilterChange as EventListener);
@@ -266,7 +303,7 @@ export default function FeedPage() {
                 <p className="text-gray-500 dark:text-gray-400 mb-6">
                   {error}
                 </p>
-                <Button onClick={loadPosts}>
+                <Button onClick={() => loadPosts(false)}>
                   Try Again
                 </Button>
               </div>
@@ -297,12 +334,24 @@ export default function FeedPage() {
           </div>
         </div>
 
-        {/* Load More */}
-        <div className="text-center">
-          <Button variant="outline" size="lg">
-            Load More Posts
-          </Button>
-        </div>
+        {/* Infinite Scroll Loading Indicator */}
+        {isLoadingMore && (
+          <div className="flex justify-center mt-8">
+            <div className="flex items-center text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading more posts...
+            </div>
+          </div>
+        )}
+        
+        {/* End of feed indicator */}
+        {!hasMore && posts.length > 0 && (
+          <div className="flex justify-center mt-8">
+            <div className="text-muted-foreground text-sm">
+              You&apos;ve reached the end of the feed
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

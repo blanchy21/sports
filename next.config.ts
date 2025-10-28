@@ -1,8 +1,12 @@
-// Temporarily comment out NextConfig type import to fix module resolution
-// import type { NextConfig } from "next";
+import type { NextConfig } from "next";
 
-const nextConfig = {
+const nextConfig: NextConfig = {
   // Performance optimizations
+  turbopack: {
+    resolveAlias: {
+      // Firebase/gRPC needs fs module, so we can't alias it to false
+    },
+  },
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@tanstack/react-query'],
@@ -25,6 +29,12 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'cdn.steemitimages.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'steemitimages.com',
         port: '',
         pathname: '/**',
       },
@@ -66,6 +76,12 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'files.peakd.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'files.dtube.tv',
         port: '',
         pathname: '/**',
@@ -79,58 +95,6 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: false,
-  },
-  webpack: (config: unknown, { isServer, dev }: { isServer: boolean; dev: boolean }) => {
-    const webpackConfig = config as { 
-      resolve: { fallback: Record<string, unknown> };
-      optimization: { splitChunks: any };
-    };
-    
-    if (!isServer) {
-      webpackConfig.resolve.fallback = {
-        ...webpackConfig.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
-      };
-    }
-
-    // Bundle optimization
-    if (!dev && !isServer) {
-      webpackConfig.optimization.splitChunks = {
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-            priority: 10,
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            priority: 5,
-            reuseExistingChunk: true,
-          },
-          hive: {
-            test: /[\\/]node_modules[\\/](@hiveio|@aioha)[\\/]/,
-            name: 'hive-libs',
-            chunks: 'all',
-            priority: 15,
-          },
-          ui: {
-            test: /[\\/]node_modules[\\/](lucide-react|@radix-ui)[\\/]/,
-            name: 'ui-libs',
-            chunks: 'all',
-            priority: 12,
-          },
-        },
-      };
-    }
-
-    return config;
   },
 };
 

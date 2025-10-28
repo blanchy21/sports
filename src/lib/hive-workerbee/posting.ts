@@ -2,6 +2,11 @@ import { SPORTS_ARENA_CONFIG, initializeWorkerBeeClient } from './client';
 import { makeHiveApiCall } from './api';
 import { HiveAccount } from '../shared/types';
 import type { ITransaction } from "@hiveio/wax";
+import { 
+  createPostOperation, 
+  createCommentOperation, 
+  checkResourceCreditsWax
+} from './wax-helpers';
 
 // Type definitions for better type safety
 interface HiveAccountWithRC extends HiveAccount {
@@ -23,12 +28,7 @@ interface BroadcastResult {
 
 
 
-interface RcResult {
-  rc_accounts?: Array<{
-    rc_manabar?: { current_mana: string };
-    max_rc?: string;
-  }>;
-}
+// Removed unused interface
 
 import { aioha } from '@/lib/aioha/config';
 // import { Wax } from '@hiveio/wax'; // Not needed for basic posting operations
@@ -55,20 +55,7 @@ export interface PublishResult {
   error?: string;
 }
 
-// Utility functions
-function generateUniquePermlink(title: string): string {
-  // Convert title to permlink format
-  const permlink = title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single
-    .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
-  
-  // Add timestamp to ensure uniqueness
-  const timestamp = Date.now();
-  return `${permlink}-${timestamp}`;
-}
+// Removed unused function - now using Wax helpers
 
 function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
   try {
@@ -79,73 +66,45 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
 }
 
 /**
- * Publish a post to the Hive blockchain using Aioha
+ * Publish a post to the Hive blockchain using Wax
  * @param postData - Post data to publish
  * @returns Publish result
  */
 export async function publishPost(postData: PostData): Promise<PublishResult> {
   try {
-    console.log('[publishPost] Starting post publication:', postData);
+    console.log('[publishPost] Starting post publication with Wax:', postData);
     
     if (!aioha) {
       console.error('[publishPost] Aioha is not available:', aioha);
       throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
     }
 
-    console.log('[publishPost] Aioha instance:', aioha);
-    console.log('[publishPost] Aioha methods:', Object.keys(aioha as object));
-
-    // Generate unique permlink
-    const permlink = generateUniquePermlink(postData.title);
-    
-    // Build JSON metadata
-    const metadata = {
-      app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
-      format: 'markdown',
-      tags: [
-        ...postData.tags,
-        SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-        'sportsblock'
-      ],
-      community: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
-      sport_category: postData.sportCategory,
-      image: postData.featuredImage ? [postData.featuredImage] : undefined,
-    };
-
-    // Add any additional metadata
-    if (postData.jsonMetadata) {
-      const additionalMetadata = parseJsonMetadata(postData.jsonMetadata);
-      Object.assign(metadata, additionalMetadata);
+    // Validate post data
+    const validation = validatePostData(postData);
+    if (!validation.isValid) {
+      throw new Error(`Post validation failed: ${validation.errors.join(', ')}`);
     }
 
-    // Create the post operation
-    const operation = {
-      parent_author: postData.parentAuthor || '',
-      parent_permlink: postData.parentPermlink || SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+    // Create post operation using Wax helpers
+    const operation = createPostOperation({
       author: postData.author,
-      permlink,
       title: postData.title,
       body: postData.body,
-      json_metadata: JSON.stringify(metadata),
-      max_accepted_payout: '1000000.000 HBD',
-      percent_hbd: 10000, // 100% HBD
-      allow_votes: true,
-      allow_curation_rewards: true,
-      extensions: [
-        [
-          0,
-          {
-            beneficiaries: SPORTS_ARENA_CONFIG.DEFAULT_BENEFICIARIES
-          }
-        ]
-      ]
-    };
+      parentAuthor: postData.parentAuthor,
+      parentPermlink: postData.parentPermlink,
+      sportCategory: postData.sportCategory,
+      featuredImage: postData.featuredImage,
+      tags: postData.tags,
+      jsonMetadata: postData.jsonMetadata
+    });
+
+    console.log('[publishPost] Wax operation created:', operation);
 
     // Use Aioha to sign and broadcast the transaction
     // Aioha expects operations in a specific format - each operation should be an array
     // Format: [operation_type, operation_data]
     const operations = [
-      ['post', operation]
+      ['comment', operation]
     ];
     
     console.log('[publishPost] Operations array:', operations);
@@ -169,17 +128,17 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
     }
     
     // Generate post URL
-    const url = `https://hive.blog/@${postData.author}/${permlink}`;
+    const url = `https://hive.blog/@${postData.author}/${operation.permlink}`;
 
     return {
       success: true,
       transactionId: (result as { id?: string })?.id || 'unknown',
       author: postData.author,
-      permlink,
+      permlink: operation.permlink,
       url,
     };
   } catch (error) {
-    console.error('Error publishing post with Aioha:', error);
+    console.error('Error publishing post with Wax:', error);
     
     return {
       success: false,
@@ -189,7 +148,7 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
 }
 
 /**
- * Publish a comment/reply to an existing post using Aioha
+ * Publish a comment/reply to an existing post using Wax
  * @param commentData - Comment data
  * @param aiohaInstance - Aioha instance (optional, will use default if not provided)
  * @returns Publish result
@@ -205,7 +164,7 @@ export async function publishComment(
   aiohaInstance?: unknown
 ): Promise<PublishResult> {
   try {
-    console.log('[publishComment] Starting comment publication:', commentData);
+    console.log('[publishComment] Starting comment publication with Wax:', commentData);
     
     // Use provided instance or fall back to default
     const aiohaToUse = aiohaInstance || (await import('@/lib/aioha/config')).aioha;
@@ -215,45 +174,26 @@ export async function publishComment(
       throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
     }
 
-    console.log('[publishComment] Aioha instance:', aiohaToUse);
-    console.log('[publishComment] Aioha methods:', Object.keys(aiohaToUse as object));
-
-    // Generate permlink for comment (timestamp-based)
-    const timestamp = Date.now();
-    const permlink = `re-${commentData.parentAuthor}-${commentData.parentPermlink}-${timestamp}`;
-    
-    console.log('[publishComment] Generated permlink:', permlink);
-    
-    // Build JSON metadata for comment
-    const metadata = {
-      app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
-      format: 'markdown',
-      tags: ['sportsblock'],
-    };
-
-    // Add any additional metadata
-    if (commentData.jsonMetadata) {
-      const additionalMetadata = parseJsonMetadata(commentData.jsonMetadata);
-      Object.assign(metadata, additionalMetadata);
-    }
-
-    // Create the comment operation
-    const operation = {
-      parent_author: commentData.parentAuthor,
-      parent_permlink: commentData.parentPermlink,
+    // Create comment operation using Wax helpers
+    const operation = createCommentOperation({
       author: commentData.author,
-      permlink,
-      title: '', // Comments don't have titles
       body: commentData.body,
-      json_metadata: JSON.stringify(metadata),
-      max_accepted_payout: '1000000.000 HBD',
-      percent_hbd: 10000,
-      allow_votes: true,
-      allow_curation_rewards: true,
-    };
+      parentAuthor: commentData.parentAuthor,
+      parentPermlink: commentData.parentPermlink,
+      jsonMetadata: commentData.jsonMetadata
+    });
 
-    console.log('[publishComment] Operation to broadcast:', operation);
+    console.log('[publishComment] Wax operation created:', operation);
 
+    // Use Aioha to sign and broadcast the transaction
+    // Aioha expects operations in a specific format - each operation should be an array
+    // Format: [operation_type, operation_data]
+    const operations = [
+      ['comment', operation]
+    ];
+    
+    console.log('[publishComment] Operations array:', operations);
+    
     // Check if signAndBroadcastTx method exists
     if (typeof (aiohaToUse as AiohaInstance)?.signAndBroadcastTx !== 'function') {
       console.error('[publishComment] signAndBroadcastTx method not available on Aioha instance');
@@ -262,27 +202,6 @@ export async function publishComment(
 
     // Use Aioha to sign and broadcast the transaction
     console.log('[publishComment] Attempting to sign and broadcast transaction...');
-    
-    // Aioha expects operations in a specific format - each operation should be an array
-    // Format: [operation_type, operation_data]
-    const operations = [
-      ['comment', {
-        parent_author: commentData.parentAuthor,
-        parent_permlink: commentData.parentPermlink,
-        author: commentData.author,
-        permlink,
-        title: '', // Comments don't have titles
-        body: commentData.body,
-        json_metadata: JSON.stringify(metadata),
-        max_accepted_payout: '1000000.000 HBD',
-        percent_hbd: 10000,
-        allow_votes: true,
-        allow_curation_rewards: true,
-      }]
-    ];
-    
-    console.log('[publishComment] Operations array:', operations);
-    
     const result = await (aiohaToUse as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
     
     console.log('[publishComment] Broadcast result:', result);
@@ -294,17 +213,17 @@ export async function publishComment(
     }
     
     // Generate comment URL
-    const url = `https://hive.blog/@${commentData.author}/${permlink}`;
+    const url = `https://hive.blog/@${commentData.author}/${operation.permlink}`;
 
     return {
       success: true,
       transactionId: (result as { id?: string })?.id || 'unknown',
       author: commentData.author,
-      permlink,
+      permlink: operation.permlink,
       url,
     };
   } catch (error) {
-    console.error('Error publishing comment with Aioha:', error);
+    console.error('Error publishing comment with Wax:', error);
     
     return {
       success: false,
@@ -419,7 +338,7 @@ export async function deletePost(
 }
 
 /**
- * Check if user has enough Resource Credits to post using WorkerBee
+ * Check if user has enough Resource Credits to post using Wax
  * @param username - Username to check
  * @returns True if user can post
  */
@@ -429,121 +348,68 @@ export async function canUserPost(username: string): Promise<{
   message?: string;
 }> {
   try {
-
-    // Use condenser_api.get_accounts to get account info including RC
-    const accountResult = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountWithRC[];
-    const account = accountResult && accountResult.length > 0 ? accountResult[0] : null;
+    console.log(`[canUserPost] Checking RC for user: ${username} using Wax`);
     
-    if (!account) {
-      return {
-        canPost: false,
-        rcPercentage: 0,
-        message: 'Unable to fetch account information'
-      };
+    // Use Wax helpers for RC checking
+    const rcCheck = await checkResourceCreditsWax(username);
+    
+    if (!rcCheck.canPost) {
+      console.log(`[canUserPost] User ${username} cannot post: ${rcCheck.message}`);
+      return rcCheck;
     }
 
-    // Extract RC information from account data
-    const rc_manabar = account.rc_manabar as { current_mana: string } | undefined;
-    const max_rc = account.max_rc as string | undefined;
-    
-    if (!rc_manabar || !max_rc) {
-      // Debug: Log all available fields in account data
-      console.log(`[canUserPost] Available account fields:`, Object.keys(account));
-      console.log(`[canUserPost] RC-related fields:`, {
-        rc_manabar: account.rc_manabar,
-        max_rc: account.max_rc,
-        rc_manabar_type: typeof account.rc_manabar,
-        max_rc_type: typeof account.max_rc
-      });
-      
-      // Try to get RC data using condenser_api.get_account (singular)
-      try {
-        console.log(`[canUserPost] Trying condenser_api.get_account for RC data...`);
-        const accountWithRc = await makeHiveApiCall('condenser_api', 'get_account', [username]) as HiveAccountWithRC;
-        console.log(`[canUserPost] get_account response fields:`, Object.keys(accountWithRc));
-        
-        if (accountWithRc && accountWithRc.rc_manabar && accountWithRc.max_rc) {
-          const rcManabar = accountWithRc.rc_manabar as { current_mana: string };
-          const maxRc = accountWithRc.max_rc as string;
-          const rcPercentage = (parseFloat(rcManabar.current_mana) / parseFloat(maxRc)) * 100;
-          console.log(`[canUserPost] RC from get_account: ${rcPercentage.toFixed(2)}%`);
-          
-          if (rcPercentage < 10) {
-            return {
-              canPost: false,
-              rcPercentage,
-              message: `Insufficient Resource Credits: ${rcPercentage.toFixed(1)}% (need at least 10%)`
-            };
-          }
-
-          return {
-            canPost: true,
-            rcPercentage,
-          };
-        }
-      } catch (getAccountError) {
-        console.warn('Failed to fetch RC from get_account:', getAccountError);
-      }
-      
-      // Try rc_api with different parameter format
-      try {
-        console.log(`[canUserPost] Trying rc_api.find_rc_accounts with different format...`);
-        const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [username]);
-        console.log(`[canUserPost] rc_api response:`, rcResult);
-        
-        if (rcResult && (rcResult as RcResult).rc_accounts && Array.isArray((rcResult as RcResult).rc_accounts) && (rcResult as RcResult).rc_accounts!.length > 0) {
-          const rcData = (rcResult as RcResult).rc_accounts![0];
-          if (rcData && rcData.rc_manabar && rcData.max_rc) {
-            const rcPercentage = (parseFloat(rcData.rc_manabar.current_mana) / parseFloat(rcData.max_rc)) * 100;
-            console.log(`[canUserPost] RC from rc_api: ${rcPercentage.toFixed(2)}%`);
-            
-            if (rcPercentage < 10) {
-              return {
-                canPost: false,
-                rcPercentage,
-                message: `Insufficient Resource Credits: ${rcPercentage.toFixed(1)}% (need at least 10%)`
-              };
-            }
-
-            return {
-              canPost: true,
-              rcPercentage,
-            };
-          }
-        }
-      } catch (rcApiError) {
-        console.warn('Failed to fetch RC from rc_api:', rcApiError);
-      }
-      
-      return {
-        canPost: false,
-        rcPercentage: 0,
-        message: 'Resource Credits information not available'
-      };
-    }
-
-    const rcPercentage = (parseFloat(rc_manabar.current_mana) / parseFloat(max_rc)) * 100;
-    
-    // Users typically need at least 10% RC to post
-    if (rcPercentage < 10) {
-      return {
-        canPost: false,
-        rcPercentage,
-        message: 'Insufficient Resource Credits. You need more HIVE POWER or delegation to post.'
-      };
-    }
-
-    return {
-      canPost: true,
-      rcPercentage,
-    };
+    console.log(`[canUserPost] User ${username} can post with ${rcCheck.rcPercentage.toFixed(2)}% RC`);
+    return rcCheck;
   } catch (error) {
-    console.error('Error checking RC with WorkerBee:', error);
-    return {
-      canPost: false,
-      rcPercentage: 0,
-      message: 'Error checking Resource Credits'
-    };
+    console.error('Error checking RC with Wax:', error);
+    
+    // Fallback to original method if Wax fails
+    try {
+      console.log(`[canUserPost] Falling back to original RC check method`);
+      const accountResult = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountWithRC[];
+      const account = accountResult && accountResult.length > 0 ? accountResult[0] : null;
+      
+      if (!account) {
+        return {
+          canPost: false,
+          rcPercentage: 0,
+          message: 'Unable to fetch account information'
+        };
+      }
+
+      const rc_manabar = account.rc_manabar as { current_mana: string } | undefined;
+      const max_rc = account.max_rc as string | undefined;
+      
+      if (!rc_manabar || !max_rc) {
+        return {
+          canPost: false,
+          rcPercentage: 0,
+          message: 'Resource Credits information not available'
+        };
+      }
+
+      const rcPercentage = (parseFloat(rc_manabar.current_mana) / parseFloat(max_rc)) * 100;
+      
+      if (rcPercentage < 10) {
+        return {
+          canPost: false,
+          rcPercentage,
+          message: 'Insufficient Resource Credits. You need more HIVE POWER or delegation to post.'
+        };
+      }
+
+      return {
+        canPost: true,
+        rcPercentage,
+      };
+    } catch (fallbackError) {
+      console.error('Error in fallback RC check:', fallbackError);
+      return {
+        canPost: false,
+        rcPercentage: 0,
+        message: 'Error checking Resource Credits'
+      };
+    }
   }
 }
 

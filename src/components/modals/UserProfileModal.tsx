@@ -1,10 +1,12 @@
 "use client";
 
-import React from "react";
-import { useUserProfile, useUserFollowerCount, useUserFollowingCount } from "@/lib/react-query/queries/useUserProfile";
+import React, { useState } from "react";
+import { useUserProfile, useUserFollowerCount, useUserFollowingCount, useIsFollowingUser } from "@/lib/react-query/queries/useUserProfile";
+import { useFollowUser, useUnfollowUser } from "@/lib/react-query/queries/useFollowers";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { UserPlus, Calendar, MapPin, Link as LinkIcon } from "lucide-react";
+import { UserPlus, UserMinus, Calendar, MapPin, Link as LinkIcon } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { BaseModal } from "@/components/ui/BaseModal";
 
@@ -16,9 +18,74 @@ interface UserProfileModalProps {
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, data }) => {
   const username = data?.username as string;
+  const { user: currentUser } = useAuth();
   const { data: profile, isLoading, error } = useUserProfile(username || '');
   const { data: followerCount } = useUserFollowerCount(username || '');
   const { data: followingCount } = useUserFollowingCount(username || '');
+  
+  // Follow/unfollow functionality
+  const { data: isFollowing, isLoading: isCheckingFollow, refetch: refetchIsFollowing, error: followError } = useIsFollowingUser(
+    username || '', 
+    currentUser?.username || ''
+  );
+  
+  // Debug logging
+  console.log('[UserProfileModal] Follow status:', {
+    username,
+    currentUser: currentUser?.username,
+    isFollowing,
+    isCheckingFollow,
+    followError,
+    hasProfile: !!profile
+  });
+  const followMutation = useFollowUser();
+  const unfollowMutation = useUnfollowUser();
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+
+  const handleFollowToggle = async () => {
+    console.log('Follow button clicked!', { username, currentUser: currentUser?.username, isFollowing });
+    
+    if (!username || !currentUser?.username) {
+      console.log('Missing username or currentUser');
+      alert('Please login to follow users');
+      return;
+    }
+    
+    setIsFollowLoading(true);
+    try {
+      if (isFollowing) {
+        console.log('Unfollowing user:', username);
+        const result = await unfollowMutation.mutateAsync({
+          username,
+          follower: currentUser.username
+        });
+        console.log('Unfollow result:', result);
+        if (!result.success) {
+          alert(`Failed to unfollow: ${result.error || 'Unknown error'}`);
+        }
+      } else {
+        console.log('Following user:', username);
+        const result = await followMutation.mutateAsync({
+          username,
+          follower: currentUser.username
+        });
+        console.log('Follow result:', result);
+        if (!result.success) {
+          alert(`Failed to follow: ${result.error || 'Unknown error'}`);
+        }
+      }
+      
+      // Manually refetch the follow status to update the UI immediately
+      setTimeout(() => {
+        refetchIsFollowing();
+      }, 500);
+    } catch (error) {
+      console.error('Error toggling follow status:', error);
+      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
 
   return (
     <BaseModal
@@ -159,10 +226,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          {profile && (
-            <Button>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Follow
+          {profile && currentUser?.username && currentUser.username !== username && (
+            <Button
+              onClick={handleFollowToggle}
+              disabled={isFollowLoading || isCheckingFollow}
+              variant={isFollowing ? "outline" : "default"}
+            >
+              {isFollowLoading ? (
+                <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : isFollowing ? (
+                <UserMinus className="h-4 w-4 mr-2" />
+              ) : (
+                <UserPlus className="h-4 w-4 mr-2" />
+              )}
+              {isFollowLoading ? 'Loading...' : isFollowing ? 'Unfollow' : 'Follow'}
             </Button>
           )}
         </div>

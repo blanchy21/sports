@@ -13,7 +13,9 @@ import {
   Moon,
   Sun,
   Zap,
-  Users
+  Users,
+  Search,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
@@ -26,6 +28,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { cn } from "@/lib/utils";
+import { useModal } from "@/components/modals/ModalProvider";
+import { fetchUserAccount } from "@/lib/hive-workerbee/account";
 
 export const TopNavigation: React.FC = () => {
   const pathname = usePathname();
@@ -33,12 +37,17 @@ export const TopNavigation: React.FC = () => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { unreadCount } = useNotifications();
+  const { openModal } = useModal();
   const [showSportsPopup, setShowSportsPopup] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUpgradeFlow, setShowUpgradeFlow] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [selectedSport, setSelectedSport] = useState<string>("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const handleToggleTheme = () => {
@@ -51,6 +60,45 @@ export const TopNavigation: React.FC = () => {
     localStorage.setItem('selectedSport', sportId);
     // You could also emit an event or use a context to notify other components
     window.dispatchEvent(new CustomEvent('sportFilterChanged', { detail: sportId }));
+  };
+
+  // Search functionality
+  React.useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (searchQuery && searchQuery.length >= 3) {
+        setIsSearching(true);
+        try {
+          const accountData = await fetchUserAccount(searchQuery);
+          if (accountData) {
+            setSearchResults([{
+              username: searchQuery,
+              displayName: accountData.profile?.name || searchQuery,
+              avatar: accountData.profile?.profileImage,
+              reputation: accountData.reputationFormatted,
+              followers: accountData.stats?.followers || 0,
+              following: accountData.stats?.following || 0,
+            }]);
+          } else {
+            setSearchResults([]);
+          }
+        } catch (error) {
+          console.error('Search error:', error);
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResults([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleUserClick = (username: string) => {
+    window.location.href = `/user/${username}`;
+    setShowSearch(false);
+    setSearchQuery("");
   };
 
   return (
@@ -131,14 +179,10 @@ export const TopNavigation: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleToggleTheme}
+            onClick={() => setShowSearch(true)}
             className="hidden sm:flex text-white/90 hover:bg-white/20 hover:text-white w-16 h-16"
           >
-            {theme === "light" ? (
-              <Moon className="h-8 w-8" />
-            ) : (
-              <Sun className="h-8 w-8" />
-            )}
+            <Search className="h-8 w-8" />
           </Button>
 
           {user ? (
@@ -249,6 +293,82 @@ export const TopNavigation: React.FC = () => {
             }}
             onDismiss={() => setShowUpgradePrompt(false)}
           />
+        </div>
+      )}
+
+      {/* Search Modal */}
+      {showSearch && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setShowSearch(false)} />
+          <div className="relative z-10 w-full max-w-2xl mx-4">
+            <div className="bg-card border rounded-lg shadow-2xl overflow-hidden">
+              {/* Search Input */}
+              <div className="p-4 border-b flex items-center space-x-4">
+                <Search className="h-6 w-6 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent border-none outline-none text-lg"
+                  autoFocus
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowSearch(false)}
+                  className="hover:bg-muted"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {/* Search Results */}
+              <div className="p-4 max-h-96 overflow-y-auto">
+                {isSearching ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Searching...
+                  </div>
+                ) : searchQuery.length < 3 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Start typing to search for users...
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="space-y-2">
+                    {searchResults.map((result) => (
+                      <button
+                        key={result.username}
+                        onClick={() => handleUserClick(result.username)}
+                        className="w-full flex items-center space-x-3 p-3 hover:bg-muted rounded-lg transition-colors"
+                      >
+                        <Avatar
+                          src={result.avatar}
+                          fallback={result.username}
+                          alt={result.displayName}
+                          size="md"
+                        />
+                        <div className="flex-1 text-left">
+                          <div className="font-semibold text-foreground">
+                            {result.displayName || result.username}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            @{result.username}
+                          </div>
+                        </div>
+                        <div className="text-right text-sm text-muted-foreground">
+                          {result.followers || 0} followers
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No user found with that username
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </header>

@@ -1,6 +1,10 @@
 import { initializeWorkerBeeClient } from './client';
 import { makeHiveApiCall } from './api';
 import type { ITransaction } from "@hiveio/wax";
+import { 
+  createCommentOperation, 
+  formatJsonMetadata
+} from './wax-helpers';
 
 // Type definitions for better type safety
 
@@ -95,41 +99,27 @@ function getUserVote(post: { active_votes?: HiveVote[] }, voter: string): HiveCo
 }
 
 /**
- * Post a comment/reply to a post or another comment using WorkerBee
+ * Post a comment/reply to a post or another comment using Wax
  * @param commentData - Comment data
  * @returns Comment result
  */
 export async function postComment(commentData: CommentData): Promise<CommentResult> {
   try {
+    console.log('[postComment] Starting comment publication with Wax:', commentData);
+    
     // Initialize WorkerBee client (for future use with real-time features)
     await initializeWorkerBeeClient();
     
-    // Generate unique permlink for the comment
-    const timestamp = Date.now();
-    const permlink = `re-${commentData.parentAuthor}-${commentData.parentPermlink}-${timestamp}`;
-    
-    // Build JSON metadata
-    const metadata = {
-      app: 'sportsblock/1.0.0',
-      format: 'markdown',
-      tags: ['sportsblock'],
-      ...(commentData.jsonMetadata ? parseJsonMetadata(commentData.jsonMetadata) : {})
-    };
-
-    // Create the comment operation using Wax
-    const operation = {
-      parent_author: commentData.parentAuthor,
-      parent_permlink: commentData.parentPermlink,
+    // Create comment operation using Wax helpers
+    const operation = createCommentOperation({
       author: commentData.author,
-      permlink,
-      title: '', // Comments don't have titles
       body: commentData.body,
-      json_metadata: JSON.stringify(metadata),
-      max_accepted_payout: '1000000.000 HBD',
-      percent_hbd: 10000, // 100% HBD
-      allow_votes: true,
-      allow_curation_rewards: true,
-    };
+      parentAuthor: commentData.parentAuthor,
+      parentPermlink: commentData.parentPermlink,
+      jsonMetadata: commentData.jsonMetadata
+    });
+
+    console.log('[postComment] Wax comment operation created:', operation);
 
     // Initialize WorkerBee client for broadcasting
     const client = await initializeWorkerBeeClient();
@@ -138,17 +128,17 @@ export async function postComment(commentData: CommentData): Promise<CommentResu
     await client.broadcast(operation as unknown as ITransaction);
     
     // Generate comment URL
-    const url = `https://hive.blog/@${commentData.author}/${permlink}`;
+    const url = `https://hive.blog/@${commentData.author}/${operation.permlink}`;
 
     return {
       success: true,
       transactionId: 'broadcasted',
       author: commentData.author,
-      permlink,
+      permlink: operation.permlink,
       url,
     };
   } catch (error) {
-    console.error('Error posting comment with WorkerBee:', error);
+    console.error('Error posting comment with Wax:', error);
     
     return {
       success: false,
@@ -158,7 +148,7 @@ export async function postComment(commentData: CommentData): Promise<CommentResu
 }
 
 /**
- * Update an existing comment using WorkerBee
+ * Update an existing comment using Wax
  * @param updateData - Update data
  * @returns Update result
  */
@@ -170,6 +160,8 @@ export async function updateComment(
     jsonMetadata?: string;
   }): Promise<CommentResult> {
   try {
+    console.log('[updateComment] Starting comment update with Wax:', updateData);
+    
     // Get existing comment to preserve some data
     const existingComment = await makeHiveApiCall('condenser_api', 'get_content', [updateData.author, updateData.permlink]) as HiveComment;
     if (!existingComment) {
@@ -189,20 +181,21 @@ export async function updateComment(
     const updateMetadata = updateData.jsonMetadata ? parseJsonMetadata(updateData.jsonMetadata) : {};
     const mergedMetadata = { ...existingMetadata, ...updateMetadata };
 
-    // Create the update operation using Wax
-    const operation = {
-      parent_author: existingComment.parent_author as string,
-      parent_permlink: existingComment.parent_permlink as string,
+    // Create the update operation using Wax helpers
+    const operation = createCommentOperation({
       author: updateData.author,
-      permlink: updateData.permlink,
-      title: '', // Comments don't have titles
       body: updateData.body,
-      json_metadata: JSON.stringify(mergedMetadata),
-      max_accepted_payout: existingComment.max_accepted_payout as string,
-      percent_hbd: existingComment.percent_hbd as number,
-      allow_votes: existingComment.allow_votes as boolean,
-      allow_curation_rewards: existingComment.allow_curation_rewards as boolean,
-    };
+      parentAuthor: existingComment.parent_author as string,
+      parentPermlink: existingComment.parent_permlink as string,
+      permlink: updateData.permlink,
+      jsonMetadata: formatJsonMetadata(mergedMetadata),
+      maxAcceptedPayout: existingComment.max_accepted_payout as string,
+      percentHbd: existingComment.percent_hbd as number,
+      allowVotes: existingComment.allow_votes as boolean,
+      allowCurationRewards: existingComment.allow_curation_rewards as boolean
+    });
+
+    console.log('[updateComment] Wax update operation created:', operation);
 
     // Initialize WorkerBee client for broadcasting
     const client = await initializeWorkerBeeClient();
@@ -218,7 +211,7 @@ export async function updateComment(
       url: `https://hive.blog/@${updateData.author}/${updateData.permlink}`,
     };
   } catch (error) {
-    console.error('Error updating comment with WorkerBee:', error);
+    console.error('Error updating comment with Wax:', error);
     
     return {
       success: false,
