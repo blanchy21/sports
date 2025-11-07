@@ -11,8 +11,13 @@ import {
   CommunityStats 
 } from "@/lib/hive-workerbee/analytics";
 import { useRealtimeEvents } from "@/hooks/useUpcomingEvents";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFollowUser, useUnfollowUser } from "@/lib/react-query/queries/useFollowers";
+import { useIsFollowingUser } from "@/lib/react-query/queries/useUserProfile";
 
 export const RightSidebar: React.FC = () => {
+  const { user } = useAuth();
+  
   // State for dynamic data
   const [trendingSports, setTrendingSports] = useState<TrendingSport[]>([]);
   const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
@@ -27,6 +32,80 @@ export const RightSidebar: React.FC = () => {
   // Loading and error states
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Follow/unfollow mutations
+  const followMutation = useFollowUser();
+  const unfollowMutation = useUnfollowUser();
+
+  // Follow button component
+  const FollowButton: React.FC<{ username: string }> = ({ username }) => {
+    const { data: isFollowing } = useIsFollowingUser(username, user?.username || '');
+    const [isFollowingState, setIsFollowingState] = useState(false);
+    const [hasAttemptedFollow, setHasAttemptedFollow] = useState(false);
+
+    // Only update local state from API if we haven't made any local changes
+    // Since the API always returns false, we'll rely on local state management
+    useEffect(() => {
+      // Only set from API if we haven't attempted any follow operations
+      if (!hasAttemptedFollow) {
+        setIsFollowingState(isFollowing || false);
+      }
+    }, [isFollowing, hasAttemptedFollow]);
+
+    const handleFollowToggle = async () => {
+      if (!user?.username) return;
+
+      try {
+        if (isFollowingState) {
+          await unfollowMutation.mutateAsync({
+            username,
+            follower: user.username
+          });
+          setIsFollowingState(false);
+          setHasAttemptedFollow(false);
+        } else {
+          await followMutation.mutateAsync({
+            username,
+            follower: user.username
+          });
+          setIsFollowingState(true);
+          setHasAttemptedFollow(true);
+        }
+      } catch (error) {
+        console.error('Error toggling follow status:', error);
+        // Reset state on error
+        setHasAttemptedFollow(false);
+      }
+    };
+
+    const isLoading = followMutation.isPending || unfollowMutation.isPending;
+
+    // Use optimistic state: prioritize hasAttemptedFollow for successful operations
+    const displayState = hasAttemptedFollow || isFollowingState;
+
+    // Debug logging
+    console.log(`[FollowButton] ${username}:`, {
+      isFollowing,
+      isFollowingState,
+      hasAttemptedFollow,
+      isLoading,
+      displayState
+    });
+
+    return (
+      <button 
+        onClick={handleFollowToggle}
+        disabled={isLoading}
+        className={`px-3 py-1 text-xs rounded-md transition-colors disabled:opacity-50 ${
+          displayState 
+            ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
+            : 'bg-primary text-primary-foreground hover:bg-primary/90'
+        }`}
+      >
+        {isLoading ? '...' : displayState ? 'Following' : 'Follow'}
+      </button>
+    );
+  };
 
   // Real-time events data
   const { 
@@ -52,7 +131,7 @@ export const RightSidebar: React.FC = () => {
         });
         
         // Calculate analytics data
-        const analytics = getAnalyticsData(result.posts);
+        const analytics = getAnalyticsData(result.posts, user?.username);
         
         setTrendingSports(analytics.trendingSports);
         setTrendingTopics(analytics.trendingTopics);
@@ -68,7 +147,7 @@ export const RightSidebar: React.FC = () => {
     };
 
     fetchAnalytics();
-  }, []);
+  }, [user?.username]);
 
   // Loading skeleton component
   const LoadingSkeleton = () => (
@@ -198,9 +277,7 @@ export const RightSidebar: React.FC = () => {
                         @{author.username} • {author.posts} posts
                       </div>
                     </div>
-                    <button className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
-                      Follow
-                    </button>
+                    <FollowButton username={author.username} />
                   </div>
                 ))}
               </div>

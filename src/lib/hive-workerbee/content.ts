@@ -190,44 +190,52 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
               // Use the post's creation date as the 'before' parameter
               const beforeDate = postData.created;
               
-              const communityPosts = await getContentOptimized('get_discussions_by_created', [{
-                tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-                limit: limit,
-                start_author: '',
-                start_permlink: '',
-                before_date: beforeDate
-              }]);
+              const communityPosts = await getContentOptimized('get_discussions_by_created', [
+                {
+                  tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+                  limit: limit,
+                  before_date: beforeDate
+                }
+              ]);
               posts = (communityPosts || []) as unknown as HivePost[];
             } else {
               // Fallback to regular fetch if we can't get the post date
-              const communityPosts = await getContentOptimized('get_discussions_by_created', [{
-                tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-                limit: limit
-              }]);
+              const communityPosts = await getContentOptimized('get_discussions_by_created', [
+                {
+                  tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+                  limit: limit
+                }
+              ]);
               posts = (communityPosts || []) as unknown as HivePost[];
             }
           } catch (error) {
             console.warn('[fetchSportsblockPosts] Error getting post date for pagination, falling back to regular fetch:', error);
-            const communityPosts = await getContentOptimized('get_discussions_by_created', [{
-              tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-              limit: limit
-            }]);
+            const communityPosts = await getContentOptimized('get_discussions_by_created', [
+              {
+                tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+                limit: limit
+              }
+            ]);
             posts = (communityPosts || []) as unknown as HivePost[];
           }
         } else {
           // Invalid cursor format, fallback to regular fetch
-          const communityPosts = await getContentOptimized('get_discussions_by_created', [{
-            tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-            limit: limit
-          }]);
+          const communityPosts = await getContentOptimized('get_discussions_by_created', [
+            {
+              tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+              limit: limit
+            }
+          ]);
           posts = (communityPosts || []) as unknown as HivePost[];
         }
       } else {
         // First page - use get_discussions_by_created for chronological order
-        const communityPosts = await getContentOptimized('get_discussions_by_created', [{
-          tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-          limit: limit
-        }]);
+        const communityPosts = await getContentOptimized('get_discussions_by_created', [
+          {
+            tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+            limit: limit
+          }
+        ]);
         posts = (communityPosts || []) as unknown as HivePost[];
       }
     }

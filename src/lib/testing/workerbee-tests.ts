@@ -14,8 +14,6 @@ import { fetchComments } from '../hive-workerbee/comments';
 
 // Test configuration
 const TEST_USERNAME = 'gtg'; // Using a known active account for testing
-const TEST_POST_AUTHOR = 'gtg';
-const TEST_POST_PERMLINK = 'test-post-permlink';
 
 interface TestResult {
   testName: string;
@@ -169,7 +167,16 @@ export async function testVotingOperations(): Promise<TestResult[]> {
 export async function testCommentOperations(): Promise<TestResult[]> {
   const tests = [
     runTest('Fetch Comments', async () => {
-      const comments = await fetchComments(TEST_POST_AUTHOR, TEST_POST_PERMLINK);
+      const recentPosts = await fetchSportsblockPosts({ limit: 10, author: TEST_USERNAME });
+      const candidatePost =
+        recentPosts.posts.find(post => post.children > 0) ??
+        recentPosts.posts[0];
+
+      if (!candidatePost) {
+        throw new Error('No posts available for comment fetch');
+      }
+
+      const comments = await fetchComments(candidatePost.author, candidatePost.permlink);
       return comments;
     })
   ];

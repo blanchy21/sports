@@ -150,9 +150,10 @@ export function calculateTrendingTopics(posts: SportsblockPost[]): TrendingTopic
 /**
  * Calculate top authors based on engagement (comments + votes)
  * @param posts - Array of posts to analyze
+ * @param excludeUser - Username to exclude from the results (e.g., current user)
  * @returns Top authors data
  */
-export function calculateTopAuthors(posts: SportsblockPost[]): TopAuthor[] {
+export function calculateTopAuthors(posts: SportsblockPost[], excludeUser?: string): TopAuthor[] {
   const recentPosts = filterPostsLast7Days(posts);
   const authorStats: Record<string, {
     username: string;
@@ -165,6 +166,11 @@ export function calculateTopAuthors(posts: SportsblockPost[]): TopAuthor[] {
   // Calculate engagement for each author
   recentPosts.forEach(post => {
     const author = post.author;
+    
+    // Skip the excluded user
+    if (excludeUser && author === excludeUser) {
+      return;
+    }
     
     if (!authorStats[author]) {
       authorStats[author] = {
@@ -236,13 +242,14 @@ export function calculateCommunityStats(posts: SportsblockPost[]): CommunityStat
 /**
  * Get all analytics data for the sidebar
  * @param posts - Array of posts to analyze
+ * @param excludeUser - Username to exclude from top authors (e.g., current user)
  * @returns Complete analytics data
  */
-export function getAnalyticsData(posts: SportsblockPost[]) {
+export function getAnalyticsData(posts: SportsblockPost[], excludeUser?: string) {
   return {
     trendingSports: calculateTrendingSports(posts),
     trendingTopics: calculateTrendingTopics(posts),
-    topAuthors: calculateTopAuthors(posts),
+    topAuthors: calculateTopAuthors(posts, excludeUser),
     communityStats: calculateCommunityStats(posts),
   };
 }

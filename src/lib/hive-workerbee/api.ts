@@ -4,13 +4,30 @@
  * Enhanced with Wax-based type-safe API wrappers
  */
 
-import { 
-  getAccountWax, 
-  getContentWax, 
+import {
+  getAccountWax,
+  getContentWax,
   getDiscussionsWax
   // getWaxInstance // Temporarily disabled
 } from './wax-helpers';
 import { getNodeHealthManager } from './node-health';
+
+const REQUEST_TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs: number = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 /**
  * Make a direct HTTP call to Hive API with automatic failover
@@ -41,9 +58,10 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
 
   for (const nodeUrl of uniqueNodes) {
     try {
+      const start = Date.now();
       console.log(`[Hive API] Trying ${nodeUrl} for ${api}.${method}`);
-      
-      const response = await fetch(nodeUrl, {
+
+      const response = await fetchWithTimeout(nodeUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -53,24 +71,32 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
           method: `${api}.${method}`,
           params: params,
           id: Math.floor(Math.random() * 1000000)
-        })
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status} from ${nodeUrl}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (result.error) {
         throw new Error(`API error from ${nodeUrl}: ${result.error.message}`);
       }
-      
+
+      const duration = Date.now() - start;
       console.log(`[Hive API] Success with ${nodeUrl} for ${api}.${method}`);
+      console.log(`[Hive API] ${nodeUrl} responded in ${duration}ms`);
       return result.result;
     } catch (error) {
-      console.warn(`[Hive API] Failed with ${nodeUrl}:`, error);
-      lastError = error as Error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isAbortError = error instanceof Error && error.name === 'AbortError';
+      const timeoutMessage = isAbortError || /aborted|timeout/i.test(errorMessage)
+        ? `Request to ${nodeUrl} timed out after ${REQUEST_TIMEOUT_MS}ms`
+        : errorMessage;
+
+      console.warn(`[Hive API] Failed with ${nodeUrl}: ${timeoutMessage}`);
+      lastError = new Error(timeoutMessage);
       // Continue to next node
     }
   }

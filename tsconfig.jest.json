@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "types": ["jest", "node"],
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": false,
+    "noEmit": true
+  },
+  "include": ["jest.setup.ts", "src/**/*", "tests/**/*", "__tests__/**/*"],
+  "exclude": ["node_modules", ".next"]
+}

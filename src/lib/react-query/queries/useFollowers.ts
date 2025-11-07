@@ -4,23 +4,22 @@ import {
   fetchFollowers, 
   fetchFollowing, 
   followUser, 
-  unfollowUser,
-  SocialFilters 
+  unfollowUser
 } from '@/lib/hive-workerbee/social';
 
-export function useFollowers(username: string, filters: SocialFilters = {}, options: { enabled?: boolean } = {}) {
+export function useFollowers(username: string, options: { enabled?: boolean } = {}) {
   return useQuery({
-    queryKey: [...queryKeys.users.followers(username), filters],
-    queryFn: () => fetchFollowers(username, filters),
+    queryKey: [...queryKeys.users.followers(username)],
+    queryFn: () => fetchFollowers(username),
     enabled: options.enabled !== undefined ? options.enabled : !!username,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
-export function useFollowing(username: string, filters: SocialFilters = {}, options: { enabled?: boolean } = {}) {
+export function useFollowing(username: string, options: { enabled?: boolean } = {}) {
   return useQuery({
-    queryKey: [...queryKeys.users.following(username), filters],
-    queryFn: () => fetchFollowing(username, filters),
+    queryKey: [...queryKeys.users.following(username)],
+    queryFn: () => fetchFollowing(username),
     enabled: options.enabled !== undefined ? options.enabled : !!username,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -39,10 +38,9 @@ export function useFollowUser() {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(username) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(follower) });
       
-      // Invalidate the isFollowing check
+      // Invalidate the isFollowing check for this specific user pair
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.users.detail(username),
-        exact: false 
+        queryKey: [...queryKeys.users.detail(username), 'following', follower]
       });
     },
   });
@@ -61,10 +59,9 @@ export function useUnfollowUser() {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(username) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(follower) });
       
-      // Invalidate the isFollowing check
+      // Invalidate the isFollowing check for this specific user pair
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.users.detail(username),
-        exact: false 
+        queryKey: [...queryKeys.users.detail(username), 'following', follower]
       });
     },
   });

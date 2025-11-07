@@ -76,6 +76,22 @@ export default function FeedPage() {
     onLoadMore: () => loadPosts(true),
   });
 
+  const getPostKey = React.useCallback((post: SportsblockPost) => {
+    return `${post.author}/${post.permlink}`;
+  }, []);
+
+  const dedupePosts = React.useCallback((postList: SportsblockPost[]) => {
+    const seen = new Set<string>();
+    return postList.filter((post) => {
+      const key = getPostKey(post);
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }, [getPostKey]);
+
   const loadPosts = React.useCallback(async (loadMore = false) => {
     if (loadMore) {
       setIsLoadingMore(true);
@@ -94,13 +110,10 @@ export default function FeedPage() {
         before: loadMore ? nextCursor : undefined,
       });
       
-      if (loadMore) {
-        // Append new posts to existing ones
-        setPosts(prev => [...prev, ...result.posts]);
-      } else {
-        // Replace posts with new ones
-        setPosts(result.posts);
-      }
+      setPosts((prev) => {
+        const merged = loadMore ? [...prev, ...result.posts] : result.posts;
+        return dedupePosts(merged);
+      });
       
       // Update pagination state
       setNextCursor(result.nextCursor);
@@ -135,7 +148,7 @@ export default function FeedPage() {
       setIsLoadingMore(false);
       setStatsLoading(false);
     }
-  }, [selectedSport, nextCursor]);
+  }, [selectedSport, nextCursor, dedupePosts]);
 
   // Redirect if not authenticated
   React.useEffect(() => {

@@ -57,23 +57,16 @@ export const Sidebar: React.FC = () => {
   }, []);
 
   // Use a consistent base className that doesn't change between server/client
-  const getLinkClassName = () => {
-    // Always return the same base classes to prevent hydration mismatch
-    // Active state will be handled by CSS or after hydration
-    return "flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors text-muted-foreground hover:bg-accent hover:text-accent-foreground";
+  const getLinkClassName = (isActive: boolean) => {
+    const baseClasses = "flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors";
+    const activeClasses = isActive 
+      ? "bg-primary text-primary-foreground" 
+      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground";
+    return `${baseClasses} ${activeClasses}`;
   };
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          .sidebar-link[data-active="true"] {
-            background-color: hsl(var(--primary)) !important;
-            color: hsl(var(--primary-foreground)) !important;
-          }
-        `
-      }} />
-      <aside className="hidden lg:flex lg:flex-col lg:w-80 lg:fixed lg:inset-y-0 lg:pt-24 lg:pb-4 lg:overflow-y-auto lg:border-r bg-background">
+    <aside className="hidden lg:flex lg:flex-col lg:w-80 lg:fixed lg:inset-y-0 lg:pt-24 lg:pb-4 lg:overflow-y-auto lg:border-r bg-background">
         <div className="flex flex-col flex-1 min-h-0">
         {/* Navigation */}
         <nav className="flex-1 px-4 py-4 space-y-1">
@@ -84,12 +77,13 @@ export const Sidebar: React.FC = () => {
 
             const Icon = item.icon;
 
+            const isActive = isHydrated && pathname === item.href;
+            
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`sidebar-link ${getLinkClassName()}`}
-                data-active={isHydrated && pathname === item.href ? 'true' : 'false'}
+                className={getLinkClassName(isActive)}
               >
                 <Icon className="mr-3 h-5 w-5" />
                 {item.label}
@@ -133,7 +127,6 @@ export const Sidebar: React.FC = () => {
           triggerRef={profileTriggerRef}
         />
       )}
-      </aside>
-    </>
+    </aside>
   );
 };

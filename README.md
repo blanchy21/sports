@@ -20,17 +20,34 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+## Testing
 
-To learn more about Next.js, take a look at the following resources:
+- Unit tests (Jest + React Testing Library):
+  ```bash
+  npm run test
+  npm run test:unit      # explicit alias
+  npm run test:unit:watch
+  ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- API route integration (Jest + Supertest):
+  ```bash
+  npm run test -- tests/api
+  ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- WorkerBee integration suite (network required):
+  ```bash
+  npm run test:workerbee:integration
+  # or run the existing CLI harness
+  npm run test:workerbee
+  ```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Playwright end-to-end tests:
+  ```bash
+  npx playwright install  # first time only
+  # Optional: provide a Hive username for auth-login e2e
+  # PLAYWRIGHT_HIVE_USERNAME=blanchy npm run test:e2e
+  npm run test:e2e
+  npm run test:e2e:headed   # interactive run
+  npm run test:e2e:debug    # step-through debugging
+  ```
+  Set `PLAYWRIGHT_SKIP_WEBSERVER=1` if you already have the dev server running.
