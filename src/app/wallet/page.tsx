@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { 
   Wallet, 
@@ -41,13 +41,16 @@ interface TransactionOperation {
 }
 
 export default function WalletPage() {
-  const { user, isAuthenticated, authType } = useAuth();
+  const { user, isAuthenticated, authType, refreshHiveAccount, hiveUser } = useAuth();
   const { bitcoinPrice, ethereumPrice, hivePrice, hbdPrice, isLoading: pricesLoading, error: priceError, lastUpdated, refreshPrices } = usePriceContext();
   const router = useRouter();
   const [showBalances, setShowBalances] = useState(true);
   const [transactions, setTransactions] = useState<TransactionOperation[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [transactionsError, setTransactionsError] = useState<string | null>(null);
+  const [isRefreshingAccount, setIsRefreshingAccount] = useState(false);
+  const [lastAccountRefresh, setLastAccountRefresh] = useState<Date | null>(null);
+  const hasRefreshedBalances = useRef(false);
 
   // Function to fetch transaction history
   const fetchTransactions = useCallback(async () => {
@@ -86,6 +89,34 @@ export default function WalletPage() {
       fetchTransactions();
     }
   }, [user?.username, isAuthenticated, authType, fetchTransactions]);
+
+  const refreshAccountData = useCallback(async () => {
+    if (!hiveUser?.username) {
+      return;
+    }
+
+    setIsRefreshingAccount(true);
+    try {
+      await refreshHiveAccount();
+      setLastAccountRefresh(new Date());
+    } catch (error) {
+      console.error("Error refreshing Hive account data:", error);
+    } finally {
+      setIsRefreshingAccount(false);
+    }
+  }, [hiveUser?.username, refreshHiveAccount]);
+
+  useEffect(() => {
+    if (
+      !hasRefreshedBalances.current &&
+      isAuthenticated &&
+      authType === "hive" &&
+      hiveUser?.username
+    ) {
+      hasRefreshedBalances.current = true;
+      void refreshAccountData();
+    }
+  }, [isAuthenticated, authType, hiveUser?.username, refreshAccountData]);
 
   // Helper function to get icon for transaction type
   const getTransactionIcon = (type: string) => {
@@ -171,6 +202,15 @@ export default function WalletPage() {
               {showBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               <span>{showBalances ? 'Hide' : 'Show'} Balances</span>
             </Button>
+            <Button
+              variant="outline"
+              onClick={refreshAccountData}
+              disabled={isRefreshingAccount}
+              className="flex items-center space-x-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshingAccount ? 'animate-spin' : ''}`} />
+              <span>{isRefreshingAccount ? 'Refreshing' : 'Refresh Balances'}</span>
+            </Button>
             <Button 
               variant="outline" 
               onClick={refreshPrices}
@@ -204,9 +244,14 @@ export default function WalletPage() {
               <p className="text-4xl font-bold">
                 {showBalances ? (pricesLoading ? "Loading..." : formatUSD(totalWalletValue)) : "••••••"}
               </p>
-              <p className="text-sm opacity-90 mt-2">
-                {lastUpdated && `Last updated ${lastUpdated.toLocaleTimeString()}`}
-              </p>
+              <div className="text-sm opacity-90 mt-2 space-y-1">
+                {lastUpdated && (
+                  <p>Prices updated {lastUpdated.toLocaleTimeString()}</p>
+                )}
+                {lastAccountRefresh && (
+                  <p>Balances refreshed {lastAccountRefresh.toLocaleTimeString()}</p>
+                )}
+              </div>
             </div>
             <div className="p-4 bg-white/10 rounded-lg">
               <BarChart3 className="h-8 w-8" />

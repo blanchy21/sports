@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { AuthState, AuthType, User } from "@/types";
 import { HiveAuthUser, HiveAccount } from "@/lib/shared/types";
-import { fetchUserAccount } from "@/lib/hive-workerbee/account";
+import { fetchUserAccount, type UserAccountData } from "@/lib/hive-workerbee/account";
 import { useAioha } from "@/contexts/AiohaProvider";
 import { AuthUser, FirebaseAuth } from "@/lib/firebase/auth";
 
@@ -1042,55 +1042,90 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [user]);
 
-  const refreshHiveAccount = useCallback(async () => {
-    if (hiveUser?.username) {
-      try {
-        const accountData = await fetchUserAccount(hiveUser.username);
-        if (accountData) {
-          // Update hiveUser with account data
-          const updatedHiveUser = {
-            ...hiveUser,
-            account: accountData as unknown as HiveAccount,
-          };
-          setHiveUser(updatedHiveUser);
-
-          // Also update the main user object with Hive profile data
-          if (user) {
-            const updatedUser = {
-              ...user,
-              reputation: accountData.reputation,
-              reputationFormatted: accountData.reputationFormatted,
-              // Liquid balances
-              liquidHiveBalance: accountData.liquidHiveBalance,
-              liquidHbdBalance: accountData.liquidHbdBalance,
-              // Savings balances
-              savingsHiveBalance: accountData.savingsHiveBalance,
-              savingsHbdBalance: accountData.savingsHbdBalance,
-              // Combined balances (for backward compatibility)
-              hiveBalance: accountData.hiveBalance,
-              hbdBalance: accountData.hbdBalance,
-              hivePower: accountData.hivePower,
-              rcPercentage: accountData.resourceCredits,
-              // Savings data
-              savingsApr: accountData.savingsApr,
-              pendingWithdrawals: accountData.pendingWithdrawals,
-              hiveProfile: accountData.profile,
-              hiveStats: accountData.stats,
-              // Use Hive profile image as avatar if available
-              avatar: accountData.profile.profileImage || user.avatar,
-              displayName: accountData.profile.name || user.displayName,
-              bio: accountData.profile.about || user.bio,
-              // Use the actual Hive account creation date
-              createdAt: accountData.createdAt,
-            };
-            updateUser(updatedUser);
-          }
-        }
-      } catch (error) {
-        console.error("Error refreshing Hive account:", error);
-      }
+  const applyAccountData = useCallback((accountData: UserAccountData) => {
+    if (!hiveUser) {
+      return;
     }
-  }, [hiveUser, user, updateUser]);
+
+    // Update hiveUser with account data
+    const updatedHiveUser: HiveAuthUser = {
+      ...hiveUser,
+      username: hiveUser.username,
+      account: accountData as unknown as HiveAccount,
+    };
+    setHiveUser(updatedHiveUser);
+
+    // Also update the main user object with Hive profile data
+    if (user) {
+      const updatedUser = {
+        ...user,
+        reputation: accountData.reputation,
+        reputationFormatted: accountData.reputationFormatted,
+        // Liquid balances
+        liquidHiveBalance: accountData.liquidHiveBalance,
+        liquidHbdBalance: accountData.liquidHbdBalance,
+        // Savings balances
+        savingsHiveBalance: accountData.savingsHiveBalance,
+        savingsHbdBalance: accountData.savingsHbdBalance,
+        // Combined balances (for backward compatibility)
+        hiveBalance: accountData.hiveBalance,
+        hbdBalance: accountData.hbdBalance,
+        hivePower: accountData.hivePower,
+        rcPercentage: accountData.resourceCredits,
+        // Savings data
+        savingsApr: accountData.savingsApr,
+        pendingWithdrawals: accountData.pendingWithdrawals,
+        hiveProfile: accountData.profile,
+        hiveStats: accountData.stats,
+        // Use Hive profile image as avatar if available
+        avatar: accountData.profile.profileImage || user.avatar,
+        displayName: accountData.profile.name || user.displayName,
+        bio: accountData.profile.about || user.bio,
+        // Use the actual Hive account creation date
+        createdAt: accountData.createdAt,
+      };
+      updateUser(updatedUser);
+    }
+  }, [hiveUser, setHiveUser, updateUser, user]);
+
+  const refreshHiveAccount = useCallback(async () => {
+    if (!hiveUser?.username) {
+      return;
+    }
+
+    try {
+      let accountData: UserAccountData | null = null;
+
+      if (typeof window === "undefined") {
+        accountData = await fetchUserAccount(hiveUser.username);
+      } else {
+        const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(hiveUser.username)}`);
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(
+            (payload as { error?: string }).error ||
+            `Failed to refresh Hive account: ${response.status}`
+          );
+        }
+        const payload = await response.json() as { account?: UserAccountData };
+        if (payload.account) {
+          const { account } = payload;
+          accountData = {
+            ...account,
+            createdAt: account.createdAt ? new Date(account.createdAt) : new Date(),
+            lastPost: account.lastPost ? new Date(account.lastPost as unknown as string) : undefined,
+            lastVote: account.lastVote ? new Date(account.lastVote as unknown as string) : undefined,
+          } as UserAccountData;
+        }
+      }
+
+      if (accountData) {
+        applyAccountData(accountData);
+      }
+    } catch (error) {
+      console.error("Error refreshing Hive account:", error);
+    }
+  }, [applyAccountData, hiveUser]);
 
   const value = {
     user,

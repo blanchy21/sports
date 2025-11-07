@@ -13,11 +13,9 @@ import { useRouter } from "next/navigation";
 export default function FollowersPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const limit = 20;
 
   const { data: followersData, isLoading, error } = useFollowers(
-    user?.username || '', 
-    { limit },
+    user?.username || '',
     { enabled: !!user?.username }
   );
 
@@ -68,7 +66,7 @@ export default function FollowersPage() {
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-primary">
-              {followersData?.relationships.length || 0}
+              {followersData?.total ?? followersData?.relationships?.length ?? 0}
             </div>
             <div className="text-sm text-muted-foreground">Total followers</div>
           </div>

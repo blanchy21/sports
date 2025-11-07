@@ -14,11 +14,9 @@ import { useUnfollowUser } from "@/lib/react-query/queries/useFollowers";
 export default function FollowingPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const limit = 20;
 
   const { data: followingData, isLoading, error } = useFollowing(
-    user?.username || '', 
-    { limit },
+    user?.username || '',
     { enabled: !!user?.username }
   );
 
@@ -84,7 +82,7 @@ export default function FollowingPage() {
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-primary">
-              {followingData?.relationships.length || 0}
+              {followingData?.total ?? followingData?.relationships?.length ?? 0}
             </div>
             <div className="text-sm text-muted-foreground">Total following</div>
           </div>

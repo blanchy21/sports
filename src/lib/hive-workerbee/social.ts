@@ -1,6 +1,6 @@
 import { initializeWorkerBeeClient } from './client';
-import { FollowRelationship } from '@/types';
 import { makeHiveApiCall } from './api';
+import { FollowRelationship } from '@/types';
 
 export interface SocialFilters {
   limit?: number;
@@ -11,6 +11,7 @@ export interface SocialResult {
   relationships: FollowRelationship[];
   hasMore: boolean;
   nextCursor?: string;
+  total?: number;
 }
 
 /**
@@ -35,24 +36,9 @@ export async function followUser(username: string, follower: string): Promise<{
     console.log(`[followUser] Starting follow operation: ${follower} -> ${username}`);
     await initializeWorkerBeeClient();
 
-    // Check if already following
-    // get_relationships takes: [follower_list, following_list, type]
-    const relationships = await makeHiveApiCall<Array<{ follower: string; following: string; what: string[] }>>(
-      'condenser_api',
-      'get_relationships',
-      [[follower], [username]]
-    );
-
-    const isAlreadyFollowing = relationships?.some(r => 
-      r.follower === follower && 
-      r.following === username && 
-      r.what?.includes('blog')
-    );
-
-    if (isAlreadyFollowing) {
-      console.log(`[followUser] ${follower} is already following ${username}`);
-      return { success: true };
-    }
+    // Skip relationship checking since get_relationships API is not available
+    // We'll proceed directly to the follow operation
+    console.log(`[followUser] Skipping relationship check - proceeding with follow operation`);
 
     // Import Aioha to broadcast the transaction
     const { aioha } = await import('@/lib/aioha/config');
@@ -77,7 +63,7 @@ export async function followUser(username: string, follower: string): Promise<{
       ['custom_json', {
         required_auths: [],
         required_posting_auths: [follower],
-        id: 'follow',
+        id: 'follow_plugin',
         json: JSON.stringify([
           'follow',
           followOperation
@@ -136,24 +122,9 @@ export async function unfollowUser(username: string, follower: string): Promise<
     console.log(`[unfollowUser] Starting unfollow operation: ${follower} -> ${username}`);
     await initializeWorkerBeeClient();
 
-    // Check current following status
-    // get_relationships takes: [follower_list, following_list, type]
-    const relationships = await makeHiveApiCall<Array<{ follower: string; following: string; what: string[] }>>(
-      'condenser_api',
-      'get_relationships',
-      [[follower], [username]]
-    );
-
-    const isFollowing = relationships?.some(r => 
-      r.follower === follower && 
-      r.following === username && 
-      r.what?.includes('blog')
-    );
-
-    if (!isFollowing) {
-      console.log(`[unfollowUser] ${follower} is not following ${username}`);
-      return { success: true };
-    }
+    // Skip relationship checking since get_relationships API is not available
+    // We'll proceed directly to the unfollow operation
+    console.log(`[unfollowUser] Skipping relationship check - proceeding with unfollow operation`);
 
     // Import Aioha to broadcast the transaction
     const { aioha } = await import('@/lib/aioha/config');
@@ -176,7 +147,7 @@ export async function unfollowUser(username: string, follower: string): Promise<
       ['custom_json', {
         required_auths: [],
         required_posting_auths: [follower],
-        id: 'follow',
+        id: 'follow_plugin',
         json: JSON.stringify([
           'follow',
           unfollowOperation
@@ -222,33 +193,29 @@ export async function unfollowUser(username: string, follower: string): Promise<
 export async function isFollowingUser(username: string, follower: string): Promise<boolean> {
   try {
     console.log(`[isFollowingUser] Checking if ${follower} is following ${username}`);
-    
-    // Validate inputs
+
     if (!username || !follower) {
       console.log('[isFollowingUser] Missing username or follower');
       return false;
     }
-    
-    await initializeWorkerBeeClient();
 
-    // Use Hive's get_relationships API to check if follower is following username
-    // get_relationships takes: [follower_list, following_list, type]
-    const relationships = await makeHiveApiCall<Array<{ follower: string; following: string; what: string[] }>>(
+    const result = await makeHiveApiCall<Array<Record<string, unknown>>>(
       'condenser_api',
-      'get_relationships',
-      [[follower], [username]]
+      'get_following',
+      [follower, username, 'blog', 1]
     );
 
-    console.log(`[isFollowingUser] API returned:`, relationships);
+    const isFollowing = Array.isArray(result)
+      && result.some(
+        (rel) =>
+          typeof rel?.following === 'string'
+          && typeof rel?.follower === 'string'
+          && rel.following === username
+          && rel.follower === follower
+      );
 
-    const isFollowing = relationships?.some(r => 
-      r.follower === follower && 
-      r.following === username && 
-      r.what?.includes('blog')
-    );
-
-    console.log(`[isFollowingUser] Result: ${follower} ${isFollowing ? 'is' : 'is not'} following ${username}`);
-    return isFollowing || false;
+    console.log(`[isFollowingUser] Result: ${isFollowing}`);
+    return isFollowing;
   } catch (error) {
     console.error('[isFollowingUser] Error checking follow status:', error);
     return false;
@@ -261,29 +228,53 @@ export async function isFollowingUser(username: string, follower: string): Promi
  * @param filters - Filters for pagination
  * @returns Followers list
  */
+const MAX_FOLLOW_PAGE_SIZE = 100;
+
 export async function fetchFollowers(username: string, filters: SocialFilters = {}): Promise<SocialResult> {
   try {
-    await initializeWorkerBeeClient();
+    console.log(`[fetchFollowers] Fetching followers for ${username}`, filters);
 
-    const limit = Math.min(filters.limit || 20, 100);
-    
-    // Use Hive's get_followers API
-    const result = await makeHiveApiCall<{ follower: string; following: string; what: string[] }[]>(
+    if (!username) {
+      return { relationships: [], hasMore: false };
+    }
+
+    const limit = Math.min(Math.max(filters.limit ?? 100, 1), MAX_FOLLOW_PAGE_SIZE);
+    const start = filters.before ?? '';
+
+    const result = await makeHiveApiCall<Array<Record<string, unknown>>>(
       'condenser_api',
       'get_followers',
-      [username, '', 'blog', limit]
+      [username, start, 'blog', limit]
     );
 
-    const followers: FollowRelationship[] = (result || []).map(r => ({
-      follower: r.follower,
-      following: username,
-      followedAt: new Date().toISOString(), // Hive API doesn't return timestamps
-    }));
+    if (!Array.isArray(result)) {
+      console.warn('[fetchFollowers] Unexpected response format', result);
+      return { relationships: [], hasMore: false };
+    }
+
+    const relationships = result
+      .filter((rel) => typeof rel?.follower === 'string' && typeof rel?.following === 'string')
+      .filter((rel) => !start || rel?.follower !== start)
+      .map((rel) => ({
+        follower: rel!.follower as string,
+        following: rel!.following as string,
+        followedAt:
+          (rel!.followed_since as string | undefined)
+          || (rel!.follow_since as string | undefined)
+          || new Date().toISOString(),
+      }));
+
+    const hasMore = result.length === limit;
+    const nextCursor = hasMore && relationships.length > 0
+      ? relationships[relationships.length - 1]?.follower
+      : undefined;
+    const total = !start ? await getFollowerCount(username) : undefined;
 
     return {
-      relationships: followers,
-      hasMore: followers.length === limit,
-      nextCursor: followers.length > 0 ? followers[followers.length - 1]?.follower : undefined,
+      relationships,
+      hasMore,
+      nextCursor,
+      total,
     };
   } catch (error) {
     console.error('Error fetching followers:', error);
@@ -302,27 +293,49 @@ export async function fetchFollowers(username: string, filters: SocialFilters = 
  */
 export async function fetchFollowing(username: string, filters: SocialFilters = {}): Promise<SocialResult> {
   try {
-    await initializeWorkerBeeClient();
+    console.log(`[fetchFollowing] Fetching following for ${username}`, filters);
 
-    const limit = Math.min(filters.limit || 20, 100);
-    
-    // Use Hive's get_following API
-    const result = await makeHiveApiCall<{ follower: string; following: string; what: string[] }[]>(
+    if (!username) {
+      return { relationships: [], hasMore: false };
+    }
+
+    const limit = Math.min(Math.max(filters.limit ?? 100, 1), MAX_FOLLOW_PAGE_SIZE);
+    const start = filters.before ?? '';
+
+    const result = await makeHiveApiCall<Array<Record<string, unknown>>>(
       'condenser_api',
       'get_following',
-      [username, '', 'blog', limit]
+      [username, start, 'blog', limit]
     );
 
-    const following: FollowRelationship[] = (result || []).map(r => ({
-      follower: username,
-      following: r.following,
-      followedAt: new Date().toISOString(), // Hive API doesn't return timestamps
-    }));
+    if (!Array.isArray(result)) {
+      console.warn('[fetchFollowing] Unexpected response format', result);
+      return { relationships: [], hasMore: false };
+    }
+
+    const relationships = result
+      .filter((rel) => typeof rel?.follower === 'string' && typeof rel?.following === 'string')
+      .filter((rel) => !start || rel?.following !== start)
+      .map((rel) => ({
+        follower: rel!.follower as string,
+        following: rel!.following as string,
+        followedAt:
+          (rel!.followed_since as string | undefined)
+          || (rel!.follow_since as string | undefined)
+          || new Date().toISOString(),
+      }));
+
+    const hasMore = result.length === limit;
+    const nextCursor = hasMore && relationships.length > 0
+      ? relationships[relationships.length - 1]?.following
+      : undefined;
+    const total = !start ? await getFollowingCount(username) : undefined;
 
     return {
-      relationships: following,
-      hasMore: following.length === limit,
-      nextCursor: following.length > 0 ? following[following.length - 1]?.following : undefined,
+      relationships,
+      hasMore,
+      nextCursor,
+      total,
     };
   } catch (error) {
     console.error('Error fetching following:', error);
@@ -340,16 +353,21 @@ export async function fetchFollowing(username: string, filters: SocialFilters = 
  */
 export async function getFollowerCount(username: string): Promise<number> {
   try {
-    await initializeWorkerBeeClient();
+    console.log(`[getFollowerCount] Getting follower count for ${username}`);
 
-    // Use get_follow_count API
-    const result = await makeHiveApiCall<{ follower_count?: number; following_count?: number }>(
+    if (!username) {
+      return 0;
+    }
+
+    const result = await makeHiveApiCall<Record<string, unknown>>(
       'condenser_api',
       'get_follow_count',
       [username]
     );
 
-    return result?.follower_count || 0;
+    const count = typeof result?.follower_count === 'number' ? result.follower_count : 0;
+    console.log(`[getFollowerCount] ${username} has ${count} followers`);
+    return count;
   } catch (error) {
     console.error('Error fetching follower count:', error);
     return 0;
@@ -363,16 +381,21 @@ export async function getFollowerCount(username: string): Promise<number> {
  */
 export async function getFollowingCount(username: string): Promise<number> {
   try {
-    await initializeWorkerBeeClient();
+    console.log(`[getFollowingCount] Getting following count for ${username}`);
 
-    // Use get_follow_count API
-    const result = await makeHiveApiCall<{ follower_count?: number; following_count?: number }>(
+    if (!username) {
+      return 0;
+    }
+
+    const result = await makeHiveApiCall<Record<string, unknown>>(
       'condenser_api',
       'get_follow_count',
       [username]
     );
 
-    return result?.following_count || 0;
+    const count = typeof result?.following_count === 'number' ? result.following_count : 0;
+    console.log(`[getFollowingCount] ${username} is following ${count} accounts`);
+    return count;
   } catch (error) {
     console.error('Error fetching following count:', error);
     return 0;
