@@ -166,6 +166,36 @@ interface AiohaInstanceWithUser {
 }
 
 
+const AUTH_STORAGE_KEY = "authState";
+
+export const sanitizeHiveUserForStorage = (hiveUser: HiveAuthUser | null): HiveAuthUser | null => {
+  if (!hiveUser) {
+    return null;
+  }
+
+  const sanitizedHiveUser: HiveAuthUser = { ...hiveUser };
+  delete sanitizedHiveUser.sessionId;
+  delete sanitizedHiveUser.aiohaUserId;
+  return sanitizedHiveUser;
+};
+
+const persistAuthState = ({
+  user: userToPersist,
+  authType: authTypeToPersist,
+  hiveUser: hiveUserToPersist,
+}: {
+  user: User | null;
+  authType: AuthType;
+  hiveUser: HiveAuthUser | null;
+}) => {
+  const sanitizedState = {
+    user: userToPersist,
+    authType: authTypeToPersist,
+    hiveUser: sanitizeHiveUserForStorage(hiveUserToPersist),
+  };
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sanitizedState));
+};
+
 const AuthContext = createContext<AuthState & {
   login: (user: User, authType: AuthType) => void;
   loginWithHiveUser: (hiveUsername: string) => Promise<void>;
@@ -205,7 +235,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsClient(true);
     
     // Check for existing auth state in localStorage
-    const savedAuth = localStorage.getItem("authState");
+    const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
     if (savedAuth) {
       try {
         const { user: savedUser, authType: savedAuthType, hiveUser: savedHiveUser } = JSON.parse(savedAuth);
@@ -233,11 +263,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthType(newAuthType);
     
     // Save to localStorage
-    localStorage.setItem("authState", JSON.stringify({
+    persistAuthState({
       user: newUser,
       authType: newAuthType,
-      hiveUser: hiveUser,
-    }));
+      hiveUser,
+    });
   };
 
   const loginWithFirebase = (authUser: AuthUser) => {
@@ -256,14 +286,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthType(authUser.isHiveUser ? "hive" : "soft");
     
     // Save to localStorage
-    localStorage.setItem("authState", JSON.stringify({
-      user: user,
+    persistAuthState({
+      user,
       authType: authUser.isHiveUser ? "hive" : "soft",
-      hiveUser: authUser.isHiveUser ? {
-        username: authUser.hiveUsername!,
-        isAuthenticated: true,
-      } : null,
-    }));
+      hiveUser: authUser.isHiveUser
+        ? {
+            username: authUser.hiveUsername!,
+            isAuthenticated: true,
+          }
+        : null,
+    });
   };
 
   const loginWithHiveUser = async (hiveUsername: string) => {
@@ -289,6 +321,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAuthenticated: true,
       };
       setHiveUser(newHiveUser);
+
+      persistAuthState({
+        user: basicUser,
+        authType: "hive",
+        hiveUser: newHiveUser,
+      });
 
       // Fetch full account data in the background
       console.log("Fetching Hive account data for:", hiveUsername);
@@ -337,11 +375,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log("Updated user with Hive profile data:", updatedUser);
 
           // Save updated state to localStorage
-          localStorage.setItem("authState", JSON.stringify({
+          persistAuthState({
             user: updatedUser,
             authType: "hive",
             hiveUser: updatedHiveUser,
-          }));
+          });
         } else {
           console.log("No account data found for:", hiveUsername);
         }
@@ -746,7 +784,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
             
             // Try to get username from localStorage or other persistent storage first
-            const storedAuth = localStorage.getItem("authState");
+          const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
             if (storedAuth) {
               try {
                 const parsed = JSON.parse(storedAuth);
@@ -754,7 +792,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   userData = {
                     username: parsed.hiveUser.username,
                     id: parsed.hiveUser.username,
-                    sessionId: parsed.hiveUser.sessionId,
                   };
                   console.log("Using stored user data:", userData);
                 } else {
@@ -855,6 +892,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
         setHiveUser(newHiveUser);
 
+        persistAuthState({
+          user: basicUser,
+          authType: "hive",
+          hiveUser: newHiveUser,
+        });
+
         // Fetch full account data in the background
         try {
           const accountData = await fetchUserAccount(userData.username!);
@@ -898,11 +941,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(updatedUser);
 
             // Save updated state to localStorage
-            localStorage.setItem("authState", JSON.stringify({
+            persistAuthState({
               user: updatedUser,
               authType: "hive",
               hiveUser: updatedHiveUser,
-            }));
+            });
           }
         } catch (profileError) {
           console.error("Error fetching Hive account data:", profileError);
@@ -942,7 +985,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setAuthType("guest");
     setHiveUser(null);
-    localStorage.removeItem("authState");
+    localStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
   const upgradeToHive = async (hiveUsername: string) => {
@@ -970,6 +1013,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAuthenticated: true,
       };
       setHiveUser(newHiveUser);
+
+      persistAuthState({
+        user: updatedUser,
+        authType: "hive",
+        hiveUser: newHiveUser,
+      });
 
       // Fetch Hive account data
       try {
@@ -1004,18 +1053,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             createdAt: accountData.createdAt,
           };
           setUser(userWithHiveData);
+
+          persistAuthState({
+            user: userWithHiveData,
+            authType: "hive",
+            hiveUser: updatedHiveUser,
+          });
         }
       } catch (profileError) {
         console.error("Error fetching Hive account data:", profileError);
         // Keep the basic user even if profile loading fails
       }
-
-      // Save updated state to localStorage
-      localStorage.setItem("authState", JSON.stringify({
-        user: updatedUser,
-        authType: "hive",
-        hiveUser: newHiveUser,
-      }));
 
     } catch (error) {
       console.error("Error upgrading to Hive account:", error);
@@ -1027,20 +1075,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (user) {
       const updatedUser = { ...user, ...userUpdate };
       setUser(updatedUser);
-      
-      // Update localStorage
-      const savedAuth = localStorage.getItem("authState");
-      if (savedAuth) {
-        try {
-          const authState = JSON.parse(savedAuth);
-          authState.user = updatedUser;
-          localStorage.setItem("authState", JSON.stringify(authState));
-        } catch (error) {
-          console.error("Error updating saved auth state:", error);
-        }
-      }
+
+      persistAuthState({
+        user: updatedUser,
+        authType,
+        hiveUser,
+      });
     }
-  }, [user]);
+  }, [authType, hiveUser, user]);
 
   const applyAccountData = useCallback((accountData: UserAccountData) => {
     if (!hiveUser) {
@@ -1085,8 +1127,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         createdAt: accountData.createdAt,
       };
       updateUser(updatedUser);
+
+      persistAuthState({
+        user: updatedUser,
+        authType,
+        hiveUser: updatedHiveUser,
+      });
     }
-  }, [hiveUser, setHiveUser, updateUser, user]);
+  }, [authType, hiveUser, setHiveUser, updateUser, user]);
 
   const refreshHiveAccount = useCallback(async () => {
     if (!hiveUser?.username) {

@@ -7,10 +7,11 @@
 import {
   getAccountWax,
   getContentWax,
-  getDiscussionsWax
+  getDiscussionsWax,
   // getWaxInstance // Temporarily disabled
 } from './wax-helpers';
 import { getNodeHealthManager } from './node-health';
+import { workerBee as workerBeeLog, info as logInfo, warn as logWarn } from './logger';
 
 const REQUEST_TIMEOUT_MS = 8000;
 
@@ -59,7 +60,7 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
   for (const nodeUrl of uniqueNodes) {
     try {
       const start = Date.now();
-      console.log(`[Hive API] Trying ${nodeUrl} for ${api}.${method}`);
+      workerBeeLog(`Hive API try ${api}.${method}`, undefined, { nodeUrl });
 
       const response = await fetchWithTimeout(nodeUrl, {
         method: 'POST',
@@ -85,8 +86,8 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
       }
 
       const duration = Date.now() - start;
-      console.log(`[Hive API] Success with ${nodeUrl} for ${api}.${method}`);
-      console.log(`[Hive API] ${nodeUrl} responded in ${duration}ms`);
+      workerBeeLog(`Hive API success ${api}.${method}`, undefined, { nodeUrl, duration });
+      logInfo(`${nodeUrl} responded in ${duration}ms`, `${api}.${method}`, { nodeUrl, duration });
       return result.result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -95,7 +96,7 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
         ? `Request to ${nodeUrl} timed out after ${REQUEST_TIMEOUT_MS}ms`
         : errorMessage;
 
-      console.warn(`[Hive API] Failed with ${nodeUrl}: ${timeoutMessage}`);
+      logWarn(`Hive API failed for ${api}.${method} using ${nodeUrl}: ${timeoutMessage}`);
       lastError = new Error(timeoutMessage);
       // Continue to next node
     }
@@ -152,7 +153,7 @@ export async function checkHiveNodeAvailability(nodeUrl: string): Promise<boolea
  */
 export async function makeWaxApiCall<T = unknown>(method: string, params: unknown[] = []): Promise<T> {
   try {
-    console.log(`[Wax API] Calling ${method} with params:`, params);
+    workerBeeLog(`Wax API call ${method}`, undefined, params);
     
     // const wax = await getWaxInstance(); // Temporarily disabled
     // Temporarily disable Wax API calls due to requestInterceptor issues
@@ -161,7 +162,7 @@ export async function makeWaxApiCall<T = unknown>(method: string, params: unknow
     console.error(`[Wax API] Failed for ${method}:`, error);
     
     // Fallback to original HTTP API call
-    console.log(`[Wax API] Falling back to HTTP API for ${method}`);
+    logWarn(`Wax API failed for ${method}, falling back to HTTP`);
     return makeHiveApiCall('condenser_api', method, params);
   }
 }
@@ -173,7 +174,7 @@ export async function makeWaxApiCall<T = unknown>(method: string, params: unknow
  */
 export async function getAccountWaxWithFallback(username: string): Promise<unknown | null> {
   try {
-    console.log(`[Wax API] Getting account for ${username} using Wax`);
+    workerBeeLog(`Wax account for ${username}`);
     return await getAccountWax(username);
   } catch (error) {
     console.error(`[Wax API] Failed to get account with Wax, falling back:`, error);
@@ -189,7 +190,7 @@ export async function getAccountWaxWithFallback(username: string): Promise<unkno
  */
 export async function getContentWaxWithFallback(author: string, permlink: string): Promise<unknown | null> {
   try {
-    console.log(`[Wax API] Getting content ${author}/${permlink} using Wax`);
+    workerBeeLog(`Wax content for ${author}/${permlink}`);
     return await getContentWax(author, permlink);
   } catch (error) {
     console.error(`[Wax API] Failed to get content with Wax, falling back:`, error);
@@ -205,7 +206,7 @@ export async function getContentWaxWithFallback(author: string, permlink: string
  */
 export async function getDiscussionsWaxWithFallback(method: string, params: unknown[]): Promise<unknown[]> {
   try {
-    console.log(`[Wax API] Getting discussions using ${method} with Wax`);
+    workerBeeLog(`Wax discussions via ${method}`);
     return await getDiscussionsWax(method, params);
   } catch (error) {
     console.error(`[Wax API] Failed to get discussions with Wax, falling back:`, error);
@@ -221,7 +222,7 @@ export async function startHiveNodeHealthMonitoring(): Promise<void> {
   try {
     const nodeHealthManager = getNodeHealthManager();
     await nodeHealthManager.startProactiveMonitoring();
-    console.log('[Hive API] Node health monitoring started');
+    logInfo('Node health monitoring started');
   } catch (error) {
     console.error('[Hive API] Failed to start node health monitoring:', error);
   }

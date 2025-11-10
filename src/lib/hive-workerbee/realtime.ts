@@ -1,6 +1,16 @@
-import { getWorkerBeeClient } from './client';
-import { SPORTS_ARENA_CONFIG } from './client';
+import { getWorkerBeeClient, initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
 import type { IStartConfiguration } from "@hiveio/workerbee";
+
+const REALTIME_DEBUG_ENABLED =
+  process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true' || process.env.NODE_ENV === 'development';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const realtimeDebugLog = (...args: any[]) => {
+  if (!REALTIME_DEBUG_ENABLED) {
+    return;
+  }
+  console.debug(...args);
+};
 
 // Real-time event types
 export interface RealtimePostEvent {
@@ -121,11 +131,14 @@ export interface StreamData {
 // Error handler type
 export type ErrorHandler = (error: WebSocketError | Error) => void;
 
+type SubscriptionLike = { unsubscribe: () => void } | (() => void) | void;
+
 // Real-time monitoring class
 export class RealtimeMonitor {
   private client: unknown = null;
   private isRunning = false;
   private callbacks: RealtimeEventCallback[] = [];
+  private subscriptions: SubscriptionLike[] = [];
 
   constructor() {
     this.initializeClient();
@@ -134,7 +147,7 @@ export class RealtimeMonitor {
   private async initializeClient() {
     try {
       this.client = await getWorkerBeeClient();
-      console.log('[RealtimeMonitor] WorkerBee client initialized');
+      realtimeDebugLog('[RealtimeMonitor] WorkerBee client initialized');
     } catch (error) {
       console.error('[RealtimeMonitor] Failed to initialize client:', error);
     }
@@ -145,23 +158,32 @@ export class RealtimeMonitor {
    */
   async start(): Promise<void> {
     if (this.isRunning) {
-      console.log('[RealtimeMonitor] Already running');
+      realtimeDebugLog('[RealtimeMonitor] Already running');
       return;
     }
 
-    if (!this.client) {
-      await this.initializeClient();
-    }
-
-    if (!this.client) {
-      throw new Error('Failed to initialize WorkerBee client');
-    }
+    await this.ensureClientStarted();
 
     try {
-      // Start monitoring for new posts in Sportsblock community
-      (this.client as { observe: { onPostsWithTags: (tags: string[]) => { subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => void } } }).observe.onPostsWithTags([SPORTS_ARENA_CONFIG.COMMUNITY_ID, 'sportsblock']).subscribe({
+      this.clearSubscriptions();
+
+      const observableApi = this.client as {
+        observe: {
+          onPostsWithTags: (tags: string[]) => {
+            subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => SubscriptionLike;
+          };
+          onVotes: () => {
+            subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => SubscriptionLike;
+          };
+          onComments: () => {
+            subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => SubscriptionLike;
+          };
+        };
+      };
+
+      const postsSubscription = observableApi.observe.onPostsWithTags([SPORTS_ARENA_CONFIG.COMMUNITY_ID, 'sportsblock']).subscribe({
         next: (data: StreamData) => {
-          console.log('[RealtimeMonitor] New post detected:', data);
+          realtimeDebugLog('[RealtimeMonitor] New post detected:', data);
           this.handleNewPost(data);
         },
         error: (error: WebSocketError) => {
@@ -169,10 +191,9 @@ export class RealtimeMonitor {
         }
       });
 
-      // Start monitoring for votes on Sportsblock posts
-      (this.client as { observe: { onVotes: () => { subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => void } } }).observe.onVotes().subscribe({
+      const votesSubscription = observableApi.observe.onVotes().subscribe({
         next: (data: StreamData) => {
-          console.log('[RealtimeMonitor] New vote detected:', data);
+          realtimeDebugLog('[RealtimeMonitor] New vote detected:', data);
           this.handleNewVote(data);
         },
         error: (error: WebSocketError) => {
@@ -180,10 +201,9 @@ export class RealtimeMonitor {
         }
       });
 
-      // Start monitoring for comments on Sportsblock posts
-      (this.client as { observe: { onComments: () => { subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => void } } }).observe.onComments().subscribe({
+      const commentsSubscription = observableApi.observe.onComments().subscribe({
         next: (data: StreamData) => {
-          console.log('[RealtimeMonitor] New comment detected:', data);
+          realtimeDebugLog('[RealtimeMonitor] New comment detected:', data);
           this.handleNewComment(data);
         },
         error: (error: WebSocketError) => {
@@ -191,10 +211,13 @@ export class RealtimeMonitor {
         }
       });
 
+      this.subscriptions.push(postsSubscription, votesSubscription, commentsSubscription);
+
       this.isRunning = true;
-      console.log('[RealtimeMonitor] Real-time monitoring started');
+      realtimeDebugLog('[RealtimeMonitor] Real-time monitoring started');
     } catch (error) {
       console.error('[RealtimeMonitor] Failed to start monitoring:', error);
+      this.clearSubscriptions();
       throw error;
     }
   }
@@ -204,16 +227,18 @@ export class RealtimeMonitor {
    */
   async stop(): Promise<void> {
     if (!this.isRunning) {
-      console.log('[RealtimeMonitor] Not running');
+      realtimeDebugLog('[RealtimeMonitor] Not running');
       return;
     }
 
     try {
+      this.clearSubscriptions();
+
       if (this.client && typeof (this.client as { stop?: () => void | Promise<void> }).stop === 'function') {
         await (this.client as { stop: () => void | Promise<void> }).stop();
       }
       this.isRunning = false;
-      console.log('[RealtimeMonitor] Real-time monitoring stopped');
+      realtimeDebugLog('[RealtimeMonitor] Real-time monitoring stopped');
     } catch (error) {
       console.error('[RealtimeMonitor] Error stopping monitoring:', error);
     }
@@ -247,6 +272,56 @@ export class RealtimeMonitor {
         console.error('[RealtimeMonitor] Callback error:', error);
       }
     });
+  }
+
+  /**
+   * Ensure WorkerBee client is initialized and running
+   */
+  private async ensureClientStarted(): Promise<void> {
+    if (
+      typeof window !== 'undefined' &&
+      (window as unknown as { __TEST_DISABLE_WORKERBEE__?: boolean }).__TEST_DISABLE_WORKERBEE__
+    ) {
+      if (!this.client) {
+        const stubSubscribe = () => ({ unsubscribe: () => {} });
+        this.client = {
+          start: async () => {},
+          stop: async () => {},
+          observe: {
+            onPostsWithTags: () => ({ subscribe: stubSubscribe }),
+            onVotes: () => ({ subscribe: stubSubscribe }),
+            onComments: () => ({ subscribe: stubSubscribe }),
+          },
+        } as WorkerBeeClient;
+      }
+      return;
+    }
+
+    try {
+      const client = await initializeWorkerBeeClient();
+      this.client = client;
+    } catch (error) {
+      console.error('[RealtimeMonitor] Failed to start WorkerBee client:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Unsubscribe from all active realtime streams
+   */
+  private clearSubscriptions(): void {
+    this.subscriptions.forEach((subscription) => {
+      try {
+        if (typeof subscription === 'function') {
+          subscription();
+        } else if (subscription && typeof (subscription as { unsubscribe?: () => void }).unsubscribe === 'function') {
+          (subscription as { unsubscribe: () => void }).unsubscribe();
+        }
+      } catch (error) {
+        console.error('[RealtimeMonitor] Failed to unsubscribe from realtime stream:', error);
+      }
+    });
+    this.subscriptions = [];
   }
 
   /**
@@ -405,4 +480,17 @@ export function getRealtimeStatus(): { isRunning: boolean; callbackCount: number
     return { isRunning: false, callbackCount: 0 };
   }
   return globalMonitor.getStatus();
+}
+
+/**
+ * Emit a realtime event (testing utility)
+ */
+export function emitRealtimeEventForTesting(event: RealtimeEvent): void {
+  const monitor = getRealtimeMonitor() as unknown as { emitEvent: (evt: RealtimeEvent) => void };
+  monitor.emitEvent(event);
+}
+
+if (typeof window !== 'undefined') {
+  (window as unknown as { __EMIT_REALTIME_EVENT__?: (event: RealtimeEvent) => void }).__EMIT_REALTIME_EVENT__ =
+    emitRealtimeEventForTesting;
 }

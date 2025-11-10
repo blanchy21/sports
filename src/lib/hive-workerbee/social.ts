@@ -1,6 +1,7 @@
 import { initializeWorkerBeeClient } from './client';
 import { makeHiveApiCall } from './api';
 import { FollowRelationship } from '@/types';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 
 export interface SocialFilters {
   limit?: number;
@@ -33,12 +34,12 @@ export async function followUser(username: string, follower: string): Promise<{
   }
 
   try {
-    console.log(`[followUser] Starting follow operation: ${follower} -> ${username}`);
+    workerBeeLog(`followUser start ${follower} -> ${username}`);
     await initializeWorkerBeeClient();
 
     // Skip relationship checking since get_relationships API is not available
     // We'll proceed directly to the follow operation
-    console.log(`[followUser] Skipping relationship check - proceeding with follow operation`);
+    workerBeeLog('followUser skipping relationship check (API unavailable)');
 
     // Import Aioha to broadcast the transaction
     const { aioha } = await import('@/lib/aioha/config');
@@ -56,7 +57,7 @@ export async function followUser(username: string, follower: string): Promise<{
       what: ['blog'] // 'blog' means following their content, empty array means unfollow
     };
 
-    console.log('[followUser] Follow operation created:', followOperation);
+    workerBeeLog('followUser operation created', undefined, followOperation);
 
     // Use Aioha to sign and broadcast the transaction
     const operations = [
@@ -71,22 +72,22 @@ export async function followUser(username: string, follower: string): Promise<{
       }]
     ];
     
-    console.log('[followUser] Attempting to sign and broadcast transaction...');
+    workerBeeLog('followUser broadcasting transaction');
     const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(operations, 'posting');
     
-    console.log('[followUser] Broadcast result:', result);
+    workerBeeLog('followUser broadcast result', undefined, result);
 
     if (!result || (result as { error?: string })?.error) {
       throw new Error(`Transaction failed: ${(result as { error?: string })?.error || 'Unknown error'}`);
     }
 
-    console.log(`[followUser] ${follower} is now following ${username}`);
+    workerBeeLog(`followUser success ${follower} -> ${username}`);
     
     return {
       success: true,
     };
   } catch (error) {
-    console.error('Error following user:', error);
+    logError('Error following user', undefined, error instanceof Error ? error : undefined);
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Full error details:', {
       message: errorMessage,
@@ -119,12 +120,12 @@ export async function unfollowUser(username: string, follower: string): Promise<
   }
 
   try {
-    console.log(`[unfollowUser] Starting unfollow operation: ${follower} -> ${username}`);
+    workerBeeLog(`unfollowUser start ${follower} -> ${username}`);
     await initializeWorkerBeeClient();
 
     // Skip relationship checking since get_relationships API is not available
     // We'll proceed directly to the unfollow operation
-    console.log(`[unfollowUser] Skipping relationship check - proceeding with unfollow operation`);
+    workerBeeLog('unfollowUser skipping relationship check (API unavailable)');
 
     // Import Aioha to broadcast the transaction
     const { aioha } = await import('@/lib/aioha/config');
@@ -140,7 +141,7 @@ export async function unfollowUser(username: string, follower: string): Promise<
       what: [] // Empty array means unfollow
     };
 
-    console.log('[unfollowUser] Unfollow operation created:', unfollowOperation);
+    workerBeeLog('unfollowUser operation created', undefined, unfollowOperation);
 
     // Use Aioha to sign and broadcast the transaction
     const operations = [
@@ -155,16 +156,16 @@ export async function unfollowUser(username: string, follower: string): Promise<
       }]
     ];
     
-    console.log('[unfollowUser] Attempting to sign and broadcast transaction...');
+    workerBeeLog('unfollowUser broadcasting transaction');
     const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(operations, 'posting');
     
-    console.log('[unfollowUser] Broadcast result:', result);
+    workerBeeLog('unfollowUser broadcast result', undefined, result);
 
     if (!result || (result as { error?: string })?.error) {
       throw new Error(`Transaction failed: ${(result as { error?: string })?.error || 'Unknown error'}`);
     }
 
-    console.log(`[unfollowUser] ${follower} is no longer following ${username}`);
+    workerBeeLog(`unfollowUser success ${follower} -> ${username}`);
     
     return {
       success: true,
@@ -192,10 +193,10 @@ export async function unfollowUser(username: string, follower: string): Promise<
  */
 export async function isFollowingUser(username: string, follower: string): Promise<boolean> {
   try {
-    console.log(`[isFollowingUser] Checking if ${follower} is following ${username}`);
+    workerBeeLog(`isFollowingUser check ${follower} -> ${username}`);
 
     if (!username || !follower) {
-      console.log('[isFollowingUser] Missing username or follower');
+      logWarn('isFollowingUser called with missing username or follower');
       return false;
     }
 
@@ -214,10 +215,10 @@ export async function isFollowingUser(username: string, follower: string): Promi
           && rel.follower === follower
       );
 
-    console.log(`[isFollowingUser] Result: ${isFollowing}`);
+    workerBeeLog(`isFollowingUser result ${follower} -> ${username}`, undefined, { isFollowing });
     return isFollowing;
   } catch (error) {
-    console.error('[isFollowingUser] Error checking follow status:', error);
+    logError('Error checking follow status', undefined, error instanceof Error ? error : undefined);
     return false;
   }
 }

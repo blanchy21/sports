@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AiohaProvider as AiohaUIProvider } from '@aioha/react-ui';
-import { aioha } from '@/lib/aioha/config';
+import { aioha, AIOHA_STUB_EVENT, getAiohaInstance } from '@/lib/aioha/config';
 
 
 // Aioha context type
@@ -33,11 +33,22 @@ export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initialize Aioha only in browser
-    const initializeAioha = async () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const resolveInstance = () => {
+      if (window.__AIOHA_FORCE_STUB__ && typeof window.__AIOHA_TEST_STUB__ !== 'undefined') {
+        setAiohaInstance(window.__AIOHA_TEST_STUB__ ?? null);
+        setIsInitialized(true);
+        setError(null);
+        return;
+      }
+
       try {
-        if (typeof window !== 'undefined' && aioha) {
-          setAiohaInstance(aioha);
+        const instance = getAiohaInstance();
+        if (instance) {
+          setAiohaInstance(instance);
           setIsInitialized(true);
           setError(null);
         } else {
@@ -50,8 +61,46 @@ export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
       }
     };
 
-    initializeAioha();
+    const handleStubApplied = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      setAiohaInstance(detail ?? window.__AIOHA_TEST_STUB__ ?? null);
+      setIsInitialized(true);
+      setError(null);
+    };
+
+    resolveInstance();
+    window.addEventListener(AIOHA_STUB_EVENT, handleStubApplied);
+
+    const originalSetter = window.__SET_AIOHA_STUB__;
+    if (originalSetter) {
+      window.__SET_AIOHA_STUB__ = (stub: unknown) => {
+        originalSetter(stub);
+        setAiohaInstance(stub ?? null);
+        setIsInitialized(true);
+        setError(null);
+      };
+    }
+
+    return () => {
+      window.removeEventListener(AIOHA_STUB_EVENT, handleStubApplied);
+      if (originalSetter) {
+        window.__SET_AIOHA_STUB__ = originalSetter;
+      }
+    };
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__AIOHA_DEBUG_STATE__ = {
+        isInitialized,
+        error,
+        hasInstance: Boolean(aiohaInstance),
+        providerMethods: aiohaInstance
+          ? Object.keys(aiohaInstance as Record<string, unknown>)
+          : [],
+      };
+    }
+  }, [aiohaInstance, isInitialized, error]);
 
   const contextValue: AiohaContextType = {
     aioha: aiohaInstance,

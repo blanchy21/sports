@@ -10,8 +10,6 @@ import {
   Bell, 
   Plus, 
   Settings,
-  Moon,
-  Sun,
   Zap,
   Users,
   Search,
@@ -25,19 +23,24 @@ import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { UpgradePrompt } from "@/components/AccountBadge";
 import { UpgradeFlow } from "@/components/UpgradeFlow";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { cn } from "@/lib/utils";
-import { useModal } from "@/components/modals/ModalProvider";
 import { fetchUserAccount } from "@/lib/hive-workerbee/account";
+
+type SearchResult = {
+  username: string;
+  displayName: string;
+  avatar?: string;
+  reputation?: string;
+  followers: number;
+  following: number;
+};
 
 export const TopNavigation: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const { unreadCount } = useNotifications();
-  const { openModal } = useModal();
   const [showSportsPopup, setShowSportsPopup] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -46,13 +49,9 @@ export const TopNavigation: React.FC = () => {
   const [selectedSport, setSelectedSport] = useState<string>("");
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
-
-  const handleToggleTheme = () => {
-    toggleTheme();
-  };
 
   const handleSportSelect = (sportId: string) => {
     setSelectedSport(sportId);
@@ -194,6 +193,7 @@ export const TopNavigation: React.FC = () => {
                   size="icon" 
                   onClick={() => setShowNotifications(!showNotifications)}
                   className="text-white/90 hover:bg-white/20 hover:text-white w-16 h-16 relative"
+                  aria-label="Notifications"
                 >
                   <Bell className="h-8 w-8" />
                   {unreadCount > 0 && (

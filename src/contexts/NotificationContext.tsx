@@ -1,8 +1,27 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "./AuthContext";
 import { getWorkerBeeClient } from "@/lib/hive-workerbee/client";
+
+const NOTIFICATION_STORAGE_PREFIX = 'sportsblock-notifications';
+
+const notificationsDebugEnabled =
+  process.env.NEXT_PUBLIC_NOTIFICATIONS_DEBUG === 'true' || process.env.NODE_ENV === 'development';
+
+const notificationDebugLog = (...args: unknown[]) => {
+  if (!notificationsDebugEnabled) {
+    return;
+  }
+  console.debug('[NotificationContext]', ...args);
+};
+
+const getStorageKey = (username?: string | null) => {
+  if (username && username.trim()) {
+    return `${NOTIFICATION_STORAGE_PREFIX}:${username.toLowerCase()}`;
+  }
+  return `${NOTIFICATION_STORAGE_PREFIX}:guest`;
+};
 
 export interface Notification {
   id: string;
@@ -50,30 +69,39 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const [isRealtimeActive, setIsRealtimeActive] = useState(false);
   const { user, isClient } = useAuth();
 
-  // Load notifications from localStorage on mount
+  const storageKey = useMemo(() => getStorageKey(user?.username), [user?.username]);
+
+  // Load notifications from localStorage when client/user ready
   useEffect(() => {
     if (!isClient) return;
-    
-    const savedNotifications = localStorage.getItem('sportsblock-notifications');
-    if (savedNotifications) {
-      try {
-        const parsed = JSON.parse(savedNotifications);
-        const notificationsWithDates = parsed.map((n: Omit<Notification, 'timestamp'> & { timestamp: string }) => ({
+
+    try {
+      const savedNotifications = localStorage.getItem(storageKey);
+      if (savedNotifications) {
+        const parsed = JSON.parse(savedNotifications) as Array<Omit<Notification, 'timestamp'> & { timestamp: string }>;
+        const notificationsWithDates = parsed.map((n) => ({
           ...n,
-          timestamp: new Date(n.timestamp)
+          timestamp: new Date(n.timestamp),
         }));
         setNotifications(notificationsWithDates);
-      } catch (error) {
-        console.error('Error loading notifications:', error);
+      } else {
+        setNotifications([]);
       }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      setNotifications([]);
     }
-  }, [isClient]);
+  }, [isClient, storageKey]);
 
   // Save notifications to localStorage whenever they change
   useEffect(() => {
     if (!isClient) return;
-    localStorage.setItem('sportsblock-notifications', JSON.stringify(notifications));
-  }, [notifications, isClient]);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(notifications));
+    } catch (error) {
+      console.error('Error saving notifications:', error);
+    }
+  }, [notifications, isClient, storageKey]);
 
   const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: Notification = {
@@ -104,7 +132,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
-  }, []);
+    if (isClient) {
+      localStorage.removeItem(storageKey);
+    }
+  }, [isClient, storageKey]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -125,17 +156,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         // Start the WorkerBee client if not already running
         if (!workerBee.running) {
           await workerBee.start();
-          console.log('[NotificationContext] WorkerBee client started');
+          notificationDebugLog('WorkerBee client started');
         }
         
         setIsRealtimeActive(true);
 
         // Monitor comments on user's posts
-        console.log('[NotificationContext] Setting up comment monitoring for user:', user.username);
+        notificationDebugLog('Setting up comment monitoring for user:', user.username);
         commentSubscription = workerBee.observe.onComments().subscribe({
           next: (data) => {
             try {
-              console.log('[NotificationContext] Comment data received:', data);
+              notificationDebugLog('Comment data received:', data);
               // Handle WorkerBee data structure
               if (data && data.comments) {
                 const comments = Array.isArray(data.comments) ? data.comments : [];
@@ -144,7 +175,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
                   
                   // Only notify if it's a comment on the user's posts
                   if (operation && operation.parent_author === user.username) {
-                    console.log('[NotificationContext] Adding comment notification for:', operation.author);
+                    notificationDebugLog('Adding comment notification for comment author:', operation.author);
                     addNotification({
                       type: 'comment',
                       title: 'New Comment',
@@ -170,11 +201,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         });
 
         // Monitor votes on user's posts
-        console.log('[NotificationContext] Setting up vote monitoring for user:', user.username);
+        notificationDebugLog('Setting up vote monitoring for user:', user.username);
         voteSubscription = workerBee.observe.onVotes().subscribe({
           next: (data) => {
             try {
-              console.log('[NotificationContext] Vote data received:', data);
+              notificationDebugLog('Vote data received:', data);
               // Handle WorkerBee data structure
               if (data && data.votes) {
                 const votes = Array.isArray(data.votes) ? data.votes : [];
@@ -183,7 +214,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
                   
                   // Only notify if it's a vote on the user's posts
                   if (operation && operation.author === user.username) {
-                    console.log('[NotificationContext] Adding vote notification for:', operation.voter);
+                    notificationDebugLog('Adding vote notification for voter:', operation.voter);
                     addNotification({
                       type: 'vote',
                       title: 'New Vote',

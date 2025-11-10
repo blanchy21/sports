@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>HiveSigner Callback</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        padding: 2rem;
+        background: #0f172a;
+        color: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      main {
+        max-width: 28rem;
+        text-align: center;
+      }
+      h1 {
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+      }
+      p {
+        margin-bottom: 0.75rem;
+        line-height: 1.5;
+      }
+      .dim {
+        color: rgba(241, 245, 249, 0.7);
+        font-size: 0.9375rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Completing HiveSigner Login&hellip;</h1>
+      <p class="dim" id="status">Processing response, please wait.</p>
+      <p class="dim">You can close this tab once the window refreshes.</p>
+    </main>
+    <script>
+      (function () {
+        try {
+          const hash = window.location.hash.startsWith('#')
+            ? window.location.hash.substring(1)
+            : window.location.search.substring(1);
+          const params = new URLSearchParams(hash);
+
+          const accessToken = params.get('access_token');
+          const expiresIn = params.get('expires_in');
+          const username = params.get('username');
+          const state = params.get('state');
+          const tokenType = params.get('token_type');
+
+          if (!accessToken || !username) {
+            throw new Error('Missing HiveSigner authentication details');
+          }
+
+          const expiryTimestamp = expiresIn ? Date.now() + Number(expiresIn) * 1000 : null;
+
+          localStorage.setItem('hivesignerToken', accessToken);
+          if (expiryTimestamp) {
+            localStorage.setItem('hivesignerExpiry', String(expiryTimestamp));
+          }
+          localStorage.setItem('hivesignerUsername', username);
+          if (state) {
+            localStorage.setItem('hivesignerState', state);
+          }
+          if (tokenType) {
+            localStorage.setItem('hivesignerTokenType', tokenType);
+          }
+
+          // Mirror the general Aioha keys so the library can restore session.
+          localStorage.setItem('aiohaUsername', username);
+          localStorage.setItem('aiohaProvider', 'hivesigner');
+
+          window.localStorage.setItem('aiohaLastLoginAt', new Date().toISOString());
+
+          // Notify opener if available.
+          if (window.opener && typeof window.opener.postMessage === 'function') {
+            window.opener.postMessage({ source: 'hivesigner-callback', success: true, username }, '*');
+          }
+
+          document.getElementById('status').textContent = 'Login information saved. Redirecting&hellip;';
+          setTimeout(() => {
+            window.location.replace('/');
+          }, 1500);
+        } catch (error) {
+          console.error('[HiveSigner callback] Failed to process response', error);
+          document.getElementById('status').textContent =
+            'We could not process the HiveSigner response. Please close this tab and try again.';
+
+          if (window.opener && typeof window.opener.postMessage === 'function') {
+            window.opener.postMessage(
+              {
+                source: 'hivesigner-callback',
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error',
+              },
+              '*'
+            );
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
+

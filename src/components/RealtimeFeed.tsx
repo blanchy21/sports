@@ -95,7 +95,7 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <Card className="p-4">
+      <Card className="p-4" data-testid="realtime-feed">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Zap className="h-5 w-5" />
@@ -106,16 +106,21 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
               {isMonitoring ? 'Live' : 'Stopped'}
             </Badge>
             {isMonitoring ? (
-              <Button onClick={handleStopMonitoring} variant="outline" size="sm">
+              <Button
+                onClick={handleStopMonitoring}
+                variant="outline"
+                size="sm"
+                data-testid="realtime-stop"
+              >
                 Stop
               </Button>
             ) : (
-              <Button onClick={handleStartMonitoring} size="sm">
+              <Button onClick={handleStartMonitoring} size="sm" data-testid="realtime-start">
                 Start
               </Button>
             )}
             {events.length > 0 && (
-              <Button onClick={clearEvents} variant="outline" size="sm">
+              <Button onClick={clearEvents} variant="outline" size="sm" data-testid="realtime-clear">
                 Clear
               </Button>
             )}
@@ -127,11 +132,12 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
             {isMonitoring ? 'Waiting for activity...' : 'Start monitoring to see real-time activity'}
           </div>
         ) : (
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+          <div className="space-y-2 max-h-96 overflow-y-auto" data-testid="realtime-events">
             {events.map((event, index) => (
               <div
                 key={index}
                 className={`p-3 rounded-lg border ${getEventColor(event)}`}
+                data-testid="realtime-event"
               >
                 <div className="flex items-start gap-3">
                   {getEventIcon(event)}

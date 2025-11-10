@@ -32,6 +32,7 @@ import {
   getHiveNodeHealthReport,
   startHiveNodeHealthMonitoring
 } from '@/lib/hive-workerbee/api';
+import { LazyRealtimeFeed } from '@/components/lazy/LazyComponents';
 
 interface MonitoringData {
   errors: {
@@ -207,6 +208,8 @@ export default function MonitoringPage() {
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <LazyRealtimeFeed className="shadow-sm" />
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

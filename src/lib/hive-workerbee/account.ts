@@ -68,6 +68,17 @@ import { HiveAccount } from '../shared/types';
 import { calculateReputation } from '../shared/utils';
 import { getAccountOptimized, getContentOptimized } from './optimization';
 
+const WORKERBEE_DEBUG_ENABLED =
+  process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true' || process.env.NODE_ENV === 'development';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const debugLog = (...args: any[]) => {
+  if (!WORKERBEE_DEBUG_ENABLED) {
+    return;
+  }
+  console.debug(...args);
+};
+
 interface VestingDelegation {
   delegator: string;
   delegatee: string;
@@ -223,9 +234,9 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     // If account data shows 0 for comments or votes, try to calculate from posts
     if (accountCommentCount === 0 || accountVoteCount === 0) {
       try {
-        console.log(`[WorkerBee fetchUserAccount] Account stats are 0, calculating from posts...`);
+        debugLog(`[WorkerBee fetchUserAccount] Account stats are 0, calculating from posts...`);
         calculatedStats = await calculateUserStats(username);
-        console.log(`[WorkerBee fetchUserAccount] Calculated stats:`, calculatedStats);
+        debugLog(`[WorkerBee fetchUserAccount] Calculated stats:`, calculatedStats);
       } catch (error) {
         console.warn(`[WorkerBee fetchUserAccount] Failed to calculate user stats:`, error);
       }
@@ -238,14 +249,14 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     const savingsHbdAsset = parseAsset(accountData.savings_hbd_balance as string);
 
     // Parse profile metadata from both json_metadata and posting_json_metadata
-    console.log(`[WorkerBee fetchUserAccount] Raw json_metadata:`, accountData.json_metadata);
-    console.log(`[WorkerBee fetchUserAccount] Raw posting_json_metadata:`, accountData.posting_json_metadata);
+    debugLog(`[WorkerBee fetchUserAccount] Raw json_metadata:`, accountData.json_metadata);
+    debugLog(`[WorkerBee fetchUserAccount] Raw posting_json_metadata:`, accountData.posting_json_metadata);
     
     const profileMetadata = parseJsonMetadata(accountData.json_metadata as string);
     const postingProfileMetadata = parseJsonMetadata(accountData.posting_json_metadata as string);
     
-    console.log(`[WorkerBee fetchUserAccount] Parsed json_metadata:`, profileMetadata);
-    console.log(`[WorkerBee fetchUserAccount] Parsed posting_json_metadata:`, postingProfileMetadata);
+    debugLog(`[WorkerBee fetchUserAccount] Parsed json_metadata:`, profileMetadata);
+    debugLog(`[WorkerBee fetchUserAccount] Parsed posting_json_metadata:`, postingProfileMetadata);
     
     // Merge profile data, prioritizing posting_json_metadata for profile info
     const profile = {
@@ -253,7 +264,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       ...(postingProfileMetadata.profile || {})
     } as Record<string, unknown>;
     
-    console.log(`[WorkerBee fetchUserAccount] Merged profile data:`, profile);
+    debugLog(`[WorkerBee fetchUserAccount] Merged profile data:`, profile);
 
     // Get global properties for HIVE POWER calculation using Wax API
     let globalProps = null;
@@ -279,7 +290,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     try {
       // Use the dedicated RC API for accurate RC calculation
       const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [username]) as { rc_accounts?: RcAccountData[] };
-      console.log(`[WorkerBee fetchUserAccount] RC API response:`, rcResult);
+      debugLog(`[WorkerBee fetchUserAccount] RC API response:`, rcResult);
       
       if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {
         const rcData = rcResult.rc_accounts[0] as { rc_manabar?: { current_mana: string }; max_rc?: string };
@@ -290,59 +301,61 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
           
           if (maxRc > 0) {
             rcPercentage = (currentMana / maxRc) * 100;
-            console.log(`[WorkerBee fetchUserAccount] RC from rc_api: ${rcPercentage.toFixed(2)}% (${currentMana.toLocaleString()} / ${maxRc.toLocaleString()})`);
+            debugLog(
+              `[WorkerBee fetchUserAccount] RC from rc_api: ${rcPercentage.toFixed(2)}% (${currentMana.toLocaleString()} / ${maxRc.toLocaleString()})`
+            );
           } else {
-            console.log(`[WorkerBee fetchUserAccount] Max RC is 0, setting RC to 100%`);
+            debugLog(`[WorkerBee fetchUserAccount] Max RC is 0, setting RC to 100%`);
             rcPercentage = 100;
           }
         } else {
-          console.log(`[WorkerBee fetchUserAccount] RC data structure invalid, setting RC to 100%`);
+          debugLog(`[WorkerBee fetchUserAccount] RC data structure invalid, setting RC to 100%`);
           rcPercentage = 100;
         }
       } else {
-        console.log(`[WorkerBee fetchUserAccount] No RC data from rc_api, setting RC to 100%`);
+        debugLog(`[WorkerBee fetchUserAccount] No RC data from rc_api, setting RC to 100%`);
         rcPercentage = 100;
       }
     } catch (rcError) {
       console.warn(`[WorkerBee fetchUserAccount] Failed to fetch RC from rc_api:`, rcError);
-      console.log(`[WorkerBee fetchUserAccount] Setting RC to 100% as fallback`);
+      debugLog(`[WorkerBee fetchUserAccount] Setting RC to 100% as fallback`);
       rcPercentage = 100;
     }
     // Use reputation from the dedicated API call if available, otherwise fall back to account data
     let rawReputation: string | number;
     if (accountReputation && accountReputation.reputation) {
       rawReputation = accountReputation.reputation;
-      console.log(`[WorkerBee fetchUserAccount] Using reputation from get_account_reputations API:`, rawReputation);
+      debugLog(`[WorkerBee fetchUserAccount] Using reputation from get_account_reputations API:`, rawReputation);
     } else {
       rawReputation = accountData.reputation as string | number;
-      console.log(`[WorkerBee fetchUserAccount] Using reputation from get_accounts API:`, rawReputation);
+      debugLog(`[WorkerBee fetchUserAccount] Using reputation from get_accounts API:`, rawReputation);
     }
     
-    console.log(`[WorkerBee fetchUserAccount] Raw reputation for ${username}:`, rawReputation, 'Type:', typeof rawReputation);
+    debugLog(`[WorkerBee fetchUserAccount] Raw reputation for ${username}:`, rawReputation, 'Type:', typeof rawReputation);
     
     // Debug: Show what raw value would produce the expected vs actual reputation
     if (rawReputation && rawReputation !== 0 && rawReputation !== '0') {
       const calculated = calculateReputation(rawReputation);
-      console.log(`[WorkerBee fetchUserAccount] DEBUG: Raw ${rawReputation} → Calculated ${calculated}`);
+      debugLog(`[WorkerBee fetchUserAccount] DEBUG: Raw ${rawReputation} → Calculated ${calculated}`);
       
       // If the calculated reputation seems too high, let's check if we need to adjust the formula
       if (calculated > 100) {
-        console.log(`[WorkerBee fetchUserAccount] WARNING: Calculated reputation ${calculated} seems unusually high`);
-        console.log(`[WorkerBee fetchUserAccount] Expected range: 25-100 for most users`);
+        debugLog(`[WorkerBee fetchUserAccount] WARNING: Calculated reputation ${calculated} seems unusually high`);
+        debugLog(`[WorkerBee fetchUserAccount] Expected range: 25-100 for most users`);
       }
     }
     
     // Handle case where reputation is 0 or undefined
     let reputation: number;
     if (!rawReputation || rawReputation === 0 || rawReputation === '0') {
-      console.log(`[WorkerBee fetchUserAccount] Reputation is 0/undefined, using default value of 25`);
+      debugLog(`[WorkerBee fetchUserAccount] Reputation is 0/undefined, using default value of 25`);
       reputation = 25; // Default reputation for new accounts
     } else {
       reputation = calculateReputation(rawReputation);
     }
-    console.log(`[WorkerBee fetchUserAccount] Final reputation for ${username}:`, reputation);
+    debugLog(`[WorkerBee fetchUserAccount] Final reputation for ${username}:`, reputation);
 
-    console.log(`[WorkerBee fetchUserAccount] Final RC percentage: ${rcPercentage.toFixed(2)}%`);
+    debugLog(`[WorkerBee fetchUserAccount] Final RC percentage: ${rcPercentage.toFixed(2)}%`);
     
     return {
       username: accountData.name as string,
@@ -439,12 +452,14 @@ export async function fetchUserBalances(username: string): Promise<{
       
       if (maxRc > 0) {
         rcPercentage = (currentMana / maxRc) * 100;
-        console.log(`[WorkerBee fetchUserBalances] RC: ${rcPercentage.toFixed(2)}% (${currentMana.toLocaleString()} / ${maxRc.toLocaleString()})`);
+        debugLog(
+          `[WorkerBee fetchUserBalances] RC: ${rcPercentage.toFixed(2)}% (${currentMana.toLocaleString()} / ${maxRc.toLocaleString()})`
+        );
       } else {
         rcPercentage = 100;
       }
     } else {
-      console.log(`[WorkerBee fetchUserBalances] No RC data available, setting to 100%`);
+      debugLog(`[WorkerBee fetchUserBalances] No RC data available, setting to 100%`);
       rcPercentage = 100;
     }
 
@@ -512,15 +527,15 @@ export async function getUserFollowStats(username: string): Promise<{
   following: number;
 } | null> {
   try {
-    console.log(`[WorkerBee getUserFollowStats] Fetching follow stats for: ${username}`);
+    debugLog(`[WorkerBee getUserFollowStats] Fetching follow stats for: ${username}`);
 
     const result = await makeHiveApiCall('condenser_api', 'get_follow_count', [username]) as FollowCountData;
-    console.log(`[WorkerBee getUserFollowStats] Raw follow stats result:`, result);
+    debugLog(`[WorkerBee getUserFollowStats] Raw follow stats result:`, result);
 
     const followers = result.follower_count || 0;
     const following = result.following_count || 0;
 
-    console.log(`[WorkerBee getUserFollowStats] Follow stats: ${followers} followers, ${following} following`);
+    debugLog(`[WorkerBee getUserFollowStats] Follow stats: ${followers} followers, ${following} following`);
     
     return {
       followers,
@@ -538,11 +553,11 @@ export async function getUserFollowStats(username: string): Promise<{
  */
 export async function getHbdSavingsApr(): Promise<number> {
   try {
-    console.log(`[WorkerBee getHbdSavingsApr] Fetching HBD savings APR...`);
+    debugLog(`[WorkerBee getHbdSavingsApr] Fetching HBD savings APR...`);
 
     const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
     const apr = (globalProps.hbd_interest_rate || 0) / 100;
-    console.log(`[WorkerBee getHbdSavingsApr] HBD savings APR: ${apr}%`);
+    debugLog(`[WorkerBee getHbdSavingsApr] HBD savings APR: ${apr}%`);
     return apr;
   } catch (error) {
     console.error('Error fetching HBD savings APR with WorkerBee:', error);
@@ -605,7 +620,7 @@ export async function getAccountHistory(
   transactionId: string;
 }> | null> {
   try {
-    console.log(`[WorkerBee getAccountHistory] Fetching history for: ${username}, limit: ${limit}, start: ${start}`);
+    debugLog(`[WorkerBee getAccountHistory] Fetching history for: ${username}, limit: ${limit}, start: ${start}`);
     
     // Get account history using Hive API
     const history = await makeHiveApiCall('condenser_api', 'get_account_history', [
@@ -614,10 +629,10 @@ export async function getAccountHistory(
       limit
     ]) as Array<[number, HiveTransaction]>;
     
-    console.log(`[WorkerBee getAccountHistory] Raw history received:`, history?.length || 0, 'operations');
+    debugLog(`[WorkerBee getAccountHistory] Raw history received:`, history?.length || 0, 'operations');
     
     if (!history || !Array.isArray(history)) {
-      console.log(`[WorkerBee getAccountHistory] No history found for ${username}`);
+      debugLog(`[WorkerBee getAccountHistory] No history found for ${username}`);
       return [];
     }
 
@@ -636,7 +651,7 @@ export async function getAccountHistory(
       };
     });
 
-    console.log(`[WorkerBee getAccountHistory] Processed ${operations.length} operations for ${username}`);
+    debugLog(`[WorkerBee getAccountHistory] Processed ${operations.length} operations for ${username}`);
     return operations;
   } catch (error) {
     console.error('Error fetching account history with WorkerBee:', error);
@@ -683,7 +698,7 @@ export async function getRecentOperations(
   description: string;
 }> | null> {
   try {
-    console.log(`[WorkerBee getRecentOperations] Fetching recent operations for: ${username}`);
+    debugLog(`[WorkerBee getRecentOperations] Fetching recent operations for: ${username}`);
     
     const operations = await getAccountHistory(username, limit);
     if (!operations) return null;
@@ -726,7 +741,9 @@ export async function getRecentOperations(
       monetaryOperationTypes.includes(op.type)
     );
 
-    console.log(`[WorkerBee getRecentOperations] Filtered ${monetaryOperations.length} monetary operations from ${operations.length} total operations for ${username}`);
+    debugLog(
+      `[WorkerBee getRecentOperations] Filtered ${monetaryOperations.length} monetary operations from ${operations.length} total operations for ${username}`
+    );
 
     // Process operations to add human-readable descriptions
     const processedOperations = await Promise.all(monetaryOperations.map(async (op) => {
@@ -828,7 +845,7 @@ export async function getRecentOperations(
       };
     }));
 
-    console.log(`[WorkerBee getRecentOperations] Processed ${processedOperations.length} monetary operations for ${username}`);
+    debugLog(`[WorkerBee getRecentOperations] Processed ${processedOperations.length} monetary operations for ${username}`);
     return processedOperations;
   } catch (error) {
     console.error('Error fetching recent operations with WorkerBee:', error);
@@ -846,7 +863,7 @@ async function calculateUserStats(username: string): Promise<{
   voteCount: number;
 }> {
   try {
-    console.log(`[WorkerBee calculateUserStats] Calculating stats for: ${username}`);
+    debugLog(`[WorkerBee calculateUserStats] Calculating stats for: ${username}`);
     
     // Fetch user's posts to calculate actual stats
     const posts = await makeHiveApiCall('condenser_api', 'get_discussions_by_author_before_date', [
@@ -856,32 +873,12 @@ async function calculateUserStats(username: string): Promise<{
       100 // limit to 100 posts for calculation
     ]) as HivePost[];
     
-    console.log(`[WorkerBee calculateUserStats] Found ${posts.length} posts for ${username}`);
+    debugLog(`[WorkerBee calculateUserStats] Found ${posts.length} posts for ${username}`);
     
-    let totalComments = 0;
-    let totalVotes = 0;
+    const totalVotes = posts.reduce((sum, post) => sum + (post.net_votes || 0), 0);
+    const totalComments = posts.reduce((sum, post) => sum + (post.children || 0), 0);
     
-    // Count comments and votes for each post
-    for (const post of posts) {
-      // Add net votes for this post
-      totalVotes += post.net_votes || 0;
-      
-      // Get comments for this post
-      try {
-        const comments = await makeHiveApiCall('condenser_api', 'get_content_replies', [
-          post.author,
-          post.permlink
-        ]) as HivePost[];
-        
-        if (Array.isArray(comments)) {
-          totalComments += comments.length;
-        }
-      } catch (commentError) {
-        console.warn(`[WorkerBee calculateUserStats] Error fetching comments for ${post.author}/${post.permlink}:`, commentError);
-      }
-    }
-    
-    console.log(`[WorkerBee calculateUserStats] Calculated stats for ${username}: ${totalComments} comments, ${totalVotes} votes`);
+    debugLog(`[WorkerBee calculateUserStats] Calculated stats for ${username}: ${totalComments} comments, ${totalVotes} votes`);
     
     return {
       commentCount: totalComments,
@@ -918,7 +915,7 @@ export async function updateUserProfile(
   try {
     
     // Note: postingKey parameter is required for actual transaction signing
-    console.log('Profile update for user:', username, 'with posting key:', postingKey ? 'provided' : 'missing');
+    debugLog('Profile update for user:', username, 'with posting key:', postingKey ? 'provided' : 'missing');
 
     // Get current account to preserve existing metadata
     const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
@@ -952,7 +949,7 @@ export async function updateUserProfile(
 
     // Broadcast transaction using WorkerBee
     // Note: This is a placeholder - actual broadcasting would require proper transaction formatting
-    console.log('Profile update operation prepared:', operation);
+    debugLog('Profile update operation prepared:', operation);
     // const client = await initializeWorkerBeeClient();
     // await client.broadcast(operation);
     

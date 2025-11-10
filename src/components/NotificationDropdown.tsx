@@ -84,6 +84,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     <div
       ref={dropdownRef}
       className="absolute right-0 top-full mt-2 w-96 bg-card border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-hidden"
+      data-testid="notification-dropdown"
     >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-gray-50">
