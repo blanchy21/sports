@@ -4,6 +4,13 @@ import type { IStartConfiguration } from "@hiveio/workerbee";
 const REALTIME_DEBUG_ENABLED =
   process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true' || process.env.NODE_ENV === 'development';
 
+const isAuthorizedTestHook = () =>
+  typeof window !== 'undefined' &&
+  (window as unknown as {
+    __TEST_DISABLE_WORKERBEE__?: boolean;
+  }).__TEST_DISABLE_WORKERBEE__ === true &&
+  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const realtimeDebugLog = (...args: any[]) => {
   if (!REALTIME_DEBUG_ENABLED) {
@@ -278,10 +285,7 @@ export class RealtimeMonitor {
    * Ensure WorkerBee client is initialized and running
    */
   private async ensureClientStarted(): Promise<void> {
-    if (
-      typeof window !== 'undefined' &&
-      (window as unknown as { __TEST_DISABLE_WORKERBEE__?: boolean }).__TEST_DISABLE_WORKERBEE__
-    ) {
+    if (isAuthorizedTestHook()) {
       if (!this.client) {
         const stubSubscribe = () => ({ unsubscribe: () => {} });
         this.client = {
@@ -486,6 +490,9 @@ export function getRealtimeStatus(): { isRunning: boolean; callbackCount: number
  * Emit a realtime event (testing utility)
  */
 export function emitRealtimeEventForTesting(event: RealtimeEvent): void {
+  if (!isAuthorizedTestHook()) {
+    throw new Error('Realtime test hooks are disabled');
+  }
   const monitor = getRealtimeMonitor() as unknown as { emitEvent: (evt: RealtimeEvent) => void };
   monitor.emitEvent(event);
 }

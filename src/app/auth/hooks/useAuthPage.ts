@@ -54,6 +54,10 @@ interface UseAuthPageResult {
   updateEmailField: <K extends keyof EmailFormState>(field: K, value: EmailFormState[K]) => void;
   togglePasswordVisibility: () => void;
   handleEmailSubmit: () => Promise<void>;
+  showAiohaModal: boolean;
+  openAiohaModal: () => void;
+  closeAiohaModal: () => void;
+  resetConnectionState: () => void;
 }
 
 const usernameRequiredProviders = new Set(["keychain", "hiveauth"]);
@@ -71,6 +75,7 @@ export const useAuthPage = (): UseAuthPageResult => {
   const [showHiveUsernameInput, setShowHiveUsernameInput] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [hiveUsername, setHiveUsername] = useState("");
+  const [showAiohaModal, setShowAiohaModal] = useState(false);
 
   const [emailForm, setEmailForm] = useState<EmailFormState>({
     email: "",
@@ -116,6 +121,9 @@ export const useAuthPage = (): UseAuthPageResult => {
   }, [resetEmailForm]);
 
   const dismissError = useCallback(() => setErrorMessage(null), []);
+
+  const openAiohaModal = useCallback(() => setShowAiohaModal(true), []);
+  const closeAiohaModal = useCallback(() => setShowAiohaModal(false), []);
 
   useEffect(() => {
     if (!aioha) {
@@ -171,12 +179,14 @@ export const useAuthPage = (): UseAuthPageResult => {
 
         await loginWithAioha(loginResult);
         resetHivePrompt();
+        setShowAiohaModal(false);
         router.push("/feed");
       } catch (error) {
         console.error("Aioha login failed:", error);
         setErrorMessage("Login failed: " + (error instanceof Error ? error.message : "Unknown error"));
       } finally {
         setIsConnecting(false);
+        setShowAiohaModal(false);
       }
     };
 
@@ -262,15 +272,18 @@ export const useAuthPage = (): UseAuthPageResult => {
         return;
       }
 
-      if (usernameRequiredProviders.has(provider) && !hiveUsername.trim()) {
-        setSelectedProvider(provider);
-        setShowHiveUsernameInput(true);
-        setErrorMessage(null);
-        return;
+      if (provider === 'keychain' || provider === 'hiveauth') {
+        if (!hiveUsername.trim()) {
+          setSelectedProvider(provider);
+          setShowHiveUsernameInput(true);
+          setErrorMessage(null);
+          return;
+        }
       }
 
       setIsConnecting(true);
       setErrorMessage(null);
+      openAiohaModal();
 
       try {
         const available = (aioha as { getProviders: () => unknown[] }).getProviders();
@@ -327,10 +340,12 @@ export const useAuthPage = (): UseAuthPageResult => {
         ) {
           await loginWithAioha(loginResult);
           resetHivePrompt();
+          setShowAiohaModal(false);
           router.push("/feed");
         } else if ((result as { errorCode?: number })?.errorCode === 4901) {
           await loginWithAioha(loginResult);
           resetHivePrompt();
+          setShowAiohaModal(false);
           router.push("/feed");
         } else {
           const info = {
@@ -346,9 +361,10 @@ export const useAuthPage = (): UseAuthPageResult => {
         setErrorMessage("Login failed: " + (error instanceof Error ? error.message : "Unknown error"));
       } finally {
         setIsConnecting(false);
+        setShowAiohaModal(false);
       }
     },
-    [aioha, hiveUsername, isInitialized, loginWithAioha, resetHivePrompt, router]
+    [aioha, hiveUsername, isInitialized, loginWithAioha, openAiohaModal, resetHivePrompt, router]
   );
 
   const onProviderSelect = useCallback(
@@ -392,6 +408,10 @@ export const useAuthPage = (): UseAuthPageResult => {
     updateEmailField,
     togglePasswordVisibility,
     handleEmailSubmit,
+    showAiohaModal,
+    openAiohaModal,
+    closeAiohaModal,
+    resetConnectionState,
   };
 };
 

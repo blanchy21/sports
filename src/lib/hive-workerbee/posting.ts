@@ -7,6 +7,7 @@ import {
   createCommentOperation, 
   checkResourceCreditsWax
 } from './wax-helpers';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 
 // Type definitions for better type safety
 interface HiveAccountWithRC extends HiveAccount {
@@ -72,10 +73,10 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
  */
 export async function publishPost(postData: PostData): Promise<PublishResult> {
   try {
-    console.log('[publishPost] Starting post publication with Wax:', postData);
+    workerBeeLog('publishPost start', undefined, postData);
     
     if (!aioha) {
-      console.error('[publishPost] Aioha is not available:', aioha);
+      logError('publishPost: Aioha instance unavailable', undefined, undefined, aioha);
       throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
     }
 
@@ -98,7 +99,7 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
       jsonMetadata: postData.jsonMetadata
     });
 
-    console.log('[publishPost] Wax operation created:', operation);
+    workerBeeLog('publishPost operation created', undefined, operation);
 
     // Use Aioha to sign and broadcast the transaction
     // Aioha expects operations in a specific format - each operation should be an array
@@ -107,23 +108,23 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
       ['comment', operation]
     ];
     
-    console.log('[publishPost] Operations array:', operations);
+    workerBeeLog('publishPost operations prepared', undefined, operations);
     
     // Check if signAndBroadcastTx method exists
     if (typeof (aioha as AiohaInstance)?.signAndBroadcastTx !== 'function') {
-      console.error('[publishPost] signAndBroadcastTx method not available on Aioha instance');
+      logError('publishPost: signAndBroadcastTx missing on Aioha instance');
       throw new Error("Aioha signAndBroadcastTx method is not available. Please check your authentication.");
     }
 
     // Use Aioha to sign and broadcast the transaction
-    console.log('[publishPost] Attempting to sign and broadcast transaction...');
+    workerBeeLog('publishPost broadcasting transaction');
     const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
     
-    console.log('[publishPost] Broadcast result:', result);
+    workerBeeLog('publishPost broadcast result', undefined, result);
     
     // Check if the result indicates success
     if (!result || (result as BroadcastResult)?.error) {
-      console.error('[publishPost] Transaction failed:', result);
+      logError('publishPost: transaction failed', undefined, undefined, result);
       throw new Error(`Transaction failed: ${(result as BroadcastResult)?.error || 'Unknown error'}`);
     }
     
@@ -138,7 +139,7 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
       url,
     };
   } catch (error) {
-    console.error('Error publishing post with Wax:', error);
+    logError('Error publishing post with Wax', undefined, error instanceof Error ? error : undefined);
     
     return {
       success: false,
@@ -164,13 +165,13 @@ export async function publishComment(
   aiohaInstance?: unknown
 ): Promise<PublishResult> {
   try {
-    console.log('[publishComment] Starting comment publication with Wax:', commentData);
+    workerBeeLog('publishComment start', undefined, commentData);
     
     // Use provided instance or fall back to default
     const aiohaToUse = aiohaInstance || (await import('@/lib/aioha/config')).aioha;
     
     if (!aiohaToUse) {
-      console.error('[publishComment] Aioha is not available:', aiohaToUse);
+      logError('publishComment: Aioha instance unavailable', undefined, undefined, aiohaToUse);
       throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
     }
 
@@ -183,7 +184,7 @@ export async function publishComment(
       jsonMetadata: commentData.jsonMetadata
     });
 
-    console.log('[publishComment] Wax operation created:', operation);
+    workerBeeLog('publishComment operation created', undefined, operation);
 
     // Use Aioha to sign and broadcast the transaction
     // Aioha expects operations in a specific format - each operation should be an array
@@ -192,23 +193,23 @@ export async function publishComment(
       ['comment', operation]
     ];
     
-    console.log('[publishComment] Operations array:', operations);
+    workerBeeLog('publishComment operations prepared', undefined, operations);
     
     // Check if signAndBroadcastTx method exists
     if (typeof (aiohaToUse as AiohaInstance)?.signAndBroadcastTx !== 'function') {
-      console.error('[publishComment] signAndBroadcastTx method not available on Aioha instance');
+      logError('publishComment: signAndBroadcastTx missing on Aioha instance');
       throw new Error("Aioha signAndBroadcastTx method is not available. Please check your authentication.");
     }
 
     // Use Aioha to sign and broadcast the transaction
-    console.log('[publishComment] Attempting to sign and broadcast transaction...');
+    workerBeeLog('publishComment broadcasting transaction');
     const result = await (aiohaToUse as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
     
-    console.log('[publishComment] Broadcast result:', result);
+    workerBeeLog('publishComment broadcast result', undefined, result);
     
     // Check if the result indicates success
     if (!result || (result as BroadcastResult)?.error) {
-      console.error('[publishComment] Transaction failed:', result);
+      logError('publishComment: transaction failed', undefined, undefined, result);
       throw new Error(`Transaction failed: ${(result as BroadcastResult)?.error || 'Unknown error'}`);
     }
     
@@ -223,7 +224,7 @@ export async function publishComment(
       url,
     };
   } catch (error) {
-    console.error('Error publishing comment with Wax:', error);
+    logError('Error publishing comment with Wax', undefined, error instanceof Error ? error : undefined);
     
     return {
       success: false,
@@ -296,7 +297,7 @@ export async function updatePost(
       url: `https://hive.blog/@${updateData.author}/${updateData.permlink}`,
     };
   } catch (error) {
-    console.error('Error updating post with WorkerBee:', error);
+    logError('Error updating post with WorkerBee', undefined, error instanceof Error ? error : undefined);
     
     return {
       success: false,
@@ -328,7 +329,7 @@ export async function deletePost(
       })
     });
   } catch (error) {
-    console.error('Error deleting post with WorkerBee:', error);
+    logError('Error deleting post with WorkerBee', undefined, error instanceof Error ? error : undefined);
     
     return {
       success: false,
@@ -348,24 +349,24 @@ export async function canUserPost(username: string): Promise<{
   message?: string;
 }> {
   try {
-    console.log(`[canUserPost] Checking RC for user: ${username} using Wax`);
+    workerBeeLog(`canUserPost check RC for ${username} via Wax`);
     
     // Use Wax helpers for RC checking
     const rcCheck = await checkResourceCreditsWax(username);
     
     if (!rcCheck.canPost) {
-      console.log(`[canUserPost] User ${username} cannot post: ${rcCheck.message}`);
+      logWarn(`canUserPost insufficient RC for ${username}: ${rcCheck.message}`);
       return rcCheck;
     }
 
-    console.log(`[canUserPost] User ${username} can post with ${rcCheck.rcPercentage.toFixed(2)}% RC`);
+    workerBeeLog(`canUserPost sufficient RC for ${username}`, undefined, { rcPercentage: rcCheck.rcPercentage });
     return rcCheck;
   } catch (error) {
-    console.error('Error checking RC with Wax:', error);
+    logError('Error checking RC with Wax', undefined, error instanceof Error ? error : undefined);
     
     // Fallback to original method if Wax fails
     try {
-      console.log(`[canUserPost] Falling back to original RC check method`);
+      logWarn('canUserPost falling back to original RC check method');
       const accountResult = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountWithRC[];
       const account = accountResult && accountResult.length > 0 ? accountResult[0] : null;
       
@@ -403,7 +404,7 @@ export async function canUserPost(username: string): Promise<{
         rcPercentage,
       };
     } catch (fallbackError) {
-      console.error('Error in fallback RC check:', fallbackError);
+      logError('Error in fallback RC check:', fallbackError instanceof Error ? fallbackError : undefined);
       return {
         canPost: false,
         rcPercentage: 0,

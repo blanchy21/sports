@@ -11,6 +11,7 @@ import { HiveUsernamePrompt } from "./components/HiveUsernamePrompt";
 import { HiveWalletSection } from "./components/HiveWalletSection";
 import { EmailAuthSection } from "./components/EmailAuthSection";
 import { useAuthPage } from "./hooks/useAuthPage";
+import { AiohaModal } from "@aioha/react-ui";
 
 const Divider: React.FC = () => (
   <div className="relative mb-8">
@@ -32,6 +33,7 @@ export default function AuthPage() {
     errorMessage,
     dismissError,
     availableProviders,
+    isAiohaReady,
     showHiveUsernameInput,
     selectedProvider,
     hiveUsername,
@@ -43,6 +45,9 @@ export default function AuthPage() {
     updateEmailField,
     togglePasswordVisibility,
     handleEmailSubmit,
+    showAiohaModal,
+    closeAiohaModal,
+    resetConnectionState,
   } = useAuthPage();
 
   return (
@@ -97,6 +102,16 @@ export default function AuthPage() {
           </div>
         </div>
       </div>
+
+      {showAiohaModal && isAiohaReady && (
+        <AiohaModal
+          onClose={() => {
+            closeAiohaModal();
+            resetConnectionState();
+          }}
+          loginOptions={{}}
+        />
+      )}
     </div>
   );
 }
