@@ -404,7 +404,7 @@ export async function canUserPost(username: string): Promise<{
         rcPercentage,
       };
     } catch (fallbackError) {
-      logError('Error in fallback RC check:', fallbackError instanceof Error ? fallbackError : undefined);
+      logError('Error in fallback RC check', 'canUserPost', fallbackError instanceof Error ? fallbackError : undefined);
       return {
         canPost: false,
         rcPercentage: 0,

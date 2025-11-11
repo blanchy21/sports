@@ -3,6 +3,41 @@ import { test, expect } from '@playwright/test';
 const DEFAULT_HIVE_USERNAME = process.env.PLAYWRIGHT_HIVE_USERNAME || 'blanchy';
 const PROVIDERS = ['keychain', 'hiveauth', 'hivesigner'] as const;
 
+interface AiohaLoginSuccess {
+  success: true;
+  provider: string;
+  username: string;
+  user: { username: string };
+  account: { name: string };
+}
+
+type AiohaEventHandler = (...args: unknown[]) => void;
+
+interface AiohaStub {
+  getProviders: () => readonly string[];
+  getCurrentUser: () => { username: string } | null;
+  getCurrentProvider: () => string | null;
+  getOtherLogins: () => unknown[];
+  isLoggedIn: () => boolean;
+  login: (provider: string, suppliedUsername?: string) => Promise<AiohaLoginSuccess>;
+  on: (event: string, handler: AiohaEventHandler) => void;
+  off: (event: string, handler: AiohaEventHandler) => void;
+  logout: () => Promise<{ success: true }>;
+  __currentUser: { username: string } | null;
+  __currentProvider: string | null;
+}
+
+interface AiohaTestWindow extends Window {
+  __AIOHA_FORCE_STUB__?: boolean;
+  __AIOHA_TEST_STUB__?: AiohaStub;
+  __AIOHA_PENDING_STUB__?: AiohaStub;
+  __AIOHA_TEST_LAST_LOGIN__?: { provider: string; username: string };
+  __SET_AIOHA_STUB__?: (stub: unknown) => void;
+  __AIOHA_DEBUG_STATE__?: {
+    isInitialized?: boolean;
+  };
+}
+
 type WalletProvider = typeof PROVIDERS[number];
 
 const providerLabelMap: Record<WalletProvider, RegExp> = {
@@ -32,19 +67,20 @@ test.describe('Aioha Wallet Providers', () => {
       window.localStorage?.clear();
       window.sessionStorage?.clear();
 
-      (window as any).__AIOHA_FORCE_STUB__ = true;
+      const testWindow = window as unknown as AiohaTestWindow;
+      testWindow.__AIOHA_FORCE_STUB__ = true;
 
-      const listeners = new Map<string, Set<(...args: unknown[]) => void>>();
+      const listeners = new Map<string, Set<AiohaEventHandler>>();
 
-      const stub: Record<string, unknown> = {
+      const stub: AiohaStub = {
         getProviders: () => providers,
-        getCurrentUser: () => (stub.__currentUser ?? null),
-        getCurrentProvider: () => (stub.__currentProvider ?? null),
+        getCurrentUser: () => stub.__currentUser ?? null,
+        getCurrentProvider: () => stub.__currentProvider,
         getOtherLogins: () => [],
         isLoggedIn: () => Boolean(stub.__currentUser),
         async login(provider: string, suppliedUsername?: string) {
           const finalUsername = suppliedUsername && suppliedUsername.trim().length > 0 ? suppliedUsername : username;
-          (window as any).__AIOHA_TEST_LAST_LOGIN__ = { provider, username: finalUsername };
+          testWindow.__AIOHA_TEST_LAST_LOGIN__ = { provider, username: finalUsername };
           stub.__currentUser = { username: finalUsername };
           stub.__currentProvider = provider;
           return {
@@ -66,7 +102,7 @@ test.describe('Aioha Wallet Providers', () => {
           if (set.size === 0) listeners.delete(event);
         },
         async logout() {
-          (window as any).__AIOHA_TEST_LAST_LOGIN__ = undefined;
+          testWindow.__AIOHA_TEST_LAST_LOGIN__ = undefined;
           stub.__currentUser = null;
           stub.__currentProvider = null;
           return { success: true };
@@ -75,8 +111,8 @@ test.describe('Aioha Wallet Providers', () => {
         __currentProvider: null,
       };
 
-      (window as any).__AIOHA_TEST_STUB__ = stub;
-      (window as any).__AIOHA_PENDING_STUB__ = stub;
+      testWindow.__AIOHA_TEST_STUB__ = stub;
+      testWindow.__AIOHA_PENDING_STUB__ = stub;
     }, { username: DEFAULT_HIVE_USERNAME, providers: PROVIDERS });
   });
 
@@ -84,24 +120,31 @@ test.describe('Aioha Wallet Providers', () => {
     test(`${provider} login completes and persists auth state`, async ({ page }) => {
       await page.goto('/auth');
 
-      await page.waitForFunction(() => typeof (window as any).__SET_AIOHA_STUB__ === 'function', null, {
+      await page.waitForFunction(() => {
+        const testWindow = window as unknown as AiohaTestWindow;
+        return typeof testWindow.__SET_AIOHA_STUB__ === 'function';
+      }, null, {
         timeout: 15_000,
       });
       await page.evaluate(() => {
-        if (typeof (window as any).__SET_AIOHA_STUB__ === 'function') {
-          (window as any).__SET_AIOHA_STUB__((window as any).__AIOHA_PENDING_STUB__);
+        const testWindow = window as unknown as AiohaTestWindow;
+        if (typeof testWindow.__SET_AIOHA_STUB__ === 'function' && testWindow.__AIOHA_PENDING_STUB__) {
+          testWindow.__SET_AIOHA_STUB__(testWindow.__AIOHA_PENDING_STUB__);
         }
       });
 
       await page.waitForFunction(
-        () => Boolean((window as any).__AIOHA_DEBUG_STATE__?.isInitialized),
+        () => {
+          const testWindow = window as unknown as AiohaTestWindow;
+          return Boolean(testWindow.__AIOHA_DEBUG_STATE__?.isInitialized);
+        },
         null,
         { timeout: 10_000 }
       );
 
       const debugInfo = await page.evaluate(() => ({
-        stubProviders: (window as any).__AIOHA_PENDING_STUB__?.getProviders?.(),
-        debugState: (window as any).__AIOHA_DEBUG_STATE__,
+        stubProviders: (window as unknown as AiohaTestWindow).__AIOHA_PENDING_STUB__?.getProviders?.(),
+        debugState: (window as unknown as AiohaTestWindow).__AIOHA_DEBUG_STATE__,
         buttons: Array.from(document.querySelectorAll('button')).map((btn) =>
           btn.textContent?.trim()
         ),
@@ -118,7 +161,10 @@ test.describe('Aioha Wallet Providers', () => {
 
       await expectFeedForUser(page, DEFAULT_HIVE_USERNAME);
 
-      const lastLogin = await page.evaluate(() => (window as any).__AIOHA_TEST_LAST_LOGIN__);
+      const lastLogin = await page.evaluate(() => {
+        const testWindow = window as unknown as AiohaTestWindow;
+        return testWindow.__AIOHA_TEST_LAST_LOGIN__ ?? null;
+      });
       expect(lastLogin).toMatchObject({ provider, username: DEFAULT_HIVE_USERNAME });
     });
   }

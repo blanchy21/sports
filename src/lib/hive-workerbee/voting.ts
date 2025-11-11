@@ -5,7 +5,7 @@ import {
   createVoteOperation, 
   getVotingPowerWax
 } from './wax-helpers';
-import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
+import { workerBee as workerBeeLog, error as logError } from './logger';
 
 // Types matching the original voting.ts interface
 export interface VoteResult {

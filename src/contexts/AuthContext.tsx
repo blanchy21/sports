@@ -409,12 +409,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let userData: AiohaUserData | null = null;
       console.log("Full loginResult object:", JSON.stringify(loginResult, null, 2));
       
+      // Utility helpers for dynamic data inspection
+      const asRecord = (value: unknown): Record<string, unknown> | null =>
+        typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
+
+      const getTrimmedString = (value: unknown): string | null =>
+        typeof value === 'string' && value.trim() ? value.trim() : null;
+
+      const getStringProp = (record: Record<string, unknown> | null, key: string): string | null =>
+        record ? getTrimmedString(record[key]) : null;
+
+      const getSessionIdFromRecord = (record: Record<string, unknown> | null): string | null =>
+        getStringProp(record, 'sessionId') ??
+        getStringProp(record, 'session_id') ??
+        getStringProp(record, 'session');
+
       // Enhanced logging to understand the structure
       if (loginResult) {
         console.log("=== DETAILED LOGIN RESULT ANALYSIS ===");
         console.log("loginResult type:", typeof loginResult);
         console.log("loginResult keys:", Object.keys(loginResult));
-        console.log("loginResult.success:", (loginResult as any).success);
+        const loginResultRecord = asRecord(loginResult);
+        console.log("loginResult.success:", loginResultRecord ? loginResultRecord['success'] : undefined);
         console.log("loginResult.username:", loginResult.username);
         console.log("loginResult.user:", loginResult.user);
         console.log("loginResult.account:", loginResult.account);
@@ -423,10 +439,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log("loginResult.session_id:", loginResult.session_id);
         
         // Log all properties for debugging
-        console.log("All loginResult properties:");
-        Object.entries(loginResult).forEach(([key, value]) => {
-          console.log(`  ${key}:`, value, `(type: ${typeof value})`);
-        });
+        if (loginResultRecord) {
+          console.log("All loginResult properties:");
+          Object.entries(loginResultRecord).forEach(([key, value]) => {
+            console.log(`  ${key}:`, value, `(type: ${typeof value})`);
+          });
+        }
         console.log("=== END ANALYSIS ===");
       }
       
@@ -446,24 +464,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Method 2: User object with username
         if (!extractedUsername && loginResult.user) {
-          if (loginResult.user.username && typeof loginResult.user.username === 'string' && loginResult.user.username.trim()) {
-            extractedUsername = loginResult.user.username.trim();
-            extractedSessionId = loginResult.user.session || (loginResult.user as any).sessionId || (loginResult.user as any).session_id;
+          const userRecord = asRecord(loginResult.user);
+          const usernameFromUser = getStringProp(userRecord, 'username');
+          const nameFromUser = getStringProp(userRecord, 'name');
+          const sessionFromUser = getSessionIdFromRecord(userRecord);
+
+          if (usernameFromUser) {
+            extractedUsername = usernameFromUser;
+            extractedSessionId = sessionFromUser;
             console.log("Found username in user object:", extractedUsername);
-          } else if (loginResult.user.name && typeof loginResult.user.name === 'string' && loginResult.user.name.trim()) {
-            extractedUsername = loginResult.user.name.trim();
-            extractedSessionId = loginResult.user.session || (loginResult.user as any).sessionId || (loginResult.user as any).session_id;
+          } else if (nameFromUser) {
+            extractedUsername = nameFromUser;
+            extractedSessionId = sessionFromUser;
             console.log("Found name in user object:", extractedUsername);
           }
         }
         
         // Method 3: Account object
         if (!extractedUsername && loginResult.account) {
-          if ((loginResult.account as any).username && typeof (loginResult.account as any).username === 'string' && (loginResult.account as any).username.trim()) {
-            extractedUsername = (loginResult.account as any).username.trim();
+          const accountRecord = asRecord(loginResult.account);
+          const usernameFromAccount = getStringProp(accountRecord, 'username');
+          const nameFromAccount = getStringProp(accountRecord, 'name');
+
+          if (usernameFromAccount) {
+            extractedUsername = usernameFromAccount;
             console.log("Found username in account object:", extractedUsername);
-          } else if (loginResult.account.name && typeof loginResult.account.name === 'string' && loginResult.account.name.trim()) {
-            extractedUsername = loginResult.account.name.trim();
+          } else if (nameFromAccount) {
+            extractedUsername = nameFromAccount;
             console.log("Found name in account object:", extractedUsername);
           }
         }
@@ -471,13 +498,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Method 4: Deep search for username in any nested property
         if (!extractedUsername) {
           console.log("Searching for username in loginResult properties...");
-          const findUsername = (obj: any, depth = 0): string | null => {
+          const findUsername = (obj: unknown, depth = 0): string | null => {
             if (depth > 3) return null; // Prevent infinite recursion
-            if (typeof obj !== 'object' || obj === null) return null;
+            const record = asRecord(obj);
+            if (!record) return null;
             
-            for (const [key, value] of Object.entries(obj)) {
-              if ((key === 'username' || key === 'name') && typeof value === 'string' && value.trim()) {
-                return value.trim();
+            for (const [key, value] of Object.entries(record)) {
+              const trimmedValue = getTrimmedString(value);
+              if ((key === 'username' || key === 'name') && trimmedValue) {
+                return trimmedValue;
               }
               if (typeof value === 'object' && value !== null) {
                 const found = findUsername(value, depth + 1);
@@ -851,13 +880,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           } catch (fallbackError) {
             console.log("Fallback user data retrieval failed:", fallbackError);
             console.log("Final Aioha state check:");
-            console.log("- aioha object keys:", Object.keys(aioha));
-            console.log("- aioha.user:", (aioha as any).user);
-            console.log("- aioha.currentUser:", (aioha as any).currentUser);
-            console.log("- aioha.username:", (aioha as any).username);
-            console.log("- aioha.account:", (aioha as any).account);
-            console.log("- aioha.session:", (aioha as any).session);
-            console.log("- aioha.auth:", (aioha as any).auth);
+        if (typeof aioha === 'object' && aioha !== null) {
+          const aiohaRecord = aioha as Record<string, unknown>;
+          console.log("- aioha object keys:", Object.keys(aiohaRecord));
+          console.log("- aioha.user:", aiohaRecord['user']);
+          console.log("- aioha.currentUser:", aiohaRecord['currentUser']);
+          console.log("- aioha.username:", aiohaRecord['username']);
+          console.log("- aioha.account:", aiohaRecord['account']);
+          console.log("- aioha.session:", aiohaRecord['session']);
+          console.log("- aioha.auth:", aiohaRecord['auth']);
+        } else {
+          console.log("- aioha object keys: not available (non-object value)");
+        }
             
             throw new Error("Unable to determine username from Aioha authentication. This may be due to a temporary issue with the authentication provider. Please try logging in again or use a different authentication method.");
           }

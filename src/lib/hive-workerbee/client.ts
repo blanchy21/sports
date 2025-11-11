@@ -1,7 +1,7 @@
 import WorkerBee from "@hiveio/workerbee";
 import type { IStartConfiguration } from "@hiveio/workerbee";
 import type { IHiveChainInterface } from "@hiveio/wax";
-import { workerBee as workerBeeLog, info as logInfo, error as logError } from './logger';
+import { workerBee as workerBeeLog, error as logError } from './logger';
 
 // Hive node endpoints - using same reliable nodes as current implementation
 const HIVE_NODES = [

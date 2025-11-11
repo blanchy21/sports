@@ -1,6 +1,6 @@
 import { getWorkerBeeClient, initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
 import type { IStartConfiguration } from "@hiveio/workerbee";
-import { workerBee as workerBeeLog, error as logError, warn as logWarn } from './logger';
+import { workerBee as workerBeeLog, error as logError } from './logger';
 
 const REALTIME_DEBUG_ENABLED =
   process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true' || process.env.NODE_ENV === 'development';

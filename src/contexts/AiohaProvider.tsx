@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AiohaProvider as AiohaUIProvider } from '@aioha/react-ui';
-import { aioha, AIOHA_STUB_EVENT, getAiohaInstance } from '@/lib/aioha/config';
+import { AIOHA_STUB_EVENT, getAiohaInstance } from '@/lib/aioha/config';
 
 
 // Aioha context type
@@ -31,6 +31,7 @@ export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
   const [aiohaInstance, setAiohaInstance] = useState<unknown | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  type AiohaUIInstance = NonNullable<React.ComponentProps<typeof AiohaUIProvider>['aioha']>;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -91,13 +92,22 @@ export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      (window as any).__AIOHA_DEBUG_STATE__ = {
+      const debugWindow = window as typeof window & {
+        __AIOHA_DEBUG_STATE__?: {
+          isInitialized: boolean;
+          error: string | null;
+          hasInstance: boolean;
+          providerMethods: string[];
+        };
+      };
+      debugWindow.__AIOHA_DEBUG_STATE__ = {
         isInitialized,
         error,
         hasInstance: Boolean(aiohaInstance),
-        providerMethods: aiohaInstance
-          ? Object.keys(aiohaInstance as Record<string, unknown>)
-          : [],
+        providerMethods:
+          typeof aiohaInstance === 'object' && aiohaInstance !== null
+            ? Object.keys(aiohaInstance as Record<string, unknown>)
+            : [],
       };
     }
   }, [aiohaInstance, isInitialized, error]);
@@ -111,7 +121,7 @@ export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
   return (
     <AiohaContext.Provider value={contextValue}>
       {!!aiohaInstance && (
-        <AiohaUIProvider aioha={aiohaInstance as any}> {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
+        <AiohaUIProvider aioha={aiohaInstance as AiohaUIInstance}>
           {children}
         </AiohaUIProvider>
       )}

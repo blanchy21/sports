@@ -1,4 +1,4 @@
-export default {
+const config = {
   preset: 'ts-jest/presets/js-with-ts-esm',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
@@ -20,3 +20,5 @@ export default {
   },
   transformIgnorePatterns: ['/node_modules/(?!(@aioha|@hiveio/workerbee|@hiveio/wax)/)']
 };
+
+export default config;

@@ -7,7 +7,7 @@
 
 import { getWaxClient } from './client';
 import { SPORTS_ARENA_CONFIG } from './client';
-import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
+import { workerBee as workerBeeLog, error as logError } from './logger';
 import type { IHiveChainInterface } from "@hiveio/wax";
 
 // Wax operation types for better type safety

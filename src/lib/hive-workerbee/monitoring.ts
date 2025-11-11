@@ -6,7 +6,7 @@
  */
 
 import { HiveError } from '../shared/utils';
-import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
+import { warn as logWarn, error as logError } from './logger';
 
 // Error types
 export enum ErrorType {

@@ -5,7 +5,7 @@ import {
   createCommentOperation, 
   formatJsonMetadata
 } from './wax-helpers';
-import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
+import { workerBee as workerBeeLog, error as logError } from './logger';
 
 // Type definitions for better type safety
 

@@ -7,7 +7,7 @@
 
 import { getWorkerBeeClient } from './client';
 import { HiveAccount } from '../shared/types';
-import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
+import { error as logError } from './logger';
 
 // Cache interfaces
 interface CacheEntry<T> {

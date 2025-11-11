@@ -1,6 +1,6 @@
 import { initializeWorkerBeeClient } from './client';
 import { Community, CommunityMember } from '@/types';
-import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
+import { workerBee as workerBeeLog, error as logError } from './logger';
 
 export interface CommunityFilters {
   search?: string;
@@ -236,13 +236,13 @@ export async function unsubscribeFromCommunity(communityId: string, username: st
  * @param username - Username to check
  * @returns Subscription status
  */
-export async function isSubscribedToCommunity(communityId: string, _username: string): Promise<boolean> {
+export async function isSubscribedToCommunity(communityId: string, username: string): Promise<boolean> {
   try {
     await initializeWorkerBeeClient();
 
     // For now, return mock data
     // In a real implementation, this would check Hivemind API
-    return communityId === 'sportsblock'; // Mock: user is subscribed to sportsblock
+    return communityId === 'sportsblock' && Boolean(username?.trim()); // Mock logic
   } catch (error) {
     logError('Error checking community subscription', 'isSubscribedToCommunity', error instanceof Error ? error : undefined);
     return false;

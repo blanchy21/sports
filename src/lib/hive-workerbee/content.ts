@@ -2,7 +2,7 @@ import { SPORTS_ARENA_CONFIG } from './client';
 import { SPORT_CATEGORIES } from '@/types';
 import { makeHiveApiCall } from './api';
 import { getContentOptimized } from './optimization';
-import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 
 interface HiveVote {
   voter: string;
