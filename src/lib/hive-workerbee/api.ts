@@ -11,7 +11,7 @@ import {
   // getWaxInstance // Temporarily disabled
 } from './wax-helpers';
 import { getNodeHealthManager } from './node-health';
-import { workerBee as workerBeeLog, info as logInfo, warn as logWarn } from './logger';
+import { workerBee as workerBeeLog, info as logInfo, warn as logWarn, error as logError } from './logger';
 
 const REQUEST_TIMEOUT_MS = 8000;
 
@@ -159,7 +159,7 @@ export async function makeWaxApiCall<T = unknown>(method: string, params: unknow
     // Temporarily disable Wax API calls due to requestInterceptor issues
     throw new Error('Wax API calls temporarily disabled');
   } catch (error) {
-    console.error(`[Wax API] Failed for ${method}:`, error);
+    logError(`[Wax API] Failed for ${method}`, 'makeWaxApiCall', error instanceof Error ? error : undefined);
     
     // Fallback to original HTTP API call
     logWarn(`Wax API failed for ${method}, falling back to HTTP`);
@@ -177,7 +177,7 @@ export async function getAccountWaxWithFallback(username: string): Promise<unkno
     workerBeeLog(`Wax account for ${username}`);
     return await getAccountWax(username);
   } catch (error) {
-    console.error(`[Wax API] Failed to get account with Wax, falling back:`, error);
+    logError('[Wax API] Failed to get account with Wax, falling back', 'getAccountWaxWithFallback', error instanceof Error ? error : undefined);
     return makeHiveApiCall('condenser_api', 'get_accounts', [[username]]);
   }
 }
@@ -193,7 +193,7 @@ export async function getContentWaxWithFallback(author: string, permlink: string
     workerBeeLog(`Wax content for ${author}/${permlink}`);
     return await getContentWax(author, permlink);
   } catch (error) {
-    console.error(`[Wax API] Failed to get content with Wax, falling back:`, error);
+    logError('[Wax API] Failed to get content with Wax, falling back', 'getContentWaxWithFallback', error instanceof Error ? error : undefined);
     return makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
   }
 }
@@ -209,7 +209,7 @@ export async function getDiscussionsWaxWithFallback(method: string, params: unkn
     workerBeeLog(`Wax discussions via ${method}`);
     return await getDiscussionsWax(method, params);
   } catch (error) {
-    console.error(`[Wax API] Failed to get discussions with Wax, falling back:`, error);
+    logError('[Wax API] Failed to get discussions with Wax, falling back', 'getDiscussionsWaxWithFallback', error instanceof Error ? error : undefined);
     return makeHiveApiCall('condenser_api', method, params) as Promise<unknown[]>;
   }
 }
@@ -224,7 +224,7 @@ export async function startHiveNodeHealthMonitoring(): Promise<void> {
     await nodeHealthManager.startProactiveMonitoring();
     logInfo('Node health monitoring started');
   } catch (error) {
-    console.error('[Hive API] Failed to start node health monitoring:', error);
+    logError('Failed to start node health monitoring', 'startHiveNodeHealthMonitoring', error instanceof Error ? error : undefined);
   }
 }
 

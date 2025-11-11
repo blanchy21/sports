@@ -7,6 +7,7 @@
 
 import { getWaxClient } from './client';
 import { SPORTS_ARENA_CONFIG } from './client';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
 import type { IHiveChainInterface } from "@hiveio/wax";
 
 // Wax operation types for better type safety
@@ -51,7 +52,7 @@ export async function getWaxInstance(): Promise<IHiveChainInterface> {
   try {
     return await getWaxClient();
   } catch (error) {
-    console.error('[Wax Helpers] Failed to get Wax instance:', error);
+    logError('[Wax Helpers] Failed to get Wax instance', 'getWaxInstance', error instanceof Error ? error : undefined);
     throw new Error('Unable to initialize Wax client. Please check your connection.');
   }
 }
@@ -274,7 +275,7 @@ export async function broadcastWaxTransaction(
 
     // For now, return success without actual broadcasting
     // The actual broadcasting should be handled by Aioha
-    console.log('[Wax Helpers] Wax operations created successfully:', waxOperations);
+    workerBeeLog('[Wax Helpers] Wax operations created successfully', undefined, waxOperations);
     return {
       success: true,
       transactionId: 'wax-operation-created',
@@ -282,7 +283,7 @@ export async function broadcastWaxTransaction(
       trxNum: 0
     };
   } catch (error) {
-    console.error('[Wax Helpers] Transaction broadcast failed:', error);
+    logError('[Wax Helpers] Transaction broadcast failed', 'broadcastWaxTransaction', error instanceof Error ? error : undefined);
     
     return {
       success: false,
@@ -298,10 +299,10 @@ export async function getAccountWax(username: string): Promise<unknown | null> {
   try {
     // For now, disable Wax API calls due to requestInterceptor issues
     // Fall back to HTTP API calls
-    console.log(`[Wax Helpers] Wax API calls temporarily disabled for account: ${username}, using fallback`);
+    workerBeeLog(`[Wax Helpers] Wax API calls temporarily disabled for account: ${username}, using fallback`);
     return null;
   } catch (error) {
-    console.error('[Wax Helpers] Failed to get account:', error);
+    logError('[Wax Helpers] Failed to get account', 'getAccountWax', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -313,10 +314,10 @@ export async function getContentWax(author: string, permlink: string): Promise<u
   try {
     // For now, disable Wax API calls due to requestInterceptor issues
     // Fall back to HTTP API calls
-    console.log(`[Wax Helpers] Wax API calls temporarily disabled for content: @${author}/${permlink}, using fallback`);
+    workerBeeLog(`[Wax Helpers] Wax API calls temporarily disabled for content: @${author}/${permlink}, using fallback`);
     return null;
   } catch (error) {
-    console.error('[Wax Helpers] Failed to get content:', error);
+    logError('[Wax Helpers] Failed to get content', 'getContentWax', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -331,10 +332,10 @@ export async function getDiscussionsWax(
   try {
     // For now, disable Wax API calls due to requestInterceptor issues
     // Fall back to HTTP API calls
-    console.log(`[Wax Helpers] Wax API calls temporarily disabled for method: ${method} with ${params.length} params, using fallback`);
+    workerBeeLog(`[Wax Helpers] Wax API calls temporarily disabled for method: ${method} with ${params.length} params, using fallback`);
     return [];
   } catch (error) {
-    console.error('[Wax Helpers] Failed to get discussions:', error);
+    logError('[Wax Helpers] Failed to get discussions', 'getDiscussionsWax', error instanceof Error ? error : undefined);
     return [];
   }
 }
@@ -386,7 +387,7 @@ export async function checkResourceCreditsWax(username: string): Promise<{
       rcPercentage,
     };
   } catch (error) {
-    console.error('[Wax Helpers] Failed to check RC:', error);
+    logError('[Wax Helpers] Failed to check RC', 'checkResourceCreditsWax', error instanceof Error ? error : undefined);
     return {
       canPost: false,
       rcPercentage: 0,
@@ -408,7 +409,7 @@ export async function getVotingPowerWax(username: string): Promise<number> {
     
     return ((account.voting_power as number) / 100); // Convert from 0-10000 to 0-100
   } catch (error) {
-    console.error('[Wax Helpers] Failed to get voting power:', error);
+    logError('[Wax Helpers] Failed to get voting power', 'getVotingPowerWax', error instanceof Error ? error : undefined);
     return 0;
   }
 }
@@ -440,7 +441,7 @@ export async function getWaxProtocolVersion(): Promise<string> {
     // Temporarily disable Wax API calls due to requestInterceptor issues
     throw new Error('Wax API calls temporarily disabled');
   } catch (error) {
-    console.error('[Wax Helpers] Failed to get protocol version:', error);
+    logError('[Wax Helpers] Failed to get protocol version', 'getWaxProtocolVersion', error instanceof Error ? error : undefined);
     return 'unknown';
   }
 }

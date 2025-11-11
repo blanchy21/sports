@@ -1,6 +1,7 @@
 import WorkerBee from "@hiveio/workerbee";
 import type { IStartConfiguration } from "@hiveio/workerbee";
 import type { IHiveChainInterface } from "@hiveio/wax";
+import { workerBee as workerBeeLog, info as logInfo, error as logError } from './logger';
 
 // Hive node endpoints - using same reliable nodes as current implementation
 const HIVE_NODES = [
@@ -80,16 +81,16 @@ export async function initializeWorkerBeeClient(): Promise<InstanceType<typeof W
  */
 export async function getWaxClient(): Promise<IHiveChainInterface> {
   try {
-    console.log('[Wax Client] Initializing Wax client...');
+    workerBeeLog('[Wax Client] Initializing Wax client...');
     
     // Initialize WorkerBee client first, then return the wax instance
     const client = await initializeWorkerBeeClient();
     const wax = getWaxFromWorkerBee(client);
     
-    console.log('[Wax Client] Wax client initialized successfully');
+    workerBeeLog('[Wax Client] Wax client initialized successfully');
     return wax;
   } catch (error) {
-    console.error('[Wax Client] Failed to initialize Wax client:', error);
+    logError('Failed to initialize Wax client', 'getWaxClient', error instanceof Error ? error : undefined);
     throw new Error(`Failed to initialize Wax client: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -108,7 +109,7 @@ export function isWorkerBeeStarted(): boolean {
 export async function stopWorkerBeeClient(): Promise<void> {
   if (workerBeeClient && workerBeeClient.running) {
     await workerBeeClient.stop();
-    console.log('WorkerBee client stopped');
+    workerBeeLog('WorkerBee client stopped');
   }
 }
 
@@ -159,7 +160,7 @@ export async function getWaxProtocolInfo(): Promise<{
     // Temporarily disable Wax API calls due to requestInterceptor issues
     throw new Error('Wax API calls temporarily disabled');
   } catch (error) {
-    console.error('[Wax Client] Failed to get protocol info:', error);
+    logError('Failed to get Wax protocol info', 'getWaxProtocolInfo', error instanceof Error ? error : undefined);
     return {
       version: 'unknown',
       chainId: 'unknown',

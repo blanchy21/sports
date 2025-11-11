@@ -5,6 +5,7 @@ import {
   createVoteOperation, 
   getVotingPowerWax
 } from './wax-helpers';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
 
 // Types matching the original voting.ts interface
 export interface VoteResult {
@@ -54,7 +55,7 @@ export async function castVote(voteData: VoteData): Promise<VoteResult> {
       weight: voteData.weight
     });
 
-    console.log('[castVote] Wax vote operation created:', operation);
+    workerBeeLog('[castVote] Wax vote operation created', undefined, operation);
 
     // Use Aioha to sign and broadcast the transaction
     // Aioha expects operations in a specific format - each operation should be an array
@@ -70,7 +71,7 @@ export async function castVote(voteData: VoteData): Promise<VoteResult> {
       transactionId: (result as { id?: string })?.id || 'unknown',
     };
   } catch (error) {
-    console.error('Error casting vote with Wax:', error);
+    logError('Error casting vote with Wax', 'castVote', error instanceof Error ? error : undefined);
     
     return {
       success: false,
@@ -104,7 +105,7 @@ export async function checkUserVote(author: string, permlink: string, voter: str
     
     return getUserVote(post, voter);
   } catch (error) {
-    console.error('Error checking user vote with WorkerBee:', error);
+    logError('Error checking user vote with WorkerBee', 'checkUserVote', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -124,7 +125,7 @@ export async function getPostVotes(author: string, permlink: string): Promise<Hi
     
     return (post as { active_votes: HiveVote[] }).active_votes;
   } catch (error) {
-    console.error('Error fetching post votes with WorkerBee:', error);
+    logError('Error fetching post votes with WorkerBee', 'getPostVotes', error instanceof Error ? error : undefined);
     return [];
   }
 }
@@ -136,26 +137,26 @@ export async function getPostVotes(author: string, permlink: string): Promise<Hi
  */
 export async function getUserVotingPower(username: string): Promise<number> {
   try {
-    console.log(`[getUserVotingPower] Getting voting power for ${username} using Wax`);
+    workerBeeLog(`[getUserVotingPower] Getting voting power for ${username} using Wax`);
     
     // Use Wax helpers for voting power
     const votingPower = await getVotingPowerWax(username);
     
-    console.log(`[getUserVotingPower] User ${username} has ${votingPower.toFixed(2)}% voting power`);
+    workerBeeLog(`[getUserVotingPower] User ${username} has ${votingPower.toFixed(2)}% voting power`);
     return votingPower;
   } catch (error) {
-    console.error('Error fetching voting power with Wax:', error);
+    logError('Error fetching voting power with Wax', 'getUserVotingPower', error instanceof Error ? error : undefined);
     
     // Fallback to original method if Wax fails
     try {
-      console.log(`[getUserVotingPower] Falling back to original method`);
+      workerBeeLog('[getUserVotingPower] Falling back to original method');
       const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as Array<{ voting_power: number }>;
       
       if (!account || account.length === 0) return 0;
       
       return ((account[0] as { voting_power: number }).voting_power / 100); // Convert from 0-10000 to 0-100
     } catch (fallbackError) {
-      console.error('Error in fallback voting power check:', fallbackError);
+      logError('Error in fallback voting power check', 'getUserVotingPower', fallbackError instanceof Error ? fallbackError : undefined);
       return 0;
     }
   }
@@ -184,7 +185,7 @@ export async function calculateOptimalVoteWeight(username: string, lastVoteTime?
     if (regeneratedPower > 20) return 40;
     return 20;
   } catch (error) {
-    console.error('Error calculating optimal vote weight with WorkerBee:', error);
+    logError('Error calculating optimal vote weight with WorkerBee', 'calculateOptimalVoteWeight', error instanceof Error ? error : undefined);
     return 50; // Default to 50% on error
   }
 }
@@ -236,7 +237,7 @@ export async function getVoteStats(author: string, permlink: string): Promise<{
       pendingPayout: parseFloat((post as { pending_payout_value?: string }).pending_payout_value || '0'),
     };
   } catch (error) {
-    console.error('Error fetching vote stats with WorkerBee:', error);
+    logError('Error fetching vote stats with WorkerBee', 'getVoteStats', error instanceof Error ? error : undefined);
     return {
       totalVotes: 0,
       upvotes: 0,
@@ -263,13 +264,13 @@ export async function getUserRecentVotes(username: string, limit: number = 20): 
   postTitle: string;
 }>> {
   try {
+    workerBeeLog(`Fetching recent votes for ${username} with WorkerBee, limit: ${limit}`);
     // This would require additional API calls to get user's voting history
     // For now, return empty array - implement with actual API when available
     // TODO: Implement with Hivemind API or custom voting history endpoint
-    console.log(`Fetching recent votes for ${username} with WorkerBee, limit: ${limit}`);
     return [];
   } catch (error) {
-    console.error('Error fetching user recent votes with WorkerBee:', error);
+    logError('Error fetching user recent votes with WorkerBee', 'getRecentVotes', error instanceof Error ? error : undefined);
     return [];
   }
 }
@@ -300,7 +301,7 @@ export async function canUserVote(username: string): Promise<{
       votingPower,
     };
   } catch (error) {
-    console.error('Error checking voting eligibility with WorkerBee:', error);
+    logError('Error checking voting eligibility with WorkerBee', 'canUserVote', error instanceof Error ? error : undefined);
     return {
       canVote: false,
       votingPower: 0,
@@ -335,7 +336,7 @@ export function getHiveSignerVoteUrl(voteData: VoteData): string {
  */
 export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
   try {
-    console.log(`[batchVote] Processing ${votes.length} votes using Wax`);
+    workerBeeLog(`[batchVote] Processing ${votes.length} votes using Wax`);
     
     // Create multiple vote operations using Wax helpers
     const operations = votes.map(vote => createVoteOperation({
@@ -345,7 +346,7 @@ export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
       weight: vote.weight
     }));
 
-    console.log(`[batchVote] Created ${operations.length} Wax vote operations`);
+    workerBeeLog('[batchVote] Created Wax vote operations', undefined, operations);
 
     // Use Aioha to sign and broadcast all operations in a single transaction
     // Aioha expects operations in a specific format - each operation should be an array
@@ -354,14 +355,14 @@ export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
     
     const result = await (aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }).signAndBroadcastTx(aiohaOperations, 'posting');
 
-    console.log(`[batchVote] Batch vote completed with transaction ID: ${(result as { id?: string })?.id}`);
+    workerBeeLog(`[batchVote] Batch vote completed with transaction ID: ${(result as { id?: string })?.id}`);
 
     return votes.map(() => ({
       success: true,
       transactionId: (result as { id?: string })?.id || 'unknown',
     }));
   } catch (error) {
-    console.error('Error batch voting with Wax:', error);
+    logError('Error batch voting with Wax', 'batchVote', error instanceof Error ? error : undefined);
     
     return votes.map(() => ({
       success: false,
@@ -389,7 +390,7 @@ export async function getVoteHistory(author: string, permlink: string, limit: nu
       .sort((a: HiveVote, b: HiveVote) => new Date(b.time).getTime() - new Date(a.time).getTime())
       .slice(0, limit);
   } catch (error) {
-    console.error('Error fetching vote history with WorkerBee:', error);
+    logError('Error fetching vote history with WorkerBee', 'getVoteHistory', error instanceof Error ? error : undefined);
     return [];
   }
 }

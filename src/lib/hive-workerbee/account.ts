@@ -67,16 +67,17 @@ import { makeHiveApiCall } from './api';
 import { HiveAccount } from '../shared/types';
 import { calculateReputation } from '../shared/utils';
 import { getAccountOptimized, getContentOptimized } from './optimization';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 
 const WORKERBEE_DEBUG_ENABLED =
   process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true' || process.env.NODE_ENV === 'development';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const debugLog = (...args: any[]) => {
-  if (!WORKERBEE_DEBUG_ENABLED) {
+const debugLog = (...args: unknown[]) => {
+  if (!WORKERBEE_DEBUG_ENABLED || args.length === 0) {
     return;
   }
-  console.debug(...args);
+  const [message, ...rest] = args;
+  workerBeeLog(String(message), 'WorkerBeeAccount', rest.length === 1 ? rest[0] : rest.length > 1 ? rest : undefined);
 };
 
 interface VestingDelegation {
@@ -200,7 +201,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
         accountReputation = reputationResult[0];
       }
     } catch (error) {
-      console.warn(`[WorkerBee fetchUserAccount] Failed to get reputation:`, error);
+      logWarn('[WorkerBee fetchUserAccount] Failed to get reputation', 'fetchUserAccount', error);
     }
 
     // Get follow stats using optimized caching
@@ -212,7 +213,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
         following: followResult.following_count || 0
       };
     } catch (error) {
-      console.warn(`[WorkerBee fetchUserAccount] Failed to get follow stats:`, error);
+      logWarn('[WorkerBee fetchUserAccount] Failed to get follow stats', 'fetchUserAccount', error);
       followStats = { followers: 0, following: 0 };
     }
 
@@ -222,7 +223,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       const globalProps = await getContentOptimized('get_dynamic_global_properties', []) as GlobalProperties;
       savingsApr = (globalProps.hbd_interest_rate || 0) / 100;
     } catch (error) {
-      console.warn(`[WorkerBee fetchUserAccount] Failed to get HBD savings APR:`, error);
+      logWarn('[WorkerBee fetchUserAccount] Failed to get HBD savings APR', 'fetchUserAccount', error);
     }
 
     // Calculate actual comment count and vote count by fetching user's posts
@@ -238,7 +239,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
         calculatedStats = await calculateUserStats(username);
         debugLog(`[WorkerBee fetchUserAccount] Calculated stats:`, calculatedStats);
       } catch (error) {
-        console.warn(`[WorkerBee fetchUserAccount] Failed to calculate user stats:`, error);
+        logWarn('[WorkerBee fetchUserAccount] Failed to calculate user stats', 'fetchUserAccount', error);
       }
     }
 
@@ -271,7 +272,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     try {
       globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
     } catch {
-      console.warn('Failed to get global properties for HIVE POWER calculation');
+      logWarn('Failed to get global properties for HIVE POWER calculation', 'fetchUserAccount');
     }
 
     // Calculate HIVE POWER from vesting shares
@@ -317,7 +318,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
         rcPercentage = 100;
       }
     } catch (rcError) {
-      console.warn(`[WorkerBee fetchUserAccount] Failed to fetch RC from rc_api:`, rcError);
+      logWarn('[WorkerBee fetchUserAccount] Failed to fetch RC from rc_api', 'fetchUserAccount', rcError);
       debugLog(`[WorkerBee fetchUserAccount] Setting RC to 100% as fallback`);
       rcPercentage = 100;
     }
@@ -399,7 +400,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       votingPower: (accountData.voting_power as number) || 0,
     };
   } catch (error) {
-    console.error('Error fetching user account with WorkerBee:', error);
+    logError('Error fetching user account with WorkerBee', 'fetchUserAccount', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -470,7 +471,7 @@ export async function fetchUserBalances(username: string): Promise<{
       resourceCredits: rcPercentage,
     };
   } catch (error) {
-    console.error('Error fetching user balances with WorkerBee:', error);
+    logError('Error fetching user balances with WorkerBee', 'fetchUserBalances', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -497,7 +498,7 @@ export async function fetchUserProfile(username: string): Promise<{
     const profileMetadata = parseJsonMetadata(accountData.json_metadata as string);
     return profileMetadata.profile || {};
   } catch (error) {
-    console.error('Error fetching user profile with WorkerBee:', error);
+    logError('Error fetching user profile with WorkerBee', 'fetchUserProfile', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -542,7 +543,7 @@ export async function getUserFollowStats(username: string): Promise<{
       following
     };
   } catch (error) {
-    console.error('Error fetching follow stats with WorkerBee:', error);
+    logError('Error fetching follow stats with WorkerBee', 'getUserFollowStats', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -560,7 +561,7 @@ export async function getHbdSavingsApr(): Promise<number> {
     debugLog(`[WorkerBee getHbdSavingsApr] HBD savings APR: ${apr}%`);
     return apr;
   } catch (error) {
-    console.error('Error fetching HBD savings APR with WorkerBee:', error);
+    logError('Error fetching HBD savings APR with WorkerBee', 'getHbdSavingsApr', error instanceof Error ? error : undefined);
     return 0;
   }
 }
@@ -595,7 +596,7 @@ export async function getUserDelegations(username: string): Promise<{
       }))
     };
   } catch (error) {
-    console.error('Error fetching delegations with WorkerBee:', error);
+    logError('Error fetching delegations with WorkerBee', 'getUserDelegations', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -654,7 +655,7 @@ export async function getAccountHistory(
     debugLog(`[WorkerBee getAccountHistory] Processed ${operations.length} operations for ${username}`);
     return operations;
   } catch (error) {
-    console.error('Error fetching account history with WorkerBee:', error);
+    logError('Error fetching account history with WorkerBee', 'getAccountHistory', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -674,7 +675,7 @@ async function convertVestsToHive(vestingShares: string): Promise<number> {
       globalProps.total_vesting_fund_hive || '0'
     );
   } catch (error) {
-    console.error('Error converting VESTS to HIVE:', error);
+    logError('Error converting VESTS to HIVE', 'convertVestsToHive', error instanceof Error ? error : undefined);
     return 0;
   }
 }
@@ -848,7 +849,7 @@ export async function getRecentOperations(
     debugLog(`[WorkerBee getRecentOperations] Processed ${processedOperations.length} monetary operations for ${username}`);
     return processedOperations;
   } catch (error) {
-    console.error('Error fetching recent operations with WorkerBee:', error);
+    logError('Error fetching recent operations with WorkerBee', 'getRecentOperations', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -885,7 +886,7 @@ async function calculateUserStats(username: string): Promise<{
       voteCount: totalVotes
     };
   } catch (error) {
-    console.error('Error calculating user stats:', error);
+    logError('Error calculating user stats', 'calculateUserStats', error instanceof Error ? error : undefined);
     return {
       commentCount: 0,
       voteCount: 0
@@ -955,7 +956,7 @@ export async function updateUserProfile(
     
     return { success: true, transactionId: 'broadcasted' };
   } catch (error) {
-    console.error('Error updating user profile with WorkerBee:', error);
+    logError('Error updating user profile with WorkerBee', 'updateUserProfile', error instanceof Error ? error : undefined);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : String(error) 

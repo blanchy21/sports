@@ -1,5 +1,6 @@
 import { initializeWorkerBeeClient } from './client';
 import { Community, CommunityMember } from '@/types';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
 
 export interface CommunityFilters {
   search?: string;
@@ -110,7 +111,7 @@ export async function fetchCommunities(filters: CommunityFilters = {}): Promise<
       nextCursor: endIndex < filteredCommunities.length ? paginatedCommunities[paginatedCommunities.length - 1]?.id : undefined,
     };
   } catch (error) {
-    console.error('Error fetching communities:', error);
+    logError('Error fetching communities', 'fetchCommunities', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -129,7 +130,7 @@ export async function fetchCommunityDetails(communityId: string): Promise<Commun
     const communities = await fetchCommunities({ limit: 100 });
     return communities.communities.find(c => c.id === communityId) || null;
   } catch (error) {
-    console.error('Error fetching community details:', error);
+    logError('Error fetching community details', 'fetchCommunityDetails', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -166,7 +167,7 @@ export async function fetchCommunityMembers(communityId: string, limit: number =
 
     return mockMembers.slice(0, limit);
   } catch (error) {
-    console.error('Error fetching community members:', error);
+    logError('Error fetching community members', 'fetchCommunityMembers', error instanceof Error ? error : undefined);
     return [];
   }
 }
@@ -186,13 +187,13 @@ export async function subscribeToCommunity(communityId: string, username: string
 
     // For now, return mock success
     // In a real implementation, this would use Hive API to subscribe
-    console.log(`Subscribing ${username} to community ${communityId}`);
+    workerBeeLog(`Subscribing ${username} to community ${communityId}`);
     
     return {
       success: true,
     };
   } catch (error) {
-    console.error('Error subscribing to community:', error);
+    logError('Error subscribing to community', 'subscribeToCommunity', error instanceof Error ? error : undefined);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -215,13 +216,13 @@ export async function unsubscribeFromCommunity(communityId: string, username: st
 
     // For now, return mock success
     // In a real implementation, this would use Hive API to unsubscribe
-    console.log(`Unsubscribing ${username} from community ${communityId}`);
+    workerBeeLog(`Unsubscribing ${username} from community ${communityId}`);
     
     return {
       success: true,
     };
   } catch (error) {
-    console.error('Error unsubscribing from community:', error);
+    logError('Error unsubscribing from community', 'unsubscribeFromCommunity', error instanceof Error ? error : undefined);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -243,7 +244,7 @@ export async function isSubscribedToCommunity(communityId: string, _username: st
     // In a real implementation, this would check Hivemind API
     return communityId === 'sportsblock'; // Mock: user is subscribed to sportsblock
   } catch (error) {
-    console.error('Error checking community subscription:', error);
+    logError('Error checking community subscription', 'isSubscribedToCommunity', error instanceof Error ? error : undefined);
     return false;
   }
 }

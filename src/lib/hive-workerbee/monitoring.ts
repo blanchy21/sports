@@ -6,6 +6,7 @@
  */
 
 import { HiveError } from '../shared/utils';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 
 // Error types
 export enum ErrorType {
@@ -96,7 +97,7 @@ export class WorkerBeeMonitor {
     this.cleanupOldEntries();
     this.checkAlerts();
 
-    console.error(`[WorkerBee Monitor] ${severity} ${type}: ${message}`, {
+    logError(`[WorkerBee Monitor] ${severity} ${type}: ${message}`, 'WorkerBeeMonitor', undefined, {
       errorId,
       context,
       stack
@@ -129,7 +130,7 @@ export class WorkerBeeMonitor {
     this.checkAlerts();
 
     if (!success || duration > this.alertConfig.performanceThreshold) {
-      console.warn(`[WorkerBee Monitor] Performance issue: ${operation} took ${duration}ms`, {
+      logWarn(`[WorkerBee Monitor] Performance issue: ${operation} took ${duration}ms`, 'WorkerBeeMonitor', {
         entryId,
         metadata
       });
@@ -347,13 +348,13 @@ export class WorkerBeeMonitor {
 
     // Check error threshold
     if (recentErrors.length >= this.alertConfig.errorThreshold) {
-      console.warn(`[WorkerBee Monitor] Alert: High error rate detected (${recentErrors.length} errors in ${timeWindow}ms)`);
+      logWarn(`[WorkerBee Monitor] Alert: High error rate detected (${recentErrors.length} errors in ${timeWindow}ms)`, 'WorkerBeeMonitor');
     }
 
     // Check performance threshold
     const slowOperations = recentPerformance.filter(p => p.duration > this.alertConfig.performanceThreshold);
     if (slowOperations.length > 0) {
-      console.warn(`[WorkerBee Monitor] Alert: ${slowOperations.length} slow operations detected`);
+      logWarn(`[WorkerBee Monitor] Alert: ${slowOperations.length} slow operations detected`, 'WorkerBeeMonitor');
     }
   }
 }
@@ -480,7 +481,7 @@ export function getMonitoringStats(): {
       health: globalMonitor.getHealthStatus()
     };
   } catch (error) {
-    console.error('Error getting monitoring stats:', error);
+    logError('Error getting monitoring stats', 'WorkerBeeMonitor', error instanceof Error ? error : undefined);
     // Return default data if monitoring fails
     return {
       errors: {

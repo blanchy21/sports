@@ -2,6 +2,7 @@ import { SPORTS_ARENA_CONFIG } from './client';
 import { SPORT_CATEGORIES } from '@/types';
 import { makeHiveApiCall } from './api';
 import { getContentOptimized } from './optimization';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
 
 interface HiveVote {
   voter: string;
@@ -209,7 +210,7 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
               posts = (communityPosts || []) as unknown as HivePost[];
             }
           } catch (error) {
-            console.warn('[fetchSportsblockPosts] Error getting post date for pagination, falling back to regular fetch:', error);
+            logWarn('[fetchSportsblockPosts] Error getting post date for pagination, falling back to regular fetch', 'fetchSportsblockPosts', error);
             const communityPosts = await getContentOptimized('get_discussions_by_created', [
               {
                 tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
@@ -284,7 +285,7 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       nextCursor,
     };
   } catch (error) {
-    console.error('Error fetching Sportsblock posts with WorkerBee:', error);
+    logError('Error fetching Sportsblock posts with WorkerBee', 'fetchSportsblockPosts', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -312,7 +313,7 @@ export async function fetchTrendingPosts(limit: number = 20): Promise<Sportsbloc
         isSportsblockPost: true,
       } as unknown as SportsblockPost));
   } catch (error) {
-    console.error('Error fetching trending posts with WorkerBee:', error);
+    logError('Error fetching trending posts with WorkerBee', 'getTrendingPosts', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -340,7 +341,7 @@ export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost
         isSportsblockPost: true,
       } as unknown as SportsblockPost));
   } catch (error) {
-    console.error('Error fetching hot posts with WorkerBee:', error);
+    logError('Error fetching hot posts with WorkerBee', 'getHotPosts', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -366,7 +367,7 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
       isSportsblockPost: true,
     } as unknown as SportsblockPost;
   } catch (error) {
-    console.error('Error fetching post with WorkerBee:', error);
+    logError('Error fetching post with WorkerBee', 'getPostByAuthorPermlink', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -380,13 +381,13 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
  */
 export async function fetchComments(author: string, permlink: string): Promise<HiveComment[]> {
   try {
-    console.log(`[fetchComments] Fetching comments for ${author}/${permlink}`);
+    workerBeeLog(`[fetchComments] Fetching comments for ${author}/${permlink}`);
     
 
     // First, get direct replies to the post
     const directReplies = await makeHiveApiCall('condenser_api', 'get_content_replies', [author, permlink]);
     
-    console.log(`[fetchComments] Direct replies:`, Array.isArray(directReplies) ? directReplies.length : 0);
+    workerBeeLog('[fetchComments] Direct replies', undefined, Array.isArray(directReplies) ? directReplies.length : 0);
     
     if (!Array.isArray(directReplies) || directReplies.length === 0) {
       return [];
@@ -397,25 +398,25 @@ export async function fetchComments(author: string, permlink: string): Promise<H
     
     for (const reply of directReplies) {
       try {
-        console.log(`[fetchComments] Fetching nested replies for ${reply.author}/${reply.permlink}`);
+        workerBeeLog(`[fetchComments] Fetching nested replies for ${reply.author}/${reply.permlink}`);
         const nestedReplies = await makeHiveApiCall('condenser_api', 'get_content_replies', [reply.author, reply.permlink]);
         
         if (Array.isArray(nestedReplies) && nestedReplies.length > 0) {
-          console.log(`[fetchComments] Found ${nestedReplies.length} nested replies for ${reply.author}/${reply.permlink}`);
+          workerBeeLog(`[fetchComments] Found ${nestedReplies.length} nested replies for ${reply.author}/${reply.permlink}`);
           allComments.push(...nestedReplies);
         }
       } catch (error) {
-        console.warn(`[fetchComments] Error fetching nested replies for ${reply.author}/${reply.permlink}:`, error);
+        logWarn(`[fetchComments] Error fetching nested replies for ${reply.author}/${reply.permlink}`, 'fetchComments', error);
         // Continue with other replies even if one fails
       }
     }
     
-    console.log(`[fetchComments] Total comments found:`, allComments.length);
-    console.log(`[fetchComments] All comments:`, allComments);
+    workerBeeLog('[fetchComments] Total comments found', undefined, allComments.length);
+    workerBeeLog('[fetchComments] All comments', undefined, allComments);
     
     return allComments as unknown as HiveComment[];
   } catch (error) {
-    console.error('Error fetching comments with WorkerBee:', error);
+    logError('Error fetching comments with WorkerBee', 'fetchComments', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -442,7 +443,7 @@ export async function searchPosts(query: string, filters: ContentFilters = {}): 
       hasMore: false,
     };
   } catch (error) {
-    console.error('Error searching posts with WorkerBee:', error);
+    logError('Error searching posts with WorkerBee', 'searchPosts', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -463,7 +464,7 @@ export async function getPostsBySport(sportCategory: string, limit: number = 20)
     
     return result.posts;
   } catch (error) {
-    console.error('Error fetching posts by sport with WorkerBee:', error);
+    logError('Error fetching posts by sport with WorkerBee', 'getPostsBySport', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -484,7 +485,7 @@ export async function getUserPosts(username: string, limit: number = 20): Promis
     
     return result.posts;
   } catch (error) {
-    console.error('Error fetching user posts with WorkerBee:', error);
+    logError('Error fetching user posts with WorkerBee', 'getUserPosts', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -518,7 +519,7 @@ export async function getPopularTags(limit: number = 20): Promise<Array<{ tag: s
       .slice(0, limit)
       .map(([tag, count]) => ({ tag, count }));
   } catch (error) {
-    console.error('Error fetching popular tags with WorkerBee:', error);
+    logError('Error fetching popular tags with WorkerBee', 'getPopularTags', error instanceof Error ? error : undefined);
     return [];
   }
 }
@@ -554,7 +555,7 @@ export async function getCommunityStats(): Promise<{
       }).length,
     };
   } catch (error) {
-    console.error('Error fetching community stats with WorkerBee:', error);
+    logError('Error fetching community stats with WorkerBee', 'getCommunityStats', error instanceof Error ? error : undefined);
     return {
       totalPosts: 0,
       totalAuthors: 0,
@@ -600,7 +601,7 @@ export async function getRelatedPosts(post: SportsblockPost, limit: number = 5):
 
     return filtered as unknown as SportsblockPost[];
   } catch (error) {
-    console.error('Error fetching related posts with WorkerBee:', error);
+    logError('Error fetching related posts with WorkerBee', 'getRelatedPosts', error instanceof Error ? error : undefined);
     return [];
   }
 }

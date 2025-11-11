@@ -1,5 +1,6 @@
 import { getWorkerBeeClient, initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
 import type { IStartConfiguration } from "@hiveio/workerbee";
+import { workerBee as workerBeeLog, error as logError, warn as logWarn } from './logger';
 
 const REALTIME_DEBUG_ENABLED =
   process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true' || process.env.NODE_ENV === 'development';
@@ -11,12 +12,11 @@ const isAuthorizedTestHook = () =>
   }).__TEST_DISABLE_WORKERBEE__ === true &&
   ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const realtimeDebugLog = (...args: any[]) => {
+const realtimeDebugLog = (message: string, data?: unknown) => {
   if (!REALTIME_DEBUG_ENABLED) {
     return;
   }
-  console.debug(...args);
+  workerBeeLog(message, 'RealtimeMonitor', data);
 };
 
 // Real-time event types
@@ -156,7 +156,7 @@ export class RealtimeMonitor {
       this.client = await getWorkerBeeClient();
       realtimeDebugLog('[RealtimeMonitor] WorkerBee client initialized');
     } catch (error) {
-      console.error('[RealtimeMonitor] Failed to initialize client:', error);
+      logError('Failed to initialize WorkerBee client', 'RealtimeMonitor', error instanceof Error ? error : undefined);
     }
   }
 
@@ -194,7 +194,7 @@ export class RealtimeMonitor {
           this.handleNewPost(data);
         },
         error: (error: WebSocketError) => {
-          console.error('[RealtimeMonitor] Post monitoring error:', error);
+          logError('Post monitoring error', 'RealtimeMonitor', error instanceof Error ? error : undefined, error);
         }
       });
 
@@ -204,7 +204,7 @@ export class RealtimeMonitor {
           this.handleNewVote(data);
         },
         error: (error: WebSocketError) => {
-          console.error('[RealtimeMonitor] Vote monitoring error:', error);
+          logError('Vote monitoring error', 'RealtimeMonitor', error instanceof Error ? error : undefined, error);
         }
       });
 
@@ -214,7 +214,7 @@ export class RealtimeMonitor {
           this.handleNewComment(data);
         },
         error: (error: WebSocketError) => {
-          console.error('[RealtimeMonitor] Comment monitoring error:', error);
+          logError('Comment monitoring error', 'RealtimeMonitor', error instanceof Error ? error : undefined, error);
         }
       });
 
@@ -223,7 +223,7 @@ export class RealtimeMonitor {
       this.isRunning = true;
       realtimeDebugLog('[RealtimeMonitor] Real-time monitoring started');
     } catch (error) {
-      console.error('[RealtimeMonitor] Failed to start monitoring:', error);
+      logError('Failed to start realtime monitoring', 'RealtimeMonitor', error instanceof Error ? error : undefined);
       this.clearSubscriptions();
       throw error;
     }
@@ -247,7 +247,7 @@ export class RealtimeMonitor {
       this.isRunning = false;
       realtimeDebugLog('[RealtimeMonitor] Real-time monitoring stopped');
     } catch (error) {
-      console.error('[RealtimeMonitor] Error stopping monitoring:', error);
+      logError('Error stopping realtime monitoring', 'RealtimeMonitor', error instanceof Error ? error : undefined);
     }
   }
 
@@ -276,7 +276,7 @@ export class RealtimeMonitor {
       try {
         callback(event);
       } catch (error) {
-        console.error('[RealtimeMonitor] Callback error:', error);
+        logError('Realtime callback error', 'RealtimeMonitor', error instanceof Error ? error : undefined);
       }
     });
   }
@@ -305,7 +305,7 @@ export class RealtimeMonitor {
       const client = await initializeWorkerBeeClient();
       this.client = client;
     } catch (error) {
-      console.error('[RealtimeMonitor] Failed to start WorkerBee client:', error);
+      logError('Failed to start WorkerBee client', 'RealtimeMonitor', error instanceof Error ? error : undefined);
       throw error;
     }
   }
@@ -322,7 +322,7 @@ export class RealtimeMonitor {
           (subscription as { unsubscribe: () => void }).unsubscribe();
         }
       } catch (error) {
-        console.error('[RealtimeMonitor] Failed to unsubscribe from realtime stream:', error);
+        logError('Failed to unsubscribe from realtime stream', 'RealtimeMonitor', error instanceof Error ? error : undefined);
       }
     });
     this.subscriptions = [];
@@ -357,7 +357,7 @@ export class RealtimeMonitor {
 
       this.emitEvent(event);
     } catch (error) {
-      console.error('[RealtimeMonitor] Error handling new post:', error);
+      logError('Error handling new post', 'RealtimeMonitor', error instanceof Error ? error : undefined);
     }
   }
 
@@ -385,7 +385,7 @@ export class RealtimeMonitor {
 
       this.emitEvent(event);
     } catch (error) {
-      console.error('[RealtimeMonitor] Error handling new vote:', error);
+      logError('Error handling new vote', 'RealtimeMonitor', error instanceof Error ? error : undefined);
     }
   }
 
@@ -414,7 +414,7 @@ export class RealtimeMonitor {
 
       this.emitEvent(event);
     } catch (error) {
-      console.error('[RealtimeMonitor] Error handling new comment:', error);
+      logError('Error handling new comment', 'RealtimeMonitor', error instanceof Error ? error : undefined);
     }
   }
 

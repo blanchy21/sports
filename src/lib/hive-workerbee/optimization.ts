@@ -7,6 +7,7 @@
 
 import { getWorkerBeeClient } from './client';
 import { HiveAccount } from '../shared/types';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 
 // Cache interfaces
 interface CacheEntry<T> {
@@ -205,7 +206,7 @@ class WorkerBeeOptimizer {
       
       return account;
     } catch (error) {
-      console.error('Error fetching account:', error);
+      logError('Error fetching account', 'WorkerBeeOptimizer', error instanceof Error ? error : undefined);
       return null;
     }
   }
@@ -235,7 +236,7 @@ class WorkerBeeOptimizer {
       
       return result;
     } catch (error) {
-      console.error('Error fetching content:', error);
+      logError('Error fetching content', 'WorkerBeeOptimizer', error instanceof Error ? error : undefined);
       throw error;
     }
   }
@@ -320,7 +321,7 @@ export function getOptimizationMetrics(): PerformanceMetrics {
   try {
     return globalOptimizer.getMetrics();
   } catch (error) {
-    console.error('Error getting optimization metrics:', error);
+    logError('Error getting optimization metrics', 'WorkerBeeOptimizer', error instanceof Error ? error : undefined);
     return {
       requestCount: 0,
       averageResponseTime: 0,
@@ -338,7 +339,7 @@ export function getCacheStatistics(): { size: number; maxSize: number; hitRate: 
   try {
     return globalOptimizer.getCacheStats();
   } catch (error) {
-    console.error('Error getting cache statistics:', error);
+    logError('Error getting cache statistics', 'WorkerBeeOptimizer', error instanceof Error ? error : undefined);
     return {
       size: 0,
       maxSize: 1000,
@@ -389,7 +390,7 @@ export class ConnectionPool {
       
       return client;
     } catch (error) {
-      console.error('Failed to create connection:', error);
+      logError('Failed to create connection', 'WorkerBeeConnectionPool', error instanceof Error ? error : undefined);
       throw error;
     }
   }

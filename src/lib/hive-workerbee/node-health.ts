@@ -7,6 +7,7 @@
 
 import { checkHiveNodeAvailability } from './api';
 import { getHiveApiNodes } from './api';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
 
 // Node health status interface
 export interface NodeHealthStatus {
@@ -89,16 +90,16 @@ export class NodeHealthManager {
    */
   public async startProactiveMonitoring(): Promise<void> {
     if (this.isMonitoring) {
-      console.log('[Node Health] Monitoring already active');
+      workerBeeLog('[Node Health] Monitoring already active');
       return;
     }
 
     if (!this.config.enableProactiveMonitoring) {
-      console.log('[Node Health] Proactive monitoring disabled');
+      workerBeeLog('[Node Health] Proactive monitoring disabled');
       return;
     }
 
-    console.log(`[Node Health] Starting proactive monitoring (interval: ${this.config.checkInterval}ms)`);
+    workerBeeLog(`[Node Health] Starting proactive monitoring (interval: ${this.config.checkInterval}ms)`);
     
     // Initial health check
     await this.checkAllNodes();
@@ -120,7 +121,7 @@ export class NodeHealthManager {
       this.healthCheckInterval = null;
     }
     this.isMonitoring = false;
-    console.log('[Node Health] Proactive monitoring stopped');
+    workerBeeLog('[Node Health] Proactive monitoring stopped');
   }
 
   /**
@@ -133,13 +134,13 @@ export class NodeHealthManager {
     try {
       await Promise.allSettled(checkPromises);
     } catch (error) {
-      console.error('[Node Health] Error during health check:', error);
+      logError('[Node Health] Error during health check', 'nodeHealth', error instanceof Error ? error : undefined);
     }
 
     const report = this.generateHealthReport();
     const duration = Date.now() - startTime;
     
-    console.log(`[Node Health] Health check completed in ${duration}ms - ${report.healthyNodes}/${report.totalNodes} nodes healthy`);
+    workerBeeLog(`[Node Health] Health check completed in ${duration}ms - ${report.healthyNodes}/${report.totalNodes} nodes healthy`);
     
     return report;
   }
@@ -206,12 +207,12 @@ export class NodeHealthManager {
       .sort((a, b) => b.healthScore - a.healthScore);
 
     if (healthyNodes.length === 0) {
-      console.warn('[Node Health] No healthy nodes available, using first node as fallback');
+      logWarn('[Node Health] No healthy nodes available, using first node as fallback', 'nodeHealth');
       return this.nodeUrls[0];
     }
 
     const bestNode = healthyNodes[0];
-    console.log(`[Node Health] Selected best node: ${bestNode.url} (score: ${bestNode.healthScore})`);
+    workerBeeLog(`[Node Health] Selected best node: ${bestNode.url} (score: ${bestNode.healthScore})`);
     return bestNode.url;
   }
 
@@ -248,7 +249,7 @@ export class NodeHealthManager {
    */
   public updateConfig(newConfig: Partial<NodeHealthConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    console.log('[Node Health] Configuration updated:', this.config);
+    workerBeeLog('[Node Health] Configuration updated', undefined, this.config);
   }
 
   /**
@@ -256,7 +257,7 @@ export class NodeHealthManager {
    */
   public resetHealthData(): void {
     this.initializeNodeHealth();
-    console.log('[Node Health] Health data reset');
+    workerBeeLog('[Node Health] Health data reset');
   }
 
   /**

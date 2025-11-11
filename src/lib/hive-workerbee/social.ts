@@ -1,7 +1,7 @@
 import { initializeWorkerBeeClient } from './client';
 import { makeHiveApiCall } from './api';
 import { FollowRelationship } from '@/types';
-import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
 
 export interface SocialFilters {
   limit?: number;
@@ -89,10 +89,10 @@ export async function followUser(username: string, follower: string): Promise<{
   } catch (error) {
     logError('Error following user', undefined, error instanceof Error ? error : undefined);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Full error details:', {
+    workerBeeLog('followUser error details', undefined, {
       message: errorMessage,
-      error: error,
-      stack: error instanceof Error ? error.stack : undefined
+      error,
+      stack: error instanceof Error ? error.stack : undefined,
     });
     return {
       success: false,
@@ -171,12 +171,12 @@ export async function unfollowUser(username: string, follower: string): Promise<
       success: true,
     };
   } catch (error) {
-    console.error('Error unfollowing user:', error);
+    logError('Error unfollowing user', undefined, error instanceof Error ? error : undefined);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Full error details:', {
+    workerBeeLog('unfollowUser error details', undefined, {
       message: errorMessage,
-      error: error,
-      stack: error instanceof Error ? error.stack : undefined
+      error,
+      stack: error instanceof Error ? error.stack : undefined,
     });
     return {
       success: false,
@@ -233,7 +233,7 @@ const MAX_FOLLOW_PAGE_SIZE = 100;
 
 export async function fetchFollowers(username: string, filters: SocialFilters = {}): Promise<SocialResult> {
   try {
-    console.log(`[fetchFollowers] Fetching followers for ${username}`, filters);
+    workerBeeLog(`fetchFollowers start for ${username}`, undefined, filters);
 
     if (!username) {
       return { relationships: [], hasMore: false };
@@ -249,7 +249,7 @@ export async function fetchFollowers(username: string, filters: SocialFilters = 
     );
 
     if (!Array.isArray(result)) {
-      console.warn('[fetchFollowers] Unexpected response format', result);
+      logWarn('fetchFollowers unexpected response format', undefined, result);
       return { relationships: [], hasMore: false };
     }
 
@@ -278,7 +278,7 @@ export async function fetchFollowers(username: string, filters: SocialFilters = 
       total,
     };
   } catch (error) {
-    console.error('Error fetching followers:', error);
+    logError('Error fetching followers', undefined, error instanceof Error ? error : undefined);
     return {
       relationships: [],
       hasMore: false,
@@ -294,7 +294,7 @@ export async function fetchFollowers(username: string, filters: SocialFilters = 
  */
 export async function fetchFollowing(username: string, filters: SocialFilters = {}): Promise<SocialResult> {
   try {
-    console.log(`[fetchFollowing] Fetching following for ${username}`, filters);
+    workerBeeLog(`fetchFollowing start for ${username}`, undefined, filters);
 
     if (!username) {
       return { relationships: [], hasMore: false };
@@ -310,7 +310,7 @@ export async function fetchFollowing(username: string, filters: SocialFilters = 
     );
 
     if (!Array.isArray(result)) {
-      console.warn('[fetchFollowing] Unexpected response format', result);
+      logWarn('fetchFollowing unexpected response format', undefined, result);
       return { relationships: [], hasMore: false };
     }
 
@@ -339,7 +339,7 @@ export async function fetchFollowing(username: string, filters: SocialFilters = 
       total,
     };
   } catch (error) {
-    console.error('Error fetching following:', error);
+    logError('Error fetching following', undefined, error instanceof Error ? error : undefined);
     return {
       relationships: [],
       hasMore: false,
@@ -354,7 +354,7 @@ export async function fetchFollowing(username: string, filters: SocialFilters = 
  */
 export async function getFollowerCount(username: string): Promise<number> {
   try {
-    console.log(`[getFollowerCount] Getting follower count for ${username}`);
+    workerBeeLog(`getFollowerCount start for ${username}`);
 
     if (!username) {
       return 0;
@@ -367,10 +367,10 @@ export async function getFollowerCount(username: string): Promise<number> {
     );
 
     const count = typeof result?.follower_count === 'number' ? result.follower_count : 0;
-    console.log(`[getFollowerCount] ${username} has ${count} followers`);
+    logInfo(`getFollowerCount found ${count} followers for ${username}`);
     return count;
   } catch (error) {
-    console.error('Error fetching follower count:', error);
+    logError('Error fetching follower count', undefined, error instanceof Error ? error : undefined);
     return 0;
   }
 }
@@ -382,7 +382,7 @@ export async function getFollowerCount(username: string): Promise<number> {
  */
 export async function getFollowingCount(username: string): Promise<number> {
   try {
-    console.log(`[getFollowingCount] Getting following count for ${username}`);
+    workerBeeLog(`getFollowingCount start for ${username}`);
 
     if (!username) {
       return 0;
@@ -395,10 +395,10 @@ export async function getFollowingCount(username: string): Promise<number> {
     );
 
     const count = typeof result?.following_count === 'number' ? result.following_count : 0;
-    console.log(`[getFollowingCount] ${username} is following ${count} accounts`);
+    logInfo(`getFollowingCount found ${count} accounts for ${username}`);
     return count;
   } catch (error) {
-    console.error('Error fetching following count:', error);
+    logError('Error fetching following count', undefined, error instanceof Error ? error : undefined);
     return 0;
   }
 }
