@@ -62,7 +62,16 @@ export const Sidebar: React.FC = () => {
     const activeClasses = isActive 
       ? "bg-primary text-primary-foreground" 
       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground";
-    return `${baseClasses} ${activeClasses}`;
+    const className = `${baseClasses} ${activeClasses}`;
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Sidebar] getLinkClassName", {
+        isActive,
+        className,
+        isHydrated,
+        pathname,
+      });
+    }
+    return className;
   };
 
   return (

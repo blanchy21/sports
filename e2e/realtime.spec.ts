@@ -50,8 +50,15 @@ test.describe('Realtime UI', () => {
     await page.goto('/monitoring');
 
     await expect(page.getByTestId('realtime-feed')).toBeVisible();
+    const feedCard = page.getByTestId('realtime-feed');
+    const startButton = page.getByTestId('realtime-start');
+    await expect(feedCard.getByText(/Stopped/i)).toBeVisible();
+    await expect(startButton).toBeVisible();
+    await expect(page.getByTestId('realtime-clear')).toHaveCount(0);
 
-    await page.getByTestId('realtime-start').click();
+    await startButton.click();
+    await expect(feedCard.getByText(/Live/i)).toBeVisible();
+    await expect(page.getByTestId('realtime-start')).toHaveCount(0);
 
     await page.evaluate(() => {
       const globalWindow = window as typeof window & {
@@ -82,12 +89,17 @@ test.describe('Realtime UI', () => {
       }
     });
 
+    await expect(page.getByTestId('realtime-clear')).toBeVisible();
     await expect(page.getByTestId('realtime-event')).toHaveCount(2);
 
     await page.getByTestId('realtime-clear').click();
+    await expect(page.getByTestId('realtime-clear')).toHaveCount(0);
+    await expect(feedCard.getByText(/Waiting for activity/i)).toBeVisible();
     await expect(page.getByTestId('realtime-event')).toHaveCount(0);
 
     await page.getByTestId('realtime-stop').click();
+    await expect(feedCard.getByText(/Stopped/i)).toBeVisible();
+    await expect(page.getByTestId('realtime-start')).toBeVisible();
   });
 
   test('displays notification dropdown with stored notifications', async ({ page, context }) => {
@@ -129,7 +141,7 @@ test.describe('Realtime UI', () => {
     await expect(dropdown).toBeVisible();
     await expect(dropdown.getByText(/New Comment/i)).toBeVisible();
 
-    await dropdown.getByText(/Clear/i).click();
+    await dropdown.getByText(/Clear/i).click({ noWaitAfter: true });
     await expect(dropdown.getByText(/No notifications yet/i)).toBeVisible();
   });
 });

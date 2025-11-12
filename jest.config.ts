@@ -4,11 +4,13 @@ const config = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@jest/(.*)$': '<rootDir>/node_modules/@jest/$1',
     '@hiveio/workerbee$': '<rootDir>/node_modules/@hiveio/workerbee/dist/bundle/index.js',
     '@hiveio/wax$': '<rootDir>/node_modules/@hiveio/wax/wasm/dist/bundle/node.js'
   },
   testPathIgnorePatterns: ['/node_modules/', '/.next/', '/e2e/'],
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  testSequencer: '<rootDir>/node_modules/@jest/test-sequencer/build/index.js',
   transform: {
     '^.+\\.(t|j)sx?$': [
       'ts-jest',
