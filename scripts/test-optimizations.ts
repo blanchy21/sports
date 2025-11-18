@@ -170,7 +170,7 @@ class OptimizationTester {
     console.log('================================');
     
     const methods: Array<[string, unknown[]]> = [
-      ['get_discussions_by_created', [{ tag: 'sportsblock', limit: 20 }]],
+      ['get_discussions_by_created', [{ tag: 'sportsblock', limit: 20, start_author: '', start_permlink: '' }]],
       ['get_discussions_by_trending', [{ tag: 'sportsblock', limit: 10 }]],
       ['get_discussions_by_hot', [{ tag: 'sportsblock', limit: 15 }]]
     ];
@@ -215,7 +215,7 @@ class OptimizationTester {
     const requests: BatchRequest[] = [
       { type: 'account', data: 'blanchy' },
       { type: 'account', data: 'hiveio' },
-      { type: 'content', data: ['get_discussions_by_created', [{ tag: 'sportsblock', limit: 20 }]] },
+      { type: 'content', data: ['get_discussions_by_created', [{ tag: 'sportsblock', limit: 20, start_author: '', start_permlink: '' }]] },
       { type: 'content', data: ['get_discussions_by_trending', [{ tag: 'sportsblock', limit: 10 }]] }
     ];
     

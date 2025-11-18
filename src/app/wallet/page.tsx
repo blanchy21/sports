@@ -26,7 +26,8 @@ import {
   formatCrypto, 
   formatPercentage,
   formatLargeNumber,
-  calculateUSDValue
+  calculateUSDValue,
+  formatTime
 } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
@@ -51,6 +52,8 @@ export default function WalletPage() {
   const [isRefreshingAccount, setIsRefreshingAccount] = useState(false);
   const [lastAccountRefresh, setLastAccountRefresh] = useState<Date | null>(null);
   const hasRefreshedBalances = useRef(false);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshAccountDataRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   // Function to fetch transaction history
   const fetchTransactions = useCallback(async () => {
@@ -106,17 +109,47 @@ export default function WalletPage() {
     }
   }, [hiveUser?.username, refreshHiveAccount]);
 
+  // Store the latest refreshAccountData in a ref to avoid recreating intervals
   useEffect(() => {
-    if (
-      !hasRefreshedBalances.current &&
-      isAuthenticated &&
-      authType === "hive" &&
-      hiveUser?.username
-    ) {
+    refreshAccountDataRef.current = refreshAccountData;
+  }, [refreshAccountData]);
+
+  // Initial refresh on mount and automatic refresh interval
+  useEffect(() => {
+    if (!isAuthenticated || authType !== "hive" || !hiveUser?.username) {
+      // Clear interval if user logs out or is not authenticated
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Initial refresh on mount
+    if (!hasRefreshedBalances.current) {
       hasRefreshedBalances.current = true;
       void refreshAccountData();
     }
-  }, [isAuthenticated, authType, hiveUser?.username, refreshAccountData]);
+
+    // Set up automatic refresh interval (45 seconds)
+    // Only set up interval if one doesn't already exist
+    if (!refreshIntervalRef.current) {
+      refreshIntervalRef.current = setInterval(() => {
+        if (refreshAccountDataRef.current) {
+          void refreshAccountDataRef.current();
+        }
+      }, 45 * 1000); // 45 seconds
+    }
+
+    // Cleanup interval on unmount or when dependencies change
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, authType, hiveUser?.username]); // refreshAccountData intentionally excluded to prevent infinite loops
 
   // Helper function to get icon for transaction type
   const getTransactionIcon = (type: string) => {
@@ -143,6 +176,7 @@ export default function WalletPage() {
   };
 
   // Helper function to format transaction timestamp
+  // Uses timezone-aware formatting to prevent hydration mismatches
   const formatTransactionTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -155,7 +189,13 @@ export default function WalletPage() {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    // Use UTC to prevent hydration mismatches
+    return date.toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   if (!isAuthenticated || authType !== "hive" || !user) {
@@ -246,10 +286,10 @@ export default function WalletPage() {
               </p>
               <div className="text-sm opacity-90 mt-2 space-y-1">
                 {lastUpdated && (
-                  <p>Prices updated {lastUpdated.toLocaleTimeString()}</p>
+                  <p>Prices updated {formatTime(lastUpdated)}</p>
                 )}
                 {lastAccountRefresh && (
-                  <p>Balances refreshed {lastAccountRefresh.toLocaleTimeString()}</p>
+                  <p>Balances refreshed {formatTime(lastAccountRefresh)}</p>
                 )}
               </div>
             </div>

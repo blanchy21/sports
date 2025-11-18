@@ -5,6 +5,10 @@ export const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(inputs));
 };
 
+/**
+ * Format date in a timezone-aware way to prevent hydration mismatches
+ * Uses UTC to ensure consistent server/client rendering
+ */
 export const formatDate = (date: Date | string): string => {
   const d = new Date(date);
   const now = new Date();
@@ -18,8 +22,43 @@ export const formatDate = (date: Date | string): string => {
     const days = Math.floor(diffInHours / 24);
     return `${days}d ago`;
   } else {
-    return d.toLocaleDateString();
+    // Use UTC to prevent hydration mismatches
+    return d.toLocaleDateString('en-US', { 
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   }
+};
+
+/**
+ * Format time in a timezone-aware way to prevent hydration mismatches
+ * Uses user's local timezone but formats consistently
+ */
+export const formatTime = (date: Date | string): string => {
+  const d = new Date(date);
+  // Use consistent formatting to prevent hydration mismatches
+  return d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+};
+
+/**
+ * Format date and time together in a timezone-aware way
+ */
+export const formatDateTime = (date: Date | string): string => {
+  const d = new Date(date);
+  return d.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
 };
 
 export const formatReadTime = (wordCount: number): string => {

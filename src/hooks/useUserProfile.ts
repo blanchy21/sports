@@ -26,20 +26,17 @@ export const useUserProfile = (username: string | null) => {
     // Check cache first
     const cachedProfile = profileCache.get(username);
     if (cachedProfile) {
-      console.log('Using cached profile for:', username, cachedProfile);
       setProfile(cachedProfile);
       return;
     }
 
     // Fetch profile data
     const fetchProfile = async () => {
-      console.log('Fetching profile for:', username);
       setIsLoading(true);
       setError(null);
       
       try {
         const profileData = await fetchUserProfile(username);
-        console.log('Profile data received for:', username, profileData);
         if (profileData) {
           // Map the profile data to our expected format
           const mappedProfile: UserProfile = {

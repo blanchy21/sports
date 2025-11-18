@@ -31,6 +31,11 @@ export default function DraftsPage() {
     setIsLoading(true);
     setError(null);
     
+    if (typeof window === 'undefined') {
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       // In a real app, this would be an API call
       const savedDrafts = localStorage.getItem('drafts');
@@ -52,7 +57,11 @@ export default function DraftsPage() {
         const needsUpdate = parsedDrafts.some((draft: Record<string, unknown>) => !draft.id);
         if (needsUpdate) {
           console.log('Updating drafts in localStorage with missing IDs...');
-          localStorage.setItem('drafts', JSON.stringify(validDrafts));
+          try {
+            localStorage.setItem('drafts', JSON.stringify(validDrafts));
+          } catch (error) {
+            console.error('Error updating drafts:', error);
+          }
         }
         
         setDrafts(validDrafts);
@@ -75,12 +84,21 @@ export default function DraftsPage() {
 
     setDeletingDraftId(draftId);
     
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
     try {
       const savedDrafts = localStorage.getItem('drafts');
       if (savedDrafts) {
         const parsedDrafts = JSON.parse(savedDrafts);
         const updatedDrafts = parsedDrafts.filter((draft: Record<string, unknown>) => draft.id !== draftId);
-        localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
+        try {
+          localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
+        } catch (error) {
+          console.error('Error saving drafts:', error);
+          throw error;
+        }
         setDrafts(updatedDrafts);
       }
     } catch (err) {

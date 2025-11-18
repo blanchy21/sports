@@ -157,10 +157,31 @@ export async function getWaxProtocolInfo(): Promise<{
   lastIrreversibleBlockNumber: number;
 }> {
   try {
-    // Temporarily disable Wax API calls due to requestInterceptor issues
-    throw new Error('Wax API calls temporarily disabled');
+    const wax = await getWaxClient();
+    
+    // Try to get protocol info using Wax API
+    if (wax && typeof (wax as unknown as { call?: (method: string, params: unknown[]) => Promise<unknown> }).call === 'function') {
+      const result = await (wax as unknown as { call: (method: string, params: unknown[]) => Promise<unknown> }).call('condenser_api.get_dynamic_global_properties', []) as Record<string, unknown>;
+      
+      if (result) {
+        return {
+          version: '1.0.0',
+          chainId: (result.chain_id as string) || 'unknown',
+          headBlockNumber: (result.head_block_number as number) || 0,
+          lastIrreversibleBlockNumber: (result.last_irreversible_block_num as number) || 0
+        };
+      }
+    }
+    
+    throw new Error('Wax protocol info not available');
   } catch (error) {
-    logError('Failed to get Wax protocol info', 'getWaxProtocolInfo', error instanceof Error ? error : undefined);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Only log if it's not a known requestInterceptor issue
+    if (!errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled')) {
+      logError('Failed to get Wax protocol info', 'getWaxProtocolInfo', error instanceof Error ? error : undefined);
+    }
+    
     return {
       version: 'unknown',
       chainId: 'unknown',
@@ -182,15 +203,31 @@ export async function checkWaxHealth(): Promise<{
   const startTime = Date.now();
   
   try {
-    // Temporarily disable Wax API calls due to requestInterceptor issues
-    throw new Error('Wax API calls temporarily disabled');
+    const wax = await getWaxClient();
+    
+    // Try a simple API call to check health
+    if (wax && typeof (wax as unknown as { call?: (method: string, params: unknown[]) => Promise<unknown> }).call === 'function') {
+      await (wax as unknown as { call: (method: string, params: unknown[]) => Promise<unknown> }).call('condenser_api.get_dynamic_global_properties', []);
+      const latency = Date.now() - startTime;
+      
+      return {
+        isHealthy: true,
+        latency
+      };
+    }
+    
+    throw new Error('Wax health check method not available');
   } catch (error) {
     const latency = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Only include error message if it's not a known requestInterceptor issue
+    const shouldIncludeError = !errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled');
     
     return {
       isHealthy: false,
       latency,
-      error: error instanceof Error ? error.message : String(error)
+      error: shouldIncludeError ? errorMessage : undefined
     };
   }
 }

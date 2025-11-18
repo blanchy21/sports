@@ -171,13 +171,19 @@ export default function FeedPage() {
       setHasMore(false);
     };
 
-    // Load saved sport filter from localStorage
-    const savedSport = localStorage.getItem('selectedSport');
-    if (savedSport) {
-      setSelectedSport(savedSport);
-      // Reset pagination when loading saved filter
-      setNextCursor(undefined);
-      setHasMore(false);
+    // Load saved sport filter from localStorage (client-side only)
+    if (typeof window !== 'undefined') {
+      try {
+        const savedSport = localStorage.getItem('selectedSport');
+        if (savedSport) {
+          setSelectedSport(savedSport);
+          // Reset pagination when loading saved filter
+          setNextCursor(undefined);
+          setHasMore(false);
+        }
+      } catch (error) {
+        console.error('Error loading saved sport filter:', error);
+      }
     }
 
     window.addEventListener('sportFilterChanged', handleSportFilterChange as EventListener);

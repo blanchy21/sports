@@ -47,13 +47,29 @@ export interface WaxTransactionResult {
 
 /**
  * Get Wax instance with proper error handling
+ * Attempts to initialize WorkerBee and access the Wax chain interface
  */
 export async function getWaxInstance(): Promise<IHiveChainInterface> {
   try {
-    return await getWaxClient();
+    const wax = await getWaxClient();
+    
+    // Verify the Wax instance is valid
+    if (!wax) {
+      throw new Error('Wax instance is null or undefined');
+    }
+    
+    return wax;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Check if it's a requestInterceptor-related error
+    if (errorMessage.includes('requestInterceptor')) {
+      logError('[Wax Helpers] requestInterceptor issue detected - Wax may not be fully compatible in this environment', 'getWaxInstance', error instanceof Error ? error : undefined);
+      throw new Error('Wax requestInterceptor issue: Wax API may not be compatible in this browser environment. Falling back to HTTP API.');
+    }
+    
     logError('[Wax Helpers] Failed to get Wax instance', 'getWaxInstance', error instanceof Error ? error : undefined);
-    throw new Error('Unable to initialize Wax client. Please check your connection.');
+    throw new Error(`Unable to initialize Wax client: ${errorMessage}`);
   }
 }
 
@@ -294,48 +310,76 @@ export async function broadcastWaxTransaction(
 
 /**
  * Get account information using Wax
+ * Uses makeWaxApiCall for consistent API access
  */
 export async function getAccountWax(username: string): Promise<unknown | null> {
   try {
-    // For now, disable Wax API calls due to requestInterceptor issues
-    // Fall back to HTTP API calls
-    workerBeeLog(`[Wax Helpers] Wax API calls temporarily disabled for account: ${username}, using fallback`);
+    // Use makeWaxApiCall which handles multiple access patterns and fallback
+    const { makeWaxApiCall } = await import('./api');
+    const result = await makeWaxApiCall<unknown[]>('get_accounts', [[username]]);
+    
+    if (Array.isArray(result) && result.length > 0) {
+      return result[0];
+    }
+    
     return null;
   } catch (error) {
-    logError('[Wax Helpers] Failed to get account', 'getAccountWax', error instanceof Error ? error : undefined);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Only log if it's not a known requestInterceptor issue
+    if (!errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled')) {
+      logError('[Wax Helpers] Failed to get account', 'getAccountWax', error instanceof Error ? error : undefined);
+    }
+    
     return null;
   }
 }
 
 /**
  * Get content using Wax
+ * Uses makeWaxApiCall for consistent API access
  */
 export async function getContentWax(author: string, permlink: string): Promise<unknown | null> {
   try {
-    // For now, disable Wax API calls due to requestInterceptor issues
-    // Fall back to HTTP API calls
-    workerBeeLog(`[Wax Helpers] Wax API calls temporarily disabled for content: @${author}/${permlink}, using fallback`);
-    return null;
+    // Use makeWaxApiCall which handles multiple access patterns and fallback
+    const { makeWaxApiCall } = await import('./api');
+    const result = await makeWaxApiCall<unknown>('get_content', [author, permlink]);
+    
+    return result || null;
   } catch (error) {
-    logError('[Wax Helpers] Failed to get content', 'getContentWax', error instanceof Error ? error : undefined);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Only log if it's not a known requestInterceptor issue
+    if (!errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled')) {
+      logError('[Wax Helpers] Failed to get content', 'getContentWax', error instanceof Error ? error : undefined);
+    }
+    
     return null;
   }
 }
 
 /**
  * Get discussions using Wax
+ * Uses makeWaxApiCall for consistent API access
  */
 export async function getDiscussionsWax(
   method: string,
   params: unknown[]
 ): Promise<unknown[]> {
   try {
-    // For now, disable Wax API calls due to requestInterceptor issues
-    // Fall back to HTTP API calls
-    workerBeeLog(`[Wax Helpers] Wax API calls temporarily disabled for method: ${method} with ${params.length} params, using fallback`);
-    return [];
+    // Use makeWaxApiCall which handles multiple access patterns and fallback
+    const { makeWaxApiCall } = await import('./api');
+    const result = await makeWaxApiCall<unknown[]>(method, params);
+    
+    return Array.isArray(result) ? result : [];
   } catch (error) {
-    logError('[Wax Helpers] Failed to get discussions', 'getDiscussionsWax', error instanceof Error ? error : undefined);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Only log if it's not a known requestInterceptor issue
+    if (!errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled')) {
+      logError('[Wax Helpers] Failed to get discussions', 'getDiscussionsWax', error instanceof Error ? error : undefined);
+    }
+    
     return [];
   }
 }
@@ -437,11 +481,30 @@ export function formatJsonMetadata(metadata: Record<string, unknown>): string {
  */
 export async function getWaxProtocolVersion(): Promise<string> {
   try {
-    // const wax = await getWaxInstance(); // Temporarily disabled
-    // Temporarily disable Wax API calls due to requestInterceptor issues
-    throw new Error('Wax API calls temporarily disabled');
+    const wax = await getWaxInstance();
+    
+    // Try to get protocol version from Wax
+    if (wax && typeof (wax as unknown as { getProtocolVersion?: () => Promise<string> }).getProtocolVersion === 'function') {
+      return await (wax as unknown as { getProtocolVersion: () => Promise<string> }).getProtocolVersion();
+    }
+    
+    // Fallback: try using call method to get dynamic global properties
+    if (wax && typeof (wax as unknown as { call?: (method: string, params: unknown[]) => Promise<unknown> }).call === 'function') {
+      const result = await (wax as unknown as { call: (method: string, params: unknown[]) => Promise<unknown> }).call('condenser_api.get_dynamic_global_properties', []);
+      if (result && typeof result === 'object' && 'head_block_number' in result) {
+        return '1.0.0'; // Return a default version if we can connect
+      }
+    }
+    
+    return 'unknown';
   } catch (error) {
-    logError('[Wax Helpers] Failed to get protocol version', 'getWaxProtocolVersion', error instanceof Error ? error : undefined);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Only log if it's not a known requestInterceptor issue
+    if (!errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled')) {
+      logError('[Wax Helpers] Failed to get protocol version', 'getWaxProtocolVersion', error instanceof Error ? error : undefined);
+    }
+    
     return 'unknown';
   }
 }

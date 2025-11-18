@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRecentOperations } from '@/lib/hive-workerbee/account';
+import { retryWithBackoff } from '@/lib/utils/api-retry';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,8 +17,16 @@ export async function GET(request: NextRequest) {
 
     console.log(`[API] Fetching transaction history for ${username}, limit: ${limit}`);
 
-    // Fetch recent operations using WorkerBee
-    const operations = await getRecentOperations(username, limit);
+    // Fetch recent operations using WorkerBee with retry logic
+    const operations = await retryWithBackoff(
+      () => getRecentOperations(username, limit),
+      {
+        maxRetries: 2,
+        initialDelay: 1000,
+        maxDelay: 10000,
+        backoffMultiplier: 2,
+      }
+    );
 
     if (!operations) {
       return NextResponse.json(

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -48,13 +48,7 @@ export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { user } = useAuth();
   const [showProfilePopup, setShowProfilePopup] = useState(false);
-  const [isHydrated, setIsHydrated] = useState(false);
   const profileTriggerRef = useRef<HTMLDivElement>(null);
-
-  // Ensure hydration is complete before showing dynamic content
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
 
   // Use a consistent base className that doesn't change between server/client
   const getLinkClassName = (isActive: boolean) => {
@@ -63,14 +57,6 @@ export const Sidebar: React.FC = () => {
       ? "bg-primary text-primary-foreground" 
       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground";
     const className = `${baseClasses} ${activeClasses}`;
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Sidebar] getLinkClassName", {
-        isActive,
-        className,
-        isHydrated,
-        pathname,
-      });
-    }
     return className;
   };
 
@@ -81,18 +67,18 @@ export const Sidebar: React.FC = () => {
         <nav className="flex-1 px-4 py-4 space-y-1">
           {navigationItems.map((item) => {
             // Skip items that require auth if user is not authenticated
-            if (item.requireAuth && !isHydrated) return null;
             if (item.requireAuth && !user) return null;
 
             const Icon = item.icon;
 
-            const isActive = isHydrated && pathname === item.href;
+            const isActive = pathname === item.href;
             
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={getLinkClassName(isActive)}
+                suppressHydrationWarning
               >
                 <Icon className="mr-3 h-5 w-5" />
                 {item.label}
@@ -102,7 +88,7 @@ export const Sidebar: React.FC = () => {
         </nav>
 
         {/* User Profile Section at Bottom */}
-        {isHydrated && user && (
+        {user && (
           <div className="p-4 border-t">
           <div 
             ref={profileTriggerRef}
@@ -129,7 +115,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Profile Popup */}
-      {isHydrated && user && (
+      {user && (
         <UserProfilePopup
           isOpen={showProfilePopup}
           onClose={() => setShowProfilePopup(false)}

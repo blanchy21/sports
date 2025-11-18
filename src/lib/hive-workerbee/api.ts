@@ -39,71 +39,81 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
  * @returns Promise with the API response
  */
 export async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
-  // Get health-based node selection
-  const nodeHealthManager = getNodeHealthManager();
-  const bestNode = nodeHealthManager.getBestNode();
+  // Generate a unique key for request deduplication
+  const requestKey = `hive-api:${api}.${method}:${JSON.stringify(params)}`;
   
-  // Fallback node list for reactive failover
-  const apiNodes = [
-    bestNode, // Start with healthiest node
-    'https://api.hive.blog',           // @blocktrades - most reliable
-    'https://api.deathwing.me',        // @deathwing - backup node
-    'https://api.openhive.network',    // @gtg - established node
-    'https://hive-api.arcange.eu'      // @arcange - reliable European node
-  ];
+  // Use deduplication to prevent duplicate concurrent requests
+  const { deduplicateRequest } = await import('@/lib/utils/request-deduplication');
+  
+  return deduplicateRequest(async () => {
+    // Get health-based node selection
+    const nodeHealthManager = getNodeHealthManager();
+    const bestNode = nodeHealthManager.getBestNode();
+    
+    // Fallback node list for reactive failover
+    const apiNodes = [
+      bestNode, // Start with healthiest node
+      'https://api.hive.blog',           // @blocktrades - most reliable
+      'https://api.deathwing.me',        // @deathwing - backup node
+      'https://api.openhive.network',    // @gtg - established node
+      'https://hive-api.arcange.eu'      // @arcange - reliable European node
+    ];
 
-  // Remove duplicates while preserving order
-  const uniqueNodes = [...new Set(apiNodes)];
+    // Remove duplicates while preserving order
+    const uniqueNodes = [...new Set(apiNodes)];
 
-  let lastError: Error | null = null;
+    let lastError: Error | null = null;
 
-  for (const nodeUrl of uniqueNodes) {
-    try {
-      const start = Date.now();
-      workerBeeLog(`Hive API try ${api}.${method}`, undefined, { nodeUrl });
+    for (const nodeUrl of uniqueNodes) {
+      try {
+        const start = Date.now();
+        workerBeeLog(`Hive API try ${api}.${method}`, undefined, { nodeUrl });
 
-      const response = await fetchWithTimeout(nodeUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: `${api}.${method}`,
-          params: params,
-          id: Math.floor(Math.random() * 1000000)
-        }),
-      });
+        const response = await fetchWithTimeout(nodeUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: `${api}.${method}`,
+            params: params,
+            id: Math.floor(Math.random() * 1000000)
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status} from ${nodeUrl}`);
-      }
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status} from ${nodeUrl}`);
+        }
 
-      const result = await response.json();
+        const result = await response.json();
 
-      if (result.error) {
-        throw new Error(`API error from ${nodeUrl}: ${result.error.message}`);
-      }
+        if (result.error) {
+          throw new Error(`API error from ${nodeUrl}: ${result.error.message}`);
+        }
 
-      const duration = Date.now() - start;
-      workerBeeLog(`Hive API success ${api}.${method}`, undefined, { nodeUrl, duration });
-      logInfo(`${nodeUrl} responded in ${duration}ms`, `${api}.${method}`, { nodeUrl, duration });
-      return result.result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      const isAbortError = error instanceof Error && error.name === 'AbortError';
-      const timeoutMessage = isAbortError || /aborted|timeout/i.test(errorMessage)
-        ? `Request to ${nodeUrl} timed out after ${REQUEST_TIMEOUT_MS}ms`
-        : errorMessage;
+        const duration = Date.now() - start;
+        workerBeeLog(`Hive API success ${api}.${method}`, undefined, { nodeUrl, duration });
+        logInfo(`${nodeUrl} responded in ${duration}ms`, `${api}.${method}`, { nodeUrl, duration });
+        return result.result;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isAbortError = error instanceof Error && error.name === 'AbortError';
+        const timeoutMessage = isAbortError || /aborted|timeout/i.test(errorMessage)
+          ? `Request to ${nodeUrl} timed out after ${REQUEST_TIMEOUT_MS}ms`
+          : errorMessage;
 
-      logWarn(`Hive API failed for ${api}.${method} using ${nodeUrl}: ${timeoutMessage}`);
+      // Only log as debug during failover (we'll log as warning if all nodes fail)
+      workerBeeLog(`Hive API failed for ${api}.${method} using ${nodeUrl}, trying next node: ${timeoutMessage}`);
       lastError = new Error(timeoutMessage);
       // Continue to next node
     }
   }
 
-  // If all nodes failed, throw the last error
+  // If all nodes failed, log as warning and throw
+  logWarn(`All Hive API nodes failed for ${api}.${method}. Last error: ${lastError?.message}`);
   throw new Error(`All Hive API nodes failed. Last error: ${lastError?.message}`);
+  }, requestKey);
 }
 
 /**
@@ -155,11 +165,52 @@ export async function makeWaxApiCall<T = unknown>(method: string, params: unknow
   try {
     workerBeeLog(`Wax API call ${method}`, undefined, params);
     
-    // const wax = await getWaxInstance(); // Temporarily disabled
-    // Temporarily disable Wax API calls due to requestInterceptor issues
-    throw new Error('Wax API calls temporarily disabled');
+    // Try to use Wax API with proper error handling
+    const { getWaxInstance } = await import('./wax-helpers');
+    const wax = await getWaxInstance();
+    
+    // Try different method access patterns for Wax API
+    const waxAny = wax as unknown as Record<string, unknown>;
+    
+    // Pattern 1: Direct method call (e.g., wax.getAccounts)
+    if (typeof waxAny[method] === 'function') {
+      const result = await (waxAny[method] as (params: unknown[]) => Promise<T>)(params);
+      return result;
+    }
+    
+    // Pattern 2: Using call method with full API path
+    if (typeof waxAny.call === 'function') {
+      const result = await (waxAny.call as (method: string, params: unknown[]) => Promise<T>)(`condenser_api.${method}`, params);
+      return result;
+    }
+    
+    // Pattern 3: Try accessing via api property (some Wax implementations use this)
+    if (waxAny.api && typeof (waxAny.api as Record<string, unknown>).call === 'function') {
+      const result = await ((waxAny.api as { call: (method: string, params: unknown[]) => Promise<T> }).call)(`condenser_api.${method}`, params);
+      return result;
+    }
+    
+    // Pattern 4: Try accessing condenser_api directly
+    if (waxAny.condenser_api && typeof (waxAny.condenser_api as Record<string, unknown>)[method] === 'function') {
+      const result = await ((waxAny.condenser_api as Record<string, unknown>)[method] as (params: unknown[]) => Promise<T>)(params);
+      return result;
+    }
+    
+    throw new Error(`Wax method ${method} not available - tried multiple access patterns`);
   } catch (error) {
-    logError(`[Wax API] Failed for ${method}`, 'makeWaxApiCall', error instanceof Error ? error : undefined);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Check if it's a requestInterceptor issue
+    if (errorMessage.includes('requestInterceptor')) {
+      // Silently fall back to HTTP - this is expected in some environments
+      logWarn(`Wax API requestInterceptor issue for ${method}, using HTTP fallback`);
+      return makeHiveApiCall('condenser_api', method, params);
+    }
+    
+    // Only log as error if it's not a known temporary disable
+    if (!errorMessage.includes('temporarily disabled')) {
+      logError(`[Wax API] Failed for ${method}: ${errorMessage}`, 'makeWaxApiCall', error instanceof Error ? error : undefined);
+    }
     
     // Fallback to original HTTP API call
     logWarn(`Wax API failed for ${method}, falling back to HTTP`);

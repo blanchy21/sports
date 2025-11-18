@@ -83,15 +83,6 @@ export const RightSidebar: React.FC = () => {
     // Use optimistic state: prioritize hasAttemptedFollow for successful operations
     const displayState = hasAttemptedFollow || isFollowingState;
 
-    // Debug logging
-    console.log(`[FollowButton] ${username}:`, {
-      isFollowing,
-      isFollowingState,
-      hasAttemptedFollow,
-      isLoading,
-      displayState
-    });
-
     return (
       <button 
         onClick={handleFollowToggle}
@@ -124,11 +115,25 @@ export const RightSidebar: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
-        // Fetch recent posts (last 100 posts)
-        const result = await fetchSportsblockPosts({
-          limit: 100,
-          sort: 'created',
-        });
+        // Fetch recent posts for analytics
+        // Try get_discussions_by_created first, fallback to trending if it fails
+        let result;
+        try {
+          result = await fetchSportsblockPosts({
+            limit: 100,
+            sort: 'created',
+          });
+        } catch (error) {
+          // If get_discussions_by_created fails (some nodes reject it), use trending posts as fallback
+          console.warn('Failed to fetch posts by created, using trending posts as fallback:', error);
+          const { fetchTrendingPosts } = await import('@/lib/hive-workerbee/content');
+          const trendingPosts = await fetchTrendingPosts(100);
+          result = {
+            posts: trendingPosts,
+            hasMore: false,
+            nextCursor: undefined
+          };
+        }
         
         // Calculate analytics data
         const analytics = getAnalyticsData(result.posts, user?.username);

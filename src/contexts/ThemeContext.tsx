@@ -18,9 +18,12 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme, setThemeState] = useState<"light" | "dark">("light");
+  // Start with null to prevent hydration mismatch
+  const [theme, setThemeState] = useState<"light" | "dark" | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     // Check for saved theme preference or default to light mode
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     if (savedTheme) {
@@ -33,14 +36,20 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    if (!mounted || !theme) return;
+    
     // Update the DOM
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(theme);
     
     // Save to localStorage
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+    try {
+      localStorage.setItem("theme", theme);
+    } catch (error) {
+      console.error('Error saving theme to localStorage:', error);
+    }
+  }, [theme, mounted]);
 
   const setTheme = (newTheme: "light" | "dark") => {
     setThemeState(newTheme);
@@ -51,10 +60,19 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   const value: ThemeState = {
-    theme,
+    theme: theme || "light", // Default to light for SSR
     setTheme,
     toggleTheme,
   };
+
+  // Prevent hydration mismatch by not rendering theme-dependent content until mounted
+  if (!mounted) {
+    return (
+      <ThemeContext.Provider value={value}>
+        {children}
+      </ThemeContext.Provider>
+    );
+  }
 
   return (
     <ThemeContext.Provider value={value}>

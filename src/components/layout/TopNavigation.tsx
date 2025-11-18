@@ -55,10 +55,18 @@ export const TopNavigation: React.FC = () => {
 
   const handleSportSelect = (sportId: string) => {
     setSelectedSport(sportId);
-    // Store the selected sport in localStorage for persistence
-    localStorage.setItem('selectedSport', sportId);
+    // Store the selected sport in localStorage for persistence (client-side only)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('selectedSport', sportId);
+      } catch (error) {
+        console.error('Error saving sport filter:', error);
+      }
+    }
     // You could also emit an event or use a context to notify other components
-    window.dispatchEvent(new CustomEvent('sportFilterChanged', { detail: sportId }));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sportFilterChanged', { detail: sportId }));
+    }
   };
 
   // Search functionality
@@ -210,7 +218,7 @@ export const TopNavigation: React.FC = () => {
                 />
               </div>
               
-              <Link href="/publish" suppressHydrationWarning>
+              <Link href="/publish">
                 <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 hover:text-white w-16 h-16">
                   <Plus className="h-8 w-8" />
                 </Button>
@@ -223,7 +231,7 @@ export const TopNavigation: React.FC = () => {
               </div>
 
               <div className="flex items-center space-x-3">
-                <Link href="/profile" suppressHydrationWarning className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                <Link href="/profile" className="flex items-center space-x-3 hover:opacity-80 transition-opacity" suppressHydrationWarning>
                   <Avatar
                     src={user.avatar}
                     fallback={user.username}

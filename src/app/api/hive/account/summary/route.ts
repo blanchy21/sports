@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
+import { retryWithBackoff } from '@/lib/utils/api-retry';
 
 function serializeAccount(account: unknown) {
   if (!account || typeof account !== 'object') {
@@ -39,7 +40,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const account = await fetchUserAccount(username);
+    const account = await retryWithBackoff(
+      () => fetchUserAccount(username),
+      {
+        maxRetries: 2,
+        initialDelay: 1000,
+        maxDelay: 10000,
+        backoffMultiplier: 2,
+      }
+    );
 
     if (!account) {
       return NextResponse.json(

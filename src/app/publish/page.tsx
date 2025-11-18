@@ -80,6 +80,10 @@ function PublishPageContent() {
   }, [searchParams, user]);
 
   const loadDraft = (draftId: string) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
     try {
       const savedDrafts = localStorage.getItem('drafts');
       
@@ -232,6 +236,10 @@ function PublishPageContent() {
   }, [showEmojiPicker]);
 
   const handleSaveDraft = () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
     const draftId = searchParams.get('draft');
     const existingDrafts = JSON.parse(localStorage.getItem('drafts') || '[]');
     
@@ -254,12 +262,24 @@ function PublishPageContent() {
       const updatedDrafts = existingDrafts.map((draft: { id: string }) => 
         draft.id === draftId ? draftData : draft
       );
-      localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
+      try {
+        localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
+      } catch (error) {
+        console.error('Error saving draft:', error);
+        alert('Failed to save draft. Please try again.');
+        return;
+      }
       alert('Draft updated successfully!');
     } else {
       // Create new draft
       existingDrafts.push(draftData);
-      localStorage.setItem('drafts', JSON.stringify(existingDrafts));
+      try {
+        localStorage.setItem('drafts', JSON.stringify(existingDrafts));
+      } catch (error) {
+        console.error('Error saving draft:', error);
+        alert('Failed to save draft. Please try again.');
+        return;
+      }
       alert('Draft saved successfully!');
     }
   };

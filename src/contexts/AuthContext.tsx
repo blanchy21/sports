@@ -188,12 +188,22 @@ const persistAuthState = ({
   authType: AuthType;
   hiveUser: HiveAuthUser | null;
 }) => {
+  // Only persist on client-side
+  if (typeof window === 'undefined') {
+    return;
+  }
+  
   const sanitizedState = {
     user: userToPersist,
     authType: authTypeToPersist,
     hiveUser: sanitizeHiveUserForStorage(hiveUserToPersist),
   };
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sanitizedState));
+  
+  try {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sanitizedState));
+  } catch (error) {
+    console.error('Error persisting auth state:', error);
+  }
 };
 
 const AuthContext = createContext<AuthState & {
@@ -813,7 +823,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
             
             // Try to get username from localStorage or other persistent storage first
-          const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
+          const storedAuth = typeof window !== 'undefined' ? localStorage.getItem(AUTH_STORAGE_KEY) : null;
             if (storedAuth) {
               try {
                 const parsed = JSON.parse(storedAuth);
@@ -1019,7 +1029,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setAuthType("guest");
     setHiveUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    
+    // Only remove from localStorage on client-side
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      } catch (error) {
+        console.error('Error removing auth state from localStorage:', error);
+      }
+    }
   };
 
   const upgradeToHive = async (hiveUsername: string) => {

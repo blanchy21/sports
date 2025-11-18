@@ -99,22 +99,26 @@ export async function fetchAllPrices(): Promise<CryptoPriceData> {
     }
 
     
-    // Fetch all prices from our API route
-    const response = await fetch('/api/crypto/prices?type=all', {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
+    // Fetch all prices from our API route with deduplication
+    const { deduplicateFetch } = await import('@/lib/utils/request-deduplication');
+    const result = await deduplicateFetch<{ success: boolean; data?: CryptoPriceData; error?: string }>(
+      '/api/crypto/prices?type=all',
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
       },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+      async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      }
+    );
     console.log('[fetchAllPrices] Price data from API:', result);
     
-    if (!result.success) {
+    if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to fetch cryptocurrency prices');
     }
 

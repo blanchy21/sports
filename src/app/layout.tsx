@@ -10,6 +10,8 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { QueryClientProvider } from "@/lib/react-query/QueryClientProvider";
 import { ModalProvider } from "@/components/modals/ModalProvider";
 import { ServiceWorkerInitializer } from "@/components/ServiceWorkerInitializer";
+import { NodeHealthInitializer } from "@/components/NodeHealthInitializer";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body className={inter.className}>
         <QueryClientProvider>
           <ThemeProvider>
@@ -35,8 +37,11 @@ export default function RootLayout({
                   <PriceProvider>
                     <ToastProvider>
                       <ModalProvider>
-                        <ServiceWorkerInitializer />
-                        {children}
+                        <ErrorBoundary>
+                          <ServiceWorkerInitializer />
+                          <NodeHealthInitializer />
+                          {children}
+                        </ErrorBoundary>
                       </ModalProvider>
                     </ToastProvider>
                   </PriceProvider>

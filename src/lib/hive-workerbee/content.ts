@@ -177,64 +177,45 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       posts = (accountPosts || []) as unknown as HivePost[];
     } else {
       // Fetch posts from Sportsblock community using optimized caching
-      // For pagination, we need to use get_discussions_by_created with proper before date
+      // For pagination, we need to use get_discussions_by_created with start_author and start_permlink
       if (filters.before) {
-        // Parse the cursor to get the date from the last post
+        // Parse the cursor to get author and permlink for pagination
         const [author, permlink] = filters.before.split('/');
         
         if (author && permlink) {
-          try {
-            // Get the specific post to extract its creation date
-            const postData = await getContentOptimized('get_content', [author, permlink]) as HivePost;
-            
-            if (postData && postData.created) {
-              // Use the post's creation date as the 'before' parameter
-              const beforeDate = postData.created;
-              
-              const communityPosts = await getContentOptimized('get_discussions_by_created', [
-                {
-                  tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-                  limit: limit,
-                  before_date: beforeDate
-                }
-              ]);
-              posts = (communityPosts || []) as unknown as HivePost[];
-            } else {
-              // Fallback to regular fetch if we can't get the post date
-              const communityPosts = await getContentOptimized('get_discussions_by_created', [
-                {
-                  tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-                  limit: limit
-                }
-              ]);
-              posts = (communityPosts || []) as unknown as HivePost[];
-            }
-          } catch (error) {
-            logWarn('[fetchSportsblockPosts] Error getting post date for pagination, falling back to regular fetch', 'fetchSportsblockPosts', error);
-            const communityPosts = await getContentOptimized('get_discussions_by_created', [
-              {
-                tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-                limit: limit
-              }
-            ]);
-            posts = (communityPosts || []) as unknown as HivePost[];
-          }
-        } else {
-          // Invalid cursor format, fallback to regular fetch
+          // Use start_author and start_permlink for pagination
+          // get_discussions_by_created requires tag, limit, start_author, and start_permlink
           const communityPosts = await getContentOptimized('get_discussions_by_created', [
             {
               tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-              limit: limit
+              limit: limit,
+              start_author: author,
+              start_permlink: permlink
+            }
+          ]);
+          posts = (communityPosts || []) as unknown as HivePost[];
+        } else {
+          // Invalid cursor format, fallback to regular fetch
+          // get_discussions_by_created requires tag, limit, start_author, and start_permlink
+          const communityPosts = await getContentOptimized('get_discussions_by_created', [
+            {
+              tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+              limit: limit,
+              start_author: '',
+              start_permlink: ''
             }
           ]);
           posts = (communityPosts || []) as unknown as HivePost[];
         }
       } else {
         // First page - use get_discussions_by_created for chronological order
+        // get_discussions_by_created requires tag, limit, start_author, and start_permlink
         const communityPosts = await getContentOptimized('get_discussions_by_created', [
           {
             tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-            limit: limit
+            limit: limit,
+            start_author: '',
+            start_permlink: ''
           }
         ]);
         posts = (communityPosts || []) as unknown as HivePost[];
