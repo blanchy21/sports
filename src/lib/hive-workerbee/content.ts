@@ -1,6 +1,6 @@
 import { SPORTS_ARENA_CONFIG } from './client';
 import { SPORT_CATEGORIES } from '@/types';
-import { makeHiveApiCall } from './api';
+import { makeWorkerBeeApiCall } from './api';
 import { getContentOptimized } from './optimization';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 
@@ -306,8 +306,8 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
  */
 export async function fetchTrendingPosts(limit: number = 20): Promise<SportsblockPost[]> {
   try {
-
-    const trendingPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_trending', [
+    // Use WorkerBee API call for better node management
+    const trendingPosts = await makeWorkerBeeApiCall<unknown[]>('get_discussions_by_trending', [
       {
         tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
         limit
@@ -334,8 +334,8 @@ export async function fetchTrendingPosts(limit: number = 20): Promise<Sportsbloc
  */
 export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost[]> {
   try {
-
-    const hotPosts = await makeHiveApiCall('condenser_api', 'get_discussions_by_hot', [
+    // Use WorkerBee API call for better node management
+    const hotPosts = await makeWorkerBeeApiCall<unknown[]>('get_discussions_by_hot', [
       {
         tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
         limit
@@ -363,8 +363,8 @@ export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost
  */
 export async function fetchPost(author: string, permlink: string): Promise<SportsblockPost | null> {
   try {
-
-    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    // Use WorkerBee API call for better node management
+    const post = await makeWorkerBeeApiCall<unknown>('get_content', [author, permlink]);
     
     if (!post || !isSportsblockPost(post as unknown as HivePost)) {
       return null;
@@ -392,9 +392,9 @@ export async function fetchComments(author: string, permlink: string): Promise<H
   try {
     workerBeeLog(`[fetchComments] Fetching comments for ${author}/${permlink}`);
     
-
+    // Use WorkerBee API call for better node management
     // First, get direct replies to the post
-    const directReplies = await makeHiveApiCall('condenser_api', 'get_content_replies', [author, permlink]);
+    const directReplies = await makeWorkerBeeApiCall<unknown[]>('get_content_replies', [author, permlink]);
     
     workerBeeLog('[fetchComments] Direct replies', undefined, Array.isArray(directReplies) ? directReplies.length : 0);
     
@@ -407,15 +407,17 @@ export async function fetchComments(author: string, permlink: string): Promise<H
     
     for (const reply of directReplies) {
       try {
-        workerBeeLog(`[fetchComments] Fetching nested replies for ${reply.author}/${reply.permlink}`);
-        const nestedReplies = await makeHiveApiCall('condenser_api', 'get_content_replies', [reply.author, reply.permlink]);
+        const replyData = reply as { author: string; permlink: string };
+        workerBeeLog(`[fetchComments] Fetching nested replies for ${replyData.author}/${replyData.permlink}`);
+        const nestedReplies = await makeWorkerBeeApiCall<unknown[]>('get_content_replies', [replyData.author, replyData.permlink]);
         
         if (Array.isArray(nestedReplies) && nestedReplies.length > 0) {
-          workerBeeLog(`[fetchComments] Found ${nestedReplies.length} nested replies for ${reply.author}/${reply.permlink}`);
+          workerBeeLog(`[fetchComments] Found ${nestedReplies.length} nested replies for ${replyData.author}/${replyData.permlink}`);
           allComments.push(...nestedReplies);
         }
       } catch (error) {
-        logWarn(`[fetchComments] Error fetching nested replies for ${reply.author}/${reply.permlink}`, 'fetchComments', error);
+        const replyData = reply as { author: string; permlink: string };
+        logWarn(`[fetchComments] Error fetching nested replies for ${replyData.author}/${replyData.permlink}`, 'fetchComments', error);
         // Continue with other replies even if one fails
       }
     }

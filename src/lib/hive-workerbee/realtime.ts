@@ -1,6 +1,8 @@
 import { getWorkerBeeClient, initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
 import type { IStartConfiguration } from "@hiveio/workerbee";
-import { workerBee as workerBeeLog, error as logError } from './logger';
+import { workerBee as workerBeeLog, error as logError, warn as logWarn } from './logger';
+import { fetchSportsblockPosts } from './content';
+import { makeWorkerBeeApiCall } from './api';
 
 const REALTIME_DEBUG_ENABLED =
   process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true' || process.env.NODE_ENV === 'development';
@@ -140,15 +142,24 @@ export type ErrorHandler = (error: WebSocketError | Error) => void;
 
 type SubscriptionLike = { unsubscribe: () => void } | (() => void) | void;
 
+// Storage key for last processed block
+const LAST_PROCESSED_BLOCK_KEY = 'sportsblock_last_processed_block';
+
 // Real-time monitoring class
 export class RealtimeMonitor {
   private client: unknown = null;
   private isRunning = false;
   private callbacks: RealtimeEventCallback[] = [];
   private subscriptions: SubscriptionLike[] = [];
+  private sportsblockAuthors: Set<string> = new Set();
+  private authorCacheExpiry: number = 0;
+  private readonly AUTHOR_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+  private lastProcessedBlock: number = 0;
+  private isProcessingHistory: boolean = false;
 
   constructor() {
     this.initializeClient();
+    this.loadLastProcessedBlock();
   }
 
   private async initializeClient() {
@@ -161,15 +172,224 @@ export class RealtimeMonitor {
   }
 
   /**
-   * Start real-time monitoring
+   * Load last processed block from storage
    */
-  async start(): Promise<void> {
+  private loadLastProcessedBlock(): void {
+    if (typeof window === 'undefined') return; // Server-side: skip localStorage
+    
+    try {
+      const saved = localStorage.getItem(LAST_PROCESSED_BLOCK_KEY);
+      if (saved) {
+        this.lastProcessedBlock = parseInt(saved, 10) || 0;
+        realtimeDebugLog(`[RealtimeMonitor] Loaded last processed block: ${this.lastProcessedBlock}`);
+      }
+    } catch (error) {
+      logWarn('Failed to load last processed block', 'RealtimeMonitor', error);
+    }
+  }
+
+  /**
+   * Save last processed block to storage
+   */
+  private saveLastProcessedBlock(blockNumber: number): void {
+    if (typeof window === 'undefined') return; // Server-side: skip localStorage
+    
+    try {
+      this.lastProcessedBlock = blockNumber;
+      localStorage.setItem(LAST_PROCESSED_BLOCK_KEY, blockNumber.toString());
+      realtimeDebugLog(`[RealtimeMonitor] Saved last processed block: ${blockNumber}`);
+    } catch (error) {
+      logWarn('Failed to save last processed block', 'RealtimeMonitor', error);
+    }
+  }
+
+  /**
+   * Get current block number from blockchain
+   */
+  private async getCurrentBlockNumber(): Promise<number> {
+    try {
+      const globalProps = await makeWorkerBeeApiCall<{ head_block_number?: number }>('get_dynamic_global_properties', []);
+      return globalProps?.head_block_number || 0;
+    } catch (error) {
+      logError('Failed to get current block number', 'RealtimeMonitor', error instanceof Error ? error : undefined);
+      return 0;
+    }
+  }
+
+  /**
+   * Process historical data using providePastOperations
+   */
+  private async processHistoricalData(startBlock: number, endBlock: number): Promise<void> {
+    if (startBlock >= endBlock) {
+      realtimeDebugLog('[RealtimeMonitor] No historical data to process');
+      return;
+    }
+
+    this.isProcessingHistory = true;
+    realtimeDebugLog(`[RealtimeMonitor] Processing historical data from block ${startBlock} to ${endBlock}`);
+
+    try {
+      const client = this.client as {
+        providePastOperations?: (start: number, end: number) => {
+          onPostsWithTags?: (tags: string[]) => {
+            subscribe: (handlers: { 
+              next: (data: StreamData) => void; 
+              error: (error: WebSocketError) => void;
+              complete?: () => void;
+            }) => SubscriptionLike;
+          };
+        };
+      };
+
+      if (!client.providePastOperations) {
+        logWarn('providePastOperations not available, skipping historical processing', 'RealtimeMonitor');
+        this.isProcessingHistory = false;
+        return;
+      }
+
+      // Process historical posts
+      await new Promise<void>((resolve, reject) => {
+        if (!client.providePastOperations) {
+          resolve(); // Historical processing not available
+          return;
+        }
+
+        const pastOps = client.providePastOperations(startBlock, endBlock);
+        const postsObserver = pastOps.onPostsWithTags?.([SPORTS_ARENA_CONFIG.COMMUNITY_ID, 'sportsblock']);
+        
+        if (!postsObserver) {
+          resolve(); // Historical posts observer not available
+          return;
+        }
+
+        const historicalSubscription = postsObserver.subscribe({
+          next: (data: StreamData) => {
+            realtimeDebugLog('[RealtimeMonitor] Historical post detected:', data);
+            this.handleNewPost(data);
+          },
+          error: (error: WebSocketError) => {
+            logError('Historical processing error', 'RealtimeMonitor', error instanceof Error ? error : undefined, error);
+            reject(error);
+          },
+          complete: () => {
+            realtimeDebugLog('[RealtimeMonitor] Historical processing complete');
+            resolve();
+          }
+        });
+
+        if (!historicalSubscription) {
+          resolve(); // No historical data to process
+        }
+      });
+
+      // Update last processed block
+      this.saveLastProcessedBlock(endBlock);
+      this.isProcessingHistory = false;
+    } catch (error) {
+      this.isProcessingHistory = false;
+      logError('Error processing historical data', 'RealtimeMonitor', error instanceof Error ? error : undefined);
+      // Don't throw - continue with live monitoring even if historical processing fails
+    }
+  }
+
+  /**
+   * Load and cache Sportsblock authors for filtering
+   */
+  private async loadSportsblockAuthors(): Promise<void> {
+    const now = Date.now();
+    
+    // Use cached authors if still valid
+    if (this.sportsblockAuthors.size > 0 && now < this.authorCacheExpiry) {
+      realtimeDebugLog(`[RealtimeMonitor] Using cached authors (${this.sportsblockAuthors.size} authors)`);
+      return;
+    }
+
+    try {
+      realtimeDebugLog('[RealtimeMonitor] Loading Sportsblock authors...');
+      
+      // Fetch recent Sportsblock posts to build author list
+      const posts = await fetchSportsblockPosts({ limit: 100 });
+      
+      // Extract unique authors
+      const authors = new Set<string>();
+      posts.posts.forEach(post => {
+        authors.add(post.author);
+      });
+      
+      this.sportsblockAuthors = authors;
+      this.authorCacheExpiry = now + this.AUTHOR_CACHE_TTL;
+      
+      realtimeDebugLog(`[RealtimeMonitor] Loaded ${authors.size} Sportsblock authors`);
+    } catch (error) {
+      logWarn('Failed to load Sportsblock authors, will use fallback filtering', 'RealtimeMonitor', error);
+      // Continue with empty set - will use fallback filtering
+    }
+  }
+
+  /**
+   * Add author to cache (called when new posts are detected)
+   */
+  private addAuthorToCache(author: string): void {
+    if (author && !this.sportsblockAuthors.has(author)) {
+      this.sportsblockAuthors.add(author);
+      realtimeDebugLog(`[RealtimeMonitor] Added author to cache: ${author}`);
+    }
+  }
+
+  /**
+   * Check if an author is a Sportsblock author
+   */
+  private isSportsblockAuthor(author: string): boolean {
+    if (!author) return false;
+    
+    // If cache is empty, return true to allow through (will be filtered by post check)
+    if (this.sportsblockAuthors.size === 0) {
+      return true; // Allow through, will be filtered later
+    }
+    
+    return this.sportsblockAuthors.has(author);
+  }
+
+  /**
+   * Start real-time monitoring
+   * Processes historical data first, then switches to live monitoring
+   */
+  async start(options: { processHistory?: boolean; historyBlocks?: number } = {}): Promise<void> {
     if (this.isRunning) {
       realtimeDebugLog('[RealtimeMonitor] Already running');
       return;
     }
 
     await this.ensureClientStarted();
+    
+    // Load Sportsblock authors for filtering
+    await this.loadSportsblockAuthors();
+
+    // Process historical data if enabled (default: true)
+    const shouldProcessHistory = options.processHistory !== false;
+    const historyBlocks = options.historyBlocks || 1000; // Default: last 1000 blocks (~3.5 hours)
+    
+    if (shouldProcessHistory) {
+      try {
+        const currentBlock = await this.getCurrentBlockNumber();
+        const startBlock = Math.max(0, currentBlock - historyBlocks);
+        
+        if (this.lastProcessedBlock > 0 && this.lastProcessedBlock < currentBlock) {
+          // Resume from last processed block
+          realtimeDebugLog(`[RealtimeMonitor] Resuming from block ${this.lastProcessedBlock}`);
+          await this.processHistoricalData(this.lastProcessedBlock, currentBlock);
+        } else if (this.lastProcessedBlock === 0) {
+          // First time: process recent history
+          realtimeDebugLog(`[RealtimeMonitor] First run: processing last ${historyBlocks} blocks`);
+          await this.processHistoricalData(startBlock, currentBlock);
+        } else {
+          realtimeDebugLog('[RealtimeMonitor] Already up to date, skipping historical processing');
+        }
+      } catch (error) {
+        logWarn('Historical processing failed, continuing with live monitoring', 'RealtimeMonitor', error);
+        // Continue with live monitoring even if historical processing fails
+      }
+    }
 
     try {
       this.clearSubscriptions();
@@ -185,9 +405,13 @@ export class RealtimeMonitor {
           onComments: () => {
             subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => SubscriptionLike;
           };
+          onImpactedAccounts?: (...accounts: string[]) => {
+            subscribe: (handlers: { next: (data: StreamData) => void; error: (error: WebSocketError) => void }) => SubscriptionLike;
+          };
         };
       };
 
+      // Monitor posts with Sportsblock tags
       const postsSubscription = observableApi.observe.onPostsWithTags([SPORTS_ARENA_CONFIG.COMMUNITY_ID, 'sportsblock']).subscribe({
         next: (data: StreamData) => {
           realtimeDebugLog('[RealtimeMonitor] New post detected:', data);
@@ -198,35 +422,130 @@ export class RealtimeMonitor {
         }
       });
 
-      const votesSubscription = observableApi.observe.onVotes().subscribe({
-        next: (data: StreamData) => {
-          realtimeDebugLog('[RealtimeMonitor] New vote detected:', data);
-          this.handleNewVote(data);
-        },
-        error: (error: WebSocketError) => {
-          logError('Vote monitoring error', 'RealtimeMonitor', error instanceof Error ? error : undefined, error);
-        }
-      });
+      // Improved vote monitoring: Use onImpactedAccounts if available, otherwise filter manually
+      let votesSubscription: SubscriptionLike;
+      
+      if (observableApi.observe.onImpactedAccounts && this.sportsblockAuthors.size > 0) {
+        // Use account-based filtering for better performance
+        const authorsArray = Array.from(this.sportsblockAuthors);
+        realtimeDebugLog(`[RealtimeMonitor] Monitoring votes for ${authorsArray.length} Sportsblock authors`);
+        
+        votesSubscription = observableApi.observe.onImpactedAccounts(...authorsArray).subscribe({
+          next: (data: StreamData) => {
+            realtimeDebugLog('[RealtimeMonitor] Vote on Sportsblock account detected:', data);
+            this.handleNewVote(data);
+          },
+          error: (error: WebSocketError) => {
+            logError('Vote monitoring error', 'RealtimeMonitor', error instanceof Error ? error : undefined, error);
+          }
+        });
+      } else {
+        // Fallback: monitor all votes and filter manually
+        realtimeDebugLog('[RealtimeMonitor] Monitoring all votes (will filter manually)');
+        votesSubscription = observableApi.observe.onVotes().subscribe({
+          next: (data: StreamData) => {
+            realtimeDebugLog('[RealtimeMonitor] New vote detected:', data);
+            this.handleNewVote(data);
+          },
+          error: (error: WebSocketError) => {
+            logError('Vote monitoring error', 'RealtimeMonitor', error instanceof Error ? error : undefined, error);
+          }
+        });
+      }
 
-      const commentsSubscription = observableApi.observe.onComments().subscribe({
-        next: (data: StreamData) => {
-          realtimeDebugLog('[RealtimeMonitor] New comment detected:', data);
-          this.handleNewComment(data);
-        },
-        error: (error: WebSocketError) => {
-          logError('Comment monitoring error', 'RealtimeMonitor', error instanceof Error ? error : undefined, error);
-        }
-      });
+      // Improved comment monitoring: Use onImpactedAccounts if available
+      let commentsSubscription: SubscriptionLike;
+      
+      if (observableApi.observe.onImpactedAccounts && this.sportsblockAuthors.size > 0) {
+        // Use account-based filtering for better performance
+        const authorsArray = Array.from(this.sportsblockAuthors);
+        realtimeDebugLog(`[RealtimeMonitor] Monitoring comments for ${authorsArray.length} Sportsblock authors`);
+        
+        commentsSubscription = observableApi.observe.onImpactedAccounts(...authorsArray).subscribe({
+          next: (data: StreamData) => {
+            realtimeDebugLog('[RealtimeMonitor] Comment on Sportsblock account detected:', data);
+            this.handleNewComment(data);
+          },
+          error: (error: WebSocketError) => {
+            logError('Comment monitoring error', 'RealtimeMonitor', error instanceof Error ? error : undefined, error);
+          }
+        });
+      } else {
+        // Fallback: monitor all comments and filter manually
+        realtimeDebugLog('[RealtimeMonitor] Monitoring all comments (will filter manually)');
+        commentsSubscription = observableApi.observe.onComments().subscribe({
+          next: (data: StreamData) => {
+            realtimeDebugLog('[RealtimeMonitor] New comment detected:', data);
+            this.handleNewComment(data);
+          },
+          error: (error: WebSocketError) => {
+            logError('Comment monitoring error', 'RealtimeMonitor', error instanceof Error ? error : undefined, error);
+          }
+        });
+      }
 
       this.subscriptions.push(postsSubscription, votesSubscription, commentsSubscription);
 
       this.isRunning = true;
       realtimeDebugLog('[RealtimeMonitor] Real-time monitoring started');
+      
+      // Refresh author cache periodically
+      this.scheduleAuthorCacheRefresh();
+      
+      // Update last processed block periodically (every 5 minutes)
+      this.scheduleBlockTracking();
     } catch (error) {
       logError('Failed to start realtime monitoring', 'RealtimeMonitor', error instanceof Error ? error : undefined);
       this.clearSubscriptions();
       throw error;
     }
+  }
+
+  /**
+   * Schedule periodic refresh of author cache
+   */
+  private scheduleAuthorCacheRefresh(): void {
+    // Refresh cache every 30 minutes
+    setInterval(() => {
+      if (this.isRunning) {
+        this.loadSportsblockAuthors().catch(error => {
+          logWarn('Failed to refresh author cache', 'RealtimeMonitor', error);
+        });
+      }
+    }, this.AUTHOR_CACHE_TTL);
+  }
+
+  /**
+   * Schedule periodic block tracking
+   */
+  private scheduleBlockTracking(): void {
+    // Update last processed block every 5 minutes
+    setInterval(async () => {
+      if (this.isRunning && !this.isProcessingHistory) {
+        try {
+          const currentBlock = await this.getCurrentBlockNumber();
+          if (currentBlock > this.lastProcessedBlock) {
+            this.saveLastProcessedBlock(currentBlock);
+          }
+        } catch (error) {
+          logWarn('Failed to update block tracking', 'RealtimeMonitor', error);
+        }
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+  }
+
+  /**
+   * Get last processed block number
+   */
+  getLastProcessedBlock(): number {
+    return this.lastProcessedBlock;
+  }
+
+  /**
+   * Check if currently processing historical data
+   */
+  isProcessingHistoricalData(): boolean {
+    return this.isProcessingHistory;
   }
 
   /**
@@ -334,8 +653,20 @@ export class RealtimeMonitor {
   private handleNewPost(data: StreamData): void {
     try {
       const post = (data.data as { post?: { json_metadata?: string; [key: string]: unknown } })?.post || data.data as { json_metadata?: string; [key: string]: unknown };
+      const author = (post as { author?: string }).author || '';
       
-      // Check if it's a Sportsblock post
+      // Extract block number if available
+      const blockNumber = (data.data as { block?: { number?: number } })?.block?.number;
+      if (blockNumber && blockNumber > this.lastProcessedBlock) {
+        this.saveLastProcessedBlock(blockNumber);
+      }
+      
+      // Add author to cache for future filtering
+      if (author) {
+        this.addAuthorToCache(author);
+      }
+      
+      // Check if it's a Sportsblock post (redundant check since we're already filtering by tags, but keep for safety)
       const metadata = JSON.parse((post as { json_metadata?: string }).json_metadata || '{}');
       const tags = (metadata as { tags?: string[] }).tags || [];
       
@@ -346,7 +677,7 @@ export class RealtimeMonitor {
       const event: RealtimePostEvent = {
         type: 'new_post',
         data: {
-          author: (post as { author?: string }).author || '',
+          author,
           permlink: (post as { permlink?: string }).permlink || '',
           title: (post as { title?: string }).title || '',
           body: (post as { body?: string }).body || '',
@@ -367,16 +698,28 @@ export class RealtimeMonitor {
   private handleNewVote(data: StreamData): void {
     try {
       const vote = (data.data as { vote?: { voter?: string; author?: string; permlink?: string; weight?: number; time?: string; [key: string]: unknown } })?.vote || data.data as { voter?: string; author?: string; permlink?: string; weight?: number; time?: string; [key: string]: unknown };
+      const author = (vote as { author?: string }).author || '';
       
-      // Check if it's a vote on a Sportsblock post
-      // This would require checking the post's tags, which might need additional API calls
-      // For now, we'll emit all votes and let the consumer filter
+      // Filter: Only process votes on posts by Sportsblock authors
+      // If using onImpactedAccounts, this check is redundant but safe
+      // If using onVotes, this filters out non-Sportsblock votes
+      if (author && !this.isSportsblockAuthor(author)) {
+        // Not a Sportsblock author - skip this vote
+        // But verify by checking the post if cache is empty
+        if (this.sportsblockAuthors.size === 0) {
+          // Cache is empty, verify by checking post
+          this.verifyAndEmitVote(vote as { author?: string; permlink?: string; voter?: string; weight?: number; time?: string }).catch(() => {
+            // Silently skip if verification fails
+          });
+        }
+        return;
+      }
       
       const event: RealtimeVoteEvent = {
         type: 'new_vote',
         data: {
           voter: (vote as { voter?: string }).voter || '',
-          author: (vote as { author?: string }).author || '',
+          author,
           permlink: (vote as { permlink?: string }).permlink || '',
           weight: (vote as { weight?: number }).weight || 0,
           timestamp: (vote as { time?: string }).time || new Date().toISOString()
@@ -390,22 +733,72 @@ export class RealtimeMonitor {
   }
 
   /**
+   * Verify if a vote is on a Sportsblock post and emit if so
+   */
+  private async verifyAndEmitVote(vote: { author?: string; permlink?: string; voter?: string; weight?: number; time?: string }): Promise<void> {
+    if (!vote.author || !vote.permlink) return;
+    
+    try {
+      // Check if the post is a Sportsblock post
+      const post = await makeWorkerBeeApiCall<{ json_metadata?: string }>('get_content', [vote.author, vote.permlink]);
+      
+      if (!post) return;
+      
+      const metadata = JSON.parse(post.json_metadata || '{}');
+      const tags = (metadata.tags as string[] | undefined) || [];
+      
+      if (tags.includes('sportsblock') || tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME)) {
+        // It's a Sportsblock post - add author to cache and emit vote
+        this.addAuthorToCache(vote.author);
+        
+        const event: RealtimeVoteEvent = {
+          type: 'new_vote',
+          data: {
+            voter: vote.voter || '',
+            author: vote.author,
+            permlink: vote.permlink,
+            weight: vote.weight || 0,
+            timestamp: vote.time || new Date().toISOString()
+          }
+        };
+        
+        this.emitEvent(event);
+      }
+    } catch (error) {
+      // Silently fail - don't spam logs for verification failures
+      realtimeDebugLog('[RealtimeMonitor] Vote verification failed', error);
+    }
+  }
+
+  /**
    * Handle new comment event
    */
   private handleNewComment(data: StreamData): void {
     try {
       const comment = (data.data as { comment?: { author?: string; permlink?: string; parent_author?: string; parent_permlink?: string; body?: string; created?: string; [key: string]: unknown } })?.comment || data.data as { author?: string; permlink?: string; parent_author?: string; parent_permlink?: string; body?: string; created?: string; [key: string]: unknown };
+      const parentAuthor = (comment as { parent_author?: string }).parent_author || '';
       
-      // Check if it's a comment on a Sportsblock post
-      // This would require checking the parent post's tags
-      // For now, we'll emit all comments and let the consumer filter
+      // Filter: Only process comments on posts by Sportsblock authors
+      // If using onImpactedAccounts, this check is redundant but safe
+      // If using onComments, this filters out non-Sportsblock comments
+      if (parentAuthor && !this.isSportsblockAuthor(parentAuthor)) {
+        // Not a Sportsblock author - skip this comment
+        // But verify by checking the parent post if cache is empty
+        if (this.sportsblockAuthors.size === 0) {
+          // Cache is empty, verify by checking parent post
+          this.verifyAndEmitComment(comment as { parent_author?: string; parent_permlink?: string; author?: string; permlink?: string; body?: string; created?: string }).catch(() => {
+            // Silently skip if verification fails
+          });
+        }
+        return;
+      }
       
       const event: RealtimeCommentEvent = {
         type: 'new_comment',
         data: {
           author: (comment as { author?: string }).author || '',
           permlink: (comment as { permlink?: string }).permlink || '',
-          parentAuthor: (comment as { parent_author?: string }).parent_author || '',
+          parentAuthor,
           parentPermlink: (comment as { parent_permlink?: string }).parent_permlink || '',
           body: (comment as { body?: string }).body || '',
           created: (comment as { created?: string }).created || new Date().toISOString()
@@ -415,6 +808,45 @@ export class RealtimeMonitor {
       this.emitEvent(event);
     } catch (error) {
       logError('Error handling new comment', 'RealtimeMonitor', error instanceof Error ? error : undefined);
+    }
+  }
+
+  /**
+   * Verify if a comment is on a Sportsblock post and emit if so
+   */
+  private async verifyAndEmitComment(comment: { parent_author?: string; parent_permlink?: string; author?: string; permlink?: string; body?: string; created?: string }): Promise<void> {
+    if (!comment.parent_author || !comment.parent_permlink) return;
+    
+    try {
+      // Check if the parent post is a Sportsblock post
+      const post = await makeWorkerBeeApiCall<{ json_metadata?: string }>('get_content', [comment.parent_author, comment.parent_permlink]);
+      
+      if (!post) return;
+      
+      const metadata = JSON.parse(post.json_metadata || '{}');
+      const tags = (metadata.tags as string[] | undefined) || [];
+      
+      if (tags.includes('sportsblock') || tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME)) {
+        // It's a Sportsblock post - add author to cache and emit comment
+        this.addAuthorToCache(comment.parent_author);
+        
+        const event: RealtimeCommentEvent = {
+          type: 'new_comment',
+          data: {
+            author: comment.author || '',
+            permlink: comment.permlink || '',
+            parentAuthor: comment.parent_author,
+            parentPermlink: comment.parent_permlink,
+            body: comment.body || '',
+            created: comment.created || new Date().toISOString()
+          }
+        };
+        
+        this.emitEvent(event);
+      }
+    } catch (error) {
+      // Silently fail - don't spam logs for verification failures
+      realtimeDebugLog('[RealtimeMonitor] Comment verification failed', error);
     }
   }
 
@@ -444,10 +876,16 @@ export function getRealtimeMonitor(): RealtimeMonitor {
 
 /**
  * Start global real-time monitoring
+ * @param options - Monitoring options
+ * @param options.processHistory - Whether to process historical data first (default: true)
+ * @param options.historyBlocks - Number of blocks to process historically (default: 1000)
  */
-export async function startRealtimeMonitoring(): Promise<void> {
+export async function startRealtimeMonitoring(options?: { 
+  processHistory?: boolean; 
+  historyBlocks?: number;
+}): Promise<void> {
   const monitor = getRealtimeMonitor();
-  await monitor.start();
+  await monitor.start(options);
 }
 
 /**

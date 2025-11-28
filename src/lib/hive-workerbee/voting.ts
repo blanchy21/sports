@@ -1,5 +1,5 @@
 
-import { makeHiveApiCall } from './api';
+import { makeWorkerBeeApiCall } from './api';
 import { aioha } from '@/lib/aioha/config';
 import { 
   createVoteOperation, 
@@ -98,12 +98,12 @@ export async function removeVote(voteData: Omit<VoteData, 'weight'>): Promise<Vo
  */
 export async function checkUserVote(author: string, permlink: string, voter: string): Promise<HiveVote | null> {
   try {
-
-    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    // Use WorkerBee API call for better node management
+    const post = await makeWorkerBeeApiCall<unknown>('get_content', [author, permlink]);
     
     if (!post) return null;
     
-    return getUserVote(post, voter);
+    return getUserVote(post as { active_votes?: HiveVote[] }, voter);
   } catch (error) {
     logError('Error checking user vote with WorkerBee', 'checkUserVote', error instanceof Error ? error : undefined);
     return null;
@@ -118,12 +118,12 @@ export async function checkUserVote(author: string, permlink: string, voter: str
  */
 export async function getPostVotes(author: string, permlink: string): Promise<HiveVote[]> {
   try {
-
-    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    // Use WorkerBee API call for better node management
+    const post = await makeWorkerBeeApiCall<{ active_votes?: HiveVote[] }>('get_content', [author, permlink]);
     
-    if (!post || !(post as { active_votes?: HiveVote[] }).active_votes) return [];
+    if (!post || !post.active_votes) return [];
     
-    return (post as { active_votes: HiveVote[] }).active_votes;
+    return post.active_votes;
   } catch (error) {
     logError('Error fetching post votes with WorkerBee', 'getPostVotes', error instanceof Error ? error : undefined);
     return [];
@@ -150,7 +150,7 @@ export async function getUserVotingPower(username: string): Promise<number> {
     // Fallback to original method if Wax fails
     try {
       workerBeeLog('[getUserVotingPower] Falling back to original method');
-      const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as Array<{ voting_power: number }>;
+      const account = await makeWorkerBeeApiCall<Array<{ voting_power: number }>>('get_accounts', [[username]]);
       
       if (!account || account.length === 0) return 0;
       
@@ -206,8 +206,12 @@ export async function getVoteStats(author: string, permlink: string): Promise<{
   pendingPayout: number;
 }> {
   try {
-
-    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    // Use WorkerBee API call for better node management
+    const post = await makeWorkerBeeApiCall<{
+      active_votes?: HiveVote[];
+      net_votes?: number;
+      pending_payout_value?: string;
+    }>('get_content', [author, permlink]);
     
     if (!post) {
       return {
@@ -380,13 +384,13 @@ export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
  */
 export async function getVoteHistory(author: string, permlink: string, limit: number = 50): Promise<HiveVote[]> {
   try {
-
-    const post = await makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    // Use WorkerBee API call for better node management
+    const post = await makeWorkerBeeApiCall<{ active_votes?: HiveVote[] }>('get_content', [author, permlink]);
     
-    if (!post || !(post as { active_votes?: HiveVote[] }).active_votes) return [];
+    if (!post || !post.active_votes) return [];
     
     // Sort by timestamp (newest first) and limit
-    return (post as { active_votes: HiveVote[] }).active_votes
+    return post.active_votes
       .sort((a: HiveVote, b: HiveVote) => new Date(b.time).getTime() - new Date(a.time).getTime())
       .slice(0, limit);
   } catch (error) {

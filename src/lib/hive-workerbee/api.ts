@@ -39,8 +39,102 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
 }
 
 /**
+ * Make an API call using WorkerBee's chain (Wax instance)
+ * This leverages WorkerBee's built-in node management and failover
+ * Falls back to HTTP if WorkerBee chain is unavailable
+ * @param method - The method to call (e.g., 'get_content', 'get_accounts')
+ * @param params - Parameters to pass to the method
+ * @returns Promise with the API response
+ */
+export async function makeWorkerBeeApiCall<T = unknown>(method: string, params: unknown[] = []): Promise<T> {
+  // Only use WorkerBee on server-side
+  if (typeof window !== 'undefined') {
+    // Client-side: fallback to HTTP
+    return makeHiveApiCall('condenser_api', method, params);
+  }
+
+  try {
+    const { initializeWorkerBeeClient, getWaxFromWorkerBee } = await import('./client');
+    const client = await initializeWorkerBeeClient();
+    const wax = getWaxFromWorkerBee(client);
+    
+    workerBeeLog(`[WorkerBee API] Calling ${method}`, undefined, { params });
+    
+    const waxAny = wax as unknown as Record<string, unknown>;
+    const WAX_TIMEOUT_MS = 10000; // 10 seconds timeout
+    
+    // Pattern 1: Direct method call (e.g., wax.getContent)
+    if (typeof waxAny[method] === 'function') {
+      const result = await withTimeout(
+        (waxAny[method] as (params: unknown[]) => Promise<T>)(params),
+        WAX_TIMEOUT_MS,
+        `WorkerBee API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
+      );
+      workerBeeLog(`[WorkerBee API] Success ${method}`);
+      return result;
+    }
+    
+    // Pattern 2: Using call method with full API path
+    if (typeof waxAny.call === 'function') {
+      const result = await withTimeout(
+        (waxAny.call as (method: string, params: unknown[]) => Promise<T>)(`condenser_api.${method}`, params),
+        WAX_TIMEOUT_MS,
+        `WorkerBee API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
+      );
+      workerBeeLog(`[WorkerBee API] Success ${method}`);
+      return result;
+    }
+    
+    // Pattern 3: Try accessing via api property
+    if (waxAny.api && typeof (waxAny.api as Record<string, unknown>).call === 'function') {
+      const result = await withTimeout(
+        ((waxAny.api as { call: (method: string, params: unknown[]) => Promise<T> }).call)(`condenser_api.${method}`, params),
+        WAX_TIMEOUT_MS,
+        `WorkerBee API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
+      );
+      workerBeeLog(`[WorkerBee API] Success ${method}`);
+      return result;
+    }
+    
+    // Pattern 4: Try accessing condenser_api directly
+    if (waxAny.condenser_api && typeof (waxAny.condenser_api as Record<string, unknown>)[method] === 'function') {
+      const result = await withTimeout(
+        ((waxAny.condenser_api as Record<string, unknown>)[method] as (params: unknown[]) => Promise<T>)(params),
+        WAX_TIMEOUT_MS,
+        `WorkerBee API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
+      );
+      workerBeeLog(`[WorkerBee API] Success ${method}`);
+      return result;
+    }
+    
+    throw new Error(`WorkerBee method ${method} not available - tried multiple access patterns`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Check for timeout or requestInterceptor issues
+    const isTimeoutError = 
+      errorMessage.includes('timed out') ||
+      errorMessage.includes('timeout') ||
+      errorMessage.includes('Request timed out');
+    
+    const isRequestInterceptorIssue = errorMessage.includes('requestInterceptor');
+    
+    // For known issues, silently fall back to HTTP
+    if (isTimeoutError || isRequestInterceptorIssue) {
+      logWarn(`[WorkerBee API] ${method} failed (${errorMessage}), using HTTP fallback`);
+      return makeHiveApiCall('condenser_api', method, params);
+    }
+    
+    // For other errors, log and fallback
+    logWarn(`[WorkerBee API] ${method} failed: ${errorMessage}, using HTTP fallback`);
+    return makeHiveApiCall('condenser_api', method, params);
+  }
+}
+
+/**
  * Make a direct HTTP call to Hive API with automatic failover
  * Enhanced with Wax-based type safety and validation
+ * This is kept as a fallback and for client-side usage
  * @param api - The API module (e.g., 'condenser_api', 'rc_api')
  * @param method - The method to call
  * @param params - Parameters to pass to the method
@@ -215,111 +309,14 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessa
   ]);
 }
 
+/**
+ * Make a Wax API call (legacy function - now uses WorkerBee internally)
+ * @deprecated Use makeWorkerBeeApiCall() instead for better WorkerBee integration
+ * This function is kept for backward compatibility
+ */
 export async function makeWaxApiCall<T = unknown>(method: string, params: unknown[] = []): Promise<T> {
-  try {
-    // Only use Wax on server-side
-    if (typeof window !== 'undefined') {
-      logWarn(`Wax API not available on client, using HTTP fallback for ${method}`);
-      return makeHiveApiCall('condenser_api', method, params) as Promise<T>;
-    }
-    
-    workerBeeLog(`Wax API call ${method}`, undefined, params);
-    
-    // Try to use Wax API with proper error handling and timeout
-    const helpers = await getWaxHelpers();
-    if (!helpers) {
-      return makeHiveApiCall('condenser_api', method, params) as Promise<T>;
-    }
-    const wax = await helpers.getWaxInstance();
-    
-    // Try different method access patterns for Wax API with timeout protection
-    const waxAny = wax as unknown as Record<string, unknown>;
-    const WAX_TIMEOUT_MS = 10000; // 10 seconds timeout for Wax calls
-    
-    // Pattern 1: Direct method call (e.g., wax.getAccounts)
-    if (typeof waxAny[method] === 'function') {
-      const result = await withTimeout(
-        (waxAny[method] as (params: unknown[]) => Promise<T>)(params),
-        WAX_TIMEOUT_MS,
-        `Wax API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
-      );
-      return result;
-    }
-    
-    // Pattern 2: Using call method with full API path
-    if (typeof waxAny.call === 'function') {
-      const result = await withTimeout(
-        (waxAny.call as (method: string, params: unknown[]) => Promise<T>)(`condenser_api.${method}`, params),
-        WAX_TIMEOUT_MS,
-        `Wax API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
-      );
-      return result;
-    }
-    
-    // Pattern 3: Try accessing via api property (some Wax implementations use this)
-    if (waxAny.api && typeof (waxAny.api as Record<string, unknown>).call === 'function') {
-      const result = await withTimeout(
-        ((waxAny.api as { call: (method: string, params: unknown[]) => Promise<T> }).call)(`condenser_api.${method}`, params),
-        WAX_TIMEOUT_MS,
-        `Wax API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
-      );
-      return result;
-    }
-    
-    // Pattern 4: Try accessing condenser_api directly
-    if (waxAny.condenser_api && typeof (waxAny.condenser_api as Record<string, unknown>)[method] === 'function') {
-      const result = await withTimeout(
-        ((waxAny.condenser_api as Record<string, unknown>)[method] as (params: unknown[]) => Promise<T>)(params),
-        WAX_TIMEOUT_MS,
-        `Wax API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
-      );
-      return result;
-    }
-    
-    throw new Error(`Wax method ${method} not available - tried multiple access patterns`);
-  } catch (error) {
-    // Extract error message from various error types
-    let errorMessage = 'Unknown error';
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    } else if (error && typeof error === 'object' && 'message' in error) {
-      errorMessage = String(error.message);
-    } else {
-      errorMessage = String(error);
-    }
-    
-    // Check for timeout-related errors (including WaxError with timeout messages)
-    const isTimeoutError = 
-      errorMessage.includes('timed out') ||
-      errorMessage.includes('timeout') ||
-      errorMessage.includes('Request timed out') ||
-      errorMessage.includes('WaxError') ||
-      (error instanceof Error && error.name === 'WaxError');
-    
-    // Check if it's a requestInterceptor issue
-    const isRequestInterceptorIssue = errorMessage.includes('requestInterceptor');
-    
-    // For timeout errors, silently fall back to HTTP (this is expected when nodes are slow)
-    if (isTimeoutError) {
-      logWarn(`Wax API timeout for ${method}, using HTTP fallback`);
-      return makeHiveApiCall('condenser_api', method, params);
-    }
-    
-    // For requestInterceptor issues, silently fall back to HTTP (this is expected in some environments)
-    if (isRequestInterceptorIssue) {
-      logWarn(`Wax API requestInterceptor issue for ${method}, using HTTP fallback`);
-      return makeHiveApiCall('condenser_api', method, params);
-    }
-    
-    // Only log as error if it's not a known temporary disable
-    if (!errorMessage.includes('temporarily disabled')) {
-      logError(`[Wax API] Failed for ${method}: ${errorMessage}`, 'makeWaxApiCall', error instanceof Error ? error : undefined);
-    }
-    
-    // Fallback to original HTTP API call for all other errors
-    logWarn(`Wax API failed for ${method}, falling back to HTTP`);
-    return makeHiveApiCall('condenser_api', method, params);
-  }
+  // Use the new WorkerBee API call function
+  return makeWorkerBeeApiCall<T>(method, params);
 }
 
 /**
