@@ -303,8 +303,13 @@ export async function getAccountOptimized(username: string): Promise<HiveAccount
 export async function getContentOptimized(method: string, params: unknown[]): Promise<unknown> {
   // Temporarily disable optimization to prevent API errors
   // TODO: Re-enable when batch processing is fixed
-  const { makeHiveApiCall } = await import('./api');
-  return makeHiveApiCall('condenser_api', method, params);
+  try {
+    const { makeHiveApiCall } = await import('./api');
+    return await makeHiveApiCall('condenser_api', method, params);
+  } catch (error) {
+    logError(`Error in getContentOptimized for ${method}`, 'getContentOptimized', error instanceof Error ? error : undefined);
+    throw error;
+  }
 }
 
 /**

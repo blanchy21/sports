@@ -84,9 +84,22 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[API] Error fetching posts:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
+    const stack = error instanceof Error ? error.stack : undefined;
+    
+    // Log full error details for debugging
+    console.error('[API] Full error details:', {
+      message,
+      stack,
+      error: error instanceof Error ? error : String(error)
+    });
     
     return NextResponse.json(
-      { success: false, error: message },
+      { 
+        success: false, 
+        error: message,
+        // Include more details in development
+        ...(process.env.NODE_ENV === 'development' && { details: stack })
+      },
       { status: 500 }
     );
   }

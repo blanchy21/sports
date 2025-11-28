@@ -18,7 +18,7 @@ interface SportsblockPost {
   created: string;
   [key: string]: unknown;
 }
-import { getAnalyticsData, CommunityStats } from "@/lib/hive-workerbee/analytics";
+import { CommunityStats } from "@/lib/hive-workerbee/analytics";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
 // No mock data needed - using real Hive blockchain content
@@ -134,20 +134,31 @@ export default function FeedPage() {
       setHasMore(result.hasMore);
       
       // Calculate analytics data from all posts (not filtered by sport)
+      // Use the posts we just fetched instead of making another API call
       if (!loadMore) {
         try {
-          const allPostsResponse = await fetch('/api/hive/posts?limit=100&sort=created');
-          if (!allPostsResponse.ok) {
-            throw new Error(`Failed to fetch all posts: ${allPostsResponse.status}`);
-          }
-          const allPostsResult = await allPostsResponse.json() as { success: boolean; posts: SportsblockPost[] };
+          // Use the posts we just fetched for analytics
+          const postsForAnalytics = result.posts || [];
           
-          const { getAnalyticsData } = await import('@/lib/hive-workerbee/analytics');
-          const analytics = getAnalyticsData(allPostsResult.posts as any, user?.username);
-          setCommunityStats(analytics.communityStats);
+          if (postsForAnalytics.length > 0) {
+            const { getAnalyticsData } = await import('@/lib/hive-workerbee/analytics');
+            // Type assertion needed due to interface differences between local and imported types
+            const analytics = getAnalyticsData(postsForAnalytics as unknown as Parameters<typeof getAnalyticsData>[0], user?.username);
+            setCommunityStats(analytics.communityStats);
+          } else {
+            // If no posts in this batch, set default stats
+            setCommunityStats({
+              totalPosts: 0,
+              totalAuthors: 0,
+              totalRewards: 0,
+              activeToday: 0,
+            });
+          }
+          setStatsLoading(false);
         } catch (analyticsError) {
           console.error('Error calculating analytics:', analyticsError);
           setStatsError('Failed to load statistics');
+          setStatsLoading(false);
           // Keep default stats values
         }
       }
@@ -164,7 +175,7 @@ export default function FeedPage() {
       setIsLoadingMore(false);
       setStatsLoading(false);
     }
-  }, [selectedSport, nextCursor, dedupePosts]);
+  }, [selectedSport, nextCursor, dedupePosts, user?.username]);
 
   // Redirect if not authenticated
   React.useEffect(() => {

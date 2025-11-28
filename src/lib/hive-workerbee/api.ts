@@ -55,8 +55,24 @@ export async function makeWorkerBeeApiCall<T = unknown>(method: string, params: 
 
   try {
     const { initializeWorkerBeeClient, getWaxFromWorkerBee } = await import('./client');
-    const client = await initializeWorkerBeeClient();
-    const wax = getWaxFromWorkerBee(client);
+    
+    let client;
+    try {
+      client = await initializeWorkerBeeClient();
+    } catch (initError) {
+      // If WorkerBee initialization fails, fallback to HTTP
+      logWarn(`WorkerBee client initialization failed for ${method}, using HTTP fallback`, 'makeWorkerBeeApiCall', initError instanceof Error ? initError : undefined);
+      return makeHiveApiCall('condenser_api', method, params);
+    }
+    
+    let wax;
+    try {
+      wax = getWaxFromWorkerBee(client);
+    } catch (waxError) {
+      // If getting Wax instance fails, fallback to HTTP
+      logWarn(`Failed to get Wax instance for ${method}, using HTTP fallback`, 'makeWorkerBeeApiCall', waxError instanceof Error ? waxError : undefined);
+      return makeHiveApiCall('condenser_api', method, params);
+    }
     
     workerBeeLog(`[WorkerBee API] Calling ${method}`, undefined, { params });
     
@@ -126,7 +142,11 @@ export async function makeWorkerBeeApiCall<T = unknown>(method: string, params: 
     }
     
     // For other errors, log and fallback
-    logWarn(`[WorkerBee API] ${method} failed: ${errorMessage}, using HTTP fallback`);
+    // Don't log as error if it's a known initialization issue
+    if (!errorMessage.includes('WorkerBee chain not available') && 
+        !errorMessage.includes('Failed to initialize')) {
+      logWarn(`[WorkerBee API] ${method} failed: ${errorMessage}, using HTTP fallback`);
+    }
     return makeHiveApiCall('condenser_api', method, params);
   }
 }

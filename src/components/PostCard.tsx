@@ -23,6 +23,8 @@ interface PostCardProps {
   className?: string;
 }
 
+import { getProxyImageUrl, shouldProxyImage } from "@/lib/utils/image-proxy";
+
 // Utility function to extract the first image URL from markdown content
 const extractFirstImageUrl = (markdown: string): string | null => {
   const imageRegex = /!\[.*?\]\((.*?)\)/;
@@ -180,15 +182,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
             if (isHivePost) {
               const imageUrl = extractFirstImageUrl(post.body);
               if (imageUrl) {
+                // Use proxy URL if needed to avoid CORS issues
+                const finalImageUrl = shouldProxyImage(imageUrl) ? getProxyImageUrl(imageUrl) : imageUrl;
                 return (
                   <div className="aspect-video w-full overflow-hidden rounded-md relative">
                     <Image
-                      src={imageUrl}
+                      src={finalImageUrl}
                       alt={post.title}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover hover:scale-105 transition-transform duration-200"
                       priority
+                      unoptimized={shouldProxyImage(imageUrl)} // Disable optimization for proxied images
                     />
                   </div>
                 );

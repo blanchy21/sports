@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Analytics collection - allow read for all, write for server-side updates
+    // Note: Server-side API routes don't have request.auth, so we allow writes
+    // In production, you may want to add additional security (e.g., API key check)
+    match /analytics/{document=**} {
+      allow read: if true;
+      allow write: if true; // Allow writes for server-side updates
+      // For production, consider: allow write: if request.auth != null || request.headers.get('x-api-key') == 'your-secret-key';
+    }
+    
+    // Profiles collection - users can read any profile, but only update their own
+    match /profiles/{userId} {
+      allow read: if true;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Soft posts collection - users can read all, but only create/update/delete their own
+    match /soft_posts/{postId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+    }
+    
+    // Default deny rule for all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

@@ -2,12 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { TrendingUp, Users, Calendar, Trophy, Star, AlertCircle, RefreshCw } from "lucide-react";
-// Types (matching from workerbee)
-interface ContentResult {
-  posts: unknown[];
-  hasMore: boolean;
-  nextCursor?: string;
-}
 import { 
   TrendingSport, 
   TrendingTopic, 
@@ -112,79 +106,49 @@ export const RightSidebar: React.FC = () => {
     lastUpdated 
   } = useRealtimeEvents({ limit: 5 });
 
-  // Fetch posts and calculate analytics
+  // Fetch analytics from layer 2 database
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         setIsLoading(true);
         setError(null);
         
-        // Fetch recent posts for analytics via API route
-        let result: ContentResult;
+        // Fetch analytics directly from layer 2 database via API route
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
+        let response: Response;
         try {
-          const response = await fetch('/api/hive/posts?limit=100&sort=created');
-          if (!response.ok) {
-            throw new Error(`Failed to fetch posts: ${response.status}`);
-          }
-          const apiResult = await response.json();
-          if (!apiResult.success) {
-            throw new Error(apiResult.error || 'Failed to fetch posts');
-          }
-          result = {
-            posts: apiResult.posts || [],
-            hasMore: apiResult.hasMore || false,
-            nextCursor: apiResult.nextCursor,
-          };
-        } catch (error) {
-          // If get_discussions_by_created fails, try trending posts as fallback
-          console.warn('Failed to fetch posts by created, using trending posts as fallback:', error);
-          try {
-            const trendingResponse = await fetch('/api/hive/posts?limit=100&sort=trending');
-            if (trendingResponse.ok) {
-              const trendingResult = await trendingResponse.json();
-              if (trendingResult.success && trendingResult.posts) {
-                result = {
-                  posts: trendingResult.posts || [],
-                  hasMore: false,
-                  nextCursor: undefined,
-                };
-              } else {
-                // API returned success but no posts, use empty result
-                console.warn('Trending posts API returned no data');
-                result = {
-                  posts: [],
-                  hasMore: false,
-                  nextCursor: undefined,
-                };
-              }
-            } else {
-              // Response not OK, use empty result instead of throwing
-              console.warn(`Trending posts API returned ${trendingResponse.status}`);
-              result = {
-                posts: [],
-                hasMore: false,
-                nextCursor: undefined,
-              };
-            }
-          } catch (trendingError) {
-            // Both attempts failed, use empty result gracefully
-            console.error('Error fetching trending posts:', trendingError);
-            result = {
-              posts: [],
-              hasMore: false,
-              nextCursor: undefined,
-            };
-          }
+          response = await fetch('/api/analytics', {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          throw fetchError;
         }
         
-        // Calculate analytics data (import dynamically to avoid client-side WorkerBee)
-        const { getAnalyticsData } = await import('@/lib/hive-workerbee/analytics');
-        const analytics = getAnalyticsData(result.posts as any, user?.username);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch analytics: ${response.status}`);
+        }
         
-        setTrendingSports(analytics.trendingSports);
-        setTrendingTopics(analytics.trendingTopics);
-        setTopAuthors(analytics.topAuthors);
-        setCommunityStats(analytics.communityStats);
+        const apiResult = await response.json();
+        if (!apiResult.success) {
+          throw new Error(apiResult.error || 'Failed to fetch analytics');
+        }
+        
+        // Set analytics data from layer 2
+        const analytics = apiResult.data;
+        setTrendingSports(analytics.trendingSports || []);
+        setTrendingTopics(analytics.trendingTopics || []);
+        setTopAuthors(analytics.topAuthors || []);
+        setCommunityStats(analytics.communityStats || {
+          totalPosts: 0,
+          totalAuthors: 0,
+          totalRewards: 0,
+          activeToday: 0,
+        });
+        
         
       } catch (err) {
         console.error('Error fetching analytics data:', err);

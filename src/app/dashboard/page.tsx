@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useUserPosts } from "@/hooks/useUserPosts";
+import { getProxyImageUrl, shouldProxyImage } from "@/lib/utils/image-proxy";
 import { 
   Eye, 
   Heart, 
@@ -322,11 +323,12 @@ export default function DashboardPage() {
                       <div className="flex-shrink-0">
                         {thumbnail ? (
                           <Image
-                            src={thumbnail}
+                            src={shouldProxyImage(thumbnail) ? getProxyImageUrl(thumbnail) : thumbnail}
                             alt={post.title}
                             width={64}
                             height={64}
                             className="w-16 h-16 object-cover rounded-lg"
+                            unoptimized={shouldProxyImage(thumbnail)}
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}
