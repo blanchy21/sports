@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "./AuthContext";
-import { getWorkerBeeClient } from "@/lib/hive-workerbee/client";
+// WorkerBee is only available server-side, so we'll use dynamic import for client-side real-time features
 
 const NOTIFICATION_STORAGE_PREFIX = 'sportsblock-notifications';
 
@@ -146,11 +146,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       return;
     }
 
-    let commentSubscription: { unsubscribe: () => void } | null = null;
-    let voteSubscription: { unsubscribe: () => void } | null = null;
-
     const initializeRealtime = async () => {
       try {
+        // WorkerBee is server-side only, so real-time monitoring is disabled on client
+        // TODO: Implement real-time monitoring via API routes or WebSocket
+        notificationDebugLog('Real-time monitoring disabled on client-side (WorkerBee is server-only)');
+        setIsRealtimeActive(false);
+        return;
+        
+        // The code below is disabled until we implement API-based real-time monitoring
+        /*
+        const { getWorkerBeeClient } = await import('@/lib/hive-workerbee/client');
         const workerBee = getWorkerBeeClient();
         
         // Start the WorkerBee client if not already running
@@ -238,11 +244,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
             setIsRealtimeActive(false);
           }
         });
-
-        // Monitor new posts in sportsblock community
-        // Note: onPostsWithTags might not be available, so we'll skip this for now
-        // and focus on comments and votes which are more reliable
-
+        */
       } catch (error) {
         console.error('Error initializing real-time monitoring:', error);
         setIsRealtimeActive(false);
@@ -252,9 +254,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     initializeRealtime();
 
     return () => {
-      commentSubscription?.unsubscribe();
-      voteSubscription?.unsubscribe();
-      // postSubscription?.unsubscribe(); // Not needed since we removed it
+      // Cleanup handled by initializeRealtime (currently disabled)
+      // TODO: Add cleanup when real-time monitoring is re-enabled
     };
   }, [isClient, user?.username, addNotification]);
 

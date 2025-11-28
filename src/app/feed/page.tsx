@@ -9,7 +9,15 @@ import { Plus, TrendingUp, Users, Award, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Post, SPORT_CATEGORIES } from "@/types";
-import { fetchSportsblockPosts, SportsblockPost } from "@/lib/hive-workerbee/content";
+// Types (matching SportsblockPost from workerbee)
+interface SportsblockPost {
+  author: string;
+  permlink: string;
+  title: string;
+  body: string;
+  created: string;
+  [key: string]: unknown;
+}
 import { getAnalyticsData, CommunityStats } from "@/lib/hive-workerbee/analytics";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
@@ -103,12 +111,18 @@ export default function FeedPage() {
     }
     
     try {
-      const result = await fetchSportsblockPosts({
-        sportCategory: selectedSport || undefined,
-        limit: 10, // Show 10 posts initially for better scrolling experience
+      const params = new URLSearchParams({
+        limit: '10',
         sort: 'created',
-        before: loadMore ? nextCursor : undefined,
       });
+      if (selectedSport) params.append('sportCategory', selectedSport);
+      if (loadMore && nextCursor) params.append('before', nextCursor);
+      
+      const response = await fetch(`/api/hive/posts?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch posts: ${response.status}`);
+      }
+      const result = await response.json() as { success: boolean; posts: SportsblockPost[]; hasMore: boolean; nextCursor?: string };
       
       setPosts((prev) => {
         const merged = loadMore ? [...prev, ...result.posts] : result.posts;
@@ -122,12 +136,14 @@ export default function FeedPage() {
       // Calculate analytics data from all posts (not filtered by sport)
       if (!loadMore) {
         try {
-          const allPostsResult = await fetchSportsblockPosts({
-            limit: 100,
-            sort: 'created',
-          });
+          const allPostsResponse = await fetch('/api/hive/posts?limit=100&sort=created');
+          if (!allPostsResponse.ok) {
+            throw new Error(`Failed to fetch all posts: ${allPostsResponse.status}`);
+          }
+          const allPostsResult = await allPostsResponse.json() as { success: boolean; posts: SportsblockPost[] };
           
-          const analytics = getAnalyticsData(allPostsResult.posts);
+          const { getAnalyticsData } = await import('@/lib/hive-workerbee/analytics');
+          const analytics = getAnalyticsData(allPostsResult.posts as any, user?.username);
           setCommunityStats(analytics.communityStats);
         } catch (analyticsError) {
           console.error('Error calculating analytics:', analyticsError);

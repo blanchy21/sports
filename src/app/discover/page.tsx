@@ -6,7 +6,7 @@ import { PostCard } from "@/components/PostCard";
 import { Button } from "@/components/ui/Button";
 import { Compass, TrendingUp, Loader2 } from "lucide-react";
 import { SPORT_CATEGORIES } from "@/types";
-import { fetchSportsblockPosts } from "@/lib/hive-workerbee/content";
+// fetchSportsblockPosts is now accessed via API route
 import { SportsblockPost } from "@/lib/shared/types";
 
 export default function DiscoverPage() {
@@ -20,13 +20,19 @@ export default function DiscoverPage() {
     setError(null);
     
     try {
-      const result = await fetchSportsblockPosts({
-        sportCategory: selectedSport === "all" ? undefined : selectedSport,
-        limit: 20,
-        sort: 'trending', // Use trending sort for discover page
+      const params = new URLSearchParams({
+        limit: '20',
+        sort: 'trending',
       });
+      if (selectedSport !== "all") params.append('sportCategory', selectedSport);
       
-      setPosts(result.posts as unknown as SportsblockPost[]);
+      const response = await fetch(`/api/hive/posts?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch posts: ${response.status}`);
+      }
+      const result = await response.json() as { success: boolean; posts: SportsblockPost[]; hasMore: boolean; nextCursor?: string };
+      
+      setPosts(result.success ? result.posts : []);
     } catch (err) {
       console.error('Error loading posts:', err);
       setError('Failed to load posts. Please try again.');

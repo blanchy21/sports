@@ -7,7 +7,7 @@
 
 import { checkHiveNodeAvailability } from './api';
 import { getHiveApiNodes } from './api';
-import { workerBee as workerBeeLog, warn as logWarn, error as logError, info as logInfo } from './logger';
+import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 
 // Node health status interface
 export interface NodeHealthStatus {
@@ -44,7 +44,7 @@ export interface NodeHealthReport {
 // Default configuration
 const DEFAULT_CONFIG: NodeHealthConfig = {
   checkInterval: 30000, // 30 seconds
-  timeout: 10000, // 10 seconds
+  timeout: 15000, // 15 seconds - match REQUEST_TIMEOUT_MS in api.ts
   maxConsecutiveFailures: 3,
   healthCheckEndpoint: 'condenser_api.get_dynamic_global_properties',
   enableProactiveMonitoring: true
@@ -155,13 +155,25 @@ export class NodeHealthManager {
     let error: string | undefined;
 
     try {
-      // Use existing health check function
+      // Use existing health check function (it now has built-in timeout)
+      // The checkHiveNodeAvailability function uses fetchWithTimeout with 10s timeout
       isHealthy = await checkHiveNodeAvailability(nodeUrl);
       latency = Date.now() - startTime;
+      
+      // If health check took too long, mark as unhealthy even if it succeeded
+      if (latency >= this.config.timeout) {
+        isHealthy = false;
+        error = `Health check took too long (${latency}ms >= ${this.config.timeout}ms)`;
+      }
     } catch (err) {
       isHealthy = false;
       latency = Date.now() - startTime;
       error = err instanceof Error ? err.message : String(err);
+      
+      // Mark timeout errors specifically
+      if (error.includes('timeout') || error.includes('aborted') || latency >= this.config.timeout) {
+        error = `Health check timed out after ${latency}ms`;
+      }
     }
 
     // Update node health status

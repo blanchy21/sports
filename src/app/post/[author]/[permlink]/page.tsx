@@ -9,7 +9,7 @@ import { Loading } from "@/components/ui/Loading";
 import { StarVoteButton } from "@/components/StarVoteButton";
 import { ArrowLeft, MessageCircle, Bookmark, Share, Calendar, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { fetchPost } from "@/lib/hive-workerbee/content";
+// fetchPost is now accessed via API route
 import { SportsblockPost } from "@/lib/shared/types";
 import { calculatePendingPayout, formatAsset } from "@/lib/shared/utils";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -40,9 +40,13 @@ export default function PostDetailPage() {
       setError(null);
       
       try {
-        const postData = await fetchPost(author, permlink);
-        if (postData) {
-          setPost(postData as unknown as SportsblockPost);
+        const response = await fetch(`/api/hive/posts?author=${encodeURIComponent(author)}&permlink=${encodeURIComponent(permlink)}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch post: ${response.status}`);
+        }
+        const result = await response.json() as { success: boolean; post: SportsblockPost | null };
+        if (result.success && result.post) {
+          setPost(result.post);
         } else {
           setError("Post not found");
         }

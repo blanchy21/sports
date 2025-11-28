@@ -9,7 +9,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { getUserPosts } from "@/lib/hive-workerbee/content";
+// getUserPosts is now accessed via API route
 import { SportsblockPost } from "@/lib/shared/types";
 
 export default function ProfilePage() {
@@ -35,8 +35,12 @@ export default function ProfilePage() {
     setPostsError(null);
     
     try {
-      const posts = await getUserPosts(user.username, 20);
-      setUserPosts(posts as unknown as SportsblockPost[]);
+      const response = await fetch(`/api/hive/posts?username=${encodeURIComponent(user.username)}&limit=20`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch posts: ${response.status}`);
+      }
+      const result = await response.json() as { success: boolean; posts: SportsblockPost[] };
+      setUserPosts(result.success ? result.posts : []);
     } catch (error) {
       console.error("Error loading user posts:", error);
       setPostsError("Failed to load posts. Please try again.");

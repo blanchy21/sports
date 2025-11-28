@@ -4,12 +4,13 @@ import type { IHiveChainInterface } from "@hiveio/wax";
 import { workerBee as workerBeeLog, error as logError } from './logger';
 
 // Hive node endpoints - using same reliable nodes as current implementation
+// Note: hive-api.arcange.eu moved to end due to consistent timeout issues
 const HIVE_NODES = [
   'https://api.hive.blog',           // @blocktrades - most reliable
   'https://api.openhive.network',    // @gtg - established node
-  'https://hive-api.arcange.eu',     // @arcange - reliable European node
   'https://api.deathwing.me',        // @deathwing - backup node
-  'https://api.c0ff33a.uk'           // @c0ff33a - backup node
+  'https://api.c0ff33a.uk',          // @c0ff33a - backup node
+  'https://hive-api.arcange.eu'      // @arcange - last resort (known to timeout frequently)
 ];
 
 // Sportsblock configuration (same as current implementation)
@@ -233,4 +234,5 @@ export async function checkWaxHealth(): Promise<{
 }
 
 // Export the main client instance (lazy initialization)
-export const workerBee = getWorkerBeeClient();
+// Only initialize on server-side to avoid client-side bundling issues
+export const workerBee = typeof window === 'undefined' ? getWorkerBeeClient() : null;

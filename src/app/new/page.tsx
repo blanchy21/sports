@@ -5,7 +5,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { PostCard } from "@/components/PostCard";
 import { Button } from "@/components/ui/Button";
 import { Clock, Filter, Loader2 } from "lucide-react";
-import { fetchSportsblockPosts } from "@/lib/hive-workerbee/content";
+// fetchSportsblockPosts is now accessed via API route
 import { SportsblockPost } from "@/lib/shared/types";
 
 export default function NewPostsPage() {
@@ -19,13 +19,19 @@ export default function NewPostsPage() {
     setError(null);
     
     try {
-      const result = await fetchSportsblockPosts({
-        sportCategory: selectedSport || undefined,
-        limit: 20,
+      const params = new URLSearchParams({
+        limit: '20',
         sort: 'created',
       });
+      if (selectedSport) params.append('sportCategory', selectedSport);
       
-      setPosts(result.posts as unknown as SportsblockPost[]);
+      const response = await fetch(`/api/hive/posts?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch posts: ${response.status}`);
+      }
+      const result = await response.json() as { success: boolean; posts: SportsblockPost[]; hasMore: boolean; nextCursor?: string };
+      
+      setPosts(result.success ? result.posts : []);
     } catch (err) {
       console.error('Error loading posts:', err);
       setError('Failed to load posts. Please try again.');

@@ -4,16 +4,24 @@
  * Enhanced with Wax-based type-safe API wrappers
  */
 
-import {
-  getAccountWax,
-  getContentWax,
-  getDiscussionsWax,
-  // getWaxInstance // Temporarily disabled
-} from './wax-helpers';
+// Wax helpers are only available server-side
+// Import dynamically to avoid client-side bundling issues
+let waxHelpers: typeof import('./wax-helpers') | null = null;
+async function getWaxHelpers() {
+  if (typeof window !== 'undefined') {
+    // Client-side: return null to skip Wax usage
+    return null;
+  }
+  if (!waxHelpers) {
+    waxHelpers = await import('./wax-helpers');
+  }
+  return waxHelpers;
+}
 import { getNodeHealthManager } from './node-health';
 import { workerBee as workerBeeLog, info as logInfo, warn as logWarn, error as logError } from './logger';
 
-const REQUEST_TIMEOUT_MS = 8000;
+// Increased timeout for better reliability on slow networks
+const REQUEST_TIMEOUT_MS = 15000; // 15 seconds
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs: number = REQUEST_TIMEOUT_MS) {
   const controller = new AbortController();
@@ -51,18 +59,22 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
     const bestNode = nodeHealthManager.getBestNode();
     
     // Fallback node list for reactive failover
+    // Using verified reliable nodes only
+    // Note: hive-api.arcange.eu removed due to consistent timeout issues
     const apiNodes = [
       bestNode, // Start with healthiest node
       'https://api.hive.blog',           // @blocktrades - most reliable
-      'https://api.deathwing.me',        // @deathwing - backup node
       'https://api.openhive.network',    // @gtg - established node
-      'https://hive-api.arcange.eu'      // @arcange - reliable European node
+      'https://api.deathwing.me',        // @deathwing - backup node
+      'https://api.c0ff33a.uk',          // @c0ff33a - backup node
+      'https://hive-api.arcange.eu'       // @arcange - last resort (known to timeout frequently)
     ];
 
     // Remove duplicates while preserving order
     const uniqueNodes = [...new Set(apiNodes)];
 
     let lastError: Error | null = null;
+    const attemptedNodes: string[] = [];
 
     for (const nodeUrl of uniqueNodes) {
       try {
@@ -99,33 +111,63 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const isAbortError = error instanceof Error && error.name === 'AbortError';
-        const timeoutMessage = isAbortError || /aborted|timeout/i.test(errorMessage)
-          ? `Request to ${nodeUrl} timed out after ${REQUEST_TIMEOUT_MS}ms`
-          : errorMessage;
+        
+        // Categorize different types of errors for better reporting
+        let categorizedError: string;
+        if (isAbortError || /aborted|timeout/i.test(errorMessage)) {
+          categorizedError = `Request to ${nodeUrl} timed out after ${REQUEST_TIMEOUT_MS}ms`;
+        } else if (/failed to fetch|network error|ERR_NAME_NOT_RESOLVED|ERR_CONNECTION/i.test(errorMessage)) {
+          // Network/DNS errors
+          categorizedError = `Network error connecting to ${nodeUrl}: ${errorMessage}`;
+        } else if (/502|503|504|50[0-9]/.test(errorMessage)) {
+          // Server errors
+          categorizedError = `Server error from ${nodeUrl}: ${errorMessage}`;
+        } else {
+          categorizedError = errorMessage;
+        }
 
-      // Only log as debug during failover (we'll log as warning if all nodes fail)
-      workerBeeLog(`Hive API failed for ${api}.${method} using ${nodeUrl}, trying next node: ${timeoutMessage}`);
-      lastError = new Error(timeoutMessage);
-      // Continue to next node
+        // Track attempted nodes for better error reporting
+        attemptedNodes.push(nodeUrl);
+
+        // Only log as debug during failover (we'll log as warning if all nodes fail)
+        workerBeeLog(`Hive API failed for ${api}.${method} using ${nodeUrl}, trying next node: ${categorizedError}`);
+        lastError = new Error(categorizedError);
+        
+        // Add a small delay before trying the next node to avoid overwhelming nodes
+        // Only if this isn't the last node
+        if (uniqueNodes.indexOf(nodeUrl) < uniqueNodes.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
+        }
+        // Continue to next node
+      }
     }
-  }
 
-  // If all nodes failed, log as warning and throw
-  logWarn(`All Hive API nodes failed for ${api}.${method}. Last error: ${lastError?.message}`);
-  throw new Error(`All Hive API nodes failed. Last error: ${lastError?.message}`);
+    // If all nodes failed, log as warning and throw with detailed information
+    const errorDetails = {
+      method: `${api}.${method}`,
+      attemptedNodes: attemptedNodes.length,
+      lastError: lastError?.message,
+      timeout: `${REQUEST_TIMEOUT_MS}ms`
+    };
+    
+    logWarn(`All Hive API nodes failed for ${api}.${method}. Attempted ${attemptedNodes.length} nodes. Last error: ${lastError?.message}`, undefined, errorDetails);
+    
+    const errorMessage = `All Hive API nodes failed (attempted ${attemptedNodes.length} nodes). This may indicate network issues or all nodes are temporarily unavailable. Last error: ${lastError?.message}`;
+    throw new Error(errorMessage);
   }, requestKey);
 }
 
 /**
  * Get the list of available Hive API nodes
- * @returns Array of Hive node URLs
+ * @returns Array of Hive node URLs (verified working nodes only)
  */
 export function getHiveApiNodes(): string[] {
   return [
-    'https://api.hive.blog',
-    'https://api.deathwing.me',
-    'https://api.openhive.network',
-    'https://hive-api.arcange.eu'
+    'https://api.hive.blog',           // @blocktrades - most reliable
+    'https://api.openhive.network',    // @gtg - established node
+    'https://api.deathwing.me',        // @deathwing - backup node
+    'https://api.c0ff33a.uk',          // @c0ff33a - backup node
+    'https://hive-api.arcange.eu'      // @arcange - last resort (known to timeout frequently)
   ];
 }
 
@@ -136,7 +178,7 @@ export function getHiveApiNodes(): string[] {
  */
 export async function checkHiveNodeAvailability(nodeUrl: string): Promise<boolean> {
   try {
-    const response = await fetch(nodeUrl, {
+    const response = await fetchWithTimeout(nodeUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -146,63 +188,125 @@ export async function checkHiveNodeAvailability(nodeUrl: string): Promise<boolea
         method: 'condenser_api.get_dynamic_global_properties',
         params: [],
         id: 1
-      })
-    });
+      }),
+    }, 10000); // 10 second timeout for health checks
     
-    return response.ok;
+    if (!response.ok) {
+      return false;
+    }
+    
+    // Verify the response is valid JSON and contains expected data
+    const result = await response.json();
+    return result && result.result && !result.error;
   } catch {
     return false;
   }
 }
 
 /**
- * Wax-enhanced API call with type safety and validation
- * @param method - The API method to call
- * @param params - Parameters to pass to the method
- * @returns Promise with the API response
+ * Wrap a promise with a timeout
  */
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(errorMessage)), timeoutMs);
+    })
+  ]);
+}
+
 export async function makeWaxApiCall<T = unknown>(method: string, params: unknown[] = []): Promise<T> {
   try {
+    // Only use Wax on server-side
+    if (typeof window !== 'undefined') {
+      logWarn(`Wax API not available on client, using HTTP fallback for ${method}`);
+      return makeHiveApiCall('condenser_api', method, params) as Promise<T>;
+    }
+    
     workerBeeLog(`Wax API call ${method}`, undefined, params);
     
-    // Try to use Wax API with proper error handling
-    const { getWaxInstance } = await import('./wax-helpers');
-    const wax = await getWaxInstance();
+    // Try to use Wax API with proper error handling and timeout
+    const helpers = await getWaxHelpers();
+    if (!helpers) {
+      return makeHiveApiCall('condenser_api', method, params) as Promise<T>;
+    }
+    const wax = await helpers.getWaxInstance();
     
-    // Try different method access patterns for Wax API
+    // Try different method access patterns for Wax API with timeout protection
     const waxAny = wax as unknown as Record<string, unknown>;
+    const WAX_TIMEOUT_MS = 10000; // 10 seconds timeout for Wax calls
     
     // Pattern 1: Direct method call (e.g., wax.getAccounts)
     if (typeof waxAny[method] === 'function') {
-      const result = await (waxAny[method] as (params: unknown[]) => Promise<T>)(params);
+      const result = await withTimeout(
+        (waxAny[method] as (params: unknown[]) => Promise<T>)(params),
+        WAX_TIMEOUT_MS,
+        `Wax API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
+      );
       return result;
     }
     
     // Pattern 2: Using call method with full API path
     if (typeof waxAny.call === 'function') {
-      const result = await (waxAny.call as (method: string, params: unknown[]) => Promise<T>)(`condenser_api.${method}`, params);
+      const result = await withTimeout(
+        (waxAny.call as (method: string, params: unknown[]) => Promise<T>)(`condenser_api.${method}`, params),
+        WAX_TIMEOUT_MS,
+        `Wax API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
+      );
       return result;
     }
     
     // Pattern 3: Try accessing via api property (some Wax implementations use this)
     if (waxAny.api && typeof (waxAny.api as Record<string, unknown>).call === 'function') {
-      const result = await ((waxAny.api as { call: (method: string, params: unknown[]) => Promise<T> }).call)(`condenser_api.${method}`, params);
+      const result = await withTimeout(
+        ((waxAny.api as { call: (method: string, params: unknown[]) => Promise<T> }).call)(`condenser_api.${method}`, params),
+        WAX_TIMEOUT_MS,
+        `Wax API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
+      );
       return result;
     }
     
     // Pattern 4: Try accessing condenser_api directly
     if (waxAny.condenser_api && typeof (waxAny.condenser_api as Record<string, unknown>)[method] === 'function') {
-      const result = await ((waxAny.condenser_api as Record<string, unknown>)[method] as (params: unknown[]) => Promise<T>)(params);
+      const result = await withTimeout(
+        ((waxAny.condenser_api as Record<string, unknown>)[method] as (params: unknown[]) => Promise<T>)(params),
+        WAX_TIMEOUT_MS,
+        `Wax API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
+      );
       return result;
     }
     
     throw new Error(`Wax method ${method} not available - tried multiple access patterns`);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    // Extract error message from various error types
+    let errorMessage = 'Unknown error';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      errorMessage = String(error.message);
+    } else {
+      errorMessage = String(error);
+    }
+    
+    // Check for timeout-related errors (including WaxError with timeout messages)
+    const isTimeoutError = 
+      errorMessage.includes('timed out') ||
+      errorMessage.includes('timeout') ||
+      errorMessage.includes('Request timed out') ||
+      errorMessage.includes('WaxError') ||
+      (error instanceof Error && error.name === 'WaxError');
     
     // Check if it's a requestInterceptor issue
-    if (errorMessage.includes('requestInterceptor')) {
-      // Silently fall back to HTTP - this is expected in some environments
+    const isRequestInterceptorIssue = errorMessage.includes('requestInterceptor');
+    
+    // For timeout errors, silently fall back to HTTP (this is expected when nodes are slow)
+    if (isTimeoutError) {
+      logWarn(`Wax API timeout for ${method}, using HTTP fallback`);
+      return makeHiveApiCall('condenser_api', method, params);
+    }
+    
+    // For requestInterceptor issues, silently fall back to HTTP (this is expected in some environments)
+    if (isRequestInterceptorIssue) {
       logWarn(`Wax API requestInterceptor issue for ${method}, using HTTP fallback`);
       return makeHiveApiCall('condenser_api', method, params);
     }
@@ -212,7 +316,7 @@ export async function makeWaxApiCall<T = unknown>(method: string, params: unknow
       logError(`[Wax API] Failed for ${method}: ${errorMessage}`, 'makeWaxApiCall', error instanceof Error ? error : undefined);
     }
     
-    // Fallback to original HTTP API call
+    // Fallback to original HTTP API call for all other errors
     logWarn(`Wax API failed for ${method}, falling back to HTTP`);
     return makeHiveApiCall('condenser_api', method, params);
   }
@@ -225,8 +329,16 @@ export async function makeWaxApiCall<T = unknown>(method: string, params: unknow
  */
 export async function getAccountWaxWithFallback(username: string): Promise<unknown | null> {
   try {
+    // Only use Wax on server-side
+    if (typeof window !== 'undefined') {
+      return makeHiveApiCall('condenser_api', 'get_accounts', [[username]]);
+    }
     workerBeeLog(`Wax account for ${username}`);
-    return await getAccountWax(username);
+    const helpers = await getWaxHelpers();
+    if (!helpers) {
+      return makeHiveApiCall('condenser_api', 'get_accounts', [[username]]);
+    }
+    return await helpers.getAccountWax(username);
   } catch (error) {
     logError('[Wax API] Failed to get account with Wax, falling back', 'getAccountWaxWithFallback', error instanceof Error ? error : undefined);
     return makeHiveApiCall('condenser_api', 'get_accounts', [[username]]);
@@ -241,8 +353,16 @@ export async function getAccountWaxWithFallback(username: string): Promise<unkno
  */
 export async function getContentWaxWithFallback(author: string, permlink: string): Promise<unknown | null> {
   try {
+    // Only use Wax on server-side
+    if (typeof window !== 'undefined') {
+      return makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    }
     workerBeeLog(`Wax content for ${author}/${permlink}`);
-    return await getContentWax(author, permlink);
+    const helpers = await getWaxHelpers();
+    if (!helpers) {
+      return makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
+    }
+    return await helpers.getContentWax(author, permlink);
   } catch (error) {
     logError('[Wax API] Failed to get content with Wax, falling back', 'getContentWaxWithFallback', error instanceof Error ? error : undefined);
     return makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
@@ -257,8 +377,16 @@ export async function getContentWaxWithFallback(author: string, permlink: string
  */
 export async function getDiscussionsWaxWithFallback(method: string, params: unknown[]): Promise<unknown[]> {
   try {
+    // Only use Wax on server-side
+    if (typeof window !== 'undefined') {
+      return makeHiveApiCall('condenser_api', method, params) as Promise<unknown[]>;
+    }
     workerBeeLog(`Wax discussions via ${method}`);
-    return await getDiscussionsWax(method, params);
+    const helpers = await getWaxHelpers();
+    if (!helpers) {
+      return makeHiveApiCall('condenser_api', method, params) as Promise<unknown[]>;
+    }
+    return await helpers.getDiscussionsWax(method, params);
   } catch (error) {
     logError('[Wax API] Failed to get discussions with Wax, falling back', 'getDiscussionsWaxWithFallback', error instanceof Error ? error : undefined);
     return makeHiveApiCall('condenser_api', method, params) as Promise<unknown[]>;

@@ -161,9 +161,10 @@ function calculatePendingPayout(post: HivePost | SportsblockPost): number {
  * @returns Filtered posts
  */
 export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promise<ContentResult> {
+  const limit = Math.min(filters.limit || 20, 100); // Max 100 posts per request
+  let fetchedAsTrending = false; // Track if we fetched trending posts from API
+  
   try {
-
-    const limit = Math.min(filters.limit || 20, 100); // Max 100 posts per request
     let posts: HivePost[] = [];
     
     if (filters.author) {
@@ -175,6 +176,18 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
         limit
       ]);
       posts = (accountPosts || []) as unknown as HivePost[];
+    } else if (filters.sort === 'trending') {
+      // Use get_discussions_by_trending for trending posts
+      // Note: get_discussions_by_trending doesn't support pagination with start_author/start_permlink
+      // So we ignore filters.before for trending and always fetch from the top
+      const trendingPosts = await getContentOptimized('get_discussions_by_trending', [
+        {
+          tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+          limit: limit
+        }
+      ]);
+      posts = (trendingPosts || []) as unknown as HivePost[];
+      fetchedAsTrending = true; // Mark that we fetched trending posts
     } else {
       // Fetch posts from Sportsblock community using optimized caching
       // For pagination, we need to use get_discussions_by_created with start_author and start_permlink
@@ -248,8 +261,10 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       });
     }
 
-    // Sort posts
-    filteredPosts = sortPosts(filteredPosts, filters.sort || 'created') as SportsblockPost[];
+    // Sort posts (skip if already fetched as trending from API, since API returns them sorted)
+    if (!fetchedAsTrending) {
+      filteredPosts = sortPosts(filteredPosts, filters.sort || 'created') as SportsblockPost[];
+    }
 
     // Determine if there are more posts
     // Use the original posts length before filtering to determine hasMore
@@ -266,8 +281,21 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       nextCursor,
     };
   } catch (error) {
-    logError('Error fetching Sportsblock posts with WorkerBee', 'fetchSportsblockPosts', error instanceof Error ? error : undefined);
-    throw error;
+    // Better error handling - convert non-Error instances to Error
+    const errorObj = error instanceof Error 
+      ? error 
+      : new Error(error ? String(error) : 'Unknown error occurred while fetching Sportsblock posts');
+    
+    // Log with more context including filters used
+    logError(
+      `Error fetching Sportsblock posts with WorkerBee: ${errorObj.message}`, 
+      'fetchSportsblockPosts', 
+      errorObj,
+      { filters, limit }
+    );
+    
+    // Re-throw as Error instance for consistent error handling
+    throw errorObj;
   }
 }
 

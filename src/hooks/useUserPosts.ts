@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getUserPosts, SportsblockPost } from '@/lib/hive-workerbee/content';
+
+// Types (matching SportsblockPost from workerbee)
+interface SportsblockPost {
+  author: string;
+  permlink: string;
+  title: string;
+  body: string;
+  created: string;
+  [key: string]: unknown;
+}
 
 interface UseUserPostsResult {
   posts: SportsblockPost[];
@@ -23,8 +32,12 @@ export function useUserPosts(username: string, limit: number = 5): UseUserPostsR
     setError(null);
 
     try {
-      const userPosts = await getUserPosts(username, limit);
-      setPosts(userPosts);
+      const response = await fetch(`/api/hive/posts?username=${encodeURIComponent(username)}&limit=${limit}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch posts: ${response.status}`);
+      }
+      const result = await response.json();
+      setPosts(result.success ? result.posts : []);
     } catch (err) {
       console.error('Error fetching user posts:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch posts');

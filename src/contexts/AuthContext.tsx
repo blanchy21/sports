@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { AuthState, AuthType, User } from "@/types";
 import { HiveAuthUser, HiveAccount } from "@/lib/shared/types";
-import { fetchUserAccount, type UserAccountData } from "@/lib/hive-workerbee/account";
+import type { UserAccountData } from "@/lib/hive-workerbee/account";
 import { useAioha } from "@/contexts/AiohaProvider";
 import { AuthUser, FirebaseAuth } from "@/lib/firebase/auth";
 
@@ -341,7 +341,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Fetch full account data in the background
       console.log("Fetching Hive account data for:", hiveUsername);
       try {
-        const accountData = await fetchUserAccount(hiveUsername);
+        const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(hiveUsername)}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch account: ${response.status}`);
+        }
+        const result = await response.json();
+        const accountData = result.success ? result.account as UserAccountData : null;
         console.log("Hive account data loaded:", accountData);
         
         if (accountData) {
@@ -944,7 +949,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Fetch full account data in the background
         try {
-          const accountData = await fetchUserAccount(userData.username!);
+          const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(userData.username!)}`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch account: ${response.status}`);
+          }
+          const result = await response.json();
+          const accountData = result.success ? result.account as UserAccountData : null;
           
           if (accountData) {
             // Update hiveUser with account data
@@ -1074,7 +1084,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Fetch Hive account data
       try {
-        const accountData = await fetchUserAccount(hiveUsername);
+        const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(hiveUsername)}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch account: ${response.status}`);
+        }
+        const result = await response.json();
+        const accountData = result.success ? result.account as UserAccountData : null;
         if (accountData) {
           const updatedHiveUser = {
             ...newHiveUser,
@@ -1196,27 +1211,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       let accountData: UserAccountData | null = null;
 
-      if (typeof window === "undefined") {
-        accountData = await fetchUserAccount(hiveUser.username);
-      } else {
-        const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(hiveUser.username)}`);
-        if (!response.ok) {
-          const payload = await response.json().catch(() => ({}));
-          throw new Error(
-            (payload as { error?: string }).error ||
-            `Failed to refresh Hive account: ${response.status}`
-          );
-        }
-        const payload = await response.json() as { account?: UserAccountData };
-        if (payload.account) {
-          const { account } = payload;
-          accountData = {
-            ...account,
-            createdAt: account.createdAt ? new Date(account.createdAt) : new Date(),
-            lastPost: account.lastPost ? new Date(account.lastPost as unknown as string) : undefined,
-            lastVote: account.lastVote ? new Date(account.lastVote as unknown as string) : undefined,
-          } as UserAccountData;
-        }
+      // Always use API route since this is a client component
+      const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(hiveUser.username)}`);
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(
+          (payload as { error?: string }).error ||
+          `Failed to refresh Hive account: ${response.status}`
+        );
+      }
+      const result = await response.json() as { success?: boolean; account?: UserAccountData };
+      if (result.success && result.account) {
+        const { account } = result;
+        accountData = {
+          ...account,
+          createdAt: account.createdAt ? new Date(account.createdAt) : new Date(),
+          lastPost: account.lastPost ? new Date(account.lastPost as unknown as string) : undefined,
+          lastVote: account.lastVote ? new Date(account.lastVote as unknown as string) : undefined,
+        } as UserAccountData;
       }
 
       if (accountData) {

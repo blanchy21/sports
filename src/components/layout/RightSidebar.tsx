@@ -2,9 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { TrendingUp, Users, Calendar, Trophy, Star, AlertCircle, RefreshCw } from "lucide-react";
-import { fetchSportsblockPosts } from "@/lib/hive-workerbee/content";
+// Types (matching from workerbee)
+interface ContentResult {
+  posts: unknown[];
+  hasMore: boolean;
+  nextCursor?: string;
+}
 import { 
-  getAnalyticsData, 
   TrendingSport, 
   TrendingTopic, 
   TopAuthor, 
@@ -115,28 +119,67 @@ export const RightSidebar: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
-        // Fetch recent posts for analytics
-        // Try get_discussions_by_created first, fallback to trending if it fails
-        let result;
+        // Fetch recent posts for analytics via API route
+        let result: ContentResult;
         try {
-          result = await fetchSportsblockPosts({
-            limit: 100,
-            sort: 'created',
-          });
-        } catch (error) {
-          // If get_discussions_by_created fails (some nodes reject it), use trending posts as fallback
-          console.warn('Failed to fetch posts by created, using trending posts as fallback:', error);
-          const { fetchTrendingPosts } = await import('@/lib/hive-workerbee/content');
-          const trendingPosts = await fetchTrendingPosts(100);
+          const response = await fetch('/api/hive/posts?limit=100&sort=created');
+          if (!response.ok) {
+            throw new Error(`Failed to fetch posts: ${response.status}`);
+          }
+          const apiResult = await response.json();
+          if (!apiResult.success) {
+            throw new Error(apiResult.error || 'Failed to fetch posts');
+          }
           result = {
-            posts: trendingPosts,
-            hasMore: false,
-            nextCursor: undefined
+            posts: apiResult.posts || [],
+            hasMore: apiResult.hasMore || false,
+            nextCursor: apiResult.nextCursor,
           };
+        } catch (error) {
+          // If get_discussions_by_created fails, try trending posts as fallback
+          console.warn('Failed to fetch posts by created, using trending posts as fallback:', error);
+          try {
+            const trendingResponse = await fetch('/api/hive/posts?limit=100&sort=trending');
+            if (trendingResponse.ok) {
+              const trendingResult = await trendingResponse.json();
+              if (trendingResult.success && trendingResult.posts) {
+                result = {
+                  posts: trendingResult.posts || [],
+                  hasMore: false,
+                  nextCursor: undefined,
+                };
+              } else {
+                // API returned success but no posts, use empty result
+                console.warn('Trending posts API returned no data');
+                result = {
+                  posts: [],
+                  hasMore: false,
+                  nextCursor: undefined,
+                };
+              }
+            } else {
+              // Response not OK, use empty result instead of throwing
+              console.warn(`Trending posts API returned ${trendingResponse.status}`);
+              result = {
+                posts: [],
+                hasMore: false,
+                nextCursor: undefined,
+              };
+            }
+          } catch (trendingError) {
+            // Both attempts failed, use empty result gracefully
+            console.error('Error fetching trending posts:', trendingError);
+            result = {
+              posts: [],
+              hasMore: false,
+              nextCursor: undefined,
+            };
+          }
         }
         
-        // Calculate analytics data
-        const analytics = getAnalyticsData(result.posts, user?.username);
+        // Calculate analytics data (import dynamically to avoid client-side WorkerBee)
+        const { getAnalyticsData } = await import('@/lib/hive-workerbee/analytics');
+        const analytics = getAnalyticsData(result.posts as any, user?.username);
         
         setTrendingSports(analytics.trendingSports);
         setTrendingTopics(analytics.trendingTopics);

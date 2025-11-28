@@ -8,7 +8,7 @@ import { MapPin, Calendar, Link as LinkIcon, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { PostCard } from "@/components/PostCard";
-import { getUserPosts } from "@/lib/hive-workerbee/content";
+// getUserPosts is now accessed via API route
 import { SportsblockPost } from "@/lib/shared/types";
 import { useUserProfile } from "@/lib/react-query/queries/useUserProfile";
 import { useUserFollowerCount, useUserFollowingCount } from "@/lib/react-query/queries/useUserProfile";
@@ -35,8 +35,12 @@ export default function UserProfilePage() {
     setPostsError(null);
     
     try {
-      const posts = await getUserPosts(username, 20);
-      setUserPosts(posts as unknown as SportsblockPost[]);
+      const response = await fetch(`/api/hive/posts?username=${encodeURIComponent(username)}&limit=20`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch posts: ${response.status}`);
+      }
+      const result = await response.json() as { success: boolean; posts: SportsblockPost[] };
+      setUserPosts(result.success ? result.posts : []);
     } catch (error) {
       console.error("Error loading user posts:", error);
       setPostsError("Failed to load posts. Please try again.");
