@@ -8,6 +8,8 @@ test.describe('Auth Page', () => {
 
     await page.getByRole('button', { name: 'Sign up' }).click();
 
+    // Wait for mode transition (webkit needs explicit wait for heading to update)
+    await expect(page.getByRole('heading', { name: /welcome back/i })).not.toBeVisible();
     await expect(page.getByRole('heading', { name: /join sportsblock/i })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create Account' })).toBeVisible();
   });
