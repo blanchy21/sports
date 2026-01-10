@@ -39,7 +39,8 @@ const TEST_AUTH_STATE = {
 };
 
 test.describe('Realtime UI', () => {
-  test('starts, emits, and clears realtime events', async ({ page, context }) => {
+  // Skip: Realtime monitoring is disabled client-side (WorkerBee is server-only)
+  test.skip('starts, emits, and clears realtime events', async ({ page, context }) => {
     await context.addInitScript(({ authState }) => {
       window.localStorage.clear();
       window.sessionStorage.clear();
