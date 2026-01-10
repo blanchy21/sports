@@ -82,7 +82,7 @@ export default function UserProfilePage() {
             <div className="text-6xl mb-4">⚠️</div>
             <h3 className="text-xl font-semibold mb-2">User Not Found</h3>
             <p className="text-muted-foreground mb-4">
-              The user profile you're looking for doesn't exist.
+              The user profile you&apos;re looking for doesn&apos;t exist.
             </p>
             <Button onClick={() => router.push("/")} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -255,7 +255,7 @@ export default function UserProfilePage() {
                 <div className="text-6xl mb-4">📝</div>
                 <h3 className="text-xl font-semibold mb-2">No posts yet</h3>
                 <p className="text-muted-foreground">
-                  This user hasn't posted anything yet.
+                  This user hasn&apos;t posted anything yet.
                 </p>
               </div>
             )}

@@ -2,14 +2,13 @@
 
 import React from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { 
-  DollarSign, 
-  TrendingUp, 
-  Wallet, 
-  ArrowUpRight, 
+import {
+  DollarSign,
+  TrendingUp,
+  Wallet,
+  ArrowUpRight,
   Calendar,
   PieChart,
-  Users,
   FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";

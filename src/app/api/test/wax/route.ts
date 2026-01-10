@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { makeWaxApiCall } from '@/lib/hive-workerbee/api';
-import { getAccountWax, getContentWax, getDiscussionsWax } from '@/lib/hive-workerbee/wax-helpers';
+import { getAccountWax, getDiscussionsWax } from '@/lib/hive-workerbee/wax-helpers';
 import { getWaxClient, checkWaxHealth } from '@/lib/hive-workerbee/client';
 
 export const runtime = 'nodejs';

@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  getMonitoringStats, 
-  clearMonitoringData,
-  exportMonitoringData
-} from '@/lib/hive-workerbee/monitoring';
-import { 
-  getOptimizationMetrics as getOptMetrics,
-  getCacheStatistics as getCacheStats,
-  clearOptimizationCache as clearOptCache
-} from '@/lib/hive-workerbee/optimization';
+import { clearMonitoringData } from '@/lib/hive-workerbee/monitoring';
+import { clearOptimizationCache as clearOptCache } from '@/lib/hive-workerbee/optimization';
 
 export async function GET(request: NextRequest) {
   try {

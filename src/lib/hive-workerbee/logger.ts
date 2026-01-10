@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * WorkerBee Logging System
- * 
+ *
  * This module provides comprehensive logging for WorkerBee operations,
  * including performance monitoring, error tracking, and debug information.
  */

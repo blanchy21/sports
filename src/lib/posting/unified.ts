@@ -68,7 +68,7 @@ export class UnifiedPostingService {
     }
   }
 
-  static async getAllPosts(limit: number = 20, _offset: number = 0): Promise<SoftPost[]> {
+  static async getAllPosts(limit: number = 20): Promise<SoftPost[]> {
     // For now, only return soft posts
     // In a full implementation, you would merge Hive and soft posts
     return await FirebasePosts.getAllPosts(limit);

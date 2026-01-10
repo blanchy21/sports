@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * WorkerBee Testing Framework
- * 
+ *
  * This module provides testing utilities for WorkerBee operations,
  * including performance benchmarking, parallel testing, and validation.
  */
