@@ -7,6 +7,9 @@ interface HiveComment {
   permlink: string;
   body: string;
   created: string;
+  parent_author?: string;
+  parent_permlink?: string;
+  net_votes?: number;
   [key: string]: unknown;
 }
 

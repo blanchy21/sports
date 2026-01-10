@@ -7,6 +7,9 @@ interface SportsblockPost {
   title: string;
   body: string;
   created: string;
+  net_votes?: number;
+  children?: number;
+  pending_payout_value?: string;
   [key: string]: unknown;
 }
 

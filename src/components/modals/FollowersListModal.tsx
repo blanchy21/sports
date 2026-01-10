@@ -24,11 +24,11 @@ export const FollowersListModal: React.FC<FollowersListModalProps> = ({ isOpen, 
     data
   });
   
-  const { data: followersData, isLoading: isLoadingFollowers } = useFollowers(username || '', {}, {
+  const { data: followersData, isLoading: isLoadingFollowers } = useFollowers(username || '', {
     enabled: isOpen && type === 'followers' && !!username,
   });
-  
-  const { data: followingData, isLoading: isLoadingFollowing } = useFollowing(username || '', {}, {
+
+  const { data: followingData, isLoading: isLoadingFollowing } = useFollowing(username || '', {
     enabled: isOpen && type === 'following' && !!username,
   });
   

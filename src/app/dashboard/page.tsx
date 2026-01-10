@@ -315,7 +315,7 @@ export default function DashboardPage() {
                   const thumbnail = extractImageFromPost(post.body);
                   return (
                     <div 
-                      key={post.id || `post-${index}`} 
+                      key={`${post.author}-${post.permlink}` || `post-${index}`} 
                       className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => router.push(`/post/${post.author}/${post.permlink}`)}
                     >
@@ -354,7 +354,7 @@ export default function DashboardPage() {
                           </span>
                           <span className="flex items-center space-x-1">
                             <DollarSign className="h-3 w-3" />
-                            <span>{parseFloat(post.pending_payout_value).toFixed(2)} HIVE</span>
+                            <span>{parseFloat(post.pending_payout_value || '0').toFixed(2)} HIVE</span>
                           </span>
                         </div>
                         <div className="flex items-center justify-between mt-2">

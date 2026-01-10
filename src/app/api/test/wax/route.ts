@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const testType = searchParams.get('type') || 'all';
   const username = searchParams.get('username') || 'blanchy';
 
-  const results: Record<string, unknown> = {
+  const results: { timestamp: string; tests: Record<string, unknown> } = {
     timestamp: new Date().toISOString(),
     tests: {}
   };

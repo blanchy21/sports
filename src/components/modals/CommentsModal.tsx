@@ -189,7 +189,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                 const isNestedReply = comment.parent_author !== author;
                 return (
                   <div 
-                    key={comment.id} 
+                    key={`${comment.author}-${comment.permlink}`} 
                     className={`flex space-x-3 ${isNestedReply ? 'ml-8 border-l-2 border-gray-200 pl-4' : ''}`}
                   >
                     <Avatar
