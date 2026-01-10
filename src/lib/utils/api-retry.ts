@@ -95,8 +95,8 @@ export async function fetchWithRetry(
     // Check if response status is retryable
     const opts = { ...DEFAULT_OPTIONS, ...options };
     if (!response.ok && opts.retryableStatuses.includes(response.status)) {
-      const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
-      (error as { status: number }).status = response.status;
+      const error = new Error(`HTTP ${response.status}: ${response.statusText}`) as Error & { status: number };
+      error.status = response.status;
       throw error;
     }
     
