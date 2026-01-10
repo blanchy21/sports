@@ -1,13 +1,20 @@
 /**
  * Node Health Manager
- * 
+ *
  * Proactive health monitoring and intelligent node selection for Hive API nodes.
  * Integrates with existing monitoring system to provide real-time node health data.
+ * Enhanced with circuit breaker pattern for better failure handling.
  */
 
 import { checkHiveNodeAvailability } from './api';
 import { getHiveApiNodes } from './api';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
+import {
+  CircuitBreaker,
+  CircuitState,
+  CircuitBreakerConfig,
+  CircuitBreakerStats
+} from '@/lib/utils/circuit-breaker';
 
 // Node health status interface
 export interface NodeHealthStatus {
@@ -19,6 +26,7 @@ export interface NodeHealthStatus {
   consecutiveFailures: number;
   lastError?: string;
   healthScore: number; // 0-100, higher is better
+  circuitState?: CircuitState;
 }
 
 // Node health configuration
@@ -28,6 +36,7 @@ export interface NodeHealthConfig {
   maxConsecutiveFailures: number;
   healthCheckEndpoint: string;
   enableProactiveMonitoring: boolean;
+  circuitBreaker?: Partial<CircuitBreakerConfig>;
 }
 
 // Node health report for monitoring
@@ -39,6 +48,7 @@ export interface NodeHealthReport {
   bestNode: string;
   worstNode: string;
   nodeStatuses: NodeHealthStatus[];
+  circuitStats: Map<string, CircuitBreakerStats>;
 }
 
 // Default configuration
@@ -52,11 +62,13 @@ const DEFAULT_CONFIG: NodeHealthConfig = {
 
 /**
  * Node Health Manager Class
- * 
+ *
  * Manages proactive health monitoring of Hive API nodes with intelligent selection.
+ * Includes circuit breaker integration for better failure handling.
  */
 export class NodeHealthManager {
   private nodeHealth: Map<string, NodeHealthStatus> = new Map();
+  private circuitBreakers: Map<string, CircuitBreaker> = new Map();
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private config: NodeHealthConfig;
   private isMonitoring: boolean = false;
@@ -66,6 +78,27 @@ export class NodeHealthManager {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.nodeUrls = getHiveApiNodes();
     this.initializeNodeHealth();
+    this.initializeCircuitBreakers();
+  }
+
+  /**
+   * Initialize circuit breakers for all nodes
+   */
+  private initializeCircuitBreakers(): void {
+    const circuitConfig: Partial<CircuitBreakerConfig> = {
+      failureThreshold: this.config.maxConsecutiveFailures,
+      successThreshold: 2,
+      resetTimeout: 30000, // 30 seconds
+      monitoringWindow: 60000, // 1 minute
+      ...this.config.circuitBreaker,
+    };
+
+    this.nodeUrls.forEach(url => {
+      this.circuitBreakers.set(url, new CircuitBreaker({
+        ...circuitConfig,
+        name: new URL(url).hostname,
+      }));
+    });
   }
 
   /**
@@ -211,14 +244,37 @@ export class NodeHealthManager {
   }
 
   /**
-   * Get the best available node based on health score
+   * Get the best available node based on health score and circuit state
    */
   public getBestNode(): string {
     const healthyNodes = Array.from(this.nodeHealth.values())
-      .filter(node => node.isHealthy && node.consecutiveFailures < this.config.maxConsecutiveFailures)
+      .filter(node => {
+        // Check basic health
+        if (!node.isHealthy || node.consecutiveFailures >= this.config.maxConsecutiveFailures) {
+          return false;
+        }
+        // Check circuit breaker state
+        const circuit = this.circuitBreakers.get(node.url);
+        if (circuit && !circuit.canAttempt()) {
+          return false;
+        }
+        return true;
+      })
       .sort((a, b) => b.healthScore - a.healthScore);
 
     if (healthyNodes.length === 0) {
+      // Try to find a node in HALF_OPEN state (testing recovery)
+      const halfOpenNodes = Array.from(this.nodeHealth.values())
+        .filter(node => {
+          const circuit = this.circuitBreakers.get(node.url);
+          return circuit?.getState() === CircuitState.HALF_OPEN;
+        });
+
+      if (halfOpenNodes.length > 0) {
+        workerBeeLog(`[Node Health] Using half-open node: ${halfOpenNodes[0].url}`);
+        return halfOpenNodes[0].url;
+      }
+
       logWarn('[Node Health] No healthy nodes available, using first node as fallback', 'nodeHealth');
       return this.nodeUrls[0];
     }
@@ -226,6 +282,59 @@ export class NodeHealthManager {
     const bestNode = healthyNodes[0];
     workerBeeLog(`[Node Health] Selected best node: ${bestNode.url} (score: ${bestNode.healthScore})`);
     return bestNode.url;
+  }
+
+  /**
+   * Record the result of a node operation (updates circuit breaker)
+   */
+  public recordNodeResult(nodeUrl: string, success: boolean, errorMessage?: string): void {
+    const circuit = this.circuitBreakers.get(nodeUrl);
+    if (circuit) {
+      if (success) {
+        circuit.recordSuccess();
+      } else {
+        circuit.recordFailure(errorMessage);
+      }
+    }
+
+    // Update node health status
+    const status = this.nodeHealth.get(nodeUrl);
+    if (status) {
+      if (success) {
+        status.consecutiveFailures = 0;
+      } else {
+        status.consecutiveFailures++;
+        status.lastError = errorMessage;
+      }
+      status.circuitState = circuit?.getState();
+      this.nodeHealth.set(nodeUrl, status);
+    }
+  }
+
+  /**
+   * Get circuit breaker for a specific node
+   */
+  public getCircuitBreaker(nodeUrl: string): CircuitBreaker | undefined {
+    return this.circuitBreakers.get(nodeUrl);
+  }
+
+  /**
+   * Get all circuit breaker stats
+   */
+  public getCircuitStats(): Map<string, CircuitBreakerStats> {
+    const stats = new Map<string, CircuitBreakerStats>();
+    this.circuitBreakers.forEach((circuit, url) => {
+      stats.set(url, circuit.getStats());
+    });
+    return stats;
+  }
+
+  /**
+   * Reset all circuit breakers
+   */
+  public resetAllCircuits(): void {
+    this.circuitBreakers.forEach(circuit => circuit.reset());
+    workerBeeLog('[Node Health] All circuit breakers reset');
   }
 
   /**
@@ -327,18 +436,24 @@ export class NodeHealthManager {
     const allNodes = Array.from(this.nodeHealth.values());
     const healthyNodes = allNodes.filter(node => node.isHealthy);
     const unhealthyNodes = allNodes.filter(node => !node.isHealthy);
-    
-    const averageLatency = allNodes.length > 0 
-      ? allNodes.reduce((sum, node) => sum + node.latency, 0) / allNodes.length 
+
+    const averageLatency = allNodes.length > 0
+      ? allNodes.reduce((sum, node) => sum + node.latency, 0) / allNodes.length
       : 0;
 
-    const bestNode = healthyNodes.length > 0 
+    const bestNode = healthyNodes.length > 0
       ? healthyNodes.sort((a, b) => b.healthScore - a.healthScore)[0].url
       : allNodes[0]?.url || '';
 
     const worstNode = allNodes.length > 0
       ? allNodes.sort((a, b) => a.healthScore - b.healthScore)[0].url
       : '';
+
+    // Add circuit state to node statuses
+    const nodeStatuses = allNodes.map(node => ({
+      ...node,
+      circuitState: this.circuitBreakers.get(node.url)?.getState(),
+    }));
 
     return {
       totalNodes: allNodes.length,
@@ -347,7 +462,8 @@ export class NodeHealthManager {
       averageLatency,
       bestNode,
       worstNode,
-      nodeStatuses: allNodes
+      nodeStatuses,
+      circuitStats: this.getCircuitStats(),
     };
   }
 
@@ -414,3 +530,30 @@ export function isNodeHealthMonitoringActive(): boolean {
   const manager = getNodeHealthManager();
   return manager.isMonitoringActive();
 }
+
+/**
+ * Record a node operation result (updates circuit breaker)
+ */
+export function recordNodeResult(nodeUrl: string, success: boolean, errorMessage?: string): void {
+  const manager = getNodeHealthManager();
+  manager.recordNodeResult(nodeUrl, success, errorMessage);
+}
+
+/**
+ * Get circuit stats for all nodes
+ */
+export function getCircuitStats(): Map<string, CircuitBreakerStats> {
+  const manager = getNodeHealthManager();
+  return manager.getCircuitStats();
+}
+
+/**
+ * Reset all circuit breakers
+ */
+export function resetAllCircuits(): void {
+  const manager = getNodeHealthManager();
+  manager.resetAllCircuits();
+}
+
+// Re-export CircuitState for consumers
+export { CircuitState } from '@/lib/utils/circuit-breaker';

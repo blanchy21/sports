@@ -11,11 +11,14 @@ jest.mock('@/lib/hive-workerbee/wax-helpers', () => ({
   getDiscussionsWax: jest.fn(),
 }));
 
+const recordNodeResultMock = jest.fn();
+
 jest.mock('@/lib/hive-workerbee/node-health', () => ({
   getNodeHealthManager: jest.fn(() => ({
     getBestNode: getBestNodeMock,
     startProactiveMonitoring: startProactiveMonitoringMock,
   })),
+  recordNodeResult: (...args: unknown[]) => recordNodeResultMock(...args),
 }));
 
 const workerBeeLogMock = jest.fn();

@@ -2,6 +2,11 @@
  * Shared Hive API utility for making HTTP calls to Hive blockchain nodes
  * This provides better error handling and fallback options across all modules
  * Enhanced with Wax-based type-safe API wrappers
+ *
+ * Includes:
+ * - Rate limiting via token bucket
+ * - Circuit breaker integration
+ * - Graceful degradation with stale data fallback
  */
 
 // Wax helpers are only available server-side
@@ -17,8 +22,24 @@ async function getWaxHelpers() {
   }
   return waxHelpers;
 }
-import { getNodeHealthManager } from './node-health';
+import { getNodeHealthManager, recordNodeResult } from './node-health';
 import { workerBee as workerBeeLog, info as logInfo, warn as logWarn, error as logError } from './logger';
+import { RateLimiter, RateLimitPresets } from '@/lib/utils/rate-limiter';
+import type { ApiResult } from '@/lib/utils/result';
+// These are imported for re-export at the bottom of this file
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { apiOk, apiErr, isApiOk, isApiErr, toLegacy, mapToApiError } from '@/lib/utils/result';
+
+// Rate limiter for API calls (shared across all calls)
+// Use higher limits in test environment to avoid test failures
+const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+const apiRateLimiter = new RateLimiter({
+  ...RateLimitPresets.read,
+  // Higher limits for testing
+  maxTokens: isTestEnv ? 1000 : RateLimitPresets.read.maxTokens,
+  refillRate: isTestEnv ? 100 : RateLimitPresets.read.refillRate,
+  name: 'hive-api',
+});
 
 // Increased timeout for better reliability on slow networks
 const REQUEST_TIMEOUT_MS = 15000; // 15 seconds
@@ -153,7 +174,7 @@ export async function makeWorkerBeeApiCall<T = unknown>(method: string, params: 
 
 /**
  * Make a direct HTTP call to Hive API with automatic failover
- * Enhanced with Wax-based type safety and validation
+ * Enhanced with rate limiting and circuit breaker integration
  * This is kept as a fallback and for client-side usage
  * @param api - The API module (e.g., 'condenser_api', 'rc_api')
  * @param method - The method to call
@@ -163,18 +184,23 @@ export async function makeWorkerBeeApiCall<T = unknown>(method: string, params: 
 export async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
   // Generate a unique key for request deduplication
   const requestKey = `hive-api:${api}.${method}:${JSON.stringify(params)}`;
-  
+
   // Use deduplication to prevent duplicate concurrent requests
   const { deduplicateRequest } = await import('@/lib/utils/request-deduplication');
-  
+
   return deduplicateRequest(async () => {
-    // Get health-based node selection
+    // Apply rate limiting (wait for token)
+    const acquired = await apiRateLimiter.acquire(1, { timeout: 5000 });
+    if (!acquired) {
+      throw new Error('Rate limit exceeded for Hive API calls');
+    }
+
+    // Get health-based node selection (now with circuit breaker awareness)
     const nodeHealthManager = getNodeHealthManager();
     const bestNode = nodeHealthManager.getBestNode();
-    
+
     // Fallback node list for reactive failover
     // Using verified reliable nodes only
-    // Note: hive-api.arcange.eu removed due to consistent timeout issues
     const apiNodes = [
       bestNode, // Start with healthiest node
       'https://api.hive.blog',           // @blocktrades - most reliable
@@ -221,11 +247,15 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
         const duration = Date.now() - start;
         workerBeeLog(`Hive API success ${api}.${method}`, undefined, { nodeUrl, duration });
         logInfo(`${nodeUrl} responded in ${duration}ms`, `${api}.${method}`, { nodeUrl, duration });
+
+        // Record success for circuit breaker
+        recordNodeResult(nodeUrl, true);
+
         return result.result;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const isAbortError = error instanceof Error && error.name === 'AbortError';
-        
+
         // Categorize different types of errors for better reporting
         let categorizedError: string;
         if (isAbortError || /aborted|timeout/i.test(errorMessage)) {
@@ -240,13 +270,16 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
           categorizedError = errorMessage;
         }
 
+        // Record failure for circuit breaker
+        recordNodeResult(nodeUrl, false, categorizedError);
+
         // Track attempted nodes for better error reporting
         attemptedNodes.push(nodeUrl);
 
         // Only log as debug during failover (we'll log as warning if all nodes fail)
         workerBeeLog(`Hive API failed for ${api}.${method} using ${nodeUrl}, trying next node: ${categorizedError}`);
         lastError = new Error(categorizedError);
-        
+
         // Add a small delay before trying the next node to avoid overwhelming nodes
         // Only if this isn't the last node
         if (uniqueNodes.indexOf(nodeUrl) < uniqueNodes.length - 1) {
@@ -483,3 +516,55 @@ export function validateApiResponse<T>(response: unknown, expectedType: string):
     errors
   };
 }
+
+/**
+ * Make a Hive API call with graceful degradation support
+ * Returns ApiResult with stale data fallback on failure
+ * @param api - The API module (e.g., 'condenser_api', 'rc_api')
+ * @param method - The method to call
+ * @param params - Parameters to pass to the method
+ * @param options - Degradation options
+ * @returns ApiResult with data or stale fallback
+ */
+export async function makeHiveApiCallWithFallback<T = unknown>(
+  api: string,
+  method: string,
+  params: unknown[] = [],
+  options?: {
+    cacheTTL?: number;
+    maxStaleAge?: number;
+    tags?: string[];
+  }
+): Promise<ApiResult<T>> {
+  const { getOrFetchWithFallback } = await import('./graceful-degradation');
+
+  const cacheKey = `hive:${api}.${method}:${JSON.stringify(params)}`;
+
+  return getOrFetchWithFallback<T>(
+    cacheKey,
+    () => makeHiveApiCall<T>(api, method, params),
+    {
+      cacheTTL: options?.cacheTTL ?? 5 * 60 * 1000, // 5 minutes default
+      maxStaleAge: options?.maxStaleAge ?? 5 * 60 * 1000, // 5 minutes default
+      tags: options?.tags,
+    }
+  );
+}
+
+/**
+ * Get rate limiter stats for monitoring
+ */
+export function getApiRateLimiterStats() {
+  return apiRateLimiter.getStats();
+}
+
+/**
+ * Check if API is rate limited
+ */
+export function isApiRateLimited(): boolean {
+  return apiRateLimiter.isThrottled();
+}
+
+// Re-export types for consumers
+export type { ApiResult } from '@/lib/utils/result';
+export { apiOk, apiErr, isApiOk, isApiErr, toLegacy } from '@/lib/utils/result';
