@@ -45,6 +45,20 @@ jest.mock('@/lib/hive-workerbee/client', () => ({
   },
 }));
 
+jest.mock('@/lib/hive-workerbee/content', () => ({
+  fetchSportsblockPosts: jest.fn(async () => ({ posts: [], hasMore: false })),
+}));
+
+jest.mock('@/lib/hive-workerbee/api', () => ({
+  makeWorkerBeeApiCall: jest.fn(async () => ({ head_block_number: 1000 })),
+}));
+
+jest.mock('@/lib/hive-workerbee/logger', () => ({
+  workerBee: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+}));
+
 const { initializeWorkerBeeClient } = jest.requireMock('@/lib/hive-workerbee/client');
 
 beforeEach(() => {
@@ -71,14 +85,14 @@ describe('RealtimeMonitor', () => {
   it('starts WorkerBee client and subscribes to feeds once', async () => {
     const monitor = new RealtimeMonitor();
 
-    await monitor.start();
+    await monitor.start({ processHistory: false });
 
     expect(initializeWorkerBeeClient).toHaveBeenCalledTimes(1);
     expect(postSubscribeMock).toHaveBeenCalledTimes(1);
     expect(voteSubscribeMock).toHaveBeenCalledTimes(1);
     expect(commentSubscribeMock).toHaveBeenCalledTimes(1);
 
-    await monitor.start();
+    await monitor.start({ processHistory: false });
 
     // Second invocation should be no-op
     expect(postSubscribeMock).toHaveBeenCalledTimes(1);
@@ -89,7 +103,7 @@ describe('RealtimeMonitor', () => {
   it('unsubscribes from feeds and stops client', async () => {
     const monitor = new RealtimeMonitor();
 
-    await monitor.start();
+    await monitor.start({ processHistory: false });
     await monitor.stop();
 
     expect(postUnsubscribeMock).toHaveBeenCalledTimes(1);
@@ -103,9 +117,10 @@ describe('RealtimeMonitor', () => {
     const callback = jest.fn();
 
     monitor.addCallback(callback);
-    await monitor.start();
+    await monitor.start({ processHistory: false });
 
     const samplePost = {
+      type: 'post',
       data: {
         post: {
           author: 'alice',

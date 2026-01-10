@@ -4,19 +4,13 @@ jest.mock('@/contexts/AuthContext', () => ({
   useAuth: jest.fn(),
 }));
 
-jest.mock('@/lib/hive-workerbee/client', () => ({
-  getWorkerBeeClient: jest.fn(),
-}));
-
 import React, { useEffect } from 'react';
 import { act, render, waitFor } from '@testing-library/react';
 import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
 import type { Notification } from '@/contexts/NotificationContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { getWorkerBeeClient } from '@/lib/hive-workerbee/client';
 
 const useAuthMock = useAuth as jest.MockedFunction<typeof useAuth>;
-const getWorkerBeeClientMock = getWorkerBeeClient as jest.MockedFunction<typeof getWorkerBeeClient>;
 
 type NotificationContextShape = {
   notifications: Notification[];
@@ -47,7 +41,7 @@ describe('NotificationProvider integration', () => {
     } as unknown as ReturnType<typeof useAuth>);
   });
 
-  it('hydrates from storage and processes realtime comment and vote events', async () => {
+  it('hydrates from storage and adds notifications manually', async () => {
     const storageKey = 'sportsblock-notifications:paul';
     const storedNotification = {
       id: 'stored-1',
@@ -60,32 +54,7 @@ describe('NotificationProvider integration', () => {
     };
     localStorage.setItem(storageKey, JSON.stringify([storedNotification]));
 
-    let commentHandler: { next: (payload: unknown) => void; error: (err: unknown) => void } | null = null;
-    let voteHandler: { next: (payload: unknown) => void; error: (err: unknown) => void } | null = null;
-
-    const workerBeeStub = {
-      running: false,
-      start: jest.fn(async () => {
-        workerBeeStub.running = true;
-      }),
-      observe: {
-        onComments: () => ({
-          subscribe: (handlers: { next: (payload: unknown) => void; error: (err: unknown) => void }) => {
-            commentHandler = handlers;
-            return { unsubscribe: jest.fn() };
-          },
-        }),
-        onVotes: () => ({
-          subscribe: (handlers: { next: (payload: unknown) => void; error: (err: unknown) => void }) => {
-            voteHandler = handlers;
-            return { unsubscribe: jest.fn() };
-          },
-        }),
-      },
-    };
-
-    getWorkerBeeClientMock.mockReturnValue(workerBeeStub as unknown as ReturnType<typeof getWorkerBeeClient>);
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let latestContext: any = null;
 
     render(
@@ -94,6 +63,7 @@ describe('NotificationProvider integration', () => {
       </NotificationProvider>
     );
 
+    // Wait for hydration from storage
     await waitFor(() => {
       expect(latestContext).not.toBeNull();
       expect(latestContext?.notifications.length).toBe(1);
@@ -106,23 +76,21 @@ describe('NotificationProvider integration', () => {
     });
     expect(latestContext?.notifications[0].timestamp).toBeInstanceOf(Date);
 
-    await waitFor(() => expect(workerBeeStub.start).toHaveBeenCalled());
-    await waitFor(() => expect(latestContext?.isRealtimeActive).toBe(true));
-    expect(commentHandler).not.toBeNull();
-    expect(voteHandler).not.toBeNull();
+    // Realtime is disabled on client-side (WorkerBee is server-only)
+    await waitFor(() => expect(latestContext?.isRealtimeActive).toBe(false));
 
+    // Test manual notification adding
     act(() => {
-      commentHandler!.next({
-        comments: [
-          {
-            operation: {
-              parent_author: 'paul',
-              author: 'alice',
-              permlink: 'new-post',
-              parent_permlink: 'sports',
-            },
-          },
-        ],
+      latestContext!.addNotification({
+        type: 'comment',
+        title: 'New Comment',
+        message: '@alice commented on your post',
+        data: {
+          author: 'alice',
+          permlink: 'new-post',
+          parentAuthor: 'paul',
+          parentPermlink: 'sports',
+        },
       });
     });
 
@@ -136,18 +104,18 @@ describe('NotificationProvider integration', () => {
       }),
     });
 
+    // Test adding another notification
     act(() => {
-      voteHandler!.next({
-        votes: [
-          {
-            operation: {
-              voter: 'bob',
-              author: 'paul',
-              permlink: 'new-post',
-              weight: 1000,
-            },
-          },
-        ],
+      latestContext!.addNotification({
+        type: 'vote',
+        title: 'New Vote',
+        message: '@bob voted on your post',
+        data: {
+          voter: 'bob',
+          author: 'paul',
+          permlink: 'new-post',
+          weight: 1000,
+        },
       });
     });
 
@@ -163,6 +131,7 @@ describe('NotificationProvider integration', () => {
 
     expect(latestContext?.unreadCount).toBe(2);
 
+    // Verify persistence to localStorage
     const saved = localStorage.getItem(storageKey);
     expect(saved).not.toBeNull();
     expect(saved).toContain('"type":"vote"');

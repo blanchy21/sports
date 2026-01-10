@@ -1,9 +1,5 @@
 /** @jest-environment jsdom */
 
-jest.mock('@/lib/hive-workerbee/account', () => ({
-  fetchUserAccount: jest.fn(),
-}));
-
 jest.mock('@/contexts/AiohaProvider', () => ({
   useAioha: jest.fn(),
 }));
@@ -23,12 +19,10 @@ import type { HiveAccount } from '@/lib/shared/types';
 import { renderWithProviders } from '../test-utils';
 import type { UserAccountData } from '@/lib/hive-workerbee/account';
 import { useAioha } from '@/contexts/AiohaProvider';
-import { fetchUserAccount } from '@/lib/hive-workerbee/account';
 
 type AuthApi = ReturnType<typeof useAuth>;
 
 const useAiohaMock = useAioha as jest.MockedFunction<typeof useAioha>;
-const fetchUserAccountMock = fetchUserAccount as jest.MockedFunction<typeof fetchUserAccount>;
 
 const DEFAULT_USERNAME = 'integration-user';
 
@@ -100,6 +94,8 @@ const Harness: React.FC<{ onChange: (auth: AuthApi) => void }> = ({ onChange }) 
 };
 
 describe('AuthProvider + Aioha integration', () => {
+  const originalFetch = global.fetch;
+
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
@@ -109,7 +105,15 @@ describe('AuthProvider + Aioha integration', () => {
       isInitialized: true,
       error: null,
     });
-    fetchUserAccountMock.mockResolvedValue(mockAccountData);
+    // Mock the fetch call to /api/hive/account/summary
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true, account: mockAccountData }),
+    });
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
   });
 
   it('logs in via Aioha, persists sanitized state, and hydrates account data', async () => {
@@ -142,7 +146,9 @@ describe('AuthProvider + Aioha integration', () => {
     });
 
     await waitFor(() => {
-      expect(fetchUserAccountMock).toHaveBeenCalledWith(DEFAULT_USERNAME);
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/hive/account/summary?username=${DEFAULT_USERNAME}`)
+      );
     });
 
     await waitFor(() => {

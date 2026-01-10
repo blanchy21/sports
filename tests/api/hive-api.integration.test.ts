@@ -79,7 +79,7 @@ describe('makeHiveApiCall integration', () => {
       expect.objectContaining({ nodeUrl: 'https://api.hive.blog' }),
     );
 
-    expect(logWarnMock).toHaveBeenCalledWith(
+    expect(workerBeeLogMock).toHaveBeenCalledWith(
       expect.stringContaining('Hive API failed for condenser_api.get_dynamic_global_properties using https://best-node.example'),
     );
     expect(logInfoMock).toHaveBeenCalledWith(
