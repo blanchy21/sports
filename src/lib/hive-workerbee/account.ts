@@ -843,7 +843,7 @@ export async function getRecentOperations(
       return {
         ...op,
         description
-      };
+      }
     }));
 
     debugLog(`[WorkerBee getRecentOperations] Processed ${processedOperations.length} monetary operations for ${username}`);
