@@ -17,6 +17,7 @@ import { useModal } from "@/components/modals/ModalProvider";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { formatDate, formatReadTime } from "@/lib/utils";
 import { proxyImagesInContent } from "@/lib/utils/image-proxy";
+import { sanitizePostContent } from "@/lib/utils/sanitize";
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -190,14 +191,9 @@ export default function PostDetailPage() {
 
         {/* Post Content */}
         <div className="prose prose-lg max-w-none mb-8">
-          <div 
-            dangerouslySetInnerHTML={{ 
-              __html: proxyImagesInContent(
-                post.body
-                  .replace(/<center>/g, '<div class="text-center my-4">')
-                  .replace(/<\/center>/g, '</div>')
-                  .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto rounded-lg shadow-md my-4" />')
-              )
+          <div
+            dangerouslySetInnerHTML={{
+              __html: proxyImagesInContent(sanitizePostContent(post.body))
             }}
           />
         </div>
