@@ -829,8 +829,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         accountData = {
           ...account,
           createdAt: account.createdAt ? new Date(account.createdAt) : new Date(),
-          lastPost: account.lastPost ? new Date(account.lastPost as unknown as string) : undefined,
-          lastVote: account.lastVote ? new Date(account.lastVote as unknown as string) : undefined,
+          // Handle both Date objects and ISO strings from JSON
+          lastPost: account.lastPost ? new Date(String(account.lastPost)) : undefined,
+          lastVote: account.lastVote ? new Date(String(account.lastVote)) : undefined,
         } as UserAccountData;
       }
 

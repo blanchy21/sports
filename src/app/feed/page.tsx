@@ -8,16 +8,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Plus, TrendingUp, Users, Award, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Post, SPORT_CATEGORIES } from "@/types";
-// Types (matching SportsblockPost from workerbee)
-interface SportsblockPost {
-  author: string;
-  permlink: string;
-  title: string;
-  body: string;
-  created: string;
-  [key: string]: unknown;
-}
+import { SPORT_CATEGORIES } from "@/types";
+import { SportsblockPost } from "@/lib/shared/types";
 import { CommunityStats } from "@/lib/hive-workerbee/analytics";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
@@ -355,7 +347,7 @@ export default function FeedPage() {
               </div>
             ) : filteredPosts.length > 0 ? (
               filteredPosts.map((post) => (
-                <PostCard key={`${post.author}/${post.permlink}`} post={post as unknown as Post} />
+                <PostCard key={`${post.author}/${post.permlink}`} post={post} />
               ))
             ) : (
               <div className="text-center py-12">
