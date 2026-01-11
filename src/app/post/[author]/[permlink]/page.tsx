@@ -35,14 +35,19 @@ export default function PostDetailPage() {
   const { profile: hiveProfile, isLoading: isProfileLoading } = useUserProfile(author);
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     const loadPost = async () => {
       if (!author || !permlink) return;
-      
+
       setIsLoading(true);
       setError(null);
-      
+
       try {
-        const response = await fetch(`/api/hive/posts?author=${encodeURIComponent(author)}&permlink=${encodeURIComponent(permlink)}`);
+        const response = await fetch(
+          `/api/hive/posts?author=${encodeURIComponent(author)}&permlink=${encodeURIComponent(permlink)}`,
+          { signal: abortController.signal }
+        );
         if (!response.ok) {
           throw new Error(`Failed to fetch post: ${response.status}`);
         }
@@ -53,14 +58,22 @@ export default function PostDetailPage() {
           setError("Post not found");
         }
       } catch (err) {
+        // Ignore abort errors
+        if (err instanceof Error && err.name === 'AbortError') return;
         console.error('Error loading post:', err);
         setError('Failed to load post. Please try again.');
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadPost();
+
+    return () => {
+      abortController.abort();
+    };
   }, [author, permlink]);
 
   const handleVoteSuccess = () => {

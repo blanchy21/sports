@@ -27,33 +27,46 @@ export default function UserProfilePage() {
   const [userPosts, setUserPosts] = useState<SportsblockPost[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
-  const loadUserPosts = React.useCallback(async () => {
-    if (!username) return;
-    
-    setIsLoadingPosts(true);
-    setPostsError(null);
-    
-    try {
-      const response = await fetch(`/api/hive/posts?username=${encodeURIComponent(username)}&limit=20`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch posts: ${response.status}`);
-      }
-      const result = await response.json() as { success: boolean; posts: SportsblockPost[] };
-      setUserPosts(result.success ? result.posts : []);
-    } catch (error) {
-      console.error("Error loading user posts:", error);
-      setPostsError("Failed to load posts. Please try again.");
-    } finally {
-      setIsLoadingPosts(false);
-    }
-  }, [username]);
+  const retryLoadPosts = () => setRetryKey(k => k + 1);
 
   useEffect(() => {
-    if (username) {
-      loadUserPosts();
-    }
-  }, [username, loadUserPosts]);
+    if (!username) return;
+
+    const abortController = new AbortController();
+
+    const loadUserPosts = async () => {
+      setIsLoadingPosts(true);
+      setPostsError(null);
+
+      try {
+        const response = await fetch(
+          `/api/hive/posts?username=${encodeURIComponent(username)}&limit=20`,
+          { signal: abortController.signal }
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch posts: ${response.status}`);
+        }
+        const result = await response.json() as { success: boolean; posts: SportsblockPost[] };
+        setUserPosts(result.success ? result.posts : []);
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return;
+        console.error("Error loading user posts:", error);
+        setPostsError("Failed to load posts. Please try again.");
+      } finally {
+        if (!abortController.signal.aborted) {
+          setIsLoadingPosts(false);
+        }
+      }
+    };
+
+    loadUserPosts();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [username, retryKey]);
 
   if (isProfileLoading) {
     return (
@@ -236,7 +249,7 @@ export default function UserProfilePage() {
             ) : postsError ? (
               <div className="text-center py-12">
                 <p className="text-red-500 mb-4">{postsError}</p>
-                <Button onClick={loadUserPosts} variant="outline">Try Again</Button>
+                <Button onClick={retryLoadPosts} variant="outline">Try Again</Button>
               </div>
             ) : userPosts.length > 0 ? (
               <div className="space-y-6">
