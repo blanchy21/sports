@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
+import { STALE_TIMES } from '@/lib/constants/cache';
 
 // Types for comments (imported from workerbee types)
 interface HiveComment {
@@ -25,7 +26,7 @@ export function useComments(author: string, permlink: string) {
       return (result.success ? result.comments : []) as HiveComment[];
     },
     enabled: !!author && !!permlink,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: STALE_TIMES.REALTIME
   });
 }
 
@@ -41,7 +42,7 @@ export function useUserComments(username: string, limit: number = 20) {
       return (result.success ? result.comments : []) as HiveComment[];
     },
     enabled: !!username,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: STALE_TIMES.REALTIME
   });
 }
 

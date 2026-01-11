@@ -7,21 +7,20 @@ import {
   unfollowUser,
   SocialResult
 } from '@/lib/hive-workerbee/social';
-
-const PAGE_SIZE = 50;
+import { STALE_TIMES, PAGINATION } from '@/lib/constants/cache';
 
 export function useFollowers(username: string, options: { enabled?: boolean } = {}) {
   return useInfiniteQuery({
     queryKey: [...queryKeys.users.followers(username)],
     queryFn: ({ pageParam }) => fetchFollowers(username, {
-      limit: PAGE_SIZE,
+      limit: PAGINATION.SOCIAL_PAGE_SIZE,
       before: pageParam
     }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: SocialResult) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
     enabled: options.enabled !== undefined ? options.enabled : !!username,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: STALE_TIMES.STANDARD,
     select: (data) => ({
       pages: data.pages,
       pageParams: data.pageParams,
@@ -37,14 +36,14 @@ export function useFollowing(username: string, options: { enabled?: boolean } = 
   return useInfiniteQuery({
     queryKey: [...queryKeys.users.following(username)],
     queryFn: ({ pageParam }) => fetchFollowing(username, {
-      limit: PAGE_SIZE,
+      limit: PAGINATION.SOCIAL_PAGE_SIZE,
       before: pageParam
     }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: SocialResult) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
     enabled: options.enabled !== undefined ? options.enabled : !!username,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: STALE_TIMES.STANDARD,
     select: (data) => ({
       pages: data.pages,
       pageParams: data.pageParams,
