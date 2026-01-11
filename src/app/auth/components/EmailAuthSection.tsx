@@ -24,27 +24,37 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
 }) => (
   <div className="space-y-4">
     <div>
+      <label htmlFor="email" className="sr-only">Email address</label>
       <input
+        id="email"
         type="email"
         value={values.email}
         onChange={(event) => onFieldChange("email", event.target.value)}
         className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-background text-foreground"
         placeholder="Email address"
+        autoComplete="email"
+        required
       />
     </div>
 
     <div className="relative">
+      <label htmlFor="password" className="sr-only">Password</label>
       <input
+        id="password"
         type={values.showPassword ? "text" : "password"}
         value={values.password}
         onChange={(event) => onFieldChange("password", event.target.value)}
         className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none pr-12 bg-background text-foreground"
         placeholder="Password"
+        autoComplete={mode === "login" ? "current-password" : "new-password"}
+        required
+        minLength={6}
       />
       <button
         type="button"
         onClick={onTogglePasswordVisibility}
         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        aria-label={values.showPassword ? "Hide password" : "Show password"}
       >
         {values.showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
       </button>
@@ -53,22 +63,33 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
     {mode === "signup" && (
       <>
         <div>
+          <label htmlFor="username" className="sr-only">Username</label>
           <input
+            id="username"
             type="text"
             value={values.username}
             onChange={(event) => onFieldChange("username", event.target.value)}
             className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-background text-foreground"
             placeholder="Choose a username"
+            autoComplete="username"
+            required
+            minLength={3}
+            maxLength={32}
+            pattern="[a-zA-Z0-9_-]+"
           />
         </div>
 
         <div>
+          <label htmlFor="displayName" className="sr-only">Display name (optional)</label>
           <input
+            id="displayName"
             type="text"
             value={values.displayName}
             onChange={(event) => onFieldChange("displayName", event.target.value)}
             className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-background text-foreground"
             placeholder="Display name (optional)"
+            autoComplete="name"
+            maxLength={64}
           />
         </div>
       </>
@@ -82,6 +103,7 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
             checked={values.acceptTerms}
             onChange={(event) => onFieldChange("acceptTerms", event.target.checked)}
             className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
+            required
           />
           <span className="text-sm text-slate-600">
             I agree to the{" "}
@@ -141,4 +163,3 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
 );
 
 export default EmailAuthSection;
-
