@@ -1,17 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-
-// Types (matching SportsblockPost from workerbee)
-interface SportsblockPost {
-  author: string;
-  permlink: string;
-  title: string;
-  body: string;
-  created: string;
-  net_votes?: number;
-  children?: number;
-  pending_payout_value?: string;
-  [key: string]: unknown;
-}
+import { SportsblockPost } from '@/lib/shared/types';
 
 interface UseUserPostsResult {
   posts: SportsblockPost[];
