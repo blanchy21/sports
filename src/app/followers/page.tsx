@@ -7,14 +7,21 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Users, UserPlus, ArrowLeft } from "lucide-react";
+import { Users, UserPlus, ArrowLeft, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function FollowersPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const { data: followersData, isLoading, error } = useFollowers(
+  const {
+    data: followersData,
+    isLoading,
+    error,
+    fetchNextPage,
+    isFetchingNextPage,
+    hasNextPage
+  } = useFollowers(
     user?.username || '',
     { enabled: !!user?.username }
   );
@@ -24,7 +31,9 @@ export default function FollowersPage() {
   };
 
   const handleLoadMore = () => {
-    // TODO: Implement pagination
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
   };
 
   if (!user) {
@@ -148,14 +157,21 @@ export default function FollowersPage() {
               ))}
 
               {/* Load More Button */}
-              {followersData?.hasMore && (
+              {hasNextPage && (
                 <div className="text-center pt-6">
                   <Button
                     variant="outline"
                     onClick={handleLoadMore}
-                    disabled={isLoading}
+                    disabled={isFetchingNextPage}
                   >
-                    Load More Followers
+                    {isFetchingNextPage ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Load More Followers'
+                    )}
                   </Button>
                 </div>
               )}

@@ -1,27 +1,58 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
-import { 
-  fetchFollowers, 
-  fetchFollowing, 
-  followUser, 
-  unfollowUser
+import {
+  fetchFollowers,
+  fetchFollowing,
+  followUser,
+  unfollowUser,
+  SocialResult
 } from '@/lib/hive-workerbee/social';
 
+const PAGE_SIZE = 50;
+
 export function useFollowers(username: string, options: { enabled?: boolean } = {}) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [...queryKeys.users.followers(username)],
-    queryFn: () => fetchFollowers(username),
+    queryFn: ({ pageParam }) => fetchFollowers(username, {
+      limit: PAGE_SIZE,
+      before: pageParam
+    }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage: SocialResult) =>
+      lastPage.hasMore ? lastPage.nextCursor : undefined,
     enabled: options.enabled !== undefined ? options.enabled : !!username,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    select: (data) => ({
+      pages: data.pages,
+      pageParams: data.pageParams,
+      // Flatten all pages into a single result for easier consumption
+      relationships: data.pages.flatMap(page => page.relationships),
+      hasMore: data.pages[data.pages.length - 1]?.hasMore ?? false,
+      total: data.pages[0]?.total,
+    }),
   });
 }
 
 export function useFollowing(username: string, options: { enabled?: boolean } = {}) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [...queryKeys.users.following(username)],
-    queryFn: () => fetchFollowing(username),
+    queryFn: ({ pageParam }) => fetchFollowing(username, {
+      limit: PAGE_SIZE,
+      before: pageParam
+    }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage: SocialResult) =>
+      lastPage.hasMore ? lastPage.nextCursor : undefined,
     enabled: options.enabled !== undefined ? options.enabled : !!username,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    select: (data) => ({
+      pages: data.pages,
+      pageParams: data.pageParams,
+      // Flatten all pages into a single result for easier consumption
+      relationships: data.pages.flatMap(page => page.relationships),
+      hasMore: data.pages[data.pages.length - 1]?.hasMore ?? false,
+      total: data.pages[0]?.total,
+    }),
   });
 }
 

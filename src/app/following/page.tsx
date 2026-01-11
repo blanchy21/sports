@@ -7,7 +7,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Users, UserPlus, ArrowLeft, UserMinus } from "lucide-react";
+import { Users, UserPlus, ArrowLeft, UserMinus, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUnfollowUser } from "@/lib/react-query/queries/useFollowers";
 
@@ -15,7 +15,14 @@ export default function FollowingPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const { data: followingData, isLoading, error } = useFollowing(
+  const {
+    data: followingData,
+    isLoading,
+    error,
+    fetchNextPage,
+    isFetchingNextPage,
+    hasNextPage
+  } = useFollowing(
     user?.username || '',
     { enabled: !!user?.username }
   );
@@ -28,19 +35,21 @@ export default function FollowingPage() {
 
   const handleUnfollow = async (username: string) => {
     if (!user?.username) return;
-    
+
     try {
       await unfollowMutation.mutateAsync({
         username,
         follower: user.username
       });
-    } catch (error) {
-      console.error('Error unfollowing user:', error);
+    } catch {
+      // Error handled by mutation
     }
   };
 
   const handleLoadMore = () => {
-    // TODO: Implement pagination
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
   };
 
   if (!user) {
@@ -174,14 +183,21 @@ export default function FollowingPage() {
               ))}
 
               {/* Load More Button */}
-              {followingData?.hasMore && (
+              {hasNextPage && (
                 <div className="text-center pt-6">
                   <Button
                     variant="outline"
                     onClick={handleLoadMore}
-                    disabled={isLoading}
+                    disabled={isFetchingNextPage}
                   >
-                    Load More Following
+                    {isFetchingNextPage ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Load More Following'
+                    )}
                   </Button>
                 </div>
               )}
