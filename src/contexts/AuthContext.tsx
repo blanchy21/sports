@@ -6,6 +6,7 @@ import { HiveAuthUser, HiveAccount } from "@/lib/shared/types";
 import type { UserAccountData } from "@/lib/hive-workerbee/account";
 import { useAioha } from "@/contexts/AiohaProvider";
 import { AuthUser, FirebaseAuth } from "@/lib/firebase/auth";
+import { parseAuthState } from "@/lib/validation/auth-schema";
 
 // ============================================================================
 // Type Definitions
@@ -287,15 +288,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Mark as client-side
     setIsClient(true);
     
-    // Check for existing auth state in localStorage
+    // Check for existing auth state in localStorage with validation
     const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
     if (savedAuth) {
-      try {
-        const { user: savedUser, authType: savedAuthType, hiveUser: savedHiveUser } = JSON.parse(savedAuth);
-        setUser(savedUser);
+      const validatedState = parseAuthState(savedAuth);
+      if (validatedState) {
+        const { user: savedUser, authType: savedAuthType, hiveUser: savedHiveUser } = validatedState;
+        // Cast validated user - schema ensures required fields exist, defaults handle optional ones
+        if (savedUser) {
+          setUser({
+            ...savedUser,
+            isHiveAuth: savedUser.isHiveAuth ?? false,
+          } as User);
+        }
         setAuthType(savedAuthType);
         if (savedHiveUser) {
-          setHiveUser(savedHiveUser);
+          setHiveUser({
+            ...savedHiveUser,
+            isAuthenticated: savedHiveUser.isAuthenticated ?? true,
+          } as HiveAuthUser);
           // If user is authenticated with Hive but doesn't have profile data, refresh it
           if (savedAuthType === "hive" && savedUser && !savedUser.hiveProfile) {
             // Use setTimeout to avoid calling refreshHiveAccount before it's defined
@@ -304,8 +315,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }, 100);
           }
         }
-      } catch (error) {
-        console.error("Error parsing saved auth state:", error);
+      } else {
+        // Invalid auth state - clear corrupted data
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        console.warn("Cleared invalid auth state from localStorage");
       }
     }
     setIsLoading(false);

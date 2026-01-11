@@ -184,3 +184,27 @@ export function withErrorBoundary<P extends object>(
   return WrappedComponent;
 }
 
+/**
+ * Compact error fallback for inline components (modals, cards, etc.)
+ */
+export function CompactErrorFallback({
+  message = 'Failed to load',
+  onRetry,
+}: {
+  message?: string;
+  onRetry?: () => void;
+}): React.ReactElement {
+  return (
+    <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+      <AlertCircle className="h-6 w-6 text-destructive mb-2" />
+      <p className="text-sm text-muted-foreground mb-2">{message}</p>
+      {onRetry && (
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          <RefreshCw className="h-3 w-3 mr-1" />
+          Retry
+        </Button>
+      )}
+    </div>
+  );
+}
+
