@@ -44,7 +44,6 @@ export function PriceProvider({ children }: PriceProviderProps) {
   useEffect(() => {
     const cachedPrices = getCachedPrices();
     if (cachedPrices) {
-      console.log('[PriceContext] Loading cached prices on mount');
       setBitcoinPrice(cachedPrices.bitcoin.usd);
       setEthereumPrice(cachedPrices.ethereum.usd);
       setHivePrice(cachedPrices.hive.usd);

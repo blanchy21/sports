@@ -57,9 +57,7 @@ export default function ProfilePage() {
     
     try {
       await refreshHiveAccount();
-      console.log("Profile refreshed successfully");
-    } catch (error) {
-      console.error("Error refreshing profile:", error);
+    } catch {
       setRefreshError("Failed to refresh profile data. Please try again.");
     } finally {
       setIsRefreshing(false);

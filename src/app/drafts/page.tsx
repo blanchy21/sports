@@ -56,11 +56,10 @@ export default function DraftsPage() {
         // Update localStorage with the corrected drafts (in case some were missing IDs)
         const needsUpdate = parsedDrafts.some((draft: Record<string, unknown>) => !draft.id);
         if (needsUpdate) {
-          console.log('Updating drafts in localStorage with missing IDs...');
           try {
             localStorage.setItem('drafts', JSON.stringify(validDrafts));
-          } catch (error) {
-            console.error('Error updating drafts:', error);
+          } catch {
+            // Storage update failed silently - drafts still in memory
           }
         }
         

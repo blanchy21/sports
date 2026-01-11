@@ -204,12 +204,10 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                           author={comment.author}
                           permlink={comment.permlink}
                           voteCount={comment.net_votes || 0}
-                          onVoteSuccess={(result) => {
-                            console.log("Comment vote successful:", result);
+                          onVoteSuccess={() => {
                             addToast(toast.success("Comment Voted!", "Your vote has been recorded on the blockchain."));
                           }}
                           onVoteError={(error) => {
-                            console.error("Comment vote error:", error);
                             addToast(toast.error("Vote Failed", error));
                           }}
                         />

@@ -18,7 +18,6 @@ export function NodeHealthInitializer() {
 
     // Node health monitoring is handled server-side
     // The monitoring API route will be called automatically by the server
-    console.log('[NodeHealthInitializer] Node health monitoring is handled server-side');
   }, []);
 
   // This component doesn't render anything

@@ -82,11 +82,11 @@ export const VotingDemo: React.FC = () => {
                 author={demoPost.author}
                 permlink={demoPost.permlink}
                 voteCount={demoPost.net_votes}
-                onVoteSuccess={(result) => {
-                  console.log("Star vote successful:", result);
+                onVoteSuccess={() => {
+                  // Vote recorded
                 }}
-                onVoteError={(error) => {
-                  console.error("Star vote error:", error);
+                onVoteError={() => {
+                  // Vote error handled by button
                 }}
               />
               <div className="text-sm text-muted-foreground">
@@ -123,11 +123,11 @@ export const VotingDemo: React.FC = () => {
                 author={demoPost.author}
                 permlink={demoPost.permlink}
                 voteCount={demoPost.net_votes}
-                onVoteSuccess={(result) => {
-                  console.log("Simple vote successful:", result);
+                onVoteSuccess={() => {
+                  // Vote recorded
                 }}
-                onVoteError={(error) => {
-                  console.error("Simple vote error:", error);
+                onVoteError={() => {
+                  // Vote error handled by button
                 }}
               />
               <div className="text-sm text-muted-foreground">
@@ -168,11 +168,11 @@ export const VotingDemo: React.FC = () => {
                     author="demo_user"
                     permlink="demo-comment-123"
                     voteCount={5}
-                    onVoteSuccess={(result) => {
-                      console.log("Demo comment vote successful:", result);
+                    onVoteSuccess={() => {
+                      // Vote recorded
                     }}
-                    onVoteError={(error) => {
-                      console.error("Demo comment vote error:", error);
+                    onVoteError={() => {
+                      // Vote error handled by button
                     }}
                   />
                 </div>

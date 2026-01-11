@@ -51,11 +51,9 @@ export const useUserProfile = (username: string | null) => {
           profileCache.set(username, mappedProfile);
           setProfile(mappedProfile);
         } else {
-          console.log('No profile data found for:', username);
           setError('Profile not found');
         }
-      } catch (err) {
-        console.error('Error fetching user profile:', err);
+      } catch {
         setError('Failed to load profile');
       } finally {
         setIsLoading(false);

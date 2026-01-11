@@ -243,11 +243,11 @@ export default function RepliesPage() {
                                   author={reply.author}
                                   permlink={reply.permlink}
                                   voteCount={reply.netVotes || 0}
-                                  onVoteSuccess={(result) => {
-                                    console.log("Reply vote successful:", result);
+                                  onVoteSuccess={() => {
+                                    // Vote recorded successfully
                                   }}
-                                  onVoteError={(error) => {
-                                    console.error("Reply vote error:", error);
+                                  onVoteError={() => {
+                                    // Vote error handled by button component
                                   }}
                                 />
                                 

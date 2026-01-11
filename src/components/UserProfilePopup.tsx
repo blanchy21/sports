@@ -55,20 +55,18 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
 
   const handleRefreshRC = useCallback(async () => {
     if (!user?.username || isRefreshingRC) return; // Prevent concurrent calls
-    
-    console.log(`[UserProfilePopup] Refreshing RC for ${user.username}...`);
+
     setIsRefreshingRC(true);
     try {
       const accountData = await fetchUserAccount(user.username);
       if (accountData) {
-        console.log(`[UserProfilePopup] RC data received: ${accountData.resourceCredits.toFixed(2)}%`);
         updateUser({
           rcPercentage: accountData.resourceCredits,
           rcBalance: accountData.resourceCredits, // Assuming RC balance is the same as percentage for now
         });
       }
-    } catch (error) {
-      console.error('Error refreshing RC data:', error);
+    } catch {
+      // RC refresh failed silently - user can try again
     } finally {
       setIsRefreshingRC(false);
     }

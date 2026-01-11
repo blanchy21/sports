@@ -16,8 +16,7 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({ isOpen, onCl
   const [isEditing, setIsEditing] = useState(false);
 
   const handleSave = () => {
-    // In a real implementation, this would save the description
-    console.log('Saving description:', description);
+    // TODO: In a real implementation, this would save the description to the backend
     setIsEditing(false);
     onClose();
   };

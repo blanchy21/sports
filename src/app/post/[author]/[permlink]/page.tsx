@@ -77,12 +77,11 @@ export default function PostDetailPage() {
   }, [author, permlink]);
 
   const handleVoteSuccess = () => {
-    console.log("Vote successful");
-    // Could trigger a refresh of the post data here
+    // Vote recorded - could trigger a refresh of the post data here
   };
 
-  const handleVoteError = (error: string) => {
-    console.error("Vote error:", error);
+  const handleVoteError = () => {
+    // Vote error handled by the component that displays it
   };
 
   const handleComment = () => {

@@ -116,8 +116,6 @@ export async function fetchAllPrices(): Promise<CryptoPriceData> {
         return response.json();
       }
     );
-    console.log('[fetchAllPrices] Price data from API:', result);
-    
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to fetch cryptocurrency prices');
     }
@@ -137,7 +135,6 @@ export async function fetchAllPrices(): Promise<CryptoPriceData> {
     
     // If we have cached data, return it even if expired
     if (priceCache.data) {
-      console.log('[fetchAllPrices] Returning expired cached data due to error');
       return priceCache.data;
     }
     
@@ -154,7 +151,6 @@ export function clearPriceCache(): void {
     timestamp: 0,
     expiresAt: 0
   };
-  console.log('[clearPriceCache] Price cache cleared');
 }
 
 /**

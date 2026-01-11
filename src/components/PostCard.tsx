@@ -10,7 +10,6 @@ import { Post } from "@/types";
 import { cn, formatDate, formatReadTime, truncateText } from "@/lib/utils";
 import { calculatePendingPayout, formatAsset } from "@/lib/shared/utils";
 import { SportsblockPost } from "@/lib/shared/types";
-import { VoteResult } from "@/lib/hive-workerbee/voting";
 import { useToast, toast } from "@/components/ui/Toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useModal } from "@/components/modals/ModalProvider";
@@ -67,14 +66,11 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
     return typeof post.author === 'string' ? post.author : (post.author.displayName || post.author.username);
   };
 
-  const handleVoteSuccess = (result: VoteResult) => {
-    console.log("Vote successful:", result);
+  const handleVoteSuccess = () => {
     addToast(toast.success("Vote Cast!", "Your vote has been recorded on the blockchain."));
-    // Could trigger a refresh of the post data here
   };
 
   const handleVoteError = (error: string) => {
-    console.error("Vote error:", error);
     addToast(toast.error("Vote Failed", error));
   };
 
@@ -89,9 +85,8 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
         author: post.author,
         permlink: post.permlink,
       });
-    } else {
-      console.log("Commenting on post:", post.id);
     }
+    // Non-Hive posts don't support commenting yet
   };
 
   const handleUpvoteList = () => {
@@ -283,8 +278,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => console.log("Voting not available for non-Hive posts")}
-                className="flex items-center space-x-1 text-muted-foreground hover:text-red-500"
+                className="flex items-center space-x-1 text-muted-foreground"
                 disabled
               >
                 <span>{post.upvotes}</span>

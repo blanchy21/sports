@@ -122,19 +122,16 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
         keyType: KeyTypes.Posting
       });
       
-      if (result && (result as { username?: string }).username && 
+      if (result && (result as { username?: string }).username &&
           ((result as { success?: boolean }).success !== false)) {
-        console.log("Aioha login successful, upgrading account...");
-        
         // Upgrade the account to Hive
         await upgradeToHive((result as { username: string }).username);
-        
+
         setStep('success');
       } else {
         throw new Error((result as { error?: string })?.error || "Invalid authentication result");
       }
     } catch (error) {
-      console.error("Wallet connection failed:", error);
       setErrorMessage("Connection failed: " + (error instanceof Error ? error.message : "Unknown error"));
       setStep('wallet');
     } finally {

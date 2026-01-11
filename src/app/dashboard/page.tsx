@@ -52,9 +52,7 @@ export default function DashboardPage() {
     
     try {
       await refreshHiveAccount();
-      console.log("Dashboard data refreshed successfully");
-    } catch (error) {
-      console.error("Error refreshing dashboard data:", error);
+    } catch {
       setRefreshError("Failed to refresh data. Please try again.");
     } finally {
       setIsRefreshing(false);
