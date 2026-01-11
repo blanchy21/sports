@@ -395,7 +395,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       // Fetch full account data in the background
-      console.log("Fetching Hive account data for:", hiveUsername);
       try {
         const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(hiveUsername)}`);
         if (!response.ok) {
@@ -403,8 +402,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         const result = await response.json();
         const accountData = result.success ? result.account as UserAccountData : null;
-        console.log("Hive account data loaded:", accountData);
-        
+
         if (accountData) {
           // Update hiveUser with account data
           const updatedHiveUser = {
@@ -443,16 +441,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           };
           setUser(updatedUser);
 
-          console.log("Updated user with Hive profile data:", updatedUser);
-
           // Save updated state to localStorage
           persistAuthState({
             user: updatedUser,
             authType: "hive",
             hiveUser: updatedHiveUser,
           });
-        } else {
-          console.log("No account data found for:", hiveUsername);
         }
       } catch (profileError) {
         console.error("Error fetching Hive account data:", profileError);
