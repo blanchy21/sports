@@ -1,29 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { canUserPost } from '@/lib/hive-workerbee/posting';
+import { postingStatusQuerySchema, parseSearchParams } from '@/lib/api/validation';
+import { createRequestContext, validationError } from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  const username = request.nextUrl.searchParams.get('username');
+const ROUTE = '/api/hive/posting';
 
-  if (!username) {
-    return NextResponse.json(
-      { success: false, error: 'Username query parameter is required' },
-      { status: 400 }
-    );
+export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
+
+  // Validate query parameters
+  const parseResult = parseSearchParams(request.nextUrl.searchParams, postingStatusQuerySchema);
+
+  if (!parseResult.success) {
+    return validationError(parseResult.error, ctx.requestId);
   }
 
+  const { username } = parseResult.data;
+
   try {
+    ctx.log.debug('Checking posting status', { username });
+
     const canPost = await canUserPost(username);
     return NextResponse.json({ success: true, username, canPost });
   } catch (error) {
-    console.error('[API] Failed to evaluate posting status:', error);
-    const message = error instanceof Error ? error.message : 'Unknown posting error';
-
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 502 }
-    );
+    return ctx.handleError(error);
   }
 }

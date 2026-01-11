@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
+import { accountSummaryQuerySchema, parseSearchParams } from '@/lib/api/validation';
+import { createRequestContext, validationError, notFoundError } from '@/lib/api/response';
 
 function serializeAccount(account: unknown) {
   if (!account || typeof account !== 'object') {
@@ -29,17 +31,23 @@ function serializeAccount(account: unknown) {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  const username = request.nextUrl.searchParams.get('username');
+const ROUTE = '/api/hive/account/summary';
 
-  if (!username) {
-    return NextResponse.json(
-      { success: false, error: 'Username query parameter is required' },
-      { status: 400 }
-    );
+export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
+
+  // Validate query parameters
+  const parseResult = parseSearchParams(request.nextUrl.searchParams, accountSummaryQuerySchema);
+
+  if (!parseResult.success) {
+    return validationError(parseResult.error, ctx.requestId);
   }
 
+  const { username } = parseResult.data;
+
   try {
+    ctx.log.debug('Fetching account summary', { username });
+
     const account = await retryWithBackoff(
       () => fetchUserAccount(username),
       {
@@ -51,10 +59,7 @@ export async function GET(request: NextRequest) {
     );
 
     if (!account) {
-      return NextResponse.json(
-        { success: false, error: `Account ${username} not found` },
-        { status: 404 }
-      );
+      return notFoundError(`Account ${username} not found`, ctx.requestId);
     }
 
     return NextResponse.json({
@@ -62,17 +67,7 @@ export async function GET(request: NextRequest) {
       account: serializeAccount(account),
     });
   } catch (error) {
-    console.error('[API] Failed to fetch Hive account summary:', error);
-    const message =
-      error instanceof Error ? error.message : 'Unknown Hive account error';
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: message,
-      },
-      { status: 502 }
-    );
+    return ctx.handleError(error);
   }
 }
 

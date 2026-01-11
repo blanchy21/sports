@@ -34,10 +34,9 @@ describe('GET /api/hive/account/summary', () => {
     const response = await request(server).get('/api/hive/account/summary');
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({
-      success: false,
-      error: 'Username query parameter is required',
-    });
+    expect(response.body.success).toBe(false);
+    expect(response.body.code).toBe('VALIDATION_ERROR');
+    expect(response.body.error).toContain('username');
   });
 
   it('returns 404 when user is not found', async () => {
@@ -48,10 +47,9 @@ describe('GET /api/hive/account/summary', () => {
       .query({ username: 'missing-user' });
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({
-      success: false,
-      error: 'Account missing-user not found',
-    });
+    expect(response.body.success).toBe(false);
+    expect(response.body.code).toBe('NOT_FOUND');
+    expect(response.body.error).toBe('Account missing-user not found');
   });
 
   it('returns account data when user exists', async () => {
@@ -92,9 +90,8 @@ describe('GET /api/hive/account/summary', () => {
       .query({ username: 'gtg' });
 
     expect(response.status).toBe(502);
-    expect(response.body).toEqual({
-      success: false,
-      error: 'Hive RPC down',
-    });
+    expect(response.body.success).toBe(false);
+    expect(response.body.code).toBe('UPSTREAM_ERROR');
+    expect(response.body.error).toBe('Hive RPC down');
   });
 });

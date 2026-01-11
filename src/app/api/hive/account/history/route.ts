@@ -1,21 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRecentOperations } from '@/lib/hive-workerbee/account';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
+import { accountHistoryQuerySchema, parseSearchParams } from '@/lib/api/validation';
+import { createRequestContext, validationError, internalError } from '@/lib/api/response';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/hive/account/history';
 
 export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
+
+  // Validate query parameters
+  const parseResult = parseSearchParams(request.nextUrl.searchParams, accountHistoryQuerySchema);
+
+  if (!parseResult.success) {
+    return validationError(parseResult.error, ctx.requestId);
+  }
+
+  const { username, limit } = parseResult.data;
+
   try {
-    const { searchParams } = new URL(request.url);
-    const username = searchParams.get('username');
-    const limit = parseInt(searchParams.get('limit') || '500');
-
-    if (!username) {
-      return NextResponse.json(
-        { error: 'Username is required' },
-        { status: 400 }
-      );
-    }
-
-    console.log(`[API] Fetching transaction history for ${username}, limit: ${limit}`);
+    ctx.log.debug('Fetching transaction history', { username, limit });
 
     // Fetch recent operations using WorkerBee with retry logic
     const operations = await retryWithBackoff(
@@ -29,13 +36,10 @@ export async function GET(request: NextRequest) {
     );
 
     if (!operations) {
-      return NextResponse.json(
-        { error: 'Failed to fetch transaction history' },
-        { status: 500 }
-      );
+      return internalError('Failed to fetch transaction history', ctx.requestId);
     }
 
-    console.log(`[API] Successfully fetched ${operations.length} operations for ${username}`);
+    ctx.log.debug('Fetched operations', { username, count: operations.length });
 
     return NextResponse.json({
       success: true,
@@ -45,14 +49,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[API] Error fetching transaction history:', error);
-    
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

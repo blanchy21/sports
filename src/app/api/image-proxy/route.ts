@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { imageProxyQuerySchema, parseSearchParams } from '@/lib/api/validation';
+import { createRequestContext, validationError, forbiddenError, timeoutError, internalError } from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const ROUTE = '/api/image-proxy';
+
 /**
  * Image Proxy API Route
- * 
+ *
  * Proxies images from external sources (like files.peakd.com) to avoid CORS issues.
- * 
+ *
  * Usage: /api/image-proxy?url=https://files.peakd.com/...
- * 
+ *
  * Security: Only allows specific trusted domains
  */
 const ALLOWED_DOMAINS = [
@@ -25,45 +29,48 @@ const ALLOWED_DOMAINS = [
   'images.unsplash.com',
 ];
 
-function isValidImageUrl(url: string): boolean {
+function isAllowedDomain(url: string): boolean {
   try {
     const parsedUrl = new URL(url);
-    return ALLOWED_DOMAINS.some(domain => parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(`.${domain}`));
+    return ALLOWED_DOMAINS.some(domain =>
+      parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(`.${domain}`)
+    );
   } catch {
     return false;
   }
 }
 
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const imageUrl = searchParams.get('url');
+  const ctx = createRequestContext(ROUTE);
 
-  if (!imageUrl) {
-    return NextResponse.json(
-      { error: 'Missing url parameter' },
-      { status: 400 }
-    );
+  // Validate query parameters
+  const parseResult = parseSearchParams(request.nextUrl.searchParams, imageProxyQuerySchema);
+
+  if (!parseResult.success) {
+    return validationError(parseResult.error, ctx.requestId);
   }
 
-  // Validate URL
-  if (!isValidImageUrl(imageUrl)) {
-    return NextResponse.json(
-      { error: 'Invalid image URL domain' },
-      { status: 403 }
-    );
+  const { url: imageUrl } = parseResult.data;
+
+  // Validate domain whitelist
+  if (!isAllowedDomain(imageUrl)) {
+    ctx.log.warn('Blocked image proxy request', { imageUrl, reason: 'domain_not_allowed' });
+    return forbiddenError('Image URL domain not allowed', ctx.requestId);
   }
 
   try {
+    ctx.log.debug('Proxying image', { imageUrl });
+
     // Fetch the image
     const response = await fetch(imageUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; Sportsblock/1.0)',
       },
-      // Add timeout
       signal: AbortSignal.timeout(10000), // 10 second timeout
     });
 
     if (!response.ok) {
+      ctx.log.warn('Image fetch failed', { imageUrl, status: response.status });
       return NextResponse.json(
         { error: `Failed to fetch image: ${response.status}` },
         { status: response.status }
@@ -86,21 +93,15 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[Image Proxy] Error fetching image:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    
-    // Handle timeout
-    if (error instanceof Error && error.name === 'TimeoutError') {
-      return NextResponse.json(
-        { error: 'Request timeout' },
-        { status: 504 }
-      );
+    // Handle timeout specifically
+    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+      ctx.log.warn('Image proxy timeout', { imageUrl });
+      return timeoutError('Image request timed out', ctx.requestId);
     }
 
-    return NextResponse.json(
-      { error: `Failed to proxy image: ${message}` },
-      { status: 500 }
-    );
+    ctx.log.error('Image proxy error', error, { imageUrl });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return internalError(`Failed to proxy image: ${message}`, ctx.requestId);
   }
 }
 

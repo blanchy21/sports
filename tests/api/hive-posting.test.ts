@@ -34,10 +34,9 @@ describe('GET /api/hive/posting', () => {
     const response = await request(server).get('/api/hive/posting');
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({
-      success: false,
-      error: 'Username query parameter is required',
-    });
+    expect(response.body.success).toBe(false);
+    expect(response.body.code).toBe('VALIDATION_ERROR');
+    expect(response.body.error).toContain('username');
   });
 
   it('returns posting eligibility when available', async () => {
@@ -63,10 +62,9 @@ describe('GET /api/hive/posting', () => {
       .get('/api/hive/posting')
       .query({ username: 'gtg' });
 
-    expect(response.status).toBe(502);
-    expect(response.body).toEqual({
-      success: false,
-      error: 'RPC unavailable',
-    });
+    expect(response.status).toBe(500);
+    expect(response.body.success).toBe(false);
+    expect(response.body.code).toBe('INTERNAL_ERROR');
+    expect(response.body.error).toBe('RPC unavailable');
   });
 });

@@ -1,24 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchSportsblockPosts, getUserPosts } from '@/lib/hive-workerbee/content';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
+import { postsQuerySchema, parseSearchParams } from '@/lib/api/validation';
+import { createRequestContext, validationError } from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const username = searchParams.get('username');
-    const author = searchParams.get('author');
-    const permlink = searchParams.get('permlink');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const sort = searchParams.get('sort') || 'created';
-    const sportCategory = searchParams.get('sportCategory') || undefined;
-    const tag = searchParams.get('tag') || undefined;
-    const before = searchParams.get('before') || undefined;
+const ROUTE = '/api/hive/posts';
 
+export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
+
+  // Validate query parameters
+  const parseResult = parseSearchParams(request.nextUrl.searchParams, postsQuerySchema);
+
+  if (!parseResult.success) {
+    return validationError(parseResult.error, ctx.requestId);
+  }
+
+  const { username, author, permlink, limit, sort, sportCategory, tag, before } = parseResult.data;
+
+  try {
     // Fetch a specific post
     if (author && permlink) {
+      ctx.log.debug('Fetching single post', { author, permlink });
+
       const { fetchPost } = await import('@/lib/hive-workerbee/content');
       const post = await retryWithBackoff(
         () => fetchPost(author, permlink),
@@ -38,6 +45,8 @@ export async function GET(request: NextRequest) {
 
     // Fetch user's posts
     if (username) {
+      ctx.log.debug('Fetching user posts', { username, limit });
+
       const posts = await retryWithBackoff(
         () => getUserPosts(username, limit),
         {
@@ -57,10 +66,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch posts with filters
+    ctx.log.debug('Fetching filtered posts', { limit, sort, sportCategory, tag });
+
     const result = await retryWithBackoff(
       () => fetchSportsblockPosts({
         limit,
-        sort: sort as 'created' | 'trending' | 'payout' | 'votes',
+        sort,
         sportCategory,
         tag,
         before,
@@ -82,26 +93,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[API] Error fetching posts:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    const stack = error instanceof Error ? error.stack : undefined;
-    
-    // Log full error details for debugging
-    console.error('[API] Full error details:', {
-      message,
-      stack,
-      error: error instanceof Error ? error : String(error)
-    });
-    
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: message,
-        // Include more details in development
-        ...(process.env.NODE_ENV === 'development' && { details: stack })
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }
 

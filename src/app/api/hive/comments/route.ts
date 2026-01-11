@@ -2,20 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fetchComments } from '@/lib/hive-workerbee/content';
 import { getUserComments } from '@/lib/hive-workerbee/comments';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
+import { commentsQuerySchema, parseSearchParams } from '@/lib/api/validation';
+import { createRequestContext, validationError } from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const author = searchParams.get('author');
-    const permlink = searchParams.get('permlink');
-    const username = searchParams.get('username');
-    const limit = parseInt(searchParams.get('limit') || '20');
+const ROUTE = '/api/hive/comments';
 
+export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
+
+  // Validate query parameters
+  const parseResult = parseSearchParams(request.nextUrl.searchParams, commentsQuerySchema);
+
+  if (!parseResult.success) {
+    return validationError(parseResult.error, ctx.requestId);
+  }
+
+  const { author, permlink, username, limit } = parseResult.data;
+
+  try {
     // Fetch comments for a specific post
     if (author && permlink) {
+      ctx.log.debug('Fetching post comments', { author, permlink });
+
       const comments = await retryWithBackoff(
         () => fetchComments(author, permlink),
         {
@@ -33,39 +44,28 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Fetch user's comments
-    if (username) {
-      const comments = await retryWithBackoff(
-        () => getUserComments(username, limit),
-        {
-          maxRetries: 2,
-          initialDelay: 1000,
-          maxDelay: 10000,
-          backoffMultiplier: 2,
-        }
-      );
+    // Fetch user's comments (username is guaranteed by schema refinement)
+    ctx.log.debug('Fetching user comments', { username, limit });
 
-      return NextResponse.json({
-        success: true,
-        comments: comments || [],
-        count: comments?.length || 0,
-        username,
-      });
-    }
-
-    return NextResponse.json(
-      { success: false, error: 'Either author/permlink or username is required' },
-      { status: 400 }
+    const comments = await retryWithBackoff(
+      () => getUserComments(username!, limit),
+      {
+        maxRetries: 2,
+        initialDelay: 1000,
+        maxDelay: 10000,
+        backoffMultiplier: 2,
+      }
     );
+
+    return NextResponse.json({
+      success: true,
+      comments: comments || [],
+      count: comments?.length || 0,
+      username,
+    });
 
   } catch (error) {
-    console.error('[API] Error fetching comments:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }
 

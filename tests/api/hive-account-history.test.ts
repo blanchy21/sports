@@ -36,7 +36,9 @@ describe('GET /api/hive/account/history', () => {
     const response = await request(server).get('/api/hive/account/history');
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: 'Username is required' });
+    expect(response.body.success).toBe(false);
+    expect(response.body.code).toBe('VALIDATION_ERROR');
+    expect(response.body.error).toContain('username');
   });
 
   it('returns 500 when worker bee returns null', async () => {
@@ -48,7 +50,9 @@ describe('GET /api/hive/account/history', () => {
 
     expect(getRecentOperations).toHaveBeenCalledWith('gtg', 500);
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: 'Failed to fetch transaction history' });
+    expect(response.body.success).toBe(false);
+    expect(response.body.code).toBe('INTERNAL_ERROR');
+    expect(response.body.error).toBe('Failed to fetch transaction history');
   });
 
   it('returns operations when available', async () => {
@@ -92,9 +96,8 @@ describe('GET /api/hive/account/history', () => {
       .query({ username: 'gtg' });
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({
-      error: 'Internal server error',
-      details: 'boom',
-    });
+    expect(response.body.success).toBe(false);
+    expect(response.body.code).toBe('INTERNAL_ERROR');
+    expect(response.body.error).toBe('boom');
   });
 });
