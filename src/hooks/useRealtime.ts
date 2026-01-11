@@ -1,19 +1,39 @@
-import { useEffect, useCallback, useRef } from 'react';
-import { 
-  RealtimeEvent, 
-  RealtimeEventCallback, 
-  addRealtimeCallback, 
-  removeRealtimeCallback, 
-  startRealtimeMonitoring, 
+import { useEffect, useCallback, useRef, useState } from 'react';
+import {
+  RealtimeEvent,
+  RealtimeEventCallback,
+  addRealtimeCallback,
+  removeRealtimeCallback,
+  startRealtimeMonitoring,
   stopRealtimeMonitoring,
   getRealtimeStatus
 } from '@/lib/hive-workerbee/realtime';
 
 /**
+ * Realtime monitoring state
+ */
+export interface RealtimeState {
+  isMonitoring: boolean;
+  isConnecting: boolean;
+  error: Error | null;
+  retryCount: number;
+}
+
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 2000;
+
+/**
  * Hook for real-time Hive blockchain monitoring
+ * Provides state management for monitoring status, errors, and retry logic
  */
 export function useRealtime() {
   const callbacksRef = useRef<RealtimeEventCallback[]>([]);
+  const [state, setState] = useState<RealtimeState>({
+    isMonitoring: false,
+    isConnecting: false,
+    error: null,
+    retryCount: 0,
+  });
 
   // Clean up callbacks on unmount
   useEffect(() => {
@@ -45,27 +65,78 @@ export function useRealtime() {
   }, []);
 
   /**
-   * Start monitoring
+   * Start monitoring with retry logic
    */
-  const startMonitoring = useCallback(async () => {
+  const startMonitoring = useCallback(async (retryAttempt = 0): Promise<boolean> => {
+    setState(prev => ({ ...prev, isConnecting: true, error: null }));
+
     try {
       await startRealtimeMonitoring();
-      console.log('[useRealtime] Monitoring started');
+      setState({
+        isMonitoring: true,
+        isConnecting: false,
+        error: null,
+        retryCount: 0,
+      });
+      return true;
     } catch (error) {
-      console.error('[useRealtime] Failed to start monitoring:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+
+      // Check if we should retry
+      if (retryAttempt < MAX_RETRY_ATTEMPTS) {
+        setState(prev => ({
+          ...prev,
+          isConnecting: true,
+          retryCount: retryAttempt + 1,
+        }));
+
+        // Wait before retrying with exponential backoff
+        await new Promise(resolve =>
+          setTimeout(resolve, RETRY_DELAY_MS * Math.pow(2, retryAttempt))
+        );
+
+        return startMonitoring(retryAttempt + 1);
+      }
+
+      // Max retries exceeded
+      setState({
+        isMonitoring: false,
+        isConnecting: false,
+        error: errorObj,
+        retryCount: retryAttempt,
+      });
+
+      return false;
     }
   }, []);
 
   /**
    * Stop monitoring
    */
-  const stopMonitoring = useCallback(async () => {
+  const stopMonitoring = useCallback(async (): Promise<boolean> => {
     try {
       await stopRealtimeMonitoring();
-      console.log('[useRealtime] Monitoring stopped');
+      setState(prev => ({
+        ...prev,
+        isMonitoring: false,
+        error: null,
+      }));
+      return true;
     } catch (error) {
-      console.error('[useRealtime] Failed to stop monitoring:', error);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      setState(prev => ({
+        ...prev,
+        error: errorObj,
+      }));
+      return false;
     }
+  }, []);
+
+  /**
+   * Clear error state
+   */
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null, retryCount: 0 }));
   }, []);
 
   /**
@@ -76,11 +147,18 @@ export function useRealtime() {
   }, []);
 
   return {
+    // State
+    isMonitoring: state.isMonitoring,
+    isConnecting: state.isConnecting,
+    error: state.error,
+    retryCount: state.retryCount,
+    // Actions
     addCallback,
     removeCallback,
     startMonitoring,
     stopMonitoring,
-    getStatus
+    clearError,
+    getStatus,
   };
 }
 

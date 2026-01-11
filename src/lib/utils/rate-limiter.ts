@@ -246,6 +246,93 @@ export class RateLimiter {
   }
 
   /**
+   * Acquire tokens with exponential backoff retry
+   * @param tokens Number of tokens to acquire
+   * @param options Retry options
+   * @returns Promise<boolean> - true if acquired
+   */
+  async acquireWithBackoff(
+    tokens: number = 1,
+    options: {
+      maxRetries?: number;
+      initialDelay?: number;
+      maxDelay?: number;
+      priority?: number;
+    } = {}
+  ): Promise<boolean> {
+    const {
+      maxRetries = 3,
+      initialDelay = 100,
+      maxDelay = 5000,
+      priority = 0,
+    } = options;
+
+    // Try immediate acquisition first
+    if (this.bucket.tryConsume(tokens)) {
+      this.totalAcquired++;
+      return true;
+    }
+
+    // Retry with exponential backoff
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const delay = Math.min(initialDelay * Math.pow(2, attempt), maxDelay);
+
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+      // Try to acquire
+      if (this.bucket.tryConsume(tokens)) {
+        this.totalAcquired++;
+        return true;
+      }
+
+      // If queue is not too long, try waiting for tokens
+      if (this.queue.length < 10) {
+        const waitTime = this.bucket.getWaitTime(tokens);
+        if (waitTime <= delay) {
+          const acquired = await this.acquire(tokens, {
+            timeout: delay,
+            priority,
+          });
+          if (acquired) {
+            return true;
+          }
+        }
+      }
+    }
+
+    this.totalRejected++;
+    return false;
+  }
+
+  /**
+   * Execute a function with rate limiting and exponential backoff
+   */
+  async executeWithBackoff<T>(
+    fn: () => Promise<T>,
+    options: {
+      tokens?: number;
+      maxRetries?: number;
+      initialDelay?: number;
+      maxDelay?: number;
+      priority?: number;
+    } = {}
+  ): Promise<T> {
+    const { tokens = 1, ...backoffOptions } = options;
+
+    const acquired = await this.acquireWithBackoff(tokens, backoffOptions);
+
+    if (!acquired) {
+      throw new RateLimitError(
+        `Rate limit exceeded after ${backoffOptions.maxRetries ?? 3} retries with backoff.`,
+        this.bucket.getWaitTime(tokens)
+      );
+    }
+
+    return fn();
+  }
+
+  /**
    * Check if rate limited (has pending requests or no tokens)
    */
   isThrottled(): boolean {
