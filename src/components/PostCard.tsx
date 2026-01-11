@@ -32,7 +32,7 @@ const extractFirstImageUrl = (markdown: string): string | null => {
   return match ? match[1] : null;
 };
 
-export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
+const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
   const { addToast } = useToast();
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
@@ -317,3 +317,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, className }) => {
     </article>
   );
 };
+
+// Memoize to prevent unnecessary re-renders in lists
+export const PostCard = React.memo(PostCardComponent);
