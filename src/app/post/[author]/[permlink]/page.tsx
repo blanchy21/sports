@@ -73,23 +73,24 @@ export default function PostDetailPage() {
   };
 
   const handleComment = () => {
+    if (!post) return;
     openModal('comments', {
-      author: post!.author,
-      permlink: post!.permlink,
+      author: post.author,
+      permlink: post.permlink,
     });
   };
 
   const handleBookmark = () => {
-    if (post) {
-      toggleBookmark(post);
-    }
+    if (!post) return;
+    toggleBookmark(post);
   };
 
   const handleShare = () => {
+    if (!post) return;
     if (navigator.share) {
       navigator.share({
-        title: post!.title,
-        text: post!.title,
+        title: post.title,
+        text: post.title,
         url: window.location.href,
       });
     } else {

@@ -12,6 +12,22 @@ interface RealtimeFeedProps {
   className?: string;
 }
 
+/**
+ * Generate a unique key for a realtime event
+ */
+function getEventKey(event: RealtimeEvent): string {
+  switch (event.type) {
+    case 'new_post':
+      return `post-${event.data.author}-${event.data.permlink}`;
+    case 'new_vote':
+      return `vote-${event.data.voter}-${event.data.author}-${event.data.permlink}-${event.data.timestamp}`;
+    case 'new_comment':
+      return `comment-${event.data.author}-${event.data.permlink}`;
+    default:
+      return `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+}
+
 export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
   const [isMonitoring, setIsMonitoring] = useState(false);
@@ -133,9 +149,9 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
           </div>
         ) : (
           <div className="space-y-2 max-h-96 overflow-y-auto" data-testid="realtime-events">
-            {events.map((event, index) => (
+            {events.map((event) => (
               <div
-                key={index}
+                key={getEventKey(event)}
                 className={`p-3 rounded-lg border ${getEventColor(event)}`}
                 data-testid="realtime-event"
               >

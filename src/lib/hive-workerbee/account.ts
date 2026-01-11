@@ -447,9 +447,8 @@ export async function fetchUserBalances(username: string): Promise<{
     // Calculate RC percentage using the proper rc_api data
     let rcPercentage = 0;
     if (rc && rc.rc_manabar && rc.max_rc) {
-      const rcData = rc;
-      const currentMana = parseFloat(rcData.rc_manabar!.current_mana);
-      const maxRc = parseFloat(rcData.max_rc!);
+      const currentMana = parseFloat(rc.rc_manabar.current_mana);
+      const maxRc = parseFloat(rc.max_rc);
       
       if (maxRc > 0) {
         rcPercentage = (currentMana / maxRc) * 100;

@@ -34,9 +34,9 @@ export const AccountDiscovery: React.FC<AccountDiscoveryProps> = ({
           <h6 className="text-xs font-medium text-gray-600 mb-2">
             Found {discoveredAccounts.length} account(s):
           </h6>
-          {discoveredAccounts.map((account, index) => (
+          {discoveredAccounts.map((account) => (
             <div
-              key={index}
+              key={`${account.username}-${account.provider}`}
               onClick={() => onAccountSelect(account)}
               className="p-2 bg-gray-50 hover:bg-gray-100 rounded cursor-pointer border border-gray-200"
             >

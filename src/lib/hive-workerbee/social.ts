@@ -254,15 +254,16 @@ export async function fetchFollowers(username: string, filters: SocialFilters = 
     }
 
     const relationships = result
-      .filter((rel) => typeof rel?.follower === 'string' && typeof rel?.following === 'string')
-      .filter((rel) => !start || rel?.follower !== start)
+      .filter((rel): rel is Record<string, unknown> & { follower: string; following: string } =>
+        typeof rel?.follower === 'string' && typeof rel?.following === 'string')
+      .filter((rel) => !start || rel.follower !== start)
       .map((rel) => ({
-        follower: rel!.follower as string,
-        following: rel!.following as string,
+        follower: rel.follower,
+        following: rel.following,
         followedAt:
-          (rel!.followed_since as string | undefined)
-          || (rel!.follow_since as string | undefined)
-          || new Date().toISOString(),
+          (typeof rel.followed_since === 'string' ? rel.followed_since : undefined)
+          ?? (typeof rel.follow_since === 'string' ? rel.follow_since : undefined)
+          ?? new Date().toISOString(),
       }));
 
     const hasMore = result.length === limit;
@@ -315,15 +316,16 @@ export async function fetchFollowing(username: string, filters: SocialFilters = 
     }
 
     const relationships = result
-      .filter((rel) => typeof rel?.follower === 'string' && typeof rel?.following === 'string')
-      .filter((rel) => !start || rel?.following !== start)
+      .filter((rel): rel is Record<string, unknown> & { follower: string; following: string } =>
+        typeof rel?.follower === 'string' && typeof rel?.following === 'string')
+      .filter((rel) => !start || rel.following !== start)
       .map((rel) => ({
-        follower: rel!.follower as string,
-        following: rel!.following as string,
+        follower: rel.follower,
+        following: rel.following,
         followedAt:
-          (rel!.followed_since as string | undefined)
-          || (rel!.follow_since as string | undefined)
-          || new Date().toISOString(),
+          (typeof rel.followed_since === 'string' ? rel.followed_since : undefined)
+          ?? (typeof rel.follow_since === 'string' ? rel.follow_since : undefined)
+          ?? new Date().toISOString(),
       }));
 
     const hasMore = result.length === limit;
