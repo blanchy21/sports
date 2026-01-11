@@ -7,162 +7,217 @@ import type { UserAccountData } from "@/lib/hive-workerbee/account";
 import { useAioha } from "@/contexts/AiohaProvider";
 import { AuthUser, FirebaseAuth } from "@/lib/firebase/auth";
 
-// Aioha login result type
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+/**
+ * Extracted user data from Aioha authentication
+ */
+interface ExtractedUserData {
+  username: string;
+  sessionId?: string;
+}
+
+/**
+ * Aioha login result - simplified type covering common response shapes
+ */
 interface AiohaLoginResult {
-  user?: {
-    username?: string;
-    name?: string;
-    account?: HiveAccount;
-    session?: string;
-  };
   username?: string;
   name?: string;
   id?: string;
-  account?: HiveAccount;
   session?: string;
   session_id?: string;
-  provider?: string;
-  aiohaUserId?: string;
   sessionId?: string;
+  provider?: string;
   errorCode?: number;
-  data?: {
+  user?: {
     username?: string;
     name?: string;
+    session?: string;
+    sessionId?: string;
+    session_id?: string;
   };
-  result?: {
-    username?: string;
-    name?: string;
-  };
-  auth?: {
-    username?: string;
-    name?: string;
-  };
-  profile?: {
+  account?: {
     name?: string;
     username?: string;
   };
-  identity?: {
-    name?: string;
-    username?: string;
-  };
-  accountData?: {
-    name?: string;
-    username?: string;
-  };
+  data?: { username?: string; name?: string };
+  result?: { username?: string; name?: string };
+  auth?: { username?: string; name?: string };
+  profile?: { username?: string; name?: string };
+  identity?: { username?: string; name?: string };
+  accountData?: { username?: string; name?: string };
 }
 
-// Enhanced Aioha instance with comprehensive typing
+/**
+ * Aioha instance interface - the SDK object
+ */
 interface AiohaInstance {
   user?: {
     username?: string;
-    account?: HiveAccount;
-    session?: string;
     sessionId?: string;
     session_id?: string;
   };
   currentUser?: {
     username?: string;
-    account?: HiveAccount;
-    session?: string;
     sessionId?: string;
     session_id?: string;
   };
   username?: string;
-  account?: HiveAccount;
-  session?: string;
   sessionId?: string;
   session_id?: string;
+  account?: { name?: string };
   currentProvider?: string;
-  providers?: Record<string, {
-    user?: {
-      username?: string;
-      sessionId?: string;
-      session_id?: string;
-    };
-    username?: string;
-    sessionId?: string;
-    session_id?: string;
-    account?: {
-      name?: string;
-    };
-  }>;
-  errorCode?: number;
-  // Additional properties that might exist
-  [key: string]: unknown;
-}
-
-// Extended Aioha instance with state properties
-interface AiohaInstanceWithState extends AiohaInstance {
-  state?: {
-    user?: {
-      username?: string;
-      sessionId?: string;
-      session_id?: string;
-    };
-  };
-  _state?: {
-    user?: {
-      username?: string;
-      sessionId?: string;
-      session_id?: string;
-    };
-  };
-  // Additional methods that might exist
-  getUser?: () => Promise<AiohaUserData>;
-  auth?: AiohaAuthData;
-}
-
-// Aioha user data type
-interface AiohaUserData {
-  username?: string;
-  name?: string;
-  id?: string;
-  sessionId?: string;
-  session_id?: string;
-  account?: HiveAccount;
-  profile?: {
-    name?: string;
-    username?: string;
-    avatar?: string;
-    bio?: string;
-  };
-  [key: string]: unknown;
-}
-
-// Aioha auth data type
-interface AiohaAuthData {
-  username?: string;
-  name?: string;
-  sessionId?: string;
-  session_id?: string;
-  [key: string]: unknown;
-}
-
-// Enhanced Aioha instance types for better type safety
-interface AiohaInstanceWithUser {
-  user?: {
-    username?: string;
-    sessionId?: string;
-    session_id?: string;
-    id?: string;
-    [key: string]: unknown;
-  };
-  currentUser?: {
-    username?: string;
-    sessionId?: string;
-    session_id?: string;
-    id?: string;
-    [key: string]: unknown;
-  };
-  username?: string;
-  sessionId?: string;
-  session_id?: string;
-  account?: {
-    name?: string;
-    [key: string]: unknown;
-  };
+  providers?: Record<string, AiohaProvider>;
+  state?: { user?: { username?: string; sessionId?: string; session_id?: string } };
+  _state?: { user?: { username?: string; sessionId?: string; session_id?: string } };
+  getUser?: () => Promise<{ username?: string; id?: string; sessionId?: string }>;
   logout?: () => Promise<void>;
-  [key: string]: unknown;
+}
+
+interface AiohaProvider {
+  user?: { username?: string; sessionId?: string; session_id?: string };
+  username?: string;
+  sessionId?: string;
+  session_id?: string;
+  account?: { name?: string };
+}
+
+/**
+ * Auth context value - exported for consumers
+ */
+export interface AuthContextValue extends AuthState {
+  login: (user: User, authType: AuthType) => void;
+  loginWithHiveUser: (hiveUsername: string) => Promise<void>;
+  loginWithAioha: (loginResult?: AiohaLoginResult) => Promise<void>;
+  loginWithFirebase: (authUser: AuthUser) => void;
+  logout: () => Promise<void>;
+  updateUser: (user: Partial<User>) => void;
+  upgradeToHive: (hiveUsername: string) => Promise<void>;
+  hiveUser: HiveAuthUser | null;
+  setHiveUser: (hiveUser: HiveAuthUser | null) => void;
+  refreshHiveAccount: () => Promise<void>;
+  isClient: boolean;
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Safely get a trimmed string value
+ */
+function getTrimmedString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+/**
+ * Safely get a string property from an object
+ */
+function getStringProp(obj: unknown, key: string): string | undefined {
+  if (typeof obj === 'object' && obj !== null) {
+    return getTrimmedString((obj as Record<string, unknown>)[key]);
+  }
+  return undefined;
+}
+
+/**
+ * Extract session ID from various property names
+ */
+function extractSessionId(obj: unknown): string | undefined {
+  return getStringProp(obj, 'sessionId')
+    ?? getStringProp(obj, 'session_id')
+    ?? getStringProp(obj, 'session');
+}
+
+/**
+ * Extract username from an Aioha login result
+ */
+function extractFromLoginResult(result: AiohaLoginResult): ExtractedUserData | null {
+  // Try direct properties first
+  const directUsername = getTrimmedString(result.username) ?? getTrimmedString(result.name);
+  if (directUsername) {
+    return { username: directUsername, sessionId: extractSessionId(result) };
+  }
+
+  // Try nested user object
+  if (result.user) {
+    const userUsername = getTrimmedString(result.user.username) ?? getTrimmedString(result.user.name);
+    if (userUsername) {
+      return { username: userUsername, sessionId: extractSessionId(result.user) };
+    }
+  }
+
+  // Try account object
+  if (result.account) {
+    const accountUsername = getTrimmedString(result.account.name) ?? getTrimmedString(result.account.username);
+    if (accountUsername) {
+      return { username: accountUsername, sessionId: extractSessionId(result) };
+    }
+  }
+
+  // Try other common nested structures
+  const nestedSources = [result.data, result.result, result.auth, result.profile, result.identity, result.accountData];
+  for (const source of nestedSources) {
+    if (source) {
+      const username = getTrimmedString(source.username) ?? getTrimmedString(source.name);
+      if (username) {
+        return { username, sessionId: extractSessionId(result) };
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract username from Aioha instance
+ */
+function extractFromAiohaInstance(aioha: AiohaInstance): ExtractedUserData | null {
+  // Try user object
+  if (aioha.user?.username) {
+    return { username: aioha.user.username, sessionId: extractSessionId(aioha.user) };
+  }
+
+  // Try currentUser
+  if (aioha.currentUser?.username) {
+    return { username: aioha.currentUser.username, sessionId: extractSessionId(aioha.currentUser) };
+  }
+
+  // Try direct username
+  if (aioha.username) {
+    return { username: aioha.username, sessionId: extractSessionId(aioha) };
+  }
+
+  // Try account
+  if (aioha.account?.name) {
+    return { username: aioha.account.name, sessionId: extractSessionId(aioha) };
+  }
+
+  // Try state objects
+  const stateUser = aioha.state?.user ?? aioha._state?.user;
+  if (stateUser?.username) {
+    return { username: stateUser.username, sessionId: extractSessionId(stateUser) };
+  }
+
+  return null;
+}
+
+/**
+ * Extract username from provider instance
+ */
+function extractFromProvider(provider: AiohaProvider): ExtractedUserData | null {
+  if (provider.user?.username) {
+    return { username: provider.user.username, sessionId: extractSessionId(provider.user) };
+  }
+  if (provider.username) {
+    return { username: provider.username, sessionId: extractSessionId(provider) };
+  }
+  if (provider.account?.name) {
+    return { username: provider.account.name, sessionId: extractSessionId(provider) };
+  }
+  return null;
 }
 
 
@@ -206,19 +261,7 @@ const persistAuthState = ({
   }
 };
 
-const AuthContext = createContext<AuthState & {
-  login: (user: User, authType: AuthType) => void;
-  loginWithHiveUser: (hiveUsername: string) => Promise<void>;
-  loginWithAioha: (loginResult?: AiohaLoginResult) => Promise<void>;
-  loginWithFirebase: (authUser: AuthUser) => void;
-  logout: () => Promise<void>;
-  updateUser: (user: Partial<User>) => void;
-  upgradeToHive: (hiveUsername: string) => Promise<void>;
-  hiveUser: HiveAuthUser | null;
-  setHiveUser: (hiveUser: HiveAuthUser | null) => void;
-  refreshHiveAccount: () => Promise<void>;
-  isClient: boolean;
-} | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -409,608 +452,155 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const loginWithAioha = async (loginResult?: AiohaLoginResult) => {
-    console.log("loginWithAioha called, isInitialized:", isInitialized, "aioha:", !!aioha);
-    console.log("loginWithAioha loginResult:", loginResult);
-    
     if (!isInitialized || !aioha) {
-      console.error("Aioha not initialized");
       throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
     }
 
     try {
-      console.log("Processing Aioha authentication...");
-      
-      // If we have a login result, use it directly
-      let userData: AiohaUserData | null = null;
-      console.log("Full loginResult object:", JSON.stringify(loginResult, null, 2));
-      
-      // Utility helpers for dynamic data inspection
-      const asRecord = (value: unknown): Record<string, unknown> | null =>
-        typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
+      const aiohaInstance = aioha as AiohaInstance;
+      let extracted: ExtractedUserData | null = null;
 
-      const getTrimmedString = (value: unknown): string | null =>
-        typeof value === 'string' && value.trim() ? value.trim() : null;
-
-      const getStringProp = (record: Record<string, unknown> | null, key: string): string | null =>
-        record ? getTrimmedString(record[key]) : null;
-
-      const getSessionIdFromRecord = (record: Record<string, unknown> | null): string | null =>
-        getStringProp(record, 'sessionId') ??
-        getStringProp(record, 'session_id') ??
-        getStringProp(record, 'session');
-
-      // Enhanced logging to understand the structure
+      // Step 1: Try to extract from login result
       if (loginResult) {
-        console.log("=== DETAILED LOGIN RESULT ANALYSIS ===");
-        console.log("loginResult type:", typeof loginResult);
-        console.log("loginResult keys:", Object.keys(loginResult));
-        const loginResultRecord = asRecord(loginResult);
-        console.log("loginResult.success:", loginResultRecord ? loginResultRecord['success'] : undefined);
-        console.log("loginResult.username:", loginResult.username);
-        console.log("loginResult.user:", loginResult.user);
-        console.log("loginResult.account:", loginResult.account);
-        console.log("loginResult.session:", loginResult.session);
-        console.log("loginResult.sessionId:", loginResult.sessionId);
-        console.log("loginResult.session_id:", loginResult.session_id);
-        
-        // Log all properties for debugging
-        if (loginResultRecord) {
-          console.log("All loginResult properties:");
-          Object.entries(loginResultRecord).forEach(([key, value]) => {
-            console.log(`  ${key}:`, value, `(type: ${typeof value})`);
-          });
-        }
-        console.log("=== END ANALYSIS ===");
-      }
-      
-      // First, check if the loginResult itself contains user data
-      if (loginResult) {
-        console.log("Checking loginResult for user data...");
-        
-        // Try multiple ways to extract username from the login result
-        let extractedUsername: string | null = null;
-        let extractedSessionId: string | null = null;
-        
-        // Method 1: Direct username property
-        if (loginResult.username && typeof loginResult.username === 'string' && loginResult.username.trim()) {
-          extractedUsername = loginResult.username.trim();
-          console.log("Found direct username:", extractedUsername);
-        }
-        
-        // Method 2: User object with username
-        if (!extractedUsername && loginResult.user) {
-          const userRecord = asRecord(loginResult.user);
-          const usernameFromUser = getStringProp(userRecord, 'username');
-          const nameFromUser = getStringProp(userRecord, 'name');
-          const sessionFromUser = getSessionIdFromRecord(userRecord);
-
-          if (usernameFromUser) {
-            extractedUsername = usernameFromUser;
-            extractedSessionId = sessionFromUser;
-            console.log("Found username in user object:", extractedUsername);
-          } else if (nameFromUser) {
-            extractedUsername = nameFromUser;
-            extractedSessionId = sessionFromUser;
-            console.log("Found name in user object:", extractedUsername);
-          }
-        }
-        
-        // Method 3: Account object
-        if (!extractedUsername && loginResult.account) {
-          const accountRecord = asRecord(loginResult.account);
-          const usernameFromAccount = getStringProp(accountRecord, 'username');
-          const nameFromAccount = getStringProp(accountRecord, 'name');
-
-          if (usernameFromAccount) {
-            extractedUsername = usernameFromAccount;
-            console.log("Found username in account object:", extractedUsername);
-          } else if (nameFromAccount) {
-            extractedUsername = nameFromAccount;
-            console.log("Found name in account object:", extractedUsername);
-          }
-        }
-        
-        // Method 4: Deep search for username in any nested property
-        if (!extractedUsername) {
-          console.log("Searching for username in loginResult properties...");
-          const findUsername = (obj: unknown, depth = 0): string | null => {
-            if (depth > 3) return null; // Prevent infinite recursion
-            const record = asRecord(obj);
-            if (!record) return null;
-            
-            for (const [key, value] of Object.entries(record)) {
-              const trimmedValue = getTrimmedString(value);
-              if ((key === 'username' || key === 'name') && trimmedValue) {
-                return trimmedValue;
-              }
-              if (typeof value === 'object' && value !== null) {
-                const found = findUsername(value, depth + 1);
-                if (found) return found;
-              }
-            }
-            return null;
-          };
-          
-          extractedUsername = findUsername(loginResult);
-          if (extractedUsername) {
-            console.log("Found username in nested loginResult:", extractedUsername);
-          }
-        }
-        
-        // If we found a username, create userData
-        if (extractedUsername) {
-          userData = {
-            username: extractedUsername,
-            id: extractedUsername,
-            sessionId: extractedSessionId || loginResult.session || loginResult.sessionId || loginResult.session_id,
-          };
-          console.log("Successfully extracted user data from loginResult:", userData);
-        } else {
-          console.log("No username found in loginResult, will try other methods...");
-          console.log("This might be a Keychain success response without user data - will try to get from Aioha instance");
-        }
-      }
-      
-      // Add a small delay to allow Aioha to fully process the login
-      if (loginResult && !userData) {
-        console.log("Waiting for Aioha to process login...");
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // After delay, check Aioha instance again
-        console.log("Aioha instance after delay:");
-        const aiohaInstance = aioha as AiohaInstance;
-        console.log("- aioha.user:", aiohaInstance.user);
-        console.log("- aioha.currentUser:", aiohaInstance.currentUser);
-        console.log("- aioha.username:", aiohaInstance.username);
-        console.log("- aioha.account:", aiohaInstance.account);
-        console.log("- aioha.session:", aiohaInstance.session);
-        console.log("- aioha.state:", (aioha as AiohaInstance & { state?: unknown }).state);
-        console.log("- aioha._state:", (aioha as AiohaInstance & { _state?: unknown })._state);
-        
-        // Try to get user data from Aioha instance after delay
-        if (!userData) {
-          console.log("Trying to get user data from Aioha instance after delay...");
-          if (aiohaInstance.user && aiohaInstance.user.username) {
-            userData = {
-              username: aiohaInstance.user.username,
-              id: aiohaInstance.user.username,
-              sessionId: aiohaInstance.user.sessionId || aiohaInstance.user.session_id,
-            };
-            console.log("Found user data in Aioha instance after delay:", userData);
-          } else if (aiohaInstance.currentUser && aiohaInstance.currentUser.username) {
-            userData = {
-              username: aiohaInstance.currentUser.username,
-              id: aiohaInstance.currentUser.username,
-              sessionId: aiohaInstance.currentUser.sessionId || aiohaInstance.currentUser.session_id,
-            };
-            console.log("Found currentUser data in Aioha instance after delay:", userData);
-          } else if (aiohaInstance.username) {
-            userData = {
-              username: aiohaInstance.username,
-              id: aiohaInstance.username,
-              sessionId: aiohaInstance.sessionId || aiohaInstance.session_id,
-            };
-            console.log("Found direct username in Aioha instance after delay:", userData);
-          }
-        }
-      }
-      
-      // Try multiple possible structures for the username
-      if (loginResult) {
-        // Handle special case where user is already logged in (errorCode 4901)
+        // Handle "already logged in" case (errorCode 4901)
         if (loginResult.errorCode === 4901) {
-          console.log("Handling 'already logged in' case...");
-          const aiohaInstance = aioha as AiohaInstance;
-          console.log("Current provider:", aiohaInstance.currentProvider);
-          
-          // For already logged in case, we need to get user data from the current provider
-          try {
-            // Get the current provider instance
-            const currentProvider = aiohaInstance.currentProvider;
-            if (currentProvider && aiohaInstance.providers && aiohaInstance.providers[currentProvider]) {
-              const providerInstance = aiohaInstance.providers[currentProvider];
-              console.log("Provider instance:", providerInstance);
-              console.log("Provider instance properties:", Object.keys(providerInstance));
-              
-              // Try to get user data from the provider instance
-              if (providerInstance.user && providerInstance.user.username) {
-                userData = {
-                  username: providerInstance.user.username,
-                  id: providerInstance.user.username,
-                  sessionId: providerInstance.user.sessionId || providerInstance.user.session_id,
-                };
-                console.log("Found user data in provider instance:", userData);
-              } else if (providerInstance.username) {
-                userData = {
-                  username: providerInstance.username,
-                  id: providerInstance.username,
-                  sessionId: providerInstance.sessionId || providerInstance.session_id,
-                };
-                console.log("Found username in provider instance:", userData);
-              } else if (providerInstance.account && providerInstance.account.name) {
-                userData = {
-                  username: providerInstance.account.name,
-                  id: providerInstance.account.name,
-                  sessionId: providerInstance.sessionId || providerInstance.session_id,
-                };
-                console.log("Found account name in provider instance:", userData);
-              } else {
-                console.log("No user data found in provider instance, trying other methods...");
-                
-                // Try to get from Aioha's internal state more comprehensively
-                const aiohaWithState = aioha as AiohaInstanceWithState;
-                const aiohaState = aiohaWithState.state || aiohaWithState._state;
-                if (aiohaState && aiohaState.user && aiohaState.user.username) {
-                  userData = {
-                    username: aiohaState.user.username,
-                    id: aiohaState.user.username,
-                    sessionId: aiohaState.user.sessionId || aiohaState.user.session_id,
-                  };
-                  console.log("Found user data in Aioha state for already logged in case:", userData);
-                } else if (aiohaState && typeof aiohaState === 'object' && 'currentUser' in aiohaState && aiohaState.currentUser && typeof aiohaState.currentUser === 'object' && 'username' in aiohaState.currentUser && aiohaState.currentUser.username) {
-                  const currentUser = aiohaState.currentUser as { username: string; sessionId?: string; session_id?: string };
-                  userData = {
-                    username: currentUser.username,
-                    id: currentUser.username,
-                    sessionId: currentUser.sessionId || currentUser.session_id,
-                  };
-                  console.log("Found currentUser data in Aioha state for already logged in case:", userData);
-                } else {
-                  console.log("No user data found in Aioha state for already logged in case");
-                }
-              }
-            } else {
-              console.log("No current provider or provider instance found");
-            }
-          } catch (providerError) {
-            console.log("Error accessing provider instance:", providerError);
+          const currentProvider = aiohaInstance.currentProvider;
+          if (currentProvider && aiohaInstance.providers?.[currentProvider]) {
+            extracted = extractFromProvider(aiohaInstance.providers[currentProvider]);
           }
         } else {
-          // Normal case - check all possible username locations in loginResult
-          // Check all possible username locations
-          const possibleUsernames = [
-          loginResult.username,
-          loginResult.name,
-          loginResult.account?.name,
-          loginResult.user?.username,
-          loginResult.user?.name,
-          loginResult.data?.username,
-          loginResult.data?.name,
-          loginResult.result?.username,
-          loginResult.result?.name,
-          loginResult.auth?.username,
-          loginResult.auth?.name,
-          // Additional common patterns
-          loginResult.profile?.name,
-          loginResult.profile?.username,
-          loginResult.identity?.name,
-          loginResult.identity?.username,
-          loginResult.accountData?.name,
-          loginResult.accountData?.username,
-        ].filter(Boolean); // Remove null/undefined values
-        
-        console.log("Possible usernames found:", possibleUsernames);
-        
-        if (possibleUsernames.length > 0) {
-          const username = possibleUsernames[0];
-          userData = {
-            username: username,
-            id: username, // Use username as ID
-            sessionId: loginResult.sessionId || loginResult.session_id || loginResult.id,
+          extracted = extractFromLoginResult(loginResult);
+        }
+      }
+
+      // Step 2: Try to extract from Aioha instance
+      if (!extracted) {
+        extracted = extractFromAiohaInstance(aiohaInstance);
+      }
+
+      // Step 3: Try with retries (Aioha may need time to process)
+      if (!extracted && loginResult) {
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+          extracted = extractFromAiohaInstance(aiohaInstance);
+          if (extracted) break;
+        }
+      }
+
+      // Step 4: Try getUser method if available
+      if (!extracted && typeof aiohaInstance.getUser === 'function') {
+        try {
+          const getUserResult = await aiohaInstance.getUser();
+          if (getUserResult?.username) {
+            extracted = { username: getUserResult.username, sessionId: getUserResult.sessionId };
+          }
+        } catch {
+          // getUser failed, continue to next fallback
+        }
+      }
+
+      // Step 5: Try localStorage fallback
+      if (!extracted && typeof window !== 'undefined') {
+        const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
+        if (storedAuth) {
+          try {
+            const parsed = JSON.parse(storedAuth);
+            if (parsed.hiveUser?.username) {
+              extracted = { username: parsed.hiveUser.username };
+            }
+          } catch {
+            // localStorage parse failed
+          }
+        }
+      }
+
+      // If we still have nothing, throw
+      if (!extracted) {
+        throw new Error("Unable to determine username from Aioha authentication. Please try again.");
+      }
+
+      const { username, sessionId } = extracted;
+
+      // Create and set user
+      const basicUser: User = {
+        id: username,
+        username: username,
+        displayName: username,
+        isHiveAuth: true,
+        hiveUsername: username,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      setUser(basicUser);
+      setAuthType("hive");
+
+      const newHiveUser: HiveAuthUser = {
+        username: username,
+        isAuthenticated: true,
+        provider: loginResult?.provider ?? 'aioha',
+        sessionId: sessionId,
+      };
+      setHiveUser(newHiveUser);
+
+      persistAuthState({
+        user: basicUser,
+        authType: "hive",
+        hiveUser: newHiveUser,
+      });
+
+      // Fetch full account data in background
+      try {
+        const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(username)}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch account: ${response.status}`);
+        }
+        const result = await response.json();
+        const accountData = result.success ? result.account as UserAccountData : null;
+
+        if (accountData) {
+          const updatedHiveUser: HiveAuthUser = {
+            ...newHiveUser,
+            account: accountData as unknown as HiveAccount,
           };
-          console.log("Using extracted username:", userData);
-        } else {
-          console.log("No username found in loginResult, trying fallback methods...");
-        }
-        } // Close the else block for normal case
-      }
-      
-      // If we still don't have userData, try fallback methods
-      if (!userData) {
-        console.log("No userData found in loginResult, trying fallback methods...");
-        console.log("Aioha instance:", aioha);
-        console.log("Aioha instance keys:", aioha ? Object.keys(aioha) : "No aioha instance");
-        
-        // Log all properties of the Aioha instance to see what's available
-        if (aioha) {
-          console.log("Aioha instance properties:");
-          Object.keys(aioha).forEach(key => {
-            console.log(`- aioha.${key}:`, (aioha as Record<string, unknown>)[key]);
+          setHiveUser(updatedHiveUser);
+
+          const updatedUser: User = {
+            ...basicUser,
+            reputation: accountData.reputation,
+            reputationFormatted: accountData.reputationFormatted,
+            liquidHiveBalance: accountData.liquidHiveBalance,
+            liquidHbdBalance: accountData.liquidHbdBalance,
+            savingsHiveBalance: accountData.savingsHiveBalance,
+            savingsHbdBalance: accountData.savingsHbdBalance,
+            hiveBalance: accountData.hiveBalance,
+            hbdBalance: accountData.hbdBalance,
+            hivePower: accountData.hivePower,
+            rcPercentage: accountData.resourceCredits,
+            savingsApr: accountData.savingsApr,
+            pendingWithdrawals: accountData.pendingWithdrawals,
+            hiveProfile: accountData.profile,
+            hiveStats: accountData.stats,
+            avatar: accountData.profile.profileImage,
+            displayName: accountData.profile.name ?? username,
+            bio: accountData.profile.about,
+            createdAt: accountData.createdAt,
+          };
+          setUser(updatedUser);
+
+          persistAuthState({
+            user: updatedUser,
+            authType: "hive",
+            hiveUser: updatedHiveUser,
           });
-          
-          // Try to find user data in any of the Aioha properties
-          console.log("Searching for user data in all Aioha properties...");
-          for (const key of Object.keys(aioha)) {
-            const value = (aioha as Record<string, unknown>)[key];
-            if (value && typeof value === 'object') {
-              const objValue = value as Record<string, unknown>;
-              // Check if this property contains user data
-              if (objValue.username || objValue.name || objValue.user || objValue.account) {
-                console.log(`Found potential user data in aioha.${key}:`, value);
-                
-                // Try to extract username from this property
-                const potentialUsername = objValue.username || objValue.name || 
-                  (objValue.user as Record<string, unknown>)?.username || (objValue.user as Record<string, unknown>)?.name ||
-                  (objValue.account as Record<string, unknown>)?.name || (objValue.account as Record<string, unknown>)?.username;
-                
-                if (potentialUsername) {
-                  userData = {
-                    username: potentialUsername as string,
-                    id: potentialUsername as string,
-                    sessionId: (objValue.sessionId || objValue.session_id || objValue.id) as string | undefined,
-                  };
-                  console.log(`Successfully extracted user data from aioha.${key}:`, userData);
-                  break; // Exit the loop once we find user data
-                }
-              }
-            }
-          }
         }
-        
-        // If we still don't have userData and we have a loginResult, try retry mechanism
-        if (loginResult && !userData) {
-          console.log("No user data found in loginResult, attempting retry mechanism...");
-          
-          const maxRetries = 3;
-          const baseDelay = 500; // Start with 500ms
-          
-          for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            const delay = baseDelay * attempt; // Progressive delay: 500ms, 1000ms, 1500ms
-            console.log(`Retry attempt ${attempt}/${maxRetries}: Waiting ${delay}ms for Aioha to process login...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            
-            try {
-              console.log(`Retry attempt ${attempt}: Checking Aioha internal state...`);
-              const aiohaWithUser = aioha as AiohaInstanceWithUser;
-              console.log(`Retry attempt ${attempt}: Aioha.user:`, aiohaWithUser.user);
-              console.log(`Retry attempt ${attempt}: Aioha.currentUser:`, aiohaWithUser.currentUser);
-              console.log(`Retry attempt ${attempt}: Aioha.username:`, aiohaWithUser.username);
-              console.log(`Retry attempt ${attempt}: Aioha.account:`, aiohaWithUser.account);
-              
-              // Try to get user data from Aioha's internal state
-              if (aiohaWithUser.user && aiohaWithUser.user.username) {
-                userData = {
-                  username: aiohaWithUser.user.username,
-                  id: aiohaWithUser.user.username,
-                  sessionId: aiohaWithUser.user.sessionId || aiohaWithUser.user.session_id,
-                };
-                console.log(`Retry attempt ${attempt}: Found user data in Aioha.user:`, userData);
-                break;
-              } else if (aiohaWithUser.currentUser && aiohaWithUser.currentUser.username) {
-                userData = {
-                  username: aiohaWithUser.currentUser.username,
-                  id: aiohaWithUser.currentUser.username,
-                  sessionId: aiohaWithUser.currentUser.sessionId || aiohaWithUser.currentUser.session_id,
-                };
-                console.log(`Retry attempt ${attempt}: Found user data in Aioha.currentUser:`, userData);
-                break;
-              } else if (aiohaWithUser.username) {
-                userData = {
-                  username: aiohaWithUser.username,
-                  id: aiohaWithUser.username,
-                  sessionId: aiohaWithUser.sessionId || aiohaWithUser.session_id,
-                };
-                console.log(`Retry attempt ${attempt}: Found user data in Aioha.username:`, userData);
-                break;
-              } else if (aiohaWithUser.account && aiohaWithUser.account.name) {
-                userData = {
-                  username: aiohaWithUser.account.name,
-                  id: aiohaWithUser.account.name,
-                  sessionId: aiohaWithUser.sessionId || aiohaWithUser.session_id,
-                };
-                console.log(`Retry attempt ${attempt}: Found user data in Aioha.account:`, userData);
-                break;
-              } else {
-                console.log(`Retry attempt ${attempt}: No user data found in Aioha internal state`);
-              }
-            } catch (retryError) {
-              console.log(`Retry attempt ${attempt}: Error checking Aioha state:`, retryError);
-            }
-          }
-        }
-        
-        try {
-          // Check if Aioha has a getUser method or similar
-          if (typeof (aioha as AiohaInstanceWithState).getUser === 'function') {
-            const getUserResult = await (aioha as AiohaInstanceWithState).getUser!();
-            userData = getUserResult as AiohaUserData;
-            console.log("Got user data from Aioha getUser():", userData);
-          } else {
-            // If no getUser method, try to get from Aioha's internal state
-            console.log("Aioha getUser not available, checking for existing session...");
-            console.log("Aioha internal state:", {
-              user: (aioha as AiohaInstanceWithState).user,
-              currentUser: (aioha as AiohaInstanceWithState).currentUser,
-              username: (aioha as AiohaInstanceWithState).username,
-              account: (aioha as AiohaInstanceWithState).account,
-              session: (aioha as AiohaInstanceWithState).session,
-              auth: (aioha as AiohaInstanceWithState).auth,
-            });
-            
-            // Try to get username from localStorage or other persistent storage first
-          const storedAuth = typeof window !== 'undefined' ? localStorage.getItem(AUTH_STORAGE_KEY) : null;
-            if (storedAuth) {
-              try {
-                const parsed = JSON.parse(storedAuth);
-                if (parsed.hiveUser && parsed.hiveUser.username) {
-                  userData = {
-                    username: parsed.hiveUser.username,
-                    id: parsed.hiveUser.username,
-                  };
-                  console.log("Using stored user data:", userData);
-                } else {
-                  throw new Error("No stored username found");
-                }
-              } catch (parseError) {
-                console.log("Could not parse stored auth data:", parseError);
-                throw new Error("No valid stored auth data");
-              }
-            } else {
-              throw new Error("No stored auth data");
-            }
-          }
-        } catch (getUserError) {
-          console.log("Could not get user data from Aioha:", getUserError);
-          
-          // Try one more fallback - check if Aioha has user info in its internal state
-          try {
-            console.log("Trying to extract from Aioha internal state...");
-            const aiohaWithUser = aioha as AiohaInstanceWithUser;
-            console.log("Aioha.user:", aiohaWithUser.user);
-            console.log("Aioha.currentUser:", aiohaWithUser.currentUser);
-            console.log("Aioha.username:", aiohaWithUser.username);
-            console.log("Aioha.account:", aiohaWithUser.account);
-            
-            if (aiohaWithUser.user && aiohaWithUser.user.username) {
-              userData = {
-                username: aiohaWithUser.user.username,
-                id: aiohaWithUser.user.username,
-                sessionId: aiohaWithUser.user.sessionId || aiohaWithUser.user.session_id,
-              };
-              console.log("Using Aioha internal user data:", userData);
-            } else if (aiohaWithUser.currentUser && aiohaWithUser.currentUser.username) {
-              userData = {
-                username: aiohaWithUser.currentUser.username,
-                id: aiohaWithUser.currentUser.username,
-                sessionId: aiohaWithUser.currentUser.sessionId || aiohaWithUser.currentUser.session_id,
-              };
-              console.log("Using Aioha currentUser data:", userData);
-            } else if (aiohaWithUser.username) {
-              userData = {
-                username: aiohaWithUser.username,
-                id: aiohaWithUser.username,
-                sessionId: aiohaWithUser.sessionId || aiohaWithUser.session_id,
-              };
-              console.log("Using Aioha direct username:", userData);
-            } else if (aiohaWithUser.account && aiohaWithUser.account.name) {
-              userData = {
-                username: aiohaWithUser.account.name,
-                id: aiohaWithUser.account.name,
-                sessionId: aiohaWithUser.sessionId || aiohaWithUser.session_id,
-              };
-              console.log("Using Aioha account name:", userData);
-            } else {
-              throw new Error("No user data found in Aioha internal state");
-            }
-          } catch (fallbackError) {
-            console.log("Fallback user data retrieval failed:", fallbackError);
-            console.log("Final Aioha state check:");
-        if (typeof aioha === 'object' && aioha !== null) {
-          const aiohaRecord = aioha as Record<string, unknown>;
-          console.log("- aioha object keys:", Object.keys(aiohaRecord));
-          console.log("- aioha.user:", aiohaRecord['user']);
-          console.log("- aioha.currentUser:", aiohaRecord['currentUser']);
-          console.log("- aioha.username:", aiohaRecord['username']);
-          console.log("- aioha.account:", aiohaRecord['account']);
-          console.log("- aioha.session:", aiohaRecord['session']);
-          console.log("- aioha.auth:", aiohaRecord['auth']);
-        } else {
-          console.log("- aioha object keys: not available (non-object value)");
-        }
-            
-            throw new Error("Unable to determine username from Aioha authentication. This may be due to a temporary issue with the authentication provider. Please try logging in again or use a different authentication method.");
-          }
-        }
-      }
-      
-      if (userData && userData.username) {
-        console.log("Aioha user authenticated:", userData);
-        
-        // Create basic user object
-        const basicUser: User = {
-          id: userData.username!,
-          username: userData.username!,
-          displayName: userData.username!,
-          isHiveAuth: true,
-          hiveUsername: userData.username!,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        // Set the user immediately for UI responsiveness
-        setUser(basicUser);
-        setAuthType("hive");
-
-        // Create Hive user object with Aioha metadata
-        const newHiveUser: HiveAuthUser = {
-          username: userData.username!,
-          isAuthenticated: true,
-          provider: loginResult?.provider || 'aioha',
-          aiohaUserId: userData.id ? String(userData.id) : undefined,
-          sessionId: userData.sessionId ? String(userData.sessionId) : undefined,
-        };
-        setHiveUser(newHiveUser);
-
-        persistAuthState({
-          user: basicUser,
-          authType: "hive",
-          hiveUser: newHiveUser,
-        });
-
-        // Fetch full account data in the background
-        try {
-          const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(userData.username!)}`);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch account: ${response.status}`);
-          }
-          const result = await response.json();
-          const accountData = result.success ? result.account as UserAccountData : null;
-          
-          if (accountData) {
-            // Update hiveUser with account data
-            const updatedHiveUser = {
-              ...newHiveUser,
-              account: accountData as unknown as HiveAccount,
-            };
-            setHiveUser(updatedHiveUser);
-
-            // Update the main user object with Hive profile data
-            const updatedUser = {
-              ...basicUser,
-              reputation: accountData.reputation,
-              reputationFormatted: accountData.reputationFormatted,
-              // Liquid balances
-              liquidHiveBalance: accountData.liquidHiveBalance,
-              liquidHbdBalance: accountData.liquidHbdBalance,
-              // Savings balances
-              savingsHiveBalance: accountData.savingsHiveBalance,
-              savingsHbdBalance: accountData.savingsHbdBalance,
-              // Combined balances (for backward compatibility)
-              hiveBalance: accountData.hiveBalance,
-              hbdBalance: accountData.hbdBalance,
-              hivePower: accountData.hivePower,
-              rcPercentage: accountData.resourceCredits,
-              // Savings data
-              savingsApr: accountData.savingsApr,
-              pendingWithdrawals: accountData.pendingWithdrawals,
-              hiveProfile: accountData.profile,
-              hiveStats: accountData.stats,
-              // Use Hive profile image as avatar if available
-              avatar: accountData.profile.profileImage,
-              displayName: accountData.profile.name || userData.username!,
-              bio: accountData.profile.about,
-              // Use the actual Hive account creation date
-              createdAt: accountData.createdAt,
-            };
-            setUser(updatedUser);
-
-            // Save updated state to localStorage
-            persistAuthState({
-              user: updatedUser,
-              authType: "hive",
-              hiveUser: updatedHiveUser,
-            });
-          }
-        } catch (profileError) {
-          console.error("Error fetching Hive account data:", profileError);
-          // Keep the basic user even if profile loading fails
-        }
-      } else {
-        throw new Error("No user data available from Aioha");
+      } catch (profileError) {
+        console.error("Error fetching Hive account data:", profileError);
+        // Keep basic user if profile loading fails
       }
     } catch (error) {
       console.error("Error processing Aioha authentication:", error);
-      throw error; // Re-throw so UI can handle it
+      throw error;
     }
   };
 
@@ -1018,9 +608,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Logout from Aioha if user was authenticated via Aioha
     if (hiveUser?.provider && aioha) {
       try {
-        const aiohaWithUser = aioha as AiohaInstanceWithUser;
-        if (aiohaWithUser.logout) {
-          await aiohaWithUser.logout();
+        const aiohaInstance = aioha as AiohaInstance;
+        if (aiohaInstance.logout) {
+          await aiohaInstance.logout();
         }
       } catch (error) {
         console.error("Error logging out from Aioha:", error);
