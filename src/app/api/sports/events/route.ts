@@ -76,8 +76,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const sport = searchParams.get('sport');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    
+    // Validate and clamp limit to reasonable range (1-100)
+    const rawLimit = parseInt(searchParams.get('limit') || '10', 10);
+    const limit = Math.max(1, Math.min(100, isNaN(rawLimit) ? 10 : rawLimit));
+
     // Check if we have valid cached data
     const now = Date.now();
     if (eventsCache.data && now < eventsCache.expiresAt) {
