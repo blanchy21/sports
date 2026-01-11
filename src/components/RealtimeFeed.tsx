@@ -35,19 +35,16 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
 
   // Monitor new posts
   useNewPosts((event) => {
-    console.log('[RealtimeFeed] New post:', event);
     setEvents(prev => [event, ...prev.slice(0, 49)]); // Keep last 50 events
   }, isMonitoring);
 
   // Monitor new votes
   useNewVotes((event) => {
-    console.log('[RealtimeFeed] New vote:', event);
     setEvents(prev => [event, ...prev.slice(0, 49)]);
   }, isMonitoring);
 
   // Monitor new comments
   useNewComments((event) => {
-    console.log('[RealtimeFeed] New comment:', event);
     setEvents(prev => [event, ...prev.slice(0, 49)]);
   }, isMonitoring);
 

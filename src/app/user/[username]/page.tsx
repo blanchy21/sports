@@ -193,24 +193,18 @@ export default function UserProfilePage() {
                 
                 {/* Stats Section */}
                 <div className="flex items-center space-x-6 mt-6 pt-4 border-t border-border">
-                  <div 
+                  <div
                     className="text-center cursor-pointer hover:opacity-70 transition-opacity"
-                    onClick={() => {
-                      console.log('[UserProfilePage] Opening following modal with:', { username, type: 'following' });
-                      openModal('followersList', { username, type: 'following' });
-                    }}
+                    onClick={() => openModal('followersList', { username, type: 'following' })}
                   >
                     <div className="text-2xl font-bold text-foreground">
                       {followingCount || 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Following</div>
                   </div>
-                  <div 
+                  <div
                     className="text-center cursor-pointer hover:opacity-70 transition-opacity"
-                    onClick={() => {
-                      console.log('[UserProfilePage] Opening followers modal with:', { username, type: 'followers' });
-                      openModal('followersList', { username, type: 'followers' });
-                    }}
+                    onClick={() => openModal('followersList', { username, type: 'followers' })}
                   >
                     <div className="text-2xl font-bold text-foreground">
                       {followerCount || 0}

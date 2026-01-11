@@ -33,24 +33,6 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
   
   const { data: comments, isLoading, error } = useComments(author || '', permlink || '');
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log('CommentsModal - Debug Info:', {
-      author,
-      permlink,
-      comments: comments?.length || 0,
-      isLoading,
-      error,
-      commentsData: comments,
-      aiohaStatus: {
-        isInitialized,
-        hasAioha: !!aioha,
-        aiohaError,
-        aiohaMethods: aioha ? Object.keys(aioha as object) : []
-      }
-    });
-  }, [author, permlink, comments, isLoading, error, isInitialized, aioha, aiohaError]);
-
   const handleSubmitComment = async () => {
     if (!commentText.trim()) {
       addToast({

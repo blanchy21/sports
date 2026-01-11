@@ -29,47 +29,31 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
     currentUser?.username || ''
   );
   
-  // Debug logging
-  console.log('[UserProfileModal] Follow status:', {
-    username,
-    currentUser: currentUser?.username,
-    isFollowing,
-    isCheckingFollow,
-    followError,
-    hasProfile: !!profile
-  });
   const followMutation = useFollowUser();
   const unfollowMutation = useUnfollowUser();
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
   const handleFollowToggle = async () => {
-    console.log('Follow button clicked!', { username, currentUser: currentUser?.username, isFollowing });
-    
     if (!username || !currentUser?.username) {
-      console.log('Missing username or currentUser');
       alert('Please login to follow users');
       return;
     }
-    
+
     setIsFollowLoading(true);
     try {
       if (isFollowing) {
-        console.log('Unfollowing user:', username);
         const result = await unfollowMutation.mutateAsync({
           username,
           follower: currentUser.username
         });
-        console.log('Unfollow result:', result);
         if (!result.success) {
           alert(`Failed to unfollow: ${result.error || 'Unknown error'}`);
         }
       } else {
-        console.log('Following user:', username);
         const result = await followMutation.mutateAsync({
           username,
           follower: currentUser.username
         });
-        console.log('Follow result:', result);
         if (!result.success) {
           alert(`Failed to follow: ${result.error || 'Unknown error'}`);
         }

@@ -15,28 +15,14 @@ interface FollowersListModalProps {
 
 export const FollowersListModal: React.FC<FollowersListModalProps> = ({ isOpen, onClose, data }) => {
   const username = data?.username as string;
-  const type = data?.type as 'followers' | 'following'; // 'followers' or 'following'
-  
-  console.log('[FollowersListModal] Modal state:', {
-    isOpen,
-    username,
-    type,
-    data
-  });
-  
+  const type = data?.type as 'followers' | 'following';
+
   const { data: followersData, isLoading: isLoadingFollowers } = useFollowers(username || '', {
     enabled: isOpen && type === 'followers' && !!username,
   });
 
   const { data: followingData, isLoading: isLoadingFollowing } = useFollowing(username || '', {
     enabled: isOpen && type === 'following' && !!username,
-  });
-  
-  console.log('[FollowersListModal] Data loaded:', {
-    followersData,
-    followingData,
-    isLoadingFollowers,
-    isLoadingFollowing
   });
 
   const isLoading = type === 'followers' ? isLoadingFollowers : isLoadingFollowing;

@@ -127,11 +127,6 @@ export default function PostDetailPage() {
 
   const pendingPayout = calculatePendingPayout(post);
 
-  // Debug: Log the post body to see what markdown content looks like
-  console.log('Post body content:', post.body);
-  console.log('Post title:', post.title);
-  console.log('Post author:', post.author);
-
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto p-6">
