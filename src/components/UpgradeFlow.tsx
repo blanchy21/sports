@@ -203,7 +203,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
             {step === 'connecting' && 'Connecting...'}
             {step === 'success' && 'Upgrade Complete!'}
           </h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close dialog">
             <X className="h-5 w-5" />
           </Button>
         </div>

@@ -60,6 +60,7 @@ export default function FollowersPage() {
               size="icon"
               onClick={() => router.back()}
               className="hover:bg-muted"
+              aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>

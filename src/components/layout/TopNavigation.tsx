@@ -188,6 +188,7 @@ export const TopNavigation: React.FC = () => {
             size="icon"
             onClick={() => setShowSearch(true)}
             className="hidden sm:flex text-white/90 hover:bg-white/20 hover:text-white w-16 h-16"
+            aria-label="Search"
           >
             <Search className="h-8 w-8" />
           </Button>
@@ -219,13 +220,13 @@ export const TopNavigation: React.FC = () => {
               </div>
               
               <Link href="/publish">
-                <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 hover:text-white w-16 h-16">
+                <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 hover:text-white w-16 h-16" aria-label="Create new post">
                   <Plus className="h-8 w-8" />
                 </Button>
               </Link>
 
               <div className="relative">
-                <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 hover:text-white w-16 h-16">
+                <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 hover:text-white w-16 h-16" aria-label="Settings">
                   <Settings className="h-8 w-8" />
                 </Button>
               </div>
