@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clearMonitoringData } from '@/lib/hive-workerbee/monitoring';
 import { clearOptimizationCache as clearOptCache } from '@/lib/hive-workerbee/optimization';
+import { withCsrfProtection } from '@/lib/api/csrf';
 
 export async function GET(request: NextRequest) {
   try {
@@ -70,45 +71,47 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const { action } = await request.json();
+  return withCsrfProtection(request, async () => {
+    try {
+      const { action } = await request.json();
 
-    switch (action) {
-      case 'clear':
-        await Promise.all([
-          clearMonitoringData(),
-          clearOptCache()
-        ]);
-        
-        return NextResponse.json({ 
-          success: true, 
-          message: 'All monitoring data cleared' 
-        });
+      switch (action) {
+        case 'clear':
+          await Promise.all([
+            clearMonitoringData(),
+            clearOptCache()
+          ]);
 
-      case 'clear-cache':
-        await clearOptCache();
-        
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Cache cleared' 
-        });
+          return NextResponse.json({
+            success: true,
+            message: 'All monitoring data cleared'
+          });
 
-      case 'clear-monitoring':
-        await clearMonitoringData();
-        
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Monitoring data cleared' 
-        });
+        case 'clear-cache':
+          await clearOptCache();
 
-      default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+          return NextResponse.json({
+            success: true,
+            message: 'Cache cleared'
+          });
+
+        case 'clear-monitoring':
+          await clearMonitoringData();
+
+          return NextResponse.json({
+            success: true,
+            message: 'Monitoring data cleared'
+          });
+
+        default:
+          return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+      }
+    } catch (error) {
+      console.error('Error in monitoring API POST:', error);
+      return NextResponse.json(
+        { error: 'Failed to perform action' },
+        { status: 500 }
+      );
     }
-  } catch (error) {
-    console.error('Error in monitoring API POST:', error);
-    return NextResponse.json(
-      { error: 'Failed to perform action' },
-      { status: 500 }
-    );
-  }
+  });
 }
