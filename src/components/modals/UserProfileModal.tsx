@@ -24,8 +24,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const { data: followingCount } = useUserFollowingCount(username || '');
   
   // Follow/unfollow functionality
-  const { data: isFollowing, isLoading: isCheckingFollow, refetch: refetchIsFollowing, error: followError } = useIsFollowingUser(
-    username || '', 
+  const { data: isFollowing, isLoading: isCheckingFollow, refetch: refetchIsFollowing } = useIsFollowingUser(
+    username || '',
     currentUser?.username || ''
   );
   
