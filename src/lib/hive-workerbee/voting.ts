@@ -255,24 +255,77 @@ export async function getVoteStats(author: string, permlink: string): Promise<{
 }
 
 /**
- * Get recent votes by a user using WorkerBee/Wax
- * @param username - Username
- * @param limit - Number of votes to fetch
- * @returns Recent votes
+ * Vote history entry from account history
  */
-export async function getUserRecentVotes(username: string, limit: number = 20): Promise<Array<{
+export interface VoteHistoryEntry {
   author: string;
   permlink: string;
   weight: number;
   timestamp: Date;
   postTitle: string;
-}>> {
+}
+
+/**
+ * Get recent votes by a user using account history API
+ * @param username - Username
+ * @param limit - Number of votes to fetch (max 1000)
+ * @returns Recent votes
+ */
+export async function getUserRecentVotes(
+  username: string,
+  limit: number = 20
+): Promise<VoteHistoryEntry[]> {
   try {
     workerBeeLog(`Fetching recent votes for ${username} with WorkerBee, limit: ${limit}`);
-    // This would require additional API calls to get user's voting history
-    // For now, return empty array - implement with actual API when available
-    // TODO: Implement with Hivemind API or custom voting history endpoint
-    return [];
+
+    // Fetch account history - start from -1 (most recent) and work backwards
+    // Request more than limit since we need to filter for vote operations only
+    const batchSize = Math.min(limit * 5, 1000);
+    const history = await makeWorkerBeeApiCall<Array<[number, {
+      op: [string, {
+        voter?: string;
+        author?: string;
+        permlink?: string;
+        weight?: number;
+      }];
+      timestamp: string;
+    }]>>('get_account_history', [username, -1, batchSize]);
+
+    if (!history || !Array.isArray(history)) {
+      return [];
+    }
+
+    // Filter for vote operations and map to our format
+    const votes: VoteHistoryEntry[] = [];
+
+    for (const [, entry] of history) {
+      if (!entry || !entry.op) continue;
+
+      const [opType, opData] = entry.op;
+
+      // Only process vote operations
+      if (opType !== 'vote') continue;
+
+      // Only include votes by this user (not votes on their content)
+      if (opData.voter !== username) continue;
+
+      votes.push({
+        author: opData.author || '',
+        permlink: opData.permlink || '',
+        weight: (opData.weight || 0) / 100, // Convert from basis points to percentage
+        timestamp: new Date(entry.timestamp + 'Z'),
+        postTitle: '', // Would need additional API call to get title
+      });
+
+      // Stop if we have enough votes
+      if (votes.length >= limit) break;
+    }
+
+    // Sort by timestamp descending (newest first)
+    votes.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    workerBeeLog(`Found ${votes.length} votes for ${username}`);
+    return votes.slice(0, limit);
   } catch (error) {
     logError('Error fetching user recent votes with WorkerBee', 'getRecentVotes', error instanceof Error ? error : undefined);
     return [];

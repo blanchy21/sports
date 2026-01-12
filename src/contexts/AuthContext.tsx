@@ -100,6 +100,7 @@ export interface AuthContextValue extends AuthState {
   setHiveUser: (hiveUser: HiveAuthUser | null) => void;
   refreshHiveAccount: () => Promise<void>;
   isClient: boolean;
+  hasMounted: boolean;
 }
 
 // ============================================================================
@@ -282,47 +283,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hiveUser, setHiveUser] = useState<HiveAuthUser | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   const { aioha, isInitialized } = useAioha();
 
+  // Track if we need to refresh Hive account after mount
+  const needsHiveRefresh = React.useRef(false);
+
   useEffect(() => {
-    // Mark as client-side
+    // Mark as client-side first to prevent hydration mismatch
     setIsClient(true);
-    
-    // Check for existing auth state in localStorage with validation
-    const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (savedAuth) {
-      const validatedState = parseAuthState(savedAuth);
-      if (validatedState) {
-        const { user: savedUser, authType: savedAuthType, hiveUser: savedHiveUser } = validatedState;
-        // Cast validated user - schema ensures required fields exist, defaults handle optional ones
-        if (savedUser) {
-          setUser({
-            ...savedUser,
-            isHiveAuth: savedUser.isHiveAuth ?? false,
-          } as User);
-        }
-        setAuthType(savedAuthType);
-        if (savedHiveUser) {
-          setHiveUser({
-            ...savedHiveUser,
-            isAuthenticated: savedHiveUser.isAuthenticated ?? true,
-          } as HiveAuthUser);
-          // If user is authenticated with Hive but doesn't have profile data, refresh it
-          if (savedAuthType === "hive" && savedUser && !savedUser.hiveProfile) {
-            // Use setTimeout to avoid calling refreshHiveAccount before it's defined
-            setTimeout(() => {
-              refreshHiveAccount();
-            }, 100);
+    setHasMounted(true);
+
+    // Use requestAnimationFrame to batch state updates after paint
+    // This prevents visible flash by deferring state changes
+    requestAnimationFrame(() => {
+      // Check for existing auth state in localStorage with validation
+      const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (savedAuth) {
+        const validatedState = parseAuthState(savedAuth);
+        if (validatedState) {
+          const { user: savedUser, authType: savedAuthType, hiveUser: savedHiveUser } = validatedState;
+          // Cast validated user - schema ensures required fields exist, defaults handle optional ones
+          if (savedUser) {
+            setUser({
+              ...savedUser,
+              isHiveAuth: savedUser.isHiveAuth ?? false,
+            } as User);
           }
+          setAuthType(savedAuthType);
+          if (savedHiveUser) {
+            setHiveUser({
+              ...savedHiveUser,
+              isAuthenticated: savedHiveUser.isAuthenticated ?? true,
+            } as HiveAuthUser);
+            // Mark that we need to refresh Hive account if profile data is missing
+            if (savedAuthType === "hive" && savedUser && !savedUser.hiveProfile) {
+              needsHiveRefresh.current = true;
+            }
+          }
+        } else {
+          // Invalid auth state - clear corrupted data
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          console.warn("Cleared invalid auth state from localStorage");
         }
-      } else {
-        // Invalid auth state - clear corrupted data
-        localStorage.removeItem(AUTH_STORAGE_KEY);
-        console.warn("Cleared invalid auth state from localStorage");
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Separate effect for Hive account refresh to avoid calling before it's defined
+  useEffect(() => {
+    if (!isLoading && needsHiveRefresh.current) {
+      needsHiveRefresh.current = false;
+      refreshHiveAccount();
+    }
+  }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = (newUser: User, newAuthType: AuthType) => {
     setUser(newUser);
@@ -853,6 +868,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setHiveUser,
     refreshHiveAccount,
     isClient,
+    hasMounted,
   };
 
   return (

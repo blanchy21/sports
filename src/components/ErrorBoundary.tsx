@@ -3,6 +3,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { reportErrorBoundary } from '@/lib/utils/error-reporting';
 
 interface Props {
   children: ReactNode;
@@ -43,10 +44,8 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
-    }
+    // Report error to error reporting service
+    reportErrorBoundary(error, errorInfo);
 
     // Call optional error handler
     if (this.props.onError) {
@@ -58,9 +57,6 @@ export class ErrorBoundary extends Component<Props, State> {
       error,
       errorInfo,
     });
-
-    // TODO: Send error to error reporting service (e.g., Sentry)
-    // reportErrorToService(error, errorInfo);
   }
 
   componentDidUpdate(prevProps: Props) {

@@ -173,6 +173,79 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
 }
 
 /**
+ * Pending withdrawal entry type
+ */
+type PendingWithdrawal = {
+  id: string;
+  amount: string;
+  to: string;
+  memo: string;
+  requestId: number;
+  from: string;
+  timestamp: string;
+};
+
+/**
+ * Calculate pending power down withdrawals from account data
+ */
+function calculatePendingWithdrawals(
+  accountData: HiveAccount,
+  globalProps: GlobalProperties | null
+): PendingWithdrawal[] {
+  const withdrawals: PendingWithdrawal[] = [];
+
+  // Check if there's an active power down
+  const toWithdraw = BigInt(String(accountData.to_withdraw || '0'));
+  const withdrawn = BigInt(String(accountData.withdrawn || '0'));
+  const vestingWithdrawRate = accountData.vesting_withdraw_rate;
+  const nextVestingWithdrawal = accountData.next_vesting_withdrawal;
+
+  // If to_withdraw is 0 or equal to withdrawn, no active power down
+  if (toWithdraw === BigInt(0) || toWithdraw <= withdrawn) {
+    return withdrawals;
+  }
+
+  // Parse the vesting withdraw rate (VESTS per week)
+  const rateVests = parseAsset(vestingWithdrawRate || '0 VESTS');
+
+  // Calculate how much HIVE this represents
+  let rateHive = 0;
+  if (globalProps && rateVests.amount > 0) {
+    const totalVestingShares = parseFloat((globalProps as { total_vesting_shares?: string }).total_vesting_shares || '0');
+    const totalVestingFundHive = parseFloat((globalProps as { total_vesting_fund_hive?: string }).total_vesting_fund_hive || '0');
+    if (totalVestingShares > 0) {
+      rateHive = (rateVests.amount / totalVestingShares) * totalVestingFundHive;
+    }
+  }
+
+  // Calculate remaining withdrawals
+  const remainingVests = toWithdraw - withdrawn;
+  const weeksRemaining = rateVests.amount > 0
+    ? Math.ceil(Number(remainingVests) / 1000000 / rateVests.amount)
+    : 0;
+
+  // Create entries for each remaining week
+  const nextDate = new Date(nextVestingWithdrawal);
+  const username = accountData.name;
+
+  for (let i = 0; i < Math.min(weeksRemaining, 13); i++) {
+    const withdrawalDate = new Date(nextDate.getTime() + i * 7 * 24 * 60 * 60 * 1000);
+
+    withdrawals.push({
+      id: `powerdown-${username}-${i}`,
+      amount: `${rateHive.toFixed(3)} HIVE`,
+      to: username,
+      memo: 'Power Down',
+      requestId: i,
+      from: username,
+      timestamp: withdrawalDate.toISOString(),
+    });
+  }
+
+  return withdrawals;
+}
+
+/**
  * Fetch complete user account data using WorkerBee/Wax
  * @param username - Hive username
  * @returns Complete user account data
@@ -377,7 +450,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       hasEnoughRC: rcPercentage > 10,
       // Savings data
       savingsApr,
-      pendingWithdrawals: [], // TODO: Implement pending withdrawals with WorkerBee
+      pendingWithdrawals: calculatePendingWithdrawals(accountData, globalProps),
       profile: {
         name: profile.name as string,
         about: profile.about as string,
