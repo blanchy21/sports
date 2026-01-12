@@ -17,6 +17,11 @@ import {
 import { db } from './config';
 import { SoftPost } from '@/types/auth';
 
+const FIREBASE_NOT_CONFIGURED_ERROR = new Error(
+  'Firebase is not configured. Post storage is unavailable. ' +
+  'Set NEXT_PUBLIC_FIREBASE_* environment variables to enable.'
+);
+
 export class FirebasePosts {
   static async createPost(
     authorId: string,
@@ -24,10 +29,14 @@ export class FirebasePosts {
     content: string,
     tags: string[] = []
   ): Promise<SoftPost> {
+    if (!db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       // Generate a unique permlink
       const permlink = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
-      
+
       const docRef = await addDoc(collection(db, 'soft_posts'), {
         authorId,
         title,
@@ -59,6 +68,10 @@ export class FirebasePosts {
   }
 
   static async getPostsByAuthor(authorId: string): Promise<SoftPost[]> {
+    if (!db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       const q = query(
         collection(db, 'soft_posts'),
@@ -90,6 +103,10 @@ export class FirebasePosts {
   }
 
   static async getAllPosts(postsLimit: number = 20, lastDoc?: DocumentSnapshot): Promise<SoftPost[]> {
+    if (!db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       let q = query(
         collection(db, 'soft_posts'),
@@ -130,6 +147,10 @@ export class FirebasePosts {
   }
 
   static async getPostById(id: string): Promise<SoftPost | null> {
+    if (!db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       const docRef = doc(db, 'soft_posts', id);
       const docSnap = await getDoc(docRef);
@@ -158,13 +179,17 @@ export class FirebasePosts {
   }
 
   static async updatePost(
-    id: string, 
+    id: string,
     updates: Partial<{
       title: string;
       content: string;
       tags: string[];
     }>
   ): Promise<SoftPost> {
+    if (!db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       const docRef = doc(db, 'soft_posts', id);
       await updateDoc(docRef, {
@@ -186,6 +211,10 @@ export class FirebasePosts {
   }
 
   static async markAsPublishedToHive(id: string, hivePermlink: string): Promise<void> {
+    if (!db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       const docRef = doc(db, 'soft_posts', id);
       await updateDoc(docRef, {
@@ -200,6 +229,10 @@ export class FirebasePosts {
   }
 
   static async deletePost(id: string): Promise<void> {
+    if (!db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       const docRef = doc(db, 'soft_posts', id);
       await deleteDoc(docRef);

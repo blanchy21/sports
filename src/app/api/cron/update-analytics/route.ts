@@ -25,6 +25,14 @@ export async function GET() {
   */
 
   try {
+    // Check if Firebase is configured
+    if (!db) {
+      return NextResponse.json({
+        success: false,
+        error: 'Firebase not configured - analytics update skipped',
+      }, { status: 503 });
+    }
+
     console.log('[Cron] Starting analytics update...');
 
     // Fetch posts from Hive

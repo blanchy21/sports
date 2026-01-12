@@ -15,6 +15,11 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from './config';
 
+const FIREBASE_NOT_CONFIGURED_ERROR = new Error(
+  'Firebase is not configured. Email authentication is unavailable. ' +
+  'Set NEXT_PUBLIC_FIREBASE_* environment variables to enable.'
+);
+
 export interface AuthUser {
   id: string;
   email?: string;
@@ -41,11 +46,15 @@ export interface Profile {
 
 export class FirebaseAuth {
   static async signUp(
-    email: string, 
-    password: string, 
-    username: string, 
+    email: string,
+    password: string,
+    username: string,
     displayName?: string
   ): Promise<AuthUser> {
+    if (!auth || !db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -88,6 +97,10 @@ export class FirebaseAuth {
   }
 
   static async signIn(email: string, password: string): Promise<AuthUser> {
+    if (!auth || !db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -119,6 +132,10 @@ export class FirebaseAuth {
   }
 
   static async signOut(): Promise<void> {
+    if (!auth) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       await signOut(auth);
     } catch (error) {
@@ -128,10 +145,18 @@ export class FirebaseAuth {
   }
 
   static async getCurrentUser(): Promise<AuthUser | null> {
+    if (!auth || !db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
+    // Capture in local variables for TypeScript narrowing in callbacks
+    const firebaseAuth = auth;
+    const firebaseDb = db;
+
     return new Promise((resolve) => {
-      const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
+      const unsubscribe = onAuthStateChanged(firebaseAuth, async (user: FirebaseUser | null) => {
         unsubscribe();
-        
+
         if (!user) {
           resolve(null);
           return;
@@ -139,7 +164,7 @@ export class FirebaseAuth {
 
         try {
           // Get user profile from Firestore
-          const profileDoc = await getDoc(doc(db, 'profiles', user.uid));
+          const profileDoc = await getDoc(doc(firebaseDb, 'profiles', user.uid));
           
           if (!profileDoc.exists()) {
             resolve(null);
@@ -168,6 +193,10 @@ export class FirebaseAuth {
   }
 
   static async updateProfile(userId: string, updates: Partial<Profile>): Promise<void> {
+    if (!db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       await updateDoc(doc(db, 'profiles', userId), {
         ...updates,
@@ -180,6 +209,10 @@ export class FirebaseAuth {
   }
 
   static async upgradeToHive(userId: string, hiveUsername: string): Promise<void> {
+    if (!db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
     try {
       await updateDoc(doc(db, 'profiles', userId), {
         isHiveUser: true,
@@ -193,7 +226,15 @@ export class FirebaseAuth {
   }
 
   static onAuthStateChange(callback: (user: AuthUser | null) => void) {
-    return onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+    if (!auth || !db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
+    // Capture in local variables for TypeScript narrowing in callbacks
+    const firebaseAuth = auth;
+    const firebaseDb = db;
+
+    return onAuthStateChanged(firebaseAuth, async (firebaseUser: FirebaseUser | null) => {
       if (!firebaseUser) {
         callback(null);
         return;
@@ -201,7 +242,7 @@ export class FirebaseAuth {
 
       try {
         // Get user profile from Firestore
-        const profileDoc = await getDoc(doc(db, 'profiles', firebaseUser.uid));
+        const profileDoc = await getDoc(doc(firebaseDb, 'profiles', firebaseUser.uid));
         
         if (!profileDoc.exists()) {
           callback(null);

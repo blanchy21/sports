@@ -2,13 +2,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
 import { getFollowerCount, getFollowingCount, isFollowingUser } from '@/lib/hive-workerbee/social';
+import { STALE_TIMES } from '@/lib/constants/cache';
 
 export function useUserProfile(username: string) {
   return useQuery({
     queryKey: queryKeys.users.detail(username),
     queryFn: () => fetchUserAccount(username),
     enabled: !!username,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: STALE_TIMES.STANDARD,
   });
 }
 
@@ -17,7 +18,7 @@ export function useUserFollowerCount(username: string) {
     queryKey: [...queryKeys.users.followers(username), 'count'],
     queryFn: () => getFollowerCount(username),
     enabled: !!username,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: STALE_TIMES.STABLE,
   });
 }
 
@@ -26,7 +27,7 @@ export function useUserFollowingCount(username: string) {
     queryKey: [...queryKeys.users.following(username), 'count'],
     queryFn: () => getFollowingCount(username),
     enabled: !!username,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: STALE_TIMES.STABLE,
   });
 }
 
@@ -35,7 +36,7 @@ export function useIsFollowingUser(username: string, follower: string) {
     queryKey: [...queryKeys.users.detail(username), 'following', follower],
     queryFn: () => isFollowingUser(username, follower),
     enabled: !!username && !!follower,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: STALE_TIMES.REALTIME,
   });
 }
 

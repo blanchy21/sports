@@ -1,20 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
-import { 
-  fetchCommunities, 
-  fetchCommunityDetails, 
+import {
+  fetchCommunities,
+  fetchCommunityDetails,
   fetchCommunityMembers,
   subscribeToCommunity,
   unsubscribeFromCommunity,
   isSubscribedToCommunity,
-  CommunityFilters 
+  CommunityFilters
 } from '@/lib/hive-workerbee/community';
+import { STALE_TIMES } from '@/lib/constants/cache';
 
 export function useCommunities(filters: CommunityFilters = {}) {
   return useQuery({
     queryKey: queryKeys.communities.list(filters as Record<string, unknown>),
     queryFn: () => fetchCommunities(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: STALE_TIMES.STANDARD,
   });
 }
 
@@ -23,7 +24,7 @@ export function useCommunity(communityId: string) {
     queryKey: queryKeys.communities.detail(communityId),
     queryFn: () => fetchCommunityDetails(communityId),
     enabled: !!communityId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: STALE_TIMES.STANDARD,
   });
 }
 
@@ -32,7 +33,7 @@ export function useCommunityMembers(communityId: string, limit: number = 50) {
     queryKey: queryKeys.communities.members(communityId),
     queryFn: () => fetchCommunityMembers(communityId, limit),
     enabled: !!communityId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: STALE_TIMES.STABLE,
   });
 }
 
@@ -41,7 +42,7 @@ export function useIsSubscribedToCommunity(communityId: string, username: string
     queryKey: [...queryKeys.communities.detail(communityId), 'subscription', username],
     queryFn: () => isSubscribedToCommunity(communityId, username),
     enabled: !!communityId && !!username,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: STALE_TIMES.REALTIME,
   });
 }
 

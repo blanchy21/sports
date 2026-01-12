@@ -4,7 +4,9 @@ const hiveUsername = process.env.PLAYWRIGHT_HIVE_USERNAME;
 
 const skipReason = 'PLAYWRIGHT_HIVE_USERNAME env var is required for the Hive login flow e2e test.';
 
-hiveUsername ? test.describe.configure({ mode: 'serial' }) : test.describe.skip('Auth Login', skipReason, () => {});
+if (hiveUsername) {
+  test.describe.configure({ mode: 'serial' });
+}
 
 test.describe('Auth Login', () => {
   test('persists hive auth state and shows personalized feed', async ({ page, request }) => {

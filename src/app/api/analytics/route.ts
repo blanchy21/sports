@@ -30,6 +30,15 @@ export async function GET() {
       } as CommunityStats,
     };
 
+    // Return empty analytics if Firebase is not configured
+    if (!db) {
+      return NextResponse.json({
+        success: true,
+        ...analytics,
+        message: 'Firebase not configured - returning default analytics',
+      });
+    }
+
     // Fetch trending sports from Firestore
     try {
       const trendingSportsDoc = doc(db, 'analytics', 'trendingSports');
