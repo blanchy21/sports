@@ -436,8 +436,8 @@ export class RateLimiter {
         }
         request.resolve(true);
 
-        // Process next immediately
-        setImmediate(processNext);
+        // Process next immediately (use setTimeout for browser compatibility)
+        setTimeout(processNext, 0);
       } else {
         // Wait for tokens to refill
         const waitTime = this.bucket.getWaitTime(request.tokens);

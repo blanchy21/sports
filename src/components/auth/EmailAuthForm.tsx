@@ -1,8 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { EmailAuthFormProps } from './types';
 import { useAuthForm } from './hooks/useAuthForm';
+import { useAuth } from '@/contexts/AuthContext';
+import { FirebaseAuth } from '@/lib/firebase/auth';
+import { FirebaseError } from 'firebase/app';
+
+// Map Firebase error codes to user-friendly messages
+const getFirebaseErrorMessage = (error: FirebaseError): string => {
+  switch (error.code) {
+    case 'auth/email-already-in-use':
+      return 'This email is already registered. Try logging in instead.';
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/operation-not-allowed':
+      return 'Email/password sign-in is not enabled. Please contact support.';
+    case 'auth/weak-password':
+      return 'Password should be at least 6 characters.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled. Please contact support.';
+    case 'auth/user-not-found':
+      return 'No account found with this email. Try signing up instead.';
+    case 'auth/wrong-password':
+      return 'Incorrect password. Please try again.';
+    case 'auth/invalid-credential':
+      return 'Invalid email or password. Please try again.';
+    case 'auth/too-many-requests':
+      return 'Too many failed attempts. Please try again later.';
+    default:
+      return error.message || 'Authentication failed. Please try again.';
+  }
+};
 
 export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
   isLoginMode,
@@ -17,6 +46,9 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
     validateForm,
   } = useAuthForm(isLoginMode);
 
+  const { loginWithFirebase } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async () => {
     const validationError = validateForm();
     if (validationError) {
@@ -24,21 +56,44 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      // For demo purposes, create a mock user
-      // const user = {
-      //   id: "email_user_" + Date.now(),
-      //   username: formState.username || formState.email.split("@")[0],
-      //   displayName: formState.username || formState.email.split("@")[0],
-      //   isHiveAuth: false,
-      //   createdAt: new Date(),
-      //   updatedAt: new Date(),
-      // };
-      
-      // Simulate successful login
+      if (isLoginMode) {
+        // Sign in existing user
+        const authUser = await FirebaseAuth.signIn(
+          formState.email,
+          formState.password
+        );
+        loginWithFirebase(authUser);
+      } else {
+        // Sign up new user
+        const username = formState.username || formState.email.split('@')[0];
+        const authUser = await FirebaseAuth.signUp(
+          formState.email,
+          formState.password,
+          username,
+          username // displayName same as username initially
+        );
+        loginWithFirebase(authUser);
+      }
+
       onSuccess();
-    } catch {
-      onError('Login failed. Please try again.');
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        onError(getFirebaseErrorMessage(error));
+      } else if (error instanceof Error) {
+        // Handle Firebase not configured error
+        if (error.message.includes('Firebase is not configured')) {
+          onError('Email authentication is currently unavailable. Please try Hive login.');
+        } else {
+          onError(error.message);
+        }
+      } else {
+        onError('Login failed. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -145,9 +200,17 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
 
         <Button
           onClick={handleSubmit}
+          disabled={isSubmitting}
           className="w-full py-3 text-base font-semibold bg-primary hover:bg-primary/90"
         >
-          {isLoginMode ? "LOGIN" : "SIGN UP"}
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {isLoginMode ? "Logging in..." : "Creating account..."}
+            </>
+          ) : (
+            isLoginMode ? "LOGIN" : "SIGN UP"
+          )}
         </Button>
 
         <p className="text-center text-sm text-gray-600">

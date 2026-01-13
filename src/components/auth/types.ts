@@ -1,11 +1,5 @@
 // Shared types for authentication components
 
-export interface DiscoveredAccount {
-  username: string;
-  provider: string;
-  balance?: string;
-}
-
 export interface AuthFormData {
   email: string;
   password: string;
@@ -33,20 +27,6 @@ export interface HiveAuthSectionProps {
   onSuccess: () => void;
 }
 
-export interface AccountDiscoveryProps {
-  discoveredAccounts: DiscoveredAccount[];
-  isConnecting: boolean;
-  onAccountSelect: (account: DiscoveredAccount) => void;
-  onDiscover: () => void;
-}
-
-export interface ProviderButtonsProps {
-  availableProviders: string[];
-  selectedProvider: string | null;
-  onProviderSelect: (provider: string) => void;
-  isConnecting: boolean;
-}
-
 export interface AuthFormState {
   email: string;
   password: string;
@@ -54,13 +34,4 @@ export interface AuthFormState {
   acceptTerms: boolean;
   subscribeNewsletter: boolean;
   showPassword: boolean;
-}
-
-export interface HiveAuthState {
-  hiveUsername: string;
-  showHiveUsernameInput: boolean;
-  showAccountDiscovery: boolean;
-  discoveredAccounts: DiscoveredAccount[];
-  availableProviders: string[];
-  selectedProvider: string | null;
 }
