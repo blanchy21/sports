@@ -1,30 +1,126 @@
 rules_version = '2';
+
+/**
+ * Firestore Security Rules for Sportsblock
+ *
+ * Deploy via: firebase deploy --only firestore:rules
+ */
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Analytics collection - allow read for all, write for server-side updates
-    // Note: Server-side API routes don't have request.auth, so we allow writes
-    // In production, you may want to add additional security (e.g., API key check)
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function validString(field, maxLen) {
+      return field is string && field.size() <= maxLen;
+    }
+
+    // ============================================
+    // ANALYTICS (Read-only for clients)
+    // ============================================
+
+    // Analytics data is written by server-side cron jobs using Firebase Admin SDK
+    // which bypasses these rules. Clients can only read.
     match /analytics/{document=**} {
       allow read: if true;
-      allow write: if true; // Allow writes for server-side updates
-      // For production, consider: allow write: if request.auth != null || request.headers.get('x-api-key') == 'your-secret-key';
+      allow write: if false; // Only Admin SDK can write
     }
-    
-    // Profiles collection - users can read any profile, but only update their own
+
+    // ============================================
+    // USER PROFILES
+    // ============================================
+
     match /profiles/{userId} {
       allow read: if true;
-      allow create, update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if isOwner(userId) &&
+        validString(request.resource.data.username, 50);
+      allow update: if isOwner(userId) &&
+        // Prevent changing the userId
+        request.resource.data.userId == resource.data.userId;
+      allow delete: if isOwner(userId);
     }
-    
-    // Soft posts collection - users can read all, but only create/update/delete their own
+
+    // ============================================
+    // SOFT POSTS (Firebase-only posts for soft auth users)
+    // ============================================
+
     match /soft_posts/{postId} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.authorId == request.auth.uid &&
+        validString(request.resource.data.title, 500) &&
+        validString(request.resource.data.body, 100000);
+      allow update: if isAuthenticated() &&
+        resource.data.authorId == request.auth.uid;
+      allow delete: if isAuthenticated() &&
+        resource.data.authorId == request.auth.uid;
     }
-    
-    // Default deny rule for all other collections
+
+    // ============================================
+    // BOOKMARKS
+    // ============================================
+
+    match /bookmarks/{bookmarkId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ============================================
+    // NOTIFICATIONS
+    // ============================================
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      // Users can only mark as read
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if false; // Server-side only via Admin SDK
+    }
+
+    // ============================================
+    // USER SETTINGS (Private)
+    // ============================================
+
+    match /user_settings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ============================================
+    // DRAFTS (Private)
+    // ============================================
+
+    match /drafts/{draftId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // ============================================
+    // DEFAULT DENY
+    // ============================================
+
     match /{document=**} {
       allow read, write: if false;
     }

@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
-import { 
-  LogOut, 
+import {
+  LogOut,
   UserPlus,
   RefreshCw
 } from "lucide-react";
@@ -21,6 +22,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
   onClose,
   triggerRef
 }) => {
+  const router = useRouter();
   const { user, logout, updateUser } = useAuth();
   const popupRef = useRef<HTMLDivElement>(null);
   const [isRefreshingRC, setIsRefreshingRC] = useState(false);
@@ -48,9 +50,10 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
     };
   }, [isOpen, onClose, triggerRef]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
     onClose();
+    await logout();
+    router.push("/auth");
   };
 
   const handleRefreshRC = useCallback(async () => {

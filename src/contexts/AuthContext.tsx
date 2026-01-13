@@ -329,7 +329,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       setIsLoading(false);
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Separate effect for Hive account refresh to avoid calling before it's defined
   useEffect(() => {

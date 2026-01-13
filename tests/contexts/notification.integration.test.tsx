@@ -4,6 +4,14 @@ jest.mock('@/contexts/AuthContext', () => ({
   useAuth: jest.fn(),
 }));
 
+// Mock fetch for notification API calls
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({ success: true, notifications: [] }),
+  })
+) as jest.Mock;
+
 import React, { useEffect } from 'react';
 import { act, render, waitFor } from '@testing-library/react';
 import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
@@ -32,13 +40,19 @@ const TestConsumer: React.FC<{ onChange: (ctx: NotificationContextShape) => void
 
 describe('NotificationProvider integration', () => {
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
+    (global.fetch as jest.Mock).mockClear();
     localStorage.clear();
     sessionStorage.clear();
     useAuthMock.mockReturnValue({
       user: { username: 'paul' },
       isClient: true,
     } as unknown as ReturnType<typeof useAuth>);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('hydrates from storage and adds notifications manually', async () => {
@@ -76,8 +90,8 @@ describe('NotificationProvider integration', () => {
     });
     expect(latestContext?.notifications[0].timestamp).toBeInstanceOf(Date);
 
-    // Realtime is disabled on client-side (WorkerBee is server-only)
-    await waitFor(() => expect(latestContext?.isRealtimeActive).toBe(false));
+    // Realtime is active when polling is enabled for logged-in users
+    await waitFor(() => expect(latestContext?.isRealtimeActive).toBe(true));
 
     // Test manual notification adding
     act(() => {

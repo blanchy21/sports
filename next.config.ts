@@ -1,6 +1,69 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Security headers including CSP
+  async headers() {
+    return [
+      {
+        // Apply to all routes
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              // Default policy - restrict to self
+              "default-src 'self'",
+              // Scripts - self, inline for Next.js hydration, and eval for dev
+              process.env.NODE_ENV === 'development'
+                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+                : "script-src 'self' 'unsafe-inline'",
+              // Styles - self and inline (required for styled-jsx and Tailwind)
+              "style-src 'self' 'unsafe-inline'",
+              // Images - self, data URIs, and allowed image hosts
+              "img-src 'self' data: blob: https://images.unsplash.com https://cdn.steemitimages.com https://steemitimages.com https://images.hive.blog https://gateway.ipfs.io https://ipfs.io https://files.peakd.com https://files.ecency.com https://files.3speak.tv https://files.dtube.tv",
+              // Fonts - self and data URIs
+              "font-src 'self' data:",
+              // Connect - API endpoints, Hive nodes, and Sentry
+              "connect-src 'self' https://api.hive.blog https://api.deathwing.me https://api.openhive.network https://anyx.io https://rpc.ausbit.dev https://api.coingecko.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://*.sentry.io https://*.ingest.sentry.io",
+              // Frames - restricted to video embeds
+              "frame-src 'self' https://www.youtube.com https://youtube.com https://player.vimeo.com https://3speak.tv https://emb.3speak.tv",
+              // Object - none
+              "object-src 'none'",
+              // Base URI - self only
+              "base-uri 'self'",
+              // Form actions - self only
+              "form-action 'self'",
+              // Frame ancestors - prevent clickjacking
+              "frame-ancestors 'self'",
+              // Upgrade insecure requests in production
+              process.env.NODE_ENV === 'production' ? 'upgrade-insecure-requests' : '',
+            ].filter(Boolean).join('; '),
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+        ],
+      },
+    ];
+  },
   // Webpack configuration for WASM support (required for @hiveio/wax)
   webpack: (config, { isServer }) => {
     // Externalize WorkerBee and Wax packages - they should only be used server-side
@@ -73,6 +136,12 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
+    // Allow local static images and API proxy images with query strings
+    localPatterns: [
+      {
+        pathname: '/**',
+      },
+    ],
     remotePatterns: [
       {
         protocol: 'https',
@@ -152,4 +221,37 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry configuration options
+const sentryWebpackPluginOptions = {
+  // Suppresses source map uploading logs during build
+  silent: true,
+
+  // Organization and project from environment variables
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+
+  // Auth token for uploading source maps (only in CI/CD)
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // Only upload source maps in production builds
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+
+  // Disable Sentry during development builds
+  disableServerWebpackPlugin: process.env.NODE_ENV !== 'production',
+  disableClientWebpackPlugin: process.env.NODE_ENV !== 'production',
+
+  // Hide source maps from being publicly accessible
+  hideSourceMaps: true,
+
+  // Automatically instrument routes
+  automaticVercelMonitors: true,
+};
+
+// Wrap with Sentry only if DSN is configured
+const exportedConfig = process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+  : nextConfig;
+
+export default exportedConfig;

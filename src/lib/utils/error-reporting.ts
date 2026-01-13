@@ -1,13 +1,12 @@
 /**
  * Error Reporting Utility
  *
- * Centralized error reporting that can be extended to use
- * external services like Sentry, LogRocket, or Bugsnag.
- *
- * Currently logs to console, with structured data for production monitoring.
+ * Centralized error reporting integrated with Sentry.
+ * Falls back to console logging in development or when Sentry is not configured.
  */
 
 import { ErrorInfo } from 'react';
+import * as Sentry from '@sentry/nextjs';
 
 /**
  * Error severity levels
@@ -76,23 +75,62 @@ function formatErrorReport(report: ErrorReport): string {
 }
 
 /**
- * Send error to external service (placeholder for Sentry, etc.)
- * Extend this function when adding a service like Sentry
+ * Map our severity levels to Sentry severity levels
+ */
+function mapSeverityToSentry(severity: ErrorSeverity): Sentry.SeverityLevel {
+  switch (severity) {
+    case 'fatal':
+      return 'fatal';
+    case 'error':
+      return 'error';
+    case 'warning':
+      return 'warning';
+    case 'info':
+      return 'info';
+    default:
+      return 'error';
+  }
+}
+
+/**
+ * Send error to Sentry
  */
 async function sendToExternalService(report: ErrorReport): Promise<void> {
-  // Placeholder for external service integration
-  // Example Sentry integration:
-  // if (typeof Sentry !== 'undefined') {
-  //   Sentry.captureException(new Error(report.message), {
-  //     level: report.severity,
-  //     contexts: { error: report.context },
-  //     extra: { componentStack: report.componentStack },
-  //   });
-  // }
+  // Only send to Sentry in production with DSN configured
+  if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_SENTRY_DSN) {
+    try {
+      // Set user context if available
+      if (report.context.userId || report.context.username) {
+        Sentry.setUser({
+          id: report.context.userId,
+          username: report.context.username,
+        });
+      }
 
-  // For now, we'll log structured data that can be picked up by log aggregators
-  if (process.env.NODE_ENV === 'production') {
-    // Structured JSON logging for production (useful for log aggregation)
+      // Set additional context
+      Sentry.setContext('errorContext', {
+        component: report.context.component,
+        action: report.context.action,
+        url: report.context.url,
+        timestamp: report.context.timestamp,
+        ...report.context.extra,
+      });
+
+      // Capture the exception with proper severity
+      Sentry.captureException(new Error(report.message), {
+        level: mapSeverityToSentry(report.severity),
+        extra: {
+          componentStack: report.componentStack,
+          stack: report.stack,
+        },
+      });
+    } catch (sentryError) {
+      // Fallback to console if Sentry fails
+      console.error('[Sentry Error]', sentryError);
+      console.error(JSON.stringify({ type: 'error_report', ...report }));
+    }
+  } else if (process.env.NODE_ENV === 'production') {
+    // Structured JSON logging for production without Sentry
     console.error(JSON.stringify({
       type: 'error_report',
       ...report,

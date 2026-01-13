@@ -1,10 +1,11 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "./AuthContext";
-// WorkerBee is only available server-side, so we'll use dynamic import for client-side real-time features
 
 const NOTIFICATION_STORAGE_PREFIX = 'sportsblock-notifications';
+const NOTIFICATION_POLL_INTERVAL = 30000; // 30 seconds
+const NOTIFICATION_LAST_CHECK_KEY = 'sportsblock-notifications-last-check';
 
 const notificationsDebugEnabled =
   process.env.NEXT_PUBLIC_NOTIFICATIONS_DEBUG === 'true' || process.env.NODE_ENV === 'development';
@@ -139,125 +140,104 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Initialize real-time monitoring when user is logged in
+  // Track polling state
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const lastCheckRef = useRef<string | null>(null);
+
+  // Fetch notifications from API
+  const fetchNotifications = useCallback(async (username: string, since?: string) => {
+    try {
+      const params = new URLSearchParams({ username, limit: '50' });
+      if (since) {
+        params.set('since', since);
+      }
+
+      const response = await fetch(`/api/hive/notifications?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success && Array.isArray(data.notifications)) {
+        return data.notifications as Array<{
+          id: string;
+          type: 'vote' | 'comment' | 'mention' | 'transfer' | 'reblog';
+          title: string;
+          message: string;
+          timestamp: string;
+          data: Record<string, unknown>;
+        }>;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
+  }, []);
+
+  // Initialize polling when user is logged in
   useEffect(() => {
     if (!isClient || !user?.username) {
       setIsRealtimeActive(false);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
       return;
     }
 
-    const initializeRealtime = async () => {
-      try {
-        // WorkerBee is server-side only, so real-time monitoring is disabled on client
-        // TODO: Implement real-time monitoring via API routes or WebSocket
-        notificationDebugLog('Real-time monitoring disabled on client-side (WorkerBee is server-only)');
-        setIsRealtimeActive(false);
-        return;
-        
-        // The code below is disabled until we implement API-based real-time monitoring
-        /*
-        const { getWorkerBeeClient } = await import('@/lib/hive-workerbee/client');
-        const workerBee = getWorkerBeeClient();
-        
-        // Start the WorkerBee client if not already running
-        if (!workerBee.running) {
-          await workerBee.start();
-          notificationDebugLog('WorkerBee client started');
-        }
-        
-        setIsRealtimeActive(true);
+    const username = user.username;
 
-        // Monitor comments on user's posts
-        notificationDebugLog('Setting up comment monitoring for user:', user.username);
-        commentSubscription = workerBee.observe.onComments().subscribe({
-          next: (data) => {
-            try {
-              notificationDebugLog('Comment data received:', data);
-              // Handle WorkerBee data structure
-              if (data && data.comments) {
-                const comments = Array.isArray(data.comments) ? data.comments : [];
-                comments.forEach((comment: { operation?: { parent_author?: string; author?: string; permlink?: string; parent_permlink?: string } }) => {
-                  const operation = comment.operation;
-                  
-                  // Only notify if it's a comment on the user's posts
-                  if (operation && operation.parent_author === user.username) {
-                    notificationDebugLog('Adding comment notification for comment author:', operation.author);
-                    addNotification({
-                      type: 'comment',
-                      title: 'New Comment',
-                      message: `@${operation.author} commented on your post`,
-                      data: {
-                        author: operation.author,
-                        permlink: operation.permlink,
-                        parentAuthor: operation.parent_author,
-                        parentPermlink: operation.parent_permlink,
-                      }
-                    });
-                  }
-                });
-              }
-            } catch (error) {
-              console.error('Error processing comments data:', error);
-            }
-          },
-          error: (error) => {
-            console.error('Error monitoring comments:', error);
-            setIsRealtimeActive(false);
-          }
-        });
+    // Get last check timestamp from localStorage
+    const lastCheckKey = `${NOTIFICATION_LAST_CHECK_KEY}:${username}`;
+    lastCheckRef.current = localStorage.getItem(lastCheckKey);
 
-        // Monitor votes on user's posts
-        notificationDebugLog('Setting up vote monitoring for user:', user.username);
-        voteSubscription = workerBee.observe.onVotes().subscribe({
-          next: (data) => {
-            try {
-              notificationDebugLog('Vote data received:', data);
-              // Handle WorkerBee data structure
-              if (data && data.votes) {
-                const votes = Array.isArray(data.votes) ? data.votes : [];
-                votes.forEach((vote: { operation?: { voter?: string; author?: string; permlink?: string; weight?: number } }) => {
-                  const operation = vote.operation;
-                  
-                  // Only notify if it's a vote on the user's posts
-                  if (operation && operation.author === user.username) {
-                    notificationDebugLog('Adding vote notification for voter:', operation.voter);
-                    addNotification({
-                      type: 'vote',
-                      title: 'New Vote',
-                      message: `@${operation.voter} voted on your post`,
-                      data: {
-                        voter: operation.voter,
-                        author: operation.author,
-                        permlink: operation.permlink,
-                        weight: operation.weight,
-                      }
-                    });
-                  }
-                });
-              }
-            } catch (error) {
-              console.error('Error processing votes data:', error);
-            }
-          },
-          error: (error) => {
-            console.error('Error monitoring votes:', error);
-            setIsRealtimeActive(false);
-          }
+    const poll = async () => {
+      notificationDebugLog('Polling for notifications...', { username, since: lastCheckRef.current });
+
+      const newNotifications = await fetchNotifications(username, lastCheckRef.current || undefined);
+
+      if (newNotifications.length > 0) {
+        notificationDebugLog('Found new notifications:', newNotifications.length);
+
+        // Add new notifications (avoiding duplicates)
+        setNotifications(prev => {
+          const existingIds = new Set(prev.map(n => n.id));
+          const uniqueNew = newNotifications
+            .filter(n => !existingIds.has(n.id))
+            .map(n => ({
+              ...n,
+              type: n.type as 'comment' | 'vote' | 'post' | 'mention',
+              timestamp: new Date(n.timestamp),
+              read: false,
+            }));
+
+          if (uniqueNew.length === 0) return prev;
+
+          return [...uniqueNew, ...prev].slice(0, 100);
         });
-        */
-      } catch (error) {
-        console.error('Error initializing real-time monitoring:', error);
-        setIsRealtimeActive(false);
       }
+
+      // Update last check timestamp
+      const now = new Date().toISOString();
+      lastCheckRef.current = now;
+      localStorage.setItem(lastCheckKey, now);
     };
 
-    initializeRealtime();
+    // Initial poll
+    poll();
+    setIsRealtimeActive(true);
+
+    // Set up interval
+    pollingRef.current = setInterval(poll, NOTIFICATION_POLL_INTERVAL);
 
     return () => {
-      // Cleanup handled by initializeRealtime (currently disabled)
-      // TODO: Add cleanup when real-time monitoring is re-enabled
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
     };
-  }, [isClient, user?.username, addNotification]);
+  }, [isClient, user?.username, fetchNotifications]);
 
   const value = {
     notifications,

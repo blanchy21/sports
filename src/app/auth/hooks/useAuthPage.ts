@@ -179,14 +179,14 @@ export const useAuthPage = (): UseAuthPageResult => {
 
         await loginWithAioha(loginResult);
         resetHivePrompt();
-        setShowAiohaModal(false);
+        closeAiohaModal();
         router.push("/feed");
       } catch (error) {
         console.error("Aioha login failed:", error);
         setErrorMessage("Login failed: " + (error instanceof Error ? error.message : "Unknown error"));
       } finally {
         setIsConnecting(false);
-        setShowAiohaModal(false);
+        closeAiohaModal();
       }
     };
 
@@ -209,7 +209,7 @@ export const useAuthPage = (): UseAuthPageResult => {
       aiohaWithEvents.off("connect", handleAuthSuccess);
       aiohaWithEvents.off("error", handleAuthError);
     };
-  }, [aioha, loginWithAioha, resetHivePrompt, router]);
+  }, [aioha, closeAiohaModal, loginWithAioha, resetHivePrompt, router]);
 
   const validateEmailForm = useCallback((): string | null => {
     if (!emailForm.email || !emailForm.password) {
@@ -283,7 +283,8 @@ export const useAuthPage = (): UseAuthPageResult => {
 
       setIsConnecting(true);
       setErrorMessage(null);
-      openAiohaModal();
+      // Note: Don't show AiohaModal here - we're using programmatic login
+      // The Keychain extension will popup directly when aioha.login() is called
 
       try {
         const available = (aioha as { getProviders: () => unknown[] }).getProviders();
@@ -340,12 +341,11 @@ export const useAuthPage = (): UseAuthPageResult => {
         ) {
           await loginWithAioha(loginResult);
           resetHivePrompt();
-          setShowAiohaModal(false);
           router.push("/feed");
         } else if ((result as { errorCode?: number })?.errorCode === 4901) {
+          // Error code 4901 means "already logged in"
           await loginWithAioha(loginResult);
           resetHivePrompt();
-          setShowAiohaModal(false);
           router.push("/feed");
         } else {
           const info = {
@@ -361,10 +361,9 @@ export const useAuthPage = (): UseAuthPageResult => {
         setErrorMessage("Login failed: " + (error instanceof Error ? error.message : "Unknown error"));
       } finally {
         setIsConnecting(false);
-        setShowAiohaModal(false);
       }
     },
-    [aioha, hiveUsername, isInitialized, loginWithAioha, openAiohaModal, resetHivePrompt, router]
+    [aioha, hiveUsername, isInitialized, loginWithAioha, resetHivePrompt, router]
   );
 
   const onProviderSelect = useCallback(

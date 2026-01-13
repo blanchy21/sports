@@ -299,22 +299,14 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       logWarn('[WorkerBee fetchUserAccount] Failed to get HBD savings APR', 'fetchUserAccount', error);
     }
 
-    // Calculate actual comment count and vote count by fetching user's posts
-    // Only do this if the account data doesn't have reliable stats
-    let calculatedStats = { commentCount: 0, voteCount: 0 };
+    // Use account stats directly - skip expensive calculateUserStats call
+    // The get_discussions_by_author_before_date API is unreliable and causes 15+ second delays
+    const calculatedStats = { commentCount: 0, voteCount: 0 };
     const accountCommentCount = (accountData.comment_count as number) || 0;
     const accountVoteCount = (accountData.lifetime_vote_count as number) || 0;
-    
-    // If account data shows 0 for comments or votes, try to calculate from posts
-    if (accountCommentCount === 0 || accountVoteCount === 0) {
-      try {
-        debugLog(`[WorkerBee fetchUserAccount] Account stats are 0, calculating from posts...`);
-        calculatedStats = await calculateUserStats(username);
-        debugLog(`[WorkerBee fetchUserAccount] Calculated stats:`, calculatedStats);
-      } catch (error) {
-        logWarn('[WorkerBee fetchUserAccount] Failed to calculate user stats', 'fetchUserAccount', error);
-      }
-    }
+
+    // Note: We no longer call calculateUserStats as it uses get_discussions_by_author_before_date
+    // which frequently times out and blocks the login flow for 15+ seconds per node
 
     // Parse balances
     const hiveAsset = parseAsset(accountData.balance as string);
@@ -359,11 +351,19 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     }
 
     // Calculate Resource Credits percentage using the proper rc_api
+    // Use a short timeout (3s) since this is non-critical data
     let rcPercentage = 0;
-    
+
     try {
-      // Use the dedicated RC API for accurate RC calculation
-      const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [username]) as { rc_accounts?: RcAccountData[] };
+      // Use the dedicated RC API for accurate RC calculation with a fast timeout
+      const rcPromise = makeHiveApiCall('rc_api', 'find_rc_accounts', [username]);
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error('RC API timeout (3s)')), 3000)
+      );
+
+      const rcResult = await Promise.race([rcPromise, timeoutPromise]) as { rc_accounts?: RcAccountData[] } | null;
+      if (!rcResult) throw new Error('RC API returned null');
+
       debugLog(`[WorkerBee fetchUserAccount] RC API response:`, rcResult);
       
       if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {

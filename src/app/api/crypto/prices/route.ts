@@ -108,71 +108,46 @@ export async function GET(request: NextRequest) {
         }
       };
     } else {
-      // Fetch all prices with retry logic
-      const [bitcoinResponse, hiveResponse, ethereumResponse] = await Promise.all([
-        retryWithBackoff(
-          () => fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_market_cap=true', {
-            headers: { 'Accept': 'application/json', 'User-Agent': 'Sportsblock/1.0' }
-          }),
+      // Fetch all prices in a SINGLE API call to avoid rate limits
+      const response = await retryWithBackoff(
+        () => fetch(
+          'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,hive,hive_dollar&vs_currencies=usd&include_24hr_change=true&include_market_cap=true',
           {
-            maxRetries: 3,
-            initialDelay: 2000,
-            maxDelay: 30000,
-            backoffMultiplier: 2,
+            headers: { 'Accept': 'application/json', 'User-Agent': 'Sportsblock/1.0' }
           }
         ),
-        retryWithBackoff(
-          () => fetch('https://api.coingecko.com/api/v3/simple/price?ids=hive,hive_dollar&vs_currencies=usd&include_24hr_change=true', {
-            headers: { 'Accept': 'application/json', 'User-Agent': 'Sportsblock/1.0' }
-          }),
-          {
-            maxRetries: 3,
-            initialDelay: 2000,
-            maxDelay: 30000,
-            backoffMultiplier: 2,
-          }
-        ),
-        retryWithBackoff(
-          () => fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true&include_market_cap=true', {
-            headers: { 'Accept': 'application/json', 'User-Agent': 'Sportsblock/1.0' }
-          }),
-          {
-            maxRetries: 3,
-            initialDelay: 2000,
-            maxDelay: 30000,
-            backoffMultiplier: 2,
-          }
-        )
-      ]);
+        {
+          maxRetries: 2,
+          initialDelay: 3000, // Longer delay for rate limit recovery
+          maxDelay: 30000,
+          backoffMultiplier: 2,
+        }
+      );
 
-      if (!bitcoinResponse.ok || !hiveResponse.ok || !ethereumResponse.ok) {
-        throw new Error(`CoinGecko API error: Bitcoin ${bitcoinResponse.status}, HIVE/HBD ${hiveResponse.status}, Ethereum ${ethereumResponse.status}`);
+      if (!response.ok) {
+        throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`);
       }
 
-      const [bitcoinResult, hiveResult, ethereumResult] = await Promise.all([
-        bitcoinResponse.json(),
-        hiveResponse.json(),
-        ethereumResponse.json()
-      ]);
+      const data = await response.json();
 
       priceData = {
         bitcoin: {
-          usd: bitcoinResult.bitcoin?.usd || 0,
-          usd_24h_change: bitcoinResult.bitcoin?.usd_24h_change,
-          market_cap: bitcoinResult.bitcoin?.usd_market_cap,
+          usd: data.bitcoin?.usd || 0,
+          usd_24h_change: data.bitcoin?.usd_24h_change,
+          market_cap: data.bitcoin?.usd_market_cap,
         },
         ethereum: {
-          usd: ethereumResult.ethereum?.usd || 0,
-          usd_24h_change: ethereumResult.ethereum?.usd_24h_change,
-          market_cap: ethereumResult.ethereum?.usd_market_cap,
+          usd: data.ethereum?.usd || 0,
+          usd_24h_change: data.ethereum?.usd_24h_change,
+          market_cap: data.ethereum?.usd_market_cap,
         },
         hive: {
-          usd: hiveResult.hive?.usd || 0,
-          usd_24h_change: hiveResult.hive?.usd_24h_change,
+          usd: data.hive?.usd || 0,
+          usd_24h_change: data.hive?.usd_24h_change,
         },
         hive_dollar: {
-          usd: hiveResult.hive_dollar?.usd || 0,
-          usd_24h_change: hiveResult.hive_dollar?.usd_24h_change,
+          usd: data.hive_dollar?.usd || 0,
+          usd_24h_change: data.hive_dollar?.usd_24h_change,
         },
       };
     }
