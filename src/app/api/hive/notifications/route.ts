@@ -28,6 +28,9 @@ interface NotificationItem {
   data: Record<string, unknown>;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
 
@@ -46,7 +49,8 @@ export async function GET(request: NextRequest) {
   }
 
   const { username, since, limit } = parseResult.data;
-  const sinceDate = since ? new Date(since) : null;
+  const parsedSince = since ? new Date(since) : null;
+  const sinceDate = parsedSince && !Number.isNaN(parsedSince.getTime()) ? parsedSince : null;
 
   try {
     // Fetch account history - get more entries than limit since we'll filter
@@ -99,10 +103,13 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[API] Error fetching notifications:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: false,
+      error: message,
+      notifications: [],
+      count: 0,
+      username,
+    });
   }
 }
 
@@ -111,11 +118,15 @@ export async function GET(request: NextRequest) {
  */
 function processOperation(
   opType: string,
-  opData: Record<string, unknown>,
+  opData: unknown,
   username: string,
   timestamp: string,
   trxId: string
 ): NotificationItem | null {
+  if (!isRecord(opData)) {
+    return null;
+  }
+
   switch (opType) {
     case 'vote': {
       // Only notify if someone voted on the user's content

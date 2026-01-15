@@ -146,13 +146,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   // Fetch notifications from API
   const fetchNotifications = useCallback(async (username: string, since?: string) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      notificationDebugLog('Skipping notifications fetch: offline');
+      return [];
+    }
+
     try {
       const params = new URLSearchParams({ username, limit: '50' });
       if (since) {
         params.set('since', since);
       }
 
-      const response = await fetch(`/api/hive/notifications?${params.toString()}`);
+      const response = await fetch(`/api/hive/notifications?${params.toString()}`, {
+        cache: 'no-store',
+      });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -170,7 +177,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       }
       return [];
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      const isNetworkError = error instanceof TypeError && /failed to fetch/i.test(error.message);
+      if (isNetworkError) {
+        notificationDebugLog('Notification fetch failed (network).', error);
+      } else {
+        console.error('Error fetching notifications:', error);
+      }
       return [];
     }
   }, []);
