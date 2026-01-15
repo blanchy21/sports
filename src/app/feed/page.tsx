@@ -25,6 +25,7 @@ export default function FeedPage() {
   const [nextCursor, setNextCursor] = React.useState<string | undefined>(undefined);
   const [hasMore, setHasMore] = React.useState(false);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
+  const nextCursorRef = React.useRef<string | undefined>(undefined);
   const [communityStats, setCommunityStats] = React.useState<CommunityStats>({
     totalPosts: 0,
     totalAuthors: 0,
@@ -76,6 +77,12 @@ export default function FeedPage() {
     onLoadMore: () => loadPosts(true),
   });
 
+  const resetPagination = React.useCallback(() => {
+    setNextCursor(undefined);
+    nextCursorRef.current = undefined;
+    setHasMore(false);
+  }, []);
+
   const getPostKey = React.useCallback((post: SportsblockPost) => {
     return `${post.author}/${post.permlink}`;
   }, []);
@@ -93,6 +100,11 @@ export default function FeedPage() {
   }, [getPostKey]);
 
   const loadPosts = React.useCallback(async (loadMore = false) => {
+    const cursor = loadMore ? nextCursorRef.current : undefined;
+    if (loadMore && !cursor) {
+      return;
+    }
+
     if (loadMore) {
       setIsLoadingMore(true);
     } else {
@@ -108,7 +120,7 @@ export default function FeedPage() {
         sort: 'created',
       });
       if (selectedSport) params.append('sportCategory', selectedSport);
-      if (loadMore && nextCursor) params.append('before', nextCursor);
+      if (loadMore && cursor) params.append('before', cursor);
       
       const response = await fetch(`/api/hive/posts?${params.toString()}`);
       if (!response.ok) {
@@ -123,6 +135,7 @@ export default function FeedPage() {
       
       // Update pagination state
       setNextCursor(result.nextCursor);
+      nextCursorRef.current = result.nextCursor;
       setHasMore(result.hasMore);
       
       // Calculate analytics data from all posts (not filtered by sport)
@@ -167,7 +180,7 @@ export default function FeedPage() {
       setIsLoadingMore(false);
       setStatsLoading(false);
     }
-  }, [selectedSport, nextCursor, dedupePosts, user?.username]);
+  }, [selectedSport, dedupePosts, user?.username]);
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -186,8 +199,7 @@ export default function FeedPage() {
     const handleSportFilterChange = (event: CustomEvent) => {
       setSelectedSport(event.detail);
       // Reset pagination when sport filter changes
-      setNextCursor(undefined);
-      setHasMore(false);
+      resetPagination();
     };
 
     // Load saved sport filter from localStorage (client-side only)
@@ -197,8 +209,7 @@ export default function FeedPage() {
         if (savedSport) {
           setSelectedSport(savedSport);
           // Reset pagination when loading saved filter
-          setNextCursor(undefined);
-          setHasMore(false);
+          resetPagination();
         }
       } catch (error) {
         console.error('Error loading saved sport filter:', error);
