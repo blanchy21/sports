@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { clearMonitoringData } from '@/lib/hive-workerbee/monitoring';
-import { clearOptimizationCache as clearOptCache } from '@/lib/hive-workerbee/optimization';
+import {
+  getMonitoringStats,
+  clearMonitoringData,
+  exportMonitoringData
+} from '@/lib/hive-workerbee/monitoring';
+import {
+  getOptimizationMetrics,
+  clearOptimizationCache as clearOptCache
+} from '@/lib/hive-workerbee/optimization';
+import { getMemoryCache } from '@/lib/cache';
+import { getTieredCache } from '@/lib/cache';
 import { withCsrfProtection } from '@/lib/api/csrf';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,56 +21,58 @@ export async function GET(request: NextRequest) {
 
     switch (action) {
       case 'stats':
-        // Return mock data for now to avoid errors
-        const mockData = {
-          monitoring: {
-            errors: {
-              total: 0,
-              unresolved: 0,
-              byType: {},
-              bySeverity: {},
-              recentErrors: []
-            },
-            performance: {
-              totalOperations: 0,
-              averageDuration: 0,
-              successRate: 100,
-              slowOperations: [],
-              recentPerformance: []
-            },
-            health: {
-              status: 'healthy',
-              issues: [],
-              recommendations: []
-            }
-          },
-          optimization: {
-            requestCount: 0,
-            averageResponseTime: 0,
-            cacheHitRate: 0,
-            errorRate: 0,
-            lastUpdated: Date.now()
-          },
-          cache: {
-            size: 0,
-            maxSize: 1000,
-            hitRate: 0
-          },
-          timestamp: new Date().toISOString()
+        // Get real monitoring data
+        const monitoringStats = getMonitoringStats();
+        const optimizationStats = getOptimizationMetrics();
+
+        // Get cache stats
+        let cacheStats = {
+          size: 0,
+          maxSize: 1000,
+          hitRate: 0,
+          redisAvailable: false
         };
-        
-        return NextResponse.json(mockData);
+
+        try {
+          const memoryCache = getMemoryCache();
+          const memoryCacheStats = memoryCache.getStats();
+
+          const tieredCache = await getTieredCache();
+          const tieredStats = tieredCache.getStats();
+
+          cacheStats = {
+            size: memoryCacheStats.size,
+            maxSize: memoryCacheStats.maxEntries,
+            hitRate: tieredStats.hitRate * 100,
+            redisAvailable: tieredCache.isRedisAvailable()
+          };
+        } catch {
+          // Cache not available, use defaults
+        }
+
+        return NextResponse.json({
+          monitoring: monitoringStats,
+          optimization: optimizationStats,
+          cache: cacheStats,
+          timestamp: new Date().toISOString()
+        });
 
       case 'export':
+        // Export full monitoring data for analysis
+        const exportData = exportMonitoringData();
+        const exportOptStats = getOptimizationMetrics();
+
         return NextResponse.json({
-          monitoring: {},
-          optimization: {},
-          cache: {},
+          monitoring: exportData,
+          optimization: exportOptStats,
           timestamp: new Date().toISOString()
         });
 
       default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Invalid action. Use ?action=stats or ?action=export' },
+          { status: 400 }
+        );
     }
   } catch (error) {
     console.error('Error in monitoring API:', error);

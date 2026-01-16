@@ -37,6 +37,8 @@
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query": "^5.90.5",
     "@types/dompurify": "^3.0.5",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.1",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

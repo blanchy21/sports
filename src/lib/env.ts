@@ -55,6 +55,10 @@ export const serverEnv = {
   redis: {
     url: getOptionalEnv('REDIS_URL'),
   },
+  upstash: {
+    redisRestUrl: getOptionalEnv('UPSTASH_REDIS_REST_URL'),
+    redisRestToken: getOptionalEnv('UPSTASH_REDIS_REST_TOKEN'),
+  },
   hive: {
     nodeUrl: getOptionalEnv('HIVE_NODE_URL', 'https://api.hive.blog'),
     testnetUrl: getOptionalEnv('HIVE_NODE_URL_TESTNET', 'https://testnet.openhive.network'),
@@ -84,10 +88,24 @@ export function isFirebaseConfigured(): boolean {
 }
 
 /**
- * Check if Redis is configured
+ * Check if Redis is configured (via REDIS_URL)
  */
 export function isRedisConfigured(): boolean {
   return !!serverEnv.redis.url;
+}
+
+/**
+ * Check if Upstash Redis is configured
+ */
+export function isUpstashConfigured(): boolean {
+  return !!(serverEnv.upstash.redisRestUrl && serverEnv.upstash.redisRestToken);
+}
+
+/**
+ * Check if any Redis is configured (Upstash or standard)
+ */
+export function isAnyRedisConfigured(): boolean {
+  return isUpstashConfigured() || isRedisConfigured();
 }
 
 /**

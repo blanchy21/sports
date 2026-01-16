@@ -89,11 +89,35 @@ export class RedisCache {
 
     this.isInitialized = true;
 
-    // Get Redis URL from config or environment
+    // First, check for Upstash environment variables (preferred)
+    const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (upstashUrl && upstashToken) {
+      this.redisUrl = upstashUrl;
+      this.restToken = upstashToken;
+
+      try {
+        // Test connection
+        const testResult = await this.executeCommand('PING');
+        if (testResult === 'PONG') {
+          this.stats.connected = true;
+          this.stats.lastConnectedAt = Date.now();
+          console.info('[RedisCache] Connected to Upstash Redis via REST API');
+          return true;
+        }
+      } catch (error) {
+        this.stats.errors++;
+        this.stats.lastError = error instanceof Error ? error.message : String(error);
+        console.warn('[RedisCache] Upstash connection failed:', this.stats.lastError);
+      }
+    }
+
+    // Fallback: Get Redis URL from config or environment
     const url = this.config.url || process.env.REDIS_URL;
 
     if (!url) {
-      console.debug('[RedisCache] No REDIS_URL configured, running in memory-only mode');
+      console.debug('[RedisCache] No Redis configured, running in memory-only mode');
       return false;
     }
 
@@ -112,7 +136,7 @@ export class RedisCache {
         if (testResult === 'PONG') {
           this.stats.connected = true;
           this.stats.lastConnectedAt = Date.now();
-          console.info('[RedisCache] Connected to Upstash Redis');
+          console.info('[RedisCache] Connected to Upstash Redis via URL');
           return true;
         }
       } else {
@@ -471,7 +495,17 @@ export async function getRedisCache(): Promise<RedisCache> {
 
 /**
  * Check if Redis is available without initializing
+ * Supports both Upstash environment variables and REDIS_URL
  */
 export function isRedisConfigured(): boolean {
-  return !!process.env.REDIS_URL;
+  // Check Upstash environment variables first (preferred)
+  const hasUpstash = !!(
+    process.env.UPSTASH_REDIS_REST_URL &&
+    process.env.UPSTASH_REDIS_REST_TOKEN
+  );
+
+  // Fallback to REDIS_URL
+  const hasRedisUrl = !!process.env.REDIS_URL;
+
+  return hasUpstash || hasRedisUrl;
 }

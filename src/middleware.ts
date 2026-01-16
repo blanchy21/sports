@@ -11,7 +11,7 @@ import {
  * Next.js Middleware
  *
  * Handles:
- * - API rate limiting
+ * - API rate limiting (distributed via Upstash Redis)
  * - Security headers (CSP applied via next.config.ts)
  */
 
@@ -50,7 +50,7 @@ function getRateLimitType(pathname: string): RateLimitType | null {
   return null;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Only apply rate limiting to API routes
@@ -69,9 +69,9 @@ export function middleware(request: NextRequest) {
   const clientId = getClientIdentifier(request);
   const rateLimitKey = `${clientId}:${rateLimitType}`;
 
-  // Check rate limit
+  // Check rate limit (async - uses distributed Redis when available)
   const config = RATE_LIMITS[rateLimitType];
-  const result = checkRateLimit(rateLimitKey, config);
+  const result = await checkRateLimit(rateLimitKey, config, rateLimitType);
 
   // Add rate limit headers to response
   const rateLimitHeaders = createRateLimitHeaders(
