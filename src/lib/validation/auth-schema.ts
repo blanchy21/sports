@@ -61,6 +61,8 @@ export const authStateSchema = z.object({
   user: userSchema.nullable(),
   authType: authTypeSchema,
   hiveUser: hiveUserSchema.optional(),
+  // Session timestamp for expiry checking (added for 30-minute session timeout)
+  loginAt: z.number().optional(),
 });
 
 /**

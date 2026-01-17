@@ -9,19 +9,20 @@ import { useRouter } from "next/navigation";
 
 export default function CommunityMembersPage() {
   const params = useParams();
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const communityId = params.id as string;
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
-    if (!user) {
+    if (!isAuthLoading && !user) {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
 
-  if (!user) {
-    return null; // Will redirect
+  // Show nothing while auth is loading or if user is not authenticated (will redirect)
+  if (isAuthLoading || !user) {
+    return null;
   }
 
   return (

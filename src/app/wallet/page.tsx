@@ -42,7 +42,7 @@ interface TransactionOperation {
 }
 
 export default function WalletPage() {
-  const { user, isAuthenticated, authType, refreshHiveAccount, hiveUser } = useAuth();
+  const { user, isAuthenticated, authType, refreshHiveAccount, hiveUser, isLoading: isAuthLoading } = useAuth();
   const { bitcoinPrice, ethereumPrice, hivePrice, hbdPrice, isLoading: pricesLoading, error: priceError, lastUpdated, refreshPrices } = usePriceContext();
   const router = useRouter();
   const [showBalances, setShowBalances] = useState(true);
@@ -79,12 +79,12 @@ export default function WalletPage() {
     }
   }, [user?.username]);
 
-  // Redirect if not authenticated or not a Hive user
+  // Redirect if not authenticated or not a Hive user (wait for auth to load first)
   useEffect(() => {
-    if (!isAuthenticated || authType !== "hive" || !user) {
+    if (!isAuthLoading && (!isAuthenticated || authType !== "hive" || !user)) {
       router.push("/");
     }
-  }, [isAuthenticated, authType, user, router]);
+  }, [isAuthenticated, authType, user, isAuthLoading, router]);
 
   // Fetch transactions when user is available
   useEffect(() => {
@@ -198,14 +198,21 @@ export default function WalletPage() {
     });
   };
 
-  if (!isAuthenticated || authType !== "hive" || !user) {
+  // Show loading or auth required message
+  if (isAuthLoading || !isAuthenticated || authType !== "hive" || !user) {
     return (
       <MainLayout showRightSidebar={false} className="max-w-none">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
-            <p className="text-muted-foreground">Please connect your Hive account to view wallet information.</p>
+            <h2 className="text-xl font-semibold mb-2">
+              {isAuthLoading ? "Loading..." : "Authentication Required"}
+            </h2>
+            <p className="text-muted-foreground">
+              {isAuthLoading 
+                ? "Checking authentication status..." 
+                : "Please connect your Hive account to view wallet information."}
+            </p>
           </div>
         </div>
       </MainLayout>

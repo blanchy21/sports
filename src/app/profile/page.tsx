@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { SportsblockPost } from "@/lib/shared/types";
 
 export default function ProfilePage() {
-  const { user, authType, refreshHiveAccount } = useAuth();
+  const { user, authType, refreshHiveAccount, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
@@ -21,12 +21,12 @@ export default function ProfilePage() {
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
-    if (!user) {
+    if (!isAuthLoading && !user) {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
 
   const loadUserPosts = React.useCallback(async () => {
     if (!user?.username) return;
@@ -71,8 +71,9 @@ export default function ProfilePage() {
     }
   }, [user?.username, loadUserPosts]);
 
-  if (!user) {
-    return null; // Will redirect
+  // Show nothing while auth is loading or if user is not authenticated (will redirect)
+  if (isAuthLoading || !user) {
+    return null;
   }
 
   return (

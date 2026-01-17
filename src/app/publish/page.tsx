@@ -42,7 +42,7 @@ const EmojiPicker = dynamic(
 );
 
 function PublishPageContent() {
-  const { user, authType, hiveUser } = useAuth();
+  const { user, authType, hiveUser, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [title, setTitle] = useState("");
@@ -60,12 +60,12 @@ function PublishPageContent() {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const emojiButtonRef = React.useRef<HTMLButtonElement>(null);
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
-    if (!user) {
+    if (!isAuthLoading && !user) {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
 
   // Load draft if draft ID is provided in URL
   React.useEffect(() => {
@@ -342,18 +342,23 @@ function PublishPageContent() {
     }
   };
 
-  if (!user) {
+  // Show loading or auth required message
+  if (isAuthLoading || !user) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            {isAuthLoading ? "Loading..." : "Authentication Required"}
+          </h2>
           <p className="text-muted-foreground mb-4">
-            Please sign in to create and publish posts.
+            {isAuthLoading ? "Checking authentication..." : "Please sign in to create and publish posts."}
           </p>
-          <Button onClick={() => router.push("/")}>
-            Go Home
-          </Button>
+          {!isAuthLoading && (
+            <Button onClick={() => router.push("/")}>
+              Go Home
+            </Button>
+          )}
         </div>
       </div>
     );

@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, authType, refreshHiveAccount } = useAuth();
+  const { user, authType, refreshHiveAccount, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
@@ -37,12 +37,12 @@ export default function DashboardPage() {
     5
   );
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
-    if (!user) {
+    if (!isAuthLoading && !user) {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
 
   const handleRefreshData = async () => {
     if (authType !== "hive") return;
@@ -59,14 +59,19 @@ export default function DashboardPage() {
     }
   };
 
-  if (!user) {
+  // Show loading or auth required message
+  if (isAuthLoading || !user) {
     return (
       <MainLayout showRightSidebar={false} className="max-w-none">
         <div className="max-w-4xl mx-auto text-center py-12">
-          <h2 className="text-xl font-semibold mb-2">Please sign in to view your dashboard</h2>
-          <Button onClick={() => router.push("/")}>
-            Go Home
-          </Button>
+          <h2 className="text-xl font-semibold mb-2">
+            {isAuthLoading ? "Loading..." : "Please sign in to view your dashboard"}
+          </h2>
+          {!isAuthLoading && (
+            <Button onClick={() => router.push("/")}>
+              Go Home
+            </Button>
+          )}
         </div>
       </MainLayout>
     );

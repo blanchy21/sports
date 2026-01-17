@@ -19,7 +19,7 @@ interface Draft {
 }
 
 export default function DraftsPage() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -108,27 +108,32 @@ export default function DraftsPage() {
     }
   };
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (wait for auth to load first)
   useEffect(() => {
-    if (!user) {
+    if (!isAuthLoading && !user) {
       router.push("/");
-    } else {
+    } else if (!isAuthLoading && user) {
       loadDrafts();
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
 
-  if (!user) {
+  // Show loading or auth required message
+  if (isAuthLoading || !user) {
     return (
       <MainLayout>
         <div className="max-w-4xl mx-auto text-center py-12">
           <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            {isAuthLoading ? "Loading..." : "Authentication Required"}
+          </h2>
           <p className="text-muted-foreground mb-4">
-            Please sign in to view your draft posts.
+            {isAuthLoading ? "Checking authentication..." : "Please sign in to view your draft posts."}
           </p>
-          <Button onClick={() => router.push("/")}>
-            Go Home
-          </Button>
+          {!isAuthLoading && (
+            <Button onClick={() => router.push("/")}>
+              Go Home
+            </Button>
+          )}
         </div>
       </MainLayout>
     );

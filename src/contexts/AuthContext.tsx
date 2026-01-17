@@ -225,6 +225,17 @@ function extractFromProvider(provider: AiohaProvider): ExtractedUserData | null 
 
 const AUTH_STORAGE_KEY = "authState";
 
+// Session expires after 30 minutes of inactivity
+const SESSION_DURATION_MS = 30 * 60 * 1000;
+
+/**
+ * Check if a session is expired based on loginAt timestamp
+ */
+function isSessionExpired(loginAt: number | undefined): boolean {
+  if (!loginAt) return true;
+  return Date.now() - loginAt > SESSION_DURATION_MS;
+}
+
 export const sanitizeHiveUserForStorage = (hiveUser: HiveAuthUser | null): HiveAuthUser | null => {
   if (!hiveUser) {
     return null;
@@ -240,10 +251,12 @@ const persistAuthState = ({
   user: userToPersist,
   authType: authTypeToPersist,
   hiveUser: hiveUserToPersist,
+  loginAt: loginAtToPersist,
 }: {
   user: User | null;
   authType: AuthType;
   hiveUser: HiveAuthUser | null;
+  loginAt?: number;
 }) => {
   // Only persist on client-side
   if (typeof window === 'undefined') {
@@ -254,6 +267,8 @@ const persistAuthState = ({
     user: userToPersist,
     authType: authTypeToPersist,
     hiveUser: sanitizeHiveUserForStorage(hiveUserToPersist),
+    // Use existing loginAt or create new timestamp
+    loginAt: loginAtToPersist ?? Date.now(),
   };
   
   try {
@@ -284,6 +299,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [hiveUser, setHiveUser] = useState<HiveAuthUser | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
+  const [loginAt, setLoginAt] = useState<number | undefined>(undefined);
   const { aioha, isInitialized } = useAioha();
 
   // Track if we need to refresh Hive account after mount
@@ -302,7 +318,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (savedAuth) {
         const validatedState = parseAuthState(savedAuth);
         if (validatedState) {
-          const { user: savedUser, authType: savedAuthType, hiveUser: savedHiveUser } = validatedState;
+          const { user: savedUser, authType: savedAuthType, hiveUser: savedHiveUser, loginAt: savedLoginAt } = validatedState;
+          
+          // Check if session has expired (30 minutes of inactivity)
+          if (isSessionExpired(savedLoginAt)) {
+            // Session expired - clear auth state
+            localStorage.removeItem(AUTH_STORAGE_KEY);
+            console.log("Session expired after 30 minutes of inactivity");
+            setIsLoading(false);
+            return;
+          }
+          
+          // Session is still valid - restore state
           // Cast validated user - schema ensures required fields exist, defaults handle optional ones
           if (savedUser) {
             setUser({
@@ -311,6 +338,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             } as User);
           }
           setAuthType(savedAuthType);
+          setLoginAt(savedLoginAt);
           if (savedHiveUser) {
             setHiveUser({
               ...savedHiveUser,
@@ -340,18 +368,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = (newUser: User, newAuthType: AuthType) => {
+    const now = Date.now();
     setUser(newUser);
     setAuthType(newAuthType);
+    setLoginAt(now);
     
-    // Save to localStorage
+    // Save to localStorage with new login timestamp
     persistAuthState({
       user: newUser,
       authType: newAuthType,
       hiveUser,
+      loginAt: now,
     });
   };
 
   const loginWithFirebase = (authUser: AuthUser) => {
+    const now = Date.now();
     const user: User = {
       id: authUser.id,
       username: authUser.username,
@@ -365,8 +397,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     setUser(user);
     setAuthType(authUser.isHiveUser ? "hive" : "soft");
+    setLoginAt(now);
     
-    // Save to localStorage
+    // Save to localStorage with new login timestamp
     persistAuthState({
       user,
       authType: authUser.isHiveUser ? "hive" : "soft",
@@ -376,11 +409,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             isAuthenticated: true,
           }
         : null,
+      loginAt: now,
     });
   };
 
   const loginWithHiveUser = async (hiveUsername: string) => {
     try {
+      const now = Date.now();
       // Create basic user object first
       const basicUser: User = {
         id: hiveUsername,
@@ -395,6 +430,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Set the user immediately for UI responsiveness
       setUser(basicUser);
       setAuthType("hive");
+      setLoginAt(now);
 
       // Create Hive user object
       const newHiveUser: HiveAuthUser = {
@@ -407,6 +443,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user: basicUser,
         authType: "hive",
         hiveUser: newHiveUser,
+        loginAt: now,
       });
 
       // Fetch full account data in the background
@@ -456,11 +493,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           };
           setUser(updatedUser);
 
-          // Save updated state to localStorage
+          // Save updated state to localStorage (keep same loginAt)
           persistAuthState({
             user: updatedUser,
             authType: "hive",
             hiveUser: updatedHiveUser,
+            loginAt: now,
           });
         }
       } catch (profileError) {
@@ -542,6 +580,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const { username, sessionId } = extracted;
+      const now = Date.now();
 
       // Create and set user
       const basicUser: User = {
@@ -556,6 +595,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       setUser(basicUser);
       setAuthType("hive");
+      setLoginAt(now);
 
       const newHiveUser: HiveAuthUser = {
         username: username,
@@ -569,6 +609,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user: basicUser,
         authType: "hive",
         hiveUser: newHiveUser,
+        loginAt: now,
       });
 
       // Fetch full account data in background
@@ -614,6 +655,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             user: updatedUser,
             authType: "hive",
             hiveUser: updatedHiveUser,
+            loginAt: now,
           });
         }
       } catch (profileError) {
@@ -668,6 +710,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
+      const now = Date.now();
       // Update Firebase profile to mark as Hive user
       await FirebaseAuth.upgradeToHive(user.id, hiveUsername);
       
@@ -680,6 +723,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       setUser(updatedUser);
       setAuthType("hive");
+      setLoginAt(now);
       
       // Create Hive user object
       const newHiveUser: HiveAuthUser = {
@@ -692,6 +736,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user: updatedUser,
         authType: "hive",
         hiveUser: newHiveUser,
+        loginAt: now,
       });
 
       // Fetch Hive account data
@@ -737,6 +782,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             user: userWithHiveData,
             authType: "hive",
             hiveUser: updatedHiveUser,
+            loginAt: now,
           });
         }
       } catch (profileError) {
@@ -755,10 +801,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const updatedUser = { ...user, ...userUpdate };
       setUser(updatedUser);
 
+      // Refresh session timestamp on user activity (sliding expiration)
+      const now = Date.now();
+      setLoginAt(now);
+
       persistAuthState({
         user: updatedUser,
         authType,
         hiveUser,
+        loginAt: now,
       });
     }
   }, [authType, hiveUser, user]);
@@ -805,15 +856,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Use the actual Hive account creation date
         createdAt: accountData.createdAt,
       };
-      updateUser(updatedUser);
+      // Note: updateUser already handles loginAt refresh, so we call it
+      // but we also need to persist with the new hiveUser
+      setUser(updatedUser);
+
+      // Refresh session timestamp on activity
+      const now = Date.now();
+      setLoginAt(now);
 
       persistAuthState({
         user: updatedUser,
         authType,
         hiveUser: updatedHiveUser,
+        loginAt: now,
       });
     }
-  }, [authType, hiveUser, setHiveUser, updateUser, user]);
+  }, [authType, hiveUser, setHiveUser, user]);
 
   const refreshHiveAccount = useCallback(async () => {
     if (!hiveUser?.username) {

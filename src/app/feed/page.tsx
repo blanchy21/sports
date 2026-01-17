@@ -16,7 +16,7 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 // No mock data needed - using real Hive blockchain content
 
 export default function FeedPage() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const [selectedSport, setSelectedSport] = React.useState<string>("");
   const [posts, setPosts] = React.useState<SportsblockPost[]>([]);
@@ -182,12 +182,12 @@ export default function FeedPage() {
     }
   }, [selectedSport, dedupePosts, user?.username]);
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
-    if (!user) {
+    if (!isAuthLoading && !user) {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
 
   // Load posts from Hive blockchain
   React.useEffect(() => {
@@ -237,8 +237,9 @@ export default function FeedPage() {
     return SPORT_CATEGORIES.find(sport => sport.id === selectedSport)?.name;
   }, [selectedSport]);
 
-  if (!user) {
-    return null; // Will redirect
+  // Show nothing while auth is loading or if user is not authenticated (will redirect)
+  if (isAuthLoading || !user) {
+    return null;
   }
 
   return (
