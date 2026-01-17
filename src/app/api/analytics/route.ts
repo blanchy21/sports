@@ -3,13 +3,43 @@ import {
   TrendingSport, 
   TrendingTopic, 
   TopAuthor, 
-  CommunityStats 
+  CommunityStats,
+  getAnalyticsData 
 } from '@/lib/hive-workerbee/analytics';
+import { SportsblockPost } from '@/lib/hive-workerbee/content';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { headers } from 'next/headers';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+/**
+ * Fetch posts via internal API route (more reliable than direct WorkerBee call)
+ */
+async function fetchPostsViaInternalApi(limit: number = 20): Promise<SportsblockPost[]> {
+  try {
+    // Get the host from request headers for internal API call
+    const headersList = await headers();
+    const host = headersList.get('host') || 'localhost:3000';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    
+    const response = await fetch(`${protocol}://${host}/api/hive/posts?limit=${limit}&sort=created`, {
+      cache: 'no-store',
+    });
+    
+    if (!response.ok) {
+      console.warn(`[Analytics API] Internal API returned ${response.status}`);
+      return [];
+    }
+    
+    const data = await response.json();
+    return data.posts || [];
+  } catch (error) {
+    console.warn('[Analytics API] Error fetching posts via internal API:', error);
+    return [];
+  }
+}
 
 /**
  * Analytics API endpoint
@@ -30,11 +60,21 @@ export async function GET() {
       } as CommunityStats,
     };
 
-    // Return empty analytics if Firebase is not configured
+    // If Firebase is not configured, compute analytics directly from Hive
     if (!db) {
+      console.log('[Analytics API] Firebase not configured, computing analytics from Hive...');
+      const posts = await fetchPostsViaInternalApi(20);
+      if (posts.length > 0) {
+        const computedAnalytics = getAnalyticsData(posts, undefined);
+        return NextResponse.json({
+          success: true,
+          data: computedAnalytics,
+          message: 'Computed from Hive (Firebase not configured)',
+        });
+      }
       return NextResponse.json({
         success: true,
-        ...analytics,
+        data: analytics,
         message: 'Firebase not configured - returning default analytics',
       });
     }
@@ -91,6 +131,31 @@ export async function GET() {
       }
     } catch (error) {
       console.warn('[Analytics API] Error fetching communityStats:', error);
+    }
+
+    // Fallback: If Firestore data is empty or stale (all zeros), compute analytics from Hive posts
+    const hasMeaningfulSportsData = analytics.trendingSports.some(s => s.posts > 0);
+    const hasMeaningfulTopicsData = analytics.trendingTopics.some(t => t.posts > 0);
+    const hasMeaningfulAuthorsData = analytics.topAuthors.length > 0;
+    const hasMeaningfulStats = analytics.communityStats.totalPosts > 0;
+    
+    const isFirestoreEmptyOrStale = 
+      !hasMeaningfulSportsData && 
+      !hasMeaningfulTopicsData && 
+      !hasMeaningfulAuthorsData &&
+      !hasMeaningfulStats;
+
+    if (isFirestoreEmptyOrStale) {
+      console.log('[Analytics API] Firestore empty or stale, computing analytics from Hive...');
+      const posts = await fetchPostsViaInternalApi(20);
+      if (posts.length > 0) {
+        const computedAnalytics = getAnalyticsData(posts, undefined);
+        analytics.trendingSports = computedAnalytics.trendingSports;
+        analytics.trendingTopics = computedAnalytics.trendingTopics;
+        analytics.topAuthors = computedAnalytics.topAuthors;
+        analytics.communityStats = computedAnalytics.communityStats;
+        console.log(`[Analytics API] Computed analytics from ${posts.length} posts`);
+      }
     }
 
     return NextResponse.json({
