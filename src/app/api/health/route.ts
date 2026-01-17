@@ -124,6 +124,16 @@ async function checkRedis(): Promise<CheckResult> {
 }
 
 /**
+ * Create an abort signal with timeout
+ * Compatible with older Node.js versions
+ */
+function createTimeoutSignal(ms: number): AbortSignal {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
+/**
  * Check Hive API connectivity
  */
 async function checkHive(): Promise<CheckResult> {
@@ -140,7 +150,7 @@ async function checkHive(): Promise<CheckResult> {
         params: [],
         id: 1,
       }),
-      signal: AbortSignal.timeout(5000), // 5 second timeout
+      signal: createTimeoutSignal(5000), // 5 second timeout
     });
 
     const latency = Date.now() - startTime;

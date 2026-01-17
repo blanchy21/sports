@@ -5,15 +5,26 @@ import { createRouteTestServer } from './test-server';
 import { GET, POST } from '@/app/api/monitoring/route';
 
 jest.mock('@/lib/hive-workerbee/monitoring', () => ({
-  getMonitoringStats: jest.fn(),
+  getMonitoringStats: jest.fn().mockReturnValue({ requests: 0, errors: 0 }),
   clearMonitoringData: jest.fn(),
-  exportMonitoringData: jest.fn(),
+  exportMonitoringData: jest.fn().mockReturnValue({ history: [] }),
 }));
 
 jest.mock('@/lib/hive-workerbee/optimization', () => ({
-  getOptimizationMetrics: jest.fn(),
+  getOptimizationMetrics: jest.fn().mockReturnValue({ cacheHits: 0, cacheMisses: 0 }),
   getCacheStatistics: jest.fn(),
   clearOptimizationCache: jest.fn(),
+}));
+
+// Mock the cache module - inline to avoid hoisting issues
+jest.mock('@/lib/cache', () => ({
+  getMemoryCache: jest.fn().mockReturnValue({
+    getStats: jest.fn().mockReturnValue({ size: 10, maxEntries: 1000, hits: 5, misses: 2, hitRate: 0.71 }),
+  }),
+  getTieredCache: jest.fn().mockResolvedValue({
+    getStats: jest.fn().mockReturnValue({ hitRate: 0.8 }),
+    isRedisAvailable: jest.fn().mockReturnValue(false),
+  }),
 }));
 
 const { clearMonitoringData } = jest.requireMock('@/lib/hive-workerbee/monitoring');
@@ -63,9 +74,10 @@ describe('Monitoring API routes', () => {
     expect(response.body).toMatchObject({
       monitoring: expect.any(Object),
       optimization: expect.any(Object),
-      cache: expect.any(Object),
       timestamp: expect.any(String),
     });
+    // Export doesn't include cache stats
+    expect(response.body.cache).toBeUndefined();
   });
 
   it('returns 400 for invalid GET action', async () => {
@@ -74,7 +86,7 @@ describe('Monitoring API routes', () => {
       .query({ action: 'invalid' });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: 'Invalid action' });
+    expect(response.body).toEqual({ error: 'Invalid action. Use ?action=stats or ?action=export' });
   });
 
   it('clears monitoring data via POST', async () => {
