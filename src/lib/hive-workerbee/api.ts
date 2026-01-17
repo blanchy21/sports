@@ -41,8 +41,9 @@ const apiRateLimiter = new RateLimiter({
   name: 'hive-api',
 });
 
-// Increased timeout for better reliability on slow networks
-const REQUEST_TIMEOUT_MS = 15000; // 15 seconds
+// Optimized timeout - 8 seconds provides good balance between reliability and responsiveness
+// Previously 15s was causing cumulative delays when nodes were slow/unreachable
+const REQUEST_TIMEOUT_MS = 8000; // 8 seconds
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs: number = REQUEST_TIMEOUT_MS) {
   const controller = new AbortController();
@@ -200,14 +201,15 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
     const bestNode = nodeHealthManager.getBestNode();
 
     // Fallback node list for reactive failover
-    // Using verified reliable nodes only
+    // Using verified reliable nodes only - arcange.eu removed from primary rotation
+    // due to consistent timeout issues observed in production logs
     const apiNodes = [
-      bestNode, // Start with healthiest node
+      bestNode, // Start with healthiest node (from health manager)
       'https://api.hive.blog',           // @blocktrades - most reliable
       'https://api.openhive.network',    // @gtg - established node
-      'https://api.deathwing.me',        // @deathwing - backup node
+      'https://api.deathwing.me',        // @deathwing - good backup
       'https://api.c0ff33a.uk',          // @c0ff33a - backup node
-      'https://hive-api.arcange.eu'       // @arcange - last resort (known to timeout frequently)
+      // Note: hive-api.arcange.eu intentionally excluded - known timeout issues
     ];
 
     // Remove duplicates while preserving order
@@ -309,12 +311,12 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
  * @returns Array of Hive node URLs (verified working nodes only)
  */
 export function getHiveApiNodes(): string[] {
+  // Optimized node list - arcange.eu excluded due to consistent timeout issues
   return [
     'https://api.hive.blog',           // @blocktrades - most reliable
     'https://api.openhive.network',    // @gtg - established node
     'https://api.deathwing.me',        // @deathwing - backup node
     'https://api.c0ff33a.uk',          // @c0ff33a - backup node
-    'https://hive-api.arcange.eu'      // @arcange - last resort (known to timeout frequently)
   ];
 }
 

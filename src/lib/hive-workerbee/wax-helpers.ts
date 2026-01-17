@@ -37,6 +37,21 @@ export interface WaxCommentOperation {
 // Using type alias instead of interface to avoid empty interface warning
 export type WaxPostOperation = WaxCommentOperation;
 
+export interface WaxCommentOptionsOperation {
+  author: string;
+  permlink: string;
+  max_accepted_payout: string;
+  percent_hbd: number;
+  allow_votes: boolean;
+  allow_curation_rewards: boolean;
+  extensions: Array<[0, { beneficiaries: Array<{ account: string; weight: number }> }]>;
+}
+
+export interface Beneficiary {
+  account: string;
+  weight: number; // 0-10000 (basis points, so 2000 = 20%)
+}
+
 export interface WaxTransactionResult {
   success: boolean;
   transactionId?: string;
@@ -211,14 +226,39 @@ export function createPostOperation(postData: {
     percent_hbd: postData.percentHbd || 10000, // 100% HBD
     allow_votes: postData.allowVotes !== false,
     allow_curation_rewards: postData.allowCurationRewards !== false,
-    extensions: postData.extensions || [
-      [
-        0,
-        {
-          beneficiaries: SPORTS_ARENA_CONFIG.DEFAULT_BENEFICIARIES
-        }
-      ]
-    ]
+    extensions: [] // Beneficiaries are set via comment_options operation
+  };
+}
+
+/**
+ * Create a comment_options operation for beneficiaries
+ * This must be broadcast in the same transaction as the comment operation
+ */
+export function createCommentOptionsOperation(optionsData: {
+  author: string;
+  permlink: string;
+  beneficiaries?: Beneficiary[];
+  maxAcceptedPayout?: string;
+  percentHbd?: number;
+  allowVotes?: boolean;
+  allowCurationRewards?: boolean;
+}): WaxCommentOptionsOperation {
+  // Use default beneficiaries if not provided
+  const beneficiaries = optionsData.beneficiaries || SPORTS_ARENA_CONFIG.DEFAULT_BENEFICIARIES;
+
+  // Beneficiaries must be sorted by account name alphabetically
+  const sortedBeneficiaries = [...beneficiaries].sort((a, b) =>
+    a.account.localeCompare(b.account)
+  );
+
+  return {
+    author: optionsData.author,
+    permlink: optionsData.permlink,
+    max_accepted_payout: optionsData.maxAcceptedPayout || '1000000.000 HBD',
+    percent_hbd: optionsData.percentHbd || 10000, // 100% HBD
+    allow_votes: optionsData.allowVotes !== false,
+    allow_curation_rewards: optionsData.allowCurationRewards !== false,
+    extensions: sortedBeneficiaries.length > 0 ? [[0, { beneficiaries: sortedBeneficiaries }]] : []
   };
 }
 

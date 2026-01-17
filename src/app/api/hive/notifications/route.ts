@@ -6,6 +6,30 @@ import { z } from 'zod';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Cache configuration - 30 seconds for notifications (balance between freshness and performance)
+const CACHE_DURATION = 30 * 1000;
+
+// Per-user notification cache
+interface NotificationCache {
+  notifications: NotificationItem[];
+  count: number;
+  timestamp: number;
+  expiresAt: number;
+}
+
+const notificationCache = new Map<string, NotificationCache>();
+
+// Cleanup old cache entries periodically
+function cleanupCache() {
+  const now = Date.now();
+  for (const [key, entry] of notificationCache.entries()) {
+    // Remove entries that are more than 5 minutes old
+    if (now - entry.timestamp > 5 * 60 * 1000) {
+      notificationCache.delete(key);
+    }
+  }
+}
+
 const querySchema = z.object({
   username: z.string().min(3).max(16),
   since: z.string().optional(), // ISO timestamp to filter notifications after
@@ -56,6 +80,26 @@ export async function GET(request: NextRequest) {
   const { username, since, limit } = parseResult.data;
   const parsedSince = since ? new Date(since) : null;
   const sinceDate = parsedSince && !Number.isNaN(parsedSince.getTime()) ? parsedSince : null;
+  const now = Date.now();
+
+  // Periodically cleanup cache
+  if (Math.random() < 0.1) cleanupCache();
+
+  // Generate cache key based on username and since parameter
+  const cacheKey = `${username}:${since || 'all'}:${limit}`;
+  const cached = notificationCache.get(cacheKey);
+
+  // Return cached data if valid
+  if (cached && now < cached.expiresAt) {
+    return NextResponse.json({
+      success: true,
+      notifications: cached.notifications,
+      count: cached.count,
+      username,
+      cached: true,
+      timestamp: cached.timestamp,
+    });
+  }
 
   try {
     // Fetch account history - get more entries than limit since we'll filter
@@ -75,6 +119,7 @@ export async function GET(request: NextRequest) {
         success: true,
         notifications: [],
         count: 0,
+        cached: false,
       });
     }
 
@@ -99,15 +144,41 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Cache the results
+    notificationCache.set(cacheKey, {
+      notifications,
+      count: notifications.length,
+      timestamp: now,
+      expiresAt: now + CACHE_DURATION,
+    });
+
     return NextResponse.json({
       success: true,
       notifications,
       count: notifications.length,
       username,
+      cached: false,
+      timestamp: now,
     });
   } catch (error) {
     console.error('[API] Error fetching notifications:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
+
+    // Try to return stale cache data on error (graceful degradation)
+    const staleCache = notificationCache.get(cacheKey);
+    if (staleCache) {
+      console.log('[Notifications API] Returning stale cache due to error');
+      return NextResponse.json({
+        success: true,
+        notifications: staleCache.notifications,
+        count: staleCache.count,
+        username,
+        cached: true,
+        stale: true,
+        timestamp: staleCache.timestamp,
+      });
+    }
+
     return NextResponse.json({
       success: false,
       error: message,

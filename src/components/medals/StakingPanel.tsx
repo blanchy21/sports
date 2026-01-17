@@ -515,24 +515,24 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
 
         {/* Delegations Info */}
         {stakeInfo?.delegations &&
-          (stakeInfo.delegations.incoming.length > 0 ||
-            stakeInfo.delegations.outgoing.length > 0) && (
+          ((stakeInfo.delegations.incoming?.length ?? 0) > 0 ||
+            (stakeInfo.delegations.outgoing?.length ?? 0) > 0) && (
             <div className="p-3 bg-slate-50 rounded-lg text-sm space-y-2">
               <h4 className="font-medium text-slate-700">Delegations</h4>
-              {stakeInfo.delegations.incoming.length > 0 && (
+              {(stakeInfo.delegations.incoming?.length ?? 0) > 0 && (
                 <div>
                   <span className="text-slate-500">Received:</span>
-                  {stakeInfo.delegations.incoming.map((d, i) => (
+                  {stakeInfo.delegations.incoming?.map((d, i) => (
                     <span key={i} className="ml-2 text-green-600">
                       +{formatAmount(d.quantity)} from @{d.from}
                     </span>
                   ))}
                 </div>
               )}
-              {stakeInfo.delegations.outgoing.length > 0 && (
+              {(stakeInfo.delegations.outgoing?.length ?? 0) > 0 && (
                 <div>
                   <span className="text-slate-500">Delegated:</span>
-                  {stakeInfo.delegations.outgoing.map((d, i) => (
+                  {stakeInfo.delegations.outgoing?.map((d, i) => (
                     <span key={i} className="ml-2 text-red-600">
                       -{formatAmount(d.quantity)} to @{d.to}
                     </span>

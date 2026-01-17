@@ -3,14 +3,13 @@ import type { IStartConfiguration } from "@hiveio/workerbee";
 import type { IHiveChainInterface } from "@hiveio/wax";
 import { workerBee as workerBeeLog, error as logError } from './logger';
 
-// Hive node endpoints - using same reliable nodes as current implementation
-// Note: hive-api.arcange.eu moved to end due to consistent timeout issues
+// Hive node endpoints - optimized for reliability and speed
+// arcange.eu excluded due to consistent timeout issues in production
 const HIVE_NODES = [
   'https://api.hive.blog',           // @blocktrades - most reliable
   'https://api.openhive.network',    // @gtg - established node
   'https://api.deathwing.me',        // @deathwing - backup node
   'https://api.c0ff33a.uk',          // @c0ff33a - backup node
-  'https://hive-api.arcange.eu'      // @arcange - last resort (known to timeout frequently)
 ];
 
 // Sportsblock configuration (same as current implementation)
@@ -23,7 +22,7 @@ export const SPORTS_ARENA_CONFIG = {
   DEFAULT_BENEFICIARIES: [
     {
       account: 'sportsblock',
-      weight: 500 // 5% to platform
+      weight: 2000 // 20% to platform (per MEDALS whitepaper)
     }
   ]
 };

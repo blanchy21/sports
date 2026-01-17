@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { 
-  Wallet, 
-  ArrowUpRight, 
+import {
+  Wallet,
+  ArrowUpRight,
   RefreshCw,
   Bitcoin,
   Coins,
@@ -16,8 +16,15 @@ import {
   Clock,
   TrendingUp,
   TrendingDown,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Medal
 } from "lucide-react";
+import {
+  WalletCard as MedalsWalletCard,
+  StakingPanel,
+  MarketInfo,
+  TransferModal,
+} from "@/components/medals";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePriceContext } from "@/contexts/PriceContext";
@@ -51,6 +58,7 @@ export default function WalletPage() {
   const [transactionsError, setTransactionsError] = useState<string | null>(null);
   const [isRefreshingAccount, setIsRefreshingAccount] = useState(false);
   const [lastAccountRefresh, setLastAccountRefresh] = useState<Date | null>(null);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
   const hasRefreshedBalances = useRef(false);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const refreshAccountDataRef = useRef<(() => Promise<void>) | undefined>(undefined);
@@ -421,6 +429,41 @@ export default function WalletPage() {
           </div>
         </div>
 
+        {/* MEDALS Token Section */}
+        <div className="bg-card border rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-3 bg-amber-500/10 rounded-lg">
+                <Medal className="h-6 w-6 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">MEDALS Token</h3>
+                <p className="text-sm text-muted-foreground">Sportsblock Platform Token • Hive Engine</p>
+              </div>
+            </div>
+            <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+              Preview
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* MEDALS Wallet Card */}
+            <MedalsWalletCard
+              account={user.username}
+              onStakeClick={() => {}}
+              onSendClick={() => setTransferModalOpen(true)}
+            />
+
+            {/* MEDALS Market Info */}
+            <MarketInfo showTradeLinks={true} />
+          </div>
+
+          {/* Staking Panel */}
+          <div className="mt-6">
+            <StakingPanel account={user.username} />
+          </div>
+        </div>
+
         {/* Crypto Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Bitcoin */}
@@ -557,6 +600,13 @@ export default function WalletPage() {
             )}
           </div>
         </div>
+
+        {/* MEDALS Transfer Modal */}
+        <TransferModal
+          isOpen={transferModalOpen}
+          onClose={() => setTransferModalOpen(false)}
+          account={user.username}
+        />
       </div>
     </MainLayout>
   );

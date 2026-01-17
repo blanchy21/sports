@@ -13,6 +13,8 @@ import { SportsblockPost } from "@/lib/shared/types";
 import { useUserProfile } from "@/lib/react-query/queries/useUserProfile";
 import { useUserFollowerCount, useUserFollowingCount } from "@/lib/react-query/queries/useUserProfile";
 import { useModal } from "@/components/modals/ModalProvider";
+import { usePremiumTier } from "@/lib/premium/hooks";
+import { PremiumBadge } from "@/components/medals";
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -23,6 +25,7 @@ export default function UserProfilePage() {
   const { data: profile, isLoading: isProfileLoading, error: profileError } = useUserProfile(username);
   const { data: followerCount } = useUserFollowerCount(username);
   const { data: followingCount } = useUserFollowingCount(username);
+  const { tier: premiumTier } = usePremiumTier(username);
   
   const [userPosts, setUserPosts] = useState<SportsblockPost[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
@@ -154,6 +157,9 @@ export default function UserProfilePage() {
                   <h1 className="text-3xl font-bold text-foreground">
                     {profile.profile?.name || username}
                   </h1>
+                  {premiumTier && (
+                    <PremiumBadge tier={premiumTier} size="md" />
+                  )}
                   {profile.reputationFormatted && (
                     <div className="bg-accent/20 dark:bg-accent/20 px-2 py-1 rounded-full">
                       <span className="text-xs font-medium text-accent dark:text-accent">

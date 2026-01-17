@@ -264,40 +264,56 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     
     // Debug: Log specific fields we're interested in
 
-    // RC will be calculated directly from account data using voting_manabar
+    // PERFORMANCE OPTIMIZATION: Run all supplemental API calls in parallel
+    // This reduces total fetch time from 5-15s (sequential) to 1-3s (parallel)
+    const [reputationResult, followResult, globalPropsResult, rcResult] = await Promise.all([
+      // Reputation - with fallback
+      getContentOptimized('get_account_reputations', [username, 1])
+        .then((result) => {
+          const data = result as ReputationData[];
+          return data && data.length > 0 ? data[0] : null;
+        })
+        .catch((error) => {
+          logWarn('[WorkerBee fetchUserAccount] Failed to get reputation', 'fetchUserAccount', error);
+          return null;
+        }),
 
-    // Get reputation using optimized caching
-    let accountReputation = null;
-    try {
-      const reputationResult = await getContentOptimized('get_account_reputations', [username, 1]) as ReputationData[];
-      if (reputationResult && reputationResult.length > 0) {
-        accountReputation = reputationResult[0];
-      }
-    } catch (error) {
-      logWarn('[WorkerBee fetchUserAccount] Failed to get reputation', 'fetchUserAccount', error);
-    }
+      // Follow stats - with fallback
+      getContentOptimized('get_follow_count', [username])
+        .then((result) => {
+          const data = result as FollowCountData;
+          return {
+            followers: data.follower_count || 0,
+            following: data.following_count || 0
+          };
+        })
+        .catch((error) => {
+          logWarn('[WorkerBee fetchUserAccount] Failed to get follow stats', 'fetchUserAccount', error);
+          return { followers: 0, following: 0 };
+        }),
 
-    // Get follow stats using optimized caching
-    let followStats = null;
-    try {
-      const followResult = await getContentOptimized('get_follow_count', [username]) as FollowCountData;
-      followStats = {
-        followers: followResult.follower_count || 0,
-        following: followResult.following_count || 0
-      };
-    } catch (error) {
-      logWarn('[WorkerBee fetchUserAccount] Failed to get follow stats', 'fetchUserAccount', error);
-      followStats = { followers: 0, following: 0 };
-    }
+      // Global properties - with fallback
+      makeHiveApiCall('condenser_api', 'get_dynamic_global_properties')
+        .then((result) => result as GlobalProperties)
+        .catch(() => {
+          logWarn('Failed to get global properties for HIVE POWER calculation', 'fetchUserAccount');
+          return null;
+        }),
 
-    // Get HBD savings APR using optimized caching
-    let savingsApr = 0;
-    try {
-      const globalProps = await getContentOptimized('get_dynamic_global_properties', []) as GlobalProperties;
-      savingsApr = (globalProps.hbd_interest_rate || 0) / 100;
-    } catch (error) {
-      logWarn('[WorkerBee fetchUserAccount] Failed to get HBD savings APR', 'fetchUserAccount', error);
-    }
+      // RC API - with short 2s timeout (non-critical data, shouldn't block account fetch)
+      Promise.race([
+        makeHiveApiCall('rc_api', 'find_rc_accounts', [username]),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000))
+      ]).catch(() => null)
+    ]);
+
+    // Process results from parallel calls
+    const accountReputation = reputationResult;
+    const followStats = followResult;
+    const globalProps = globalPropsResult;
+
+    // Calculate savings APR from global props
+    const savingsApr = globalProps ? ((globalProps.hbd_interest_rate || 0) / 100) : 0;
 
     // Use account stats directly - skip expensive calculateUserStats call
     // The get_discussions_by_author_before_date API is unreliable and causes 15+ second delays
@@ -332,14 +348,6 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     
     debugLog(`[WorkerBee fetchUserAccount] Merged profile data:`, profile);
 
-    // Get global properties for HIVE POWER calculation using Wax API
-    let globalProps = null;
-    try {
-      globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
-    } catch {
-      logWarn('Failed to get global properties for HIVE POWER calculation', 'fetchUserAccount');
-    }
-
     // Calculate HIVE POWER from vesting shares
     let hivePower = 0;
     if (accountData.vesting_shares && globalProps) {
@@ -350,50 +358,40 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       );
     }
 
-    // Calculate Resource Credits percentage using the proper rc_api
-    // Use a short timeout (3s) since this is non-critical data
-    let rcPercentage = 0;
-
-    try {
-      // Use the dedicated RC API for accurate RC calculation with a fast timeout
-      const rcPromise = makeHiveApiCall('rc_api', 'find_rc_accounts', [username]);
-      const timeoutPromise = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error('RC API timeout (3s)')), 3000)
-      );
-
-      const rcResult = await Promise.race([rcPromise, timeoutPromise]) as { rc_accounts?: RcAccountData[] } | null;
-      if (!rcResult) throw new Error('RC API returned null');
-
-      debugLog(`[WorkerBee fetchUserAccount] RC API response:`, rcResult);
-      
-      if (rcResult && rcResult.rc_accounts && Array.isArray(rcResult.rc_accounts) && rcResult.rc_accounts.length > 0) {
-        const rcData = rcResult.rc_accounts[0] as { rc_manabar?: { current_mana: string }; max_rc?: string };
+    // Process Resource Credits from parallel call result (already completed above)
+    let rcPercentage = 100; // Default to 100% if RC fetch failed
+    
+    if (rcResult) {
+      try {
+        const rcData = rcResult as { rc_accounts?: RcAccountData[] };
+        debugLog(`[WorkerBee fetchUserAccount] RC API response:`, rcData);
         
-        if (rcData.rc_manabar && rcData.max_rc) {
-          const currentMana = parseFloat(rcData.rc_manabar.current_mana);
-          const maxRc = parseFloat(rcData.max_rc);
+        if (rcData.rc_accounts && Array.isArray(rcData.rc_accounts) && rcData.rc_accounts.length > 0) {
+          const rc = rcData.rc_accounts[0] as { rc_manabar?: { current_mana: string }; max_rc?: string };
           
-          if (maxRc > 0) {
-            rcPercentage = (currentMana / maxRc) * 100;
-            debugLog(
-              `[WorkerBee fetchUserAccount] RC from rc_api: ${rcPercentage.toFixed(2)}% (${currentMana.toLocaleString()} / ${maxRc.toLocaleString()})`
-            );
+          if (rc.rc_manabar && rc.max_rc) {
+            const currentMana = parseFloat(rc.rc_manabar.current_mana);
+            const maxRc = parseFloat(rc.max_rc);
+            
+            if (maxRc > 0) {
+              rcPercentage = (currentMana / maxRc) * 100;
+              debugLog(
+                `[WorkerBee fetchUserAccount] RC from rc_api: ${rcPercentage.toFixed(2)}% (${currentMana.toLocaleString()} / ${maxRc.toLocaleString()})`
+              );
+            } else {
+              debugLog(`[WorkerBee fetchUserAccount] Max RC is 0, setting RC to 100%`);
+            }
           } else {
-            debugLog(`[WorkerBee fetchUserAccount] Max RC is 0, setting RC to 100%`);
-            rcPercentage = 100;
+            debugLog(`[WorkerBee fetchUserAccount] RC data structure invalid, setting RC to 100%`);
           }
         } else {
-          debugLog(`[WorkerBee fetchUserAccount] RC data structure invalid, setting RC to 100%`);
-          rcPercentage = 100;
+          debugLog(`[WorkerBee fetchUserAccount] No RC data from rc_api, setting RC to 100%`);
         }
-      } else {
-        debugLog(`[WorkerBee fetchUserAccount] No RC data from rc_api, setting RC to 100%`);
-        rcPercentage = 100;
+      } catch (rcError) {
+        debugLog(`[WorkerBee fetchUserAccount] Error processing RC result, setting RC to 100%: ${rcError}`);
       }
-    } catch (rcError) {
-      logWarn('[WorkerBee fetchUserAccount] Failed to fetch RC from rc_api', 'fetchUserAccount', rcError);
-      debugLog(`[WorkerBee fetchUserAccount] Setting RC to 100% as fallback`);
-      rcPercentage = 100;
+    } else {
+      debugLog(`[WorkerBee fetchUserAccount] RC fetch timed out or failed, setting RC to 100% as fallback`);
     }
     // Use reputation from the dedicated API call if available, otherwise fall back to account data
     let rawReputation: string | number;

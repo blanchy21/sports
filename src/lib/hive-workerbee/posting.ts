@@ -2,9 +2,10 @@ import { SPORTS_ARENA_CONFIG, initializeWorkerBeeClient } from './client';
 import { makeHiveApiCall } from './api';
 import { HiveAccount } from '../shared/types';
 import type { ITransaction } from "@hiveio/wax";
-import { 
-  createPostOperation, 
-  createCommentOperation, 
+import {
+  createPostOperation,
+  createCommentOperation,
+  createCommentOptionsOperation,
   checkResourceCreditsWax
 } from './wax-helpers';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
@@ -110,14 +111,24 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
 
     workerBeeLog('publishPost operation created', undefined, operation);
 
+    // Create comment_options operation for beneficiaries (20% to @sportsblock)
+    const commentOptionsOp = createCommentOptionsOperation({
+      author: postData.author,
+      permlink: operation.permlink,
+    });
+
+    workerBeeLog('publishPost comment_options created', undefined, commentOptionsOp);
+
     // Use Aioha to sign and broadcast the transaction
     // Aioha expects operations in a specific format - each operation should be an array
     // Format: [operation_type, operation_data]
+    // Both operations must be in the same transaction for beneficiaries to work
     const operations = [
-      ['comment', operation]
+      ['comment', operation],
+      ['comment_options', commentOptionsOp]
     ];
-    
-    workerBeeLog('publishPost operations prepared', undefined, operations);
+
+    workerBeeLog('publishPost operations prepared with beneficiaries', undefined, operations);
     
     // Check if signAndBroadcastTx method exists
     if (typeof (aioha as AiohaInstance)?.signAndBroadcastTx !== 'function') {

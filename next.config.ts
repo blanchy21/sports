@@ -65,7 +65,38 @@ const nextConfig: NextConfig = {
     ];
   },
   // Webpack configuration for WASM support (required for @hiveio/wax)
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, webpack }) => {
+    // Suppress OpenTelemetry/Sentry critical dependency warnings
+    // These are caused by dynamic requires in @opentelemetry/instrumentation
+    // and don't affect functionality - just noisy console output
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      {
+        module: /@opentelemetry\/instrumentation/,
+        message: /Critical dependency/,
+      },
+      {
+        module: /@sentry/,
+        message: /Critical dependency/,
+      },
+    ];
+
+    // Also use ContextReplacementPlugin to suppress the warning at build time
+    config.plugins.push(
+      new webpack.ContextReplacementPlugin(
+        /@opentelemetry\/instrumentation/,
+        (data: { dependencies: Array<{ critical?: boolean }> }) => {
+          // Remove critical flag from dynamic requires
+          data.dependencies.forEach((dependency) => {
+            if (dependency.critical) {
+              dependency.critical = false;
+            }
+          });
+          return data;
+        }
+      )
+    );
+
     // Externalize WorkerBee and Wax packages - they should only be used server-side
     // This prevents WASM files from being bundled on the client
     if (!isServer) {

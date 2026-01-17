@@ -14,6 +14,8 @@ import { useToast, toast } from "@/components/ui/Toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useModal } from "@/components/modals/ModalProvider";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { usePremiumTier } from "@/lib/premium/hooks";
+import { PremiumBadge } from "@/components/medals";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -43,6 +45,9 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
   
   // Fetch Hive user profile if it's a Hive post
   const { profile: hiveProfile, isLoading: isProfileLoading } = useUserProfile(isHivePost ? authorUsername : null);
+
+  // Fetch premium tier for the author
+  const { tier: authorPremiumTier } = usePremiumTier(authorUsername);
 
   // Helper functions to get post data safely
   const getAuthorName = () => {
@@ -119,7 +124,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2">
-              <span 
+              <span
                 className="text-sm font-medium hover:underline cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -128,6 +133,9 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
               >
                 @{getAuthorName()}
               </span>
+              {authorPremiumTier && (
+                <PremiumBadge tier={authorPremiumTier} size="sm" showLabel={false} />
+              )}
               <span className="text-muted-foreground">•</span>
               <span className="text-sm text-muted-foreground">
                 {formatDate(isHivePost ? new Date(post.created) : (post.publishedAt || post.createdAt))}
