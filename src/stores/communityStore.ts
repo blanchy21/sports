@@ -1,34 +1,21 @@
 import { create } from 'zustand';
-
-interface Community {
-  id: string;
-  name: string;
-  title: string;
-  about: string;
-  description: string;
-  subscribers: number;
-  posts: number;
-  created: string;
-  avatar?: string;
-  coverImage?: string;
-  team: CommunityMember[];
-}
-
-interface CommunityMember {
-  username: string;
-  role: 'admin' | 'moderator' | 'member';
-  joinedAt: string;
-}
+import { persist } from 'zustand/middleware';
+import { Community, CommunityFilters } from '@/types';
 
 interface CommunityState {
+  // All communities (cache)
   communities: Community[];
+  // User's joined communities
+  userCommunities: Community[];
+  // Currently selected community
   selectedCommunity: Community | null;
+  // Loading state
   isLoading: boolean;
+  // Error state
   error: string | null;
-  filters: {
-    search?: string;
-    sort?: 'subscribers' | 'posts' | 'created' | 'name';
-  };
+  // Current filters
+  filters: CommunityFilters;
+  // Pagination state
   pagination: {
     hasMore: boolean;
     nextCursor?: string;
@@ -36,62 +23,120 @@ interface CommunityState {
 }
 
 interface CommunityActions {
+  // Communities list actions
   setCommunities: (communities: Community[]) => void;
   addCommunities: (communities: Community[]) => void;
+  clearCommunities: () => void;
+  
+  // User communities actions
+  setUserCommunities: (communities: Community[]) => void;
+  addUserCommunity: (community: Community) => void;
+  removeUserCommunity: (communityId: string) => void;
+  
+  // Selection actions
   setSelectedCommunity: (community: Community | null) => void;
+  
+  // Loading/Error actions
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  setFilters: (filters: Partial<CommunityState['filters']>) => void;
+  
+  // Filter actions
+  setFilters: (filters: Partial<CommunityFilters>) => void;
+  resetFilters: () => void;
+  
+  // Pagination actions
   setPagination: (pagination: Partial<CommunityState['pagination']>) => void;
+  
+  // Update community
   updateCommunity: (communityId: string, updates: Partial<Community>) => void;
-  clearCommunities: () => void;
 }
 
-export const useCommunityStore = create<CommunityState & CommunityActions>((set, get) => ({
-  // State
-  communities: [],
-  selectedCommunity: null,
-  isLoading: false,
-  error: null,
-  filters: {
-    sort: 'subscribers',
-  },
-  pagination: {
-    hasMore: false,
-  },
+const DEFAULT_FILTERS: CommunityFilters = {
+  sort: 'memberCount',
+  limit: 20,
+};
 
-  // Actions
-  setCommunities: (communities) => set({ communities }),
+export const useCommunityStore = create<CommunityState & CommunityActions>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      communities: [],
+      userCommunities: [],
+      selectedCommunity: null,
+      isLoading: false,
+      error: null,
+      filters: DEFAULT_FILTERS,
+      pagination: {
+        hasMore: false,
+      },
 
-  addCommunities: (newCommunities) => {
-    const currentCommunities = get().communities;
-    const existingIds = new Set(currentCommunities.map(c => c.id));
-    const uniqueNewCommunities = newCommunities.filter(c => !existingIds.has(c.id));
-    set({ communities: [...currentCommunities, ...uniqueNewCommunities] });
-  },
+      // Communities list actions
+      setCommunities: (communities) => set({ communities }),
 
-  setSelectedCommunity: (community) => set({ selectedCommunity: community }),
+      addCommunities: (newCommunities) => {
+        const currentCommunities = get().communities;
+        const existingIds = new Set(currentCommunities.map((c) => c.id));
+        const uniqueNewCommunities = newCommunities.filter((c) => !existingIds.has(c.id));
+        set({ communities: [...currentCommunities, ...uniqueNewCommunities] });
+      },
 
-  setLoading: (loading) => set({ isLoading: loading }),
+      clearCommunities: () => set({ communities: [], pagination: { hasMore: false } }),
 
-  setError: (error) => set({ error }),
+      // User communities actions
+      setUserCommunities: (communities) => set({ userCommunities: communities }),
 
-  setFilters: (newFilters) => {
-    const currentFilters = get().filters;
-    set({ 
-      filters: { ...currentFilters, ...newFilters },
-      communities: [], // Clear communities when filters change
-    });
-  },
+      addUserCommunity: (community) => {
+        const current = get().userCommunities;
+        if (!current.some((c) => c.id === community.id)) {
+          set({ userCommunities: [...current, community] });
+        }
+      },
 
-  setPagination: (pagination) => set({ pagination: { ...get().pagination, ...pagination } }),
+      removeUserCommunity: (communityId) => {
+        const current = get().userCommunities;
+        set({ userCommunities: current.filter((c) => c.id !== communityId) });
+      },
 
-  updateCommunity: (communityId, updates) => {
-    const communities = get().communities.map(community => 
-      community.id === communityId ? { ...community, ...updates } : community
-    );
-    set({ communities });
-  },
+      // Selection actions
+      setSelectedCommunity: (community) => set({ selectedCommunity: community }),
 
-  clearCommunities: () => set({ communities: [], pagination: { hasMore: false } }),
-}));
+      // Loading/Error actions
+      setLoading: (loading) => set({ isLoading: loading }),
+      setError: (error) => set({ error }),
+
+      // Filter actions
+      setFilters: (newFilters) => {
+        const currentFilters = get().filters;
+        set({
+          filters: { ...currentFilters, ...newFilters },
+          communities: [], // Clear communities when filters change
+        });
+      },
+
+      resetFilters: () => set({ filters: DEFAULT_FILTERS, communities: [] }),
+
+      // Pagination actions
+      setPagination: (pagination) =>
+        set({ pagination: { ...get().pagination, ...pagination } }),
+
+      // Update community
+      updateCommunity: (communityId, updates) => {
+        const communities = get().communities.map((community) =>
+          community.id === communityId ? { ...community, ...updates } : community
+        );
+        const userCommunities = get().userCommunities.map((community) =>
+          community.id === communityId ? { ...community, ...updates } : community
+        );
+        set({ communities, userCommunities });
+      },
+    }),
+    {
+      name: 'sportsblock-communities',
+      partialize: (state) => ({
+        // Only persist user communities (for faster loading)
+        userCommunities: state.userCommunities,
+        filters: state.filters,
+      }),
+    }
+  )
+);

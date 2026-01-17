@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { Bell, Check, Trash2, MessageSquare, ThumbsUp, FileText, AtSign } from "lucide-react";
+import { Bell, Check, Trash2, MessageSquare, ThumbsUp, FileText, AtSign, Zap } from "lucide-react";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "./ui/Button";
@@ -50,6 +50,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
+      case 'short_reply':
+        return <Zap className="h-4 w-4 text-primary" />;
       case 'comment':
         return <MessageSquare className="h-4 w-4 text-accent" />;
       case 'vote':
@@ -65,6 +67,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
   const getNotificationColor = (type: string) => {
     switch (type) {
+      case 'short_reply':
+        return 'bg-primary/10 border-primary/20';
       case 'comment':
         return 'bg-accent/10 border-accent/20';
       case 'vote':

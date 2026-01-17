@@ -34,6 +34,13 @@ interface BroadcastResult {
 import { aioha } from '@/lib/aioha/config';
 // import { Wax } from '@hiveio/wax'; // Not needed for basic posting operations
 
+// Sub-community data for publishing to a specific community
+export interface SubCommunityData {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 // Types matching the original posting.ts interface
 export interface PostData {
   title: string;
@@ -45,6 +52,7 @@ export interface PostData {
   parentAuthor?: string;
   parentPermlink?: string;
   jsonMetadata?: string;
+  subCommunity?: SubCommunityData;
 }
 
 export interface PublishResult {
@@ -96,7 +104,8 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
       sportCategory: postData.sportCategory,
       featuredImage: postData.featuredImage,
       tags: postData.tags,
-      jsonMetadata: postData.jsonMetadata
+      jsonMetadata: postData.jsonMetadata,
+      subCommunity: postData.subCommunity,
     });
 
     workerBeeLog('publishPost operation created', undefined, operation);

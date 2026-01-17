@@ -21,11 +21,16 @@ interface AccountHistoryEntry {
 
 interface NotificationItem {
   id: string;
-  type: 'vote' | 'comment' | 'mention' | 'transfer' | 'reblog';
+  type: 'vote' | 'comment' | 'mention' | 'transfer' | 'reblog' | 'short_reply';
   title: string;
   message: string;
   timestamp: string;
   data: Record<string, unknown>;
+}
+
+// Helper to check if a permlink belongs to a short
+function isShortPermlink(permlink: string): boolean {
+  return typeof permlink === 'string' && permlink.startsWith('short-');
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -153,11 +158,17 @@ function processOperation(
     case 'comment': {
       // Only notify for replies to the user's content (not their own comments)
       if (opData.parent_author === username && opData.author !== username) {
+        const parentPermlink = String(opData.parent_permlink || '');
+        const isShortReply = isShortPermlink(parentPermlink);
+        const bodyPreview = String(opData.body || '').slice(0, 100);
+        
         return {
           id: `comment-${trxId}`,
-          type: 'comment',
-          title: 'New Reply',
-          message: `@${opData.author} replied to your post`,
+          type: isShortReply ? 'short_reply' : 'comment',
+          title: isShortReply ? '💬 Reply to your Short' : 'New Reply',
+          message: isShortReply 
+            ? `@${opData.author} replied: "${bodyPreview}${bodyPreview.length >= 100 ? '...' : ''}"`
+            : `@${opData.author} replied to your post`,
           timestamp,
           data: {
             author: opData.author,
@@ -165,6 +176,7 @@ function processOperation(
             parentAuthor: opData.parent_author,
             parentPermlink: opData.parent_permlink,
             body: String(opData.body || '').slice(0, 200),
+            isShort: isShortReply,
           },
         };
       }

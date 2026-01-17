@@ -16,7 +16,7 @@ interface CommunityMembersProps {
 }
 
 export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId, className }) => {
-  const { data: members, isLoading, error } = useCommunityMembers(communityId, 50);
+  const { data: members, isLoading, error } = useCommunityMembers(communityId, { limit: 50 });
 
   if (isLoading) {
     return (

@@ -26,7 +26,7 @@ const getStorageKey = (username?: string | null) => {
 
 export interface Notification {
   id: string;
-  type: 'comment' | 'vote' | 'post' | 'mention';
+  type: 'comment' | 'vote' | 'post' | 'mention' | 'short_reply';
   title: string;
   message: string;
   timestamp: Date;
@@ -38,6 +38,7 @@ export interface Notification {
     parentPermlink?: string;
     weight?: number;
     voter?: string;
+    isShort?: boolean;
   };
 }
 
@@ -219,7 +220,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
             .filter(n => !existingIds.has(n.id))
             .map(n => ({
               ...n,
-              type: n.type as 'comment' | 'vote' | 'post' | 'mention',
+              type: n.type as 'comment' | 'vote' | 'post' | 'mention' | 'short_reply',
               timestamp: new Date(n.timestamp),
               read: false,
             }));

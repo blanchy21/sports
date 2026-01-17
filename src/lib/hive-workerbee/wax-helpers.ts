@@ -140,6 +140,15 @@ export function createCommentOperation(commentData: {
 }
 
 /**
+ * Sub-community data for tagging posts to user-created communities
+ */
+interface SubCommunityData {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+/**
  * Create a post operation using Wax (posts are comments with specific parent settings)
  */
 export function createPostOperation(postData: {
@@ -158,24 +167,37 @@ export function createPostOperation(postData: {
   allowVotes?: boolean;
   allowCurationRewards?: boolean;
   extensions?: unknown[];
+  subCommunity?: SubCommunityData;
 }): WaxPostOperation {
   // Generate permlink if not provided
   const permlink = postData.permlink || generatePermlink(postData.title);
   
+  // Build tags array, including sub-community slug if provided
+  const tags = [
+    ...(postData.tags || []),
+    SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+    'sportsblock',
+    // Add sub-community slug as a tag for discoverability
+    ...(postData.subCommunity ? [postData.subCommunity.slug] : []),
+  ];
+  
   // Build JSON metadata
-  const metadata = {
+  const metadata: Record<string, unknown> = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
     format: 'markdown',
-    tags: [
-      ...(postData.tags || []),
-      SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-      'sportsblock'
-    ],
+    tags,
     community: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
     sport_category: postData.sportCategory,
     image: postData.featuredImage ? [postData.featuredImage] : undefined,
-    ...(postData.jsonMetadata ? JSON.parse(postData.jsonMetadata) : {})
+    ...(postData.jsonMetadata ? JSON.parse(postData.jsonMetadata) : {}),
   };
+  
+  // Add sub-community data to metadata if provided
+  if (postData.subCommunity) {
+    metadata.sub_community = postData.subCommunity.slug;
+    metadata.sub_community_id = postData.subCommunity.id;
+    metadata.sub_community_name = postData.subCommunity.name;
+  }
 
   return {
     parent_author: postData.parentAuthor || '',

@@ -299,7 +299,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [hiveUser, setHiveUser] = useState<HiveAuthUser | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
-  const [loginAt, setLoginAt] = useState<number | undefined>(undefined);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_loginAt, setLoginAt] = useState<number | undefined>(undefined);
   const { aioha, isInitialized } = useAioha();
 
   // Track if we need to refresh Hive account after mount

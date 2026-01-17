@@ -27,13 +27,14 @@ import {
   Upload,
   X
 } from "lucide-react";
-import { SPORT_CATEGORIES } from "@/types";
+import { SPORT_CATEGORIES, Community } from "@/types";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import dynamic from "next/dynamic";
 import { publishPost, canUserPost, validatePostData } from "@/lib/hive-workerbee/posting";
 import { PostData } from "@/lib/hive-workerbee/posting";
+import { useCommunities, useUserCommunities } from "@/lib/react-query/queries/useCommunity";
 
 // Import emoji picker dynamically to avoid SSR issues
 const EmojiPicker = dynamic(
@@ -48,8 +49,13 @@ function PublishPageContent() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedSport, setSelectedSport] = useState("");
+  const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
   const [tags, setTags] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  
+  // Fetch user's communities for the selector
+  const { data: userCommunities } = useUserCommunities(user?.id || '');
+  const { data: allCommunities } = useCommunities({ limit: 50 });
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
@@ -299,6 +305,12 @@ function PublishPageContent() {
         tags: tags.split(',').map(t => t.trim()).filter(t => t.length > 0),
         featuredImage: imageUrl || undefined,
         author: hiveUser?.username || user.username,
+        // Add community data if a community is selected
+        subCommunity: selectedCommunity ? {
+          id: selectedCommunity.id,
+          slug: selectedCommunity.slug,
+          name: selectedCommunity.name,
+        } : undefined,
       };
 
       const validation = validatePostData(postData);
@@ -437,7 +449,7 @@ function PublishPageContent() {
         {/* Settings Panel */}
         {showSettings && (
           <div className="border-t bg-gradient-to-r from-silver-bird to-white px-6 py-4 space-y-4 shadow-lg">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               {/* Sport Selection */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-primary">Sport Category</label>
@@ -452,6 +464,47 @@ function PublishPageContent() {
                       {sport.icon} {sport.name}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              {/* Community Selection */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-primary">Community (Optional)</label>
+                <select
+                  value={selectedCommunity?.id || ''}
+                  onChange={(e) => {
+                    const communityId = e.target.value;
+                    if (!communityId) {
+                      setSelectedCommunity(null);
+                    } else {
+                      const community = [...(userCommunities || []), ...(allCommunities?.communities || [])]
+                        .find(c => c.id === communityId);
+                      setSelectedCommunity(community || null);
+                    }
+                  }}
+                  className="w-full px-3 py-2 border-2 border-primary/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-primary"
+                >
+                  <option value="">Main Sportsblock Feed</option>
+                  {userCommunities && userCommunities.length > 0 && (
+                    <optgroup label="Your Communities">
+                      {userCommunities.map((community) => (
+                        <option key={community.id} value={community.id}>
+                          {community.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {allCommunities?.communities && allCommunities.communities.length > 0 && (
+                    <optgroup label="All Communities">
+                      {allCommunities.communities
+                        .filter(c => !userCommunities?.some(uc => uc.id === c.id))
+                        .map((community) => (
+                          <option key={community.id} value={community.id}>
+                            {community.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                  )}
                 </select>
               </div>
 

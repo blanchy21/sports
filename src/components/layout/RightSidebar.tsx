@@ -108,25 +108,17 @@ export const RightSidebar: React.FC = () => {
 
   // Fetch analytics from layer 2 database
   useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     const fetchAnalytics = async () => {
       try {
         setIsLoading(true);
         setError(null);
         
-        // Fetch analytics directly from layer 2 database via API route
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-        
-        let response: Response;
-        try {
-          response = await fetch('/api/analytics', {
-            signal: controller.signal
-          });
-          clearTimeout(timeoutId);
-        } catch (fetchError) {
-          clearTimeout(timeoutId);
-          throw fetchError;
-        }
+        const response = await fetch('/api/analytics', {
+          signal: controller.signal
+        });
         
         if (!response.ok) {
           throw new Error(`Failed to fetch analytics: ${response.status}`);
@@ -149,8 +141,11 @@ export const RightSidebar: React.FC = () => {
           activeToday: 0,
         });
         
-        
       } catch (err) {
+        // Ignore abort errors (expected when component unmounts or timeout)
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
         console.error('Error fetching analytics data:', err);
         setError('Failed to load sidebar data');
       } finally {
@@ -159,6 +154,12 @@ export const RightSidebar: React.FC = () => {
     };
 
     fetchAnalytics();
+
+    // Cleanup: abort fetch and clear timeout on unmount
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [user?.username]);
 
   // Loading skeleton component

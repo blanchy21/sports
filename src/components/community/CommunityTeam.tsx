@@ -129,7 +129,7 @@ interface TeamMemberCardProps {
   member: {
     username: string;
     role: 'admin' | 'moderator' | 'member';
-    joinedAt: string;
+    joinedAt: string | Date;
   };
 }
 

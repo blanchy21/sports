@@ -1,13 +1,17 @@
-import { initializeWorkerBeeClient } from './client';
-import { Community, CommunityMember } from '@/types';
+/**
+ * Community Functions
+ * 
+ * This module provides community-related functions.
+ * Note: Community data is now stored in Firestore, not on Hive blockchain.
+ * These functions call the API routes which interact with Firestore.
+ * 
+ * For direct Firestore access, use @/lib/firebase/communities.ts
+ */
+
+import { Community, CommunityMember, CommunityFilters, CommunityListResult } from '@/types';
 import { workerBee as workerBeeLog, error as logError } from './logger';
 
-export interface CommunityFilters {
-  search?: string;
-  sort?: 'subscribers' | 'posts' | 'created' | 'name';
-  limit?: number;
-  before?: string; // For pagination
-}
+export type { CommunityFilters };
 
 export interface CommunityResult {
   communities: Community[];
@@ -16,99 +20,32 @@ export interface CommunityResult {
 }
 
 /**
- * Fetch communities from Hive
+ * Fetch communities from the API
  * @param filters - Community filters
  * @returns Filtered communities
  */
 export async function fetchCommunities(filters: CommunityFilters = {}): Promise<CommunityResult> {
   try {
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
+    workerBeeLog('Fetching communities via API', undefined, filters);
 
-    const limit = Math.min(filters.limit || 20, 100);
+    const params = new URLSearchParams();
+    if (filters.search) params.set('search', filters.search);
+    if (filters.sportCategory) params.set('sportCategory', filters.sportCategory);
+    if (filters.type) params.set('type', filters.type);
+    if (filters.sort) params.set('sort', filters.sort);
+    if (filters.limit) params.set('limit', String(filters.limit));
+
+    const response = await fetch(`/api/communities?${params.toString()}`);
     
-    // For now, we'll create mock communities since Hive doesn't have a direct communities API
-    // In a real implementation, this would fetch from Hivemind or a custom communities API
-    const mockCommunities: Community[] = [
-      {
-        id: 'sportsblock',
-        name: 'sportsblock',
-        title: 'Sportsblock',
-        about: 'The premier community for sports content on Hive blockchain',
-        description: 'Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain. From football to basketball, tennis to golf - all sports are welcome!',
-        subscribers: 1234,
-        posts: 5678,
-        created: '2024-01-01T00:00:00.000Z',
-        avatar: '/sportsblock-logo.png',
-        coverImage: '/stadium.jpg',
-        team: [
-          {
-            username: 'sportsblock',
-            role: 'admin',
-            joinedAt: '2024-01-01T00:00:00.000Z',
-          },
-        ],
-      },
-      {
-        id: 'football',
-        name: 'football',
-        title: 'Football Community',
-        about: 'Everything about football (soccer)',
-        description: 'Discuss matches, players, tactics, and everything related to the beautiful game.',
-        subscribers: 890,
-        posts: 2345,
-        created: '2024-01-15T00:00:00.000Z',
-        team: [
-          {
-            username: 'footballmod',
-            role: 'moderator',
-            joinedAt: '2024-01-15T00:00:00.000Z',
-          },
-        ],
-      },
-      {
-        id: 'basketball',
-        name: 'basketball',
-        title: 'Basketball Community',
-        about: 'NBA, college basketball, and more',
-        description: 'Covering all levels of basketball from NBA to college and international play.',
-        subscribers: 567,
-        posts: 1234,
-        created: '2024-02-01T00:00:00.000Z',
-        team: [
-          {
-            username: 'basketballmod',
-            role: 'moderator',
-            joinedAt: '2024-02-01T00:00:00.000Z',
-          },
-        ],
-      },
-    ];
-
-    // Apply filters
-    let filteredCommunities = mockCommunities;
-
-    if (filters.search) {
-      const searchTerm = filters.search.toLowerCase();
-      filteredCommunities = filteredCommunities.filter(community =>
-        community.title.toLowerCase().includes(searchTerm) ||
-        community.about.toLowerCase().includes(searchTerm) ||
-        community.name.toLowerCase().includes(searchTerm)
-      );
+    if (!response.ok) {
+      throw new Error(`Failed to fetch communities: ${response.statusText}`);
     }
 
-    // Sort communities
-    filteredCommunities = sortCommunities(filteredCommunities, filters.sort || 'subscribers');
-
-    // Apply pagination
-    const startIndex = 0; // In a real implementation, this would be based on before cursor
-    const endIndex = startIndex + limit;
-    const paginatedCommunities = filteredCommunities.slice(startIndex, endIndex);
-
+    const data: CommunityListResult & { success: boolean } = await response.json();
+    
     return {
-      communities: paginatedCommunities,
-      hasMore: endIndex < filteredCommunities.length,
-      nextCursor: endIndex < filteredCommunities.length ? paginatedCommunities[paginatedCommunities.length - 1]?.id : undefined,
+      communities: data.communities || [],
+      hasMore: data.hasMore || false,
     };
   } catch (error) {
     logError('Error fetching communities', 'fetchCommunities', error instanceof Error ? error : undefined);
@@ -118,17 +55,25 @@ export async function fetchCommunities(filters: CommunityFilters = {}): Promise<
 
 /**
  * Fetch community details by ID
- * @param communityId - Community ID
+ * @param communityId - Community ID or slug
  * @returns Community details
  */
 export async function fetchCommunityDetails(communityId: string): Promise<Community | null> {
   try {
-    await initializeWorkerBeeClient();
+    workerBeeLog('Fetching community details via API', undefined, { communityId });
 
-    // For now, return mock data
-    // In a real implementation, this would fetch from Hivemind API
-    const communities = await fetchCommunities({ limit: 100 });
-    return communities.communities.find(c => c.id === communityId) || null;
+    const response = await fetch(`/api/communities/${communityId}`);
+    
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch community: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.community || null;
   } catch (error) {
     logError('Error fetching community details', 'fetchCommunityDetails', error instanceof Error ? error : undefined);
     return null;
@@ -143,29 +88,20 @@ export async function fetchCommunityDetails(communityId: string): Promise<Commun
  */
 export async function fetchCommunityMembers(communityId: string, limit: number = 50): Promise<CommunityMember[]> {
   try {
-    await initializeWorkerBeeClient();
+    workerBeeLog('Fetching community members via API', undefined, { communityId, limit });
 
-    // For now, return mock data
-    // In a real implementation, this would fetch from Hivemind API
-    const mockMembers: CommunityMember[] = [
-      {
-        username: 'sportsblock',
-        role: 'admin',
-        joinedAt: '2024-01-01T00:00:00.000Z',
-      },
-      {
-        username: 'footballfan1',
-        role: 'member',
-        joinedAt: '2024-01-15T00:00:00.000Z',
-      },
-      {
-        username: 'basketballfan2',
-        role: 'member',
-        joinedAt: '2024-02-01T00:00:00.000Z',
-      },
-    ];
+    const params = new URLSearchParams();
+    params.set('limit', String(limit));
+    params.set('status', 'active');
 
-    return mockMembers.slice(0, limit);
+    const response = await fetch(`/api/communities/${communityId}/members?${params.toString()}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch members: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.members || [];
   } catch (error) {
     logError('Error fetching community members', 'fetchCommunityMembers', error instanceof Error ? error : undefined);
     return [];
@@ -173,25 +109,34 @@ export async function fetchCommunityMembers(communityId: string, limit: number =
 }
 
 /**
- * Subscribe to a community
+ * Subscribe to a community (join)
  * @param communityId - Community ID
- * @param username - Username to subscribe
+ * @param userId - User ID
+ * @param username - Username
+ * @param hiveUsername - Hive username (optional)
  * @returns Subscription result
  */
-export async function subscribeToCommunity(communityId: string, username: string): Promise<{
-  success: boolean;
-  error?: string;
-}> {
+export async function subscribeToCommunity(
+  communityId: string, 
+  userId: string,
+  username?: string,
+  hiveUsername?: string
+): Promise<{ success: boolean; error?: string }> {
   try {
-    await initializeWorkerBeeClient();
+    workerBeeLog('Subscribing to community via API', undefined, { communityId, userId });
 
-    // For now, return mock success
-    // In a real implementation, this would use Hive API to subscribe
-    workerBeeLog(`Subscribing ${username} to community ${communityId}`);
-    
-    return {
-      success: true,
-    };
+    const response = await fetch(`/api/communities/${communityId}/members`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, username: username || userId, hiveUsername }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.error || 'Failed to join community' };
+    }
+
+    return { success: true };
   } catch (error) {
     logError('Error subscribing to community', 'subscribeToCommunity', error instanceof Error ? error : undefined);
     return {
@@ -202,25 +147,30 @@ export async function subscribeToCommunity(communityId: string, username: string
 }
 
 /**
- * Unsubscribe from a community
+ * Unsubscribe from a community (leave)
  * @param communityId - Community ID
- * @param username - Username to unsubscribe
+ * @param userId - User ID
  * @returns Unsubscription result
  */
-export async function unsubscribeFromCommunity(communityId: string, username: string): Promise<{
-  success: boolean;
-  error?: string;
-}> {
+export async function unsubscribeFromCommunity(
+  communityId: string, 
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
   try {
-    await initializeWorkerBeeClient();
+    workerBeeLog('Unsubscribing from community via API', undefined, { communityId, userId });
 
-    // For now, return mock success
-    // In a real implementation, this would use Hive API to unsubscribe
-    workerBeeLog(`Unsubscribing ${username} from community ${communityId}`);
-    
-    return {
-      success: true,
-    };
+    const response = await fetch(`/api/communities/${communityId}/members`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.error || 'Failed to leave community' };
+    }
+
+    return { success: true };
   } catch (error) {
     logError('Error unsubscribing from community', 'unsubscribeFromCommunity', error instanceof Error ? error : undefined);
     return {
@@ -233,43 +183,17 @@ export async function unsubscribeFromCommunity(communityId: string, username: st
 /**
  * Check if user is subscribed to a community
  * @param communityId - Community ID
- * @param username - Username to check
+ * @param userId - User ID
  * @returns Subscription status
  */
-export async function isSubscribedToCommunity(communityId: string, username: string): Promise<boolean> {
+export async function isSubscribedToCommunity(communityId: string, userId: string): Promise<boolean> {
   try {
-    await initializeWorkerBeeClient();
+    if (!userId) return false;
 
-    // For now, return mock data
-    // In a real implementation, this would check Hivemind API
-    return communityId === 'sportsblock' && Boolean(username?.trim()); // Mock logic
+    const members = await fetchCommunityMembers(communityId, 1000);
+    return members.some((m) => m.userId === userId && m.status === 'active');
   } catch (error) {
     logError('Error checking community subscription', 'isSubscribedToCommunity', error instanceof Error ? error : undefined);
     return false;
-  }
-}
-
-/**
- * Sort communities based on criteria
- * @param communities - Communities to sort
- * @param sortBy - Sort criteria
- * @returns Sorted communities
- */
-function sortCommunities(communities: Community[], sortBy: string): Community[] {
-  switch (sortBy) {
-    case 'subscribers':
-      return communities.sort((a, b) => b.subscribers - a.subscribers);
-    
-    case 'posts':
-      return communities.sort((a, b) => b.posts - a.posts);
-    
-    case 'created':
-      return communities.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
-    
-    case 'name':
-      return communities.sort((a, b) => a.name.localeCompare(b.name));
-    
-    default:
-      return communities;
   }
 }
