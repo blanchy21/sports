@@ -8,6 +8,8 @@ export interface RetryOptions {
   maxDelay?: number;
   backoffMultiplier?: number;
   retryableStatuses?: number[];
+  /** Jitter factor (0-1) to randomize delays and prevent thundering herd. Default 0.3 (±30%) */
+  jitter?: number;
 }
 
 const DEFAULT_OPTIONS: Required<RetryOptions> = {
@@ -16,6 +18,7 @@ const DEFAULT_OPTIONS: Required<RetryOptions> = {
   maxDelay: 30000, // 30 seconds
   backoffMultiplier: 2,
   retryableStatuses: [429, 500, 502, 503, 504], // Rate limit and server errors
+  jitter: 0.3, // ±30% randomization to prevent thundering herd
 };
 
 /**
@@ -26,11 +29,22 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Calculate delay with exponential backoff
+ * Calculate delay with exponential backoff and optional jitter
+ * Jitter helps prevent "thundering herd" where all clients retry simultaneously
  */
 function calculateDelay(attempt: number, options: Required<RetryOptions>): number {
-  const delay = options.initialDelay * Math.pow(options.backoffMultiplier, attempt);
-  return Math.min(delay, options.maxDelay);
+  const baseDelay = options.initialDelay * Math.pow(options.backoffMultiplier, attempt);
+  const cappedDelay = Math.min(baseDelay, options.maxDelay);
+
+  // Apply jitter: randomize the delay by ±jitter factor
+  // e.g., with jitter=0.3 and delay=1000ms, result is 700-1300ms
+  if (options.jitter > 0) {
+    const jitterRange = cappedDelay * options.jitter;
+    const jitterOffset = (Math.random() * 2 - 1) * jitterRange; // Random between -jitterRange and +jitterRange
+    return Math.max(0, Math.round(cappedDelay + jitterOffset));
+  }
+
+  return cappedDelay;
 }
 
 /**

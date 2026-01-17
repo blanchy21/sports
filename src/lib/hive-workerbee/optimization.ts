@@ -179,11 +179,11 @@ class WorkerBeeOptimizer {
   }
 
   /**
-   * Optimized account fetching with caching
+   * Optimized account fetching with caching (direct call, no batching)
    */
   async fetchAccountOptimized(username: string): Promise<HiveAccount | null> {
     const cacheKey = this.getCacheKey('get_accounts', [[username]]);
-    
+
     // Check cache first
     const cached = this.getCached<HiveAccount>(cacheKey);
     if (cached) {
@@ -192,18 +192,20 @@ class WorkerBeeOptimizer {
 
     try {
       const startTime = Date.now();
-      const result = await this.addToBatch('condenser_api', ['get_accounts', [[username]]]);
+      // Direct API call without batching
+      const { makeHiveApiCall } = await import('./api');
+      const result = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
       const responseTime = Date.now() - startTime;
-      
+
       this.responseTimes.push(responseTime);
       this.updateMetrics();
 
       const account = Array.isArray(result) && result.length > 0 ? result[0] : null;
-      
+
       if (account) {
         this.setCached(cacheKey, account, this.DEFAULT_TTL);
       }
-      
+
       return account;
     } catch (error) {
       logError('Error fetching account', 'WorkerBeeOptimizer', error instanceof Error ? error : undefined);
@@ -212,11 +214,11 @@ class WorkerBeeOptimizer {
   }
 
   /**
-   * Optimized content fetching with caching
+   * Optimized content fetching with caching (direct call, no batching)
    */
   async fetchContentOptimized(method: string, params: unknown[]): Promise<unknown> {
     const cacheKey = this.getCacheKey(method, params);
-    
+
     // Check cache first
     const cached = this.getCached(cacheKey);
     if (cached) {
@@ -225,15 +227,17 @@ class WorkerBeeOptimizer {
 
     try {
       const startTime = Date.now();
-      const result = await this.addToBatch(method, params);
+      // Direct API call without batching
+      const { makeHiveApiCall } = await import('./api');
+      const result = await makeHiveApiCall('condenser_api', method, params);
       const responseTime = Date.now() - startTime;
-      
+
       this.responseTimes.push(responseTime);
       this.updateMetrics();
 
       // Cache successful results
       this.setCached(cacheKey, result, this.DEFAULT_TTL);
-      
+
       return result;
     } catch (error) {
       logError('Error fetching content', 'WorkerBeeOptimizer', error instanceof Error ? error : undefined);
@@ -287,29 +291,17 @@ class WorkerBeeOptimizer {
 const globalOptimizer = new WorkerBeeOptimizer();
 
 /**
- * Get optimized account data
+ * Get optimized account data with caching
  */
 export async function getAccountOptimized(username: string): Promise<HiveAccount | null> {
-  // Temporarily disable optimization to prevent API errors
-  // TODO: Re-enable when batch processing is fixed
-  const { makeHiveApiCall } = await import('./api');
-  const accounts = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
-  return accounts && accounts.length > 0 ? accounts[0] : null;
+  return globalOptimizer.fetchAccountOptimized(username);
 }
 
 /**
- * Get optimized content data
+ * Get optimized content data with caching
  */
 export async function getContentOptimized(method: string, params: unknown[]): Promise<unknown> {
-  // Temporarily disable optimization to prevent API errors
-  // TODO: Re-enable when batch processing is fixed
-  try {
-    const { makeHiveApiCall } = await import('./api');
-    return await makeHiveApiCall('condenser_api', method, params);
-  } catch (error) {
-    logError(`Error in getContentOptimized for ${method}`, 'getContentOptimized', error instanceof Error ? error : undefined);
-    throw error;
-  }
+  return globalOptimizer.fetchContentOptimized(method, params);
 }
 
 /**

@@ -27,6 +27,14 @@ export interface NodeHealthStatus {
   lastError?: string;
   healthScore: number; // 0-100, higher is better
   circuitState?: CircuitState;
+  averageLatency?: number; // Rolling average latency over history window
+}
+
+// History entry for sliding window
+interface HealthCheckEntry {
+  timestamp: number;
+  success: boolean;
+  latency: number;
 }
 
 // Node health configuration
@@ -69,10 +77,12 @@ const DEFAULT_CONFIG: NodeHealthConfig = {
 export class NodeHealthManager {
   private nodeHealth: Map<string, NodeHealthStatus> = new Map();
   private circuitBreakers: Map<string, CircuitBreaker> = new Map();
+  private nodeHistory: Map<string, HealthCheckEntry[]> = new Map(); // Sliding window history
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private config: NodeHealthConfig;
   private isMonitoring: boolean = false;
   private nodeUrls: string[];
+  private readonly HISTORY_WINDOW_SIZE = 20; // Keep last 20 checks per node
 
   constructor(config: Partial<NodeHealthConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -113,9 +123,42 @@ export class NodeHealthManager {
         lastChecked: 0,
         successRate: 100,
         consecutiveFailures: 0,
-        healthScore: 50 // Start with neutral score
+        healthScore: 50, // Start with neutral score
+        averageLatency: 0,
       });
+      // Initialize empty history for each node
+      this.nodeHistory.set(url, []);
     });
+  }
+
+  /**
+   * Add entry to node history with sliding window
+   */
+  private addToHistory(nodeUrl: string, entry: HealthCheckEntry): void {
+    const history = this.nodeHistory.get(nodeUrl) || [];
+    history.push(entry);
+
+    // Maintain sliding window size
+    if (history.length > this.HISTORY_WINDOW_SIZE) {
+      history.shift(); // Remove oldest entry
+    }
+
+    this.nodeHistory.set(nodeUrl, history);
+  }
+
+  /**
+   * Calculate average latency from history
+   */
+  private calculateAverageLatency(nodeUrl: string): number {
+    const history = this.nodeHistory.get(nodeUrl) || [];
+    if (history.length === 0) return 0;
+
+    // Only consider successful checks for latency average
+    const successfulChecks = history.filter(h => h.success);
+    if (successfulChecks.length === 0) return 0;
+
+    const totalLatency = successfulChecks.reduce((sum, h) => sum + h.latency, 0);
+    return Math.round(totalLatency / successfulChecks.length);
   }
 
   /**
@@ -209,6 +252,13 @@ export class NodeHealthManager {
       }
     }
 
+    // Add to history before updating status
+    this.addToHistory(nodeUrl, {
+      timestamp: Date.now(),
+      success: isHealthy,
+      latency,
+    });
+
     // Update node health status
     const currentStatus = this.nodeHealth.get(nodeUrl);
     if (currentStatus) {
@@ -219,8 +269,9 @@ export class NodeHealthManager {
         lastChecked: Date.now(),
         consecutiveFailures: isHealthy ? 0 : currentStatus.consecutiveFailures + 1,
         lastError: isHealthy ? undefined : error,
-        successRate: this.calculateSuccessRate(nodeUrl, isHealthy),
-        healthScore: this.calculateHealthScore(nodeUrl, isHealthy, latency)
+        successRate: this.calculateSuccessRate(nodeUrl),
+        healthScore: this.calculateHealthScore(nodeUrl, isHealthy, latency),
+        averageLatency: this.calculateAverageLatency(nodeUrl),
       };
 
       this.nodeHealth.set(nodeUrl, newStatus);
@@ -236,7 +287,8 @@ export class NodeHealthManager {
       successRate: isHealthy ? 100 : 0,
       consecutiveFailures: isHealthy ? 0 : 1,
       lastError: error,
-      healthScore: isHealthy ? 80 : 20
+      healthScore: isHealthy ? 80 : 20,
+      averageLatency: latency,
     };
 
     this.nodeHealth.set(nodeUrl, newStatus);
@@ -382,22 +434,19 @@ export class NodeHealthManager {
   }
 
   /**
-   * Calculate success rate for a node
+   * Calculate success rate for a node from sliding window history
    */
-  private calculateSuccessRate(nodeUrl: string, currentSuccess: boolean): number {
-    const current = this.nodeHealth.get(nodeUrl);
-    if (!current) return currentSuccess ? 100 : 0;
+  private calculateSuccessRate(nodeUrl: string): number {
+    const history = this.nodeHistory.get(nodeUrl) || [];
+    if (history.length === 0) return 100; // Assume 100% if no history
 
-    // Simple moving average over last 10 checks
-    const history = this.getNodeHistory(nodeUrl);
-    const recentChecks = history.slice(-10);
-    const successCount = recentChecks.filter(check => check).length;
-    
-    return recentChecks.length > 0 ? (successCount / recentChecks.length) * 100 : current.successRate;
+    const successCount = history.filter(h => h.success).length;
+    return Math.round((successCount / history.length) * 100);
   }
 
   /**
    * Calculate health score for a node (0-100)
+   * Uses sliding window history for more accurate scoring
    */
   private calculateHealthScore(nodeUrl: string, isHealthy: boolean, latency: number): number {
     let score = 0;
@@ -407,17 +456,18 @@ export class NodeHealthManager {
       score += 40;
     }
 
-    // Latency score (lower is better)
-    if (latency < 1000) {
+    // Latency score based on average latency from history (more stable)
+    const avgLatency = this.calculateAverageLatency(nodeUrl) || latency;
+    if (avgLatency < 1000) {
       score += 30;
-    } else if (latency < 3000) {
+    } else if (avgLatency < 3000) {
       score += 20;
-    } else if (latency < 5000) {
+    } else if (avgLatency < 5000) {
       score += 10;
     }
 
-    // Success rate score
-    const successRate = this.calculateSuccessRate(nodeUrl, isHealthy);
+    // Success rate score from sliding window history
+    const successRate = this.calculateSuccessRate(nodeUrl);
     score += (successRate / 100) * 20;
 
     // Penalty for consecutive failures
@@ -468,13 +518,28 @@ export class NodeHealthManager {
   }
 
   /**
-   * Get node check history (simplified - in real implementation, you'd store this)
+   * Get node check history entries
    */
-  private getNodeHistory(nodeUrl: string): boolean[] {
-    // This is a simplified implementation
-    // In a real scenario, you'd store check history
-    const current = this.nodeHealth.get(nodeUrl);
-    return current ? [current.isHealthy] : [];
+  public getNodeHistory(nodeUrl: string): HealthCheckEntry[] {
+    return this.nodeHistory.get(nodeUrl) || [];
+  }
+
+  /**
+   * Get recommended timeout for a node based on its average latency
+   * Returns a timeout that's 2x the average latency, with min/max bounds
+   */
+  public getAdaptiveTimeout(nodeUrl: string): number {
+    const avgLatency = this.calculateAverageLatency(nodeUrl);
+    if (avgLatency === 0) {
+      return this.config.timeout; // Use default if no history
+    }
+
+    // Adaptive timeout: 2x average latency, bounded between 5s and 30s
+    const adaptiveTimeout = avgLatency * 2;
+    const minTimeout = 5000;
+    const maxTimeout = 30000;
+
+    return Math.max(minTimeout, Math.min(maxTimeout, adaptiveTimeout));
   }
 }
 
@@ -553,6 +618,22 @@ export function getCircuitStats(): Map<string, CircuitBreakerStats> {
 export function resetAllCircuits(): void {
   const manager = getNodeHealthManager();
   manager.resetAllCircuits();
+}
+
+/**
+ * Get adaptive timeout for a node based on its latency history
+ */
+export function getAdaptiveTimeout(nodeUrl: string): number {
+  const manager = getNodeHealthManager();
+  return manager.getAdaptiveTimeout(nodeUrl);
+}
+
+/**
+ * Get health check history for a node
+ */
+export function getNodeHistory(nodeUrl: string): { timestamp: number; success: boolean; latency: number }[] {
+  const manager = getNodeHealthManager();
+  return manager.getNodeHistory(nodeUrl);
 }
 
 // Re-export CircuitState for consumers
