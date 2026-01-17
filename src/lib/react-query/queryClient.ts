@@ -69,4 +69,11 @@ export const queryKeys = {
     lists: () => [...queryKeys.votes.all, 'list'] as const,
     list: (postId: string) => [...queryKeys.votes.lists(), postId] as const,
   },
+  medals: {
+    all: ['medals'] as const,
+    balance: (account: string) => [...queryKeys.medals.all, 'balance', account] as const,
+    stake: (account: string) => [...queryKeys.medals.all, 'stake', account] as const,
+    history: (account: string) => [...queryKeys.medals.all, 'history', account] as const,
+    market: () => [...queryKeys.medals.all, 'market'] as const,
+  },
 } as const;

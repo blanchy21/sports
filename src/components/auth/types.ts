@@ -35,3 +35,22 @@ export interface AuthFormState {
   subscribeNewsletter: boolean;
   showPassword: boolean;
 }
+
+export interface DiscoveredAccount {
+  username: string;
+  provider: string;
+  balance?: string;
+}
+
+export interface AccountDiscoveryProps {
+  discoveredAccounts: DiscoveredAccount[];
+  isConnecting: boolean;
+  onAccountSelect: (account: DiscoveredAccount) => void;
+  onDiscover: () => void;
+}
+
+export interface ProviderButtonsProps {
+  availableProviders: string[];
+  onProviderSelect: (provider: string) => void;
+  isConnecting: boolean;
+}
