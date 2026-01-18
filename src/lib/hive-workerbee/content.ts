@@ -482,19 +482,69 @@ export async function getPostsBySport(sportCategory: string, limit: number = 20)
 
 /**
  * Get user's posts from Sportsblock using WorkerBee
+ * This function paginates through the user's posts until it finds enough sportsblock posts
  * @param username - Username
- * @param limit - Number of posts to fetch
- * @returns User's posts
+ * @param limit - Number of sportsblock posts to find
+ * @returns User's sportsblock posts
  */
 export async function getUserPosts(username: string, limit: number = 20): Promise<SportsblockPost[]> {
   try {
-    const result = await fetchSportsblockPosts({
-      author: username,
-      limit,
-      sort: 'created',
-    });
+    const sportsblockPosts: SportsblockPost[] = [];
+    let startPermlink = '';
+    const maxPages = 10; // Maximum pages to fetch (10 * 20 = 200 posts max)
+    const postsPerPage = 20; // Hive API limit
     
-    return result.posts;
+    for (let page = 0; page < maxPages && sportsblockPosts.length < limit; page++) {
+      // Fetch a page of user posts
+      const accountPosts = await getContentOptimized('get_discussions_by_author_before_date', [
+        username,
+        startPermlink,
+        '',
+        postsPerPage
+      ]) as HivePost[] | null;
+      
+      const posts = accountPosts || [];
+      
+      // No more posts available
+      if (posts.length === 0) {
+        break;
+      }
+      
+      // Skip the first post on subsequent pages (it's a duplicate from the previous page)
+      const newPosts = page === 0 ? posts : posts.slice(1);
+      
+      if (newPosts.length === 0) {
+        break;
+      }
+      
+      // Filter for sportsblock posts and add them
+      for (const post of newPosts) {
+        if (isSportsblockPost(post)) {
+          sportsblockPosts.push({
+            ...post,
+            sportCategory: getSportCategory(post) || undefined,
+            isSportsblockPost: true,
+            allow_votes: true,
+            allow_curation_rewards: true,
+          } as unknown as SportsblockPost);
+          
+          // Stop if we have enough
+          if (sportsblockPosts.length >= limit) {
+            break;
+          }
+        }
+      }
+      
+      // Set up pagination for the next page
+      startPermlink = posts[posts.length - 1].permlink;
+      
+      // If we got fewer posts than requested, we've reached the end
+      if (posts.length < postsPerPage) {
+        break;
+      }
+    }
+    
+    return sportsblockPosts;
   } catch (error) {
     logError('Error fetching user posts with WorkerBee', 'getUserPosts', error instanceof Error ? error : undefined);
     throw error;
