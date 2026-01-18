@@ -596,8 +596,7 @@ export async function getCommunityStats(): Promise<{
   activeToday: number;
 }> {
   try {
-    // This would require additional API calls or database queries
-    // For now, return mock data - implement with actual Hivemind API later
+    // Fetch recent posts to calculate stats
     const recentPosts = await fetchSportsblockPosts({ limit: 100 });
     
     const authors = new Set((recentPosts.posts as unknown as HivePost[]).map(post => post.author));

@@ -1,12 +1,25 @@
 "use client";
 
 import React, { createContext, useContext } from "react";
+import dynamic from "next/dynamic";
 import { useUIStore } from "@/stores/uiStore";
-import { CommentsModal } from "./CommentsModal";
-import { UpvoteListModal } from "./UpvoteListModal";
-import { DescriptionModal } from "./DescriptionModal";
-import { UserProfileModal } from "./UserProfileModal";
-import { FollowersListModal } from "./FollowersListModal";
+
+// Lazy load modals - only loaded when first opened
+const CommentsModal = dynamic(() => import("./CommentsModal").then(mod => ({ default: mod.CommentsModal })), {
+  ssr: false,
+});
+const UpvoteListModal = dynamic(() => import("./UpvoteListModal").then(mod => ({ default: mod.UpvoteListModal })), {
+  ssr: false,
+});
+const DescriptionModal = dynamic(() => import("./DescriptionModal").then(mod => ({ default: mod.DescriptionModal })), {
+  ssr: false,
+});
+const UserProfileModal = dynamic(() => import("./UserProfileModal").then(mod => ({ default: mod.UserProfileModal })), {
+  ssr: false,
+});
+const FollowersListModal = dynamic(() => import("./FollowersListModal").then(mod => ({ default: mod.FollowersListModal })), {
+  ssr: false,
+});
 
 interface ModalContextType {
   openModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'followersList', data?: Record<string, unknown>) => void;

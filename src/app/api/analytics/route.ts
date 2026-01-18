@@ -65,7 +65,7 @@ export async function GET() {
       console.log('[Analytics API] Firebase not configured, computing analytics from Hive...');
       const posts = await fetchPostsViaInternalApi(20);
       if (posts.length > 0) {
-        const computedAnalytics = getAnalyticsData(posts, undefined);
+        const computedAnalytics = await getAnalyticsData(posts, undefined);
         return NextResponse.json({
           success: true,
           data: computedAnalytics,
@@ -149,7 +149,7 @@ export async function GET() {
       console.log('[Analytics API] Firestore empty or stale, computing analytics from Hive...');
       const posts = await fetchPostsViaInternalApi(20);
       if (posts.length > 0) {
-        const computedAnalytics = getAnalyticsData(posts, undefined);
+        const computedAnalytics = await getAnalyticsData(posts, undefined);
         analytics.trendingSports = computedAnalytics.trendingSports;
         analytics.trendingTopics = computedAnalytics.trendingTopics;
         analytics.topAuthors = computedAnalytics.topAuthors;

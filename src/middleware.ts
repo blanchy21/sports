@@ -21,20 +21,45 @@ const RATE_LIMITED_ROUTES = {
   '/api/hive/posts': 'read',
   '/api/hive/comments': 'read',
   '/api/hive/account': 'read',
+  '/api/hive/shorts': 'read',
   '/api/crypto/prices': 'read',
   '/api/analytics': 'read',
+  '/api/sports/events': 'read',
+  '/api/metrics/leaderboard': 'read',
+  '/api/hive-engine/balance': 'read',
+  '/api/hive-engine/market': 'read',
+  '/api/hive-engine/history': 'read',
+  '/api/communities': 'read',
+  '/api/image-proxy': 'read',
+  '/api/health': 'read',
 
   // Write operations
   '/api/hive/posting': 'write',
+  '/api/hive-engine/stake': 'write',
+  '/api/hive-engine/transfer': 'write',
+  '/api/metrics/track': 'write',
 
   // Real-time operations
   '/api/hive/realtime': 'realtime',
   '/api/hive/notifications': 'realtime',
+
+  // Cron jobs - exempt (authenticated via CRON_SECRET)
+  // '/api/cron': null,
 } as const;
 
 type RateLimitType = 'read' | 'write' | 'auth' | 'realtime';
 
 function getRateLimitType(pathname: string): RateLimitType | null {
+  // Cron jobs are exempt - they use CRON_SECRET authentication
+  if (pathname.startsWith('/api/cron')) {
+    return null;
+  }
+
+  // Test endpoints exempt in development
+  if (pathname.startsWith('/api/test')) {
+    return null;
+  }
+
   // Check exact matches first
   for (const [route, type] of Object.entries(RATE_LIMITED_ROUTES)) {
     if (pathname === route || pathname.startsWith(route + '/')) {
@@ -44,6 +69,11 @@ function getRateLimitType(pathname: string): RateLimitType | null {
 
   // Default rate limit for all /api/hive routes
   if (pathname.startsWith('/api/hive')) {
+    return 'read';
+  }
+
+  // Default rate limit for all other API routes
+  if (pathname.startsWith('/api/')) {
     return 'read';
   }
 

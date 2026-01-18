@@ -73,7 +73,7 @@ async function updateAnalytics() {
 
     // Calculate analytics
     console.log('📊 Calculating analytics...');
-    const analytics = getAnalyticsData(result.posts, undefined);
+    const analytics = await getAnalyticsData(result.posts, undefined);
     console.log(`  ✅ Calculated analytics:
     - Trending Sports: ${analytics.trendingSports.length}
     - Trending Topics: ${analytics.trendingTopics.length}

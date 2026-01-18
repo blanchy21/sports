@@ -11,7 +11,6 @@
  */
 
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import {
   calculateStakingRewards,
   getWeekId,
@@ -20,32 +19,10 @@ import {
   type StakerInfo,
   type DistributionResult,
 } from '@/lib/rewards/staking-distribution';
-import { hiveEngineClient } from '@/lib/hive-engine/client';
+import { getHiveEngineClient } from '@/lib/hive-engine/client';
 import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-
-// Vercel cron secret for authentication
-const CRON_SECRET = process.env.CRON_SECRET;
-
-/**
- * Verify the request is from Vercel Cron or authorized source
- */
-async function verifyCronRequest(): Promise<boolean> {
-  const headersList = await headers();
-  const authHeader = headersList.get('authorization');
-
-  // In development, allow without auth
-  if (process.env.NODE_ENV === 'development') {
-    return true;
-  }
-
-  // Vercel Cron sends authorization header
-  if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) {
-    return true;
-  }
-
-  return false;
-}
+import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
 
 /**
  * Check if rewards have already been processed for this week
@@ -112,16 +89,13 @@ async function fetchAllStakers(): Promise<StakerInfo[]> {
   while (hasMore) {
     try {
       // Query Hive Engine for staked balances
-      const result = await hiveEngineClient.query('contracts', 'find', {
-        contract: 'tokens',
-        table: 'balances',
-        query: {
-          symbol: 'MEDALS',
-          stake: { $gt: '0' },
-        },
-        limit,
-        offset,
-      });
+      const result = await getHiveEngineClient().find<{
+        account: string;
+        stake: string;
+      }>('tokens', 'balances', {
+        symbol: 'MEDALS',
+        stake: { $gt: '0' },
+      }, { limit, offset });
 
       if (!result || result.length === 0) {
         hasMore = false;
@@ -190,14 +164,17 @@ export async function GET() {
 
     // Check rewards account balance
     const rewardsAccount = getRewardsAccount();
-    const rewardsBalance = await hiveEngineClient.getBalance(rewardsAccount, 'MEDALS');
+    const rewardsBalanceResult = await getHiveEngineClient().findOne<{
+      balance: string;
+    }>('tokens', 'balances', { account: rewardsAccount, symbol: 'MEDALS' });
+    const rewardsBalance = rewardsBalanceResult ? parseFloat(rewardsBalanceResult.balance) : 0;
     const totalToDistribute = distributionResult.distributions.reduce(
       (sum, d) => sum + d.amount,
       0
     );
 
     const balanceCheck = validateRewardsBalance(
-      rewardsBalance?.balance || 0,
+      rewardsBalance,
       totalToDistribute
     );
 

@@ -3,6 +3,7 @@ import { fetchSportsblockPosts } from '@/lib/hive-workerbee/content';
 import { getAnalyticsData } from '@/lib/hive-workerbee/analytics';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -10,19 +11,12 @@ export const dynamic = 'force-dynamic';
 /**
  * Cron endpoint for updating analytics in Firestore
  * This endpoint is called by Vercel Cron Jobs or other scheduled services
- * 
- * Security: Optionally verify with CRON_SECRET environment variable
  */
 export async function GET() {
-  // Optional: Verify cron secret for security
-  // Uncomment if you set CRON_SECRET in your environment variables
-  /*
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // Verify cron authentication
+  if (!(await verifyCronRequest())) {
+    return NextResponse.json(createUnauthorizedResponse(), { status: 401 });
   }
-  */
 
   try {
     // Check if Firebase is configured
@@ -53,7 +47,7 @@ export async function GET() {
     console.log(`[Cron] Fetched ${result.posts.length} posts, calculating analytics...`);
 
     // Calculate analytics
-    const analytics = getAnalyticsData(result.posts, undefined);
+    const analytics = await getAnalyticsData(result.posts, undefined);
 
     // Update Firestore
     await Promise.all([

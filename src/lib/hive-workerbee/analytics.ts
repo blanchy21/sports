@@ -1,5 +1,6 @@
 import { SportsblockPost } from './content';
 import { SPORT_CATEGORIES } from '@/types';
+import { getFollowerCount } from './social';
 
 // Types for analytics data
 export interface TrendingSport {
@@ -148,12 +149,23 @@ export function calculateTrendingTopics(posts: SportsblockPost[]): TrendingTopic
 }
 
 /**
+ * Format follower count as "X.XK" string
+ */
+function formatFollowerCount(count: number): string {
+  if (count >= 1000) {
+    const thousands = count / 1000;
+    return `${thousands.toFixed(1)}K`;
+  }
+  return count.toString();
+}
+
+/**
  * Calculate top authors based on engagement (comments + votes)
  * @param posts - Array of posts to analyze
  * @param excludeUser - Username to exclude from the results (e.g., current user)
- * @returns Top authors data
+ * @returns Top authors data with real follower counts
  */
-export function calculateTopAuthors(posts: SportsblockPost[], excludeUser?: string): TopAuthor[] {
+export async function calculateTopAuthors(posts: SportsblockPost[], excludeUser?: string): Promise<TopAuthor[]> {
   const recentPosts = filterPostsLast7Days(posts);
   const authorStats: Record<string, {
     username: string;
@@ -162,16 +174,16 @@ export function calculateTopAuthors(posts: SportsblockPost[], excludeUser?: stri
     totalComments: number;
     totalVotes: number;
   }> = {};
-  
+
   // Calculate engagement for each author
   recentPosts.forEach(post => {
     const author = post.author;
-    
+
     // Skip the excluded user
     if (excludeUser && author === excludeUser) {
       return;
     }
-    
+
     if (!authorStats[author]) {
       authorStats[author] = {
         username: author,
@@ -181,28 +193,35 @@ export function calculateTopAuthors(posts: SportsblockPost[], excludeUser?: stri
         totalVotes: 0,
       };
     }
-    
+
     const stats = authorStats[author];
     stats.posts += 1;
     stats.totalComments += post.children || 0;
     stats.totalVotes += post.net_votes || 0;
-    
+
     // Engagement score: comments × 2 + net_votes
     stats.totalEngagement += (post.children || 0) * 2 + (post.net_votes || 0);
   });
-  
-  // Convert to array, sort by engagement, and return top 3
-  return Object.values(authorStats)
+
+  // Get top 3 authors by engagement
+  const topAuthors = Object.values(authorStats)
     .sort((a, b) => b.totalEngagement - a.totalEngagement)
-    .slice(0, 3)
-    .map((stats, index) => ({
-      id: `author-${index + 1}`,
-      username: stats.username,
-      displayName: stats.username, // We'll use username as display name for now
-      posts: stats.posts,
-      engagement: stats.totalEngagement,
-      followers: `${Math.floor(Math.random() * 50 + 5)}.${Math.floor(Math.random() * 9 + 1)}K`, // Mock data for now
-    }));
+    .slice(0, 3);
+
+  // Fetch real follower counts in parallel
+  const followerCounts = await Promise.all(
+    topAuthors.map(author => getFollowerCount(author.username))
+  );
+
+  // Map to TopAuthor format with real follower counts
+  return topAuthors.map((stats, index) => ({
+    id: `author-${index + 1}`,
+    username: stats.username,
+    displayName: stats.username,
+    posts: stats.posts,
+    engagement: stats.totalEngagement,
+    followers: formatFollowerCount(followerCounts[index]),
+  }));
 }
 
 /**
@@ -245,11 +264,15 @@ export function calculateCommunityStats(posts: SportsblockPost[]): CommunityStat
  * @param excludeUser - Username to exclude from top authors (e.g., current user)
  * @returns Complete analytics data
  */
-export function getAnalyticsData(posts: SportsblockPost[], excludeUser?: string) {
+export async function getAnalyticsData(posts: SportsblockPost[], excludeUser?: string) {
+  const [topAuthors] = await Promise.all([
+    calculateTopAuthors(posts, excludeUser),
+  ]);
+
   return {
     trendingSports: calculateTrendingSports(posts),
     trendingTopics: calculateTrendingTopics(posts),
-    topAuthors: calculateTopAuthors(posts, excludeUser),
+    topAuthors,
     communityStats: calculateCommunityStats(posts),
   };
 }

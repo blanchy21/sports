@@ -148,7 +148,7 @@ export default function FeedPage() {
           if (postsForAnalytics.length > 0) {
             const { getAnalyticsData } = await import('@/lib/hive-workerbee/analytics');
             // Type assertion needed due to interface differences between local and imported types
-            const analytics = getAnalyticsData(postsForAnalytics as unknown as Parameters<typeof getAnalyticsData>[0], user?.username);
+            const analytics = await getAnalyticsData(postsForAnalytics as unknown as Parameters<typeof getAnalyticsData>[0], user?.username);
             setCommunityStats(analytics.communityStats);
           } else {
             // If no posts in this batch, set default stats

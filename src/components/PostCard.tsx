@@ -193,7 +193,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover hover:scale-105 transition-transform duration-200"
-                      priority
+                      loading="lazy"
                       unoptimized={shouldProxyImage(imageUrl)} // Disable optimization for proxied images
                     />
                   </div>
@@ -208,6 +208,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover hover:scale-105 transition-transform duration-200"
+                    loading="lazy"
                   />
                 </div>
               );

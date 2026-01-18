@@ -2,7 +2,7 @@
  * Curator Rewards Cron Job
  *
  * Runs every 15 minutes to process curator votes and queue rewards.
- * Vercel Cron: "*/15 * * * *"
+ * Vercel Cron: every 15 minutes
  *
  * This endpoint:
  * 1. Fetches recent votes from designated curators
@@ -11,7 +11,6 @@
  */
 
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import {
   getCuratorAccounts,
   filterCuratorVotes,
@@ -25,30 +24,10 @@ import { getCuratorRewardAmount } from '@/lib/rewards/config';
 import { collection, doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
-
-// Vercel cron secret for authentication
-const CRON_SECRET = process.env.CRON_SECRET;
+import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
 
 // Time window to look back for votes (in minutes)
 const VOTE_LOOKBACK_MINUTES = 20; // Slightly more than cron interval
-
-/**
- * Verify the request is from Vercel Cron or authorized source
- */
-async function verifyCronRequest(): Promise<boolean> {
-  const headersList = await headers();
-  const authHeader = headersList.get('authorization');
-
-  if (process.env.NODE_ENV === 'development') {
-    return true;
-  }
-
-  if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) {
-    return true;
-  }
-
-  return false;
-}
 
 /**
  * Get processed vote IDs for today to prevent double processing

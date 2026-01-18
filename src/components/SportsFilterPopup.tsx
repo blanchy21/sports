@@ -6,11 +6,16 @@ import { X, Users, Clock } from "lucide-react";
 import { SPORT_CATEGORIES } from "@/types";
 import { cn } from "@/lib/utils";
 
+export interface SportStats {
+  [sportId: string]: { posts: number };
+}
+
 interface SportsFilterPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onSportSelect: (sportId: string) => void;
   selectedSport?: string;
+  sportStats?: SportStats;
 }
 
 export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
@@ -18,40 +23,8 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
   onClose,
   onSportSelect,
   selectedSport,
+  sportStats = {},
 }) => {
-  // Mock data for post counts (in real app, this would come from API)
-  const sportStats = {
-    'american-football': { posts: 1247 },
-    football: { posts: 2156 },
-    basketball: { posts: 892 },
-    baseball: { posts: 543 },
-    hockey: { posts: 678 },
-    tennis: { posts: 445 },
-    golf: { posts: 234 },
-    mma: { posts: 567 },
-    motorsports: { posts: 345 },
-    cricket: { posts: 1890 },
-    rugby: { posts: 456 },
-    volleyball: { posts: 234 },
-    badminton: { posts: 123 },
-    'table-tennis': { posts: 89 },
-    swimming: { posts: 567 },
-    athletics: { posts: 345 },
-    cycling: { posts: 678 },
-    skiing: { posts: 234 },
-    surfing: { posts: 123 },
-    wrestling: { posts: 456 },
-    gymnastics: { posts: 234 },
-    weightlifting: { posts: 123 },
-    archery: { posts: 89 },
-    equestrian: { posts: 345 },
-    sailing: { posts: 123 },
-    climbing: { posts: 234 },
-    darts: { posts: 456 },
-    esports: { posts: 1234 },
-    general: { posts: 1234 },
-  };
-
   const handleSportClick = (sportId: string) => {
     onSportSelect(sportId);
     onClose();
@@ -108,7 +81,7 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
                 <div className="flex-1 overflow-y-auto p-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {SPORT_CATEGORIES.map((sport) => {
-                      const stats = sportStats[sport.id as keyof typeof sportStats];
+                      const stats = sportStats[sport.id];
                       const isSelected = selectedSport === sport.id;
                       
                       return (

@@ -83,7 +83,7 @@ export async function trackEngagement(event: EngagementEvent): Promise<void> {
         totalEngagement: 0,
         lastUpdated: new Date(),
       };
-      initialMetrics[incrementField as keyof PostMetrics] = 1;
+      (initialMetrics as Record<string, unknown>)[incrementField] = 1;
       if (event.type !== 'view') {
         initialMetrics.totalEngagement = 1;
       }
@@ -116,7 +116,7 @@ export async function trackEngagement(event: EngagementEvent): Promise<void> {
         totalEngagement: 0,
         lastUpdated: new Date(),
       };
-      initialUserMetrics[userIncrementField as keyof UserMetrics] = 1;
+      (initialUserMetrics as Record<string, unknown>)[userIncrementField] = 1;
       await setDoc(userDocRef, initialUserMetrics);
     }
 
@@ -291,7 +291,7 @@ export async function getPostMetrics(
   try {
     if (!db) {
       console.warn('Firestore not configured');
-      return;
+      return null;
     }
     const targetWeekId = weekId || getCurrentWeekId();
     const postId = getPostId(author, permlink);
@@ -320,7 +320,7 @@ export async function getUserMetrics(
   try {
     if (!db) {
       console.warn('Firestore not configured');
-      return;
+      return null;
     }
     const targetWeekId = weekId || getCurrentWeekId();
 

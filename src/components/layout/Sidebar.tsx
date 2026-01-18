@@ -3,15 +3,14 @@
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  Star, 
-  Clock, 
-  Compass, 
-  Video, 
-  Bookmark, 
-  LayoutDashboard, 
-  Edit, 
-  MessageSquare, 
+import {
+  Star,
+  Clock,
+  Compass,
+  Bookmark,
+  LayoutDashboard,
+  Edit,
+  MessageSquare,
   FileEdit,
   Zap,
   User,
@@ -30,7 +29,6 @@ const navigationItems = [
   { href: "/new", icon: Clock, label: "New", requireAuth: false, featured: true },
   { href: "/discover", icon: Compass, label: "Discover", requireAuth: false, featured: true },
   { href: "/feed", icon: BookOpen, label: "Feed", requireAuth: false, featured: true },
-  { href: "/videos", icon: Video, label: "Videos", requireAuth: false },
   { href: "/shorts", icon: Zap, label: "Shorts", requireAuth: false },
   { href: "/bookmarks", icon: Bookmark, label: "Bookmarks", requireAuth: false },
   { href: "/publish", icon: Edit, label: "Publish", requireAuth: false },

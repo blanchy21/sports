@@ -10,7 +10,6 @@
  */
 
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import { getWeekId } from '@/lib/rewards/staking-distribution';
 import {
   generateWeeklyLeaderboards,
@@ -18,30 +17,10 @@ import {
   storeRewardDistributions,
   getLeaderboards,
 } from '@/lib/metrics/leaderboard';
-import { CONTENT_REWARDS, getPlatformYear } from '@/lib/rewards/config';
+import { getPlatformYear } from '@/lib/rewards/config';
 import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-
-// Vercel cron secret for authentication
-const CRON_SECRET = process.env.CRON_SECRET;
-
-/**
- * Verify the request is from Vercel Cron or authorized source
- */
-async function verifyCronRequest(): Promise<boolean> {
-  const headersList = await headers();
-  const authHeader = headersList.get('authorization');
-
-  if (process.env.NODE_ENV === 'development') {
-    return true;
-  }
-
-  if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) {
-    return true;
-  }
-
-  return false;
-}
+import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
 
 /**
  * Get the previous week's ID (since we run on Monday for the previous week)

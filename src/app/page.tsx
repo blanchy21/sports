@@ -3,12 +3,12 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { 
-  Shield, 
-  TrendingUp, 
-  Filter, 
-  DollarSign, 
-  Users, 
+import {
+  Shield,
+  TrendingUp,
+  Filter,
+  DollarSign,
+  Users,
   Zap,
   CheckCircle,
   ArrowRight,
@@ -17,7 +17,12 @@ import {
   MessageCircle,
   BarChart3,
   Key,
-  User
+  User,
+  Trophy,
+  Coins,
+  Crown,
+  Star,
+  Gift
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
@@ -134,16 +139,16 @@ export default function LandingPage() {
             className="mt-12 flex items-center justify-center gap-8 text-white/80"
           >
             <div className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              <span>10K+ Users</span>
+              <Shield className="h-5 w-5" />
+              <span>Hive Blockchain</span>
             </div>
             <div className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
-              <span>50K+ Posts</span>
+              <Trophy className="h-5 w-5" />
+              <span>MEDALS Token</span>
             </div>
             <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              <span>$100K+ Earned</span>
+              <Zap className="h-5 w-5" />
+              <span>Earn Rewards</span>
             </div>
           </motion.div>
         </div>
@@ -350,8 +355,162 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Sports Filter Section */}
+      {/* MEDALS Token Section */}
       <section className="py-24 px-6 bg-background">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/10 rounded-full text-yellow-600 dark:text-yellow-400 font-semibold mb-6">
+              <Trophy className="h-4 w-4" />
+              MEDALS Token
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Stake, Earn & Unlock Premium
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              MEDALS is our native utility token. Stake your tokens to earn passive rewards
+              and unlock exclusive premium features.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-12 items-start mb-16">
+            {/* Left side - Staking benefits */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="space-y-6"
+            >
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-yellow-500/10 rounded-lg">
+                  <Coins className="h-6 w-6 text-yellow-500" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Stake for Passive Income</h3>
+                  <p className="text-muted-foreground">
+                    Stake your MEDALS tokens and earn weekly rewards. The more you stake,
+                    the larger your share of the reward pool.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-purple-500/10 rounded-lg">
+                  <Crown className="h-6 w-6 text-purple-500" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Unlock Premium Tiers</h3>
+                  <p className="text-muted-foreground">
+                    Progress through Bronze, Silver, Gold, and Platinum tiers to unlock
+                    exclusive features like ad-free browsing and priority curation.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-accent/10 rounded-lg">
+                  <Gift className="h-6 w-6 text-accent" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Weekly Reward Distributions</h3>
+                  <p className="text-muted-foreground">
+                    Rewards are distributed every week to stakers, top content creators,
+                    and community curators. Multiple ways to earn.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Right side - Premium tiers */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="bg-gradient-to-br from-yellow-500/10 via-purple-500/10 to-primary/10 rounded-2xl p-8 border-2 border-yellow-500/30"
+            >
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold mb-2">Premium Tiers</h3>
+                <p className="text-sm text-muted-foreground">Stake MEDALS to unlock benefits</p>
+              </div>
+
+              {[
+                { tier: "Bronze", stake: "1,000", benefits: "Ad-free browsing, Bronze badge", color: "bg-amber-600", icon: "🥉" },
+                { tier: "Silver", stake: "5,000", benefits: "Priority curation, Early access", color: "bg-gray-400", icon: "🥈" },
+                { tier: "Gold", stake: "25,000", benefits: "Exclusive contests, Analytics", color: "bg-yellow-500", icon: "🥇" },
+                { tier: "Platinum", stake: "100,000", benefits: "Boosted visibility, VIP support", color: "bg-purple-500", icon: "💎" }
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className="bg-card/50 backdrop-blur rounded-lg p-4 mb-3 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{item.icon}</span>
+                    <div>
+                      <div className="font-semibold">{item.tier}</div>
+                      <div className="text-sm text-muted-foreground">{item.benefits}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-primary">{item.stake}</div>
+                    <div className="text-xs text-muted-foreground">MEDALS</div>
+                  </div>
+                </motion.div>
+              ))}
+
+              <div className="mt-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  <Star className="h-4 w-4 inline mr-1 text-yellow-500" />
+                  Higher tiers include all lower-tier benefits
+                </p>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Reward categories */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+          >
+            {[
+              { label: "Staking Rewards", value: "30K+", sublabel: "MEDALS/week", icon: Coins },
+              { label: "Content Rewards", value: "15K+", sublabel: "MEDALS/week", icon: Trophy },
+              { label: "Curator Rewards", value: "100", sublabel: "per quality vote", icon: Star },
+              { label: "Post of the Week", value: "2,000", sublabel: "MEDALS prize", icon: Gift }
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="bg-card border rounded-xl p-6 text-center hover:shadow-lg transition-shadow"
+              >
+                <stat.icon className="h-8 w-8 mx-auto mb-3 text-yellow-500" />
+                <div className="text-2xl font-bold text-primary">{stat.value}</div>
+                <div className="text-sm text-muted-foreground">{stat.sublabel}</div>
+                <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Sports Filter Section */}
+      <section className="py-24 px-6 bg-muted/30">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -600,7 +759,7 @@ export default function LandingPage() {
           className="max-w-4xl mx-auto text-center"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Join Thousands of Sports Fans Today
+            Ready to Join the Community?
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
             Start sharing your sports passion and earning rewards in minutes.
