@@ -206,22 +206,6 @@ function extractFromAiohaInstance(aioha: AiohaInstance): ExtractedUserData | nul
   return null;
 }
 
-/**
- * Extract username from provider instance
- */
-function extractFromProvider(provider: AiohaProvider): ExtractedUserData | null {
-  if (provider.user?.username) {
-    return { username: provider.user.username, sessionId: extractSessionId(provider.user) };
-  }
-  if (provider.username) {
-    return { username: provider.username, sessionId: extractSessionId(provider) };
-  }
-  if (provider.account?.name) {
-    return { username: provider.account.name, sessionId: extractSessionId(provider) };
-  }
-  return null;
-}
-
 
 const AUTH_STORAGE_KEY = "authState";
 
@@ -447,69 +431,71 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         loginAt: now,
       });
 
-      // Fetch full account data in the background
-      try {
-        const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(hiveUsername)}`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch account: ${response.status}`);
+      // PERFORMANCE: Defer profile fetch to background - don't block login/redirect
+      setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(hiveUsername)}`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch account: ${response.status}`);
+          }
+          const result = await response.json();
+          const accountData = result.success ? result.account as UserAccountData : null;
+
+          if (accountData) {
+            // Update hiveUser with account data
+            const updatedHiveUser = {
+              ...newHiveUser,
+              account: accountData as unknown as HiveAccount,
+            };
+            setHiveUser(updatedHiveUser);
+
+            // Update the main user object with Hive profile data
+            const updatedUser = {
+              ...basicUser,
+              reputation: accountData.reputation,
+              reputationFormatted: accountData.reputationFormatted,
+              // Liquid balances
+              liquidHiveBalance: accountData.liquidHiveBalance,
+              liquidHbdBalance: accountData.liquidHbdBalance,
+              // Savings balances
+              savingsHiveBalance: accountData.savingsHiveBalance,
+              savingsHbdBalance: accountData.savingsHbdBalance,
+              // Combined balances (for backward compatibility)
+              hiveBalance: accountData.hiveBalance,
+              hbdBalance: accountData.hbdBalance,
+              hivePower: accountData.hivePower,
+              rcPercentage: accountData.resourceCredits,
+              // Savings data
+              savingsApr: accountData.savingsApr,
+              pendingWithdrawals: accountData.pendingWithdrawals,
+              hiveProfile: accountData.profile,
+              hiveStats: accountData.stats,
+              // Use Hive profile image as avatar if available
+              avatar: accountData.profile.profileImage,
+              displayName: accountData.profile.name || hiveUsername,
+              bio: accountData.profile.about,
+              // Use the actual Hive account creation date
+              createdAt: accountData.createdAt,
+            };
+            setUser(updatedUser);
+
+            // Save updated state to localStorage (keep same loginAt)
+            persistAuthState({
+              user: updatedUser,
+              authType: "hive",
+              hiveUser: updatedHiveUser,
+              loginAt: now,
+            });
+          }
+        } catch (profileError) {
+          console.error("Error fetching Hive account data:", profileError);
+          // Keep the basic user even if profile loading fails
         }
-        const result = await response.json();
-        const accountData = result.success ? result.account as UserAccountData : null;
-
-        if (accountData) {
-          // Update hiveUser with account data
-          const updatedHiveUser = {
-            ...newHiveUser,
-            account: accountData as unknown as HiveAccount,
-          };
-          setHiveUser(updatedHiveUser);
-
-          // Update the main user object with Hive profile data
-          const updatedUser = {
-            ...basicUser,
-            reputation: accountData.reputation,
-            reputationFormatted: accountData.reputationFormatted,
-            // Liquid balances
-            liquidHiveBalance: accountData.liquidHiveBalance,
-            liquidHbdBalance: accountData.liquidHbdBalance,
-            // Savings balances
-            savingsHiveBalance: accountData.savingsHiveBalance,
-            savingsHbdBalance: accountData.savingsHbdBalance,
-            // Combined balances (for backward compatibility)
-            hiveBalance: accountData.hiveBalance,
-            hbdBalance: accountData.hbdBalance,
-            hivePower: accountData.hivePower,
-            rcPercentage: accountData.resourceCredits,
-            // Savings data
-            savingsApr: accountData.savingsApr,
-            pendingWithdrawals: accountData.pendingWithdrawals,
-            hiveProfile: accountData.profile,
-            hiveStats: accountData.stats,
-            // Use Hive profile image as avatar if available
-            avatar: accountData.profile.profileImage,
-            displayName: accountData.profile.name || hiveUsername,
-            bio: accountData.profile.about,
-            // Use the actual Hive account creation date
-            createdAt: accountData.createdAt,
-          };
-          setUser(updatedUser);
-
-          // Save updated state to localStorage (keep same loginAt)
-          persistAuthState({
-            user: updatedUser,
-            authType: "hive",
-            hiveUser: updatedHiveUser,
-            loginAt: now,
-          });
-        }
-      } catch (profileError) {
-        console.error("Error fetching Hive account data:", profileError);
-        // Keep the basic user even if profile loading fails
-      }
-      } catch (error) {
-        console.error("Error logging in with Hive user:", error);
-        // Keep the basic user even if profile loading fails
-      }
+      }, 0);
+    } catch (error) {
+      console.error("Error logging in with Hive user:", error);
+      // Keep the basic user even if profile loading fails
+    }
   };
 
   const loginWithAioha = async (loginResult?: AiohaLoginResult) => {
@@ -522,16 +508,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let extracted: ExtractedUserData | null = null;
 
       // Step 1: Try to extract from login result
+      // Note: errorCode 4901 ("already logged in") is a valid state - user has existing session
       if (loginResult) {
-        // Handle "already logged in" case (errorCode 4901)
-        if (loginResult.errorCode === 4901) {
-          const currentProvider = aiohaInstance.currentProvider;
-          if (currentProvider && aiohaInstance.providers?.[currentProvider]) {
-            extracted = extractFromProvider(aiohaInstance.providers[currentProvider]);
-          }
-        } else {
-          extracted = extractFromLoginResult(loginResult);
-        }
+        extracted = extractFromLoginResult(loginResult);
       }
 
       // Step 2: Try to extract from Aioha instance
@@ -613,56 +592,59 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         loginAt: now,
       });
 
-      // Fetch full account data in background
-      try {
-        const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(username)}`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch account: ${response.status}`);
+      // PERFORMANCE: Defer profile fetch to background - don't block login/redirect
+      // This allows the user to navigate immediately while profile loads in the background
+      setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(username)}`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch account: ${response.status}`);
+          }
+          const result = await response.json();
+          const accountData = result.success ? result.account as UserAccountData : null;
+
+          if (accountData) {
+            const updatedHiveUser: HiveAuthUser = {
+              ...newHiveUser,
+              account: accountData as unknown as HiveAccount,
+            };
+            setHiveUser(updatedHiveUser);
+
+            const updatedUser: User = {
+              ...basicUser,
+              reputation: accountData.reputation,
+              reputationFormatted: accountData.reputationFormatted,
+              liquidHiveBalance: accountData.liquidHiveBalance,
+              liquidHbdBalance: accountData.liquidHbdBalance,
+              savingsHiveBalance: accountData.savingsHiveBalance,
+              savingsHbdBalance: accountData.savingsHbdBalance,
+              hiveBalance: accountData.hiveBalance,
+              hbdBalance: accountData.hbdBalance,
+              hivePower: accountData.hivePower,
+              rcPercentage: accountData.resourceCredits,
+              savingsApr: accountData.savingsApr,
+              pendingWithdrawals: accountData.pendingWithdrawals,
+              hiveProfile: accountData.profile,
+              hiveStats: accountData.stats,
+              avatar: accountData.profile.profileImage,
+              displayName: accountData.profile.name ?? username,
+              bio: accountData.profile.about,
+              createdAt: accountData.createdAt,
+            };
+            setUser(updatedUser);
+
+            persistAuthState({
+              user: updatedUser,
+              authType: "hive",
+              hiveUser: updatedHiveUser,
+              loginAt: now,
+            });
+          }
+        } catch (profileError) {
+          console.error("Error fetching Hive account data:", profileError);
+          // Keep basic user if profile loading fails
         }
-        const result = await response.json();
-        const accountData = result.success ? result.account as UserAccountData : null;
-
-        if (accountData) {
-          const updatedHiveUser: HiveAuthUser = {
-            ...newHiveUser,
-            account: accountData as unknown as HiveAccount,
-          };
-          setHiveUser(updatedHiveUser);
-
-          const updatedUser: User = {
-            ...basicUser,
-            reputation: accountData.reputation,
-            reputationFormatted: accountData.reputationFormatted,
-            liquidHiveBalance: accountData.liquidHiveBalance,
-            liquidHbdBalance: accountData.liquidHbdBalance,
-            savingsHiveBalance: accountData.savingsHiveBalance,
-            savingsHbdBalance: accountData.savingsHbdBalance,
-            hiveBalance: accountData.hiveBalance,
-            hbdBalance: accountData.hbdBalance,
-            hivePower: accountData.hivePower,
-            rcPercentage: accountData.resourceCredits,
-            savingsApr: accountData.savingsApr,
-            pendingWithdrawals: accountData.pendingWithdrawals,
-            hiveProfile: accountData.profile,
-            hiveStats: accountData.stats,
-            avatar: accountData.profile.profileImage,
-            displayName: accountData.profile.name ?? username,
-            bio: accountData.profile.about,
-            createdAt: accountData.createdAt,
-          };
-          setUser(updatedUser);
-
-          persistAuthState({
-            user: updatedUser,
-            authType: "hive",
-            hiveUser: updatedHiveUser,
-            loginAt: now,
-          });
-        }
-      } catch (profileError) {
-        console.error("Error fetching Hive account data:", profileError);
-        // Keep basic user if profile loading fails
-      }
+      }, 0);
     } catch (error) {
       console.error("Error processing Aioha authentication:", error);
       throw error;

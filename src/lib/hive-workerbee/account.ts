@@ -300,10 +300,11 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
           return null;
         }),
 
-      // RC API - with short 2s timeout (non-critical data, shouldn't block account fetch)
+      // RC API - with very short 500ms timeout (non-critical data, shouldn't block account fetch)
+      // This data is failing on most nodes anyway, so don't let it slow down login
       Promise.race([
         makeHiveApiCall('rc_api', 'find_rc_accounts', [username]),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000))
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 500))
       ]).catch(() => null)
     ]);
 

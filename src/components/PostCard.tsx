@@ -7,7 +7,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { StarVoteButton } from "@/components/StarVoteButton";
 import { Post } from "@/types";
-import { cn, formatDate, formatReadTime, truncateText } from "@/lib/utils";
+import { cn, formatDate, formatReadTime } from "@/lib/utils";
 import { calculatePendingPayout, formatAsset } from "@/lib/shared/utils";
 import { SportsblockPost } from "@/lib/shared/types";
 import { useToast, toast } from "@/components/ui/Toast";
@@ -16,8 +16,6 @@ import { useModal } from "@/components/modals/ModalProvider";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { usePremiumTier } from "@/lib/premium/hooks";
 import { PremiumBadge } from "@/components/medals";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 interface PostCardProps {
   post: Post | SportsblockPost;
@@ -221,24 +219,6 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
             <h2 className="text-lg font-semibold line-clamp-2 hover:text-primary transition-colors">
               {post.title}
             </h2>
-            <div className="text-muted-foreground text-sm mt-2 line-clamp-3">
-              {isHivePost ? (
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    img: () => null, // Hide images in preview
-                    p: ({ children }) => <p className="text-muted-foreground text-sm">{children}</p>,
-                    a: ({ children }) => <span className="text-muted-foreground text-sm">{children}</span>, // Convert links to spans
-                  }}
-                >
-                  {truncateText(post.body, 200)}
-                </ReactMarkdown>
-              ) : (
-                <p className="text-muted-foreground text-sm">
-                  {truncateText(post.excerpt, 150)}
-                </p>
-              )}
-            </div>
           </div>
 
           {/* Tags */}

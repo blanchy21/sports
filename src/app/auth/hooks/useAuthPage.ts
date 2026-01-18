@@ -6,6 +6,39 @@ import { useAioha } from "@/contexts/AiohaProvider";
 import { FirebaseAuth } from "@/lib/firebase/auth";
 import type { HiveAccount } from "@/lib/shared/types";
 
+// Declare Hive Keychain global for browser extension detection
+declare global {
+  interface Window {
+    hive_keychain?: {
+      requestSignBuffer?: (username: string, message: string, keyType: string, callback: (response: unknown) => void) => void;
+      [key: string]: unknown;
+    };
+  }
+}
+
+// Login timeout in milliseconds (10 seconds)
+const LOGIN_TIMEOUT_MS = 10000;
+
+/**
+ * Check if Hive Keychain browser extension is installed and available
+ */
+function isKeychainExtensionAvailable(): boolean {
+  if (typeof window === 'undefined') return false;
+  return Boolean(window.hive_keychain && typeof window.hive_keychain === 'object');
+}
+
+/**
+ * Wrap a promise with a timeout
+ */
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => 
+      setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+    )
+  ]);
+}
+
 export type AuthMode = "login" | "signup";
 
 interface AiohaLoginResult {
@@ -272,6 +305,14 @@ export const useAuthPage = (): UseAuthPageResult => {
         return;
       }
 
+      // Check if Keychain extension is actually installed for Keychain provider
+      if (provider === 'keychain' && !isKeychainExtensionAvailable()) {
+        setErrorMessage(
+          "Hive Keychain extension not detected. Please install the Hive Keychain browser extension and refresh the page."
+        );
+        return;
+      }
+
       if (provider === 'keychain' || provider === 'hiveauth') {
         if (!hiveUsername.trim()) {
           setSelectedProvider(provider);
@@ -283,8 +324,6 @@ export const useAuthPage = (): UseAuthPageResult => {
 
       setIsConnecting(true);
       setErrorMessage(null);
-      // Note: Don't show AiohaModal here - we're using programmatic login
-      // The Keychain extension will popup directly when aioha.login() is called
 
       try {
         const available = (aioha as { getProviders: () => unknown[] }).getProviders();
@@ -320,12 +359,39 @@ export const useAuthPage = (): UseAuthPageResult => {
         const usernameToUse =
           usernameRequiredProviders.has(provider) && hiveUsername.trim() ? hiveUsername.trim() : "";
 
-        const result = await (aioha as {
+        // Wrap login with timeout to handle unresponsive wallet extensions
+        const loginPromise = (aioha as {
           login: (provider: Providers, username: string, options: { msg: string; keyType: KeyTypes }) => Promise<unknown>;
         }).login(providerEnum, usernameToUse, {
           msg: "Login to Sportsblock",
           keyType: KeyTypes.Posting,
         });
+
+        const result = await withTimeout(
+          loginPromise,
+          LOGIN_TIMEOUT_MS,
+          `${provider === 'keychain' ? 'Hive Keychain' : provider} did not respond. Please check if the extension is working and try again.`
+        );
+
+        // Check for errorCode 4901 ("already logged in") - this is a valid state
+        // The user has an existing authenticated session, so we can proceed directly
+        const isAlreadyLoggedIn = (result as { errorCode?: number })?.errorCode === 4901;
+        
+        if (isAlreadyLoggedIn) {
+          console.log("Aioha: User already logged in (4901), proceeding with existing session");
+          // For already logged in, pass the username we're trying to log in with
+          // since the result may not contain username info
+          const alreadyLoggedInResult: AiohaLoginResult = {
+            username: usernameToUse || hiveUsername.trim(),
+            success: true,
+            errorCode: 4901,
+            provider: provider,
+          };
+          await loginWithAioha(alreadyLoggedInResult);
+          resetHivePrompt();
+          router.push("/feed");
+          return;
+        }
 
         const loginResult: AiohaLoginResult = {
           ...(result as Record<string, unknown>),
@@ -342,11 +408,6 @@ export const useAuthPage = (): UseAuthPageResult => {
           await loginWithAioha(loginResult);
           resetHivePrompt();
           router.push("/feed");
-        } else if ((result as { errorCode?: number })?.errorCode === 4901) {
-          // Error code 4901 means "already logged in"
-          await loginWithAioha(loginResult);
-          resetHivePrompt();
-          router.push("/feed");
         } else {
           const info = {
             username: (result as { username?: string })?.username,
@@ -354,7 +415,7 @@ export const useAuthPage = (): UseAuthPageResult => {
             errorCode: (result as { errorCode?: number })?.errorCode,
           };
           console.debug("Aioha login result validation failed:", info);
-          throw new Error((result as { error?: string })?.error || "Invalid authentication result");
+          throw new Error((result as { error?: string })?.error || "Invalid authentication result. Please try again.");
         }
       } catch (error) {
         console.error("Aioha login failed:", error);
