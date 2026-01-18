@@ -20,8 +20,13 @@ export default function CommunityAboutPage() {
     }
   }, [user, isAuthLoading, router]);
 
-  // Show nothing while auth is loading or if user is not authenticated (will redirect)
-  if (isAuthLoading || !user) {
+  // Show skeleton while auth is loading (handled by loading.tsx for initial load)
+  if (isAuthLoading) {
+    return null; // Let loading.tsx handle it
+  }
+
+  // User not authenticated - will redirect
+  if (!user) {
     return null;
   }
 

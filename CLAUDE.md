@@ -69,7 +69,7 @@ Two auth paths converge in `AuthContext`:
 ### Hive Integration (`src/lib/hive-workerbee/`)
 
 | File | Purpose |
-|------|---------|
+| ------ | --------- |
 | `client.ts` | WorkerBee/Wax singleton, node configuration |
 | `content.ts` | Fetch posts from Hive community |
 | `posting.ts` | Create/broadcast posts and comments |

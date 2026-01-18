@@ -2,34 +2,35 @@
 
 import React, { useState, useEffect } from "react";
 import { TrendingUp, Users, Calendar, Trophy, Star, AlertCircle, RefreshCw } from "lucide-react";
-import { 
-  TrendingSport, 
-  TrendingTopic, 
-  TopAuthor, 
-  CommunityStats 
-} from "@/lib/hive-workerbee/analytics";
 import { useRealtimeEvents } from "@/hooks/useUpcomingEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFollowUser, useUnfollowUser } from "@/lib/react-query/queries/useFollowers";
 import { useIsFollowingUser } from "@/lib/react-query/queries/useUserProfile";
+import { useSidebarAnalytics } from "@/lib/react-query/queries/useSidebarAnalytics";
 
 export const RightSidebar: React.FC = () => {
   const { user } = useAuth();
   
-  // State for dynamic data
-  const [trendingSports, setTrendingSports] = useState<TrendingSport[]>([]);
-  const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
-  const [topAuthors, setTopAuthors] = useState<TopAuthor[]>([]);
-  const [communityStats, setCommunityStats] = useState<CommunityStats>({
+  // Use React Query for analytics data - cached across navigations
+  const { 
+    data: analyticsData, 
+    isLoading, 
+    error: analyticsError 
+  } = useSidebarAnalytics();
+  
+  // Extract data from cached query
+  const trendingSports = analyticsData?.trendingSports || [];
+  const trendingTopics = analyticsData?.trendingTopics || [];
+  const topAuthors = analyticsData?.topAuthors || [];
+  const communityStats = analyticsData?.communityStats || {
     totalPosts: 0,
     totalAuthors: 0,
     totalRewards: 0,
     activeToday: 0,
-  });
+  };
   
-  // Loading and error states
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Convert error to string for display
+  const error = analyticsError ? 'Failed to load sidebar data' : null;
 
   // Follow/unfollow mutations
   const followMutation = useFollowUser();
@@ -105,62 +106,6 @@ export const RightSidebar: React.FC = () => {
     isRefreshing,
     lastUpdated 
   } = useRealtimeEvents({ limit: 5 });
-
-  // Fetch analytics from layer 2 database
-  useEffect(() => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-    const fetchAnalytics = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const response = await fetch('/api/analytics', {
-          signal: controller.signal
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch analytics: ${response.status}`);
-        }
-        
-        const apiResult = await response.json();
-        if (!apiResult.success) {
-          throw new Error(apiResult.error || 'Failed to fetch analytics');
-        }
-        
-        // Set analytics data from layer 2
-        const analytics = apiResult.data;
-        setTrendingSports(analytics.trendingSports || []);
-        setTrendingTopics(analytics.trendingTopics || []);
-        setTopAuthors(analytics.topAuthors || []);
-        setCommunityStats(analytics.communityStats || {
-          totalPosts: 0,
-          totalAuthors: 0,
-          totalRewards: 0,
-          activeToday: 0,
-        });
-        
-      } catch (err) {
-        // Ignore abort errors (expected when component unmounts or timeout)
-        if (err instanceof Error && err.name === 'AbortError') {
-          return;
-        }
-        console.error('Error fetching analytics data:', err);
-        setError('Failed to load sidebar data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAnalytics();
-
-    // Cleanup: abort fetch and clear timeout on unmount
-    return () => {
-      clearTimeout(timeoutId);
-      controller.abort();
-    };
-  }, [user?.username]);
 
   // Loading skeleton component
   const LoadingSkeleton = () => (

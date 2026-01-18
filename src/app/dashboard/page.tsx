@@ -59,19 +59,22 @@ export default function DashboardPage() {
     }
   };
 
-  // Show loading or auth required message
-  if (isAuthLoading || !user) {
+  // Show skeleton while auth is loading (handled by loading.tsx for initial load)
+  if (isAuthLoading) {
+    return null; // Let loading.tsx handle it
+  }
+
+  // User not authenticated - redirect
+  if (!user) {
     return (
       <MainLayout showRightSidebar={false} className="max-w-none">
         <div className="max-w-4xl mx-auto text-center py-12">
           <h2 className="text-xl font-semibold mb-2">
-            {isAuthLoading ? "Loading..." : "Please sign in to view your dashboard"}
+            Please sign in to view your dashboard
           </h2>
-          {!isAuthLoading && (
             <Button onClick={() => router.push("/")}>
               Go Home
             </Button>
-          )}
         </div>
       </MainLayout>
     );

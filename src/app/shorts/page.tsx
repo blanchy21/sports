@@ -57,8 +57,14 @@ export default function ShortsPage() {
     }
   }, [user, isAuthLoading, router]);
 
-  // Show nothing while auth is loading
-  if (isAuthLoading || !user) {
+  // Show skeleton while auth is loading (handled by loading.tsx for initial load)
+  // This handles subsequent navigations where auth state may still be loading
+  if (isAuthLoading) {
+    return null; // Let loading.tsx handle it
+  }
+
+  // User not authenticated - will redirect
+  if (!user) {
     return null;
   }
 

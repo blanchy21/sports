@@ -12,6 +12,7 @@ import { ModalProvider } from "@/components/modals/ModalProvider";
 import { ServiceWorkerInitializer } from "@/components/ServiceWorkerInitializer";
 import { NodeHealthInitializer } from "@/components/NodeHealthInitializer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { NavigationProgress } from "@/components/NavigationProgress";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -38,6 +39,7 @@ export default function RootLayout({
                     <ToastProvider>
                       <ModalProvider>
                         <ErrorBoundary>
+                          <NavigationProgress />
                           <ServiceWorkerInitializer />
                           <NodeHealthInitializer />
                           {children}

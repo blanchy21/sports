@@ -354,23 +354,26 @@ function PublishPageContent() {
     }
   };
 
-  // Show loading or auth required message
-  if (isAuthLoading || !user) {
+  // Show skeleton while auth is loading (handled by loading.tsx for initial load)
+  if (isAuthLoading) {
+    return null; // Let loading.tsx handle it
+  }
+
+  // User not authenticated - show auth required message
+  if (!user) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">
-            {isAuthLoading ? "Loading..." : "Authentication Required"}
+            Authentication Required
           </h2>
           <p className="text-muted-foreground mb-4">
-            {isAuthLoading ? "Checking authentication..." : "Please sign in to create and publish posts."}
+            Please sign in to create and publish posts.
           </p>
-          {!isAuthLoading && (
             <Button onClick={() => router.push("/")}>
               Go Home
             </Button>
-          )}
         </div>
       </div>
     );
