@@ -330,29 +330,68 @@ export const RightSidebar: React.FC = () => {
           ) : upcomingEvents.length > 0 ? (
             <>
               <div className="space-y-3">
-                {upcomingEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex items-start space-x-3 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer"
-                  >
-                    <div className="text-2xl">{event.icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">{event.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(event.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </div>
-                      {event.teams && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {event.teams.home} vs {event.teams.away}
+                {upcomingEvents.map((event) => {
+                  const eventDate = new Date(event.date);
+                  const now = new Date();
+                  const diffMs = eventDate.getTime() - now.getTime();
+                  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                  const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                  
+                  // Format relative time
+                  let timeDisplay: string;
+                  if (event.status === 'live') {
+                    timeDisplay = '';
+                  } else if (diffMs < 0) {
+                    timeDisplay = 'Starting soon';
+                  } else if (diffHours < 1) {
+                    timeDisplay = `In ${diffMins}m`;
+                  } else if (diffHours < 24) {
+                    timeDisplay = `In ${diffHours}h ${diffMins > 0 ? `${diffMins}m` : ''}`.trim();
+                  } else {
+                    timeDisplay = eventDate.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit'
+                    });
+                  }
+                  
+                  return (
+                    <div
+                      key={event.id}
+                      className={`flex items-start space-x-3 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer ${
+                        event.status === 'live' ? 'bg-red-500/5 border border-red-500/20' : ''
+                      }`}
+                    >
+                      <div className="text-2xl">{event.icon}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          {event.status === 'live' && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white bg-red-500 rounded animate-pulse">
+                              <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+                              Live
+                            </span>
+                          )}
+                          <span className="font-medium text-sm truncate">{event.league || event.sport}</span>
                         </div>
-                      )}
+                        {event.teams ? (
+                          <div className="text-xs text-foreground mt-0.5">
+                            {event.teams.home} vs {event.teams.away}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-foreground mt-0.5 truncate">
+                            {event.name}
+                          </div>
+                        )}
+                        {timeDisplay && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {timeDisplay}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               {lastUpdated && (
                 <div className="text-xs text-muted-foreground mt-3 pt-2 border-t">
