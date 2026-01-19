@@ -17,8 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { AuthModal } from "@/components/AuthModal";
-import { SportsFilterPopup } from "@/components/SportsFilterPopup";
+import { LazyAuthModal, LazySportsFilterPopup } from "@/components/lazy/LazyComponents";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { UpgradePrompt } from "@/components/AccountBadge";
 import { UpgradeFlow } from "@/components/UpgradeFlow";
@@ -274,12 +273,12 @@ export const TopNavigation: React.FC = () => {
         </div>
       </div>
       
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
+      <LazyAuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
       />
-      
-      <SportsFilterPopup
+
+      <LazySportsFilterPopup
         isOpen={showSportsPopup}
         onClose={() => setShowSportsPopup(false)}
         onSportSelect={handleSportSelect}

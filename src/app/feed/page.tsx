@@ -12,20 +12,12 @@ import { SPORT_CATEGORIES } from "@/types";
 import { SportsblockPost } from "@/lib/shared/types";
 import { CommunityStats } from "@/lib/hive-workerbee/analytics";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
-
-// No mock data needed - using real Hive blockchain content
+import { useFeedPosts } from "@/lib/react-query/queries/usePosts";
 
 export default function FeedPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const [selectedSport, setSelectedSport] = React.useState<string>("");
-  const [posts, setPosts] = React.useState<SportsblockPost[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [nextCursor, setNextCursor] = React.useState<string | undefined>(undefined);
-  const [hasMore, setHasMore] = React.useState(false);
-  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
-  const nextCursorRef = React.useRef<string | undefined>(undefined);
   const [communityStats, setCommunityStats] = React.useState<CommunityStats>({
     totalPosts: 0,
     totalAuthors: 0,
@@ -34,6 +26,79 @@ export default function FeedPage() {
   });
   const [statsLoading, setStatsLoading] = React.useState(true);
   const [statsError, setStatsError] = React.useState<string | null>(null);
+
+  // Use React Query for feed posts with caching
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useFeedPosts({
+    sportCategory: selectedSport || undefined,
+    enabled: !isAuthLoading && !!user,
+  });
+
+  // Flatten paginated data into a single array
+  const posts = React.useMemo(() => {
+    if (!data?.pages) return [];
+    const allPosts = data.pages.flatMap(page => page.posts);
+    // Dedupe posts
+    const seen = new Set<string>();
+    return allPosts.filter(post => {
+      const key = `${post.author}/${post.permlink}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [data?.pages]);
+
+  // Memoized callback for infinite scroll
+  const handleLoadMore = React.useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Set up infinite scroll
+  useInfiniteScroll({
+    hasMore: !!hasNextPage,
+    isLoading: isFetchingNextPage,
+    onLoadMore: handleLoadMore,
+  });
+
+  // Calculate analytics when first page loads
+  React.useEffect(() => {
+    const calculateAnalytics = async () => {
+      if (!data?.pages?.[0]?.posts?.length) {
+        setStatsLoading(false);
+        return;
+      }
+
+      try {
+        const postsForAnalytics = data.pages[0].posts;
+        const { getAnalyticsData } = await import('@/lib/hive-workerbee/analytics');
+        const analytics = await getAnalyticsData(
+          postsForAnalytics as unknown as Parameters<typeof getAnalyticsData>[0],
+          user?.username
+        );
+        setCommunityStats(analytics.communityStats);
+        setStatsError(null);
+      } catch (analyticsError) {
+        console.error('Error calculating analytics:', analyticsError);
+        setStatsError('Failed to load statistics');
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    if (data?.pages?.[0]) {
+      calculateAnalytics();
+    }
+  }, [data?.pages, user?.username]);
 
   // Utility function to format numbers
   const formatNumber = (num: number): string => {
@@ -53,134 +118,22 @@ export default function FeedPage() {
 
   // Dynamic stats based on real data
   const stats = React.useMemo(() => [
-    { 
-      label: "Posts Today", 
-      value: statsLoading ? "..." : formatNumber(communityStats.activeToday), 
-      icon: TrendingUp 
+    {
+      label: "Posts Today",
+      value: statsLoading ? "..." : formatNumber(communityStats.activeToday),
+      icon: TrendingUp
     },
-    { 
-      label: "Active Users", 
-      value: statsLoading ? "..." : formatNumber(communityStats.totalAuthors), 
-      icon: Users 
+    {
+      label: "Active Users",
+      value: statsLoading ? "..." : formatNumber(communityStats.totalAuthors),
+      icon: Users
     },
-    { 
-      label: "Total Rewards", 
-      value: statsLoading ? "..." : formatCurrency(communityStats.totalRewards), 
-      icon: Award 
+    {
+      label: "Total Rewards",
+      value: statsLoading ? "..." : formatCurrency(communityStats.totalRewards),
+      icon: Award
     },
   ], [communityStats, statsLoading]);
-
-  // Set up infinite scroll
-  useInfiniteScroll({
-    hasMore,
-    isLoading: isLoadingMore,
-    onLoadMore: () => loadPosts(true),
-  });
-
-  const resetPagination = React.useCallback(() => {
-    setNextCursor(undefined);
-    nextCursorRef.current = undefined;
-    setHasMore(false);
-  }, []);
-
-  const getPostKey = React.useCallback((post: SportsblockPost) => {
-    return `${post.author}/${post.permlink}`;
-  }, []);
-
-  const dedupePosts = React.useCallback((postList: SportsblockPost[]) => {
-    const seen = new Set<string>();
-    return postList.filter((post) => {
-      const key = getPostKey(post);
-      if (seen.has(key)) {
-        return false;
-      }
-      seen.add(key);
-      return true;
-    });
-  }, [getPostKey]);
-
-  const loadPosts = React.useCallback(async (loadMore = false) => {
-    const cursor = loadMore ? nextCursorRef.current : undefined;
-    if (loadMore && !cursor) {
-      return;
-    }
-
-    if (loadMore) {
-      setIsLoadingMore(true);
-    } else {
-      setIsLoading(true);
-      setStatsLoading(true);
-      setError(null);
-      setStatsError(null);
-    }
-    
-    try {
-      const params = new URLSearchParams({
-        limit: '10',
-        sort: 'created',
-      });
-      if (selectedSport) params.append('sportCategory', selectedSport);
-      if (loadMore && cursor) params.append('before', cursor);
-      
-      const response = await fetch(`/api/hive/posts?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch posts: ${response.status}`);
-      }
-      const result = await response.json() as { success: boolean; posts: SportsblockPost[]; hasMore: boolean; nextCursor?: string };
-      
-      setPosts((prev) => {
-        const merged = loadMore ? [...prev, ...result.posts] : result.posts;
-        return dedupePosts(merged);
-      });
-      
-      // Update pagination state
-      setNextCursor(result.nextCursor);
-      nextCursorRef.current = result.nextCursor;
-      setHasMore(result.hasMore);
-      
-      // Calculate analytics data from all posts (not filtered by sport)
-      // Use the posts we just fetched instead of making another API call
-      if (!loadMore) {
-        try {
-          // Use the posts we just fetched for analytics
-          const postsForAnalytics = result.posts || [];
-          
-          if (postsForAnalytics.length > 0) {
-            const { getAnalyticsData } = await import('@/lib/hive-workerbee/analytics');
-            // Type assertion needed due to interface differences between local and imported types
-            const analytics = await getAnalyticsData(postsForAnalytics as unknown as Parameters<typeof getAnalyticsData>[0], user?.username);
-            setCommunityStats(analytics.communityStats);
-          } else {
-            // If no posts in this batch, set default stats
-            setCommunityStats({
-              totalPosts: 0,
-              totalAuthors: 0,
-              totalRewards: 0,
-              activeToday: 0,
-            });
-          }
-          setStatsLoading(false);
-        } catch (analyticsError) {
-          console.error('Error calculating analytics:', analyticsError);
-          setStatsError('Failed to load statistics');
-          setStatsLoading(false);
-          // Keep default stats values
-        }
-      }
-    } catch (err) {
-      console.error('Error loading posts:', err);
-      setError('Failed to load posts. Please try again later.');
-      setStatsError('Failed to load statistics');
-      // No fallback to mock data - show empty state instead
-      if (!loadMore) {
-        setPosts([]);
-      }
-    } finally {
-      setIsLoading(false);
-      setIsLoadingMore(false);
-      setStatsLoading(false);
-    }
-  }, [selectedSport, dedupePosts, user?.username]);
 
   // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
@@ -189,17 +142,10 @@ export default function FeedPage() {
     }
   }, [user, isAuthLoading, router]);
 
-  // Load posts from Hive blockchain
-  React.useEffect(() => {
-    loadPosts();
-  }, [selectedSport, loadPosts]);
-
   // Listen for sport filter changes from the navigation
   React.useEffect(() => {
     const handleSportFilterChange = (event: CustomEvent) => {
       setSelectedSport(event.detail);
-      // Reset pagination when sport filter changes
-      resetPagination();
     };
 
     // Load saved sport filter from localStorage (client-side only)
@@ -208,27 +154,25 @@ export default function FeedPage() {
         const savedSport = localStorage.getItem('selectedSport');
         if (savedSport) {
           setSelectedSport(savedSport);
-          // Reset pagination when loading saved filter
-          resetPagination();
         }
-      } catch (error) {
-        console.error('Error loading saved sport filter:', error);
+      } catch (err) {
+        console.error('Error loading saved sport filter:', err);
       }
     }
 
     window.addEventListener('sportFilterChanged', handleSportFilterChange as EventListener);
-    
+
     return () => {
       window.removeEventListener('sportFilterChanged', handleSportFilterChange as EventListener);
     };
   }, []);
 
-  // Filter posts based on selected sport
+  // Filter posts based on selected sport (client-side filter for cached data)
   const filteredPosts = React.useMemo(() => {
     if (!selectedSport) {
       return posts;
     }
-    return posts.filter(post => post.sportCategory === selectedSport);
+    return posts.filter((post: SportsblockPost) => post.sportCategory === selectedSport);
   }, [posts, selectedSport]);
 
   // Get the selected sport name for display
@@ -238,15 +182,18 @@ export default function FeedPage() {
   }, [selectedSport]);
 
   // Show skeleton while auth is loading (handled by loading.tsx for initial load)
-  // This handles subsequent navigations where auth state may still be loading
   if (isAuthLoading) {
-    return null; // Let loading.tsx handle it
+    return null;
   }
 
   // User not authenticated - will redirect
   if (!user) {
     return null;
   }
+
+  const errorMessage = isError
+    ? (error instanceof Error ? error.message : 'Failed to load posts. Please try again later.')
+    : null;
 
   return (
     <MainLayout>
@@ -270,7 +217,7 @@ export default function FeedPage() {
                 readOnly
               />
             </div>
-            <Button 
+            <Button
               disabled={!user}
               onClick={() => router.push("/publish")}
             >
@@ -332,7 +279,7 @@ export default function FeedPage() {
               View All
             </Button>
           </div>
-          
+
           <div className="space-y-6">
             {isLoading ? (
               // Loading skeleton
@@ -350,16 +297,16 @@ export default function FeedPage() {
                   <div className="h-4 bg-gray-300 rounded w-2/3"></div>
                 </div>
               ))
-            ) : error ? (
+            ) : errorMessage ? (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">⚠️</div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                   Error Loading Posts
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 mb-6">
-                  {error}
+                  {errorMessage}
                 </p>
-                <Button onClick={() => loadPosts(false)}>
+                <Button onClick={() => refetch()}>
                   Try Again
                 </Button>
               </div>
@@ -376,7 +323,7 @@ export default function FeedPage() {
                   {selectedSportName ? `No ${selectedSportName} posts yet` : "No posts available"}
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 mb-6">
-                  {selectedSportName 
+                  {selectedSportName
                     ? `Be the first to share something about ${selectedSportName}!`
                     : "Check back later for new content."
                   }
@@ -391,7 +338,7 @@ export default function FeedPage() {
         </div>
 
         {/* Infinite Scroll Loading Indicator */}
-        {isLoadingMore && (
+        {isFetchingNextPage && (
           <div className="flex justify-center mt-8">
             <div className="flex items-center text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -399,9 +346,9 @@ export default function FeedPage() {
             </div>
           </div>
         )}
-        
+
         {/* End of feed indicator */}
-        {!hasMore && posts.length > 0 && (
+        {!hasNextPage && posts.length > 0 && (
           <div className="flex justify-center mt-8">
             <div className="text-muted-foreground text-sm">
               You&apos;ve reached the end of the feed
@@ -412,4 +359,3 @@ export default function FeedPage() {
     </MainLayout>
   );
 }
-

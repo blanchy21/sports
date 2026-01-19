@@ -157,7 +157,15 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizeCss: true,
-    optimizePackageImports: ['lucide-react', '@tanstack/react-query'],
+    // Tree-shake imports from large packages to reduce bundle size
+    optimizePackageImports: [
+      'lucide-react',
+      '@tanstack/react-query',
+      'framer-motion',
+      'date-fns',
+      'react-markdown',
+      'zod',
+    ],
   },
   // Bundle optimization
   compiler: {

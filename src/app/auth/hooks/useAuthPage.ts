@@ -359,6 +359,18 @@ export const useAuthPage = (): UseAuthPageResult => {
         const usernameToUse =
           usernameRequiredProviders.has(provider) && hiveUsername.trim() ? hiveUsername.trim() : "";
 
+        // Force logout any existing Aioha session to ensure fresh Keychain authorization
+        // This is critical for security - the Keychain popup must ALWAYS appear for user approval
+        try {
+          const aiohaWithLogout = aioha as { logout?: () => Promise<void> };
+          if (typeof aiohaWithLogout.logout === 'function') {
+            await aiohaWithLogout.logout();
+          }
+        } catch (logoutError) {
+          // Ignore logout errors - we're just clearing any stale session
+          console.debug("Aioha logout (pre-login cleanup):", logoutError);
+        }
+
         // Wrap login with timeout to handle unresponsive wallet extensions
         const loginPromise = (aioha as {
           login: (provider: Providers, username: string, options: { msg: string; keyType: KeyTypes }) => Promise<unknown>;
@@ -372,26 +384,6 @@ export const useAuthPage = (): UseAuthPageResult => {
           LOGIN_TIMEOUT_MS,
           `${provider === 'keychain' ? 'Hive Keychain' : provider} did not respond. Please check if the extension is working and try again.`
         );
-
-        // Check for errorCode 4901 ("already logged in") - this is a valid state
-        // The user has an existing authenticated session, so we can proceed directly
-        const isAlreadyLoggedIn = (result as { errorCode?: number })?.errorCode === 4901;
-        
-        if (isAlreadyLoggedIn) {
-          console.log("Aioha: User already logged in (4901), proceeding with existing session");
-          // For already logged in, pass the username we're trying to log in with
-          // since the result may not contain username info
-          const alreadyLoggedInResult: AiohaLoginResult = {
-            username: usernameToUse || hiveUsername.trim(),
-            success: true,
-            errorCode: 4901,
-            provider: provider,
-          };
-          await loginWithAioha(alreadyLoggedInResult);
-          resetHivePrompt();
-          router.push("/feed");
-          return;
-        }
 
         const loginResult: AiohaLoginResult = {
           ...(result as Record<string, unknown>),

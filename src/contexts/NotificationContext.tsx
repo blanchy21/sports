@@ -95,14 +95,31 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   }, [isClient, storageKey]);
 
-  // Save notifications to localStorage whenever they change
+  // Save notifications to localStorage with debouncing to prevent excessive writes
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     if (!isClient) return;
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(notifications));
-    } catch (error) {
-      console.error('Error saving notifications:', error);
+
+    // Clear any pending save
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+
+    // Debounce localStorage writes by 500ms
+    saveTimeoutRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(notifications));
+      } catch (error) {
+        console.error('Error saving notifications:', error);
+      }
+    }, 500);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [notifications, isClient, storageKey]);
 
   const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
@@ -144,6 +161,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Track polling state
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const lastCheckRef = useRef<string | null>(null);
+  const hasInitializedRef = useRef(false);
 
   // Fetch notifications from API
   const fetchNotifications = useCallback(async (username: string, since?: string) => {
@@ -237,12 +255,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       localStorage.setItem(lastCheckKey, now);
     };
 
-    // Initial poll
-    poll();
+    // Only do initial poll once per session (not on every navigation)
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+      poll();
+    }
     setIsRealtimeActive(true);
 
-    // Set up interval
-    pollingRef.current = setInterval(poll, NOTIFICATION_POLL_INTERVAL);
+    // Set up interval (only if not already running)
+    if (!pollingRef.current) {
+      pollingRef.current = setInterval(poll, NOTIFICATION_POLL_INTERVAL);
+    }
 
     return () => {
       if (pollingRef.current) {

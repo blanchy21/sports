@@ -100,3 +100,10 @@ const LazyCommunitiesListBase = dynamic(
   }
 );
 export const LazyCommunitiesList = withLazyErrorBoundary(LazyCommunitiesListBase, 'CommunitiesList');
+
+// Lazy load SportsFilterPopup (uses framer-motion, only shown when opened)
+const LazySportsFilterPopupBase = dynamic(
+  () => import('@/components/SportsFilterPopup').then(mod => ({ default: mod.SportsFilterPopup })),
+  { ssr: false }
+);
+export const LazySportsFilterPopup = withLazyErrorBoundary(LazySportsFilterPopupBase, 'SportsFilterPopup');

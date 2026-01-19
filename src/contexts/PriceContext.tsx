@@ -1,10 +1,13 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { PriceContextType } from '@/types';
 import { fetchAllPrices, getCachedPrices } from '@/lib/crypto/prices';
 
 const PriceContext = createContext<PriceContextType | undefined>(undefined);
+
+// Minimum time between fetches (1 minute) to prevent refetch on navigation
+const MIN_FETCH_INTERVAL = 60 * 1000;
 
 interface PriceProviderProps {
   children: React.ReactNode;
@@ -19,18 +22,29 @@ export function PriceProvider({ children }: PriceProviderProps) {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const refreshPrices = useCallback(async () => {
+  // Track last fetch time to prevent unnecessary refetches
+  const lastFetchTimeRef = useRef<number>(0);
+  const hasFetchedRef = useRef(false);
+
+  const refreshPrices = useCallback(async (force = false) => {
+    // Skip if recently fetched (unless forced)
+    const now = Date.now();
+    if (!force && now - lastFetchTimeRef.current < MIN_FETCH_INTERVAL) {
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const priceData = await fetchAllPrices();
-      
+
       setBitcoinPrice(priceData.bitcoin.usd);
       setEthereumPrice(priceData.ethereum.usd);
       setHivePrice(priceData.hive.usd);
       setHbdPrice(priceData.hive_dollar.usd);
       setLastUpdated(new Date());
+      lastFetchTimeRef.current = now;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error('[PriceContext] Error refreshing prices:', errorMessage);
@@ -49,17 +63,22 @@ export function PriceProvider({ children }: PriceProviderProps) {
       setHivePrice(cachedPrices.hive.usd);
       setHbdPrice(cachedPrices.hive_dollar.usd);
       setLastUpdated(new Date());
+      // Mark as having data so we don't immediately refetch
+      lastFetchTimeRef.current = Date.now();
     }
   }, []);
 
   // Auto-refresh prices every 10 minutes
   useEffect(() => {
-    // Initial fetch
-    refreshPrices();
-
-    // Set up interval for auto-refresh
-    const interval = setInterval(() => {
+    // Only fetch on initial mount if we haven't already
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
       refreshPrices();
+    }
+
+    // Set up interval for auto-refresh (force refresh)
+    const interval = setInterval(() => {
+      refreshPrices(true);
     }, 10 * 60 * 1000); // 10 minutes
 
     return () => {

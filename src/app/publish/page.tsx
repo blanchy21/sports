@@ -29,14 +29,35 @@ import {
 } from "lucide-react";
 import { SPORT_CATEGORIES, Community } from "@/types";
 import { cn } from "@/lib/utils";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import dynamic from "next/dynamic";
 import { publishPost, canUserPost, validatePostData } from "@/lib/hive-workerbee/posting";
 import { PostData } from "@/lib/hive-workerbee/posting";
 import { useCommunities, useUserCommunities } from "@/lib/react-query/queries/useCommunity";
 
-// Import emoji picker dynamically to avoid SSR issues
+import remarkGfm from "remark-gfm";
+
+// Loading skeleton for markdown preview
+function MarkdownLoadingSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3">
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+    </div>
+  );
+}
+
+// Dynamically import heavy dependencies to reduce initial bundle size
+// ReactMarkdown is ~40KB, only load when preview is shown
+const ReactMarkdown = dynamic(
+  () => import("react-markdown"),
+  {
+    ssr: false,
+    loading: () => <MarkdownLoadingSkeleton />
+  }
+);
+
+// Import emoji picker dynamically (~300KB uncompressed)
 const EmojiPicker = dynamic(
   () => import("emoji-picker-react"),
   { ssr: false }
