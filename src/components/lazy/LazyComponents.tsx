@@ -107,3 +107,17 @@ const LazySportsFilterPopupBase = dynamic(
   { ssr: false }
 );
 export const LazySportsFilterPopup = withLazyErrorBoundary(LazySportsFilterPopupBase, 'SportsFilterPopup');
+
+// Lazy load UpgradeFlow (uses Aioha wallet library, only shown when upgrading)
+const LazyUpgradeFlowBase = dynamic(
+  () => import('@/components/UpgradeFlow').then(mod => ({ default: mod.UpgradeFlow })),
+  { ssr: false }
+);
+export const LazyUpgradeFlow = withLazyErrorBoundary(LazyUpgradeFlowBase, 'UpgradeFlow');
+
+// Lazy load NotificationDropdown (uses date-fns, only shown when notifications opened)
+const LazyNotificationDropdownBase = dynamic(
+  () => import('@/components/NotificationDropdown').then(mod => ({ default: mod.NotificationDropdown })),
+  { ssr: false }
+);
+export const LazyNotificationDropdown = withLazyErrorBoundary(LazyNotificationDropdownBase, 'NotificationDropdown');

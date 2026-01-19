@@ -17,10 +17,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { LazyAuthModal, LazySportsFilterPopup } from "@/components/lazy/LazyComponents";
-import { NotificationDropdown } from "@/components/NotificationDropdown";
+import { LazyAuthModal, LazySportsFilterPopup, LazyUpgradeFlow, LazyNotificationDropdown } from "@/components/lazy/LazyComponents";
 import { UpgradePrompt } from "@/components/AccountBadge";
-import { UpgradeFlow } from "@/components/UpgradeFlow";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { cn } from "@/lib/utils";
@@ -211,7 +209,7 @@ export const TopNavigation: React.FC = () => {
                   )}
                 </Button>
                 
-                <NotificationDropdown
+                <LazyNotificationDropdown
                   isOpen={showNotifications}
                   onClose={() => setShowNotifications(false)}
                   triggerRef={notificationButtonRef}
@@ -285,7 +283,7 @@ export const TopNavigation: React.FC = () => {
         selectedSport={selectedSport}
       />
 
-      <UpgradeFlow
+      <LazyUpgradeFlow
         isOpen={showUpgradeFlow}
         onClose={() => setShowUpgradeFlow(false)}
       />
