@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Users, Clock } from "lucide-react";
 import { SPORT_CATEGORIES } from "@/types";
@@ -25,6 +25,18 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
   selectedSport,
   sportStats = {},
 }) => {
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   const handleSportClick = (sportId: string) => {
     onSportSelect(sportId);
     onClose();
@@ -74,7 +86,7 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
 
               {/* Content */}
               <div className="flex flex-col flex-1 min-h-0">
-                <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+                <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-8">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {SPORT_CATEGORIES.map((sport) => {
                       const stats = sportStats[sport.id];
