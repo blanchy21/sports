@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AiohaProvider } from "@/contexts/AiohaProvider";
@@ -52,6 +53,7 @@ export default function RootLayout({
             </AiohaProvider>
           </ThemeProvider>
         </QueryClientProvider>
+        <Analytics />
       </body>
     </html>
   );
