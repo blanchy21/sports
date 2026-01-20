@@ -43,14 +43,20 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
             onClick={onClose}
           />
 
-          {/* Popup */}
+          {/* Popup Container - Flexbox centering */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", duration: 0.3 }}
-            className="fixed inset-4 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-50 w-auto sm:w-[calc(100vw-2rem)] sm:max-w-4xl max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
           >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              transition={{ type: "spring", duration: 0.3 }}
+              className="w-full max-w-4xl max-h-[calc(100vh-2rem)] overflow-hidden pointer-events-auto"
+            >
             <div className="bg-card dark:bg-card rounded-2xl shadow-2xl border border-border h-full flex flex-col">
               {/* Header */}
               <div className="bg-gradient-to-r from-primary to-bright-cobalt px-4 sm:px-8 py-4 sm:py-6 relative flex-shrink-0">
@@ -184,6 +190,7 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
                 </div>
               </div>
             </div>
+            </motion.div>
           </motion.div>
         </>
       )}
