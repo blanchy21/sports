@@ -18,7 +18,7 @@ import {
   Upload,
   Loader2,
 } from "lucide-react";
-import { Community } from "@/types";
+import { Community, SPORT_CATEGORIES } from "@/types";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { publishPost, canUserPost, validatePostData } from "@/lib/hive-workerbee/posting";
@@ -710,6 +710,34 @@ function PublishPageContent() {
               />
             </div>
 
+            {/* Sport Category - Primary Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Sport Category <span className="text-destructive">*</span>
+              </label>
+              <select
+                value={selectedSport}
+                onChange={(e) => setSelectedSport(e.target.value)}
+                className={cn(
+                  "w-full px-3 py-2.5 rounded-lg border bg-background",
+                  "text-sm focus:outline-none focus:ring-2 focus:ring-ring",
+                  !selectedSport && "text-muted-foreground"
+                )}
+              >
+                <option value="">Select a sport category</option>
+                {SPORT_CATEGORIES.map((sport) => (
+                  <option key={sport.id} value={sport.id}>
+                    {sport.icon} {sport.name}
+                  </option>
+                ))}
+              </select>
+              {!selectedSport && (
+                <p className="text-xs text-muted-foreground">
+                  Choose the sport your post is about
+                </p>
+              )}
+            </div>
+
             {/* Tags */}
             <TagInput
               value={tags}
@@ -721,8 +749,6 @@ function PublishPageContent() {
 
             {/* Advanced Options */}
             <AdvancedOptions
-              selectedSport={selectedSport}
-              onSportChange={setSelectedSport}
               selectedCommunity={selectedCommunity}
               onCommunityChange={setSelectedCommunity}
               userCommunities={userCommunities}

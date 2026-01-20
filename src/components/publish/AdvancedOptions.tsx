@@ -3,7 +3,7 @@
 import React from "react";
 import { ChevronDown, ChevronUp, Plus, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { SPORT_CATEGORIES, Community } from "@/types";
+import { Community } from "@/types";
 import { cn } from "@/lib/utils";
 
 export type RewardsOption = "50_50" | "power_up" | "decline";
@@ -14,10 +14,6 @@ export interface Beneficiary {
 }
 
 export interface AdvancedOptionsProps {
-  // Sport category
-  selectedSport: string;
-  onSportChange: (sport: string) => void;
-
   // Community
   selectedCommunity: Community | null;
   onCommunityChange: (community: Community | null) => void;
@@ -63,8 +59,6 @@ const REWARDS_OPTIONS = [
 ];
 
 export function AdvancedOptions({
-  selectedSport,
-  onSportChange,
   selectedCommunity,
   onCommunityChange,
   userCommunities = [],
@@ -135,29 +129,6 @@ export function AdvancedOptions({
       {/* Content */}
       {isExpanded && (
         <div className="p-4 space-y-6">
-          {/* Sport Category (Required) */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Sport Category <span className="text-destructive">*</span>
-            </label>
-            <select
-              value={selectedSport}
-              onChange={(e) => onSportChange(e.target.value)}
-              className={cn(
-                "w-full px-3 py-2 rounded-lg border bg-background",
-                "text-sm focus:outline-none focus:ring-2 focus:ring-ring",
-                !selectedSport && "text-muted-foreground"
-              )}
-            >
-              <option value="">Select a sport</option>
-              {SPORT_CATEGORIES.map((sport) => (
-                <option key={sport.id} value={sport.id}>
-                  {sport.icon} {sport.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Community Selection */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
