@@ -120,7 +120,7 @@ export const RightSidebar: React.FC = () => {
   );
 
   return (
-    <aside className="hidden xl:flex xl:flex-col xl:w-[28rem] xl:fixed xl:right-0 xl:top-20 xl:h-[calc(100vh-5rem)] xl:overflow-y-auto xl:border-l bg-background xl:p-6">
+    <aside className="hidden xl:flex xl:flex-col xl:w-80 2xl:w-[28rem] xl:fixed xl:right-0 xl:top-20 2xl:top-24 xl:h-[calc(100vh-5rem)] 2xl:h-[calc(100vh-6rem)] xl:overflow-y-auto xl:border-l bg-background xl:p-4 2xl:p-6">
       <div className="space-y-6">
         {/* Trending Topics */}
         <div className="bg-card border rounded-lg p-4">

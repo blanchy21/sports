@@ -16,8 +16,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, className, sho
   return (
     <div className="min-h-screen bg-background">
       <TopNavigation />
-      <div className={cn("lg:pl-80", showRightSidebar && "xl:pr-[28rem]")}>
-        <main className={cn("max-w-6xl mx-auto px-6 py-6", className)}>
+      <div className={cn("lg:pl-64 xl:pl-80", showRightSidebar && "xl:pr-80 2xl:pr-[28rem]")}>
+        <main className={cn("max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6", className)}>
           {children}
         </main>
       </div>

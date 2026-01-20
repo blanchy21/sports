@@ -231,40 +231,43 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         </div>
 
         {/* Comment Input */}
-        <div className="border-t p-6">
-        <div className="flex space-x-3">
-          <Avatar
-            fallback={user?.username?.[0] || "U"}
-            alt={user?.username || "You"}
-            size="sm"
-          />
-          <div className="flex-1">
-            <textarea
-              placeholder="Write a comment... (Ctrl+Enter to submit)"
-              className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-              rows={3}
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                  e.preventDefault();
-                  handleSubmitComment();
-                }
-              }}
-              disabled={isSubmitting}
-            />
+        <div className="border-t p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex gap-3 flex-1">
+              <Avatar
+                fallback={user?.username?.[0] || "U"}
+                alt={user?.username || "You"}
+                size="sm"
+                className="hidden sm:flex"
+              />
+              <div className="flex-1">
+                <textarea
+                  placeholder="Write a comment..."
+                  className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
+                  rows={2}
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      handleSubmitComment();
+                    }
+                  }}
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+            <Button
+              size="sm"
+              className="self-stretch sm:self-end w-full sm:w-auto"
+              onClick={handleSubmitComment}
+              disabled={isSubmitting || !commentText.trim()}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {isSubmitting ? "Posting..." : "Comment"}
+            </Button>
           </div>
-          <Button 
-            size="sm" 
-            className="self-end"
-            onClick={handleSubmitComment}
-            disabled={isSubmitting || !commentText.trim()}
-          >
-            <Send className="h-4 w-4 mr-2" />
-            {isSubmitting ? "Posting..." : "Comment"}
-          </Button>
         </div>
-      </div>
     </BaseModal>
   );
 };

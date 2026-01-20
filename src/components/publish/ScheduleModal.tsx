@@ -98,35 +98,35 @@ export function ScheduleModal({
   const maxDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-card border rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card border rounded-lg p-4 sm:p-6 w-full max-w-md shadow-xl max-h-[calc(100vh-2rem)] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-foreground">Schedule Post</h3>
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground">Schedule Post</h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Quick select buttons */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <span className="text-sm font-medium text-foreground mb-2 block">
             Quick select
           </span>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {quickOptions.map((option) => (
               <button
                 key={option.label}
                 type="button"
                 onClick={() => handleQuickSelect(option)}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-sm",
+                  "px-3 py-2 rounded-lg text-xs sm:text-sm",
                   "bg-muted hover:bg-muted/80 text-foreground",
-                  "transition-colors"
+                  "transition-colors text-center"
                 )}
               >
                 {option.label}
@@ -136,7 +136,7 @@ export function ScheduleModal({
         </div>
 
         {/* Date and time inputs */}
-        <div className="space-y-4 mb-6">
+        <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -173,19 +173,19 @@ export function ScheduleModal({
         </div>
 
         {/* Timezone display */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 p-3 bg-muted/50 rounded-lg">
-          <Globe className="h-4 w-4" />
-          <span>Timezone: {timezone}</span>
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 p-2 sm:p-3 bg-muted/50 rounded-lg">
+          <Globe className="h-4 w-4 flex-shrink-0" />
+          <span className="truncate">Timezone: {timezone}</span>
         </div>
 
         {/* Preview */}
-        <div className="mb-6 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-          <span className="text-sm text-muted-foreground">Your post will be published:</span>
-          <p className="text-foreground font-medium">
+        <div className="mb-4 sm:mb-6 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+          <span className="text-xs sm:text-sm text-muted-foreground">Your post will be published:</span>
+          <p className="text-sm sm:text-base text-foreground font-medium">
             {selectedDate.toLocaleDateString("en-US", {
-              weekday: "long",
+              weekday: "short",
               year: "numeric",
-              month: "long",
+              month: "short",
               day: "numeric",
             })}{" "}
             at{" "}
@@ -197,11 +197,11 @@ export function ScheduleModal({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3">
-          <Button type="button" variant="outline" onClick={onClose}>
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
+          <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button type="button" onClick={handleSchedule}>
+          <Button type="button" onClick={handleSchedule} className="w-full sm:w-auto">
             Schedule
           </Button>
         </div>

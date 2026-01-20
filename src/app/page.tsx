@@ -114,18 +114,18 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 1 }}
-            className="mt-12 flex items-center justify-center gap-8 text-white/80"
+            className="mt-8 sm:mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-white/80 text-sm sm:text-base"
           >
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
+              <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
               <span>Hive Blockchain</span>
             </div>
             <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5" />
+              <Trophy className="h-4 w-4 sm:h-5 sm:w-5" />
               <span>MEDALS Token</span>
             </div>
             <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5" />
+              <Zap className="h-4 w-4 sm:h-5 sm:w-5" />
               <span>Earn Rewards</span>
             </div>
           </motion.div>

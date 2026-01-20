@@ -76,24 +76,24 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
       className="overflow-hidden"
     >
       {/* Custom Header */}
-      <div className="flex items-center justify-between p-6 border-b">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between p-4 sm:p-6 border-b">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Image
             src="/hive-keychain-logo.svg"
             alt="Hive Keychain"
-            width={32}
-            height={32}
-            className="rounded-md"
+            width={28}
+            height={28}
+            className="rounded-md flex-shrink-0 sm:w-8 sm:h-8"
           />
-          <h2 className="text-lg font-semibold text-foreground">
-            Sign in with Hive Keychain
+          <h2 className="text-base sm:text-lg font-semibold text-foreground truncate">
+            Sign in with Keychain
           </h2>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 flex-shrink-0"
           aria-label="Close modal"
         >
           <X className="h-4 w-4" />
@@ -101,7 +101,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
       </div>
 
       {/* Content */}
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Keychain Status */}
         <div className="flex items-center gap-2 text-sm">
           {isKeychainAvailable ? (

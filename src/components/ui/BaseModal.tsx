@@ -85,9 +85,9 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       />
       
       {/* Modal */}
-      <div 
+      <div
         className={cn(
-          "relative bg-card border rounded-lg shadow-lg w-full mx-4 my-8",
+          "relative bg-card border rounded-lg shadow-lg w-full mx-2 sm:mx-4 my-4 sm:my-8 max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col",
           sizeClasses[size],
           className
         )}
@@ -98,15 +98,15 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       >
         {/* Header */}
         {showHeader && (title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b">
-            <div className="flex-1">
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b flex-shrink-0">
+            <div className="flex-1 min-w-0 pr-2">
               {title && (
-                <h2 id="modal-title" className="text-lg font-semibold text-foreground">
+                <h2 id="modal-title" className="text-base sm:text-lg font-semibold text-foreground truncate">
                   {title}
                 </h2>
               )}
               {description && (
-                <p id="modal-description" className="text-sm text-muted-foreground mt-1">
+                <p id="modal-description" className="text-xs sm:text-sm text-muted-foreground mt-1">
                   {description}
                 </p>
               )}
@@ -116,7 +116,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="ml-4 h-8 w-8 p-0"
+                className="ml-2 sm:ml-4 h-8 w-8 p-0 flex-shrink-0"
                 aria-label="Close modal"
               >
                 <X className="h-4 w-4" />
@@ -124,9 +124,9 @@ export const BaseModal: React.FC<BaseModalProps> = ({
             )}
           </div>
         )}
-        
+
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {children}
         </div>
       </div>
@@ -139,7 +139,7 @@ export const ModalHeader: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className }) => (
-  <div className={cn("flex items-center justify-between p-6 border-b", className)}>
+  <div className={cn("flex items-center justify-between p-4 sm:p-6 border-b", className)}>
     {children}
   </div>
 );
@@ -148,7 +148,7 @@ export const ModalTitle: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className }) => (
-  <h2 className={cn("text-lg font-semibold text-foreground", className)}>
+  <h2 className={cn("text-base sm:text-lg font-semibold text-foreground", className)}>
     {children}
   </h2>
 );
@@ -157,7 +157,7 @@ export const ModalDescription: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className }) => (
-  <p className={cn("text-sm text-muted-foreground mt-1", className)}>
+  <p className={cn("text-xs sm:text-sm text-muted-foreground mt-1", className)}>
     {children}
   </p>
 );
@@ -166,7 +166,7 @@ export const ModalContent: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className }) => (
-  <div className={cn("p-6", className)}>
+  <div className={cn("p-4 sm:p-6", className)}>
     {children}
   </div>
 );
@@ -175,7 +175,7 @@ export const ModalFooter: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className }) => (
-  <div className={cn("flex items-center justify-end gap-3 p-6 border-t bg-muted/30", className)}>
+  <div className={cn("flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3 p-4 sm:p-6 border-t bg-muted/30", className)}>
     {children}
   </div>
 );
