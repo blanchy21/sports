@@ -12,7 +12,7 @@ export const MEDALS_CONFIG = {
   SYMBOL: 'MEDALS',
 
   /** Decimal precision for token amounts */
-  PRECISION: 3,
+  PRECISION: 6,
 
   /** Hive Engine sidechain contract ID */
   CONTRACT_ID: 'ssc-mainnet-hive',

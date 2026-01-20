@@ -357,7 +357,7 @@ export function resetHiveEngineClient(): void {
 /**
  * Format a quantity string with proper precision
  */
-export function formatQuantity(amount: number, precision: number = 3): string {
+export function formatQuantity(amount: number, precision: number = 6): string {
   return amount.toFixed(precision);
 }
 
@@ -391,7 +391,7 @@ export function isValidAccountName(name: string): boolean {
 /**
  * Validate a token quantity
  */
-export function isValidQuantity(quantity: string, precision: number = 3): boolean {
+export function isValidQuantity(quantity: string, precision: number = 6): boolean {
   const regex = new RegExp(`^\\d+(\\.\\d{1,${precision}})?$`);
   if (!regex.test(quantity)) return false;
   const value = parseFloat(quantity);

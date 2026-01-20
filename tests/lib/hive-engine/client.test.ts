@@ -25,10 +25,10 @@ describe('HiveEngineClient', () => {
   });
 
   describe('formatQuantity', () => {
-    it('should format number with default precision', () => {
-      expect(formatQuantity(100)).toBe('100.000');
-      expect(formatQuantity(0.1)).toBe('0.100');
-      expect(formatQuantity(1234.5678)).toBe('1234.568');
+    it('should format number with default precision (6 decimals for MEDALS)', () => {
+      expect(formatQuantity(100)).toBe('100.000000');
+      expect(formatQuantity(0.1)).toBe('0.100000');
+      expect(formatQuantity(1234.5678)).toBe('1234.567800');
     });
 
     it('should format with custom precision', () => {
@@ -37,7 +37,7 @@ describe('HiveEngineClient', () => {
     });
 
     it('should handle zero', () => {
-      expect(formatQuantity(0)).toBe('0.000');
+      expect(formatQuantity(0)).toBe('0.000000');
     });
   });
 
@@ -97,7 +97,7 @@ describe('HiveEngineClient', () => {
       expect(isValidQuantity('')).toBe(false);
       expect(isValidQuantity('0')).toBe(false); // Must be > 0
       expect(isValidQuantity('-100')).toBe(false);
-      expect(isValidQuantity('100.1234')).toBe(false); // Too many decimals
+      expect(isValidQuantity('100.1234567')).toBe(false); // Too many decimals (>6)
       expect(isValidQuantity('abc')).toBe(false);
     });
 

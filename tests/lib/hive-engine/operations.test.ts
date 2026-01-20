@@ -65,18 +65,18 @@ describe('Hive Engine Operations', () => {
   });
 
   describe('buildTransferOpFromAmount', () => {
-    it('should format amount correctly', () => {
+    it('should format amount correctly (6 decimals for MEDALS)', () => {
       const op = buildTransferOpFromAmount('alice', 'bob', 100);
 
       const payload = JSON.parse(op.json);
-      expect(payload.contractPayload.quantity).toBe('100.000');
+      expect(payload.contractPayload.quantity).toBe('100.000000');
     });
 
     it('should handle decimal amounts', () => {
       const op = buildTransferOpFromAmount('alice', 'bob', 99.999);
 
       const payload = JSON.parse(op.json);
-      expect(payload.contractPayload.quantity).toBe('99.999');
+      expect(payload.contractPayload.quantity).toBe('99.999000');
     });
   });
 
@@ -155,7 +155,7 @@ describe('Hive Engine Operations', () => {
 
       const payloads = ops.map((op) => JSON.parse(op.json));
       expect(payloads[0].contractPayload.to).toBe('bob');
-      expect(payloads[0].contractPayload.quantity).toBe('100.000');
+      expect(payloads[0].contractPayload.quantity).toBe('100.000000');
       expect(payloads[1].contractPayload.to).toBe('carol');
       expect(payloads[1].contractPayload.memo).toBe('Reward');
       expect(payloads[2].contractPayload.to).toBe('dave');
@@ -171,7 +171,7 @@ describe('Hive Engine Operations', () => {
 
       const payload = JSON.parse(op.json);
       expect(payload.contractPayload.to).toBe('author1');
-      expect(payload.contractPayload.quantity).toBe('100.000'); // Default Y1-3 amount
+      expect(payload.contractPayload.quantity).toBe('100.000000'); // Default Y1-3 amount
       expect(payload.contractPayload.memo).toContain('Curator reward');
       expect(payload.contractPayload.memo).toContain('@author1/my-post');
     });
@@ -180,7 +180,7 @@ describe('Hive Engine Operations', () => {
       const op = buildCuratorRewardOp('curator1', 'author1', 'my-post', 150);
 
       const payload = JSON.parse(op.json);
-      expect(payload.contractPayload.quantity).toBe('150.000');
+      expect(payload.contractPayload.quantity).toBe('150.000000');
     });
   });
 

@@ -90,9 +90,9 @@ describe('GET /api/hive-engine/balance', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.account).toBe('testuser');
-    expect(response.body.liquid).toBe('0.000');
-    expect(response.body.staked).toBe('0.000');
-    expect(response.body.total).toBe('0.000');
+    expect(response.body.liquid).toBe('0.000000');
+    expect(response.body.staked).toBe('0.000000');
+    expect(response.body.total).toBe('0.000000');
     expect(response.body.premiumTier).toBeNull();
   });
 
