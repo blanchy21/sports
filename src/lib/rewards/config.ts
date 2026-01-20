@@ -12,7 +12,7 @@ export const MEDALS_ACCOUNTS = {
   /** Main platform account */
   MAIN: 'sportsblock',
   /** Account holding reward pool for distribution */
-  REWARDS: 'sportsblock-rewards',
+  REWARDS: 'sp-blockrewards',
   /** Burn account for deflationary mechanics */
   BURN: 'medals-burn',
 } as const;

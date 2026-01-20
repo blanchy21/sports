@@ -4,35 +4,33 @@ import React, { useState, Suspense } from "react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
-import { 
+import {
   ArrowLeft,
   Eye,
-  Save, 
+  Save,
   Send,
   AlertCircle,
   Image as ImageIcon,
-  Tag as TagIcon,
-  Settings,
-  Bold,
-  Italic,
-  Underline as UnderlineIcon,
-  Strikethrough,
-  List,
-  ListOrdered,
+  MoreVertical,
+  Calendar,
+  X,
   Link as LinkIcon,
-  Smile,
-  Undo,
-  Code,
-  Quote,
-  Upload,
-  X
 } from "lucide-react";
-import { SPORT_CATEGORIES, Community } from "@/types";
+import { Community } from "@/types";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { publishPost, canUserPost, validatePostData } from "@/lib/hive-workerbee/posting";
 import { PostData } from "@/lib/hive-workerbee/posting";
 import { useCommunities, useUserCommunities } from "@/lib/react-query/queries/useCommunity";
+import { UnifiedPostingService } from "@/lib/posting/unified";
+import { useUIStore } from "@/stores/uiStore";
+import { FirebasePosts } from "@/lib/firebase/posts";
+
+// Import new components
+import { EditorToolbar, FormatType } from "@/components/publish/EditorToolbar";
+import { TagInput } from "@/components/publish/TagInput";
+import { AdvancedOptions, RewardsOption, Beneficiary } from "@/components/publish/AdvancedOptions";
+import { ScheduleModal } from "@/components/publish/ScheduleModal";
 
 import remarkGfm from "remark-gfm";
 
@@ -47,82 +45,107 @@ function MarkdownLoadingSkeleton() {
   );
 }
 
-// Dynamically import heavy dependencies to reduce initial bundle size
-// ReactMarkdown is ~40KB, only load when preview is shown
-const ReactMarkdown = dynamic(
-  () => import("react-markdown"),
-  {
-    ssr: false,
-    loading: () => <MarkdownLoadingSkeleton />
-  }
-);
-
-// Import emoji picker dynamically (~300KB uncompressed)
-const EmojiPicker = dynamic(
-  () => import("emoji-picker-react"),
-  { ssr: false }
-);
+// Dynamically import heavy dependencies
+const ReactMarkdown = dynamic(() => import("react-markdown"), {
+  ssr: false,
+  loading: () => <MarkdownLoadingSkeleton />,
+});
 
 function PublishPageContent() {
   const { user, authType, hiveUser, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Form state
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [selectedSport, setSelectedSport] = useState("");
   const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
-  const [tags, setTags] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
-  
-  // Fetch user's communities for the selector
-  const { data: userCommunities } = useUserCommunities(user?.id || '');
-  const { data: allCommunities } = useCommunities({ limit: 50 });
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [coverImage, setCoverImage] = useState("");
+  const [rewardsOption, setRewardsOption] = useState<RewardsOption>("50_50");
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
+    { account: "sportsblock", weight: 5 },
+  ]);
+
+  // UI state
   const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [imageAlt, setImageAlt] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkText, setLinkText] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
-  const [rcStatus, setRcStatus] = useState<{canPost: boolean; rcPercentage: number; message?: string} | null>(null);
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-  const emojiButtonRef = React.useRef<HTMLButtonElement>(null);
+  const [rcStatus, setRcStatus] = useState<{
+    canPost: boolean;
+    rcPercentage: number;
+    message?: string;
+  } | null>(null);
 
-  // Redirect if not authenticated (wait for auth to load first)
+  // Refs
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  // Store
+  const { recentTags, addRecentTags } = useUIStore();
+
+  // Fetch communities
+  const { data: userCommunities } = useUserCommunities(user?.id || "");
+  const { data: allCommunities } = useCommunities({ limit: 50 });
+
+  // Detect images from content
+  const detectedImages = React.useMemo(() => {
+    const regex = /!\[.*?\]\((.*?)\)/g;
+    const matches: string[] = [];
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+      if (match[1] && !matches.includes(match[1])) {
+        matches.push(match[1]);
+      }
+    }
+    return matches;
+  }, [content]);
+
+  // Redirect if not authenticated
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
       router.push("/");
     }
   }, [user, isAuthLoading, router]);
 
-  // Load draft if draft ID is provided in URL
+  // Load draft if draft ID is provided
   React.useEffect(() => {
-    const draftId = searchParams.get('draft');
-    
+    const draftId = searchParams.get("draft");
     if (draftId && user) {
-      // Add a small delay to ensure the component is fully mounted
-      setTimeout(() => {
-        loadDraft(draftId);
-      }, 100);
+      setTimeout(() => loadDraft(draftId), 100);
     }
   }, [searchParams, user]);
 
+  // Close menu on click outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const loadDraft = (draftId: string) => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    
+    if (typeof window === "undefined") return;
+
     try {
-      const savedDrafts = localStorage.getItem('drafts');
-      
+      const savedDrafts = localStorage.getItem("drafts");
       if (savedDrafts) {
         const parsedDrafts = JSON.parse(savedDrafts);
-        
-        // Try to find by ID first
         let draft = parsedDrafts.find((d: { id?: string }) => d.id === draftId);
-        
-        // If not found by ID, try to find by index (for old drafts without IDs)
+
         if (!draft) {
-          // The draft ID format is "draft-timestamp-index", so we can extract the index
           const match = draftId.match(/draft-(\d+)-(\d+)/);
           if (match) {
             const index = parseInt(match[2]);
@@ -131,24 +154,24 @@ function PublishPageContent() {
             }
           }
         }
-        
+
         if (draft) {
-          setTitle(draft.title || '');
-          setContent(draft.content || '');
-          setSelectedSport(draft.sport || '');
-          setTags(Array.isArray(draft.tags) ? draft.tags.join(', ') : (draft.tags || ''));
-          setImageUrl(draft.imageUrl || '');
-          setImageAlt(draft.imageAlt || '');
+          setTitle(draft.title || "");
+          setContent(draft.content || "");
+          setExcerpt(draft.excerpt || "");
+          setSelectedSport(draft.sport || "");
+          setTags(Array.isArray(draft.tags) ? draft.tags : []);
+          setCoverImage(draft.imageUrl || "");
         }
       }
     } catch (err) {
-      console.error('Error loading draft:', err);
+      console.error("Error loading draft:", err);
     }
   };
 
   const checkRCStatus = React.useCallback(async () => {
     if (!hiveUser?.username) return;
-    
+
     try {
       const status = await canUserPost(hiveUser.username);
       setRcStatus(status);
@@ -173,11 +196,11 @@ function PublishPageContent() {
     const end = textarea.selectionEnd;
     const selectedText = content.substring(start, end);
     const textToInsert = selectedText || placeholder;
-    
-    const newText = content.substring(0, start) + before + textToInsert + after + content.substring(end);
+
+    const newText =
+      content.substring(0, start) + before + textToInsert + after + content.substring(end);
     setContent(newText);
 
-    // Set cursor position
     setTimeout(() => {
       const newCursorPos = start + before.length + textToInsert.length;
       textarea.focus();
@@ -199,30 +222,46 @@ function PublishPageContent() {
     }, 0);
   };
 
-  // Formatting actions
-  const formatBold = () => insertMarkdown("**", "**", "bold text");
-  const formatItalic = () => insertMarkdown("*", "*", "italic text");
-  const formatUnderline = () => insertMarkdown("<u>", "</u>", "underlined text");
-  const formatStrikethrough = () => insertMarkdown("~~", "~~", "strikethrough text");
-  const formatCode = () => insertMarkdown("`", "`", "code");
-  const formatQuote = () => insertAtCursor("\n> ");
-  
-  const formatHeading = (level: number) => {
-    const hashes = "#".repeat(level);
-    insertAtCursor(`\n${hashes} `);
-  };
-
-  const formatBulletList = () => insertAtCursor("\n- ");
-  const formatNumberedList = () => insertAtCursor("\n1. ");
-
-  const insertLink = () => {
-    const url = prompt("Enter URL:");
-    if (url) {
-      insertMarkdown("[", `](${url})`, "link text");
+  // Format handlers
+  const handleFormat = (type: FormatType) => {
+    switch (type) {
+      case "bold":
+        insertMarkdown("**", "**", "bold text");
+        break;
+      case "italic":
+        insertMarkdown("*", "*", "italic text");
+        break;
+      case "underline":
+        insertMarkdown("<u>", "</u>", "underlined text");
+        break;
+      case "strikethrough":
+        insertMarkdown("~~", "~~", "strikethrough text");
+        break;
+      case "code":
+        insertMarkdown("`", "`", "code");
+        break;
+      case "quote":
+        insertAtCursor("\n> ");
+        break;
+      case "h1":
+        insertAtCursor("\n# ");
+        break;
+      case "h2":
+        insertAtCursor("\n## ");
+        break;
+      case "h3":
+        insertAtCursor("\n### ");
+        break;
+      case "bulletList":
+        insertAtCursor("\n- ");
+        break;
+      case "numberedList":
+        insertAtCursor("\n1. ");
+        break;
     }
   };
 
-  const insertImage = () => {
+  const handleInsertImage = () => {
     setShowImageDialog(true);
   };
 
@@ -236,136 +275,218 @@ function PublishPageContent() {
     }
   };
 
-  const handleEmojiSelect = (emojiData: { emoji: string }) => {
-    insertAtCursor(emojiData.emoji);
-    setShowEmojiPicker(false);
+  const handleInsertLink = () => {
+    setShowLinkDialog(true);
+  };
+
+  const handleLinkInsert = () => {
+    if (linkUrl) {
+      const text = linkText || linkUrl;
+      insertMarkdown("[", `](${linkUrl})`, text);
+      setLinkUrl("");
+      setLinkText("");
+      setShowLinkDialog(false);
+    }
+  };
+
+  const handleEmoji = (emoji: string) => {
+    insertAtCursor(emoji);
   };
 
   const handleUndo = () => {
-    document.execCommand('undo');
+    document.execCommand("undo");
   };
 
-  // Close emoji picker when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showEmojiPicker &&
-        emojiButtonRef.current &&
-        !emojiButtonRef.current.contains(event.target as Node) &&
-        !(event.target as Element).closest('.EmojiPickerReact')
-      ) {
-        setShowEmojiPicker(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showEmojiPicker]);
+  const handleRedo = () => {
+    document.execCommand("redo");
+  };
 
   const handleSaveDraft = () => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    
-    const draftId = searchParams.get('draft');
-    const existingDrafts = JSON.parse(localStorage.getItem('drafts') || '[]');
-    
+    if (typeof window === "undefined") return;
+
+    const draftId = searchParams.get("draft");
+    const existingDrafts = JSON.parse(localStorage.getItem("drafts") || "[]");
+
     const draftData = {
-      id: draftId || Date.now().toString(), // Use existing ID or generate new one
+      id: draftId || Date.now().toString(),
       title,
       content,
-      excerpt: content.substring(0, 150) + (content.length > 150 ? '...' : ''), // Create excerpt
+      excerpt,
       sport: selectedSport,
-      tags: tags.split(',').map(t => t.trim()).filter(t => t.length > 0),
-      imageUrl,
-      imageAlt,
-      createdAt: draftId ? existingDrafts.find((d: { id: string; createdAt?: string }) => d.id === draftId)?.createdAt || new Date().toISOString() : new Date().toISOString(),
+      tags,
+      imageUrl: coverImage,
+      createdAt: draftId
+        ? existingDrafts.find((d: { id: string }) => d.id === draftId)?.createdAt ||
+          new Date().toISOString()
+        : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      wordCount: content.split(/\s+/).filter(word => word.length > 0).length,
+      wordCount: content.split(/\s+/).filter((word) => word.length > 0).length,
     };
-    
+
     if (draftId) {
-      // Update existing draft
-      const updatedDrafts = existingDrafts.map((draft: { id: string }) => 
+      const updatedDrafts = existingDrafts.map((draft: { id: string }) =>
         draft.id === draftId ? draftData : draft
       );
       try {
-        localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
+        localStorage.setItem("drafts", JSON.stringify(updatedDrafts));
+        alert("Draft updated!");
       } catch (error) {
-        console.error('Error saving draft:', error);
-        alert('Failed to save draft. Please try again.');
-        return;
+        console.error("Error saving draft:", error);
+        alert("Failed to save draft.");
       }
-      alert('Draft updated successfully!');
     } else {
-      // Create new draft
       existingDrafts.push(draftData);
       try {
-        localStorage.setItem('drafts', JSON.stringify(existingDrafts));
+        localStorage.setItem("drafts", JSON.stringify(existingDrafts));
+        alert("Draft saved!");
       } catch (error) {
-        console.error('Error saving draft:', error);
-        alert('Failed to save draft. Please try again.');
+        console.error("Error saving draft:", error);
+        alert("Failed to save draft.");
+      }
+    }
+  };
+
+  const handleSchedule = async (scheduledAt: Date) => {
+    if (!user) return;
+
+    try {
+      // Basic validation
+      if (!title.trim()) {
+        setPublishError("Title is required");
         return;
       }
-      alert('Draft saved successfully!');
+      if (!content.trim()) {
+        setPublishError("Content is required");
+        return;
+      }
+      if (!selectedSport) {
+        setPublishError("Please select a sport category");
+        return;
+      }
+
+      // Create scheduled post
+      await FirebasePosts.createScheduledPost(
+        user.id,
+        {
+          authorId: user.id,
+          authorUsername: user.username,
+          authorDisplayName: user.displayName,
+          authorAvatar: user.avatar,
+          title: title.trim(),
+          content: content.trim(),
+          tags,
+          sportCategory: selectedSport,
+          featuredImage: coverImage || undefined,
+          communityId: selectedCommunity?.id,
+          communitySlug: selectedCommunity?.slug,
+          communityName: selectedCommunity?.name,
+        },
+        scheduledAt
+      );
+
+      // Save used tags to recent tags
+      if (tags.length > 0) {
+        addRecentTags(tags);
+      }
+
+      alert(`Post scheduled for ${scheduledAt.toLocaleString()}`);
+      router.push("/feed");
+    } catch (error) {
+      console.error("Error scheduling post:", error);
+      setPublishError("Failed to schedule post");
     }
   };
 
   const handlePublish = async () => {
     if (!user) return;
-    
+
     setPublishError(null);
     setIsPublishing(true);
 
     try {
-      // Validate post data
-      const postData: PostData = {
-        title: title.trim(),
-        body: content.trim(),
-        sportCategory: selectedSport,
-        tags: tags.split(',').map(t => t.trim()).filter(t => t.length > 0),
-        featuredImage: imageUrl || undefined,
-        author: hiveUser?.username || user.username,
-        // Add community data if a community is selected
-        subCommunity: selectedCommunity ? {
-          id: selectedCommunity.id,
-          slug: selectedCommunity.slug,
-          name: selectedCommunity.name,
-        } : undefined,
-      };
-
-      const validation = validatePostData(postData);
-      if (!validation.isValid) {
-        setPublishError(validation.errors.join(', '));
+      // Basic validation
+      if (!title.trim()) {
+        setPublishError("Title is required");
+        return;
+      }
+      if (!content.trim()) {
+        setPublishError("Content is required");
+        return;
+      }
+      if (!selectedSport) {
+        setPublishError("Please select a sport category");
         return;
       }
 
       if (authType === "hive" && hiveUser?.username) {
-        // Check if user has posting key available
+        // HIVE USER: Publish to blockchain
+        const postData: PostData = {
+          title: title.trim(),
+          body: content.trim(),
+          sportCategory: selectedSport,
+          tags,
+          featuredImage: coverImage || undefined,
+          author: hiveUser.username,
+          subCommunity: selectedCommunity
+            ? {
+                id: selectedCommunity.id,
+                slug: selectedCommunity.slug,
+                name: selectedCommunity.name,
+              }
+            : undefined,
+        };
+
+        const validation = validatePostData(postData);
+        if (!validation.isValid) {
+          setPublishError(validation.errors.join(", "));
+          return;
+        }
+
         if (!hiveUser.postingKey) {
           setPublishError("Posting key not available. Please connect with Hive Keychain.");
           return;
         }
 
-        // Check RC status
         if (rcStatus && !rcStatus.canPost) {
           setPublishError(rcStatus.message || "Insufficient Resource Credits to post.");
           return;
         }
 
-        // Publish to Hive blockchain
         const result = await publishPost(postData);
-        
+
         if (result.success) {
-          alert(`Post published successfully! View on Hive: ${result.url}`);
-          router.push('/feed');
+          // Save used tags
+          if (tags.length > 0) {
+            addRecentTags(tags);
+          }
+          alert(`Post published to Hive! View: ${result.url}`);
+          router.push("/feed");
         } else {
           setPublishError(result.error || "Failed to publish post");
         }
       } else {
-        // For soft auth users, save as draft and prompt to connect Hive
-        handleSaveDraft();
-        alert("Post saved as draft. Connect with Hive Keychain to publish to the blockchain and earn rewards!");
+        // SOFT USER: Publish to Firebase
+        const result = await UnifiedPostingService.createPost(user, {
+          title: title.trim(),
+          content: content.trim(),
+          tags,
+          sportCategory: selectedSport,
+          featuredImage: coverImage || undefined,
+          communityId: selectedCommunity?.id,
+          communitySlug: selectedCommunity?.slug,
+          communityName: selectedCommunity?.name,
+        });
+
+        if (result.success) {
+          // Save used tags
+          if (tags.length > 0) {
+            addRecentTags(tags);
+          }
+          alert("Post published! Connect to Hive to earn rewards on future posts.");
+          router.push("/feed");
+        } else {
+          setPublishError(result.error || "Failed to publish post");
+        }
       }
     } catch (error) {
       console.error("Error publishing post:", error);
@@ -375,551 +496,399 @@ function PublishPageContent() {
     }
   };
 
-  // Show skeleton while auth is loading (handled by loading.tsx for initial load)
+  // Show nothing while auth is loading
   if (isAuthLoading) {
-    return null; // Let loading.tsx handle it
+    return null;
   }
 
-  // User not authenticated - show auth required message
+  // User not authenticated
   if (!user) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">
-            Authentication Required
-          </h2>
-          <p className="text-muted-foreground mb-4">
-            Please sign in to create and publish posts.
-          </p>
-            <Button onClick={() => router.push("/")}>
-              Go Home
-            </Button>
+          <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
+          <p className="text-muted-foreground mb-4">Please sign in to create and publish posts.</p>
+          <Button onClick={() => router.push("/")}>Go Home</Button>
         </div>
       </div>
     );
   }
 
+  // Generate preview link
+  const previewLink = hiveUser?.username
+    ? `peakd.com/@${hiveUser.username}/[post-slug]`
+    : "sportsblock.com/[username]/[post-slug]";
+
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Top Bar */}
-      <div className="border-b bg-gradient-to-r from-primary to-accent shadow-lg">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-4">
+      {/* Minimal Header */}
+      <div className="border-b bg-card">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push("/feed")}
-              className="text-white hover:bg-white/20 hover:text-white"
+              className="h-8 w-8 p-0"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div className="border-l border-white/30 h-6" />
+            <span className="text-sm text-foreground">
+              Write a new post in{" "}
+              <select
+                value={selectedCommunity?.id || ""}
+                onChange={(e) => {
+                  const communityId = e.target.value;
+                  if (!communityId) {
+                    setSelectedCommunity(null);
+                  } else {
+                    const community = [
+                      ...(userCommunities || []),
+                      ...(allCommunities?.communities || []),
+                    ].find((c) => c.id === communityId);
+                    setSelectedCommunity(community || null);
+                  }
+                }}
+                className="bg-transparent font-medium text-primary hover:underline cursor-pointer border-none outline-none"
+              >
+                <option value="">Sportsblock</option>
+                {userCommunities?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </span>
+          </div>
+
+          {/* Menu button */}
+          <div className="relative" ref={menuRef}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowMenu(!showMenu)}
+              className="h-8 w-8 p-0"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-card border rounded-lg shadow-lg py-1 z-50">
+                <button
+                  onClick={() => {
+                    handleSaveDraft();
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Save Draft
+                </button>
+                <button
+                  onClick={() => {
+                    setShowScheduleModal(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Schedule Post
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content - Split View */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Side - Editor (60%) */}
+        <div className="w-3/5 flex flex-col border-r overflow-hidden">
+          {/* Title Input */}
+          <div className="border-b px-6 py-4">
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Post Title..."
-              className="text-xl font-semibold bg-transparent border-none outline-none w-96 placeholder:text-white/70 text-white"
+              placeholder="Post Title"
+              className="w-full text-2xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground"
             />
           </div>
 
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSettings(!showSettings)}
-              className="text-white hover:bg-white/20 hover:text-white"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Button>
+          {/* Editor Toolbar */}
+          <EditorToolbar
+            onFormat={handleFormat}
+            onInsertImage={handleInsertImage}
+            onInsertLink={handleInsertLink}
+            onEmoji={handleEmoji}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+          />
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveDraft}
-              disabled={!title || !content}
-              className="border-white/30 text-white hover:bg-white/20 hover:text-white"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save Draft
-            </Button>
-
-            
-            <Button
-              size="sm"
-              onClick={handlePublish}
-              disabled={!title || !content || !selectedSport || isPublishing || (authType === "hive" && rcStatus && !rcStatus.canPost) || false}
-              className={cn(
-                "min-w-[140px] text-white font-semibold",
-                authType === "hive" 
-                  ? "bg-primary hover:bg-primary/90 shadow-lg" 
-                  : "bg-accent text-primary-foreground hover:bg-accent/90 shadow-lg"
-              )}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {isPublishing 
-                ? "Publishing..." 
-                : authType === "hive" 
-                  ? "Publish to Hive" 
-                  : "Save Draft"
-              }
-            </Button>
-          </div>
-        </div>
-
-        {/* Settings Panel */}
-        {showSettings && (
-          <div className="border-t bg-gradient-to-r from-silver-bird to-white px-6 py-4 space-y-4 shadow-lg">
-            <div className="grid grid-cols-3 gap-4">
-              {/* Sport Selection */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-primary">Sport Category</label>
-                <select
-                  value={selectedSport}
-                  onChange={(e) => setSelectedSport(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-primary/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-primary"
-                >
-                  <option value="">Select a sport</option>
-                  {SPORT_CATEGORIES.map((sport) => (
-                    <option key={sport.id} value={sport.id}>
-                      {sport.icon} {sport.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Community Selection */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-primary">Community (Optional)</label>
-                <select
-                  value={selectedCommunity?.id || ''}
-                  onChange={(e) => {
-                    const communityId = e.target.value;
-                    if (!communityId) {
-                      setSelectedCommunity(null);
-                    } else {
-                      const community = [...(userCommunities || []), ...(allCommunities?.communities || [])]
-                        .find(c => c.id === communityId);
-                      setSelectedCommunity(community || null);
-                    }
-                  }}
-                  className="w-full px-3 py-2 border-2 border-primary/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-primary"
-                >
-                  <option value="">Main Sportsblock Feed</option>
-                  {userCommunities && userCommunities.length > 0 && (
-                    <optgroup label="Your Communities">
-                      {userCommunities.map((community) => (
-                        <option key={community.id} value={community.id}>
-                          {community.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {allCommunities?.communities && allCommunities.communities.length > 0 && (
-                    <optgroup label="All Communities">
-                      {allCommunities.communities
-                        .filter(c => !userCommunities?.some(uc => uc.id === c.id))
-                        .map((community) => (
-                          <option key={community.id} value={community.id}>
-                            {community.name}
-                          </option>
-                        ))}
-                    </optgroup>
-                  )}
-                </select>
-              </div>
-
-              {/* Tags */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-primary">Tags</label>
-                <div className="relative">
-                  <TagIcon className="absolute left-3 top-2.5 h-4 w-4 text-primary" />
-                  <input
-                    type="text"
-                    value={tags}
-                    onChange={(e) => setTags(e.target.value)}
-                    placeholder="basketball, NBA, analysis"
-                    className="w-full pl-10 pr-3 py-2 border-2 border-primary/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-primary"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Auth Warning */}
-            {authType !== "hive" && (
-              <div className="bg-accent/10 dark:bg-accent/20 border border-accent/20 dark:border-accent/40 rounded-lg p-3">
-                <div className="flex items-start space-x-2">
-                  <AlertCircle className="h-4 w-4 text-accent mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-accent dark:text-accent text-sm">
-                      Guest Mode
-                    </h4>
-                    <p className="text-xs text-accent dark:text-accent mt-1">
-                      Posts won&apos;t earn rewards or be published to the blockchain. Connect with Hive Keychain to unlock full features.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* RC Status */}
-            {authType === "hive" && rcStatus && (
-              <div className={cn(
-                "rounded-lg p-3",
-                rcStatus.canPost 
-                  ? "bg-accent/10 dark:bg-accent/20 border border-accent/20 dark:border-accent/40"
-                  : "bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800"
-              )}>
-                <div className="flex items-start space-x-2">
-                  <AlertCircle className={cn(
-                    "h-4 w-4 mt-0.5",
-                    rcStatus.canPost ? "text-accent" : "text-red-600"
-                  )} />
-                  <div>
-                    <h4 className={cn(
-                      "font-medium text-sm",
-                      rcStatus.canPost 
-                        ? "text-accent-foreground dark:text-accent-foreground"
-                        : "text-red-800 dark:text-red-200"
-                    )}>
-                      Resource Credits: {rcStatus.rcPercentage.toFixed(1)}%
-                    </h4>
-                    {rcStatus.message && (
-                      <p className={cn(
-                        "text-xs mt-1",
-                        rcStatus.canPost 
-                          ? "text-accent-foreground/80 dark:text-accent-foreground/80"
-                          : "text-red-700 dark:text-red-300"
-                      )}>
-                        {rcStatus.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Publish Error */}
-            {publishError && (
-              <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                <div className="flex items-start space-x-2">
-                  <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-red-800 dark:text-red-200 text-sm">
-                      Publishing Error
-                    </h4>
-                    <p className="text-xs text-red-700 dark:text-red-300 mt-1">
-                      {publishError}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Split Editor View */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Markdown Editor */}
-        <div className="w-1/2 flex flex-col border-r">
-          <div className="border-b bg-gradient-to-r from-primary to-primary/80">
-            <div className="flex items-center justify-between px-4 py-2 border-b border-white/20">
-              <h3 className="font-medium text-sm text-white">Editor</h3>
-            </div>
-            
-            {/* Formatting Toolbar */}
-            <div className="flex items-center gap-1 px-4 py-2 flex-wrap bg-white/10">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={formatBold}
-                title="Bold (Ctrl+B)"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-              >
-                <Bold className="h-4 w-4" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={formatItalic}
-                title="Italic (Ctrl+I)"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-              >
-                <Italic className="h-4 w-4" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={formatUnderline}
-                title="Underline"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-              >
-                <UnderlineIcon className="h-4 w-4" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={formatStrikethrough}
-                title="Strikethrough"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-              >
-                <Strikethrough className="h-4 w-4" />
-              </Button>
-
-              <div className="w-px h-6 bg-white/30 mx-1" />
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => formatHeading(1)}
-                title="Heading 1"
-                className="h-8 px-2 text-xs font-bold text-white hover:bg-white/20 hover:text-white"
-              >
-                H1
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => formatHeading(2)}
-                title="Heading 2"
-                className="h-8 px-2 text-xs font-bold text-white hover:bg-white/20 hover:text-white"
-              >
-                H2
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => formatHeading(3)}
-                title="Heading 3"
-                className="h-8 px-2 text-xs font-bold text-white hover:bg-white/20 hover:text-white"
-              >
-                H3
-              </Button>
-
-              <div className="w-px h-6 bg-white/30 mx-1" />
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={formatBulletList}
-                title="Bullet List"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={formatNumberedList}
-                title="Numbered List"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-              >
-                <ListOrdered className="h-4 w-4" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={formatQuote}
-                title="Quote"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-              >
-                <Quote className="h-4 w-4" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={formatCode}
-                title="Code"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-              >
-                <Code className="h-4 w-4" />
-              </Button>
-
-              <div className="w-px h-6 bg-white/30 mx-1" />
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={insertLink}
-                title="Insert Link"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-              >
-                <LinkIcon className="h-4 w-4" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={insertImage}
-                title="Upload Image"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-              >
-                <Upload className="h-4 w-4" />
-              </Button>
-
-              <div className="relative">
-                <Button
-                  ref={emojiButtonRef}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  title="Insert Emoji"
-                  className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-                >
-                  <Smile className="h-4 w-4" />
-                </Button>
-                
-                {showEmojiPicker && (
-                  <div className="absolute top-full left-0 mt-2 z-50">
-                    <EmojiPicker onEmojiClick={handleEmojiSelect} />
-                  </div>
-                )}
-              </div>
-
-              <div className="w-px h-6 bg-white/30 mx-1" />
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleUndo}
-                title="Undo (Ctrl+Z)"
-                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
-              >
-                <Undo className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
+          {/* Editor Textarea */}
           <div className="flex-1 overflow-auto">
             <textarea
               ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your post using Markdown...
-
-# Heading 1
-## Heading 2
-
-**Bold text** or *italic text*
-
-- List item 1
-- List item 2
-
-[Link text](https://example.com)
-
-![Image alt text](image-url)
-
-> Blockquote
-
-```code block```"
+              placeholder="Write your post using Markdown..."
               className="w-full h-full px-6 py-4 bg-background border-none outline-none resize-none font-mono text-sm leading-relaxed"
             />
           </div>
+
+          {/* Bottom Fields */}
+          <div className="border-t px-6 py-4 space-y-4 max-h-[45%] overflow-auto">
+            {/* Short Description / Excerpt */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">
+                  Short Description
+                </label>
+                <span className="text-xs text-muted-foreground">{excerpt.length}/120</span>
+              </div>
+              <input
+                type="text"
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value.slice(0, 120))}
+                placeholder="Brief description of your post (optional)"
+                className={cn(
+                  "w-full px-3 py-2 rounded-lg border bg-background",
+                  "text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                )}
+                maxLength={120}
+              />
+            </div>
+
+            {/* Tags */}
+            <TagInput
+              value={tags}
+              onChange={setTags}
+              maxTags={10}
+              recentTags={recentTags}
+              placeholder="Add tags..."
+            />
+
+            {/* Advanced Options */}
+            <AdvancedOptions
+              selectedSport={selectedSport}
+              onSportChange={setSelectedSport}
+              selectedCommunity={selectedCommunity}
+              onCommunityChange={setSelectedCommunity}
+              userCommunities={userCommunities}
+              allCommunities={allCommunities?.communities}
+              rewardsOption={rewardsOption}
+              onRewardsChange={setRewardsOption}
+              beneficiaries={beneficiaries}
+              onBeneficiariesChange={setBeneficiaries}
+              coverImage={coverImage}
+              onCoverImageChange={setCoverImage}
+              detectedImages={detectedImages}
+              isHiveUser={authType === "hive"}
+            />
+
+            {/* Error Display */}
+            {publishError && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
+                  <p className="text-sm text-destructive">{publishError}</p>
+                </div>
+              </div>
+            )}
+
+            {/* RC Status (Hive users) */}
+            {authType === "hive" && rcStatus && (
+              <div
+                className={cn(
+                  "rounded-lg p-3",
+                  rcStatus.canPost
+                    ? "bg-green-500/10 border border-green-500/20"
+                    : "bg-destructive/10 border border-destructive/20"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className={cn(
+                      "h-2 w-2 rounded-full",
+                      rcStatus.canPost ? "bg-green-500" : "bg-destructive"
+                    )}
+                  />
+                  <span className="text-sm">
+                    Resource Credits: {rcStatus.rcPercentage.toFixed(1)}%
+                  </span>
+                </div>
+                {rcStatus.message && (
+                  <p className="text-xs text-muted-foreground mt-1">{rcStatus.message}</p>
+                )}
+              </div>
+            )}
+
+            {/* Soft User Notice */}
+            {authType !== "hive" && (
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                <p className="text-sm text-blue-600 dark:text-blue-400">
+                  Your post will be visible to everyone. Connect with Hive to earn rewards!
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Right: Preview */}
-        <div className="w-1/2 flex flex-col bg-gradient-to-br from-silver-bird to-white">
-          <div className="border-b px-6 py-3 bg-gradient-to-r from-accent to-accent/80">
-            <div className="flex items-center space-x-2">
-              <Eye className="h-4 w-4 text-primary-foreground" />
-              <h3 className="font-medium text-sm text-primary-foreground">Preview</h3>
+        {/* Right Side - Preview (40%) */}
+        <div className="w-2/5 flex flex-col bg-muted/30 overflow-hidden">
+          {/* Preview Header */}
+          <div className="border-b px-6 py-3 bg-background">
+            <div className="flex items-center gap-2 text-sm">
+              <Eye className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Preview</span>
             </div>
+            <p className="text-xs text-muted-foreground mt-1 truncate">Link: {previewLink}</p>
           </div>
+
+          {/* Preview Content */}
           <div className="flex-1 overflow-auto px-6 py-4">
-            {title && (
-              <h1 className="text-3xl font-bold mb-6">{title}</h1>
+            {coverImage && (
+              <div className="mb-4 rounded-lg overflow-hidden border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={coverImage}
+                  alt="Cover"
+                  className="w-full h-40 object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </div>
             )}
+
+            {title && <h1 className="text-2xl font-bold mb-4">{title}</h1>}
+
+            {excerpt && <p className="text-muted-foreground text-sm mb-4 italic">{excerpt}</p>}
+
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-4">
+                {tags.map((tag) => (
+                  <span key={tag} className="text-xs text-primary">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {content ? (
-              <div className="prose prose-slate dark:prose-invert max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {content}
-                </ReactMarkdown>
+              <div className="prose prose-sm prose-slate dark:prose-invert max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
               </div>
             ) : (
-              <p className="text-muted-foreground italic">
-                Start writing to see the preview...
-              </p>
+              <p className="text-muted-foreground italic">Start writing to see the preview...</p>
             )}
           </div>
         </div>
       </div>
 
-      {/* Image Upload Dialog */}
+      {/* Fixed Bottom Action Bar */}
+      <div className="border-t bg-card px-6 py-4">
+        <div className="flex items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleSaveDraft}
+            disabled={!title && !content}
+            className="min-w-[120px]"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Draft
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => setShowScheduleModal(true)}
+            disabled={!title || !content || !selectedSport}
+            className="min-w-[120px]"
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Schedule
+          </Button>
+
+          <Button
+            onClick={handlePublish}
+            disabled={
+              !title ||
+              !content ||
+              !selectedSport ||
+              isPublishing ||
+              (authType === "hive" && rcStatus !== null && !rcStatus.canPost)
+            }
+            className="min-w-[140px]"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {isPublishing
+              ? "Publishing..."
+              : authType === "hive"
+                ? "Publish to Hive"
+                : "Publish"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Image Dialog */}
       {showImageDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gradient-to-br from-silver-bird to-white border-2 border-primary/30 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
+          <div className="bg-card border rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-primary">Insert Image</h3>
-              <Button
-                variant="ghost"
-                size="sm"
+              <h3 className="text-lg font-semibold">Insert Image</h3>
+              <button
                 onClick={() => {
                   setShowImageDialog(false);
                   setImageUrl("");
                   setImageAlt("");
                 }}
-                className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
+                className="text-muted-foreground hover:text-foreground"
               >
-                <X className="h-4 w-4" />
-              </Button>
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-primary">
-                  Image URL
-                </label>
+                <label className="block text-sm font-medium mb-2">Image URL</label>
                 <input
                   type="text"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 border-2 border-primary/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-primary"
+                  className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-primary">
-                  Description (Alt Text)
-                </label>
+                <label className="block text-sm font-medium mb-2">Alt Text</label>
                 <input
                   type="text"
                   value={imageAlt}
                   onChange={(e) => setImageAlt(e.target.value)}
                   placeholder="Describe the image"
-                  className="w-full px-3 py-2 border-2 border-primary/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-primary"
+                  className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 
               {imageUrl && (
-                <div className="border-2 border-primary/30 rounded-lg p-2 bg-white/50">
-                  <p className="text-xs text-primary mb-2 font-medium">Preview:</p>
+                <div className="border rounded-lg p-2">
+                  <p className="text-xs text-muted-foreground mb-2">Preview:</p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imageUrl}
                     alt={imageAlt || "Preview"}
                     className="w-full rounded"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
+                      (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
                 </div>
               )}
 
-              <div className="flex items-center justify-end space-x-2 pt-2">
+              <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -927,30 +896,95 @@ function PublishPageContent() {
                     setImageUrl("");
                     setImageAlt("");
                   }}
-                  className="border-primary/30 text-primary hover:bg-primary/10"
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleImageInsert}
-                  disabled={!imageUrl}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg"
-                >
+                <Button onClick={handleImageInsert} disabled={!imageUrl}>
                   <ImageIcon className="h-4 w-4 mr-2" />
-                  Insert Image
+                  Insert
                 </Button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Link Dialog */}
+      {showLinkDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card border rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Insert Link</h3>
+              <button
+                onClick={() => {
+                  setShowLinkDialog(false);
+                  setLinkUrl("");
+                  setLinkText("");
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">URL</label>
+                <input
+                  type="text"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Link Text (optional)</label>
+                <input
+                  type="text"
+                  value={linkText}
+                  onChange={(e) => setLinkText(e.target.value)}
+                  placeholder="Click here"
+                  className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowLinkDialog(false);
+                    setLinkUrl("");
+                    setLinkText("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleLinkInsert} disabled={!linkUrl}>
+                  <LinkIcon className="h-4 w-4 mr-2" />
+                  Insert
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Modal */}
+      <ScheduleModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        onSchedule={handleSchedule}
+      />
     </div>
   );
 }
 
 export default function PublishPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading...</div>}>
       <PublishPageContent />
     </Suspense>
   );

@@ -1,8 +1,9 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface ModalState {
   isOpen: boolean;
-  type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | null;
+  type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'keychainLogin' | null;
   data: Record<string, unknown> | null;
 }
 
@@ -13,11 +14,13 @@ interface UIState {
     description: ModalState;
     userProfile: ModalState;
     followersList: ModalState;
+    keychainLogin: ModalState;
   };
   sidebarOpen: boolean;
   rightSidebarOpen: boolean;
   selectedSport: string;
   theme: 'light' | 'dark';
+  recentTags: string[];
 }
 
 interface UIActions {
@@ -30,70 +33,93 @@ interface UIActions {
   setTheme: (theme: 'light' | 'dark') => void;
   toggleSidebar: () => void;
   toggleRightSidebar: () => void;
+  addRecentTags: (tags: string[]) => void;
+  clearRecentTags: () => void;
 }
 
-export const useUIStore = create<UIState & UIActions>((set) => ({
-  // State
-  modals: {
-    comments: { isOpen: false, type: null, data: null },
-    upvoteList: { isOpen: false, type: null, data: null },
-    description: { isOpen: false, type: null, data: null },
-    userProfile: { isOpen: false, type: null, data: null },
-    followersList: { isOpen: false, type: null, data: null },
-  },
-  sidebarOpen: true,
-  rightSidebarOpen: true,
-  selectedSport: '',
-  theme: 'light',
-
-  // Actions
-  openModal: (type, data = {}) => {
-    set(state => ({
-      modals: {
-        ...state.modals,
-        [type]: {
-          isOpen: true,
-          type,
-          data,
-        },
-      },
-    }));
-  },
-
-  closeModal: (type) => {
-    set(state => ({
-      modals: {
-        ...state.modals,
-        [type]: {
-          isOpen: false,
-          type: null,
-          data: null,
-        },
-      },
-    }));
-  },
-
-  closeAllModals: () => {
-    set(() => ({
+export const useUIStore = create<UIState & UIActions>()(
+  persist(
+    (set) => ({
+      // State
       modals: {
         comments: { isOpen: false, type: null, data: null },
         upvoteList: { isOpen: false, type: null, data: null },
         description: { isOpen: false, type: null, data: null },
         userProfile: { isOpen: false, type: null, data: null },
         followersList: { isOpen: false, type: null, data: null },
+        keychainLogin: { isOpen: false, type: null, data: null },
       },
-    }));
-  },
+      sidebarOpen: true,
+      rightSidebarOpen: true,
+      selectedSport: '',
+      theme: 'light',
+      recentTags: [],
 
-  setSidebarOpen: (open) => set({ sidebarOpen: open }),
+      // Actions
+      openModal: (type, data = {}) => {
+        set((state) => ({
+          modals: {
+            ...state.modals,
+            [type]: {
+              isOpen: true,
+              type,
+              data,
+            },
+          },
+        }));
+      },
 
-  setRightSidebarOpen: (open) => set({ rightSidebarOpen: open }),
+      closeModal: (type) => {
+        set((state) => ({
+          modals: {
+            ...state.modals,
+            [type]: {
+              isOpen: false,
+              type: null,
+              data: null,
+            },
+          },
+        }));
+      },
 
-  setSelectedSport: (sport) => set({ selectedSport: sport }),
+      closeAllModals: () => {
+        set(() => ({
+          modals: {
+            comments: { isOpen: false, type: null, data: null },
+            upvoteList: { isOpen: false, type: null, data: null },
+            description: { isOpen: false, type: null, data: null },
+            userProfile: { isOpen: false, type: null, data: null },
+            followersList: { isOpen: false, type: null, data: null },
+            keychainLogin: { isOpen: false, type: null, data: null },
+          },
+        }));
+      },
 
-  setTheme: (theme) => set({ theme }),
+      setSidebarOpen: (open) => set({ sidebarOpen: open }),
 
-  toggleSidebar: () => set(state => ({ sidebarOpen: !state.sidebarOpen })),
+      setRightSidebarOpen: (open) => set({ rightSidebarOpen: open }),
 
-  toggleRightSidebar: () => set(state => ({ rightSidebarOpen: !state.rightSidebarOpen })),
-}));
+      setSelectedSport: (sport) => set({ selectedSport: sport }),
+
+      setTheme: (theme) => set({ theme }),
+
+      toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+
+      toggleRightSidebar: () => set((state) => ({ rightSidebarOpen: !state.rightSidebarOpen })),
+
+      addRecentTags: (tags) =>
+        set((state) => {
+          // Add new tags to the beginning, remove duplicates, limit to 20
+          const uniqueTags = [...new Set([...tags, ...state.recentTags])].slice(0, 20);
+          return { recentTags: uniqueTags };
+        }),
+
+      clearRecentTags: () => set({ recentTags: [] }),
+    }),
+    {
+      name: 'ui-store',
+      // Only persist recentTags to localStorage
+      partialize: (state) => ({ recentTags: state.recentTags }),
+    }
+  )
+);

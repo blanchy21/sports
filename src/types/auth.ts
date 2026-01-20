@@ -126,14 +126,31 @@ export interface AccountBadgeProps {
 export interface SoftPost {
   id: string
   authorId: string
+  // Author profile data for display
+  authorUsername: string
+  authorDisplayName?: string
+  authorAvatar?: string
+  // Post content
   title: string
   content: string
+  excerpt?: string
   permlink: string
   tags: string[]
+  sportCategory?: string
+  featuredImage?: string
+  // Community data (optional)
+  communityId?: string
+  communitySlug?: string
+  communityName?: string
+  // Timestamps
   createdAt: Date
   updatedAt: Date
+  // Hive integration
   isPublishedToHive: boolean
   hivePermlink?: string
+  // Engagement (soft tracking - no rewards)
+  viewCount?: number
+  likeCount?: number
 }
 
 export interface HivePost {

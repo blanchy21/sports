@@ -20,10 +20,13 @@ const UserProfileModal = dynamic(() => import("./UserProfileModal").then(mod => 
 const FollowersListModal = dynamic(() => import("./FollowersListModal").then(mod => ({ default: mod.FollowersListModal })), {
   ssr: false,
 });
+const KeychainLoginModal = dynamic(() => import("./KeychainLoginModal").then(mod => ({ default: mod.KeychainLoginModal })), {
+  ssr: false,
+});
 
 interface ModalContextType {
-  openModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'followersList', data?: Record<string, unknown>) => void;
-  closeModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'followersList') => void;
+  openModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'followersList' | 'keychainLogin', data?: Record<string, unknown>) => void;
+  closeModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'followersList' | 'keychainLogin') => void;
   closeAllModals: () => void;
 }
 
@@ -88,10 +91,18 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
       )}
       
       {modals.followersList.isOpen && (
-        <FollowersListModal 
+        <FollowersListModal
           isOpen={modals.followersList.isOpen}
           onClose={() => closeModal('followersList')}
           data={modals.followersList.data}
+        />
+      )}
+
+      {modals.keychainLogin.isOpen && (
+        <KeychainLoginModal
+          isOpen={modals.keychainLogin.isOpen}
+          onClose={() => closeModal('keychainLogin')}
+          data={modals.keychainLogin.data}
         />
       )}
     </ModalContext.Provider>

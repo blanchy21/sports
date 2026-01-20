@@ -12,11 +12,13 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { useAuth } from "@/contexts/AuthContext";
+import { useModal } from "@/components/modals/ModalProvider";
 import { LazyLandingSections } from "@/components/lazy/LazyLandingContent";
 
 export default function LandingPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
+  const { openModal } = useModal();
   const { scrollY } = useScroll();
 
   // Call hooks before any conditional returns
@@ -93,7 +95,7 @@ export default function LandingPage() {
             <Button
               size="lg"
               className="text-lg px-8 py-6 group"
-              onClick={() => router.push('/auth')}
+              onClick={() => openModal('keychainLogin')}
             >
               Get Started
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -102,7 +104,7 @@ export default function LandingPage() {
               size="lg"
               variant="outline"
               className="text-lg px-8 py-6 bg-white/10 border-white/30 text-white hover:bg-white/20"
-              onClick={() => router.push('/auth')}
+              onClick={() => openModal('keychainLogin')}
             >
               Sign In
             </Button>

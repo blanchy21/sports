@@ -19,6 +19,8 @@ export const SPORTS_ARENA_CONFIG = {
   COMMUNITY_ID: 'hive-115814',
   COMMUNITY_NAME: 'sportsblock',
   TAGS: ['sportsblock', 'hive-115814'],
+  // Account that distributes block rewards to users
+  REWARDS_ACCOUNT: 'sp-blockrewards',
   DEFAULT_BENEFICIARIES: [
     {
       account: 'sportsblock',

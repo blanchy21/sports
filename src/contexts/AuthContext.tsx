@@ -360,15 +360,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             needsHiveRefresh.current = true;
           }
 
+          // Refresh loginAt to extend the session (user is active)
+          const refreshedLoginAt = Date.now();
+
           // SINGLE state update with all restored values
           updateAuthState({
             user: restoredUser,
             authType: savedAuthType,
             hiveUser: restoredHiveUser,
-            loginAt: savedLoginAt,
+            loginAt: refreshedLoginAt,
             isClient: true,
             hasMounted: true,
             isLoading: false,
+          });
+
+          // Persist the refreshed loginAt to localStorage
+          persistAuthState({
+            user: restoredUser,
+            authType: savedAuthType,
+            hiveUser: restoredHiveUser,
+            loginAt: refreshedLoginAt,
           });
         } else {
           // Invalid auth state - clear corrupted data

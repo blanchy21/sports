@@ -1,50 +1,73 @@
 import { User } from '@/types';
-import { FirebasePosts } from '@/lib/firebase/posts';
+import { FirebasePosts, CreateSoftPostInput } from '@/lib/firebase/posts';
 import { SoftPost } from '@/types/auth';
 
 export interface PostData {
   title: string;
   content: string;
   tags: string[];
-  parentAuthor?: string;
-  parentPermlink?: string;
+  sportCategory?: string;
+  featuredImage?: string;
+  communityId?: string;
+  communitySlug?: string;
+  communityName?: string;
 }
 
 export interface PostResult {
   success: boolean;
   postId?: string;
   permlink?: string;
+  url?: string;
   error?: string;
-  isHivePost?: boolean;
+  isHivePost: boolean;
 }
 
 export class UnifiedPostingService {
+  /**
+   * Create a post - routes to Hive blockchain or Firebase based on user auth type
+   *
+   * Hive users: Posts go to blockchain, earn HIVE rewards and MEDALS
+   * Soft users: Posts go to Firebase, visible on platform but no rewards
+   */
   static async createPost(
     user: User,
     postData: PostData
   ): Promise<PostResult> {
     try {
-      if (user.isHiveAuth) {
-        // For Hive users, we would use the existing Hive posting logic
-        // This is a placeholder - you would integrate with your existing Hive posting
+      if (user.isHiveAuth && user.hiveUsername) {
+        // For Hive users, we delegate to the existing Hive posting system
+        // The publish page handles this directly with publishPost()
+        // This branch is here for completeness but Hive posting goes through
+        // the existing flow in src/lib/hive-workerbee/posting.ts
         return {
           success: false,
-          error: 'Hive posting not yet implemented in unified service',
+          error: 'Use publishPost() directly for Hive posts',
           isHivePost: true
         };
       } else {
         // For soft users, create a post in Firebase
-        const post = await FirebasePosts.createPost(
-          user.id,
-          postData.title,
-          postData.content,
-          postData.tags
-        );
+        const input: CreateSoftPostInput = {
+          authorId: user.id,
+          authorUsername: user.username,
+          authorDisplayName: user.displayName,
+          authorAvatar: user.avatar,
+          title: postData.title,
+          content: postData.content,
+          tags: postData.tags,
+          sportCategory: postData.sportCategory,
+          featuredImage: postData.featuredImage,
+          communityId: postData.communityId,
+          communitySlug: postData.communitySlug,
+          communityName: postData.communityName
+        };
+
+        const post = await FirebasePosts.createPost(input);
 
         return {
           success: true,
           postId: post.id,
           permlink: post.permlink,
+          url: `/post/soft/${post.permlink}`,
           isHivePost: false
         };
       }
@@ -52,7 +75,8 @@ export class UnifiedPostingService {
       console.error('Error creating post:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        isHivePost: user.isHiveAuth
       };
     }
   }
@@ -117,7 +141,8 @@ export class UnifiedPostingService {
       console.error('Error updating post:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        isHivePost: user.isHiveAuth
       };
     }
   }
@@ -144,7 +169,8 @@ export class UnifiedPostingService {
       console.error('Error deleting post:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        isHivePost: user.isHiveAuth
       };
     }
   }
@@ -157,7 +183,8 @@ export class UnifiedPostingService {
       if (!user.isHiveAuth) {
         return {
           success: false,
-          error: 'User must be upgraded to Hive account to migrate posts'
+          error: 'User must be upgraded to Hive account to migrate posts',
+          isHivePost: false
         };
       }
 
@@ -166,7 +193,8 @@ export class UnifiedPostingService {
       if (!softPost) {
         return {
           success: false,
-          error: 'Post not found'
+          error: 'Post not found',
+          isHivePost: true
         };
       }
 
@@ -187,7 +215,8 @@ export class UnifiedPostingService {
       console.error('Error migrating post to Hive:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        isHivePost: true
       };
     }
   }
