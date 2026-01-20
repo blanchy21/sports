@@ -44,13 +44,13 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
           />
 
           {/* Popup Container - using flexbox for centering to avoid Framer Motion transform conflicts */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pr-[100px]">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", duration: 0.3 }}
-              className="w-full max-w-4xl max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-hidden"
+              className="w-full max-w-3xl max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-hidden"
             >
             <div className="bg-card dark:bg-card rounded-2xl shadow-2xl border border-border h-full flex flex-col">
               {/* Header */}
