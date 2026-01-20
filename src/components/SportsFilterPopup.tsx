@@ -49,7 +49,7 @@ export const SportsFilterPopup: React.FC<SportsFilterPopupProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", duration: 0.3 }}
-            className="fixed inset-4 sm:inset-auto sm:top-[5vh] sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-[calc(100vw-2rem)] sm:max-w-4xl max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-hidden"
+            className="fixed inset-4 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-50 w-auto sm:w-[calc(100vw-2rem)] sm:max-w-4xl max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-hidden"
           >
             <div className="bg-card dark:bg-card rounded-2xl shadow-2xl border border-border h-full flex flex-col">
               {/* Header */}

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { MapPin, Calendar, Link as LinkIcon, Edit, Settings, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
+import { MapPin, Calendar, Link as LinkIcon, Edit, Settings, RefreshCw, AlertCircle, Loader2, Zap, Star } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { PostCard } from "@/components/PostCard";
@@ -119,14 +119,15 @@ export default function ProfilePage() {
                     <h1 className="text-3xl font-bold text-foreground">{user.displayName || user.username}</h1>
                     {authType === "hive" && (
                       <div className="flex items-center space-x-2">
-                        <div className="flex items-center space-x-1 bg-accent/20 dark:bg-accent/20 px-2 py-1 rounded-full">
-                          <div className="w-2 h-2 bg-accent rounded-full"></div>
-                          <span className="text-xs font-medium text-accent-foreground dark:text-accent-foreground">Hive</span>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500 to-red-600 shadow-md shadow-red-500/25">
+                          <Zap className="h-3.5 w-3.5 text-white" />
+                          <span className="text-xs font-semibold text-white">Hive</span>
                         </div>
                         {user.reputationFormatted && (
-                          <div className="bg-accent/20 dark:bg-accent/20 px-2 py-1 rounded-full">
-                            <span className="text-xs font-medium text-accent dark:text-accent">
-                              Rep: {user.reputationFormatted}
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 shadow-md shadow-amber-500/25">
+                            <Star className="h-3.5 w-3.5 text-white" />
+                            <span className="text-xs font-semibold text-white">
+                              {user.reputationFormatted}
                             </span>
                           </div>
                         )}
