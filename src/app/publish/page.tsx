@@ -442,11 +442,6 @@ function PublishPageContent() {
           return;
         }
 
-        if (!hiveUser.postingKey) {
-          setPublishError("Posting key not available. Please connect with Hive Keychain.");
-          return;
-        }
-
         if (rcStatus && !rcStatus.canPost) {
           setPublishError(rcStatus.message || "Insufficient Resource Credits to post.");
           return;
