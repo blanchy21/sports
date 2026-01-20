@@ -1,6 +1,5 @@
 import { SPORTS_ARENA_CONFIG, initializeWorkerBeeClient } from './client';
 import { makeHiveApiCall } from './api';
-import { HiveAccount } from '../shared/types';
 import type { ITransaction } from "@hiveio/wax";
 import {
   createPostOperation,
@@ -11,13 +10,6 @@ import {
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 
 // Type definitions for better type safety
-interface HiveAccountWithRC extends HiveAccount {
-  rc_manabar?: {
-    current_mana: string;
-    last_update_time: number;
-  };
-  max_rc?: string;
-}
 interface AiohaInstance {
   signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
 }
@@ -384,24 +376,34 @@ export async function canUserPost(username: string): Promise<{
   } catch (error) {
     logError('Error checking RC with Wax', undefined, error instanceof Error ? error : undefined);
     
-    // Fallback to original method if Wax fails
+    // Fallback to direct RC API call if Wax fails
     try {
-      logWarn('canUserPost falling back to original RC check method');
-      const accountResult = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccountWithRC[];
-      const account = accountResult && accountResult.length > 0 ? accountResult[0] : null;
-      
-      if (!account) {
+      logWarn('canUserPost falling back to direct RC API call');
+      const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [{ accounts: [username] }]) as {
+        rc_accounts?: Array<{
+          account: string;
+          rc_manabar: {
+            current_mana: string;
+            last_update_time: number;
+          };
+          max_rc: string;
+        }>;
+      };
+
+      const rcAccounts = rcResult?.rc_accounts;
+      if (!rcAccounts || rcAccounts.length === 0) {
         return {
           canPost: false,
           rcPercentage: 0,
-          message: 'Unable to fetch account information'
+          message: 'Unable to fetch account RC information'
         };
       }
 
-      const rc_manabar = account.rc_manabar as { current_mana: string } | undefined;
-      const max_rc = account.max_rc as string | undefined;
-      
-      if (!rc_manabar || !max_rc) {
+      const rcAccount = rcAccounts[0];
+      const rcManabar = rcAccount.rc_manabar;
+      const maxRc = rcAccount.max_rc;
+
+      if (!rcManabar || !maxRc) {
         return {
           canPost: false,
           rcPercentage: 0,
@@ -409,8 +411,30 @@ export async function canUserPost(username: string): Promise<{
         };
       }
 
-      const rcPercentage = (parseFloat(rc_manabar.current_mana) / parseFloat(max_rc)) * 100;
-      
+      // Calculate current RC with mana regeneration
+      const now = Math.floor(Date.now() / 1000);
+      const lastUpdate = rcManabar.last_update_time;
+      const currentMana = BigInt(rcManabar.current_mana);
+      const maxMana = BigInt(maxRc);
+
+      // RC regenerates fully in 5 days (432000 seconds)
+      const REGENERATION_SECONDS = 432000;
+      const elapsed = now - lastUpdate;
+
+      // Calculate regenerated mana
+      let regeneratedMana = currentMana;
+      if (elapsed > 0 && maxMana > 0n) {
+        const regenAmount = (maxMana * BigInt(elapsed)) / BigInt(REGENERATION_SECONDS);
+        regeneratedMana = currentMana + regenAmount;
+        if (regeneratedMana > maxMana) {
+          regeneratedMana = maxMana;
+        }
+      }
+
+      const rcPercentage = maxMana > 0n
+        ? Number((regeneratedMana * 10000n) / maxMana) / 100
+        : 0;
+
       if (rcPercentage < 10) {
         return {
           canPost: false,

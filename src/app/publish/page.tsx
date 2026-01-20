@@ -15,6 +15,8 @@ import {
   Calendar,
   X,
   Link as LinkIcon,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { Community } from "@/types";
 import { cn } from "@/lib/utils";
@@ -76,6 +78,9 @@ function PublishPageContent() {
   const [showMenu, setShowMenu] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [imageAlt, setImageAlt] = useState("");
+  const [imageTab, setImageTab] = useState<"url" | "upload">("url");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkText, setLinkText] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
@@ -271,7 +276,57 @@ function PublishPageContent() {
       insertAtCursor(`\n![${alt}](${imageUrl})\n`);
       setImageUrl("");
       setImageAlt("");
+      setImageTab("url");
+      setUploadError(null);
       setShowImageDialog(false);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Image must be less than 5MB");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setUploadError(null);
+
+    try {
+      // Use Ecency's image upload API (commonly used in Hive apps)
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("https://images.ecency.com/hs/af050e32", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const data = await response.json();
+
+      if (data.url) {
+        setImageUrl(data.url);
+        setImageAlt(file.name.replace(/\.[^/.]+$/, "")); // Use filename without extension as alt
+      } else {
+        throw new Error("No URL returned");
+      }
+    } catch (error) {
+      console.error("Image upload error:", error);
+      setUploadError("Failed to upload image. Please try again or use a URL instead.");
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -837,6 +892,8 @@ function PublishPageContent() {
                   setShowImageDialog(false);
                   setImageUrl("");
                   setImageAlt("");
+                  setImageTab("url");
+                  setUploadError(null);
                 }}
                 className="text-muted-foreground hover:text-foreground"
               >
@@ -844,18 +901,107 @@ function PublishPageContent() {
               </button>
             </div>
 
+            {/* Tabs */}
+            <div className="flex border-b mb-4">
+              <button
+                onClick={() => setImageTab("url")}
+                className={cn(
+                  "flex-1 py-2 text-sm font-medium border-b-2 transition-colors",
+                  imageTab === "url"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <LinkIcon className="h-4 w-4 inline mr-2" />
+                From URL
+              </button>
+              <button
+                onClick={() => setImageTab("upload")}
+                className={cn(
+                  "flex-1 py-2 text-sm font-medium border-b-2 transition-colors",
+                  imageTab === "upload"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Upload className="h-4 w-4 inline mr-2" />
+                Upload File
+              </button>
+            </div>
+
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Image URL</label>
-                <input
-                  type="text"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  autoFocus
-                />
-              </div>
+              {imageTab === "url" ? (
+                <div>
+                  <label className="block text-sm font-medium mb-2">Image URL</label>
+                  <input
+                    type="text"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium mb-2">Upload Image</label>
+                  <div
+                    className={cn(
+                      "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                      isUploadingImage
+                        ? "border-primary/50 bg-primary/5"
+                        : "border-muted-foreground/25 hover:border-primary/50"
+                    )}
+                  >
+                    {isUploadingImage ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground">Uploading...</p>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Drag and drop or click to select
+                        </p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload(file);
+                          }}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          style={{ position: "absolute" }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const input = document.createElement("input");
+                            input.type = "file";
+                            input.accept = "image/*";
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0];
+                              if (file) handleFileUpload(file);
+                            };
+                            input.click();
+                          }}
+                        >
+                          Choose File
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Max 5MB • JPG, PNG, GIF, WebP
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  {uploadError && (
+                    <p className="text-sm text-destructive mt-2">{uploadError}</p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium mb-2">Alt Text</label>
@@ -875,7 +1021,7 @@ function PublishPageContent() {
                   <img
                     src={imageUrl}
                     alt={imageAlt || "Preview"}
-                    className="w-full rounded"
+                    className="w-full rounded max-h-48 object-contain"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";
                     }}
@@ -890,11 +1036,13 @@ function PublishPageContent() {
                     setShowImageDialog(false);
                     setImageUrl("");
                     setImageAlt("");
+                    setImageTab("url");
+                    setUploadError(null);
                   }}
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleImageInsert} disabled={!imageUrl}>
+                <Button onClick={handleImageInsert} disabled={!imageUrl || isUploadingImage}>
                   <ImageIcon className="h-4 w-4 mr-2" />
                   Insert
                 </Button>

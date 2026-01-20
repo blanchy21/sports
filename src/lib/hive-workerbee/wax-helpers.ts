@@ -447,7 +447,8 @@ export async function getDiscussionsWax(
 }
 
 /**
- * Check if user has sufficient Resource Credits using Wax
+ * Check if user has sufficient Resource Credits using the RC API
+ * RC data must be fetched from rc_api.find_rc_accounts, not get_accounts
  */
 export async function checkResourceCreditsWax(username: string): Promise<{
   canPost: boolean;
@@ -455,9 +456,21 @@ export async function checkResourceCreditsWax(username: string): Promise<{
   message?: string;
 }> {
   try {
-    const account = await getAccountWax(username) as Record<string, unknown>;
-    
-    if (!account) {
+    // RC data must be fetched from rc_api, not condenser_api
+    const { makeHiveApiCall } = await import('./api');
+    const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [{ accounts: [username] }]) as {
+      rc_accounts?: Array<{
+        account: string;
+        rc_manabar: {
+          current_mana: string;
+          last_update_time: number;
+        };
+        max_rc: string;
+      }>;
+    };
+
+    const rcAccounts = rcResult?.rc_accounts;
+    if (!rcAccounts || rcAccounts.length === 0) {
       return {
         canPost: false,
         rcPercentage: 0,
@@ -465,10 +478,10 @@ export async function checkResourceCreditsWax(username: string): Promise<{
       };
     }
 
-    // Extract RC information
-    const rcManabar = account.rc_manabar as Record<string, unknown>;
-    const maxRc = account.max_rc as string;
-    
+    const rcAccount = rcAccounts[0];
+    const rcManabar = rcAccount.rc_manabar;
+    const maxRc = rcAccount.max_rc;
+
     if (!rcManabar || !maxRc) {
       return {
         canPost: false,
@@ -477,8 +490,30 @@ export async function checkResourceCreditsWax(username: string): Promise<{
       };
     }
 
-    const rcPercentage = (parseFloat(rcManabar.current_mana as string) / parseFloat(maxRc)) * 100;
-    
+    // Calculate current RC with mana regeneration
+    const now = Math.floor(Date.now() / 1000);
+    const lastUpdate = rcManabar.last_update_time;
+    const currentMana = BigInt(rcManabar.current_mana);
+    const maxMana = BigInt(maxRc);
+
+    // RC regenerates fully in 5 days (432000 seconds)
+    const REGENERATION_SECONDS = 432000;
+    const elapsed = now - lastUpdate;
+
+    // Calculate regenerated mana
+    let regeneratedMana = currentMana;
+    if (elapsed > 0 && maxMana > 0n) {
+      const regenAmount = (maxMana * BigInt(elapsed)) / BigInt(REGENERATION_SECONDS);
+      regeneratedMana = currentMana + regenAmount;
+      if (regeneratedMana > maxMana) {
+        regeneratedMana = maxMana;
+      }
+    }
+
+    const rcPercentage = maxMana > 0n
+      ? Number((regeneratedMana * 10000n) / maxMana) / 100
+      : 0;
+
     // Users typically need at least 10% RC to post
     if (rcPercentage < 10) {
       return {
