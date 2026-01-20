@@ -457,8 +457,9 @@ export async function checkResourceCreditsWax(username: string): Promise<{
 }> {
   try {
     // RC data must be fetched from rc_api, not condenser_api
+    // Note: rc_api uses object params, not array params like condenser_api
     const { makeHiveApiCall } = await import('./api');
-    const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [{ accounts: [username] }]) as {
+    const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', { accounts: [username] }) as {
       rc_accounts?: Array<{
         account: string;
         rc_manabar: {

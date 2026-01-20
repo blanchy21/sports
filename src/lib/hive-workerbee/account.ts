@@ -302,8 +302,9 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
 
       // RC API - with very short 500ms timeout (non-critical data, shouldn't block account fetch)
       // This data is failing on most nodes anyway, so don't let it slow down login
+      // Note: rc_api uses object params { accounts: [username] }, not array params
       Promise.race([
-        makeHiveApiCall('rc_api', 'find_rc_accounts', [username]),
+        makeHiveApiCall('rc_api', 'find_rc_accounts', { accounts: [username] }),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 500))
       ]).catch(() => null)
     ]);
@@ -490,9 +491,10 @@ export async function fetchUserBalances(username: string): Promise<{
 } | null> {
   try {
     // Get account and RC data in parallel using optimized caching
+    // Note: rc_api uses object params { accounts: [username] }, not array params
     const [account, rc] = await Promise.all([
       getAccountOptimized(username),
-      getContentOptimized('rc_api', ['find_rc_accounts', [username]]).then((result: unknown) => {
+      makeHiveApiCall('rc_api', 'find_rc_accounts', { accounts: [username] }).then((result: unknown) => {
         const rcResult = result as { rc_accounts?: RcAccountData[] };
         return rcResult && rcResult.rc_accounts && rcResult.rc_accounts.length > 0 ? rcResult.rc_accounts[0] : null;
       }).catch(() => null)

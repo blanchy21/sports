@@ -179,10 +179,10 @@ export async function makeWorkerBeeApiCall<T = unknown>(method: string, params: 
  * This is kept as a fallback and for client-side usage
  * @param api - The API module (e.g., 'condenser_api', 'rc_api')
  * @param method - The method to call
- * @param params - Parameters to pass to the method
+ * @param params - Parameters to pass to the method (array for condenser_api, object for rc_api)
  * @returns Promise with the API response
  */
-export async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] = []): Promise<T> {
+export async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] | Record<string, unknown> = []): Promise<T> {
   // Generate a unique key for request deduplication
   const requestKey = `hive-api:${api}.${method}:${JSON.stringify(params)}`;
 

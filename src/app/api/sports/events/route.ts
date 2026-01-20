@@ -260,27 +260,27 @@ async function fetchAllEvents(): Promise<{ events: SportsEvent[]; liveEventIds: 
 }
 
 /**
- * Filter events to next 24 hours and exclude finished events
+ * Filter events to next 7 days and exclude finished events
  */
 function filterEvents(events: SportsEvent[]): SportsEvent[] {
   const now = new Date();
-  const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  
+  const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
   return events.filter(event => {
     // Exclude finished events
     if (event.status === 'finished') {
       return false;
     }
-    
+
     const eventDate = new Date(event.date);
-    
+
     // Include live events regardless of time
     if (event.status === 'live') {
       return true;
     }
-    
-    // Include upcoming events within next 24 hours
-    return eventDate >= now && eventDate <= in24Hours;
+
+    // Include upcoming events within next 7 days
+    return eventDate >= now && eventDate <= in7Days;
   });
 }
 

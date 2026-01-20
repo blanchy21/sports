@@ -379,7 +379,8 @@ export async function canUserPost(username: string): Promise<{
     // Fallback to direct RC API call if Wax fails
     try {
       logWarn('canUserPost falling back to direct RC API call');
-      const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', [{ accounts: [username] }]) as {
+      // Note: rc_api uses object params, not array params like condenser_api
+      const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', { accounts: [username] }) as {
         rc_accounts?: Array<{
           account: string;
           rc_manabar: {
