@@ -57,6 +57,7 @@ export function ShortCard({ short, className, isNew = false }: ShortCardProps) {
     // Create a post-like object for the bookmark system
     // Cast to unknown first to bypass strict type checking for partial SportsblockPost
     const postLike = {
+      postType: 'sportsblock',
       id: 0, // Using 0 as placeholder since shorts don't have numeric IDs
       author: short.author,
       permlink: short.permlink,
@@ -118,6 +119,7 @@ export function ShortCard({ short, className, isNew = false }: ShortCardProps) {
 
   // Bookmark compatible object - create a minimal SportsblockPost-like object
   const bookmarkObj = {
+    postType: 'sportsblock' as const,
     id: 0,
     author: short.author,
     permlink: short.permlink,

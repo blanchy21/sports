@@ -26,6 +26,7 @@ import {
 } from '@/lib/hive-engine/operations';
 import { formatQuantity, isValidAccountName, isValidQuantity } from '@/lib/hive-engine/client';
 import { MEDALS_CONFIG, CACHE_TTLS } from '@/lib/hive-engine/constants';
+import { withCsrfProtection } from '@/lib/api/csrf';
 
 export const dynamic = 'force-dynamic';
 
@@ -131,114 +132,116 @@ export async function GET(request: NextRequest) {
  * POST - Build stake/unstake operation
  */
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { action, quantity, account, txId } = body;
+  return withCsrfProtection(request, async () => {
+    try {
+      const body = await request.json();
+      const { action, quantity, account, txId } = body;
 
-    // Validate account
-    if (!account || !isValidAccountName(account)) {
-      return NextResponse.json(
-        { error: 'Valid account is required' },
-        { status: 400 }
-      );
-    }
-
-    // Handle different actions
-    switch (action) {
-      case 'stake': {
-        if (!quantity || !isValidQuantity(quantity)) {
-          return NextResponse.json(
-            { error: 'Valid quantity is required (e.g., "100.000")' },
-            { status: 400 }
-          );
-        }
-
-        const operation = buildStakeOp(account, quantity);
-        const validation = validateOperation(operation);
-
-        if (!validation.valid) {
-          return NextResponse.json(
-            { error: validation.error },
-            { status: 400 }
-          );
-        }
-
-        return NextResponse.json({
-          success: true,
-          action: 'stake',
-          operation,
-          message: `Stake ${quantity} ${MEDALS_CONFIG.SYMBOL}`,
-        });
-      }
-
-      case 'unstake': {
-        if (!quantity || !isValidQuantity(quantity)) {
-          return NextResponse.json(
-            { error: 'Valid quantity is required (e.g., "100.000")' },
-            { status: 400 }
-          );
-        }
-
-        const operation = buildUnstakeOp(account, quantity);
-        const validation = validateOperation(operation);
-
-        if (!validation.valid) {
-          return NextResponse.json(
-            { error: validation.error },
-            { status: 400 }
-          );
-        }
-
-        return NextResponse.json({
-          success: true,
-          action: 'unstake',
-          operation,
-          message: `Unstake ${quantity} ${MEDALS_CONFIG.SYMBOL}`,
-        });
-      }
-
-      case 'cancelUnstake': {
-        if (!txId || typeof txId !== 'string') {
-          return NextResponse.json(
-            { error: 'Transaction ID (txId) is required' },
-            { status: 400 }
-          );
-        }
-
-        const operation = buildCancelUnstakeOp(account, txId);
-        const validation = validateOperation(operation);
-
-        if (!validation.valid) {
-          return NextResponse.json(
-            { error: validation.error },
-            { status: 400 }
-          );
-        }
-
-        return NextResponse.json({
-          success: true,
-          action: 'cancelUnstake',
-          operation,
-          message: `Cancel unstake ${txId}`,
-        });
-      }
-
-      default:
+      // Validate account
+      if (!account || !isValidAccountName(account)) {
         return NextResponse.json(
-          { error: 'Invalid action. Use: stake, unstake, or cancelUnstake' },
+          { error: 'Valid account is required' },
           { status: 400 }
         );
+      }
+
+      // Handle different actions
+      switch (action) {
+        case 'stake': {
+          if (!quantity || !isValidQuantity(quantity)) {
+            return NextResponse.json(
+              { error: 'Valid quantity is required (e.g., "100.000")' },
+              { status: 400 }
+            );
+          }
+
+          const operation = buildStakeOp(account, quantity);
+          const validation = validateOperation(operation);
+
+          if (!validation.valid) {
+            return NextResponse.json(
+              { error: validation.error },
+              { status: 400 }
+            );
+          }
+
+          return NextResponse.json({
+            success: true,
+            action: 'stake',
+            operation,
+            message: `Stake ${quantity} ${MEDALS_CONFIG.SYMBOL}`,
+          });
+        }
+
+        case 'unstake': {
+          if (!quantity || !isValidQuantity(quantity)) {
+            return NextResponse.json(
+              { error: 'Valid quantity is required (e.g., "100.000")' },
+              { status: 400 }
+            );
+          }
+
+          const operation = buildUnstakeOp(account, quantity);
+          const validation = validateOperation(operation);
+
+          if (!validation.valid) {
+            return NextResponse.json(
+              { error: validation.error },
+              { status: 400 }
+            );
+          }
+
+          return NextResponse.json({
+            success: true,
+            action: 'unstake',
+            operation,
+            message: `Unstake ${quantity} ${MEDALS_CONFIG.SYMBOL}`,
+          });
+        }
+
+        case 'cancelUnstake': {
+          if (!txId || typeof txId !== 'string') {
+            return NextResponse.json(
+              { error: 'Transaction ID (txId) is required' },
+              { status: 400 }
+            );
+          }
+
+          const operation = buildCancelUnstakeOp(account, txId);
+          const validation = validateOperation(operation);
+
+          if (!validation.valid) {
+            return NextResponse.json(
+              { error: validation.error },
+              { status: 400 }
+            );
+          }
+
+          return NextResponse.json({
+            success: true,
+            action: 'cancelUnstake',
+            operation,
+            message: `Cancel unstake ${txId}`,
+          });
+        }
+
+        default:
+          return NextResponse.json(
+            { error: 'Invalid action. Use: stake, unstake, or cancelUnstake' },
+            { status: 400 }
+          );
+      }
+    } catch (error) {
+      console.error('[API] Error building stake operation:', error);
+      // Sanitize error response - don't expose internal details
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to build staking operation. Please check your input and try again.',
+          code: 'STAKE_BUILD_ERROR',
+        },
+        { status: 500 }
+      );
     }
-  } catch (error) {
-    console.error('[API] Error building stake operation:', error);
-    // Sanitize error response - don't expose internal details
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to build staking operation. Please check your input and try again.',
-        code: 'STAKE_BUILD_ERROR',
-      },
-      { status: 500 }
-    );
-  }
+  });
 }

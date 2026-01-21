@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
-import { STALE_TIMES } from '@/lib/constants/cache';
+import { STALE_TIMES, getPostStaleTime } from '@/lib/constants/cache';
 
 // Types for comments (imported from workerbee types)
 interface HiveComment {
@@ -14,7 +14,25 @@ interface HiveComment {
   [key: string]: unknown;
 }
 
-export function useComments(author: string, permlink: string) {
+/**
+ * Fetch comments for a post.
+ *
+ * @param author - Post author username
+ * @param permlink - Post permlink
+ * @param options - Optional configuration
+ * @param options.postCreatedAt - If known, pass the post creation date to enable
+ *                                 smart caching (older posts rarely get new comments)
+ */
+export function useComments(
+  author: string,
+  permlink: string,
+  options?: { postCreatedAt?: Date | string }
+) {
+  // Calculate stale time based on post age - older posts rarely get new comments
+  const staleTime = options?.postCreatedAt
+    ? getPostStaleTime(options.postCreatedAt)
+    : STALE_TIMES.REALTIME;
+
   return useQuery({
     queryKey: queryKeys.comments.list(`${author}/${permlink}`),
     queryFn: async () => {
@@ -26,7 +44,7 @@ export function useComments(author: string, permlink: string) {
       return (result.success ? result.comments : []) as HiveComment[];
     },
     enabled: !!author && !!permlink,
-    staleTime: STALE_TIMES.REALTIME
+    staleTime,
   });
 }
 

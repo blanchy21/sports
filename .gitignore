@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/test-results
+*.log
 
 # next.js
 /.next/
@@ -30,8 +32,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -40,7 +43,17 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# documentation files
-*.md
-!README.md
-!CLAUDE.md
+# IDE
+.vscode/
+.cursor/
+.idea/
+
+# Python virtual environment
+.venv/
+
+# Playwright
+/playwright-report/
+/playwright/.cache/
+
+# Code review notes (local only)
+/code-review/

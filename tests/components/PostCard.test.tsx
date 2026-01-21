@@ -80,6 +80,7 @@ const mockHivePost: any = {
 };
 
 const mockLegacyPost = {
+  postType: 'standard' as const,
   id: '123',
   title: 'Legacy Test Post',
   content: 'This is the full content of the legacy post.',

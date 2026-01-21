@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FirebasePosts } from '@/lib/firebase/posts';
+import { validateCsrf, csrfError } from '@/lib/api/csrf';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -56,6 +57,11 @@ export async function PATCH(
   request: NextRequest,
   context: RouteContext
 ) {
+  // CSRF protection
+  if (!validateCsrf(request)) {
+    return csrfError('Request blocked: invalid origin');
+  }
+
   try {
     const { id } = await context.params;
     const body = await request.json();
@@ -140,6 +146,11 @@ export async function DELETE(
   request: NextRequest,
   context: RouteContext
 ) {
+  // CSRF protection
+  if (!validateCsrf(request)) {
+    return csrfError('Request blocked: invalid origin');
+  }
+
   try {
     const { id } = await context.params;
     const { searchParams } = new URL(request.url);

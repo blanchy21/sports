@@ -39,6 +39,8 @@ interface HivePost {
 
 // Types matching the original content.ts interface
 export interface SportsblockPost {
+  /** Discriminant for Post union types */
+  postType: 'sportsblock';
   id: number;
   author: string;
   permlink: string;
@@ -62,7 +64,8 @@ export interface SportsblockPost {
   parent_author: string;
   parent_permlink: string;
   sportCategory?: string;
-  isSportsblockPost: boolean;
+  /** @deprecated Use postType === 'sportsblock' instead */
+  isSportsblockPost: true;
 }
 
 export interface HiveComment {
@@ -241,6 +244,7 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       .map((post: HivePost) => ({
         ...post,
         sportCategory: getSportCategory(post) || undefined,
+        postType: 'sportsblock',
         isSportsblockPost: true,
       } as unknown as SportsblockPost));
 
@@ -319,6 +323,7 @@ export async function fetchTrendingPosts(limit: number = 20): Promise<Sportsbloc
       .map((post: HivePost) => ({
         ...post,
         sportCategory: getSportCategory(post) || undefined,
+        postType: 'sportsblock',
         isSportsblockPost: true,
       } as unknown as SportsblockPost));
   } catch (error) {
@@ -347,6 +352,7 @@ export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost
       .map((post: HivePost) => ({
         ...post,
         sportCategory: getSportCategory(post) || undefined,
+        postType: 'sportsblock',
         isSportsblockPost: true,
       } as unknown as SportsblockPost));
   } catch (error) {
@@ -373,7 +379,8 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
     return {
       ...(post as unknown as HivePost),
       sportCategory: getSportCategory(post as unknown as HivePost),
-      isSportsblockPost: true,
+      postType: 'sportsblock',
+        isSportsblockPost: true,
     } as unknown as SportsblockPost;
   } catch (error) {
     logError('Error fetching post with WorkerBee', 'getPostByAuthorPermlink', error instanceof Error ? error : undefined);
@@ -523,7 +530,8 @@ export async function getUserPosts(username: string, limit: number = 20): Promis
           sportsblockPosts.push({
             ...post,
             sportCategory: getSportCategory(post) || undefined,
-            isSportsblockPost: true,
+            postType: 'sportsblock',
+        isSportsblockPost: true,
             allow_votes: true,
             allow_curation_rewards: true,
           } as unknown as SportsblockPost);

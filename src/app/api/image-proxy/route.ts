@@ -82,12 +82,15 @@ export async function GET(request: NextRequest) {
     const contentType = response.headers.get('content-type') || 'image/jpeg';
 
     // Return the image with proper CORS headers
+    // Restrict CORS to app domain only (prevents abuse from malicious sites)
+    const allowedOrigin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
     return new NextResponse(imageBuffer, {
       status: 200,
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=31536000, immutable', // Cache for 1 year
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': allowedOrigin,
         'Access-Control-Allow-Methods': 'GET',
         'Access-Control-Allow-Headers': 'Content-Type',
       },

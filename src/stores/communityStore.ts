@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 import { Community, CommunityFilters } from '@/types';
 
 interface CommunityState {
@@ -58,7 +59,7 @@ const DEFAULT_FILTERS: CommunityFilters = {
 
 export const useCommunityStore = create<CommunityState & CommunityActions>()(
   persist(
-    (set, get) => ({
+    immer((set, get) => ({
       // Initial state
       communities: [],
       userCommunities: [],
@@ -70,66 +71,85 @@ export const useCommunityStore = create<CommunityState & CommunityActions>()(
         hasMore: false,
       },
 
-      // Communities list actions
-      setCommunities: (communities) => set({ communities }),
+      // Communities list actions - using immer for safe mutable-style updates
+      setCommunities: (communities) => set((state) => {
+        state.communities = communities;
+      }),
 
-      addCommunities: (newCommunities) => {
-        const currentCommunities = get().communities;
-        const existingIds = new Set(currentCommunities.map((c) => c.id));
+      addCommunities: (newCommunities) => set((state) => {
+        const existingIds = new Set(state.communities.map((c) => c.id));
         const uniqueNewCommunities = newCommunities.filter((c) => !existingIds.has(c.id));
-        set({ communities: [...currentCommunities, ...uniqueNewCommunities] });
-      },
+        state.communities.push(...uniqueNewCommunities);
+      }),
 
-      clearCommunities: () => set({ communities: [], pagination: { hasMore: false } }),
+      clearCommunities: () => set((state) => {
+        state.communities = [];
+        state.pagination.hasMore = false;
+      }),
 
       // User communities actions
-      setUserCommunities: (communities) => set({ userCommunities: communities }),
+      setUserCommunities: (communities) => set((state) => {
+        state.userCommunities = communities;
+      }),
 
       addUserCommunity: (community) => {
-        const current = get().userCommunities;
-        if (!current.some((c) => c.id === community.id)) {
-          set({ userCommunities: [...current, community] });
+        if (!get().userCommunities.some((c) => c.id === community.id)) {
+          set((state) => {
+            state.userCommunities.push(community);
+          });
         }
       },
 
-      removeUserCommunity: (communityId) => {
-        const current = get().userCommunities;
-        set({ userCommunities: current.filter((c) => c.id !== communityId) });
-      },
+      removeUserCommunity: (communityId) => set((state) => {
+        const index = state.userCommunities.findIndex((c) => c.id === communityId);
+        if (index !== -1) {
+          state.userCommunities.splice(index, 1);
+        }
+      }),
 
       // Selection actions
-      setSelectedCommunity: (community) => set({ selectedCommunity: community }),
+      setSelectedCommunity: (community) => set((state) => {
+        state.selectedCommunity = community;
+      }),
 
       // Loading/Error actions
-      setLoading: (loading) => set({ isLoading: loading }),
-      setError: (error) => set({ error }),
+      setLoading: (loading) => set((state) => {
+        state.isLoading = loading;
+      }),
+
+      setError: (error) => set((state) => {
+        state.error = error;
+      }),
 
       // Filter actions
-      setFilters: (newFilters) => {
-        const currentFilters = get().filters;
-        set({
-          filters: { ...currentFilters, ...newFilters },
-          communities: [], // Clear communities when filters change
-        });
-      },
+      setFilters: (newFilters) => set((state) => {
+        Object.assign(state.filters, newFilters);
+        state.communities = []; // Clear communities when filters change
+      }),
 
-      resetFilters: () => set({ filters: DEFAULT_FILTERS, communities: [] }),
+      resetFilters: () => set((state) => {
+        state.filters = DEFAULT_FILTERS;
+        state.communities = [];
+      }),
 
       // Pagination actions
-      setPagination: (pagination) =>
-        set({ pagination: { ...get().pagination, ...pagination } }),
+      setPagination: (pagination) => set((state) => {
+        Object.assign(state.pagination, pagination);
+      }),
 
       // Update community
-      updateCommunity: (communityId, updates) => {
-        const communities = get().communities.map((community) =>
-          community.id === communityId ? { ...community, ...updates } : community
-        );
-        const userCommunities = get().userCommunities.map((community) =>
-          community.id === communityId ? { ...community, ...updates } : community
-        );
-        set({ communities, userCommunities });
-      },
-    }),
+      updateCommunity: (communityId, updates) => set((state) => {
+        const communityIndex = state.communities.findIndex((c) => c.id === communityId);
+        if (communityIndex !== -1) {
+          Object.assign(state.communities[communityIndex], updates);
+        }
+
+        const userCommunityIndex = state.userCommunities.findIndex((c) => c.id === communityId);
+        if (userCommunityIndex !== -1) {
+          Object.assign(state.userCommunities[userCommunityIndex], updates);
+        }
+      }),
+    })),
     {
       name: 'sportsblock-communities',
       partialize: (state) => ({

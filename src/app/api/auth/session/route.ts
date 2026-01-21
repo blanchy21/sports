@@ -1,8 +1,8 @@
 /**
  * Session Management API
  *
- * Handles secure session tokens using httpOnly cookies.
- * This prevents XSS attacks from accessing session data.
+ * Handles secure session tokens using httpOnly cookies with AES-256-GCM encryption.
+ * This prevents XSS attacks from accessing session data and ensures integrity.
  *
  * POST /api/auth/session - Set session (login)
  * DELETE /api/auth/session - Clear session (logout)
@@ -12,9 +12,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
+import crypto from 'crypto';
+import { validateCsrf, csrfError } from '@/lib/api/csrf';
 
 const SESSION_COOKIE_NAME = 'sb_session';
 const SESSION_MAX_AGE = 30 * 60; // 30 minutes in seconds
+
+// Encryption configuration
+const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
+const IV_LENGTH = 16; // 128 bits
+const AUTH_TAG_LENGTH = 16; // 128 bits
+
+/**
+ * Get or generate the session encryption key.
+ * In production, SESSION_SECRET must be set as a 32+ character string.
+ */
+function getEncryptionKey(): Buffer {
+  const secret = process.env.SESSION_SECRET;
+
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('SESSION_SECRET environment variable is required in production');
+    }
+    // Development fallback - NOT SECURE, only for local development
+    console.warn('[Session API] WARNING: Using insecure default key. Set SESSION_SECRET in production.');
+    return crypto.scryptSync('development-only-insecure-key', 'salt', 32);
+  }
+
+  // Derive a 256-bit key from the secret using scrypt
+  return crypto.scryptSync(secret, 'sportsblock-session-salt', 32);
+}
 
 // Validation schema for session data
 const sessionSchema = z.object({
@@ -27,22 +54,73 @@ const sessionSchema = z.object({
 type SessionData = z.infer<typeof sessionSchema>;
 
 /**
- * Encode session data for cookie storage
+ * Encrypt session data for secure cookie storage.
+ * Uses AES-256-GCM for authenticated encryption.
  */
-function encodeSession(data: SessionData): string {
-  return Buffer.from(JSON.stringify(data)).toString('base64');
+function encryptSession(data: SessionData): string {
+  const key = getEncryptionKey();
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, key, iv);
+
+  const jsonData = JSON.stringify(data);
+  const encrypted = Buffer.concat([
+    cipher.update(jsonData, 'utf8'),
+    cipher.final()
+  ]);
+
+  const authTag = cipher.getAuthTag();
+
+  // Combine IV + authTag + encrypted data, then base64 encode
+  const combined = Buffer.concat([iv, authTag, encrypted]);
+  return combined.toString('base64');
 }
 
 /**
- * Decode session data from cookie
+ * Decrypt session data from cookie.
+ * Returns null if decryption fails or data is invalid.
  */
-function decodeSession(encoded: string): SessionData | null {
+function decryptSession(encrypted: string): SessionData | null {
   try {
-    const decoded = Buffer.from(encoded, 'base64').toString('utf-8');
-    const parsed = JSON.parse(decoded);
+    const key = getEncryptionKey();
+    const combined = Buffer.from(encrypted, 'base64');
+
+    // Validate minimum length (IV + authTag + at least 1 byte of data)
+    if (combined.length < IV_LENGTH + AUTH_TAG_LENGTH + 1) {
+      console.warn('[Session API] Security: Invalid session token length - possible tampering attempt');
+      return null;
+    }
+
+    // Extract components
+    const iv = combined.subarray(0, IV_LENGTH);
+    const authTag = combined.subarray(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
+    const encryptedData = combined.subarray(IV_LENGTH + AUTH_TAG_LENGTH);
+
+    const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
+
+    const decrypted = Buffer.concat([
+      decipher.update(encryptedData),
+      decipher.final()
+    ]).toString('utf8');
+
+    const parsed = JSON.parse(decrypted);
     const result = sessionSchema.safeParse(parsed);
-    return result.success ? result.data : null;
-  } catch {
+
+    if (!result.success) {
+      console.warn('[Session API] Security: Session data failed validation after decryption');
+      return null;
+    }
+
+    return result.data;
+  } catch (error) {
+    // Log security-relevant failures (tampering, corruption, expired keys)
+    if (error instanceof Error) {
+      if (error.message.includes('Unsupported state') || error.message.includes('auth tag')) {
+        console.warn('[Session API] Security: Session decryption failed - possible tampering attempt');
+      } else {
+        console.warn('[Session API] Security: Session decode failure:', error.message);
+      }
+    }
     return null;
   }
 }
@@ -63,7 +141,7 @@ export async function POST(request: NextRequest) {
     }
 
     const sessionData = parseResult.data;
-    const encodedSession = encodeSession(sessionData);
+    const encryptedSession = encryptSession(sessionData);
 
     // Create response with session cookie
     const response = NextResponse.json({
@@ -71,8 +149,8 @@ export async function POST(request: NextRequest) {
       message: 'Session created',
     });
 
-    // Set httpOnly cookie
-    response.cookies.set(SESSION_COOKIE_NAME, encodedSession, {
+    // Set httpOnly cookie with encrypted session
+    response.cookies.set(SESSION_COOKIE_NAME, encryptedSession, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -106,7 +184,7 @@ export async function GET() {
       });
     }
 
-    const session = decodeSession(sessionCookie.value);
+    const session = decryptSession(sessionCookie.value);
 
     if (!session) {
       // Invalid session, clear the cookie
@@ -141,7 +219,12 @@ export async function GET() {
 /**
  * DELETE /api/auth/session - Clear session (logout)
  */
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
+  // CSRF protection for logout
+  if (!validateCsrf(request)) {
+    return csrfError('Request blocked: invalid origin');
+  }
+
   try {
     const response = NextResponse.json({
       success: true,

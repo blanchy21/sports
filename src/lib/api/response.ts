@@ -20,7 +20,132 @@ export type ApiErrorCode =
   | 'RATE_LIMITED'
   | 'TIMEOUT'
   | 'UPSTREAM_ERROR'
-  | 'INTERNAL_ERROR';
+  | 'INTERNAL_ERROR'
+  | 'HIVE_ERROR'
+  | 'AUTH_ERROR';
+
+// ============================================================================
+// Structured Error Classes
+// ============================================================================
+
+/**
+ * Base API error class with error code
+ */
+export class ApiError extends Error {
+  readonly code: ApiErrorCode;
+  readonly statusCode: number;
+  readonly details?: unknown;
+
+  constructor(message: string, code: ApiErrorCode, statusCode: number, details?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+    this.statusCode = statusCode;
+    this.details = details;
+    // Maintains proper stack trace for where error was thrown
+    Error.captureStackTrace?.(this, this.constructor);
+  }
+}
+
+/**
+ * Validation error (400)
+ */
+export class ValidationError extends ApiError {
+  constructor(message: string, details?: unknown) {
+    super(message, 'VALIDATION_ERROR', 400, details);
+    this.name = 'ValidationError';
+  }
+}
+
+/**
+ * Not found error (404)
+ */
+export class NotFoundError extends ApiError {
+  constructor(message: string) {
+    super(message, 'NOT_FOUND', 404);
+    this.name = 'NotFoundError';
+  }
+}
+
+/**
+ * Authentication error (401)
+ */
+export class AuthError extends ApiError {
+  constructor(message = 'Authentication required') {
+    super(message, 'AUTH_ERROR', 401);
+    this.name = 'AuthError';
+  }
+}
+
+/**
+ * Unauthorized error (401) - alias for backward compatibility
+ */
+export class UnauthorizedError extends ApiError {
+  constructor(message = 'Authentication required') {
+    super(message, 'UNAUTHORIZED', 401);
+    this.name = 'UnauthorizedError';
+  }
+}
+
+/**
+ * Forbidden error (403)
+ */
+export class ForbiddenError extends ApiError {
+  constructor(message: string) {
+    super(message, 'FORBIDDEN', 403);
+    this.name = 'ForbiddenError';
+  }
+}
+
+/**
+ * Rate limit error (429)
+ */
+export class RateLimitError extends ApiError {
+  constructor(message = 'Too many requests') {
+    super(message, 'RATE_LIMITED', 429);
+    this.name = 'RateLimitError';
+  }
+}
+
+/**
+ * Timeout error (504)
+ */
+export class TimeoutError extends ApiError {
+  constructor(message = 'Request timeout') {
+    super(message, 'TIMEOUT', 504);
+    this.name = 'TimeoutError';
+  }
+}
+
+/**
+ * Upstream/external service error (502)
+ */
+export class UpstreamError extends ApiError {
+  constructor(message: string) {
+    super(message, 'UPSTREAM_ERROR', 502);
+    this.name = 'UpstreamError';
+  }
+}
+
+/**
+ * Hive blockchain specific error (502)
+ */
+export class HiveError extends ApiError {
+  constructor(message: string, details?: unknown) {
+    super(message, 'HIVE_ERROR', 502, details);
+    this.name = 'HiveError';
+  }
+}
+
+/**
+ * Internal server error (500)
+ */
+export class InternalError extends ApiError {
+  constructor(message = 'Internal server error') {
+    super(message, 'INTERNAL_ERROR', 500);
+    this.name = 'InternalError';
+  }
+}
 
 /**
  * Structured API error
@@ -280,6 +405,13 @@ export function successResponse<T>(
 
 /**
  * Handle API route errors consistently
+ *
+ * Priority:
+ * 1. Structured ApiError subclasses (instanceof checks)
+ * 2. ZodError for validation
+ * 3. Native Error types (AbortError, TimeoutError)
+ * 4. String matching fallback for legacy errors
+ * 5. Default to internal error
  */
 export function handleApiError(
   route: string,
@@ -289,13 +421,39 @@ export function handleApiError(
   // Log the error
   apiLogger.error(route, 'Request failed', error, { requestId });
 
-  // Handle Zod validation errors
+  // 1. Handle structured API errors (preferred)
+  if (error instanceof ApiError) {
+    return NextResponse.json(
+      {
+        success: false as const,
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        requestId,
+      },
+      { status: error.statusCode }
+    );
+  }
+
+  // 2. Handle Zod validation errors
   if (error instanceof ZodError) {
     return validationError(error, requestId);
   }
 
-  // Handle known error types
+  // 3. Handle native Error types
   if (error instanceof Error) {
+    // AbortError from fetch cancellation
+    if (error.name === 'AbortError') {
+      return timeoutError('Request was cancelled', requestId);
+    }
+
+    // Native TimeoutError
+    if (error.name === 'TimeoutError') {
+      return timeoutError('Request timed out', requestId);
+    }
+
+    // 4. String matching fallback for legacy errors
+    // (This allows gradual migration to structured errors)
     const message = error.message.toLowerCase();
 
     if (message.includes('timeout') || message.includes('aborted')) {
@@ -324,7 +482,7 @@ export function handleApiError(
     }
   }
 
-  // Default to internal error
+  // 5. Default to internal error
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
   return internalError(errorMessage, requestId);
 }

@@ -1,6 +1,21 @@
 import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
 import { Post } from '@/types';
 import { SportsblockPost } from '@/lib/hive-workerbee/content';
+
+// Type guards for Post union
+export function isSportsblockPost(post: Post | SportsblockPost): post is SportsblockPost {
+  return post.postType === 'sportsblock';
+}
+
+export function isStandardPost(post: Post | SportsblockPost): post is Post {
+  return post.postType === 'standard';
+}
+
+// Helper to get post ID from either type
+export function getPostId(post: Post | SportsblockPost): string {
+  return isSportsblockPost(post) ? `${post.author}/${post.permlink}` : post.id;
+}
 
 interface PostState {
   posts: (Post | SportsblockPost)[];
@@ -31,58 +46,63 @@ interface PostActions {
   clearPosts: () => void;
 }
 
-export const usePostStore = create<PostState & PostActions>((set, get) => ({
-  // State
-  posts: [],
-  selectedPost: null,
-  isLoading: false,
-  error: null,
-  filters: {
-    sort: 'created',
-  },
-  pagination: {
-    hasMore: false,
-  },
+export const usePostStore = create<PostState & PostActions>()(
+  immer((set, get) => ({
+    // State
+    posts: [],
+    selectedPost: null,
+    isLoading: false,
+    error: null,
+    filters: {
+      sort: 'created',
+    },
+    pagination: {
+      hasMore: false,
+    },
 
-  // Actions
-  setPosts: (posts) => set({ posts }),
+    // Actions - using immer for safe mutable-style updates
+    setPosts: (posts) => set((state) => {
+      state.posts = posts;
+    }),
 
-  addPosts: (newPosts) => {
-    const currentPosts = get().posts;
-    const existingIds = new Set(currentPosts.map(p => 'isSportsblockPost' in p ? `${p.author}/${p.permlink}` : p.id));
-    const uniqueNewPosts = newPosts.filter(p => {
-      const id = 'isSportsblockPost' in p ? `${p.author}/${p.permlink}` : p.id;
-      return !existingIds.has(id);
-    });
-    set({ posts: [...currentPosts, ...uniqueNewPosts] });
-  },
+    addPosts: (newPosts) => set((state) => {
+      const existingIds = new Set(state.posts.map(getPostId));
+      const uniqueNewPosts = newPosts.filter(p => !existingIds.has(getPostId(p)));
+      state.posts.push(...uniqueNewPosts);
+    }),
 
-  setSelectedPost: (post) => set({ selectedPost: post }),
+    setSelectedPost: (post) => set((state) => {
+      state.selectedPost = post;
+    }),
 
-  setLoading: (loading) => set({ isLoading: loading }),
+    setLoading: (loading) => set((state) => {
+      state.isLoading = loading;
+    }),
 
-  setError: (error) => set({ error }),
+    setError: (error) => set((state) => {
+      state.error = error;
+    }),
 
-  setFilters: (newFilters) => {
-    const currentFilters = get().filters;
-    set({ 
-      filters: { ...currentFilters, ...newFilters },
-      posts: [], // Clear posts when filters change
-    });
-  },
+    setFilters: (newFilters) => set((state) => {
+      Object.assign(state.filters, newFilters);
+      state.posts = []; // Clear posts when filters change
+    }),
 
-  setPagination: (pagination) => set({ pagination: { ...get().pagination, ...pagination } }),
+    setPagination: (pagination) => set((state) => {
+      Object.assign(state.pagination, pagination);
+    }),
 
-  updatePost: (postId, updates) => {
-    const posts = get().posts.map(post => {
-      const id = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : post.id;
-      if (id === postId) {
-        return { ...post, ...updates } as Post | SportsblockPost;
+    updatePost: (postId, updates) => set((state) => {
+      const index = state.posts.findIndex(p => getPostId(p) === postId);
+      if (index !== -1) {
+        // Immer handles immutability - just merge the updates
+        Object.assign(state.posts[index], updates);
       }
-      return post;
-    });
-    set({ posts });
-  },
+    }),
 
-  clearPosts: () => set({ posts: [], pagination: { hasMore: false } }),
-}));
+    clearPosts: () => set((state) => {
+      state.posts = [];
+      state.pagination.hasMore = false;
+    }),
+  }))
+);

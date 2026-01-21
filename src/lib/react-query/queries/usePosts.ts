@@ -2,7 +2,7 @@ import { useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-quer
 import { queryKeys } from '../queryClient';
 import { fetchSportsblockPosts, fetchTrendingPosts, fetchHotPosts, fetchPost } from '@/lib/hive-workerbee/content';
 import { ContentFilters } from '@/lib/hive-workerbee/content';
-import { STALE_TIMES } from '@/lib/constants/cache';
+import { STALE_TIMES, getPostStaleTime } from '@/lib/constants/cache';
 import { SportsblockPost } from '@/lib/shared/types';
 
 // API response type for feed posts
@@ -57,12 +57,30 @@ export function useHotPosts(limit: number = 20) {
   });
 }
 
-export function usePost(author: string, permlink: string) {
+/**
+ * Fetch a single post by author and permlink.
+ *
+ * @param author - Post author username
+ * @param permlink - Post permlink
+ * @param options - Optional configuration
+ * @param options.knownCreatedAt - If known from a list view, pass the post creation date
+ *                                  to enable smart caching (older posts cache longer)
+ */
+export function usePost(
+  author: string,
+  permlink: string,
+  options?: { knownCreatedAt?: Date | string }
+) {
+  // Calculate stale time based on post age if known
+  const staleTime = options?.knownCreatedAt
+    ? getPostStaleTime(options.knownCreatedAt)
+    : STALE_TIMES.STANDARD;
+
   return useQuery({
     queryKey: queryKeys.posts.detail(`${author}/${permlink}`),
     queryFn: () => fetchPost(author, permlink),
     enabled: !!author && !!permlink,
-    staleTime: STALE_TIMES.STANDARD,
+    staleTime,
   });
 }
 

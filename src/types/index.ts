@@ -64,6 +64,8 @@ export interface User {
 }
 
 export interface Post {
+  /** Discriminant for Post union types */
+  postType: 'standard';
   id: string;
   title: string;
   content: string;

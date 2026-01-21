@@ -122,6 +122,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({
           <PostCard
             key={`${post.author}-${post.permlink}`}
             post={{
+              postType: 'standard',
               id: `${post.author}/${post.permlink}`,
               title: post.title || 'Untitled',
               content: post.body || '',

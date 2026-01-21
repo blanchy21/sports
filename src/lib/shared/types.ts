@@ -285,8 +285,11 @@ export interface HiveKeychainResponse {
 
 // Sportsblock specific types
 export interface SportsblockPost extends HivePost {
+  /** Discriminant for Post union types */
+  postType: 'sportsblock';
   sportCategory?: string;
-  isSportsblockPost: boolean;
+  /** @deprecated Use postType === 'sportsblock' instead */
+  isSportsblockPost: true;
 }
 
 export interface HiveAuthUser {

@@ -2,11 +2,12 @@
  * Distributed rate limiting utility using Upstash Redis
  *
  * Uses @upstash/ratelimit for production-ready distributed rate limiting
- * Falls back to in-memory rate limiting if Redis is unavailable
+ * Falls back to in-memory rate limiting with LRU cache if Redis is unavailable
  */
 
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import { LRUCache } from 'lru-cache';
 
 interface RateLimitConfig {
   /** Maximum requests allowed within the window */
@@ -21,45 +22,33 @@ interface RateLimitResult {
   reset: number;
 }
 
-// In-memory fallback store (used when Redis is unavailable)
+// In-memory fallback store using LRU cache to prevent unbounded memory growth
 interface RateLimitEntry {
   count: number;
   resetTime: number;
 }
 
-const inMemoryStore = new Map<string, RateLimitEntry>();
+// LRU cache configuration
+const MAX_ENTRIES = 10000; // Maximum unique identifiers to track
+const TTL_MS = 5 * 60 * 1000; // 5 minute TTL for entries (covers most rate limit windows)
 
-// Cleanup old entries periodically for in-memory fallback
-const CLEANUP_INTERVAL = 60 * 1000; // 1 minute
-let cleanupTimer: NodeJS.Timeout | null = null;
-
-function startCleanup() {
-  if (cleanupTimer) return;
-
-  cleanupTimer = setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of inMemoryStore.entries()) {
-      if (entry.resetTime < now) {
-        inMemoryStore.delete(key);
-      }
-    }
-  }, CLEANUP_INTERVAL);
-
-  // Don't keep the process alive just for cleanup
-  if (cleanupTimer.unref) {
-    cleanupTimer.unref();
-  }
-}
+const inMemoryStore = new LRUCache<string, RateLimitEntry>({
+  max: MAX_ENTRIES,
+  ttl: TTL_MS,
+  // Automatically update TTL on get
+  updateAgeOnGet: true,
+  // Allow stale entries to be returned while fetching
+  allowStale: false,
+});
 
 /**
  * In-memory rate limit check (fallback)
+ * Uses LRU cache for bounded memory usage
  */
 function checkRateLimitInMemory(
   identifier: string,
   config: RateLimitConfig
 ): RateLimitResult {
-  startCleanup();
-
   const now = Date.now();
   const windowMs = config.windowSeconds * 1000;
   const key = identifier;
@@ -86,11 +75,12 @@ function checkRateLimitInMemory(
     };
   }
 
-  // Increment count
-  entry.count += 1;
+  // Increment count - need to re-set for LRU to update
+  const newEntry = { count: entry.count + 1, resetTime: entry.resetTime };
+  inMemoryStore.set(key, newEntry);
   return {
     success: true,
-    remaining: config.limit - entry.count,
+    remaining: config.limit - newEntry.count,
     reset: entry.resetTime,
   };
 }

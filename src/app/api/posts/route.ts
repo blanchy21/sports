@@ -8,6 +8,7 @@ import {
   forbiddenError,
   internalError,
 } from '@/lib/api/response';
+import { withCsrfProtection } from '@/lib/api/csrf';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -108,78 +109,80 @@ export async function GET(request: NextRequest) {
  * Requires authenticated user. The authorId must match the authenticated user.
  */
 export async function POST(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    // Parse JSON body with error handling
-    let body: unknown;
     try {
-      body = await request.json();
-    } catch {
-      return validationError('Invalid JSON body', ctx.requestId);
-    }
+      // Parse JSON body with error handling
+      let body: unknown;
+      try {
+        body = await request.json();
+      } catch {
+        return validationError('Invalid JSON body', ctx.requestId);
+      }
 
-    // Validate request body
-    const parseResult = createPostSchema.safeParse(body);
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
+      // Validate request body
+      const parseResult = createPostSchema.safeParse(body);
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
 
-    const data = parseResult.data;
+      const data = parseResult.data;
 
-    // Authorization check: Verify user identity
-    // The client should pass the authenticated user's ID in a header
-    const authenticatedUserId = request.headers.get('x-user-id');
+      // Authorization check: Verify user identity
+      // The client should pass the authenticated user's ID in a header
+      const authenticatedUserId = request.headers.get('x-user-id');
 
-    if (!authenticatedUserId) {
-      return unauthorizedError('Authentication required. Please provide x-user-id header.', ctx.requestId);
-    }
+      if (!authenticatedUserId) {
+        return unauthorizedError('Authentication required. Please provide x-user-id header.', ctx.requestId);
+      }
 
-    // Verify the authenticated user matches the author
-    if (authenticatedUserId !== data.authorId) {
-      ctx.log.warn('Authorization failed: user ID mismatch', {
-        authenticatedUserId,
-        requestedAuthorId: data.authorId,
+      // Verify the authenticated user matches the author
+      if (authenticatedUserId !== data.authorId) {
+        ctx.log.warn('Authorization failed: user ID mismatch', {
+          authenticatedUserId,
+          requestedAuthorId: data.authorId,
+        });
+        return forbiddenError('You can only create posts as yourself', ctx.requestId);
+      }
+
+      ctx.log.info('Creating post', {
+        authorId: data.authorId,
+        authorUsername: data.authorUsername,
+        title: data.title.substring(0, 50),
+        communityId: data.communityId,
       });
-      return forbiddenError('You can only create posts as yourself', ctx.requestId);
+
+      // Build the input for Firebase
+      const input: CreateSoftPostInput = {
+        authorId: data.authorId,
+        authorUsername: data.authorUsername,
+        authorDisplayName: data.authorDisplayName,
+        authorAvatar: data.authorAvatar ?? undefined,
+        title: data.title,
+        content: data.content,
+        tags: data.tags,
+        sportCategory: data.sportCategory,
+        featuredImage: data.featuredImage ?? undefined,
+        communityId: data.communityId,
+        communitySlug: data.communitySlug,
+        communityName: data.communityName,
+      };
+
+      const post = await FirebasePosts.createPost(input);
+
+      ctx.log.info('Post created successfully', { postId: post.id });
+
+      return NextResponse.json(
+        {
+          success: true,
+          post,
+          message: 'Post created successfully',
+        },
+        { status: 201 }
+      );
+    } catch (error) {
+      return ctx.handleError(error);
     }
-
-    ctx.log.info('Creating post', {
-      authorId: data.authorId,
-      authorUsername: data.authorUsername,
-      title: data.title.substring(0, 50),
-      communityId: data.communityId,
-    });
-
-    // Build the input for Firebase
-    const input: CreateSoftPostInput = {
-      authorId: data.authorId,
-      authorUsername: data.authorUsername,
-      authorDisplayName: data.authorDisplayName,
-      authorAvatar: data.authorAvatar ?? undefined,
-      title: data.title,
-      content: data.content,
-      tags: data.tags,
-      sportCategory: data.sportCategory,
-      featuredImage: data.featuredImage ?? undefined,
-      communityId: data.communityId,
-      communitySlug: data.communitySlug,
-      communityName: data.communityName,
-    };
-
-    const post = await FirebasePosts.createPost(input);
-
-    ctx.log.info('Post created successfully', { postId: post.id });
-
-    return NextResponse.json(
-      {
-        success: true,
-        post,
-        message: 'Post created successfully',
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+  });
 }
