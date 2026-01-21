@@ -6,6 +6,7 @@
     "dev": "next dev --port 3000",
     "dev:force": "./scripts/start-dev.sh",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "start": "next start --port 3000",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
@@ -70,6 +71,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@next/bundle-analyzer": "^15.1.6",
     "@playwright/test": "^1.48.2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.0",

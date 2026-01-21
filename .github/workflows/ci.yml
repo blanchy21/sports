@@ -50,6 +50,38 @@ jobs:
       - name: Run tests
         run: npm test
 
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    # Run after unit tests pass
+    needs: [test]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run WorkerBee integration tests
+        run: npm run test:workerbee:integration
+        env:
+          RUN_WORKERBEE_TESTS: true
+        # Allow failures for now since these depend on external services
+        continue-on-error: true
+
+      - name: Run Hive API integration tests
+        run: npm test -- tests/api/*.integration.test.ts --forceExit
+        env:
+          RUN_WORKERBEE_TESTS: true
+        continue-on-error: true
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -73,3 +105,32 @@ jobs:
         env:
           # Suppress build-time warnings for missing env vars
           SKIP_ENV_VALIDATION: true
+
+      - name: Check bundle size
+        run: |
+          # Extract bundle sizes from .next/build-manifest.json
+          echo "## Bundle Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Calculate total JS bundle size
+          TOTAL_JS=$(find .next/static/chunks -name "*.js" -exec wc -c {} + | tail -1 | awk '{print $1}')
+          TOTAL_JS_MB=$(echo "scale=2; $TOTAL_JS / 1048576" | bc)
+
+          # Performance budget: 1MB for initial JS
+          MAX_JS_BYTES=1048576
+
+          echo "| Metric | Size | Budget | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$TOTAL_JS" -gt "$MAX_JS_BYTES" ]; then
+            echo "| Total JS | ${TOTAL_JS_MB}MB | 1MB | :warning: Over budget |" >> $GITHUB_STEP_SUMMARY
+            echo "::warning::Total JS bundle (${TOTAL_JS_MB}MB) exceeds 1MB budget"
+          else
+            echo "| Total JS | ${TOTAL_JS_MB}MB | 1MB | :white_check_mark: OK |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # List largest chunks
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Largest Chunks" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          find .next/static/chunks -name "*.js" -exec ls -lh {} \; | sort -k5 -hr | head -10 | awk '{print "- " $9 ": " $5}' >> $GITHUB_STEP_SUMMARY

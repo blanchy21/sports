@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+// Bundle analyzer - only enabled when ANALYZE=true
+const withBundleAnalyzer = process.env.ANALYZE === 'true'
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ? require('@next/bundle-analyzer')({ enabled: true })
+  : (config: NextConfig) => config;
+
 const nextConfig: NextConfig = {
   // Security headers including CSP
   async headers() {
@@ -288,9 +294,12 @@ const sentryWebpackPluginOptions = {
   automaticVercelMonitors: true,
 };
 
-// Wrap with Sentry only if DSN is configured
-const exportedConfig = process.env.NEXT_PUBLIC_SENTRY_DSN
+// Wrap with Sentry only if DSN is configured, then bundle analyzer
+const configWithSentry = process.env.NEXT_PUBLIC_SENTRY_DSN
   ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
   : nextConfig;
+
+// Apply bundle analyzer (only active when ANALYZE=true)
+const exportedConfig = withBundleAnalyzer(configWithSentry);
 
 export default exportedConfig;

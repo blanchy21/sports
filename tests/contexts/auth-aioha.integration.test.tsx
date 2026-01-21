@@ -147,7 +147,8 @@ describe('AuthProvider + Aioha integration', () => {
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/api/hive/account/summary?username=${DEFAULT_USERNAME}`)
+        expect.stringContaining(`/api/hive/account/summary?username=${DEFAULT_USERNAME}`),
+        expect.anything()
       );
     });
 
@@ -157,9 +158,13 @@ describe('AuthProvider + Aioha integration', () => {
       expect(latestAuth?.hiveUser?.username).toBe(DEFAULT_USERNAME);
     });
 
-    const storedRaw = localStorage.getItem('authState');
-    expect(storedRaw).not.toBeNull();
+    // Wait for localStorage to be updated (it happens async via useEffect)
+    await waitFor(() => {
+      const storedRaw = localStorage.getItem('authState');
+      expect(storedRaw).not.toBeNull();
+    });
 
+    const storedRaw = localStorage.getItem('authState');
     const stored = JSON.parse(storedRaw!);
     expect(stored.user.username).toBe(DEFAULT_USERNAME);
     expect(stored.authType).toBe('hive');

@@ -4,11 +4,24 @@
  *
  * This module provides comprehensive logging for WorkerBee operations,
  * including performance monitoring, error tracking, and debug information.
+ *
+ * Features:
+ * - JSON format for production (structured logging)
+ * - Human-readable format for development
+ * - Rate limiting for repeated messages
+ * - Performance tracking
  */
 
 import { getWorkerBeeConfig, getDebugSettings } from './config';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+/**
+ * Check if we should use JSON format logging
+ * JSON format is used in production for log aggregation services
+ */
+const useJsonFormat = process.env.NODE_ENV === 'production' &&
+  process.env.LOG_FORMAT !== 'pretty';
 
 /**
  * Rate limiting configuration for sensitive log messages
@@ -254,16 +267,51 @@ class WorkerBeeLogger {
 
   /**
    * Output to console with appropriate formatting
+   * Uses JSON format in production for log aggregation services
    */
   private outputToConsole(entry: LogEntry): void {
     const { timestamp, level, message, context, data, error, performance } = entry;
-    
+
+    // JSON format for production (structured logging)
+    if (useJsonFormat) {
+      const jsonEntry = {
+        timestamp,
+        level,
+        message,
+        ...(context && { context }),
+        ...(data && { data }),
+        ...(error && { error }),
+        ...(performance && { performance }),
+      };
+
+      const jsonString = JSON.stringify(jsonEntry);
+
+      switch (level) {
+        case 'debug':
+          if (this.debugSettings.workerBee || this.debugSettings.general) {
+            console.debug(jsonString);
+          }
+          break;
+        case 'info':
+          console.info(jsonString);
+          break;
+        case 'warn':
+          console.warn(jsonString);
+          break;
+        case 'error':
+          console.error(jsonString);
+          break;
+      }
+      return;
+    }
+
+    // Human-readable format for development
     const timestampStr = new Date(timestamp).toLocaleTimeString();
     const contextStr = context ? `[${context}]` : '';
     const levelStr = level.toUpperCase().padEnd(5);
-    
+
     const baseMessage = `${timestampStr} ${levelStr} ${contextStr} ${message}`;
-    
+
     switch (level) {
       case 'debug':
         if (this.debugSettings.workerBee || this.debugSettings.general) {
@@ -281,7 +329,7 @@ class WorkerBeeLogger {
         break;
     }
 
-    // Performance logging
+    // Performance logging (only in development)
     if (performance) {
       console.info(`⏱️  ${performance.operation}: ${performance.duration}ms`);
     }
