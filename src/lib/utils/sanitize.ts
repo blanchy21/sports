@@ -161,3 +161,159 @@ export function hasSuspiciousContent(content: string): boolean {
 
   return suspiciousPatterns.some(pattern => pattern.test(content));
 }
+
+// ============================================
+// URL Validation Utilities
+// ============================================
+
+/**
+ * Allowed protocols for URLs
+ */
+const ALLOWED_URL_PROTOCOLS = ['https:', 'http:'];
+
+/**
+ * Allowed protocols for image URLs (more restrictive)
+ */
+const ALLOWED_IMAGE_PROTOCOLS = ['https:', 'http:'];
+
+/**
+ * Validate a URL is safe and well-formed
+ *
+ * @param url - URL string to validate
+ * @param options - Validation options
+ * @returns Validation result with sanitized URL or error
+ */
+export function validateUrl(
+  url: string,
+  options: {
+    allowedProtocols?: string[];
+    requireHttps?: boolean;
+  } = {}
+): { valid: boolean; url?: string; error?: string } {
+  const { allowedProtocols = ALLOWED_URL_PROTOCOLS, requireHttps = false } = options;
+
+  if (!url || typeof url !== 'string') {
+    return { valid: false, error: 'URL is required' };
+  }
+
+  // Trim whitespace
+  const trimmed = url.trim();
+
+  if (!trimmed) {
+    return { valid: false, error: 'URL is required' };
+  }
+
+  // Block javascript: and data: URLs immediately
+  const lowerUrl = trimmed.toLowerCase();
+  if (lowerUrl.startsWith('javascript:') || lowerUrl.startsWith('data:')) {
+    return { valid: false, error: 'Invalid URL protocol' };
+  }
+
+  try {
+    // Parse the URL
+    const parsed = new URL(trimmed);
+
+    // Check protocol
+    if (!allowedProtocols.includes(parsed.protocol)) {
+      return {
+        valid: false,
+        error: `URL must use ${allowedProtocols.join(' or ')} protocol`,
+      };
+    }
+
+    // Require HTTPS if specified
+    if (requireHttps && parsed.protocol !== 'https:') {
+      return { valid: false, error: 'URL must use HTTPS' };
+    }
+
+    // Return the parsed href (normalized)
+    return { valid: true, url: parsed.href };
+  } catch {
+    // Try adding https:// if no protocol
+    if (!trimmed.includes('://')) {
+      try {
+        const withProtocol = new URL(`https://${trimmed}`);
+        if (allowedProtocols.includes(withProtocol.protocol)) {
+          return { valid: true, url: withProtocol.href };
+        }
+      } catch {
+        // Fall through to error
+      }
+    }
+
+    return { valid: false, error: 'Invalid URL format' };
+  }
+}
+
+/**
+ * Validate an image URL
+ * More restrictive than general URL validation
+ *
+ * @param url - Image URL to validate
+ * @returns Validation result
+ */
+export function validateImageUrl(url: string): {
+  valid: boolean;
+  url?: string;
+  error?: string;
+} {
+  const result = validateUrl(url, {
+    allowedProtocols: ALLOWED_IMAGE_PROTOCOLS,
+  });
+
+  if (!result.valid) {
+    return result;
+  }
+
+  // Additional image-specific checks
+  const parsed = new URL(result.url!);
+
+  // Block localhost and private IPs in production
+  const hostname = parsed.hostname.toLowerCase();
+  if (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('192.168.') ||
+    hostname.startsWith('10.') ||
+    hostname.startsWith('172.16.')
+  ) {
+    if (process.env.NODE_ENV === 'production') {
+      return { valid: false, error: 'Private URLs not allowed' };
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Check if a URL points to a known trusted image host
+ *
+ * @param url - URL to check
+ * @returns true if URL is from a trusted host
+ */
+export function isTrustedImageHost(url: string): boolean {
+  const trustedHosts = [
+    'images.hive.blog',
+    'images.ecency.com',
+    'files.peakd.com',
+    'cdn.steemitimages.com',
+    'steemitimages.com',
+    'images.unsplash.com',
+    'gateway.ipfs.io',
+    'ipfs.io',
+    'files.3speak.tv',
+    'files.dtube.tv',
+    'i.imgur.com',
+    'imgur.com',
+    'media.tenor.com',
+  ];
+
+  try {
+    const parsed = new URL(url);
+    return trustedHosts.some(
+      (host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`)
+    );
+  } catch {
+    return false;
+  }
+}

@@ -19,6 +19,8 @@ import {
 import { cn } from "@/lib/utils";
 import { SPORT_CATEGORIES } from "@/types";
 import { SHORTS_CONFIG, createShortOperation, validateShortContent } from "@/lib/hive-workerbee/shorts";
+import { uploadImageWithKeychain, isKeychainAvailable } from "@/lib/hive/imageUpload";
+import { validateImageUrl } from "@/lib/utils/sanitize";
 import dynamic from "next/dynamic";
 
 // Import emoji picker dynamically
@@ -69,6 +71,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const gifSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const charCount = content.length;
   const maxChars = SHORTS_CONFIG.MAX_CHARS;
@@ -106,11 +109,18 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
   };
 
   const handleAddImage = () => {
-    if (imageUrl.trim()) {
-      setImages([...images, imageUrl.trim()]);
-      setImageUrl("");
-      setUploadError(null);
+    if (!imageUrl.trim()) return;
+
+    // Validate the URL
+    const validation = validateImageUrl(imageUrl.trim());
+    if (!validation.valid) {
+      setUploadError(validation.error || "Invalid image URL");
+      return;
     }
+
+    setImages([...images, validation.url!]);
+    setImageUrl("");
+    setUploadError(null);
   };
 
   const handleFileUpload = async (file: File) => {
@@ -128,34 +138,38 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       return;
     }
 
+    // Check if user is authenticated with Hive
+    if (!user?.username || authType !== 'hive') {
+      setUploadError("Please login with a Hive wallet to upload images");
+      return;
+    }
+
+    // Check if Keychain is available
+    if (!isKeychainAvailable()) {
+      setUploadError("Hive Keychain is required for image uploads. Please install the browser extension.");
+      return;
+    }
+
     setIsUploadingImage(true);
     setUploadError(null);
 
     try {
-      // Use Ecency's image upload API (commonly used in Hive apps)
-      const formData = new FormData();
-      formData.append("file", file);
+      // Upload via Hive Keychain (signs the image with posting key)
+      const result = await uploadImageWithKeychain(file, user.username);
 
-      const response = await fetch("https://images.ecency.com/hs/af050e32", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const data = await response.json();
-
-      if (data.url) {
-        setImages([...images, data.url]);
+      if (result.success && result.url) {
+        setImages([...images, result.url]);
         setUploadError(null);
       } else {
-        throw new Error("No URL returned");
+        throw new Error(result.error || "Upload failed");
       }
     } catch (error) {
       console.error("Image upload error:", error);
-      setUploadError("Failed to upload image. Please try again or use a URL.");
+      setUploadError(
+        error instanceof Error
+          ? error.message
+          : "Failed to upload image. Please try again or use a URL."
+      );
     } finally {
       setIsUploadingImage(false);
     }
@@ -165,7 +179,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  // GIF search using Tenor API
+  // GIF search using server-side API route
   const searchGifs = useCallback(async (query: string) => {
     if (!query.trim()) {
       setGifResults([]);
@@ -176,11 +190,8 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     setGifError(null);
 
     try {
-      // Using Tenor's free API with a public key for demo purposes
-      // In production, this should be moved to an API route with your own key
-      const apiKey = "AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ"; // Google's public Tenor API key
       const response = await fetch(
-        `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=${apiKey}&limit=20&media_filter=gif,tinygif`
+        `/api/tenor?type=search&q=${encodeURIComponent(query)}&limit=20`
       );
 
       if (!response.ok) {
@@ -188,7 +199,11 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       }
 
       const data = await response.json();
-      setGifResults(data.results || []);
+      if (data.success) {
+        setGifResults(data.data || []);
+      } else {
+        throw new Error(data.error || "Failed to search GIFs");
+      }
     } catch (error) {
       console.error("GIF search error:", error);
       setGifError("Failed to load GIFs. Please try again.");
@@ -204,17 +219,18 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     setGifError(null);
 
     try {
-      const apiKey = "AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ";
-      const response = await fetch(
-        `https://tenor.googleapis.com/v2/featured?key=${apiKey}&limit=20&media_filter=gif,tinygif`
-      );
+      const response = await fetch('/api/tenor?type=featured&limit=20');
 
       if (!response.ok) {
         throw new Error("Failed to load trending GIFs");
       }
 
       const data = await response.json();
-      setGifResults(data.results || []);
+      if (data.success) {
+        setGifResults(data.data || []);
+      } else {
+        throw new Error(data.error || "Failed to load trending GIFs");
+      }
     } catch (error) {
       console.error("Trending GIF error:", error);
       setGifError("Failed to load GIFs. Please try again.");
@@ -295,6 +311,15 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     }
   }, [content, images, gifs, sportCategory, user, hiveUser, onSuccess, onError]);
 
+  // Cleanup debounce timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (gifSearchTimeoutRef.current) {
+        clearTimeout(gifSearchTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Close pickers when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -316,6 +341,10 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
         !target.closest('[data-gif-picker]')
       ) {
         setShowGifPicker(false);
+        // Clear debounce timeout when closing picker
+        if (gifSearchTimeoutRef.current) {
+          clearTimeout(gifSearchTimeoutRef.current);
+        }
       }
     };
 
@@ -630,12 +659,22 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                       type="text"
                       value={gifSearchQuery}
                       onChange={(e) => {
-                        setGifSearchQuery(e.target.value);
-                        if (e.target.value) {
-                          searchGifs(e.target.value);
-                        } else {
-                          loadTrendingGifs();
+                        const value = e.target.value;
+                        setGifSearchQuery(value);
+
+                        // Clear existing timeout
+                        if (gifSearchTimeoutRef.current) {
+                          clearTimeout(gifSearchTimeoutRef.current);
                         }
+
+                        // Debounce search by 300ms
+                        gifSearchTimeoutRef.current = setTimeout(() => {
+                          if (value.trim()) {
+                            searchGifs(value);
+                          } else {
+                            loadTrendingGifs();
+                          }
+                        }, 300);
                       }}
                       placeholder="Search GIFs..."
                       className="w-full pl-8 pr-3 py-2 bg-muted rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"

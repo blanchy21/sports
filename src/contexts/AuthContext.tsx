@@ -747,10 +747,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         loginAt: now,
       });
 
-      // PERFORMANCE: Defer profile fetch to background
+      // PERFORMANCE: Defer profile fetch to background - don't block login/redirect
+      // Cancel any previous in-flight request
+      profileFetchController.current?.abort();
+      profileFetchController.current = new AbortController();
+      const controller = profileFetchController.current;
+
       setTimeout(async () => {
         try {
-          const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(username)}`);
+          const response = await fetch(
+            `/api/hive/account/summary?username=${encodeURIComponent(username)}`,
+            { signal: controller.signal }
+          );
           if (!response.ok) {
             throw new Error(`Failed to fetch account: ${response.status}`);
           }
@@ -799,6 +807,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
           }
         } catch (profileError) {
+          // Ignore abort errors (expected when user logs out during fetch)
+          if (profileError instanceof Error && profileError.name === 'AbortError') {
+            return;
+          }
           console.error("Error fetching Hive account data:", profileError);
           dispatch({ type: 'LOGIN_PROFILE_FAILED' });
         }

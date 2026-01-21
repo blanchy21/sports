@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Community } from "@/types";
 import { cn } from "@/lib/utils";
+import { validateImageUrl, validateUrl } from "@/lib/utils/sanitize";
 import dynamic from "next/dynamic";
 import { publishPost, canUserPost, validatePostData } from "@/lib/hive-workerbee/posting";
 import { PostData } from "@/lib/hive-workerbee/posting";
@@ -27,6 +28,7 @@ import { useCommunities, useUserCommunities } from "@/lib/react-query/queries/us
 import { UnifiedPostingService } from "@/lib/posting/unified";
 import { useUIStore } from "@/stores/uiStore";
 import { FirebasePosts } from "@/lib/firebase/posts";
+import { uploadImageWithKeychain, isKeychainAvailable } from "@/lib/hive/imageUpload";
 
 // Import new components
 import { EditorToolbar, FormatType } from "@/components/publish/EditorToolbar";
@@ -271,15 +273,22 @@ function PublishPageContent() {
   };
 
   const handleImageInsert = () => {
-    if (imageUrl) {
-      const alt = imageAlt || "image";
-      insertAtCursor(`\n![${alt}](${imageUrl})\n`);
-      setImageUrl("");
-      setImageAlt("");
-      setImageTab("url");
-      setUploadError(null);
-      setShowImageDialog(false);
+    if (!imageUrl) return;
+
+    // Validate the image URL
+    const validation = validateImageUrl(imageUrl);
+    if (!validation.valid) {
+      setUploadError(validation.error || "Invalid image URL");
+      return;
     }
+
+    const alt = imageAlt || "image";
+    insertAtCursor(`\n![${alt}](${validation.url})\n`);
+    setImageUrl("");
+    setImageAlt("");
+    setImageTab("url");
+    setUploadError(null);
+    setShowImageDialog(false);
   };
 
   const handleFileUpload = async (file: File) => {
@@ -297,34 +306,38 @@ function PublishPageContent() {
       return;
     }
 
+    // Check if user is authenticated with Hive
+    if (!user?.username || authType !== 'hive') {
+      setUploadError("Please login with a Hive wallet to upload images");
+      return;
+    }
+
+    // Check if Keychain is available
+    if (!isKeychainAvailable()) {
+      setUploadError("Hive Keychain is required for image uploads. Please install the browser extension.");
+      return;
+    }
+
     setIsUploadingImage(true);
     setUploadError(null);
 
     try {
-      // Use Ecency's image upload API (commonly used in Hive apps)
-      const formData = new FormData();
-      formData.append("file", file);
+      // Upload via Hive Keychain (signs the image with posting key)
+      const result = await uploadImageWithKeychain(file, user.username);
 
-      const response = await fetch("https://images.ecency.com/hs/af050e32", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const data = await response.json();
-
-      if (data.url) {
-        setImageUrl(data.url);
+      if (result.success && result.url) {
+        setImageUrl(result.url);
         setImageAlt(file.name.replace(/\.[^/.]+$/, "")); // Use filename without extension as alt
       } else {
-        throw new Error("No URL returned");
+        throw new Error(result.error || "Upload failed");
       }
     } catch (error) {
       console.error("Image upload error:", error);
-      setUploadError("Failed to upload image. Please try again or use a URL instead.");
+      setUploadError(
+        error instanceof Error
+          ? error.message
+          : "Failed to upload image. Please try again or use a URL instead."
+      );
     } finally {
       setIsUploadingImage(false);
     }
@@ -335,13 +348,21 @@ function PublishPageContent() {
   };
 
   const handleLinkInsert = () => {
-    if (linkUrl) {
-      const text = linkText || linkUrl;
-      insertMarkdown("[", `](${linkUrl})`, text);
-      setLinkUrl("");
-      setLinkText("");
-      setShowLinkDialog(false);
+    if (!linkUrl) return;
+
+    // Validate the URL
+    const validation = validateUrl(linkUrl);
+    if (!validation.valid) {
+      setPublishError(validation.error || "Invalid URL");
+      return;
     }
+
+    const text = linkText || validation.url!;
+    insertMarkdown("[", `](${validation.url})`, text);
+    setLinkUrl("");
+    setLinkText("");
+    setShowLinkDialog(false);
+    setPublishError(null);
   };
 
   const handleEmoji = (emoji: string) => {

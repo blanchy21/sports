@@ -3,16 +3,22 @@ const CACHE_NAME = 'sportsblock-v1';
 const STATIC_CACHE = 'sportsblock-static-v1';
 const DYNAMIC_CACHE = 'sportsblock-dynamic-v1';
 
-// Assets to cache immediately
+// Skip caching in development
+const IS_DEV = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+// Assets to cache immediately (production only)
 const STATIC_ASSETS = [
-  '/',
-  '/feed',
-  '/auth',
   '/manifest.json',
 ];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
+  if (IS_DEV) {
+    // Skip caching in development
+    self.skipWaiting();
+    return;
+  }
+
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then((cache) => {
@@ -42,6 +48,11 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache with network fallback
 self.addEventListener('fetch', (event) => {
+  // In development, always go to network
+  if (IS_DEV) {
+    return;
+  }
+
   const { request } = event;
   const url = new URL(request.url);
 
@@ -52,6 +63,11 @@ self.addEventListener('fetch', (event) => {
 
   // Skip external requests
   if (url.origin !== location.origin) {
+    return;
+  }
+
+  // Don't cache Next.js build assets (they have hashed filenames anyway)
+  if (url.pathname.startsWith('/_next/')) {
     return;
   }
 

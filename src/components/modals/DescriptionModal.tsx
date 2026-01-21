@@ -1,24 +1,57 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
-import { Save, Edit3 } from "lucide-react";
+import { Save, Edit3, Loader2 } from "lucide-react";
 import { BaseModal } from "@/components/ui/BaseModal";
 
 interface DescriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
   data?: Record<string, unknown> | null;
+  /** Optional callback when description is saved. If not provided, modal just closes. */
+  onSave?: (description: string) => Promise<void> | void;
 }
 
-export const DescriptionModal: React.FC<DescriptionModalProps> = ({ isOpen, onClose, data }) => {
+export const DescriptionModal: React.FC<DescriptionModalProps> = ({
+  isOpen,
+  onClose,
+  data,
+  onSave
+}) => {
   const [description, setDescription] = useState(data?.description as string || '');
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = () => {
-    // TODO: In a real implementation, this would save the description to the backend
-    setIsEditing(false);
-    onClose();
+  // Reset state when modal opens with new data
+  useEffect(() => {
+    if (isOpen) {
+      setDescription(data?.description as string || '');
+      setIsEditing(false);
+      setError(null);
+    }
+  }, [isOpen, data]);
+
+  const handleSave = async () => {
+    setError(null);
+
+    if (onSave) {
+      setIsSaving(true);
+      try {
+        await onSave(description);
+        setIsEditing(false);
+        onClose();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to save description');
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      // No onSave callback - just close the modal
+      setIsEditing(false);
+      onClose();
+    }
   };
 
   const handleCancel = () => {
@@ -67,6 +100,13 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({ isOpen, onCl
               <p>• Use markdown formatting for better readability</p>
               <p>• Descriptions help other users understand your content</p>
             </div>
+
+            {/* Error message */}
+            {error && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -75,14 +115,19 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({ isOpen, onCl
           <Button
             variant="outline"
             onClick={isEditing ? handleCancel : onClose}
+            disabled={isSaving}
           >
             {isEditing ? 'Cancel' : 'Close'}
           </Button>
-          
+
           {isEditing ? (
-            <Button onClick={handleSave}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           ) : (
             <Button onClick={() => setIsEditing(true)}>

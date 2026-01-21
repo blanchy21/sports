@@ -98,6 +98,15 @@ class WorkerBeeOptimizer {
 
   /**
    * Batch multiple requests together
+   *
+   * Note: Batch processing is intentionally disabled. The Hive API's batch
+   * endpoint has inconsistent behavior across different nodes, and the
+   * performance gains are minimal for our use case. Direct API calls with
+   * caching provide better reliability.
+   *
+   * If batch processing is needed in the future, implement using the
+   * `condenser_api.call` method with multiple operations, but test
+   * thoroughly across different Hive nodes first.
    */
   private async processBatch(): Promise<void> {
     if (this.batchQueue.length === 0) {
@@ -108,10 +117,10 @@ class WorkerBeeOptimizer {
     this.batchQueue = [];
     this.batchTimer = null;
 
-    // Temporarily disable batch processing to prevent API errors
-    // TODO: Implement proper batch processing when needed
+    // Batch processing disabled - use direct API calls instead
+    // See method documentation above for rationale
     batch.forEach(request => {
-      request.reject(new Error('Batch processing temporarily disabled'));
+      request.reject(new Error('Batch processing is disabled. Use direct API calls with caching.'));
     });
   }
 
