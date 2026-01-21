@@ -204,3 +204,175 @@ export function CompactErrorFallback({
   );
 }
 
+/**
+ * API Error Fallback - for when API calls fail
+ * Shows a user-friendly message with retry option
+ */
+export function ApiErrorFallback({
+  error,
+  onRetry,
+  title = 'Failed to load data',
+  compact = false,
+}: {
+  error?: Error | string | null;
+  onRetry?: () => void;
+  title?: string;
+  compact?: boolean;
+}): React.ReactElement {
+  const errorMessage = error instanceof Error ? error.message : error;
+  const isNetworkError = errorMessage?.toLowerCase().includes('network') ||
+    errorMessage?.toLowerCase().includes('fetch');
+  const isServerError = errorMessage?.includes('500') || errorMessage?.includes('502') ||
+    errorMessage?.includes('503') || errorMessage?.includes('504');
+
+  const getUserFriendlyMessage = () => {
+    if (isNetworkError) {
+      return 'Please check your internet connection and try again.';
+    }
+    if (isServerError) {
+      return 'Our servers are temporarily unavailable. Please try again in a moment.';
+    }
+    return 'Something went wrong while loading this content.';
+  };
+
+  if (compact) {
+    return (
+      <div className="flex items-center justify-between p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+        <div className="flex items-center space-x-2">
+          <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
+          <p className="text-sm text-muted-foreground">{title}</p>
+        </div>
+        {onRetry && (
+          <Button variant="ghost" size="sm" onClick={onRetry} className="ml-2">
+            <RefreshCw className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center p-6 rounded-lg bg-muted/50 border border-border">
+      <div className="rounded-full bg-destructive/10 p-3 mb-4">
+        <AlertCircle className="h-6 w-6 text-destructive" />
+      </div>
+      <h3 className="text-lg font-semibold text-foreground mb-1">{title}</h3>
+      <p className="text-sm text-muted-foreground text-center mb-4 max-w-sm">
+        {getUserFriendlyMessage()}
+      </p>
+      {onRetry && (
+        <Button variant="outline" onClick={onRetry}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Empty State Fallback - for when data is empty (not an error)
+ */
+export function EmptyStateFallback({
+  title = 'No data found',
+  description,
+  icon: Icon,
+  action,
+}: {
+  title?: string;
+  description?: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+}): React.ReactElement {
+  const IconComponent = Icon || AlertCircle;
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8 rounded-lg bg-muted/30">
+      <div className="rounded-full bg-muted p-3 mb-4">
+        <IconComponent className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <h3 className="text-lg font-semibold text-foreground mb-1">{title}</h3>
+      {description && (
+        <p className="text-sm text-muted-foreground text-center mb-4 max-w-sm">
+          {description}
+        </p>
+      )}
+      {action && (
+        <Button variant="outline" onClick={action.onClick}>
+          {action.label}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Loading Fallback - skeleton placeholder during loading
+ */
+export function LoadingFallback({
+  lines = 3,
+  className = '',
+}: {
+  lines?: number;
+  className?: string;
+}): React.ReactElement {
+  return (
+    <div className={`animate-pulse space-y-3 ${className}`}>
+      {Array.from({ length: lines }).map((_, i) => (
+        <div
+          key={i}
+          className="h-4 bg-muted rounded"
+          style={{ width: `${Math.random() * 40 + 60}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Data Fetching Wrapper - handles loading, error, and empty states
+ * Use this to wrap components that fetch data
+ */
+export function DataFetchWrapper<T>({
+  isLoading,
+  error,
+  data,
+  onRetry,
+  loadingFallback,
+  errorFallback,
+  emptyFallback,
+  children,
+}: {
+  isLoading: boolean;
+  error?: Error | string | null;
+  data?: T | null;
+  onRetry?: () => void;
+  loadingFallback?: React.ReactNode;
+  errorFallback?: React.ReactNode;
+  emptyFallback?: React.ReactNode;
+  children: (data: T) => React.ReactNode;
+}): React.ReactElement {
+  if (isLoading) {
+    return <>{loadingFallback || <LoadingFallback />}</>;
+  }
+
+  if (error) {
+    return (
+      <>
+        {errorFallback || (
+          <ApiErrorFallback error={error} onRetry={onRetry} />
+        )}
+      </>
+    );
+  }
+
+  if (!data || (Array.isArray(data) && data.length === 0)) {
+    return <>{emptyFallback || <EmptyStateFallback />}</>;
+  }
+
+  return <>{children(data)}</>;
+}
+
