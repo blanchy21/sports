@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { Post } from '@/types';
 import { SportsblockPost } from '@/lib/hive-workerbee/content';
@@ -47,7 +48,8 @@ interface PostActions {
 }
 
 export const usePostStore = create<PostState & PostActions>()(
-  immer((set, get) => ({
+  devtools(
+    immer((set, get) => ({
     // State
     posts: [],
     selectedPost: null,
@@ -104,5 +106,7 @@ export const usePostStore = create<PostState & PostActions>()(
       state.posts = [];
       state.pagination.hasMore = false;
     }),
-  }))
+  })),
+    { name: 'PostStore', enabled: process.env.NODE_ENV === 'development' }
+  )
 );

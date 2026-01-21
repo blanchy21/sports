@@ -4,13 +4,17 @@ import React, { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  Image as ImageIcon, 
-  Smile, 
-  X, 
+import {
+  Image as ImageIcon,
+  Smile,
+  X,
   Loader2,
   MapPin,
-  Send
+  Send,
+  Upload,
+  Link as LinkIcon,
+  Film,
+  Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SPORT_CATEGORIES } from "@/types";
@@ -18,10 +22,22 @@ import { SHORTS_CONFIG, createShortOperation, validateShortContent } from "@/lib
 import dynamic from "next/dynamic";
 
 // Import emoji picker dynamically
+import { EmojiStyle } from "emoji-picker-react";
 const EmojiPicker = dynamic(
   () => import("emoji-picker-react"),
   { ssr: false }
 );
+
+// Tenor GIF result type
+interface TenorGif {
+  id: string;
+  title: string;
+  media_formats: {
+    gif: { url: string };
+    tinygif: { url: string };
+    nanogif: { url: string };
+  };
+}
 
 interface ComposeShortProps {
   onSuccess?: () => void;
@@ -38,9 +54,21 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
   const [showSportPicker, setShowSportPicker] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [showImageInput, setShowImageInput] = useState(false);
-  
+  const [imageInputMode, setImageInputMode] = useState<"upload" | "url">("upload");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // GIF picker state
+  const [gifs, setGifs] = useState<string[]>([]);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [gifSearchQuery, setGifSearchQuery] = useState("");
+  const [gifResults, setGifResults] = useState<TenorGif[]>([]);
+  const [isLoadingGifs, setIsLoadingGifs] = useState(false);
+  const [gifError, setGifError] = useState<string | null>(null);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const charCount = content.length;
   const maxChars = SHORTS_CONFIG.MAX_CHARS;
@@ -81,12 +109,132 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     if (imageUrl.trim()) {
       setImages([...images, imageUrl.trim()]);
       setImageUrl("");
-      setShowImageInput(false);
+      setUploadError(null);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Image must be less than 5MB");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setUploadError(null);
+
+    try {
+      // Use Ecency's image upload API (commonly used in Hive apps)
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("https://images.ecency.com/hs/af050e32", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const data = await response.json();
+
+      if (data.url) {
+        setImages([...images, data.url]);
+        setUploadError(null);
+      } else {
+        throw new Error("No URL returned");
+      }
+    } catch (error) {
+      console.error("Image upload error:", error);
+      setUploadError("Failed to upload image. Please try again or use a URL.");
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
   const handleRemoveImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
+  };
+
+  // GIF search using Tenor API
+  const searchGifs = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setGifResults([]);
+      return;
+    }
+
+    setIsLoadingGifs(true);
+    setGifError(null);
+
+    try {
+      // Using Tenor's free API with a public key for demo purposes
+      // In production, this should be moved to an API route with your own key
+      const apiKey = "AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ"; // Google's public Tenor API key
+      const response = await fetch(
+        `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=${apiKey}&limit=20&media_filter=gif,tinygif`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to search GIFs");
+      }
+
+      const data = await response.json();
+      setGifResults(data.results || []);
+    } catch (error) {
+      console.error("GIF search error:", error);
+      setGifError("Failed to load GIFs. Please try again.");
+      setGifResults([]);
+    } finally {
+      setIsLoadingGifs(false);
+    }
+  }, []);
+
+  // Load trending GIFs when picker opens
+  const loadTrendingGifs = useCallback(async () => {
+    setIsLoadingGifs(true);
+    setGifError(null);
+
+    try {
+      const apiKey = "AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ";
+      const response = await fetch(
+        `https://tenor.googleapis.com/v2/featured?key=${apiKey}&limit=20&media_filter=gif,tinygif`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load trending GIFs");
+      }
+
+      const data = await response.json();
+      setGifResults(data.results || []);
+    } catch (error) {
+      console.error("Trending GIF error:", error);
+      setGifError("Failed to load GIFs. Please try again.");
+    } finally {
+      setIsLoadingGifs(false);
+    }
+  }, []);
+
+  const handleGifSelect = (gif: TenorGif) => {
+    const gifUrl = gif.media_formats.gif?.url || gif.media_formats.tinygif?.url;
+    if (gifUrl) {
+      setGifs([...gifs, gifUrl]);
+      setShowGifPicker(false);
+      setGifSearchQuery("");
+      setGifResults([]);
+    }
+  };
+
+  const handleRemoveGif = (index: number) => {
+    setGifs(gifs.filter((_, i) => i !== index));
   };
 
   const handlePublish = useCallback(async () => {
@@ -110,6 +258,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
         author: hiveUser.username,
         sportCategory: sportCategory || undefined,
         images: images.length > 0 ? images : undefined,
+        gifs: gifs.length > 0 ? gifs : undefined,
       });
 
       // Import aioha for broadcasting
@@ -135,6 +284,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       // Success - clear form
       setContent("");
       setImages([]);
+      setGifs([]);
       setSportCategory("");
       onSuccess?.();
     } catch (error) {
@@ -143,24 +293,35 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     } finally {
       setIsPublishing(false);
     }
-  }, [content, images, sportCategory, user, hiveUser, onSuccess, onError]);
+  }, [content, images, gifs, sportCategory, user, hiveUser, onSuccess, onError]);
 
   // Close pickers when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+
+      // Close emoji picker
       if (
         showEmojiPicker &&
         emojiButtonRef.current &&
-        !emojiButtonRef.current.contains(event.target as Node) &&
-        !(event.target as Element).closest('.EmojiPickerReact')
+        !emojiButtonRef.current.contains(target as Node) &&
+        !target.closest('.EmojiPickerReact')
       ) {
         setShowEmojiPicker(false);
+      }
+
+      // Close GIF picker
+      if (
+        showGifPicker &&
+        !target.closest('[data-gif-picker]')
+      ) {
+        setShowGifPicker(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showEmojiPicker]);
+  }, [showEmojiPicker, showGifPicker]);
 
   // Auto-resize textarea
   React.useEffect(() => {
@@ -220,8 +381,8 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             {images.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {images.map((img, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="relative group rounded-lg overflow-hidden border"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -235,6 +396,34 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                     />
                     <button
                       onClick={() => handleRemoveImage(index)}
+                      className="absolute top-1 right-1 p-1 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3 text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* GIF previews */}
+            {gifs.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {gifs.map((gif, index) => (
+                  <div
+                    key={index}
+                    className="relative group rounded-lg overflow-hidden border border-purple-500/30"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={gif}
+                      alt={`GIF ${index + 1}`}
+                      className="w-24 h-24 object-cover"
+                    />
+                    <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-purple-600/80 rounded text-[10px] text-white font-medium">
+                      GIF
+                    </div>
+                    <button
+                      onClick={() => handleRemoveGif(index)}
                       className="absolute top-1 right-1 p-1 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="h-3 w-3 text-white" />
@@ -261,28 +450,115 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
               </div>
             )}
 
-            {/* Image URL input */}
+            {/* Image input panel */}
             {showImageInput && (
-              <div className="flex gap-2 mt-3">
-                <input
-                  type="text"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="Paste image URL..."
-                  className="flex-1 px-3 py-2 bg-muted rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddImage();
-                    }
-                  }}
-                />
-                <Button size="sm" onClick={handleAddImage} disabled={!imageUrl.trim()}>
-                  Add
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => setShowImageInput(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
+              <div className="mt-3 p-3 bg-muted/50 rounded-lg border">
+                {/* Tab buttons */}
+                <div className="flex gap-1 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setImageInputMode("upload")}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                      imageInputMode === "upload"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageInputMode("url")}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                      imageInputMode === "url"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                    URL
+                  </button>
+                  <div className="flex-1" />
+                  <Button size="sm" variant="ghost" onClick={() => {
+                    setShowImageInput(false);
+                    setUploadError(null);
+                    setImageUrl("");
+                  }}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Upload mode */}
+                {imageInputMode === "upload" && (
+                  <div className="space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file);
+                        e.target.value = "";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                      className={cn(
+                        "w-full flex flex-col items-center justify-center gap-2 p-4",
+                        "border-2 border-dashed border-muted-foreground/30 rounded-lg",
+                        "hover:border-primary/50 hover:bg-primary/5 transition-colors",
+                        "text-muted-foreground",
+                        isUploadingImage && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {isUploadingImage ? (
+                        <>
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <span className="text-sm">Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-6 w-6" />
+                          <span className="text-sm">Click to select an image</span>
+                          <span className="text-xs text-muted-foreground/70">Max 5MB</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* URL mode */}
+                {imageInputMode === "url" && (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="Paste image URL..."
+                      className="flex-1 px-3 py-2 bg-background rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary border"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddImage();
+                        }
+                      }}
+                    />
+                    <Button size="sm" onClick={handleAddImage} disabled={!imageUrl.trim()}>
+                      Add
+                    </Button>
+                  </div>
+                )}
+
+                {/* Error message */}
+                {uploadError && (
+                  <p className="text-sm text-destructive mt-2">{uploadError}</p>
+                )}
               </div>
             )}
           </div>
@@ -315,10 +591,98 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             >
               <Smile className="h-5 w-5" />
             </Button>
-            
+
             {showEmojiPicker && (
               <div className="absolute top-full left-0 mt-2 z-50">
-                <EmojiPicker onEmojiClick={handleEmojiSelect} />
+                <EmojiPicker
+                  onEmojiClick={handleEmojiSelect}
+                  emojiStyle={EmojiStyle.NATIVE}
+                  lazyLoadEmojis={true}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* GIF button */}
+          <div className="relative" data-gif-picker>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowGifPicker(!showGifPicker);
+                if (!showGifPicker && gifResults.length === 0) {
+                  loadTrendingGifs();
+                }
+              }}
+              className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
+              title="Add GIF"
+            >
+              <Film className="h-5 w-5" />
+            </Button>
+
+            {showGifPicker && (
+              <div className="absolute top-full left-0 mt-2 z-50 bg-card border rounded-lg shadow-lg w-80 max-h-96 overflow-hidden">
+                {/* Search input */}
+                <div className="p-2 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      value={gifSearchQuery}
+                      onChange={(e) => {
+                        setGifSearchQuery(e.target.value);
+                        if (e.target.value) {
+                          searchGifs(e.target.value);
+                        } else {
+                          loadTrendingGifs();
+                        }
+                      }}
+                      placeholder="Search GIFs..."
+                      className="w-full pl-8 pr-3 py-2 bg-muted rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+
+                {/* GIF results */}
+                <div className="p-2 overflow-y-auto max-h-72">
+                  {isLoadingGifs ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : gifError ? (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      {gifError}
+                    </div>
+                  ) : gifResults.length === 0 ? (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      {gifSearchQuery ? "No GIFs found" : "Search for GIFs"}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-1">
+                      {gifResults.map((gif) => (
+                        <button
+                          key={gif.id}
+                          type="button"
+                          onClick={() => handleGifSelect(gif)}
+                          className="relative aspect-square overflow-hidden rounded hover:opacity-80 transition-opacity"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={gif.media_formats.tinygif?.url || gif.media_formats.gif?.url}
+                            alt={gif.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Tenor attribution */}
+                <div className="px-2 py-1.5 border-t bg-muted/50 text-center">
+                  <span className="text-[10px] text-muted-foreground">Powered by Tenor</span>
+                </div>
               </div>
             )}
           </div>

@@ -10,6 +10,19 @@ import { getWorkerBeeConfig, getDebugSettings } from './config';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
+/**
+ * Rate limiting configuration for sensitive log messages
+ */
+interface RateLimitEntry {
+  count: number;
+  firstSeen: number;
+  lastLogged: number;
+}
+
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute window
+const RATE_LIMIT_MAX_PER_WINDOW = 5; // Max 5 identical messages per window
+const RATE_LIMIT_COOLDOWN_MS = 10_000; // 10 seconds between identical messages
+
 export interface LogEntry {
   timestamp: string;
   level: LogLevel;
@@ -32,6 +45,96 @@ class WorkerBeeLogger {
   private debugSettings = getDebugSettings();
   private logs: LogEntry[] = [];
   private maxLogs = 1000;
+  private rateLimitMap = new Map<string, RateLimitEntry>();
+
+  /**
+   * Generate a rate limit key from message and context
+   */
+  private getRateLimitKey(level: LogLevel, message: string, context?: string): string {
+    return `${level}:${context || ''}:${message}`;
+  }
+
+  /**
+   * Check if a log message should be rate limited
+   * @returns true if the message should be suppressed
+   */
+  private shouldRateLimit(level: LogLevel, message: string, context?: string): boolean {
+    // Only rate limit warn and error levels
+    if (level !== 'warn' && level !== 'error') {
+      return false;
+    }
+
+    const key = this.getRateLimitKey(level, message, context);
+    const now = Date.now();
+    const entry = this.rateLimitMap.get(key);
+
+    if (!entry) {
+      // First time seeing this message
+      this.rateLimitMap.set(key, {
+        count: 1,
+        firstSeen: now,
+        lastLogged: now,
+      });
+      this.cleanupRateLimitMap();
+      return false;
+    }
+
+    // Check if we're outside the rate limit window
+    if (now - entry.firstSeen > RATE_LIMIT_WINDOW_MS) {
+      // Reset the window
+      this.rateLimitMap.set(key, {
+        count: 1,
+        firstSeen: now,
+        lastLogged: now,
+      });
+      return false;
+    }
+
+    // Within window - check limits
+    entry.count++;
+
+    // If we've exceeded max per window, suppress
+    if (entry.count > RATE_LIMIT_MAX_PER_WINDOW) {
+      // But allow periodic updates (every cooldown period)
+      if (now - entry.lastLogged > RATE_LIMIT_COOLDOWN_MS) {
+        entry.lastLogged = now;
+        // Log with suppression notice
+        return false;
+      }
+      return true; // Suppress this log
+    }
+
+    // Within limits - allow and update
+    entry.lastLogged = now;
+    return false;
+  }
+
+  /**
+   * Get suppression count for a message (for display)
+   */
+  private getSuppressionInfo(level: LogLevel, message: string, context?: string): string | null {
+    const key = this.getRateLimitKey(level, message, context);
+    const entry = this.rateLimitMap.get(key);
+
+    if (entry && entry.count > RATE_LIMIT_MAX_PER_WINDOW) {
+      return `(repeated ${entry.count} times)`;
+    }
+    return null;
+  }
+
+  /**
+   * Cleanup old rate limit entries to prevent memory leaks
+   */
+  private cleanupRateLimitMap(): void {
+    if (this.rateLimitMap.size > 100) {
+      const now = Date.now();
+      for (const [key, entry] of this.rateLimitMap.entries()) {
+        if (now - entry.firstSeen > RATE_LIMIT_WINDOW_MS * 2) {
+          this.rateLimitMap.delete(key);
+        }
+      }
+    }
+  }
 
   /**
    * Log a debug message
@@ -113,10 +216,19 @@ class WorkerBeeLogger {
     error?: Error,
     performance?: { duration: number; operation: string }
   ): void {
+    // Check rate limiting for warn/error levels
+    if (this.shouldRateLimit(level, message, context)) {
+      return; // Suppress this log
+    }
+
+    // Get suppression info if this message has been rate-limited previously
+    const suppressionInfo = this.getSuppressionInfo(level, message, context);
+    const displayMessage = suppressionInfo ? `${message} ${suppressionInfo}` : message;
+
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
-      message,
+      message: displayMessage,
       context,
       data,
       performance,

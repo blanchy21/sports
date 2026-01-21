@@ -25,8 +25,10 @@ export async function GET(
       );
     }
 
-    // Increment view count (fire and forget)
-    FirebasePosts.incrementViewCount(id).catch(() => {});
+    // Increment view count (fire and forget, but log errors)
+    FirebasePosts.incrementViewCount(id).catch((err) => {
+      console.error('Failed to increment view count:', err instanceof Error ? err.message : err);
+    });
 
     return NextResponse.json({
       success: true,

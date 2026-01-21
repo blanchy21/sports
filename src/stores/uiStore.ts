@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 
 interface ModalState {
   isOpen: boolean;
@@ -38,8 +38,9 @@ interface UIActions {
 }
 
 export const useUIStore = create<UIState & UIActions>()(
-  persist(
-    (set) => ({
+  devtools(
+    persist(
+      (set) => ({
       // State
       modals: {
         comments: { isOpen: false, type: null, data: null },
@@ -115,11 +116,13 @@ export const useUIStore = create<UIState & UIActions>()(
         }),
 
       clearRecentTags: () => set({ recentTags: [] }),
-    }),
-    {
-      name: 'ui-store',
-      // Only persist recentTags to localStorage
-      partialize: (state) => ({ recentTags: state.recentTags }),
-    }
+      }),
+      {
+        name: 'ui-store',
+        // Only persist recentTags to localStorage
+        partialize: (state) => ({ recentTags: state.recentTags }),
+      }
+    ),
+    { name: 'UIStore', enabled: process.env.NODE_ENV === 'development' }
   )
 );

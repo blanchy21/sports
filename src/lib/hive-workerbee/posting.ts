@@ -62,7 +62,14 @@ export interface PublishResult {
 function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
   try {
     return JSON.parse(jsonMetadata || '{}');
-  } catch {
+  } catch (error) {
+    // Log parse failures for debugging - invalid metadata is common from external sources
+    if (process.env.NODE_ENV === 'development') {
+      logWarn('Failed to parse JSON metadata', 'parseJsonMetadata', {
+        jsonMetadata: jsonMetadata?.substring(0, 200), // Truncate for logging
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
     return {};
   }
 }

@@ -48,7 +48,7 @@ A Next.js 15 sports content platform integrated with the Hive blockchain. Users 
 ## Scripts
 
 | Command | Description |
-|---------|-------------|
+| --------- | ------------- |
 | `npm run dev` | Start development server |
 | `npm run build` | Create production build |
 | `npm run start` | Start production server |

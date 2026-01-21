@@ -52,6 +52,55 @@ export interface Beneficiary {
   weight: number; // 0-10000 (basis points, so 2000 = 20%)
 }
 
+/**
+ * Validate beneficiary configuration
+ * @param beneficiaries - Array of beneficiaries to validate
+ * @returns Validation result with errors if invalid
+ */
+export function validateBeneficiaries(beneficiaries: Beneficiary[]): {
+  isValid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  if (beneficiaries.length > 8) {
+    errors.push('Maximum 8 beneficiaries allowed');
+  }
+
+  let totalWeight = 0;
+  const seenAccounts = new Set<string>();
+
+  for (const beneficiary of beneficiaries) {
+    // Validate account name (3-16 chars, lowercase alphanumeric and dots/hyphens)
+    if (!beneficiary.account || !/^[a-z][a-z0-9.-]{2,15}$/.test(beneficiary.account)) {
+      errors.push(`Invalid account name: ${beneficiary.account || '(empty)'}`);
+    }
+
+    // Check for duplicate accounts
+    if (seenAccounts.has(beneficiary.account)) {
+      errors.push(`Duplicate beneficiary account: ${beneficiary.account}`);
+    }
+    seenAccounts.add(beneficiary.account);
+
+    // Validate individual weight (must be positive integer, max 10000)
+    if (!Number.isInteger(beneficiary.weight) || beneficiary.weight < 1 || beneficiary.weight > 10000) {
+      errors.push(`Invalid weight for ${beneficiary.account}: ${beneficiary.weight} (must be 1-10000)`);
+    }
+
+    totalWeight += beneficiary.weight;
+  }
+
+  // Total weight cannot exceed 10000 (100%)
+  if (totalWeight > 10000) {
+    errors.push(`Total beneficiary weight ${totalWeight} exceeds maximum 10000 (${(totalWeight / 100).toFixed(2)}% > 100%)`);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
 export interface WaxTransactionResult {
   success: boolean;
   transactionId?: string;
@@ -245,6 +294,12 @@ export function createCommentOptionsOperation(optionsData: {
 }): WaxCommentOptionsOperation {
   // Use default beneficiaries if not provided
   const beneficiaries = optionsData.beneficiaries || SPORTS_ARENA_CONFIG.DEFAULT_BENEFICIARIES;
+
+  // Validate beneficiaries before using them
+  const validation = validateBeneficiaries(beneficiaries);
+  if (!validation.isValid) {
+    throw new Error(`Invalid beneficiaries: ${validation.errors.join(', ')}`);
+  }
 
   // Beneficiaries must be sorted by account name alphabetically
   const sortedBeneficiaries = [...beneficiaries].sort((a, b) =>

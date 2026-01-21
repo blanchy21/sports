@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { Community, CommunityFilters } from '@/types';
 
@@ -58,8 +58,9 @@ const DEFAULT_FILTERS: CommunityFilters = {
 };
 
 export const useCommunityStore = create<CommunityState & CommunityActions>()(
-  persist(
-    immer((set, get) => ({
+  devtools(
+    persist(
+      immer((set, get) => ({
       // Initial state
       communities: [],
       userCommunities: [],
@@ -150,13 +151,15 @@ export const useCommunityStore = create<CommunityState & CommunityActions>()(
         }
       }),
     })),
-    {
-      name: 'sportsblock-communities',
-      partialize: (state) => ({
-        // Only persist user communities (for faster loading)
-        userCommunities: state.userCommunities,
-        filters: state.filters,
-      }),
-    }
+      {
+        name: 'sportsblock-communities',
+        partialize: (state) => ({
+          // Only persist user communities (for faster loading)
+          userCommunities: state.userCommunities,
+          filters: state.filters,
+        }),
+      }
+    ),
+    { name: 'CommunityStore', enabled: process.env.NODE_ENV === 'development' }
   )
 );

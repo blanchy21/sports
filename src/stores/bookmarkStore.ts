@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { Post } from '@/types';
 import { SportsblockPost } from '@/lib/shared/types';
@@ -28,8 +28,9 @@ interface BookmarkActions {
 }
 
 export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
-  persist(
-    immer((set, get) => ({
+  devtools(
+    persist(
+      immer((set, get) => ({
       // State
       bookmarks: [],
       isLoading: false,
@@ -91,9 +92,11 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
         state.error = error;
       }),
     })),
-    {
-      name: 'sportsblock-bookmarks',
-      version: 1,
-    }
+      {
+        name: 'sportsblock-bookmarks',
+        version: 1,
+      }
+    ),
+    { name: 'BookmarkStore', enabled: process.env.NODE_ENV === 'development' }
   )
 );
