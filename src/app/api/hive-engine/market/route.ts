@@ -255,10 +255,12 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     console.error('[API] Error fetching market data:', error);
+    // Sanitize error response - don't expose internal details
     return NextResponse.json(
       {
-        error: 'Failed to fetch market data',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        error: 'Failed to fetch market data. Please try again later.',
+        code: 'MARKET_FETCH_ERROR',
       },
       { status: 500 }
     );

@@ -185,10 +185,12 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('[API] Error building transfer operation:', error);
+    // Sanitize error response - don't expose internal details
     return NextResponse.json(
       {
-        error: 'Failed to build operation',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        error: 'Failed to build transfer operation. Please check your input and try again.',
+        code: 'TRANSFER_BUILD_ERROR',
       },
       { status: 500 }
     );

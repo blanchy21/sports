@@ -228,10 +228,12 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error('[API] Error fetching history:', error);
+    // Sanitize error response - don't expose internal details
     return NextResponse.json(
       {
-        error: 'Failed to fetch transaction history',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        error: 'Failed to fetch transaction history. Please try again later.',
+        code: 'HISTORY_FETCH_ERROR',
       },
       { status: 500 }
     );

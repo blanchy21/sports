@@ -115,10 +115,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('[API] Error fetching stake info:', error);
+    // Sanitize error response - don't expose internal details
     return NextResponse.json(
       {
-        error: 'Failed to fetch staking information',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        error: 'Failed to fetch staking information. Please try again later.',
+        code: 'STAKE_FETCH_ERROR',
       },
       { status: 500 }
     );
@@ -229,10 +231,12 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('[API] Error building stake operation:', error);
+    // Sanitize error response - don't expose internal details
     return NextResponse.json(
       {
-        error: 'Failed to build operation',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        error: 'Failed to build staking operation. Please check your input and try again.',
+        code: 'STAKE_BUILD_ERROR',
       },
       { status: 500 }
     );

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FirebaseCommunities } from '@/lib/firebase/communities';
+import { FirebaseCommunitiesAdmin } from '@/lib/firebase/communities-admin';
+import { isAdminConfigured } from '@/lib/firebase/admin';
 import {
   createRequestContext,
   validationError,
@@ -44,10 +45,10 @@ export async function GET(
     ctx.log.debug('Fetching community', { id });
 
     // Try to fetch by ID first, then by slug
-    let community = await FirebaseCommunities.getCommunityById(id);
+    let community = await FirebaseCommunitiesAdmin.getCommunityById(id);
     
     if (!community) {
-      community = await FirebaseCommunities.getCommunityBySlug(id);
+      community = await FirebaseCommunitiesAdmin.getCommunityBySlug(id);
     }
 
     if (!community) {
@@ -55,7 +56,7 @@ export async function GET(
     }
 
     // Fetch team members (admins and moderators)
-    const members = await FirebaseCommunities.getCommunityMembers(community.id, {
+    const members = await FirebaseCommunitiesAdmin.getCommunityMembers(community.id, {
       status: 'active',
       limit: 10,
     });
@@ -102,13 +103,13 @@ export async function PATCH(
     const { userId, ...updates } = parseResult.data;
 
     // Fetch existing community
-    const community = await FirebaseCommunities.getCommunityById(id);
+    const community = await FirebaseCommunitiesAdmin.getCommunityById(id);
     if (!community) {
       return notFoundError(`Community not found: ${id}`, ctx.requestId);
     }
 
     // Check if user is admin
-    const membership = await FirebaseCommunities.getMembership(id, userId);
+    const membership = await FirebaseCommunitiesAdmin.getMembership(id, userId);
     if (!membership || membership.role !== 'admin' || membership.status !== 'active') {
       return forbiddenError('Only admins can update this community', ctx.requestId);
     }
@@ -122,7 +123,7 @@ export async function PATCH(
       coverImage: updates.coverImage === null ? undefined : updates.coverImage,
     };
 
-    const updatedCommunity = await FirebaseCommunities.updateCommunity(id, sanitizedUpdates);
+    const updatedCommunity = await FirebaseCommunitiesAdmin.updateCommunity(id, sanitizedUpdates);
 
     return NextResponse.json({
       success: true,
@@ -154,7 +155,7 @@ export async function DELETE(
     const { userId } = parseResult.data;
 
     // Fetch existing community
-    const community = await FirebaseCommunities.getCommunityById(id);
+    const community = await FirebaseCommunitiesAdmin.getCommunityById(id);
     if (!community) {
       return notFoundError(`Community not found: ${id}`, ctx.requestId);
     }
@@ -166,7 +167,7 @@ export async function DELETE(
 
     ctx.log.info('Deleting community', { id, userId });
 
-    await FirebaseCommunities.deleteCommunity(id);
+    await FirebaseCommunitiesAdmin.deleteCommunity(id);
 
     return NextResponse.json({
       success: true,

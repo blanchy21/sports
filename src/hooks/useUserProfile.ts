@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react';
+/**
+ * User Profile Hook
+ *
+ * Uses React Query for proper caching, deduplication, and request management.
+ * When multiple PostCards request the same user profile, only one request is made.
+ */
+
+import { useQuery } from '@tanstack/react-query';
 import { fetchUserProfile } from '@/lib/hive-workerbee/account';
 
-interface UserProfile {
+export interface UserProfile {
   username: string;
   displayName?: string;
   avatar?: string;
@@ -9,59 +16,85 @@ interface UserProfile {
   reputationFormatted?: string;
 }
 
-// Cache for user profiles to avoid repeated API calls
-const profileCache = new Map<string, UserProfile>();
+/**
+ * Fetch and transform user profile data
+ */
+async function fetchProfile(username: string): Promise<UserProfile | null> {
+  const profileData = await fetchUserProfile(username);
+  if (!profileData) {
+    return null;
+  }
 
-export const useUserProfile = (username: string | null) => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  return {
+    username: username,
+    displayName: profileData.name,
+    avatar: profileData.profileImage,
+    reputation: 0,
+    reputationFormatted: '0',
+  };
+}
 
-  useEffect(() => {
-    if (!username) {
-      setProfile(null);
-      return;
-    }
+/**
+ * Hook to fetch Hive user profile with React Query caching
+ *
+ * Benefits:
+ * - Automatic request deduplication (multiple components requesting same user = 1 request)
+ * - Configurable stale time and cache time
+ * - Background refetching
+ * - Error handling
+ *
+ * @param username - Hive username to fetch profile for (null to skip)
+ */
+export function useUserProfile(username: string | null) {
+  const {
+    data: profile,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['userProfile', username],
+    queryFn: () => fetchProfile(username!),
+    enabled: !!username,
+    // Cache profile for 5 minutes before marking stale
+    staleTime: 5 * 60 * 1000,
+    // Keep in cache for 30 minutes
+    gcTime: 30 * 60 * 1000,
+    // Don't refetch on window focus for profiles (they don't change often)
+    refetchOnWindowFocus: false,
+    // Retry once on failure
+    retry: 1,
+  });
 
-    // Check cache first
-    const cachedProfile = profileCache.get(username);
-    if (cachedProfile) {
-      setProfile(cachedProfile);
-      return;
-    }
+  return {
+    profile: profile ?? null,
+    isLoading,
+    error: error ? (error instanceof Error ? error.message : 'Failed to load profile') : null,
+    refetch,
+  };
+}
 
-    // Fetch profile data
-    const fetchProfile = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        const profileData = await fetchUserProfile(username);
-        if (profileData) {
-          // Map the profile data to our expected format
-          const mappedProfile: UserProfile = {
-            username: username,
-            displayName: profileData.name,
-            avatar: profileData.profileImage,
-            reputation: 0, // Will be updated when full account data is fetched
-            reputationFormatted: '0' // Will be updated when full account data is fetched
-          };
-          
-          // Cache the profile
-          profileCache.set(username, mappedProfile);
-          setProfile(mappedProfile);
-        } else {
-          setError('Profile not found');
-        }
-      } catch {
-        setError('Failed to load profile');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+/**
+ * Prefetch multiple user profiles at once
+ * Use this at the list level to batch prefetch all authors
+ *
+ * @param usernames - Array of usernames to prefetch
+ * @param queryClient - React Query client instance
+ */
+export async function prefetchUserProfiles(
+  usernames: string[],
+  queryClient: import('@tanstack/react-query').QueryClient
+): Promise<void> {
+  // Deduplicate usernames
+  const uniqueUsernames = [...new Set(usernames.filter(Boolean))];
 
-    fetchProfile();
-  }, [username]);
-
-  return { profile, isLoading, error };
-};
+  // Prefetch all profiles in parallel
+  await Promise.allSettled(
+    uniqueUsernames.map((username) =>
+      queryClient.prefetchQuery({
+        queryKey: ['userProfile', username],
+        queryFn: () => fetchProfile(username),
+        staleTime: 5 * 60 * 1000,
+      })
+    )
+  );
+}

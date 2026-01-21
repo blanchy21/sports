@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FirebaseCommunities } from '@/lib/firebase/communities';
+import { FirebaseCommunitiesAdmin } from '@/lib/firebase/communities-admin';
+import { isAdminConfigured } from '@/lib/firebase/admin';
 import {
   createRequestContext,
   validationError,
@@ -65,7 +66,29 @@ export async function GET(request: NextRequest) {
       limit,
     };
 
-    const result = await FirebaseCommunities.listCommunities(filters);
+    if (!isAdminConfigured()) {
+      return NextResponse.json({
+        success: false,
+        error: 'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY environment variable with your Firebase service account JSON.',
+        code: 'FIREBASE_NOT_CONFIGURED',
+      }, { status: 503 });
+    }
+
+    let result;
+    try {
+      result = await FirebaseCommunitiesAdmin.listCommunities(filters);
+    } catch (firebaseError: unknown) {
+      const errorMessage = firebaseError instanceof Error ? firebaseError.message : String(firebaseError);
+      // Check for credential errors
+      if (errorMessage.includes('default credentials') || errorMessage.includes('authentication')) {
+        return NextResponse.json({
+          success: false,
+          error: 'Firebase Admin credentials not configured. Please add FIREBASE_SERVICE_ACCOUNT_KEY to your .env.local file with the service account JSON from Firebase Console > Project Settings > Service Accounts.',
+          code: 'FIREBASE_CREDENTIALS_MISSING',
+        }, { status: 503 });
+      }
+      throw firebaseError;
+    }
 
     return NextResponse.json({
       success: true,
@@ -111,9 +134,17 @@ export async function POST(request: NextRequest) {
       return unauthorizedError('Authentication required to create a community', ctx.requestId);
     }
 
+    if (!isAdminConfigured()) {
+      return NextResponse.json({
+        success: false,
+        error: 'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY or FIREBASE_PROJECT_ID.',
+        code: 'FIREBASE_NOT_CONFIGURED',
+      }, { status: 503 });
+    }
+
     ctx.log.info('Creating community', { name, slug, sportCategory, type, creatorId });
 
-    const community = await FirebaseCommunities.createCommunity(
+    const community = await FirebaseCommunitiesAdmin.createCommunity(
       {
         name,
         slug,

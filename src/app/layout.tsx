@@ -14,6 +14,7 @@ import { ServiceWorkerInitializer } from "@/components/ServiceWorkerInitializer"
 import { NodeHealthInitializer } from "@/components/NodeHealthInitializer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NavigationProgress } from "@/components/NavigationProgress";
+import { GlobalErrorHandlerInitializer } from "@/components/GlobalErrorHandlerInitializer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,6 +41,7 @@ export default function RootLayout({
                     <ToastProvider>
                       <ModalProvider>
                         <ErrorBoundary>
+                          <GlobalErrorHandlerInitializer />
                           <NavigationProgress />
                           <ServiceWorkerInitializer />
                           <NodeHealthInitializer />

@@ -106,10 +106,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('[API] Error fetching MEDALS balance:', error);
+    // Sanitize error response - don't expose internal details
     return NextResponse.json(
       {
-        error: 'Failed to fetch balance',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        error: 'Failed to fetch balance. Please try again later.',
+        code: 'BALANCE_FETCH_ERROR',
       },
       { status: 500 }
     );

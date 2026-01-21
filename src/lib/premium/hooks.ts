@@ -45,8 +45,14 @@ export function useStakedBalance(account: string | undefined) {
     queryKey: ['medals', 'staked', account],
     queryFn: () => fetchStakedBalance(account!),
     enabled: !!account,
-    staleTime: 30_000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    // Cache balance for 2 minutes before marking stale (balance doesn't change often)
+    staleTime: 2 * 60 * 1000,
+    // Keep in cache for 10 minutes
+    gcTime: 10 * 60 * 1000,
+    // Don't refetch on window focus
+    refetchOnWindowFocus: false,
+    // Retry once on failure
+    retry: 1,
   });
 }
 

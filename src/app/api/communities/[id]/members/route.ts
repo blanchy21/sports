@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FirebaseCommunities } from '@/lib/firebase/communities';
+import { FirebaseCommunitiesAdmin } from '@/lib/firebase/communities-admin';
 import {
   createRequestContext,
   validationError,
@@ -64,12 +64,12 @@ export async function GET(
     ctx.log.debug('Listing community members', { communityId, status, role, limit });
 
     // Check if community exists
-    const community = await FirebaseCommunities.getCommunityById(communityId);
+    const community = await FirebaseCommunitiesAdmin.getCommunityById(communityId);
     if (!community) {
       return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
     }
 
-    const members = await FirebaseCommunities.getCommunityMembers(communityId, {
+    const members = await FirebaseCommunitiesAdmin.getCommunityMembers(communityId, {
       status: status as CommunityMemberStatus | undefined,
       role: role as CommunityMemberRole | undefined,
       limit,
@@ -111,7 +111,7 @@ export async function POST(
 
     ctx.log.info('User joining community', { communityId, userId, username });
 
-    const member = await FirebaseCommunities.joinCommunity(
+    const member = await FirebaseCommunitiesAdmin.joinCommunity(
       communityId,
       userId,
       username,
@@ -153,13 +153,13 @@ export async function PATCH(
     const { action, targetUserId, role, userId } = parseResult.data;
 
     // Check if community exists
-    const community = await FirebaseCommunities.getCommunityById(communityId);
+    const community = await FirebaseCommunitiesAdmin.getCommunityById(communityId);
     if (!community) {
       return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
     }
 
     // Check if requesting user has permission
-    const requesterMembership = await FirebaseCommunities.getMembership(communityId, userId);
+    const requesterMembership = await FirebaseCommunitiesAdmin.getMembership(communityId, userId);
     if (!requesterMembership || requesterMembership.status !== 'active') {
       return forbiddenError('You must be an active member to perform this action', ctx.requestId);
     }
@@ -176,11 +176,11 @@ export async function PATCH(
           return forbiddenError('Only moderators can approve or reject members', ctx.requestId);
         }
         if (action === 'approve') {
-          const member = await FirebaseCommunities.approveMember(communityId, targetUserId);
+          const member = await FirebaseCommunitiesAdmin.approveMember(communityId, targetUserId);
           return NextResponse.json({ success: true, member, message: 'Member approved' });
         } else {
           // For reject, we just remove the pending membership
-          await FirebaseCommunities.leaveCommunity(communityId, targetUserId);
+          await FirebaseCommunitiesAdmin.leaveCommunity(communityId, targetUserId);
           return NextResponse.json({ success: true, message: 'Join request rejected' });
         }
 
@@ -192,14 +192,14 @@ export async function PATCH(
         if (!role) {
           return validationError('Role is required for promote/demote actions', ctx.requestId);
         }
-        const updatedMember = await FirebaseCommunities.updateMemberRole(communityId, targetUserId, role);
+        const updatedMember = await FirebaseCommunitiesAdmin.updateMemberRole(communityId, targetUserId, role);
         return NextResponse.json({ success: true, member: updatedMember, message: `Member role updated to ${role}` });
 
       case 'ban':
         if (!isModerator) {
           return forbiddenError('Only moderators can ban members', ctx.requestId);
         }
-        await FirebaseCommunities.banMember(communityId, targetUserId);
+        await FirebaseCommunitiesAdmin.banMember(communityId, targetUserId);
         return NextResponse.json({ success: true, message: 'Member banned' });
 
       case 'unban':
@@ -207,9 +207,9 @@ export async function PATCH(
           return forbiddenError('Only admins can unban members', ctx.requestId);
         }
         // For unban, update the status back to pending (they need to rejoin)
-        const targetMembership = await FirebaseCommunities.getMembership(communityId, targetUserId);
+        const targetMembership = await FirebaseCommunitiesAdmin.getMembership(communityId, targetUserId);
         if (targetMembership) {
-          await FirebaseCommunities.updateMemberRole(communityId, targetUserId, 'member');
+          await FirebaseCommunitiesAdmin.updateMemberRole(communityId, targetUserId, 'member');
         }
         return NextResponse.json({ success: true, message: 'Member unbanned' });
 
@@ -243,7 +243,7 @@ export async function DELETE(
 
     ctx.log.info('User leaving community', { communityId, userId });
 
-    await FirebaseCommunities.leaveCommunity(communityId, userId);
+    await FirebaseCommunitiesAdmin.leaveCommunity(communityId, userId);
 
     return NextResponse.json({
       success: true,

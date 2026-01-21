@@ -1,6 +1,13 @@
+/**
+ * Unified Posting Service
+ *
+ * Routes posts to either Hive blockchain or Firebase based on user auth type.
+ * Uses authenticated API calls with proper authorization headers.
+ */
+
 import { User } from '@/types';
-import { FirebasePosts, CreateSoftPostInput } from '@/lib/firebase/posts';
 import { SoftPost } from '@/types/auth';
+import { authenticatedPost, authenticatedPatch, authenticatedDelete, authenticatedFetch } from '@/lib/api/authenticated-fetch';
 
 export interface PostData {
   title: string;
@@ -27,7 +34,7 @@ export class UnifiedPostingService {
    * Create a post - routes to Hive blockchain or Firebase based on user auth type
    *
    * Hive users: Posts go to blockchain, earn HIVE rewards and MEDALS
-   * Soft users: Posts go to Firebase, visible on platform but no rewards
+   * Soft users: Posts go to Firebase via authenticated API, visible on platform but no rewards
    */
   static async createPost(
     user: User,
@@ -45,8 +52,8 @@ export class UnifiedPostingService {
           isHivePost: true
         };
       } else {
-        // For soft users, create a post in Firebase
-        const input: CreateSoftPostInput = {
+        // For soft users, create a post via the authenticated API
+        const response = await authenticatedPost('/api/posts', {
           authorId: user.id,
           authorUsername: user.username,
           authorDisplayName: user.displayName,
@@ -59,10 +66,19 @@ export class UnifiedPostingService {
           communityId: postData.communityId,
           communitySlug: postData.communitySlug,
           communityName: postData.communityName
-        };
+        });
 
-        const post = await FirebasePosts.createPost(input);
+        const result = await response.json();
 
+        if (!response.ok || !result.success) {
+          return {
+            success: false,
+            error: result.error || 'Failed to create post',
+            isHivePost: false
+          };
+        }
+
+        const post = result.post;
         return {
           success: true,
           postId: post.id,
@@ -76,7 +92,7 @@ export class UnifiedPostingService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        isHivePost: user.isHiveAuth
+        isHivePost: user.isHiveAuth ?? false
       };
     }
   }
@@ -87,25 +103,34 @@ export class UnifiedPostingService {
       // This is a placeholder - you would integrate with your existing Hive fetching
       return [];
     } else {
-      // For soft users, fetch from Firebase
-      return await FirebasePosts.getPostsByAuthor(user.id);
+      // For soft users, fetch from API
+      try {
+        const response = await authenticatedFetch(`/api/posts?authorId=${encodeURIComponent(user.id)}`);
+        const result = await response.json();
+        return result.success ? result.posts : [];
+      } catch {
+        return [];
+      }
     }
   }
 
   static async getAllPosts(limit: number = 20): Promise<SoftPost[]> {
-    // For now, only return soft posts
-    // In a full implementation, you would merge Hive and soft posts
-    return await FirebasePosts.getAllPosts(limit);
+    try {
+      const response = await fetch(`/api/posts?limit=${limit}`);
+      const result = await response.json();
+      return result.success ? result.posts : [];
+    } catch {
+      return [];
+    }
   }
 
-  static async getPostById(postId: string, user: User): Promise<SoftPost | null> {
-    if (user.isHiveAuth) {
-      // For Hive users, we would fetch from Hive blockchain
-      // This is a placeholder
+  static async getPostById(postId: string): Promise<SoftPost | null> {
+    try {
+      const response = await fetch(`/api/posts/${encodeURIComponent(postId)}`);
+      const result = await response.json();
+      return result.success ? result.post : null;
+    } catch {
       return null;
-    } else {
-      // For soft users, fetch from Firebase
-      return await FirebasePosts.getPostById(postId);
     }
   }
 
@@ -128,8 +153,23 @@ export class UnifiedPostingService {
           isHivePost: true
         };
       } else {
-        // For soft users, update in Firebase
-        const post = await FirebasePosts.updatePost(postId, updates);
+        // For soft users, update via authenticated API
+        const response = await authenticatedPatch(`/api/posts/${encodeURIComponent(postId)}`, {
+          ...updates,
+          userId: user.id
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          return {
+            success: false,
+            error: result.error || 'Failed to update post',
+            isHivePost: false
+          };
+        }
+
+        const post = result.post;
         return {
           success: true,
           postId: post.id,
@@ -142,7 +182,7 @@ export class UnifiedPostingService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        isHivePost: user.isHiveAuth
+        isHivePost: user.isHiveAuth ?? false
       };
     }
   }
@@ -158,8 +198,21 @@ export class UnifiedPostingService {
           isHivePost: true
         };
       } else {
-        // For soft users, delete from Firebase
-        await FirebasePosts.deletePost(postId);
+        // For soft users, delete via authenticated API
+        const response = await authenticatedDelete(`/api/posts/${encodeURIComponent(postId)}`, {
+          userId: user.id
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          return {
+            success: false,
+            error: result.error || 'Failed to delete post',
+            isHivePost: false
+          };
+        }
+
         return {
           success: true,
           isHivePost: false
@@ -170,7 +223,7 @@ export class UnifiedPostingService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        isHivePost: user.isHiveAuth
+        isHivePost: user.isHiveAuth ?? false
       };
     }
   }
@@ -189,7 +242,7 @@ export class UnifiedPostingService {
       }
 
       // Get the soft post
-      const softPost = await FirebasePosts.getPostById(postId);
+      const softPost = await this.getPostById(postId);
       if (!softPost) {
         return {
           success: false,
@@ -202,8 +255,22 @@ export class UnifiedPostingService {
       // This is a placeholder - you would integrate with your existing Hive posting
       const hivePermlink = `migrated-${softPost.permlink}`;
 
-      // Mark as published to Hive
-      await FirebasePosts.markAsPublishedToHive(postId, hivePermlink);
+      // Mark as published to Hive via authenticated API
+      const response = await authenticatedPatch(`/api/posts/${encodeURIComponent(postId)}`, {
+        isPublishedToHive: true,
+        hivePermlink: hivePermlink,
+        userId: user.id
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        return {
+          success: false,
+          error: result.error || 'Failed to mark post as migrated',
+          isHivePost: true
+        };
+      }
 
       return {
         success: true,

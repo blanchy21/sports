@@ -7,6 +7,7 @@ import type { UserAccountData } from "@/lib/hive-workerbee/account";
 import { useAioha } from "@/contexts/AiohaProvider";
 import { AuthUser, FirebaseAuth } from "@/lib/firebase/auth";
 import { parseAuthState } from "@/lib/validation/auth-schema";
+import { setAuthInfo, clearAuthInfo } from "@/lib/api/authenticated-fetch";
 
 // ============================================================================
 // Type Definitions
@@ -246,7 +247,7 @@ const persistAuthState = ({
   if (typeof window === 'undefined') {
     return;
   }
-  
+
   const sanitizedState = {
     user: userToPersist,
     authType: authTypeToPersist,
@@ -254,11 +255,61 @@ const persistAuthState = ({
     // Use existing loginAt or create new timestamp
     loginAt: loginAtToPersist ?? Date.now(),
   };
-  
+
   try {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sanitizedState));
   } catch (error) {
     console.error('Error persisting auth state:', error);
+  }
+
+  // Sync auth info for authenticated API calls
+  if (userToPersist) {
+    setAuthInfo({
+      userId: userToPersist.id,
+      username: userToPersist.username,
+    });
+
+    // Also sync to httpOnly cookie for server-side validation
+    syncSessionCookie({
+      userId: userToPersist.id,
+      username: userToPersist.username,
+      authType: authTypeToPersist,
+      hiveUsername: hiveUserToPersist?.username,
+    });
+  } else {
+    clearAuthInfo();
+    clearSessionCookie();
+  }
+};
+
+/**
+ * Sync session to httpOnly cookie for server-side validation
+ */
+const syncSessionCookie = async (sessionData: {
+  userId: string;
+  username: string;
+  authType: AuthType;
+  hiveUsername?: string;
+}) => {
+  try {
+    await fetch('/api/auth/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sessionData),
+    });
+  } catch (error) {
+    console.error('Error syncing session cookie:', error);
+  }
+};
+
+/**
+ * Clear session cookie on logout
+ */
+const clearSessionCookie = async () => {
+  try {
+    await fetch('/api/auth/session', { method: 'DELETE' });
+  } catch (error) {
+    console.error('Error clearing session cookie:', error);
   }
 };
 
