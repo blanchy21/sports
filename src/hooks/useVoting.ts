@@ -190,7 +190,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
     try {
       // Convert stars to vote weight percentage (1 star = 20%, 5 stars = 100%)
       const voteWeightPercentage = stars * 20;
-      
+
       const voteData: VoteData = {
         voter: hiveUser.username,
         author,
@@ -199,13 +199,29 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
       };
 
       const result = await castVote(voteData);
-      
+
       if (result.success) {
-        // Refresh vote state after successful vote
-        await checkVoteStatus();
+        // Optimistically update vote state immediately so stars stay filled
+        // The blockchain may not reflect the vote yet if we query right away
+        const percentBasisPoints = voteWeightPercentage * 100; // Convert to 0-10000 scale
+        setVoteState(prev => ({
+          ...prev,
+          isVoting: false,
+          userVote: stars > 0 ? {
+            voter: hiveUser.username,
+            weight: 0,
+            rshares: '0',
+            percent: percentBasisPoints,
+            reputation: '',
+            time: new Date().toISOString(),
+          } : null,
+          hasVoted: stars > 0,
+          voteWeight: voteWeightPercentage,
+        }));
+      } else {
+        setVoteState(prev => ({ ...prev, isVoting: false }));
       }
-      
-      setVoteState(prev => ({ ...prev, isVoting: false }));
+
       return result;
     } catch (error) {
       console.error('Error casting star vote:', error);
@@ -216,7 +232,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
         error: errorMessage,
       };
     }
-  }, [hiveUser, authType, checkVoteStatus]);
+  }, [hiveUser, authType]);
 
   // Cast a comment vote with fixed weight (typically 20% for comments)
   const commentVote = useCallback(async (author: string, permlink: string, weight: number): Promise<VoteResult> => {

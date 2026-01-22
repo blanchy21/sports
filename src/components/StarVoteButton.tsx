@@ -32,9 +32,10 @@ export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
     checkVoteStatus(author, permlink);
   }, [checkVoteStatus, author, permlink]);
 
-  // Convert vote weight to stars (0-100% to 0-5 stars)
-  const currentStars = voteState.hasVoted && voteState.userVote?.weight 
-    ? Math.round(Math.abs(voteState.userVote.weight) / 20) 
+  // Convert vote percent to stars (0-10000 basis points to 0-5 stars)
+  // Each star = 20% = 2000 basis points
+  const currentStars = voteState.hasVoted && voteState.userVote?.percent
+    ? Math.round(Math.abs(voteState.userVote.percent) / 2000)
     : 0;
 
   const handleStarClick = async (stars: number) => {
