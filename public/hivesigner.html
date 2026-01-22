@@ -77,6 +77,27 @@
 
           window.localStorage.setItem('aiohaLastLoginAt', new Date().toISOString());
 
+          // Save auth state in the format AuthContext expects
+          const authState = {
+            user: {
+              id: username,
+              username: username,
+              displayName: username,
+              isHiveAuth: true,
+              hiveUsername: username,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            authType: 'hive',
+            hiveUser: {
+              username: username,
+              isAuthenticated: true,
+              provider: 'hivesigner',
+            },
+            loginAt: Date.now(),
+          };
+          localStorage.setItem('authState', JSON.stringify(authState));
+
           // Notify opener if available.
           if (window.opener && typeof window.opener.postMessage === 'function') {
             window.opener.postMessage({ source: 'hivesigner-callback', success: true, username }, '*');
