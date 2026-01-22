@@ -21,12 +21,12 @@ export const aiohaConfig = {
     logo: '/stadium.jpg', // Using the stadium image as app logo
   },
   hivesigner: {
-    app: 'sportsblock.app',
+    app: 'sportsblock',
     callbackURL: typeof window !== 'undefined' ? `${window.location.origin}/hivesigner.html` : '',
     scope: ['login', 'vote', 'comment', 'post'],
   },
   keychain: {
-    app: 'sportsblock.app',
+    app: 'sportsblock',
   },
   ledger: {
     // Ledger specific configuration
