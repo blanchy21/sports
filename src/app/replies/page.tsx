@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRealtimeReplies } from "@/hooks/useRealtimeReplies";
 import { formatDistanceToNow } from "date-fns";
 import { CommentVoteButton } from "@/components/CommentVoteButton";
+import { sanitizePostContent } from "@/lib/utils/sanitize";
 
 export default function RepliesPage() {
   const { user, isClient } = useAuth();
@@ -236,7 +237,10 @@ export default function RepliesPage() {
                                 <span className="text-sm font-medium break-all">{getPostTitle(reply.parentAuthor, reply.parentPermlink)}</span>
                               </div>
                               
-                              <p className="text-foreground mb-3 whitespace-pre-wrap break-words overflow-hidden">{reply.body}</p>
+                              <div
+                                className="text-foreground mb-3 whitespace-pre-wrap break-words overflow-hidden prose prose-sm max-w-none"
+                                dangerouslySetInnerHTML={{ __html: sanitizePostContent(reply.body) }}
+                              />
                               
                               <div className="flex items-center space-x-4">
                                 <CommentVoteButton
