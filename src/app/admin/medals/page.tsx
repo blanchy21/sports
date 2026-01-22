@@ -6,7 +6,7 @@
  * Admin tools for managing rewards and monitoring the token economy.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/Button';
@@ -23,12 +23,7 @@ import {
   Settings,
   TrendingUp,
 } from 'lucide-react';
-import {
-  getPlatformYear,
-  getWeeklyStakingPool,
-  getCuratorRewardAmount,
-  CURATOR_REWARDS,
-} from '@/lib/rewards/config';
+import { isAdminAccount } from '@/lib/admin/config';
 
 interface DashboardMetrics {
   stakingRewards: {
@@ -49,77 +44,94 @@ interface DashboardMetrics {
   };
 }
 
-// Admin accounts that can access this dashboard
-const ADMIN_ACCOUNTS = ['sportsblock', 'admin']; // Configure as needed
+interface EnvironmentInfo {
+  nodeEnv: string;
+  cronSecretSet: boolean;
+  curatorAccounts: string[];
+  firebaseConfigured: boolean;
+}
+
+interface AdminConfig {
+  platformYear: number;
+  weeklyPool: number;
+  curatorRewardAmount: number;
+  curatorCount: number;
+}
 
 export default function MedalsAdminDashboard() {
   const { user } = useAuth();
   const router = useRouter();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [environmentInfo, setEnvironmentInfo] = useState<EnvironmentInfo | null>(null);
+  const [config, setConfig] = useState<AdminConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [_error, _setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [cronStatus, setCronStatus] = useState<string | null>(null);
 
-  const isAdmin = user && ADMIN_ACCOUNTS.includes(user.username);
-  const platformYear = getPlatformYear();
-  const weeklyStakingPool = getWeeklyStakingPool();
-  const curatorRewardAmount = getCuratorRewardAmount();
+  const isAdmin = user && isAdminAccount(user.username);
+
+  const fetchMetrics = useCallback(async () => {
+    if (!user) return;
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/admin/metrics?username=${encodeURIComponent(user.username)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to fetch metrics');
+        return;
+      }
+
+      setMetrics(data.metrics);
+      setEnvironmentInfo(data.environmentInfo);
+      setConfig(data.config);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch metrics');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
-    // Redirect non-admins
     if (!isLoading && !isAdmin) {
       router.push('/');
     }
   }, [isAdmin, isLoading, router]);
 
   useEffect(() => {
-    const fetchMetrics = async () => {
-      // For now, set mock metrics - replace with real API calls
-      setMetrics({
-        stakingRewards: {
-          lastDistribution: null,
-          weeklyPool: weeklyStakingPool,
-          totalStakers: 0,
-          totalStaked: 0,
-        },
-        curatorRewards: {
-          todayVotes: 0,
-          todayRewards: 0,
-          activeCurators: CURATOR_REWARDS.CURATOR_COUNT,
-        },
-        contentRewards: {
-          lastWeek: null,
-          pendingDistributions: 0,
-          totalDistributed: 0,
-        },
-      });
-      setIsLoading(false);
-    };
-
     if (user) {
       fetchMetrics();
     }
-  }, [user, weeklyStakingPool]);
+  }, [user, fetchMetrics]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Simulate refresh
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await fetchMetrics();
     setIsRefreshing(false);
   };
 
   const handleTriggerCron = async (cronType: string) => {
+    if (!user) return;
+    setCronStatus(null);
+
     try {
-      const response = await fetch(`/api/cron/${cronType}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch('/api/admin/trigger-cron', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.username, cronType }),
       });
       const data = await response.json();
-      alert(`${cronType} result: ${JSON.stringify(data, null, 2)}`);
+
+      if (data.success) {
+        setCronStatus(`${cronType}: completed successfully`);
+        await fetchMetrics();
+      } else {
+        setCronStatus(`${cronType} error: ${data.error || data.result?.error || 'Unknown error'}`);
+      }
     } catch (err) {
-      alert(`Error triggering ${cronType}: ${err}`);
+      setCronStatus(`${cronType} error: ${err instanceof Error ? err.message : 'Request failed'}`);
     }
   };
 
@@ -147,6 +159,11 @@ export default function MedalsAdminDashboard() {
     );
   }
 
+  const platformYear = config?.platformYear ?? 1;
+  const weeklyStakingPool = config?.weeklyPool ?? 0;
+  const curatorRewardAmount = config?.curatorRewardAmount ?? 0;
+  const curatorCount = config?.curatorCount ?? 0;
+
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto space-y-6">
@@ -170,6 +187,28 @@ export default function MedalsAdminDashboard() {
             Refresh
           </Button>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium text-red-800 dark:text-red-200">Error fetching metrics</p>
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Cron Status */}
+        {cronStatus && (
+          <div className={`border rounded-lg p-3 text-sm ${
+            cronStatus.includes('error')
+              ? 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
+              : 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
+          }`}>
+            {cronStatus}
+          </div>
+        )}
 
         {/* Overview Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -200,7 +239,7 @@ export default function MedalsAdminDashboard() {
               <BarChart3 className="h-4 w-4" />
               <span className="text-sm">Active Curators</span>
             </div>
-            <p className="text-3xl font-bold">{CURATOR_REWARDS.CURATOR_COUNT}</p>
+            <p className="text-3xl font-bold">{curatorCount}</p>
           </div>
         </div>
 
@@ -226,7 +265,7 @@ export default function MedalsAdminDashboard() {
                 {metrics?.stakingRewards.lastDistribution ? (
                   <>
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>Last run: {metrics.stakingRewards.lastDistribution}</span>
+                    <span>Last run: {new Date(metrics.stakingRewards.lastDistribution).toLocaleDateString()}</span>
                   </>
                 ) : (
                   <>
@@ -324,18 +363,18 @@ export default function MedalsAdminDashboard() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <span className="text-muted-foreground">Mode:</span>{' '}
-              <span className="font-mono">{process.env.NODE_ENV}</span>
+              <span className="font-mono">{environmentInfo?.nodeEnv ?? '...'}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Cron Secret:</span>{' '}
               <span className="font-mono">
-                {process.env.CRON_SECRET ? '✓ Set' : '✗ Not set'}
+                {environmentInfo ? (environmentInfo.cronSecretSet ? '✓ Set' : '✗ Not set') : '...'}
               </span>
             </div>
             <div>
               <span className="text-muted-foreground">Curator Accounts:</span>{' '}
               <span className="font-mono">
-                {process.env.CURATOR_ACCOUNTS || 'Default'}
+                {environmentInfo?.curatorAccounts?.join(', ') || '...'}
               </span>
             </div>
             <div>
