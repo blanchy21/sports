@@ -1,21 +1,3 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/update-analytics",
-      "schedule": "0 */6 * * *"
-    },
-    {
-      "path": "/api/cron/staking-rewards",
-      "schedule": "0 0 * * 0"
-    },
-    {
-      "path": "/api/cron/curator-rewards",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/weekly-rewards",
-      "schedule": "0 0 * * 1"
-    }
-  ]
 }
 
