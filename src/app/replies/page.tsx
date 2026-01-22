@@ -231,12 +231,12 @@ export default function RepliesPage() {
                                 )}
                               </div>
                               
-                              <div className="mb-2">
+                              <div className="mb-2 overflow-hidden">
                                 <span className="text-sm text-muted-foreground">Replied to: </span>
-                                <span className="text-sm font-medium">{getPostTitle(reply.parentAuthor, reply.parentPermlink)}</span>
+                                <span className="text-sm font-medium break-all">{getPostTitle(reply.parentAuthor, reply.parentPermlink)}</span>
                               </div>
                               
-                              <p className="text-foreground mb-3 whitespace-pre-wrap">{reply.body}</p>
+                              <p className="text-foreground mb-3 whitespace-pre-wrap break-words overflow-hidden">{reply.body}</p>
                               
                               <div className="flex items-center space-x-4">
                                 <CommentVoteButton
