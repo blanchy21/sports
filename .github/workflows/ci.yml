@@ -108,28 +108,40 @@ jobs:
 
       - name: Check bundle size
         run: |
-          # Extract bundle sizes from .next/build-manifest.json
           echo "## Bundle Size Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Calculate total JS bundle size
-          TOTAL_JS=$(find .next/static/chunks -name "*.js" -exec wc -c {} + | tail -1 | awk '{print $1}')
-          TOTAL_JS_MB=$(echo "scale=2; $TOTAL_JS / 1048576" | bc)
+          # Measure shared JS that every page loads (framework + common chunks)
+          # These are the chunks Next.js reports under "First Load JS shared by all"
+          SHARED_JS=$(wc -c .next/static/chunks/framework-*.js .next/static/chunks/main-*.js .next/static/chunks/polyfills-*.js 2>/dev/null | tail -1 | awk '{print $1}')
+          SHARED_JS_KB=$(echo "scale=0; $SHARED_JS / 1024" | bc)
 
-          # Performance budget: 1MB for initial JS
-          MAX_JS_BYTES=1048576
+          # Measure total JS (all code-split chunks combined)
+          TOTAL_JS=$(find .next/static/chunks -name "*.js" -exec wc -c {} + | tail -1 | awk '{print $1}')
+          TOTAL_JS_KB=$(echo "scale=0; $TOTAL_JS / 1024" | bc)
+
+          # Budget: 500KB for shared framework, 5MB for all code-split chunks
+          MAX_SHARED_BYTES=512000
+          MAX_TOTAL_BYTES=5242880
 
           echo "| Metric | Size | Budget | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|------|--------|--------|" >> $GITHUB_STEP_SUMMARY
 
-          if [ "$TOTAL_JS" -gt "$MAX_JS_BYTES" ]; then
-            echo "| Total JS | ${TOTAL_JS_MB}MB | 1MB | :warning: Over budget |" >> $GITHUB_STEP_SUMMARY
-            echo "::warning::Total JS bundle (${TOTAL_JS_MB}MB) exceeds 1MB budget"
+          if [ "$SHARED_JS" -gt "$MAX_SHARED_BYTES" ]; then
+            echo "| Shared JS (framework) | ${SHARED_JS_KB}KB | 500KB | :warning: Over budget |" >> $GITHUB_STEP_SUMMARY
+            echo "::warning::Shared JS (${SHARED_JS_KB}KB) exceeds 500KB budget"
           else
-            echo "| Total JS | ${TOTAL_JS_MB}MB | 1MB | :white_check_mark: OK |" >> $GITHUB_STEP_SUMMARY
+            echo "| Shared JS (framework) | ${SHARED_JS_KB}KB | 500KB | :white_check_mark: OK |" >> $GITHUB_STEP_SUMMARY
           fi
 
-          # List largest chunks
+          if [ "$TOTAL_JS" -gt "$MAX_TOTAL_BYTES" ]; then
+            echo "| Total JS (all chunks) | ${TOTAL_JS_KB}KB | 5MB | :warning: Over budget |" >> $GITHUB_STEP_SUMMARY
+            echo "::warning::Total JS (${TOTAL_JS_KB}KB) exceeds 5MB budget"
+          else
+            echo "| Total JS (all chunks) | ${TOTAL_JS_KB}KB | 5MB | :white_check_mark: OK |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # List largest chunks for awareness
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Largest Chunks" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
