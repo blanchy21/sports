@@ -15,6 +15,7 @@ import { formatReputation } from "@/lib/shared/utils";
 import { Short, extractMediaFromBody } from "@/lib/hive-workerbee/shorts";
 import { SPORT_CATEGORIES } from "@/types";
 import { getProxyImageUrl, shouldProxyImage } from "@/lib/utils/image-proxy";
+import { isTrustedImageHost } from "@/lib/utils/sanitize";
 
 interface ShortCardProps {
   short: Short;
@@ -24,25 +25,33 @@ interface ShortCardProps {
 
 export function ShortCard({ short, className, isNew = false }: ShortCardProps) {
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const { addToast } = useToast();
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
-  
+
   // Fetch author profile
   const { profile: authorProfile, isLoading: isProfileLoading } = useUserProfile(short.author);
-  
+
   // Extract text and images from body
   const { text: shortText, images: bodyImages } = React.useMemo(
     () => extractMediaFromBody(short.body),
     [short.body]
   );
 
-  // Combine images from metadata and body
+  // Combine images from metadata and body, filtering out failed ones
   const allImages = React.useMemo(() => {
     const metadataImages = short.images || [];
     const gifs = short.gifs || [];
-    return [...new Set([...metadataImages, ...gifs, ...bodyImages])];
-  }, [short.images, short.gifs, bodyImages]);
+    const combined = [...new Set([...metadataImages, ...gifs, ...bodyImages])];
+    // Filter out images that failed to load
+    return combined.filter(img => !failedImages.has(img));
+  }, [short.images, short.gifs, bodyImages, failedImages]);
+
+  // Handle image load error
+  const handleImageError = (imgUrl: string) => {
+    setFailedImages(prev => new Set(prev).add(imgUrl));
+  };
 
   const handleVoteSuccess = () => {
     addToast(toast.success("Vote Cast!", "Your vote has been recorded on the blockchain."));
@@ -258,9 +267,11 @@ export function ShortCard({ short, className, isNew = false }: ShortCardProps) {
             {allImages.slice(0, 4).map((img, index) => {
               const isGif = img.toLowerCase().endsWith('.gif');
               const finalUrl = shouldProxyImage(img) ? getProxyImageUrl(img) : img;
-              
+              // Use Next.js Image only for trusted hosts (configured in next.config.ts)
+              const canUseNextImage = isTrustedImageHost(img) && !isGif;
+
               return (
-                <div 
+                <div
                   key={index}
                   className={cn(
                     "relative overflow-hidden bg-muted",
@@ -269,14 +280,7 @@ export function ShortCard({ short, className, isNew = false }: ShortCardProps) {
                     "aspect-square"
                   )}
                 >
-                  {isGif ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={finalUrl}
-                      alt={`Image ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
+                  {canUseNextImage ? (
                     <Image
                       src={finalUrl}
                       alt={`Image ${index + 1}`}
@@ -284,9 +288,18 @@ export function ShortCard({ short, className, isNew = false }: ShortCardProps) {
                       sizes="(max-width: 768px) 100vw, 400px"
                       className="object-cover hover:scale-105 transition-transform duration-200"
                       unoptimized={shouldProxyImage(img)}
+                      onError={() => handleImageError(img)}
+                    />
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={finalUrl}
+                      alt={`Image ${index + 1}`}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                      onError={() => handleImageError(img)}
                     />
                   )}
-                  
+
                   {/* Show count for more images */}
                   {index === 3 && allImages.length > 4 && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">

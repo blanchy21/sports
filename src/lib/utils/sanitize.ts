@@ -246,6 +246,64 @@ export function validateUrl(
 }
 
 /**
+ * Common image file extensions
+ */
+const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg', '.bmp', '.ico'];
+
+/**
+ * Hosts that are known to serve images (even without file extensions in URL)
+ */
+const KNOWN_IMAGE_HOSTS = [
+  'images.hive.blog',
+  'images.ecency.com',
+  'files.peakd.com',
+  'cdn.steemitimages.com',
+  'steemitimages.com',
+  'images.unsplash.com',
+  'gateway.ipfs.io',
+  'ipfs.io',
+  'files.3speak.tv',
+  'files.dtube.tv',
+  'i.imgur.com',
+  'imgur.com',
+  'media.tenor.com',
+  'media1.tenor.com',
+  'c.tenor.com',
+  'pbs.twimg.com',
+  'media.giphy.com',
+];
+
+/**
+ * Check if a URL appears to be an image URL
+ * Either has an image extension or is from a known image host
+ */
+function looksLikeImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const pathname = parsed.pathname.toLowerCase();
+    const hostname = parsed.hostname.toLowerCase();
+
+    // Check if URL has an image extension
+    const hasImageExtension = IMAGE_EXTENSIONS.some(ext => pathname.endsWith(ext));
+    if (hasImageExtension) {
+      return true;
+    }
+
+    // Check if it's from a known image host
+    const isKnownImageHost = KNOWN_IMAGE_HOSTS.some(
+      host => hostname === host || hostname.endsWith(`.${host}`)
+    );
+    if (isKnownImageHost) {
+      return true;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Validate an image URL
  * More restrictive than general URL validation
  *
@@ -280,6 +338,14 @@ export function validateImageUrl(url: string): {
     if (process.env.NODE_ENV === 'production') {
       return { valid: false, error: 'Private URLs not allowed' };
     }
+  }
+
+  // Check if URL looks like an image
+  if (!looksLikeImageUrl(result.url!)) {
+    return {
+      valid: false,
+      error: 'URL does not appear to be an image. Please use a direct link to an image file (e.g., .jpg, .png, .gif)'
+    };
   }
 
   return result;

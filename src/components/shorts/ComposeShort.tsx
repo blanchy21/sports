@@ -378,7 +378,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
   }
 
   return (
-    <div className="bg-card border rounded-xl overflow-hidden">
+    <div className="bg-card border rounded-xl">
       <div className="p-4">
         <div className="flex gap-3">
           {/* Avatar */}
@@ -632,19 +632,14 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             )}
           </div>
 
-          {/* GIF button */}
+          {/* GIF button - disabled until Tenor API is configured */}
           <div className="relative" data-gif-picker>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                setShowGifPicker(!showGifPicker);
-                if (!showGifPicker && gifResults.length === 0) {
-                  loadTrendingGifs();
-                }
-              }}
-              className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
-              title="Add GIF"
+              disabled
+              className="h-9 w-9 p-0 text-muted-foreground/50 cursor-not-allowed"
+              title="GIFs temporarily unavailable"
             >
               <Film className="h-5 w-5" />
             </Button>
