@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { FirebaseCommunitiesAdmin } from '@/lib/firebase/communities-admin';
-import { isAdminConfigured } from '@/lib/firebase/admin';
 import {
   createRequestContext,
   validationError,

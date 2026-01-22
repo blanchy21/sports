@@ -23,7 +23,7 @@ try {
       }
     }
   });
-} catch (error) {
+} catch {
   // .env.local might not exist, that's okay
 }
 
@@ -91,8 +91,9 @@ async function updateAnalytics() {
         version: 1,
       });
       console.log('  ✅ Updated trendingSports');
-    } catch (error: any) {
-      console.error('  ❌ Error updating trendingSports:', error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error('  ❌ Error updating trendingSports:', err.message);
     }
 
     // Update Trending Topics
@@ -103,8 +104,9 @@ async function updateAnalytics() {
         version: 1,
       });
       console.log('  ✅ Updated trendingTopics');
-    } catch (error: any) {
-      console.error('  ❌ Error updating trendingTopics:', error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error('  ❌ Error updating trendingTopics:', err.message);
     }
 
     // Update Top Authors
@@ -115,8 +117,9 @@ async function updateAnalytics() {
         version: 1,
       });
       console.log('  ✅ Updated topAuthors');
-    } catch (error: any) {
-      console.error('  ❌ Error updating topAuthors:', error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error('  ❌ Error updating topAuthors:', err.message);
     }
 
     // Update Community Stats
@@ -130,13 +133,15 @@ async function updateAnalytics() {
         version: 1,
       });
       console.log('  ✅ Updated communityStats');
-    } catch (error: any) {
-      console.error('  ❌ Error updating communityStats:', error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error('  ❌ Error updating communityStats:', err.message);
     }
 
     console.log('\n✅ Analytics update completed successfully!');
-  } catch (error: any) {
-    console.error('\n❌ Error updating analytics:', error.message);
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    console.error('\n❌ Error updating analytics:', err.message);
     console.error('Full error:', error);
     process.exit(1);
   }

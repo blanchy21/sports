@@ -57,7 +57,7 @@ export default function MedalsAdminDashboard() {
   const router = useRouter();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, _setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const isAdmin = user && ADMIN_ACCOUNTS.includes(user.username);

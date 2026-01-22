@@ -18,7 +18,7 @@ import {
   getRecentActivity,
   getAccountStats,
 } from '@/lib/hive-engine/history';
-import { isValidAccountName, parseQuantity } from '@/lib/hive-engine/client';
+import { isValidAccountName } from '@/lib/hive-engine/client';
 import { MEDALS_CONFIG, CACHE_TTLS } from '@/lib/hive-engine/constants';
 
 export const dynamic = 'force-dynamic';

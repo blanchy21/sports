@@ -69,7 +69,7 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
  * @returns Promise with the API response
  */
 export async function makeWorkerBeeApiCall<T = unknown>(method: string, params: unknown[] = []): Promise<T> {
-  const callStartTime = Date.now();
+  // callStartTime can be used for future performance logging
 
   // Only use WorkerBee on server-side
   if (typeof window !== 'undefined') {

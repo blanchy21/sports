@@ -25,10 +25,16 @@ const eslintConfig = [
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "react/no-unescaped-entities": "warn",
       "react-hooks/exhaustive-deps": "warn",
       "@next/next/no-img-element": "warn",
+    },
+  },
+  {
+    files: ["tests/**/*", "e2e/**/*"],
+    rules: {
+      "@next/next/no-img-element": "off",
     },
   },
 ];

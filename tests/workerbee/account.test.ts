@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { tester, runTest, runBenchmark, comparePerformance } from '../../src/lib/hive-workerbee/testing';
+import { runTest, runBenchmark, comparePerformance } from '../../src/lib/hive-workerbee/testing';
 import { logger } from '../../src/lib/hive-workerbee/logger';
 
 // Mock data for testing

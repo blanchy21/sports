@@ -6,9 +6,8 @@
  * Tests the new NodeHealthManager functionality to ensure it's working correctly.
  */
 
-import { 
-  getNodeHealthManager, 
-  startNodeHealthMonitoring,
+import {
+  getNodeHealthManager,
   getNodeHealthReport,
   getBestAvailableNode
 } from '../src/lib/hive-workerbee/node-health';

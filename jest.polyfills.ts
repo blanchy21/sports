@@ -4,7 +4,7 @@
  */
 
 // First, polyfill TextEncoder/TextDecoder (needed by undici)
-// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const utilModule = require('util');
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).TextEncoder = utilModule.TextEncoder;
@@ -12,7 +12,7 @@ const utilModule = require('util');
 (globalThis as any).TextDecoder = utilModule.TextDecoder;
 
 // Polyfill Web Streams (needed by undici)
-// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const webStreams = require('stream/web');
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).ReadableStream = webStreams.ReadableStream;
@@ -22,7 +22,7 @@ const webStreams = require('stream/web');
 (globalThis as any).TransformStream = webStreams.TransformStream;
 
 // Polyfill MessageChannel/MessagePort (needed by undici)
-// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const workerThreads = require('worker_threads');
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).MessageChannel = workerThreads.MessageChannel;
@@ -34,7 +34,7 @@ const workerThreads = require('worker_threads');
 (globalThis as any).BroadcastChannel = workerThreads.BroadcastChannel;
 
 // Now import undici (which needs all the above polyfills)
-// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const undici = require('undici');
 
 // Polyfill Web APIs from undici for Jest's sandboxed environment

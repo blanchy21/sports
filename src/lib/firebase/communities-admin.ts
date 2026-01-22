@@ -5,7 +5,7 @@
  * Firestore security rules. Used by API routes.
  */
 
-import { getAdminDb, isAdminConfigured } from './admin';
+import { getAdminDb } from './admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import {
   Community,

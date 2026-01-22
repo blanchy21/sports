@@ -55,7 +55,7 @@ export async function trackEngagement(event: EngagementEvent): Promise<void> {
     }
 
     const weekId = getWeekId(event.timestamp);
-    const dayKey = getDayKey(event.timestamp);
+    // dayKey available via getDayKey(event.timestamp) for future daily tracking
 
     // Update post metrics
     const postDocRef = doc(collection(db, 'metrics', 'posts', weekId), event.postId.replace('/', '_'));

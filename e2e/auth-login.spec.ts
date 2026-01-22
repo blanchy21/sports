@@ -14,7 +14,7 @@ test.describe('Auth Login', () => {
 
     const username = hiveUsername!;
 
-    let accountSummary: any = null;
+    let accountSummary: Record<string, unknown> | null = null;
     try {
       const response = await request.get(`/api/hive/account/summary?username=${encodeURIComponent(username)}`);
       if (response.ok()) {

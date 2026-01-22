@@ -24,7 +24,7 @@ try {
       }
     }
   });
-} catch (error) {
+} catch {
   // .env.local might not exist, that's okay
 }
 
@@ -78,7 +78,7 @@ async function testFirebase() {
   // Initialize Firebase
   console.log('\n🔧 Initializing Firebase...');
   try {
-    const app = initializeApp(firebaseConfig);
+    initializeApp(firebaseConfig);
     console.log('  ✅ Firebase app initialized');
     console.log(`  📦 Project ID: ${firebaseConfig.projectId}`);
   } catch (error) {
@@ -101,8 +101,9 @@ async function testFirebase() {
       const profilesSnapshot = await getDocs(profilesRef);
       console.log(`  ✅ Successfully accessed 'profiles' collection`);
       console.log(`  📊 Found ${profilesSnapshot.size} profile document(s)`);
-    } catch (error: any) {
-      if (error.code === 'permission-denied') {
+    } catch (error: unknown) {
+      const err = error as { code?: string; message?: string };
+      if (err.code === 'permission-denied') {
         console.log('  ⚠️  Permission denied - Firebase is connected but rules may be restrictive');
         console.log('  ℹ️  This is normal if Firestore security rules are enabled');
       } else {
@@ -116,11 +117,12 @@ async function testFirebase() {
       const postsSnapshot = await getDocs(postsRef);
       console.log(`  ✅ Successfully accessed 'soft_posts' collection`);
       console.log(`  📊 Found ${postsSnapshot.size} post document(s)`);
-    } catch (error: any) {
-      if (error.code === 'permission-denied') {
+    } catch (error: unknown) {
+      const err = error as { code?: string; message?: string };
+      if (err.code === 'permission-denied') {
         console.log('  ⚠️  Permission denied for soft_posts - check Firestore rules');
       } else {
-        console.log(`  ⚠️  Error accessing soft_posts: ${error.message}`);
+        console.log(`  ⚠️  Error accessing soft_posts: ${err.message}`);
       }
     }
 
@@ -141,16 +143,18 @@ async function testFirebase() {
       } else {
         console.log('  ℹ️  trendingSports document does not exist yet');
       }
-    } catch (error: any) {
-      if (error.code === 'permission-denied') {
+    } catch (error: unknown) {
+      const err = error as { code?: string; message?: string };
+      if (err.code === 'permission-denied') {
         console.log('  ⚠️  Permission denied for analytics - check Firestore rules');
       } else {
-        console.log(`  ℹ️  Analytics collection may not exist yet: ${error.message}`);
+        console.log(`  ℹ️  Analytics collection may not exist yet: ${err.message}`);
       }
     }
 
-  } catch (error: any) {
-    console.error('  ❌ Firestore connection failed:', error.message);
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    console.error('  ❌ Firestore connection failed:', err.message);
     console.error('  Full error:', error);
     process.exit(1);
   }

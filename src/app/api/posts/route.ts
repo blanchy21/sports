@@ -6,7 +6,6 @@ import {
   validationError,
   unauthorizedError,
   forbiddenError,
-  internalError,
 } from '@/lib/api/response';
 import { withCsrfProtection } from '@/lib/api/csrf';
 
@@ -58,7 +57,7 @@ const createPostSchema = z.object({
   communityName: z.string().min(1).max(100).optional(),
 });
 
-type CreatePostInput = z.infer<typeof createPostSchema>;
+// Type is inferred from schema validation
 
 /**
  * GET /api/posts - Fetch soft posts (non-Hive posts stored in Firebase)

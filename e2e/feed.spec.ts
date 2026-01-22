@@ -107,7 +107,7 @@ test.describe('Feed Page', () => {
 
     // Should show some loading indicator or skeleton
     // This depends on implementation - either a spinner or skeleton cards
-    const hasLoading =
+    const _hasLoading =
       (await page.locator('.animate-pulse').count()) > 0 ||
       (await page.locator('.animate-spin').count()) > 0 ||
       (await page.getByText(/loading/i).count()) > 0;

@@ -932,7 +932,7 @@ export async function getRecentOperations(
  * @param username - Hive username
  * @returns Comment count and vote count
  */
-async function calculateUserStats(username: string): Promise<{
+async function _calculateUserStats(username: string): Promise<{
   commentCount: number;
   voteCount: number;
 }> {

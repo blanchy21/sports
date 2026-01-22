@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { getDegradationStatus, DegradationStatus } from '@/lib/hive-workerbee/graceful-degradation';
+import { getDegradationStatus } from '@/lib/hive-workerbee/graceful-degradation';
 
 export type ServiceName = 'hive' | 'firebase' | 'network';
 

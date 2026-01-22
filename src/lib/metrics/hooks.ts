@@ -113,7 +113,7 @@ export function useTrackEngagement() {
 /**
  * Hook to fetch and cache leaderboard data
  */
-export function useLeaderboard(weekId?: string, category?: string) {
+export function useLeaderboard(_weekId?: string, _category?: string) {
   // This would typically use React Query, but keeping it simple
   // The actual implementation should use the existing React Query setup
   return {

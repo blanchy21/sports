@@ -8,7 +8,6 @@ import {
   buildTransferOp,
   buildTransferOpFromAmount,
   buildStakeOp,
-  buildStakeOpFromAmount,
   buildUnstakeOp,
   buildDelegateOp,
   buildCancelUnstakeOp,

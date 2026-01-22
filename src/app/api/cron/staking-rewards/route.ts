@@ -22,7 +22,7 @@ import {
 import { getHiveEngineClient } from '@/lib/hive-engine/client';
 import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
+import { verifyCronRequest } from '@/lib/api/cron-auth';
 
 /**
  * Check if rewards have already been processed for this week

@@ -7,7 +7,7 @@
  * and allows you to view performance metrics, cache statistics, and health status.
  */
 
-import { performance } from 'perf_hooks';
+// performance from 'perf_hooks' available if needed for future timing
 
 // Type definitions for better type safety
 interface ErrorData {
@@ -86,10 +86,7 @@ class MockMonitoringData {
   }
 
   getMonitoringStats(): MonitoringStats {
-    const uptime = Date.now() - this.startTime;
     const errorRate = this.requestCount > 0 ? (this.errorCount / this.requestCount) * 100 : 0;
-    const cacheHitRate = (this.cacheHits + this.cacheMisses) > 0 ? 
-      (this.cacheHits / (this.cacheHits + this.cacheMisses)) * 100 : 0;
 
     return {
       errors: {

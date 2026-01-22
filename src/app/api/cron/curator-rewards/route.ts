@@ -24,7 +24,7 @@ import { getCuratorRewardAmount } from '@/lib/rewards/config';
 import { collection, doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
-import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
+import { verifyCronRequest } from '@/lib/api/cron-auth';
 
 // Time window to look back for votes (in minutes)
 const VOTE_LOOKBACK_MINUTES = 20; // Slightly more than cron interval

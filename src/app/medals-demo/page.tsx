@@ -19,7 +19,7 @@ import {
  */
 export default function MedalsDemoPage() {
   const [transferModalOpen, setTransferModalOpen] = useState(false);
-  const [stakingModalOpen, setStakingModalOpen] = useState(false);
+  const [, setStakingModalOpen] = useState(false);
 
   // Demo account for testing
   const demoAccount = "sportsblock";

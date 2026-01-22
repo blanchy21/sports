@@ -20,7 +20,7 @@ import {
 import { getPlatformYear } from '@/lib/rewards/config';
 import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
+import { verifyCronRequest } from '@/lib/api/cron-auth';
 
 /**
  * Get the previous week's ID (since we run on Monday for the previous week)

@@ -21,7 +21,7 @@ try {
       }
     }
   });
-} catch (error) {
+} catch {
   // .env.local might not exist, that's okay
 }
 
@@ -105,12 +105,13 @@ async function initAnalytics() {
       version: 1,
     });
     console.log(`  ✅ Created trendingSports with ${trendingSports.length} sports\n`);
-  } catch (error: any) {
-    if (error.code === 'permission-denied') {
+  } catch (error: unknown) {
+    const err = error as { code?: string; message?: string };
+    if (err.code === 'permission-denied') {
       console.error('  ❌ Permission denied - check Firestore security rules');
       console.error('  💡 Make sure firestore.rules allows write access to analytics collection');
     } else {
-      console.error('  ❌ Error:', error.message);
+      console.error('  ❌ Error:', err.message);
     }
   }
 
@@ -131,11 +132,12 @@ async function initAnalytics() {
       version: 1,
     });
     console.log(`  ✅ Created trendingTopics with ${trendingTopics.length} topics\n`);
-  } catch (error: any) {
-    if (error.code === 'permission-denied') {
+  } catch (error: unknown) {
+    const err = error as { code?: string; message?: string };
+    if (err.code === 'permission-denied') {
       console.error('  ❌ Permission denied - check Firestore security rules');
     } else {
-      console.error('  ❌ Error:', error.message);
+      console.error('  ❌ Error:', err.message);
     }
   }
 
@@ -150,11 +152,12 @@ async function initAnalytics() {
       version: 1,
     });
     console.log(`  ✅ Created topAuthors (empty, will be populated by your analytics service)\n`);
-  } catch (error: any) {
-    if (error.code === 'permission-denied') {
+  } catch (error: unknown) {
+    const err = error as { code?: string; message?: string };
+    if (err.code === 'permission-denied') {
       console.error('  ❌ Permission denied - check Firestore security rules');
     } else {
-      console.error('  ❌ Error:', error.message);
+      console.error('  ❌ Error:', err.message);
     }
   }
 
@@ -174,11 +177,12 @@ async function initAnalytics() {
       version: 1,
     });
     console.log(`  ✅ Created communityStats with initial values\n`);
-  } catch (error: any) {
-    if (error.code === 'permission-denied') {
+  } catch (error: unknown) {
+    const err = error as { code?: string; message?: string };
+    if (err.code === 'permission-denied') {
       console.error('  ❌ Permission denied - check Firestore security rules');
     } else {
-      console.error('  ❌ Error:', error.message);
+      console.error('  ❌ Error:', err.message);
     }
   }
 

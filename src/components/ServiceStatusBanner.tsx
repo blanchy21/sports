@@ -38,7 +38,7 @@ export function ServiceStatusBanner({
   dismissible = true,
   compact = false,
 }: ServiceStatusBannerProps) {
-  const { services, isAnyDegraded, isAnyDown, refresh } = useServiceStatus();
+  const { services, isAnyDegraded: _isAnyDegraded, isAnyDown: _isAnyDown, refresh } = useServiceStatus();
   const [dismissed, setDismissed] = React.useState<Set<ServiceName>>(new Set());
 
   // Filter services if specified

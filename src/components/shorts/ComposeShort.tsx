@@ -24,7 +24,6 @@ import { validateImageUrl } from "@/lib/utils/sanitize";
 import dynamic from "next/dynamic";
 
 // Import emoji picker dynamically
-import { EmojiStyle } from "emoji-picker-react";
 const EmojiPicker = dynamic(
   () => import("emoji-picker-react"),
   { ssr: false }
@@ -625,7 +624,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
               <div className="absolute top-full left-0 mt-2 z-50">
                 <EmojiPicker
                   onEmojiClick={handleEmojiSelect}
-                  emojiStyle={EmojiStyle.NATIVE}
+                  emojiStyle={"native" as unknown as import("emoji-picker-react").EmojiStyle}
                   lazyLoadEmojis={true}
                 />
               </div>

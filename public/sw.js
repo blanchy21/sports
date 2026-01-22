@@ -1,5 +1,4 @@
 // Service Worker for performance optimization
-const CACHE_NAME = 'sportsblock-v1';
 const STATIC_CACHE = 'sportsblock-static-v1';
 const DYNAMIC_CACHE = 'sportsblock-dynamic-v1';
 

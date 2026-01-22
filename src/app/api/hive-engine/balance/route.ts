@@ -16,7 +16,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getMedalsBalance,
   getStakeInfo,
-  calculateEstimatedAPY,
 } from '@/lib/hive-engine/tokens';
 import { getMarketData } from '@/lib/hive-engine/market';
 import { formatQuantity, isValidAccountName } from '@/lib/hive-engine/client';

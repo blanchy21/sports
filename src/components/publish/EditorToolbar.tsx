@@ -21,7 +21,6 @@ import {
   Heading3,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { EmojiStyle } from "emoji-picker-react";
 
 // Import emoji picker dynamically (~300KB uncompressed)
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
@@ -207,7 +206,7 @@ export function EditorToolbar({
           <div className="absolute top-full left-0 mt-2 z-50">
             <EmojiPicker
               onEmojiClick={handleEmojiSelect}
-              emojiStyle={EmojiStyle.NATIVE}
+              emojiStyle={"native" as unknown as import("emoji-picker-react").EmojiStyle}
               lazyLoadEmojis={true}
             />
           </div>

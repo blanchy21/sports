@@ -16,7 +16,7 @@ import type { WeeklyLeaderboards } from '@/lib/metrics/types';
 
 export default function LeaderboardPage() {
   const searchParams = useSearchParams();
-  const categoryFilter = searchParams.get('category');
+  const _categoryFilter = searchParams.get('category'); // Reserved for future filtering
 
   const [leaderboards, setLeaderboards] = useState<WeeklyLeaderboards | null>(null);
   const [isLoading, setIsLoading] = useState(true);

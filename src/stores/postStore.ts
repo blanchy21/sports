@@ -49,7 +49,7 @@ interface PostActions {
 
 export const usePostStore = create<PostState & PostActions>()(
   devtools(
-    immer((set, get) => ({
+    immer((set, _get) => ({
     // State
     posts: [],
     selectedPost: null,
