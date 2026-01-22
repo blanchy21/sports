@@ -14,26 +14,21 @@ declare global {
 export const AIOHA_STUB_EVENT = '__AIOHA_STUB_APPLIED__';
 
 // Aioha configuration for Sportsblock
+// Note: Only hivesigner, hiveauth, and metamasksnap need config
+// Keychain, Ledger, and PeakVault are registered automatically
 export const aiohaConfig = {
   hiveauth: {
     name: 'Sportsblock',
     description: 'Your escape to pure sports content - earn crypto rewards for your insights',
-    logo: '/stadium.jpg', // Using the stadium image as app logo
+    icon: typeof window !== 'undefined' ? `${window.location.origin}/stadium.jpg` : '/stadium.jpg',
   },
   hivesigner: {
     app: 'sportsblock',
     callbackURL: typeof window !== 'undefined' ? `${window.location.origin}/hivesigner.html` : '',
     scope: ['login', 'vote', 'comment', 'post'],
   },
-  keychain: {
-    app: 'sportsblock',
-  },
-  ledger: {
-    // Ledger specific configuration
-  },
-  peakvault: {
-    // Peak Vault specific configuration
-  },
+  // Enable MetaMask Snap for Hive
+  metamasksnap: true,
 };
 
 let aioha: AiohaInstance | null = null;

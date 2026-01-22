@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Providers, KeyTypes } from "@aioha/aioha";
+import type { LoginResult } from "@aioha/aioha/build/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAioha } from "@/contexts/AiohaProvider";
 import { FirebaseAuth } from "@/lib/firebase/auth";
@@ -90,6 +91,8 @@ interface UseAuthPageResult {
   showAiohaModal: boolean;
   openAiohaModal: () => void;
   closeAiohaModal: () => void;
+  setShowAiohaModal: Dispatch<SetStateAction<boolean>>;
+  handleAiohaModalLogin: (result: LoginResult) => Promise<void>;
   resetConnectionState: () => void;
 }
 
@@ -441,6 +444,38 @@ export const useAuthPage = (): UseAuthPageResult => {
     updateEmailField("showPassword", !emailForm.showPassword);
   }, [emailForm.showPassword, updateEmailField]);
 
+  /**
+   * Handle login result from AiohaModal
+   * This is called when the user successfully authenticates via any provider in the modal
+   */
+  const handleAiohaModalLogin = useCallback(async (result: LoginResult) => {
+    if (!result.success) {
+      setErrorMessage("Login failed: " + (result as { error?: string }).error || "Unknown error");
+      return;
+    }
+
+    setIsConnecting(true);
+    setErrorMessage(null);
+
+    try {
+      // Convert LoginResult to the format expected by loginWithAioha
+      const loginResult: AiohaLoginResult = {
+        username: result.username,
+        provider: result.provider,
+        success: true,
+      };
+
+      await loginWithAioha(loginResult);
+      setShowAiohaModal(false);
+      router.push("/feed");
+    } catch (error) {
+      console.error("Aioha modal login failed:", error);
+      setErrorMessage("Login failed: " + (error instanceof Error ? error.message : "Unknown error"));
+    } finally {
+      setIsConnecting(false);
+    }
+  }, [loginWithAioha, router]);
+
   return {
     mode,
     toggleMode,
@@ -463,6 +498,8 @@ export const useAuthPage = (): UseAuthPageResult => {
     showAiohaModal,
     openAiohaModal,
     closeAiohaModal,
+    setShowAiohaModal,
+    handleAiohaModalLogin,
     resetConnectionState,
   };
 };

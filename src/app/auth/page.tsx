@@ -2,13 +2,14 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Wallet } from "lucide-react";
+import { KeyTypes } from "@aioha/aioha";
+import { AiohaModal } from "@aioha/react-ui";
 import { Button } from "@/components/ui/Button";
+import { useAioha } from "@/contexts/AiohaProvider";
 import { AuthHero } from "./components/AuthHero";
 import { AuthHeading } from "./components/AuthHeading";
 import { ErrorAlert } from "./components/ErrorAlert";
-import { HiveUsernamePrompt } from "./components/HiveUsernamePrompt";
-import { HiveWalletSection } from "./components/HiveWalletSection";
 import { EmailAuthSection } from "./components/EmailAuthSection";
 import { useAuthPage } from "./hooks/useAuthPage";
 
@@ -25,20 +26,16 @@ const Divider: React.FC = () => (
 
 export default function AuthPage() {
   const router = useRouter();
+  const { aioha } = useAioha();
   const {
     mode,
     toggleMode,
     isConnecting,
     errorMessage,
     dismissError,
-    availableProviders,
-    showHiveUsernameInput,
-    selectedProvider,
-    hiveUsername,
-    onHiveUsernameChange,
-    onHiveUsernameSubmit,
-    onHiveUsernameCancel,
-    onProviderSelect,
+    showAiohaModal,
+    setShowAiohaModal,
+    handleAiohaModalLogin,
     emailForm,
     updateEmailField,
     togglePasswordVisibility,
@@ -67,21 +64,28 @@ export default function AuthPage() {
 
             {errorMessage && <ErrorAlert message={errorMessage} onDismiss={dismissError} />}
 
-            <HiveUsernamePrompt
-              visible={showHiveUsernameInput}
-              hiveUsername={hiveUsername}
-              selectedProvider={selectedProvider}
-              isConnecting={isConnecting}
-              onChange={onHiveUsernameChange}
-              onSubmit={onHiveUsernameSubmit}
-              onCancel={onHiveUsernameCancel}
-            />
+            {/* Hive Wallet Connect Section */}
+            <div className="mb-8">
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Connect with Hive Blockchain</h3>
+                <p className="text-sm text-muted-foreground">
+                  Choose your preferred wallet to access the full Hive ecosystem
+                </p>
+              </div>
 
-            <HiveWalletSection
-              providers={availableProviders}
-              isConnecting={isConnecting}
-              onProviderSelect={onProviderSelect}
-            />
+              <Button
+                onClick={() => setShowAiohaModal(true)}
+                disabled={isConnecting || !aioha}
+                className="w-full h-14 flex items-center justify-center space-x-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+              >
+                <Wallet className="h-5 w-5" />
+                <span>Connect Hive Wallet</span>
+              </Button>
+
+              <p className="mt-3 text-xs text-center text-muted-foreground">
+                Supports Keychain, HiveSigner, HiveAuth, Ledger, PeakVault & MetaMask
+              </p>
+            </div>
 
             <Divider />
 
@@ -98,7 +102,19 @@ export default function AuthPage() {
         </div>
       </div>
 
-      {/* Note: Using custom UI + programmatic Aioha login instead of AiohaModal */}
+      {/* AiohaModal handles all Hive wallet authentication including HiveAuth QR codes */}
+      {Boolean(aioha) && (
+        <AiohaModal
+          displayed={showAiohaModal}
+          loginTitle="Connect to Sportsblock"
+          loginOptions={{
+            msg: "Login to Sportsblock",
+            keyType: KeyTypes.Posting,
+          }}
+          onLogin={handleAiohaModalLogin}
+          onClose={setShowAiohaModal}
+        />
+      )}
     </div>
   );
 }
