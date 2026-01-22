@@ -41,12 +41,23 @@ async function fetchPostsViaInternalApi(limit: number = 20): Promise<Sportsblock
   }
 }
 
+const ROUTE = '/api/analytics';
+
 /**
  * Analytics API endpoint
  * Fetches analytics data from Firebase Firestore (layer 2 database)
  * This data is custom to Sportsblock and not available from Hive API
  */
 export async function GET() {
+  const startTime = Date.now();
+  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
+
+  console.log(`[${ROUTE}] Request started`, {
+    requestId,
+    firebaseConfigured: !!db,
+    timestamp: new Date().toISOString()
+  });
+
   try {
     const analytics = {
       trendingSports: [] as TrendingSport[],
@@ -164,12 +175,23 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('[API] Error fetching analytics:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[${ROUTE}] Request failed after ${duration}ms`, {
+      requestId,
+      firebaseConfigured: !!db,
+      error: error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      } : String(error),
+      timestamp: new Date().toISOString()
+    });
+
     const message = error instanceof Error ? error.message : 'Unknown error';
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: message,
         // Return empty data on error so UI doesn't break
         data: {

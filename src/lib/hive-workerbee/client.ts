@@ -67,13 +67,31 @@ export function getWorkerBeeForMonitoring(): InstanceType<typeof WorkerBee> {
  * @returns Promise that resolves when client is ready
  */
 export async function initializeWorkerBeeClient(): Promise<InstanceType<typeof WorkerBee>> {
-  const client = getWorkerBeeClient();
-  
-  if (!client.running) {
-    await client.start();
+  const startTime = Date.now();
+  workerBeeLog('[WorkerBee Client] Initializing...');
+
+  try {
+    const client = getWorkerBeeClient();
+
+    if (!client.running) {
+      workerBeeLog('[WorkerBee Client] Starting client...');
+      await client.start();
+      const duration = Date.now() - startTime;
+      workerBeeLog(`[WorkerBee Client] Started successfully in ${duration}ms`);
+    } else {
+      workerBeeLog('[WorkerBee Client] Client already running');
+    }
+
+    return client;
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    logError(`[WorkerBee Client] Initialization failed after ${duration}ms`, 'initializeWorkerBeeClient', error instanceof Error ? error : undefined, {
+      errorType: error instanceof Error ? error.name : typeof error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    throw error;
   }
-  
-  return client;
 }
 
 /**

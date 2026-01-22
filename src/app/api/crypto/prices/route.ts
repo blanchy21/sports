@@ -20,7 +20,19 @@ let priceCache: PriceCache = {
   expiresAt: 0
 };
 
+const ROUTE = '/api/crypto/prices';
+
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
+  const url = request.url;
+
+  console.log(`[${ROUTE}] Request started`, {
+    requestId,
+    url,
+    timestamp: new Date().toISOString()
+  });
+
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'all';
@@ -168,11 +180,21 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[API] Error fetching cryptocurrency prices:', error);
-    
+    const duration = Date.now() - startTime;
+    console.error(`[${ROUTE}] Request failed after ${duration}ms`, {
+      requestId,
+      url,
+      error: error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      } : String(error),
+      timestamp: new Date().toISOString()
+    });
+
     // If we have cached data, return it even if expired
     if (priceCache.data) {
-      console.log('[API] Returning expired cached data due to error');
+      console.log(`[${ROUTE}] Returning expired cached data due to error`);
       return NextResponse.json({
         success: true,
         data: priceCache.data,
@@ -182,7 +204,7 @@ export async function GET(request: NextRequest) {
         error: error instanceof Error ? error.message : String(error)
       });
     }
-    
+
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : String(error),

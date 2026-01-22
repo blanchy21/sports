@@ -60,8 +60,19 @@ function isShortPermlink(permlink: string): boolean {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+const ROUTE = '/api/hive/notifications';
+
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
+  const url = request.nextUrl.toString();
   const searchParams = request.nextUrl.searchParams;
+
+  console.log(`[${ROUTE}] Request started`, {
+    requestId,
+    url,
+    timestamp: new Date().toISOString()
+  });
 
   // Parse and validate query parameters
   const parseResult = querySchema.safeParse({
@@ -161,13 +172,25 @@ export async function GET(request: NextRequest) {
       timestamp: now,
     });
   } catch (error) {
-    console.error('[API] Error fetching notifications:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[${ROUTE}] Request failed after ${duration}ms`, {
+      requestId,
+      url,
+      username,
+      error: error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      } : String(error),
+      timestamp: new Date().toISOString()
+    });
+
     const message = error instanceof Error ? error.message : 'Unknown error';
 
     // Try to return stale cache data on error (graceful degradation)
     const staleCache = notificationCache.get(cacheKey);
     if (staleCache) {
-      console.log('[Notifications API] Returning stale cache due to error');
+      console.log(`[${ROUTE}] Returning stale cache due to error`);
       return NextResponse.json({
         success: true,
         notifications: staleCache.notifications,
@@ -185,7 +208,7 @@ export async function GET(request: NextRequest) {
       notifications: [],
       count: 0,
       username,
-    });
+    }, { status: 500 });
   }
 }
 

@@ -418,7 +418,24 @@ export function handleApiError(
   error: unknown,
   requestId?: string
 ): NextResponse<ApiErrorResponse> {
-  // Log the error
+  // Enhanced error logging with stack traces
+  const errorDetails = error instanceof Error ? {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+    cause: error.cause,
+  } : {
+    type: typeof error,
+    value: String(error),
+  };
+
+  console.error(`[API Error] ${route}`, JSON.stringify({
+    requestId,
+    timestamp: new Date().toISOString(),
+    error: errorDetails,
+  }, null, 2));
+
+  // Log the error using apiLogger as well
   apiLogger.error(route, 'Request failed', error, { requestId });
 
   // 1. Handle structured API errors (preferred)

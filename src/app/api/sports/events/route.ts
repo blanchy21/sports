@@ -298,7 +298,19 @@ function sortEvents(events: SportsEvent[]): SportsEvent[] {
   });
 }
 
+const ROUTE = '/api/sports/events';
+
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
+  const url = request.url;
+
+  console.log(`[${ROUTE}] Request started`, {
+    requestId,
+    url,
+    timestamp: new Date().toISOString()
+  });
+
   try {
     const { searchParams } = new URL(request.url);
     const sport = searchParams.get('sport');
@@ -364,11 +376,22 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('Error fetching sports events:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[${ROUTE}] Request failed after ${duration}ms`, {
+      requestId,
+      url,
+      error: error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      } : String(error),
+      timestamp: new Date().toISOString()
+    });
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch sports events',
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch sports events',
         data: []
       },
       { status: 500 }

@@ -69,11 +69,15 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
  * @returns Promise with the API response
  */
 export async function makeWorkerBeeApiCall<T = unknown>(method: string, params: unknown[] = []): Promise<T> {
+  const callStartTime = Date.now();
+
   // Only use WorkerBee on server-side
   if (typeof window !== 'undefined') {
-    // Client-side: fallback to HTTP
+    workerBeeLog(`[WorkerBee API] Client-side detected, using HTTP fallback for ${method}`);
     return makeHiveApiCall('condenser_api', method, params);
   }
+
+  workerBeeLog(`[WorkerBee API] Server-side call: ${method}`, undefined, { paramsLength: params.length });
 
   try {
     const { initializeWorkerBeeClient, getWaxFromWorkerBee } = await import('./client');

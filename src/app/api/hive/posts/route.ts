@@ -10,7 +10,15 @@ export const dynamic = 'force-dynamic';
 const ROUTE = '/api/hive/posts';
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
   const ctx = createRequestContext(ROUTE);
+  const url = request.nextUrl.toString();
+
+  console.log(`[${ROUTE}] Request started`, {
+    requestId: ctx.requestId,
+    url,
+    timestamp: new Date().toISOString()
+  });
 
   // Validate query parameters
   const parseResult = parseSearchParams(request.nextUrl.searchParams, postsQuerySchema);
@@ -93,6 +101,17 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[${ROUTE}] Request failed after ${duration}ms`, {
+      requestId: ctx.requestId,
+      url,
+      error: error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      } : String(error),
+      timestamp: new Date().toISOString()
+    });
     return ctx.handleError(error);
   }
 }
