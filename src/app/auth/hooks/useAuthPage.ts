@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
+import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Providers, KeyTypes } from "@aioha/aioha";
 import type { LoginResult } from "@aioha/aioha/build/types";
@@ -100,7 +100,7 @@ const usernameRequiredProviders = new Set(["keychain", "hiveauth"]);
 
 export const useAuthPage = (): UseAuthPageResult => {
   const router = useRouter();
-  const { loginWithAioha, loginWithFirebase } = useAuth();
+  const { user, isClient, loginWithAioha, loginWithFirebase } = useAuth();
   const { aioha, isInitialized } = useAioha();
 
   const [mode, setMode] = useState<AuthMode>("login");
@@ -124,6 +124,37 @@ export const useAuthPage = (): UseAuthPageResult => {
   });
 
   const isAiohaReady = useMemo(() => Boolean(aioha) && isInitialized, [aioha, isInitialized]);
+
+  const autoReconnectAttempted = useRef(false);
+
+  // Redirect if already authenticated, or auto-reconnect if wallet is still active
+  useEffect(() => {
+    if (!isClient) return;
+
+    // Already logged in via AuthContext - redirect away from auth page
+    if (user?.username) {
+      router.replace("/feed");
+      return;
+    }
+
+    // Session expired but wallet still connected - auto-reconnect (once)
+    if (isAiohaReady && aioha && !autoReconnectAttempted.current) {
+      const aiohaInstance = aioha as { getCurrentUser?: () => string | undefined };
+      const walletUser = aiohaInstance.getCurrentUser?.();
+      if (walletUser) {
+        autoReconnectAttempted.current = true;
+        setIsConnecting(true);
+        loginWithAioha()
+          .then(() => {
+            router.replace("/feed");
+          })
+          .catch(() => {
+            // Auto-reconnect failed, let user manually authenticate
+            setIsConnecting(false);
+          });
+      }
+    }
+  }, [isClient, user, isAiohaReady, aioha, loginWithAioha, router]);
 
   const resetHivePrompt = useCallback(() => {
     setShowHiveUsernameInput(false);
