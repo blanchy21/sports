@@ -121,3 +121,10 @@ const LazyNotificationDropdownBase = dynamic(
   { ssr: false }
 );
 export const LazyNotificationDropdown = withLazyErrorBoundary(LazyNotificationDropdownBase, 'NotificationDropdown');
+
+// Lazy load SettingsDropdown (only shown when settings opened)
+const LazySettingsDropdownBase = dynamic(
+  () => import('@/components/SettingsDropdown').then(mod => ({ default: mod.SettingsDropdown })),
+  { ssr: false }
+);
+export const LazySettingsDropdown = withLazyErrorBoundary(LazySettingsDropdownBase, 'SettingsDropdown');

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { LazyAuthModal, LazySportsFilterPopup, LazyUpgradeFlow, LazyNotificationDropdown } from "@/components/lazy/LazyComponents";
+import { LazyAuthModal, LazySportsFilterPopup, LazyUpgradeFlow, LazyNotificationDropdown, LazySettingsDropdown } from "@/components/lazy/LazyComponents";
 import { UpgradePrompt } from "@/components/AccountBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -50,7 +50,9 @@ export const TopNavigation: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const handleSportSelect = (sportId: string) => {
     setSelectedSport(sportId);
@@ -236,9 +238,22 @@ export const TopNavigation: React.FC = () => {
                 </Link>
 
                 <div className="relative hidden lg:block">
-                  <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 hover:text-white w-12 h-12 xl:w-16 xl:h-16" aria-label="Settings">
+                  <Button
+                    ref={settingsButtonRef}
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="text-white/90 hover:bg-white/20 hover:text-white w-12 h-12 xl:w-16 xl:h-16"
+                    aria-label="Settings"
+                  >
                     <Settings className="h-6 w-6 xl:h-8 xl:w-8" />
                   </Button>
+
+                  <LazySettingsDropdown
+                    isOpen={showSettings}
+                    onClose={() => setShowSettings(false)}
+                    triggerRef={settingsButtonRef}
+                  />
                 </div>
 
                 <Link href="/profile" className="flex items-center space-x-2 sm:space-x-3 hover:opacity-80 transition-opacity" suppressHydrationWarning>
