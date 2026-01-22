@@ -145,8 +145,8 @@ describe('GET /api/hive-engine/balance', () => {
       .query({ account: 'testuser' });
 
     expect(response.status).toBe(500);
-    expect(response.body.error).toBe('Failed to fetch balance');
-    expect(response.body.message).toBe('Network error');
+    expect(response.body.error).toBe('Failed to fetch balance. Please try again later.');
+    expect(response.body.code).toBe('BALANCE_FETCH_ERROR');
   });
 
   it('should set proper cache headers', async () => {

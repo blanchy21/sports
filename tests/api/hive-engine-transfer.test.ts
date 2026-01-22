@@ -264,7 +264,7 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ from: 'sender', to: 'recipient', quantity: '100.000' });
 
     expect(response.status).toBe(500);
-    expect(response.body.error).toBe('Failed to build operation');
-    expect(response.body.message).toBe('Network error');
+    expect(response.body.error).toBe('Failed to build transfer operation. Please check your input and try again.');
+    expect(response.body.code).toBe('TRANSFER_BUILD_ERROR');
   });
 });

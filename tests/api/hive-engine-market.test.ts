@@ -354,8 +354,8 @@ describe('GET /api/hive-engine/market', () => {
       const response = await request(server).get('/api/hive-engine/market');
 
       expect(response.status).toBe(500);
-      expect(response.body.error).toBe('Failed to fetch market data');
-      expect(response.body.message).toBe('API error');
+      expect(response.body.error).toBe('Failed to fetch market data. Please try again later.');
+      expect(response.body.code).toBe('MARKET_FETCH_ERROR');
     });
   });
 

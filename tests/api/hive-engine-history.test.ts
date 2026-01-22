@@ -251,8 +251,8 @@ describe('GET /api/hive-engine/history', () => {
       .query({ account: 'testuser', type: 'transfers' });
 
     expect(response.status).toBe(500);
-    expect(response.body.error).toBe('Failed to fetch transaction history');
-    expect(response.body.message).toBe('Database error');
+    expect(response.body.error).toBe('Failed to fetch transaction history. Please try again later.');
+    expect(response.body.code).toBe('HISTORY_FETCH_ERROR');
   });
 
   it('should set proper cache headers', async () => {

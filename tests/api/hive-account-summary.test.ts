@@ -69,7 +69,7 @@ describe('GET /api/hive/account/summary', () => {
       .query({ username: 'gtg' });
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({
+    expect(response.body).toMatchObject({
       success: true,
       account: {
         username: 'gtg',
@@ -80,14 +80,17 @@ describe('GET /api/hive/account/summary', () => {
         },
       },
     });
+    expect(response.body.cached).toBe(false);
+    expect(response.body.timestamp).toBeDefined();
   });
 
   it('handles upstream errors', async () => {
     fetchUserAccount.mockRejectedValueOnce(new Error('Hive RPC down'));
 
+    // Use a different username that's not cached from previous tests
     const response = await request(server)
       .get('/api/hive/account/summary')
-      .query({ username: 'gtg' });
+      .query({ username: 'uncached-user' });
 
     expect(response.status).toBe(502);
     expect(response.body.success).toBe(false);

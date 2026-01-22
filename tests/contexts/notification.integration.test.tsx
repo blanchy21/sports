@@ -145,10 +145,12 @@ describe('NotificationProvider integration', () => {
 
     expect(latestContext?.unreadCount).toBe(2);
 
-    // Verify persistence to localStorage
-    const saved = localStorage.getItem(storageKey);
-    expect(saved).not.toBeNull();
-    expect(saved).toContain('"type":"vote"');
+    // Verify persistence to localStorage - wait for async save
+    await waitFor(() => {
+      const saved = localStorage.getItem(storageKey);
+      expect(saved).not.toBeNull();
+      expect(saved).toContain('"type":"vote"');
+    });
   });
 });
 

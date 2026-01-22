@@ -146,7 +146,7 @@ describe('GET /api/hive-engine/stake', () => {
       .query({ account: 'testuser' });
 
     expect(response.status).toBe(500);
-    expect(response.body.error).toBe('Failed to fetch staking information');
+    expect(response.body.error).toBe('Failed to fetch staking information. Please try again later.');
   });
 });
 
