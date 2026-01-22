@@ -18,7 +18,7 @@ import {
   Upload,
   Loader2,
 } from "lucide-react";
-import { Community } from "@/types";
+import { Community, SPORT_CATEGORIES } from "@/types";
 import { cn } from "@/lib/utils";
 import { validateImageUrl, validateUrl } from "@/lib/utils/sanitize";
 import dynamic from "next/dynamic";
@@ -586,10 +586,9 @@ function PublishPageContent() {
     );
   }
 
-  // Generate preview link
-  const previewLink = hiveUser?.username
-    ? `peakd.com/@${hiveUser.username}/[post-slug]`
-    : "sportsblock.com/[username]/[post-slug]";
+  // Generate preview link - always show Sportsblock URL
+  const username = hiveUser?.username || user?.username || "username";
+  const previewLink = `sportsblock.com/@${username}/[post-slug]`;
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -731,6 +730,34 @@ function PublishPageContent() {
               />
             </div>
 
+            {/* Sport Category (Required - Prominent Position) */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Choose a Sport <span className="text-destructive">*</span>
+              </label>
+              <select
+                value={selectedSport}
+                onChange={(e) => setSelectedSport(e.target.value)}
+                className={cn(
+                  "w-full px-3 py-2.5 rounded-lg border bg-background",
+                  "text-sm focus:outline-none focus:ring-2 focus:ring-ring",
+                  !selectedSport && "text-muted-foreground"
+                )}
+              >
+                <option value="">Select a sport category</option>
+                {SPORT_CATEGORIES.map((sport) => (
+                  <option key={sport.id} value={sport.id}>
+                    {sport.icon} {sport.name}
+                  </option>
+                ))}
+              </select>
+              {!selectedSport && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Sport category is required to publish your post
+                </p>
+              )}
+            </div>
+
             {/* Tags */}
             <TagInput
               value={tags}
@@ -742,8 +769,6 @@ function PublishPageContent() {
 
             {/* Advanced Options */}
             <AdvancedOptions
-              selectedSport={selectedSport}
-              onSportChange={setSelectedSport}
               selectedCommunity={selectedCommunity}
               onCommunityChange={setSelectedCommunity}
               userCommunities={userCommunities}
