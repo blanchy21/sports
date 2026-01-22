@@ -14,7 +14,8 @@ test.describe('Auth Login', () => {
 
     const username = hiveUsername!;
 
-    let accountSummary: Record<string, unknown> | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let accountSummary: any = null;
     try {
       const response = await request.get(`/api/hive/account/summary?username=${encodeURIComponent(username)}`);
       if (response.ok()) {
