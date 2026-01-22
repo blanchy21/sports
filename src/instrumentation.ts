@@ -4,6 +4,8 @@
  * This file is used to:
  * 1. Validate environment variables at startup
  * 2. Initialize monitoring tools like Sentry
+ *
+ * @version 1.0.1 - Rebuild trigger for env vars
  */
 
 export async function register() {
