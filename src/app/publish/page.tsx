@@ -28,7 +28,7 @@ import { useCommunities, useUserCommunities } from "@/lib/react-query/queries/us
 import { UnifiedPostingService } from "@/lib/posting/unified";
 import { useUIStore } from "@/stores/uiStore";
 import { FirebasePosts } from "@/lib/firebase/posts";
-import { uploadImageWithKeychain, isKeychainAvailable } from "@/lib/hive/imageUpload";
+import { uploadImage } from "@/lib/hive/imageUpload";
 
 // Import new components
 import { EditorToolbar, FormatType } from "@/components/publish/EditorToolbar";
@@ -96,6 +96,7 @@ function PublishPageContent() {
   // Refs
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const menuRef = React.useRef<HTMLDivElement>(null);
+  const cursorPositionRef = React.useRef<number>(0);
 
   // Store
   const { recentTags, addRecentTags } = useUIStore();
@@ -269,6 +270,7 @@ function PublishPageContent() {
   };
 
   const handleInsertImage = () => {
+    cursorPositionRef.current = textareaRef.current?.selectionStart ?? content.length;
     setShowImageDialog(true);
   };
 
@@ -283,7 +285,23 @@ function PublishPageContent() {
     }
 
     const alt = imageAlt || "image";
-    insertAtCursor(`\n![${alt}](${validation.url})\n`);
+    const markdown = `\n![${alt}](${validation.url})\n`;
+
+    // Use saved cursor position since textarea lost focus to dialog
+    const pos = cursorPositionRef.current;
+    const newContent = content.substring(0, pos) + markdown + content.substring(pos);
+    setContent(newContent);
+
+    // Restore focus to textarea
+    setTimeout(() => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.focus();
+        const newPos = pos + markdown.length;
+        textarea.setSelectionRange(newPos, newPos);
+      }
+    }, 0);
+
     setImageUrl("");
     setImageAlt("");
     setImageTab("url");
@@ -306,24 +324,11 @@ function PublishPageContent() {
       return;
     }
 
-    // Check if user is authenticated with Hive
-    if (!user?.username || authType !== 'hive') {
-      setUploadError("Please login with a Hive wallet to upload images");
-      return;
-    }
-
-    // Check if Keychain is available
-    if (!isKeychainAvailable()) {
-      setUploadError("Hive Keychain is required for image uploads. Please install the browser extension.");
-      return;
-    }
-
     setIsUploadingImage(true);
     setUploadError(null);
 
     try {
-      // Upload via Hive Keychain (signs the image with posting key)
-      const result = await uploadImageWithKeychain(file, user.username);
+      const result = await uploadImage(file, user?.username);
 
       if (result.success && result.url) {
         setImageUrl(result.url);
@@ -993,7 +998,7 @@ function PublishPageContent() {
                   <label className="block text-sm font-medium mb-2">Upload Image</label>
                   <div
                     className={cn(
-                      "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                      "relative border-2 border-dashed rounded-lg p-6 text-center transition-colors",
                       isUploadingImage
                         ? "border-primary/50 bg-primary/5"
                         : "border-muted-foreground/25 hover:border-primary/50"

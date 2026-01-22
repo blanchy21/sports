@@ -19,7 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SPORT_CATEGORIES } from "@/types";
 import { SHORTS_CONFIG, createShortOperation, validateShortContent } from "@/lib/hive-workerbee/shorts";
-import { uploadImageWithKeychain, isKeychainAvailable } from "@/lib/hive/imageUpload";
+import { uploadImage } from "@/lib/hive/imageUpload";
 import { validateImageUrl } from "@/lib/utils/sanitize";
 import dynamic from "next/dynamic";
 
@@ -137,24 +137,11 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       return;
     }
 
-    // Check if user is authenticated with Hive
-    if (!user?.username || authType !== 'hive') {
-      setUploadError("Please login with a Hive wallet to upload images");
-      return;
-    }
-
-    // Check if Keychain is available
-    if (!isKeychainAvailable()) {
-      setUploadError("Hive Keychain is required for image uploads. Please install the browser extension.");
-      return;
-    }
-
     setIsUploadingImage(true);
     setUploadError(null);
 
     try {
-      // Upload via Hive Keychain (signs the image with posting key)
-      const result = await uploadImageWithKeychain(file, user.username);
+      const result = await uploadImage(file, user?.username);
 
       if (result.success && result.url) {
         setImages([...images, result.url]);

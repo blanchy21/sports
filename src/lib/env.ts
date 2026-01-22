@@ -75,6 +75,8 @@ export const serverEnv = {
   hive: {
     nodeUrl: getOptionalEnv('HIVE_NODE_URL', 'https://api.hive.blog'),
     testnetUrl: getOptionalEnv('HIVE_NODE_URL_TESTNET', 'https://testnet.openhive.network'),
+    imageUploadAccount: getOptionalEnv('HIVE_IMAGE_UPLOAD_ACCOUNT'),
+    imageUploadKey: getOptionalEnv('HIVE_IMAGE_UPLOAD_KEY'),
   },
   workerbee: {
     enabled: getOptionalEnv('WORKERBEE_ENABLED') === 'true',

@@ -1,0 +1,80 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { PrivateKey, cryptoUtils } from '@hiveio/dhive';
+
+const IMAGE_HOST = 'https://images.hive.blog';
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+export async function POST(request: NextRequest) {
+  const account = process.env.HIVE_IMAGE_UPLOAD_ACCOUNT;
+  const key = process.env.HIVE_IMAGE_UPLOAD_KEY;
+
+  if (!account || !key) {
+    return NextResponse.json(
+      { error: 'Image upload is not configured. Set HIVE_IMAGE_UPLOAD_ACCOUNT and HIVE_IMAGE_UPLOAD_KEY.' },
+      { status: 503 }
+    );
+  }
+
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file');
+
+    if (!file || !(file instanceof Blob)) {
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 400 });
+    }
+
+    // Read file as buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const imageData = Buffer.from(arrayBuffer);
+
+    // Create the signing challenge: SHA-256("ImageSigningChallenge" + imageData)
+    const prefix = Buffer.from('ImageSigningChallenge');
+    const challengeBuffer = Buffer.concat([prefix, imageData]);
+    const hash = cryptoUtils.sha256(challengeBuffer);
+
+    // Sign the hash with the service account's posting key
+    const privateKey = PrivateKey.fromString(key);
+    const signature = privateKey.sign(hash).toString();
+
+    // Upload to images.hive.blog
+    const uploadFormData = new FormData();
+    const blob = new Blob([imageData], { type: (file as File).type || 'image/png' });
+    uploadFormData.append('file', blob, (file as File).name || 'image.png');
+
+    const uploadUrl = `${IMAGE_HOST}/${account}/${signature}`;
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      body: uploadFormData,
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      console.error('Hive image upload failed:', response.status, text);
+      return NextResponse.json(
+        { error: `Image host returned ${response.status}` },
+        { status: 502 }
+      );
+    }
+
+    const result = await response.json();
+
+    if (result.url) {
+      return NextResponse.json({ url: result.url });
+    }
+
+    return NextResponse.json(
+      { error: 'No URL in image host response' },
+      { status: 502 }
+    );
+  } catch (error) {
+    console.error('Image upload error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Upload failed' },
+      { status: 500 }
+    );
+  }
+}
