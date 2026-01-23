@@ -5,7 +5,7 @@
  */
 
 /** Accounts with admin dashboard access */
-export const ADMIN_ACCOUNTS = ['sportsblock'];
+export const ADMIN_ACCOUNTS = ['sportsblock', 'blanchy', 'niallon11'];
 
 /** Check if a username has admin access */
 export function isAdminAccount(username: string): boolean {

@@ -22,7 +22,7 @@ export const MEDALS_ACCOUNTS = {
  * Year 1 starts from platform launch date
  */
 export function getPlatformYear(): number {
-  const launchDate = new Date('2025-01-01'); // Adjust to actual launch date
+  const launchDate = new Date('2026-03-01'); // Platform launch: March 2026
   const now = new Date();
   const diffYears = Math.floor(
     (now.getTime() - launchDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
@@ -62,7 +62,7 @@ export const CURATOR_REWARDS = {
   /** Maximum votes per curator per day */
   MAX_VOTES_PER_DAY: 5,
   /** Number of designated curators */
-  CURATOR_COUNT: 10,
+  CURATOR_COUNT: 4,
 } as const;
 
 /**

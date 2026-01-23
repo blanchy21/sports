@@ -22,6 +22,8 @@ import {
   RefreshCw,
   Settings,
   TrendingUp,
+  UserPlus,
+  Trash2,
 } from 'lucide-react';
 import { isAdminAccount } from '@/lib/admin/config';
 
@@ -59,24 +61,29 @@ interface AdminConfig {
 }
 
 export default function MedalsAdminDashboard() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [environmentInfo, setEnvironmentInfo] = useState<EnvironmentInfo | null>(null);
   const [config, setConfig] = useState<AdminConfig | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [metricsLoading, setMetricsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [cronStatus, setCronStatus] = useState<string | null>(null);
+  const [curators, setCurators] = useState<string[]>([]);
+  const [newCurator, setNewCurator] = useState('');
+  const [curatorLoading, setCuratorLoading] = useState(false);
 
-  const isAdmin = user && isAdminAccount(user.username);
+  const username = user?.username;
+  const isAdmin = !!username && isAdminAccount(username);
+  const isLoading = authLoading || metricsLoading;
 
   const fetchMetrics = useCallback(async () => {
-    if (!user) return;
+    if (!username) return;
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/metrics?username=${encodeURIComponent(user.username)}`);
+      const response = await fetch(`/api/admin/metrics?username=${encodeURIComponent(username)}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -90,9 +97,15 @@ export default function MedalsAdminDashboard() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch metrics');
     } finally {
-      setIsLoading(false);
+      setMetricsLoading(false);
     }
-  }, [user]);
+  }, [username]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setMetricsLoading(false);
+    }
+  }, [authLoading, user]);
 
   useEffect(() => {
     if (!isLoading && !isAdmin) {
@@ -101,10 +114,10 @@ export default function MedalsAdminDashboard() {
   }, [isAdmin, isLoading, router]);
 
   useEffect(() => {
-    if (user) {
+    if (username) {
       fetchMetrics();
     }
-  }, [user, fetchMetrics]);
+  }, [username, fetchMetrics]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -113,14 +126,14 @@ export default function MedalsAdminDashboard() {
   };
 
   const handleTriggerCron = async (cronType: string) => {
-    if (!user) return;
+    if (!username) return;
     setCronStatus(null);
 
     try {
       const response = await fetch('/api/admin/trigger-cron', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user.username, cronType }),
+        body: JSON.stringify({ username, cronType }),
       });
       const data = await response.json();
 
@@ -132,6 +145,70 @@ export default function MedalsAdminDashboard() {
       }
     } catch (err) {
       setCronStatus(`${cronType} error: ${err instanceof Error ? err.message : 'Request failed'}`);
+    }
+  };
+
+  const fetchCurators = useCallback(async () => {
+    if (!username) return;
+    try {
+      const response = await fetch(`/api/admin/curators?username=${encodeURIComponent(username)}`);
+      const data = await response.json();
+      if (data.success) {
+        setCurators(data.curators);
+      }
+    } catch {
+      // Curators will show from metrics fallback
+    }
+  }, [username]);
+
+  useEffect(() => {
+    if (username && isAdmin) {
+      fetchCurators();
+    }
+  }, [username, isAdmin, fetchCurators]);
+
+  const handleAddCurator = async () => {
+    if (!username || !newCurator.trim()) return;
+    setCuratorLoading(true);
+    try {
+      const response = await fetch('/api/admin/curators', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, curator: newCurator.trim().toLowerCase() }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCurators(data.curators);
+        setNewCurator('');
+      } else {
+        setCronStatus(`Curator error: ${data.error}`);
+      }
+    } catch (err) {
+      setCronStatus(`Curator error: ${err instanceof Error ? err.message : 'Request failed'}`);
+    } finally {
+      setCuratorLoading(false);
+    }
+  };
+
+  const handleRemoveCurator = async (curator: string) => {
+    if (!username) return;
+    setCuratorLoading(true);
+    try {
+      const response = await fetch('/api/admin/curators', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, curator }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCurators(data.curators);
+      } else {
+        setCronStatus(`Curator error: ${data.error}`);
+      }
+    } catch (err) {
+      setCronStatus(`Curator error: ${err instanceof Error ? err.message : 'Request failed'}`);
+    } finally {
+      setCuratorLoading(false);
     }
   };
 
@@ -342,6 +419,64 @@ export default function MedalsAdminDashboard() {
           </div>
         </div>
 
+        {/* Curator Management */}
+        <div className="bg-card border rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Curator Management
+          </h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Curators earn post authors {curatorRewardAmount} MEDALS per qualifying upvote (max {5} votes/day each).
+          </p>
+
+          {/* Current Curators */}
+          <div className="space-y-2 mb-4">
+            {curators.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No curators configured.</p>
+            ) : (
+              curators.map((curator) => (
+                <div
+                  key={curator}
+                  className="flex items-center justify-between border rounded-md px-3 py-2"
+                >
+                  <span className="font-mono text-sm">@{curator}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleRemoveCurator(curator)}
+                    disabled={curatorLoading}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Add Curator */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newCurator}
+              onChange={(e) => setNewCurator(e.target.value)}
+              placeholder="Hive username"
+              className="flex-1 border rounded-md px-3 py-2 text-sm bg-background"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddCurator();
+              }}
+            />
+            <Button
+              size="sm"
+              onClick={handleAddCurator}
+              disabled={curatorLoading || !newCurator.trim()}
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add
+            </Button>
+          </div>
+        </div>
+
         {/* Quick Links */}
         <div className="bg-card border rounded-lg p-6">
           <h2 className="text-xl font-bold mb-4">Quick Links</h2>
@@ -379,7 +514,7 @@ export default function MedalsAdminDashboard() {
             </div>
             <div>
               <span className="text-muted-foreground">Logged in as:</span>{' '}
-              <span className="font-mono">@{user?.username}</span>
+              <span className="font-mono">@{username}</span>
             </div>
           </div>
         </div>

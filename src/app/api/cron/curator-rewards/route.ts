@@ -12,7 +12,7 @@
 
 import { NextResponse } from 'next/server';
 import {
-  getCuratorAccounts,
+  getCuratorAccountsAsync,
   filterCuratorVotes,
   processCuratorVotes,
   getVoteUniqueId,
@@ -133,7 +133,7 @@ async function saveProcessedRewards(
  * Uses the Hive API to get account history
  */
 async function fetchRecentCuratorVotes(): Promise<CuratorVote[]> {
-  const curators = getCuratorAccounts();
+  const curators = await getCuratorAccountsAsync();
   const votes: CuratorVote[] = [];
   const cutoffTime = new Date(Date.now() - VOTE_LOOKBACK_MINUTES * 60 * 1000);
 

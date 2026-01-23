@@ -18,8 +18,7 @@ import {
   getCuratorRewardAmount,
   CURATOR_REWARDS,
 } from '@/lib/rewards/config';
-import { db } from '@/lib/firebase/config';
-import { doc, collection, getDoc } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase/admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -58,40 +57,33 @@ export async function GET(request: NextRequest) {
     let contentData: Record<string, unknown> | null = null;
     let firebaseStatus = false;
 
-    if (db) {
+    const adminDb = getAdminDb();
+    if (adminDb) {
       firebaseStatus = true;
 
-      // Fetch staking rewards doc for current week
-      try {
-        const stakingRef = doc(collection(db, 'rewards'), `staking-${weekId}`);
-        const stakingSnap = await getDoc(stakingRef);
-        if (stakingSnap.exists()) {
-          stakingData = stakingSnap.data();
-        }
-      } catch (e) {
-        ctx.log.warn('Failed to fetch staking data', { error: String(e) });
+      // Fetch all Firestore docs in parallel
+      const [stakingResult, curatorResult, contentResult] = await Promise.allSettled([
+        adminDb.collection('rewards').doc(`staking-${weekId}`).get(),
+        adminDb.collection('curator-rewards').doc(dailyKey).get(),
+        adminDb.collection('weekly-rewards-processed').doc(prevWeekId).get(),
+      ]);
+
+      if (stakingResult.status === 'fulfilled' && stakingResult.value.exists) {
+        stakingData = stakingResult.value.data() as Record<string, unknown>;
+      } else if (stakingResult.status === 'rejected') {
+        ctx.log.warn('Failed to fetch staking data', { error: String(stakingResult.reason) });
       }
 
-      // Fetch curator rewards doc for today
-      try {
-        const curatorRef = doc(collection(db, 'curator-rewards'), dailyKey);
-        const curatorSnap = await getDoc(curatorRef);
-        if (curatorSnap.exists()) {
-          curatorData = curatorSnap.data();
-        }
-      } catch (e) {
-        ctx.log.warn('Failed to fetch curator data', { error: String(e) });
+      if (curatorResult.status === 'fulfilled' && curatorResult.value.exists) {
+        curatorData = curatorResult.value.data() as Record<string, unknown>;
+      } else if (curatorResult.status === 'rejected') {
+        ctx.log.warn('Failed to fetch curator data', { error: String(curatorResult.reason) });
       }
 
-      // Fetch weekly content rewards for previous week
-      try {
-        const contentRef = doc(collection(db, 'weekly-rewards-processed'), prevWeekId);
-        const contentSnap = await getDoc(contentRef);
-        if (contentSnap.exists()) {
-          contentData = contentSnap.data();
-        }
-      } catch (e) {
-        ctx.log.warn('Failed to fetch content rewards data', { error: String(e) });
+      if (contentResult.status === 'fulfilled' && contentResult.value.exists) {
+        contentData = contentResult.value.data() as Record<string, unknown>;
+      } else if (contentResult.status === 'rejected') {
+        ctx.log.warn('Failed to fetch content rewards data', { error: String(contentResult.reason) });
       }
     }
 
@@ -99,9 +91,9 @@ export async function GET(request: NextRequest) {
     const metrics = {
       stakingRewards: {
         lastDistribution: stakingData?.createdAt
-          ? new Date(
-              (stakingData.createdAt as { seconds: number }).seconds * 1000
-            ).toISOString()
+          ? (typeof (stakingData.createdAt as { toDate?: () => Date }).toDate === 'function'
+              ? (stakingData.createdAt as { toDate: () => Date }).toDate().toISOString()
+              : new Date(stakingData.createdAt as string).toISOString())
           : null,
         weeklyPool: getWeeklyStakingPool(),
         totalStakers: (stakingData?.stakerCount as number) || 0,

@@ -6,6 +6,7 @@
  */
 
 import { getCuratorRewardAmount, CURATOR_REWARDS, MEDALS_ACCOUNTS } from './config';
+import { getAdminDb } from '@/lib/firebase/admin';
 
 /**
  * Curator vote information
@@ -54,11 +55,29 @@ export function getCuratorAccounts(): string[] {
     return envCurators.split(',').map((c) => c.trim()).filter(Boolean);
   }
 
-  // Default curators (should be configured in environment)
-  return [
-    'sportsblock',
-    // Add more curator accounts as they are designated
-  ];
+  // Default curators
+  return ['niallon11', 'bozz', 'talesfrmthecrypt', 'ablaze'];
+}
+
+/**
+ * Get curator accounts from Firestore (async), with fallback to defaults
+ */
+export async function getCuratorAccountsAsync(): Promise<string[]> {
+  const adminDb = getAdminDb();
+  if (adminDb) {
+    try {
+      const snap = await adminDb.doc('config/curators').get();
+      if (snap.exists) {
+        const data = snap.data();
+        if (Array.isArray(data?.accounts) && data.accounts.length > 0) {
+          return data.accounts as string[];
+        }
+      }
+    } catch (e) {
+      console.warn('[Curators] Failed to read from Firestore, using defaults', e);
+    }
+  }
+  return getCuratorAccounts();
 }
 
 /**
