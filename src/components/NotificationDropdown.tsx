@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Check, Trash2, MessageSquare, ThumbsUp, FileText, AtSign, Zap } from "lucide-react";
-import { useNotifications } from "@/contexts/NotificationContext";
+import { useNotifications, Notification } from "@/contexts/NotificationContext";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
@@ -13,20 +14,44 @@ interface NotificationDropdownProps {
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
 
+function getNotificationUrl(notification: Notification): string | null {
+  const data = notification.data;
+  if (!data) return null;
+
+  switch (notification.type) {
+    case 'vote':
+    case 'post':
+      if (data.author && data.permlink) {
+        return `/post/${data.author}/${data.permlink}`;
+      }
+      break;
+    case 'comment':
+    case 'short_reply':
+    case 'mention':
+      if (data.parentAuthor && data.parentPermlink) {
+        return `/post/${data.parentAuthor}/${data.parentPermlink}`;
+      }
+      break;
+  }
+
+  return null;
+}
+
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   isOpen,
   onClose,
   triggerRef
 }) => {
-  const { 
-    notifications, 
-    unreadCount, 
-    markAsRead, 
-    markAllAsRead, 
+  const router = useRouter();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
     clearNotifications,
-    isRealtimeActive 
+    isRealtimeActive
   } = useNotifications();
-  
+
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -150,7 +175,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
                   !notification.read ? 'bg-accent/10' : ''
                 }`}
-                onClick={() => markAsRead(notification.id)}
+                onClick={() => {
+                  markAsRead(notification.id);
+                  const url = getNotificationUrl(notification);
+                  if (url) {
+                    onClose();
+                    router.push(url);
+                  }
+                }}
               >
                 <div className="flex items-start space-x-3">
                   <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
