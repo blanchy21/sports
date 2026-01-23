@@ -89,35 +89,35 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
   const getIcon = () => {
     switch (toast.type) {
       case "success":
-        return <CheckCircle className="h-5 w-5 text-accent" />;
+        return <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />;
       case "error":
-        return <AlertCircle className="h-5 w-5 text-red-600" />;
+        return <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
       case "warning":
-        return <AlertTriangle className="h-5 w-5 text-yellow-600" />;
+        return <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />;
       case "info":
       default:
-        return <Info className="h-5 w-5 text-accent" />;
+        return <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
     }
   };
 
   const getBackgroundColor = () => {
     switch (toast.type) {
       case "success":
-        return "bg-accent/10 border-accent/20";
+        return "bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-700";
       case "error":
-        return "bg-red-50 border-red-200";
+        return "bg-red-50 border-red-300 dark:bg-red-950 dark:border-red-700";
       case "warning":
-        return "bg-yellow-50 border-yellow-200";
+        return "bg-yellow-50 border-yellow-300 dark:bg-yellow-950 dark:border-yellow-700";
       case "info":
       default:
-        return "bg-accent/10 border-accent/20";
+        return "bg-blue-50 border-blue-300 dark:bg-blue-950 dark:border-blue-700";
     }
   };
 
   return (
     <div
       className={cn(
-        "flex items-start space-x-3 p-4 rounded-lg border shadow-lg max-w-sm",
+        "flex items-start space-x-3 p-4 rounded-lg border shadow-xl max-w-sm",
         getBackgroundColor(),
         "animate-in slide-in-from-right-full duration-300"
       )}
@@ -125,15 +125,15 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
       {getIcon()}
       <div className="flex-1 min-w-0">
         {toast.title && (
-          <div className="text-sm font-medium text-gray-900">{toast.title}</div>
+          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{toast.title}</div>
         )}
         {toast.description && (
-          <div className="mt-1 text-sm text-gray-600">{toast.description}</div>
+          <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">{toast.description}</div>
         )}
       </div>
       <button
         onClick={onRemove}
-        className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+        className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
       >
         <X className="h-4 w-4" />
       </button>
