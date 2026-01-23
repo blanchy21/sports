@@ -142,11 +142,11 @@ export const TopNavigation: React.FC = () => {
 
           {/* Center - Navigation (desktop only) */}
           <div className="flex-1 hidden lg:flex justify-center">
-            <nav className="flex items-center space-x-4 xl:space-x-8">
+            <nav className="flex items-center space-x-4 xl:space-x-6">
               <Link
                 href="/"
                 className={cn(
-                  "flex items-center justify-center w-12 h-12 xl:w-16 xl:h-16 rounded-lg transition-all duration-200",
+                  "flex flex-col items-center justify-center px-4 py-2 xl:px-5 xl:py-3 rounded-lg transition-all duration-200",
                   pathname === "/"
                     ? "bg-card text-primary shadow-md"
                     : "text-white/90 hover:bg-white/20 hover:text-white"
@@ -154,12 +154,13 @@ export const TopNavigation: React.FC = () => {
                 suppressHydrationWarning
               >
                 <Home className="h-6 w-6 xl:h-8 xl:w-8" />
+                <span className="text-[10px] xl:text-xs mt-0.5 font-medium">Home</span>
               </Link>
 
               <Link
                 href="/dashboard"
                 className={cn(
-                  "flex items-center justify-center w-12 h-12 xl:w-16 xl:h-16 rounded-lg transition-all duration-200",
+                  "flex flex-col items-center justify-center px-4 py-2 xl:px-5 xl:py-3 rounded-lg transition-all duration-200",
                   pathname === "/dashboard"
                     ? "bg-card text-primary shadow-md"
                     : "text-white/90 hover:bg-white/20 hover:text-white"
@@ -167,12 +168,13 @@ export const TopNavigation: React.FC = () => {
                 suppressHydrationWarning
               >
                 <LayoutDashboard className="h-6 w-6 xl:h-8 xl:w-8" />
+                <span className="text-[10px] xl:text-xs mt-0.5 font-medium">Dashboard</span>
               </Link>
 
               <Link
                 href="/communities"
                 className={cn(
-                  "flex items-center justify-center w-12 h-12 xl:w-16 xl:h-16 rounded-lg transition-all duration-200",
+                  "flex flex-col items-center justify-center px-4 py-2 xl:px-5 xl:py-3 rounded-lg transition-all duration-200",
                   pathname === "/communities"
                     ? "bg-card text-primary shadow-md"
                     : "text-white/90 hover:bg-white/20 hover:text-white"
@@ -180,15 +182,17 @@ export const TopNavigation: React.FC = () => {
                 suppressHydrationWarning
               >
                 <Users className="h-6 w-6 xl:h-8 xl:w-8" />
+                <span className="text-[10px] xl:text-xs mt-0.5 font-medium">Community</span>
               </Link>
 
               {/* Sports Filter Button */}
               <Button
                 variant="ghost"
                 onClick={() => setShowSportsPopup(true)}
-                className="flex items-center justify-center w-12 h-12 xl:w-16 xl:h-16 text-white/90 hover:bg-white/20 hover:text-white transition-all duration-200 rounded-lg"
+                className="flex flex-col items-center justify-center h-auto px-4 py-2 xl:px-5 xl:py-3 text-white/90 hover:bg-white/20 hover:text-white transition-all duration-200 rounded-lg"
               >
                 <Zap className="h-6 w-6 xl:h-8 xl:w-8" />
+                <span className="text-[10px] xl:text-xs mt-0.5 font-medium">Sports</span>
               </Button>
             </nav>
           </div>
@@ -218,8 +222,8 @@ export const TopNavigation: React.FC = () => {
                   >
                     <Bell className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center animate-pulse text-[10px] sm:text-xs">
-                        {unreadCount > 9 ? '9+' : unreadCount}
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-4 h-4 sm:min-w-5 sm:h-5 px-1 flex items-center justify-center animate-pulse text-[10px] sm:text-xs">
+                        {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
                   </Button>
