@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Wallet } from "lucide-react";
 import { KeyTypes } from "@aioha/aioha";
@@ -25,6 +25,14 @@ const Divider: React.FC = () => (
 );
 
 export default function AuthPage() {
+  return (
+    <Suspense>
+      <AuthPageContent />
+    </Suspense>
+  );
+}
+
+function AuthPageContent() {
   const router = useRouter();
   const { aioha } = useAioha();
   const {
@@ -107,6 +115,7 @@ export default function AuthPage() {
         <AiohaModal
           displayed={showAiohaModal}
           loginTitle="Connect to Sportsblock"
+          arrangement="grid"
           loginOptions={{
             msg: "Login to Sportsblock",
             keyType: KeyTypes.Posting,

@@ -6,10 +6,19 @@ import { Avatar } from "@/components/ui/Avatar";
 import {
   LogOut,
   UserPlus,
-  RefreshCw
+  RefreshCw,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAioha } from "@/contexts/AiohaProvider";
 import { fetchUserAccount } from "@/lib/hive-workerbee/account";
+
+interface AiohaInstance {
+  getOtherLogins(): { [username: string]: string };
+  switchUser(username: string): boolean;
+  getCurrentUser(): string;
+}
 
 interface UserProfilePopupProps {
   isOpen: boolean;
@@ -23,10 +32,14 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
   triggerRef
 }) => {
   const router = useRouter();
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout, updateUser, loginWithHiveUser } = useAuth();
+  const { aioha } = useAioha();
   const popupRef = useRef<HTMLDivElement>(null);
   const [isRefreshingRC, setIsRefreshingRC] = useState(false);
   const hasRefreshedRef = useRef(false);
+  const [otherAccounts, setOtherAccounts] = useState<{ [username: string]: string }>({});
+  const [showAccountsList, setShowAccountsList] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
 
   // Close popup when clicking outside
   useEffect(() => {
@@ -100,8 +113,42 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
     if (!isOpen) {
       setIsRefreshingRC(false);
       hasRefreshedRef.current = false;
+      setShowAccountsList(false);
     }
   }, [isOpen]);
+
+  // Load other accounts when popup opens
+  useEffect(() => {
+    if (isOpen && aioha) {
+      try {
+        const others = (aioha as AiohaInstance).getOtherLogins();
+        setOtherAccounts(others || {});
+      } catch {
+        setOtherAccounts({});
+      }
+    }
+  }, [isOpen, aioha]);
+
+  const handleSwitchAccount = async (username: string) => {
+    if (!aioha || isSwitching) return;
+    setIsSwitching(true);
+    try {
+      const success = (aioha as AiohaInstance).switchUser(username);
+      if (success) {
+        await loginWithHiveUser(username);
+        onClose();
+      }
+    } catch {
+      // Switch failed silently
+    } finally {
+      setIsSwitching(false);
+    }
+  };
+
+  const handleAddAccount = () => {
+    onClose();
+    router.push("/auth?addAccount=true");
+  };
 
   if (!isOpen || !user) return null;
 
@@ -146,13 +193,13 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
 
           {/* Hive Resources */}
           <div className="flex space-x-2 mb-5">
-            {/* HIVE */}
+            {/* HP (Hive Power) */}
             <div className="flex-1 bg-gradient-to-br from-primary to-primary/80 border border-primary rounded-lg px-3 py-2.5 text-center shadow-sm">
-              <div className="text-xs text-primary-foreground font-semibold">{user.hiveBalance || 0} HIVE</div>
+              <div className="text-xs text-primary-foreground font-semibold">{user.hivePower !== undefined ? user.hivePower.toFixed(0) : 0} HP</div>
             </div>
-            {/* SB (Sports Bucks) */}
+            {/* MEDALS */}
             <div className="flex-1 bg-gradient-to-br from-accent to-accent/80 border border-accent rounded-lg px-3 py-2.5 text-center shadow-sm">
-              <div className="text-xs text-primary-foreground font-semibold">{user.sbBalance || 0} SB</div>
+              <div className="text-xs text-primary-foreground font-semibold">{user.sbBalance || 0} MEDALS</div>
             </div>
             {/* RC */}
             <div className="flex-1 bg-gradient-to-br from-bright-cobalt to-primary border border-bright-cobalt rounded-lg px-3 py-2.5 text-center shadow-sm relative">
@@ -182,22 +229,66 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
           {/* Menu Items */}
           <div className="space-y-1">
             {/* Switch Accounts */}
-            <button className="w-full flex items-center space-x-3 px-3 py-2.5 text-left hover:bg-accent/10 rounded-lg transition-colors">
-              <Avatar
-                src={user.avatar}
-                alt={user.displayName || user.username}
-                fallback={user.username}
-                size="sm"
-              />
-              <span className="text-foreground text-sm font-medium">Switch accounts (1)</span>
-            </button>
+            {Object.keys(otherAccounts).length > 0 && (
+              <>
+                <button
+                  onClick={() => setShowAccountsList(!showAccountsList)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-accent/10 rounded-lg transition-colors"
+                >
+                  <div className="flex items-center space-x-3">
+                    <Avatar
+                      src={`https://images.hive.blog/u/${Object.keys(otherAccounts)[0]}/avatar`}
+                      alt={Object.keys(otherAccounts)[0]}
+                      fallback={Object.keys(otherAccounts)[0]}
+                      size="sm"
+                    />
+                    <span className="text-foreground text-sm font-medium">
+                      Switch accounts ({Object.keys(otherAccounts).length})
+                    </span>
+                  </div>
+                  {showAccountsList ? (
+                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </button>
+
+                {/* Account List */}
+                {showAccountsList && (
+                  <div className="ml-4 space-y-1">
+                    {Object.entries(otherAccounts).map(([username, provider]) => (
+                      <button
+                        key={username}
+                        onClick={() => handleSwitchAccount(username)}
+                        disabled={isSwitching}
+                        className="w-full flex items-center space-x-3 px-3 py-2 text-left hover:bg-accent/10 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <Avatar
+                          src={`https://images.hive.blog/u/${username}/avatar`}
+                          alt={username}
+                          fallback={username}
+                          size="sm"
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-foreground text-sm font-medium">@{username}</span>
+                          <span className="text-muted-foreground text-xs capitalize">{provider}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
 
             {/* Add Account */}
-            <button className="w-full flex items-center space-x-3 px-3 py-2.5 text-left hover:bg-accent/10 rounded-lg transition-colors">
+            <button
+              onClick={handleAddAccount}
+              className="w-full flex items-center space-x-3 px-3 py-2.5 text-left hover:bg-accent/10 rounded-lg transition-colors"
+            >
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                 <UserPlus className="w-4 h-4 text-muted-foreground" />
               </div>
-              <span className="text-foreground text-sm font-medium">Add account</span>
+              <span className="text-foreground text-sm font-medium">Add/Switch account</span>
             </button>
 
             {/* Divider */}

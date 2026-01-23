@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Providers, KeyTypes } from "@aioha/aioha";
 import type { LoginResult } from "@aioha/aioha/build/types";
 import { useAuth } from "@/contexts/AuthContext";
@@ -100,6 +100,8 @@ const usernameRequiredProviders = new Set(["keychain", "hiveauth"]);
 
 export const useAuthPage = (): UseAuthPageResult => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isAddAccountFlow = searchParams.get("addAccount") === "true";
   const { user, isClient, loginWithAioha, loginWithFirebase } = useAuth();
   const { aioha, isInitialized } = useAioha();
 
@@ -132,13 +134,15 @@ export const useAuthPage = (): UseAuthPageResult => {
     if (!isClient) return;
 
     // Already logged in via AuthContext - redirect away from auth page
-    if (user?.username) {
+    // Skip redirect when adding a new account to preserve multi-account flow
+    if (user?.username && !isAddAccountFlow) {
       router.replace("/feed");
       return;
     }
 
     // Session expired but wallet still connected - auto-reconnect (once)
-    if (isAiohaReady && aioha && !autoReconnectAttempted.current) {
+    // Skip auto-reconnect when adding a new account
+    if (isAiohaReady && aioha && !autoReconnectAttempted.current && !isAddAccountFlow) {
       const aiohaInstance = aioha as { getCurrentUser?: () => string | undefined };
       const walletUser = aiohaInstance.getCurrentUser?.();
       if (walletUser) {
@@ -154,7 +158,7 @@ export const useAuthPage = (): UseAuthPageResult => {
           });
       }
     }
-  }, [isClient, user, isAiohaReady, aioha, loginWithAioha, router]);
+  }, [isClient, user, isAiohaReady, aioha, isAddAccountFlow, loginWithAioha, router]);
 
   const resetHivePrompt = useCallback(() => {
     setShowHiveUsernameInput(false);
@@ -395,14 +399,17 @@ export const useAuthPage = (): UseAuthPageResult => {
 
         // Force logout any existing Aioha session to ensure fresh Keychain authorization
         // This is critical for security - the Keychain popup must ALWAYS appear for user approval
-        try {
-          const aiohaWithLogout = aioha as { logout?: () => Promise<void> };
-          if (typeof aiohaWithLogout.logout === 'function') {
-            await aiohaWithLogout.logout();
+        // Skip when adding an account so the current user's persistent login is preserved
+        if (!isAddAccountFlow) {
+          try {
+            const aiohaWithLogout = aioha as { logout?: () => Promise<void> };
+            if (typeof aiohaWithLogout.logout === 'function') {
+              await aiohaWithLogout.logout();
+            }
+          } catch (logoutError) {
+            // Ignore logout errors - we're just clearing any stale session
+            console.debug("Aioha logout (pre-login cleanup):", logoutError);
           }
-        } catch (logoutError) {
-          // Ignore logout errors - we're just clearing any stale session
-          console.debug("Aioha logout (pre-login cleanup):", logoutError);
         }
 
         // Wrap login with timeout to handle unresponsive wallet extensions
@@ -450,7 +457,7 @@ export const useAuthPage = (): UseAuthPageResult => {
         setIsConnecting(false);
       }
     },
-    [aioha, hiveUsername, isInitialized, loginWithAioha, resetHivePrompt, router]
+    [aioha, hiveUsername, isAddAccountFlow, isInitialized, loginWithAioha, resetHivePrompt, router]
   );
 
   const onProviderSelect = useCallback(
