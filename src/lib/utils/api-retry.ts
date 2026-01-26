@@ -2,6 +2,8 @@
  * Utility functions for API retry logic with exponential backoff
  */
 
+import { logger } from '@/lib/logger';
+
 export interface RetryOptions {
   maxRetries?: number;
   initialDelay?: number;
@@ -25,7 +27,7 @@ const DEFAULT_OPTIONS: Required<RetryOptions> = {
  * Sleep for a given number of milliseconds
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -69,7 +71,7 @@ export async function retryWithBackoff<T>(
       // Check if error is retryable
       const errorStatus = (error as { status?: number }).status;
       const errorMessage = error instanceof Error ? error.message : String(error);
-      const isRetryable = 
+      const isRetryable =
         (errorStatus && opts.retryableStatuses.includes(errorStatus)) ||
         errorMessage.includes('429') ||
         errorMessage.includes('rate limit') ||
@@ -83,7 +85,10 @@ export async function retryWithBackoff<T>(
 
       // Calculate delay and wait before retrying
       const delay = calculateDelay(attempt, opts);
-      console.log(`[retryWithBackoff] Attempt ${attempt + 1}/${opts.maxRetries + 1} failed, retrying in ${delay}ms...`);
+      logger.info(
+        `Attempt ${attempt + 1}/${opts.maxRetries + 1} failed, retrying in ${delay}ms`,
+        'retryWithBackoff'
+      );
       await sleep(delay);
     }
   }
@@ -105,16 +110,17 @@ export async function fetchWithRetry(
 ): Promise<Response> {
   return retryWithBackoff(async () => {
     const response = await fetch(url, init);
-    
+
     // Check if response status is retryable
     const opts = { ...DEFAULT_OPTIONS, ...options };
     if (!response.ok && opts.retryableStatuses.includes(response.status)) {
-      const error = new Error(`HTTP ${response.status}: ${response.statusText}`) as Error & { status: number };
+      const error = new Error(`HTTP ${response.status}: ${response.statusText}`) as Error & {
+        status: number;
+      };
       error.status = response.status;
       throw error;
     }
-    
+
     return response;
   }, options);
 }
-

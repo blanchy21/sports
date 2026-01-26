@@ -1,22 +1,23 @@
-"use client";
+'use client';
 
-import React, { createContext, useContext, useEffect, useReducer, useCallback, useRef } from "react";
-import { AuthState, AuthType, User } from "@/types";
-import { HiveAuthUser, HiveAccount } from "@/lib/shared/types";
-import type { UserAccountData } from "@/lib/hive-workerbee/account";
-import { useAioha } from "@/contexts/AiohaProvider";
-import { AuthUser, FirebaseAuth } from "@/lib/firebase/auth";
-import { parseAuthState } from "@/lib/validation/auth-schema";
-import { setAuthInfo, clearAuthInfo } from "@/lib/api/authenticated-fetch";
-import type {
-  AiohaInstance,
-  AiohaRawLoginResult,
-  ExtractedAiohaUser,
-} from "@/lib/aioha/types";
-import {
-  extractFromRawLoginResult,
-  extractFromAiohaInstance,
-} from "@/lib/aioha/types";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+  useCallback,
+  useRef,
+} from 'react';
+import { logger } from '@/lib/logger';
+import { AuthState, AuthType, User } from '@/types';
+import { HiveAuthUser, HiveAccount } from '@/lib/shared/types';
+import type { UserAccountData } from '@/lib/hive-workerbee/account';
+import { useAioha } from '@/contexts/AiohaProvider';
+import { AuthUser, FirebaseAuth } from '@/lib/firebase/auth';
+import { parseAuthState } from '@/lib/validation/auth-schema';
+import { setAuthInfo, clearAuthInfo } from '@/lib/api/authenticated-fetch';
+import type { AiohaInstance, AiohaRawLoginResult, ExtractedAiohaUser } from '@/lib/aioha/types';
+import { extractFromRawLoginResult, extractFromAiohaInstance } from '@/lib/aioha/types';
 
 /**
  * Auth context value - exported for consumers
@@ -70,14 +71,15 @@ function isUserAccountData(data: unknown): data is UserAccountData {
 /**
  * Type guard for checking if an API response contains valid account data
  */
-function hasValidAccountData(result: unknown): result is { success: true; account: UserAccountData } {
+function hasValidAccountData(
+  result: unknown
+): result is { success: true; account: UserAccountData } {
   if (!result || typeof result !== 'object') return false;
   const obj = result as Record<string, unknown>;
   return obj.success === true && isUserAccountData(obj.account);
 }
 
-
-const AUTH_STORAGE_KEY = "authState";
+const AUTH_STORAGE_KEY = 'authState';
 
 // Session expires after 30 minutes of inactivity
 const SESSION_DURATION_MS = 30 * 60 * 1000;
@@ -119,7 +121,12 @@ const executePersist = () => {
     return;
   }
 
-  const { user: userToPersist, authType: authTypeToPersist, hiveUser: hiveUserToPersist, loginAt: loginAtToPersist } = pendingPersistState;
+  const {
+    user: userToPersist,
+    authType: authTypeToPersist,
+    hiveUser: hiveUserToPersist,
+    loginAt: loginAtToPersist,
+  } = pendingPersistState;
   pendingPersistState = null;
 
   const sanitizedState = {
@@ -132,7 +139,7 @@ const executePersist = () => {
   try {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sanitizedState));
   } catch (error) {
-    console.error('Error persisting auth state:', error);
+    logger.error('Error persisting auth state', 'AuthContext', error);
   }
 
   // Sync auth info for authenticated API calls
@@ -211,7 +218,7 @@ const syncSessionCookie = async (sessionData: {
       body: JSON.stringify(sessionData),
     });
   } catch (error) {
-    console.error('Error syncing session cookie:', error);
+    logger.error('Error syncing session cookie', 'AuthContext', error);
   }
 };
 
@@ -222,7 +229,7 @@ const clearSessionCookie = async () => {
   try {
     await fetch('/api/auth/session', { method: 'DELETE' });
   } catch (error) {
-    console.error('Error clearing session cookie:', error);
+    logger.error('Error clearing session cookie', 'AuthContext', error);
   }
 };
 
@@ -231,7 +238,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
@@ -254,7 +261,7 @@ interface AuthStateInternal {
 
 const initialAuthState: AuthStateInternal = {
   user: null,
-  authType: "guest",
+  authType: 'guest',
   hiveUser: null,
   loginAt: undefined,
   isLoading: true,
@@ -268,11 +275,22 @@ const initialAuthState: AuthStateInternal = {
 // ============================================================================
 
 type AuthAction =
-  | { type: 'RESTORE_SESSION'; payload: { user: User | null; authType: AuthType; hiveUser: HiveAuthUser | null; loginAt: number } }
+  | {
+      type: 'RESTORE_SESSION';
+      payload: {
+        user: User | null;
+        authType: AuthType;
+        hiveUser: HiveAuthUser | null;
+        loginAt: number;
+      };
+    }
   | { type: 'SESSION_EXPIRED' }
   | { type: 'INVALID_SESSION' }
   | { type: 'CLIENT_MOUNTED' }
-  | { type: 'LOGIN'; payload: { user: User; authType: AuthType; hiveUser: HiveAuthUser | null; loginAt: number } }
+  | {
+      type: 'LOGIN';
+      payload: { user: User; authType: AuthType; hiveUser: HiveAuthUser | null; loginAt: number };
+    }
   | { type: 'LOGIN_PROFILE_LOADED'; payload: { user: User; hiveUser: HiveAuthUser } }
   | { type: 'LOGIN_PROFILE_FAILED' }
   | { type: 'LOGOUT' }
@@ -283,7 +301,7 @@ type AuthAction =
 function authReducer(state: AuthStateInternal, action: AuthAction): AuthStateInternal {
   // Enable action logging in development for debugging
   if (process.env.NODE_ENV === 'development') {
-    console.debug('[AuthReducer]', action.type, 'payload' in action ? action.payload : '');
+    logger.debug(action.type, 'AuthReducer', 'payload' in action ? action.payload : undefined);
   }
 
   switch (action.type) {
@@ -388,7 +406,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const profileFetchController = useRef<AbortController | null>(null);
 
   // Destructure for easier access (these are derived, not separate state)
-  const { user, authType, hiveUser, isLoading, isClient, hasMounted, profileLoadFailed } = authState;
+  const { user, authType, hiveUser, isLoading, isClient, hasMounted, profileLoadFailed } =
+    authState;
 
   // Wrapper for setHiveUser to maintain API compatibility
   const setHiveUser = useCallback((newHiveUser: HiveAuthUser | null) => {
@@ -405,30 +424,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (savedAuth) {
         const validatedState = parseAuthState(savedAuth);
         if (validatedState) {
-          const { user: savedUser, authType: savedAuthType, hiveUser: savedHiveUser, loginAt: savedLoginAt } = validatedState;
+          const {
+            user: savedUser,
+            authType: savedAuthType,
+            hiveUser: savedHiveUser,
+            loginAt: savedLoginAt,
+          } = validatedState;
 
           // Check if session has expired (30 minutes of inactivity)
           if (isSessionExpired(savedLoginAt)) {
             // Session expired - clear auth state
             localStorage.removeItem(AUTH_STORAGE_KEY);
-            console.log("Session expired after 30 minutes of inactivity");
+            logger.info('Session expired after 30 minutes of inactivity', 'AuthContext');
             dispatch({ type: 'SESSION_EXPIRED' });
             return;
           }
 
           // Session is still valid - restore state
-          const restoredUser = savedUser ? {
-            ...savedUser,
-            isHiveAuth: savedUser.isHiveAuth ?? false,
-          } as User : null;
+          const restoredUser = savedUser
+            ? ({
+                ...savedUser,
+                isHiveAuth: savedUser.isHiveAuth ?? false,
+              } as User)
+            : null;
 
-          const restoredHiveUser = savedHiveUser ? {
-            ...savedHiveUser,
-            isAuthenticated: savedHiveUser.isAuthenticated ?? true,
-          } as HiveAuthUser : null;
+          const restoredHiveUser = savedHiveUser
+            ? ({
+                ...savedHiveUser,
+                isAuthenticated: savedHiveUser.isAuthenticated ?? true,
+              } as HiveAuthUser)
+            : null;
 
           // Mark that we need to refresh Hive account if profile data is missing
-          if (savedAuthType === "hive" && savedUser && !savedUser.hiveProfile) {
+          if (savedAuthType === 'hive' && savedUser && !savedUser.hiveProfile) {
             needsHiveRefresh.current = true;
           }
 
@@ -456,7 +484,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           // Invalid auth state - clear corrupted data
           localStorage.removeItem(AUTH_STORAGE_KEY);
-          console.warn("Cleared invalid auth state from localStorage");
+          logger.warn('Cleared invalid auth state from localStorage', 'AuthContext');
           dispatch({ type: 'INVALID_SESSION' });
         }
       } else {
@@ -474,27 +502,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const login = useCallback((newUser: User, newAuthType: AuthType) => {
-    const now = Date.now();
+  const login = useCallback(
+    (newUser: User, newAuthType: AuthType) => {
+      const now = Date.now();
 
-    dispatch({
-      type: 'LOGIN',
-      payload: {
+      dispatch({
+        type: 'LOGIN',
+        payload: {
+          user: newUser,
+          authType: newAuthType,
+          hiveUser: authState.hiveUser,
+          loginAt: now,
+        },
+      });
+
+      // Save to localStorage with new login timestamp
+      persistAuthState({
         user: newUser,
         authType: newAuthType,
         hiveUser: authState.hiveUser,
         loginAt: now,
-      },
-    });
-
-    // Save to localStorage with new login timestamp
-    persistAuthState({
-      user: newUser,
-      authType: newAuthType,
-      hiveUser: authState.hiveUser,
-      loginAt: now,
-    });
-  }, [authState.hiveUser]);
+      });
+    },
+    [authState.hiveUser]
+  );
 
   const loginWithFirebase = useCallback((authUser: AuthUser) => {
     const now = Date.now();
@@ -509,7 +540,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       updatedAt: authUser.updatedAt,
     };
 
-    const newAuthType = authUser.isHiveUser ? "hive" : "soft";
+    const newAuthType = authUser.isHiveUser ? 'hive' : 'soft';
     const newHiveUser = authUser.isHiveUser
       ? { username: authUser.hiveUsername!, isAuthenticated: true }
       : null;
@@ -558,7 +589,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         type: 'LOGIN',
         payload: {
           user: basicUser,
-          authType: "hive",
+          authType: 'hive',
           hiveUser: newHiveUser,
           loginAt: now,
         },
@@ -566,7 +597,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       persistAuthState({
         user: basicUser,
-        authType: "hive",
+        authType: 'hive',
         hiveUser: newHiveUser,
         loginAt: now,
       });
@@ -628,7 +659,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Save updated state to localStorage (keep same loginAt)
             persistAuthState({
               user: updatedUser,
-              authType: "hive",
+              authType: 'hive',
               hiveUser: updatedHiveUser,
               loginAt: now,
             });
@@ -638,188 +669,195 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (profileError instanceof Error && profileError.name === 'AbortError') {
             return;
           }
-          console.error("Error fetching Hive account data:", profileError);
+          logger.error('Error fetching Hive account data', 'AuthContext', profileError);
           // Flag the failure
           dispatch({ type: 'LOGIN_PROFILE_FAILED' });
         }
       }, 0);
     } catch (error) {
-      console.error("Error logging in with Hive user:", error);
+      logger.error('Error logging in with Hive user', 'AuthContext', error);
     }
   }, []);
 
-  const loginWithAioha = useCallback(async (loginResult?: AiohaRawLoginResult) => {
-    if (!isInitialized || !aioha) {
-      throw new Error("Aioha authentication is not available. Please refresh the page and try again.");
-    }
-
-    try {
-      const aiohaInstance = aioha as AiohaInstance;
-      let extracted: ExtractedAiohaUser | null = null;
-
-      // Step 1: Try to extract from login result
-      if (loginResult) {
-        extracted = extractFromRawLoginResult(loginResult);
+  const loginWithAioha = useCallback(
+    async (loginResult?: AiohaRawLoginResult) => {
+      if (!isInitialized || !aioha) {
+        throw new Error(
+          'Aioha authentication is not available. Please refresh the page and try again.'
+        );
       }
 
-      // Step 2: Try to extract from Aioha instance
-      if (!extracted) {
-        extracted = extractFromAiohaInstance(aiohaInstance);
-      }
+      try {
+        const aiohaInstance = aioha as AiohaInstance;
+        let extracted: ExtractedAiohaUser | null = null;
 
-      // Step 3: Try with retries (Aioha may need time to process)
-      if (!extracted && loginResult) {
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+        // Step 1: Try to extract from login result
+        if (loginResult) {
+          extracted = extractFromRawLoginResult(loginResult);
+        }
+
+        // Step 2: Try to extract from Aioha instance
+        if (!extracted) {
           extracted = extractFromAiohaInstance(aiohaInstance);
-          if (extracted) break;
         }
-      }
 
-      // Step 4: Try getUser method if available
-      if (!extracted && typeof aiohaInstance.getUser === 'function') {
-        try {
-          const getUserResult = await aiohaInstance.getUser();
-          if (getUserResult?.username) {
-            extracted = { username: getUserResult.username, sessionId: getUserResult.sessionId };
+        // Step 3: Try with retries (Aioha may need time to process)
+        if (!extracted && loginResult) {
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+            extracted = extractFromAiohaInstance(aiohaInstance);
+            if (extracted) break;
           }
-        } catch {
-          // getUser failed, continue to next fallback
         }
-      }
 
-      // Step 5: Try localStorage fallback
-      if (!extracted && typeof window !== 'undefined') {
-        const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
-        if (storedAuth) {
+        // Step 4: Try getUser method if available
+        if (!extracted && typeof aiohaInstance.getUser === 'function') {
           try {
-            const parsed = JSON.parse(storedAuth);
-            if (parsed.hiveUser?.username) {
-              extracted = { username: parsed.hiveUser.username };
+            const getUserResult = await aiohaInstance.getUser();
+            if (getUserResult?.username) {
+              extracted = { username: getUserResult.username, sessionId: getUserResult.sessionId };
             }
           } catch {
-            // localStorage parse failed
+            // getUser failed, continue to next fallback
           }
         }
-      }
 
-      // If we still have nothing, throw
-      if (!extracted) {
-        throw new Error("Unable to determine username from Aioha authentication. Please try again.");
-      }
+        // Step 5: Try localStorage fallback
+        if (!extracted && typeof window !== 'undefined') {
+          const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
+          if (storedAuth) {
+            try {
+              const parsed = JSON.parse(storedAuth);
+              if (parsed.hiveUser?.username) {
+                extracted = { username: parsed.hiveUser.username };
+              }
+            } catch {
+              // localStorage parse failed
+            }
+          }
+        }
 
-      const { username, sessionId } = extracted;
-      const now = Date.now();
+        // If we still have nothing, throw
+        if (!extracted) {
+          throw new Error(
+            'Unable to determine username from Aioha authentication. Please try again.'
+          );
+        }
 
-      // Create user objects
-      const basicUser: User = {
-        id: username,
-        username: username,
-        displayName: username,
-        isHiveAuth: true,
-        hiveUsername: username,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        const { username, sessionId } = extracted;
+        const now = Date.now();
 
-      const newHiveUser: HiveAuthUser = {
-        username: username,
-        isAuthenticated: true,
-        provider: loginResult?.provider ?? 'aioha',
-        sessionId: sessionId,
-      };
+        // Create user objects
+        const basicUser: User = {
+          id: username,
+          username: username,
+          displayName: username,
+          isHiveAuth: true,
+          hiveUsername: username,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
 
-      // Dispatch LOGIN action for immediate UI responsiveness
-      dispatch({
-        type: 'LOGIN',
-        payload: {
+        const newHiveUser: HiveAuthUser = {
+          username: username,
+          isAuthenticated: true,
+          provider: loginResult?.provider ?? 'aioha',
+          sessionId: sessionId,
+        };
+
+        // Dispatch LOGIN action for immediate UI responsiveness
+        dispatch({
+          type: 'LOGIN',
+          payload: {
+            user: basicUser,
+            authType: 'hive',
+            hiveUser: newHiveUser,
+            loginAt: now,
+          },
+        });
+
+        persistAuthState({
           user: basicUser,
-          authType: "hive",
+          authType: 'hive',
           hiveUser: newHiveUser,
           loginAt: now,
-        },
-      });
+        });
 
-      persistAuthState({
-        user: basicUser,
-        authType: "hive",
-        hiveUser: newHiveUser,
-        loginAt: now,
-      });
+        // PERFORMANCE: Defer profile fetch to background - don't block login/redirect
+        // Cancel any previous in-flight request
+        profileFetchController.current?.abort();
+        profileFetchController.current = new AbortController();
+        const controller = profileFetchController.current;
 
-      // PERFORMANCE: Defer profile fetch to background - don't block login/redirect
-      // Cancel any previous in-flight request
-      profileFetchController.current?.abort();
-      profileFetchController.current = new AbortController();
-      const controller = profileFetchController.current;
+        setTimeout(async () => {
+          try {
+            const response = await fetch(
+              `/api/hive/account/summary?username=${encodeURIComponent(username)}`,
+              { signal: controller.signal }
+            );
+            if (!response.ok) {
+              throw new Error(`Failed to fetch account: ${response.status}`);
+            }
+            const result = await response.json();
 
-      setTimeout(async () => {
-        try {
-          const response = await fetch(
-            `/api/hive/account/summary?username=${encodeURIComponent(username)}`,
-            { signal: controller.signal }
-          );
-          if (!response.ok) {
-            throw new Error(`Failed to fetch account: ${response.status}`);
+            if (hasValidAccountData(result)) {
+              const accountData = result.account;
+              const updatedHiveUser: HiveAuthUser = {
+                ...newHiveUser,
+                account: accountData as unknown as HiveAccount,
+              };
+
+              const updatedUser: User = {
+                ...basicUser,
+                reputation: accountData.reputation,
+                reputationFormatted: accountData.reputationFormatted,
+                liquidHiveBalance: accountData.liquidHiveBalance,
+                liquidHbdBalance: accountData.liquidHbdBalance,
+                savingsHiveBalance: accountData.savingsHiveBalance,
+                savingsHbdBalance: accountData.savingsHbdBalance,
+                hiveBalance: accountData.hiveBalance,
+                hbdBalance: accountData.hbdBalance,
+                hivePower: accountData.hivePower,
+                rcPercentage: accountData.resourceCredits,
+                savingsApr: accountData.savingsApr,
+                pendingWithdrawals: accountData.pendingWithdrawals,
+                hiveProfile: accountData.profile,
+                hiveStats: accountData.stats,
+                avatar: accountData.profile.profileImage,
+                displayName: accountData.profile.name ?? username,
+                bio: accountData.profile.about,
+                createdAt: accountData.createdAt,
+              };
+
+              // Dispatch profile loaded action
+              dispatch({
+                type: 'LOGIN_PROFILE_LOADED',
+                payload: { user: updatedUser, hiveUser: updatedHiveUser },
+              });
+
+              persistAuthState({
+                user: updatedUser,
+                authType: 'hive',
+                hiveUser: updatedHiveUser,
+                loginAt: now,
+              });
+            }
+          } catch (profileError) {
+            // Ignore abort errors (expected when user logs out during fetch)
+            if (profileError instanceof Error && profileError.name === 'AbortError') {
+              return;
+            }
+            logger.error('Error fetching Hive account data', 'AuthContext', profileError);
+            dispatch({ type: 'LOGIN_PROFILE_FAILED' });
           }
-          const result = await response.json();
-
-          if (hasValidAccountData(result)) {
-            const accountData = result.account;
-            const updatedHiveUser: HiveAuthUser = {
-              ...newHiveUser,
-              account: accountData as unknown as HiveAccount,
-            };
-
-            const updatedUser: User = {
-              ...basicUser,
-              reputation: accountData.reputation,
-              reputationFormatted: accountData.reputationFormatted,
-              liquidHiveBalance: accountData.liquidHiveBalance,
-              liquidHbdBalance: accountData.liquidHbdBalance,
-              savingsHiveBalance: accountData.savingsHiveBalance,
-              savingsHbdBalance: accountData.savingsHbdBalance,
-              hiveBalance: accountData.hiveBalance,
-              hbdBalance: accountData.hbdBalance,
-              hivePower: accountData.hivePower,
-              rcPercentage: accountData.resourceCredits,
-              savingsApr: accountData.savingsApr,
-              pendingWithdrawals: accountData.pendingWithdrawals,
-              hiveProfile: accountData.profile,
-              hiveStats: accountData.stats,
-              avatar: accountData.profile.profileImage,
-              displayName: accountData.profile.name ?? username,
-              bio: accountData.profile.about,
-              createdAt: accountData.createdAt,
-            };
-
-            // Dispatch profile loaded action
-            dispatch({
-              type: 'LOGIN_PROFILE_LOADED',
-              payload: { user: updatedUser, hiveUser: updatedHiveUser },
-            });
-
-            persistAuthState({
-              user: updatedUser,
-              authType: "hive",
-              hiveUser: updatedHiveUser,
-              loginAt: now,
-            });
-          }
-        } catch (profileError) {
-          // Ignore abort errors (expected when user logs out during fetch)
-          if (profileError instanceof Error && profileError.name === 'AbortError') {
-            return;
-          }
-          console.error("Error fetching Hive account data:", profileError);
-          dispatch({ type: 'LOGIN_PROFILE_FAILED' });
-        }
-      }, 0);
-    } catch (error) {
-      console.error("Error processing Aioha authentication:", error);
-      throw error;
-    }
-  }, [aioha, isInitialized]);
+        }, 0);
+      } catch (error) {
+        logger.error('Error processing Aioha authentication', 'AuthContext', error);
+        throw error;
+      }
+    },
+    [aioha, isInitialized]
+  );
 
   const logout = useCallback(async () => {
     // Cancel any in-flight profile fetch requests to prevent stale updates
@@ -834,16 +872,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           await aiohaInstance.logout();
         }
       } catch (error) {
-        console.error("Error logging out from Aioha:", error);
+        logger.error('Error logging out from Aioha', 'AuthContext', error);
       }
     }
 
     // Logout from Firebase if user was authenticated via Firebase
-    if (authType === "soft") {
+    if (authType === 'soft') {
       try {
         await FirebaseAuth.signOut();
       } catch (error) {
-        console.error("Error logging out from Firebase:", error);
+        logger.error('Error logging out from Firebase', 'AuthContext', error);
       }
     }
 
@@ -855,185 +893,196 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         localStorage.removeItem(AUTH_STORAGE_KEY);
       } catch (error) {
-        console.error('Error removing auth state from localStorage:', error);
+        logger.error('Error removing auth state from localStorage', 'AuthContext', error);
       }
     }
   }, [aioha, authType, hiveUser?.provider]);
 
-  const upgradeToHive = useCallback(async (hiveUsername: string) => {
-    if (!user || authType !== "soft") {
-      throw new Error("User must be logged in with a soft account to upgrade");
-    }
+  const upgradeToHive = useCallback(
+    async (hiveUsername: string) => {
+      if (!user || authType !== 'soft') {
+        throw new Error('User must be logged in with a soft account to upgrade');
+      }
 
-    try {
-      const now = Date.now();
-      // Update Firebase profile to mark as Hive user
-      await FirebaseAuth.upgradeToHive(user.id, hiveUsername);
+      try {
+        const now = Date.now();
+        // Update Firebase profile to mark as Hive user
+        await FirebaseAuth.upgradeToHive(user.id, hiveUsername);
 
-      // Update local user state
-      const updatedUser = {
-        ...user,
-        isHiveAuth: true,
-        hiveUsername: hiveUsername,
-      };
+        // Update local user state
+        const updatedUser = {
+          ...user,
+          isHiveAuth: true,
+          hiveUsername: hiveUsername,
+        };
 
-      // Create Hive user object
-      const newHiveUser: HiveAuthUser = {
-        username: hiveUsername,
-        isAuthenticated: true,
-      };
+        // Create Hive user object
+        const newHiveUser: HiveAuthUser = {
+          username: hiveUsername,
+          isAuthenticated: true,
+        };
 
-      // Dispatch LOGIN action for upgrade
-      dispatch({
-        type: 'LOGIN',
-        payload: {
+        // Dispatch LOGIN action for upgrade
+        dispatch({
+          type: 'LOGIN',
+          payload: {
+            user: updatedUser,
+            authType: 'hive',
+            hiveUser: newHiveUser,
+            loginAt: now,
+          },
+        });
+
+        persistAuthState({
           user: updatedUser,
-          authType: "hive",
+          authType: 'hive',
           hiveUser: newHiveUser,
           loginAt: now,
-        },
-      });
+        });
 
-      persistAuthState({
-        user: updatedUser,
-        authType: "hive",
-        hiveUser: newHiveUser,
-        loginAt: now,
-      });
+        // Fetch Hive account data
+        try {
+          const response = await fetch(
+            `/api/hive/account/summary?username=${encodeURIComponent(hiveUsername)}`
+          );
+          if (!response.ok) {
+            throw new Error(`Failed to fetch account: ${response.status}`);
+          }
+          const result = await response.json();
 
-      // Fetch Hive account data
-      try {
-        const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(hiveUsername)}`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch account: ${response.status}`);
+          if (hasValidAccountData(result)) {
+            const accountData = result.account;
+            const updatedHiveUser = {
+              ...newHiveUser,
+              account: accountData as unknown as HiveAccount,
+            };
+
+            const userWithHiveData = {
+              ...updatedUser,
+              reputation: accountData.reputation,
+              reputationFormatted: accountData.reputationFormatted,
+              liquidHiveBalance: accountData.liquidHiveBalance,
+              liquidHbdBalance: accountData.liquidHbdBalance,
+              savingsHiveBalance: accountData.savingsHiveBalance,
+              savingsHbdBalance: accountData.savingsHbdBalance,
+              hiveBalance: accountData.hiveBalance,
+              hbdBalance: accountData.hbdBalance,
+              hivePower: accountData.hivePower,
+              rcPercentage: accountData.resourceCredits,
+              savingsApr: accountData.savingsApr,
+              pendingWithdrawals: accountData.pendingWithdrawals,
+              hiveProfile: accountData.profile,
+              hiveStats: accountData.stats,
+              avatar: accountData.profile.profileImage || user.avatar,
+              displayName: accountData.profile.name || user.displayName,
+              bio: accountData.profile.about || user.bio,
+              createdAt: accountData.createdAt,
+            };
+
+            // Dispatch profile loaded action
+            dispatch({
+              type: 'LOGIN_PROFILE_LOADED',
+              payload: { user: userWithHiveData, hiveUser: updatedHiveUser },
+            });
+
+            persistAuthState({
+              user: userWithHiveData,
+              authType: 'hive',
+              hiveUser: updatedHiveUser,
+              loginAt: now,
+            });
+          }
+        } catch (profileError) {
+          logger.error('Error fetching Hive account data', 'AuthContext', profileError);
+          dispatch({ type: 'LOGIN_PROFILE_FAILED' });
         }
-        const result = await response.json();
-
-        if (hasValidAccountData(result)) {
-          const accountData = result.account;
-          const updatedHiveUser = {
-            ...newHiveUser,
-            account: accountData as unknown as HiveAccount,
-          };
-
-          const userWithHiveData = {
-            ...updatedUser,
-            reputation: accountData.reputation,
-            reputationFormatted: accountData.reputationFormatted,
-            liquidHiveBalance: accountData.liquidHiveBalance,
-            liquidHbdBalance: accountData.liquidHbdBalance,
-            savingsHiveBalance: accountData.savingsHiveBalance,
-            savingsHbdBalance: accountData.savingsHbdBalance,
-            hiveBalance: accountData.hiveBalance,
-            hbdBalance: accountData.hbdBalance,
-            hivePower: accountData.hivePower,
-            rcPercentage: accountData.resourceCredits,
-            savingsApr: accountData.savingsApr,
-            pendingWithdrawals: accountData.pendingWithdrawals,
-            hiveProfile: accountData.profile,
-            hiveStats: accountData.stats,
-            avatar: accountData.profile.profileImage || user.avatar,
-            displayName: accountData.profile.name || user.displayName,
-            bio: accountData.profile.about || user.bio,
-            createdAt: accountData.createdAt,
-          };
-
-          // Dispatch profile loaded action
-          dispatch({
-            type: 'LOGIN_PROFILE_LOADED',
-            payload: { user: userWithHiveData, hiveUser: updatedHiveUser },
-          });
-
-          persistAuthState({
-            user: userWithHiveData,
-            authType: "hive",
-            hiveUser: updatedHiveUser,
-            loginAt: now,
-          });
-        }
-      } catch (profileError) {
-        console.error("Error fetching Hive account data:", profileError);
-        dispatch({ type: 'LOGIN_PROFILE_FAILED' });
+      } catch (error) {
+        logger.error('Error upgrading to Hive account', 'AuthContext', error);
+        throw error;
       }
-    } catch (error) {
-      console.error("Error upgrading to Hive account:", error);
-      throw error;
-    }
-  }, [authType, user]);
+    },
+    [authType, user]
+  );
 
-  const updateUser = useCallback((userUpdate: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...userUpdate };
-      const now = Date.now();
+  const updateUser = useCallback(
+    (userUpdate: Partial<User>) => {
+      if (user) {
+        const updatedUser = { ...user, ...userUpdate };
+        const now = Date.now();
 
-      dispatch({
-        type: 'UPDATE_USER',
-        payload: { user: updatedUser, loginAt: now },
-      });
+        dispatch({
+          type: 'UPDATE_USER',
+          payload: { user: updatedUser, loginAt: now },
+        });
 
-      persistAuthState({
-        user: updatedUser,
-        authType,
-        hiveUser,
-        loginAt: now,
-      });
-    }
-  }, [authType, hiveUser, user]);
+        persistAuthState({
+          user: updatedUser,
+          authType,
+          hiveUser,
+          loginAt: now,
+        });
+      }
+    },
+    [authType, hiveUser, user]
+  );
 
-  const applyAccountData = useCallback((accountData: UserAccountData) => {
-    if (!hiveUser) {
-      return;
-    }
+  const applyAccountData = useCallback(
+    (accountData: UserAccountData) => {
+      if (!hiveUser) {
+        return;
+      }
 
-    // Update hiveUser with account data
-    const updatedHiveUser: HiveAuthUser = {
-      ...hiveUser,
-      username: hiveUser.username,
-      account: accountData as unknown as HiveAccount,
-    };
-
-    // Also update the main user object with Hive profile data
-    if (user) {
-      const updatedUser = {
-        ...user,
-        reputation: accountData.reputation,
-        reputationFormatted: accountData.reputationFormatted,
-        liquidHiveBalance: accountData.liquidHiveBalance,
-        liquidHbdBalance: accountData.liquidHbdBalance,
-        savingsHiveBalance: accountData.savingsHiveBalance,
-        savingsHbdBalance: accountData.savingsHbdBalance,
-        hiveBalance: accountData.hiveBalance,
-        hbdBalance: accountData.hbdBalance,
-        hivePower: accountData.hivePower,
-        rcPercentage: accountData.resourceCredits,
-        savingsApr: accountData.savingsApr,
-        pendingWithdrawals: accountData.pendingWithdrawals,
-        hiveProfile: accountData.profile,
-        hiveStats: accountData.stats,
-        avatar: accountData.profile.profileImage || user.avatar,
-        displayName: accountData.profile.name || user.displayName,
-        bio: accountData.profile.about || user.bio,
-        createdAt: accountData.createdAt,
+      // Update hiveUser with account data
+      const updatedHiveUser: HiveAuthUser = {
+        ...hiveUser,
+        username: hiveUser.username,
+        account: accountData as unknown as HiveAccount,
       };
 
-      const now = Date.now();
+      // Also update the main user object with Hive profile data
+      if (user) {
+        const updatedUser = {
+          ...user,
+          reputation: accountData.reputation,
+          reputationFormatted: accountData.reputationFormatted,
+          liquidHiveBalance: accountData.liquidHiveBalance,
+          liquidHbdBalance: accountData.liquidHbdBalance,
+          savingsHiveBalance: accountData.savingsHiveBalance,
+          savingsHbdBalance: accountData.savingsHbdBalance,
+          hiveBalance: accountData.hiveBalance,
+          hbdBalance: accountData.hbdBalance,
+          hivePower: accountData.hivePower,
+          rcPercentage: accountData.resourceCredits,
+          savingsApr: accountData.savingsApr,
+          pendingWithdrawals: accountData.pendingWithdrawals,
+          hiveProfile: accountData.profile,
+          hiveStats: accountData.stats,
+          avatar: accountData.profile.profileImage || user.avatar,
+          displayName: accountData.profile.name || user.displayName,
+          bio: accountData.profile.about || user.bio,
+          createdAt: accountData.createdAt,
+        };
 
-      dispatch({
-        type: 'REFRESH_ACCOUNT',
-        payload: { user: updatedUser, hiveUser: updatedHiveUser, loginAt: now },
-      });
+        const now = Date.now();
 
-      persistAuthState({
-        user: updatedUser,
-        authType,
-        hiveUser: updatedHiveUser,
-        loginAt: now,
-      });
-    } else {
-      // Only update hiveUser if no user
-      dispatch({ type: 'UPDATE_HIVE_USER', payload: updatedHiveUser });
-    }
-  }, [authType, hiveUser, user]);
+        dispatch({
+          type: 'REFRESH_ACCOUNT',
+          payload: { user: updatedUser, hiveUser: updatedHiveUser, loginAt: now },
+        });
+
+        persistAuthState({
+          user: updatedUser,
+          authType,
+          hiveUser: updatedHiveUser,
+          loginAt: now,
+        });
+      } else {
+        // Only update hiveUser if no user
+        dispatch({ type: 'UPDATE_HIVE_USER', payload: updatedHiveUser });
+      }
+    },
+    [authType, hiveUser, user]
+  );
 
   const refreshHiveAccount = useCallback(async () => {
     if (!hiveUser?.username) {
@@ -1044,12 +1093,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let accountData: UserAccountData | null = null;
 
       // Always use API route since this is a client component
-      const response = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(hiveUser.username)}`);
+      const response = await fetch(
+        `/api/hive/account/summary?username=${encodeURIComponent(hiveUser.username)}`
+      );
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
         throw new Error(
           (payload as { error?: string }).error ||
-          `Failed to refresh Hive account: ${response.status}`
+            `Failed to refresh Hive account: ${response.status}`
         );
       }
       const result = await response.json();
@@ -1058,7 +1109,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Convert date strings from JSON to Date objects
         accountData = {
           ...account,
-          createdAt: account.createdAt ? new Date(account.createdAt as unknown as string) : new Date(),
+          createdAt: account.createdAt
+            ? new Date(account.createdAt as unknown as string)
+            : new Date(),
           lastPost: account.lastPost ? new Date(String(account.lastPost)) : undefined,
           lastVote: account.lastVote ? new Date(String(account.lastVote)) : undefined,
         };
@@ -1068,7 +1121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         applyAccountData(accountData);
       }
     } catch (error) {
-      console.error("Error refreshing Hive account:", error);
+      logger.error('Error refreshing Hive account', 'AuthContext', error);
     }
   }, [applyAccountData, hiveUser]);
 
@@ -1092,9 +1145,5 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     profileLoadFailed,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
