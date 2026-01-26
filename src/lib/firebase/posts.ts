@@ -136,12 +136,57 @@ export class FirebasePosts {
         where('authorId', '==', authorId),
         orderBy('createdAt', 'desc')
       );
-      
+
       const querySnapshot = await getDocs(q);
-      
+
       return querySnapshot.docs.map(docSnap => this.docToSoftPost(docSnap));
     } catch (error) {
       console.error('Error getting posts by author:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the count of posts by a specific author
+   * Used for enforcing post limits for soft users
+   */
+  static async getPostCountByAuthor(authorId: string): Promise<number> {
+    if (!db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
+    try {
+      const q = query(
+        collection(db, 'soft_posts'),
+        where('authorId', '==', authorId)
+      );
+
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.size;
+    } catch (error) {
+      console.error('Error getting post count by author:', error);
+      throw error;
+    }
+  }
+
+  static async getPostsByUsername(authorUsername: string, postsLimit: number = 20): Promise<SoftPost[]> {
+    if (!db) {
+      throw FIREBASE_NOT_CONFIGURED_ERROR;
+    }
+
+    try {
+      const q = query(
+        collection(db, 'soft_posts'),
+        where('authorUsername', '==', authorUsername),
+        orderBy('createdAt', 'desc'),
+        limit(postsLimit)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      return querySnapshot.docs.map(docSnap => this.docToSoftPost(docSnap));
+    } catch (error) {
+      console.error('Error getting posts by username:', error);
       throw error;
     }
   }
