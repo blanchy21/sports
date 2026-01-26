@@ -42,11 +42,3 @@ export {
   storeRewardDistributions,
   getRewardDistributions,
 } from './leaderboard';
-
-// Client-side Hooks (re-export for convenience)
-// Note: Import directly from './hooks' in client components
-export {
-  useTrackPostView,
-  useTrackEngagement,
-  useLeaderboard,
-} from './hooks';
