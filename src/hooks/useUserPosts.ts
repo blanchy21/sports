@@ -8,13 +8,23 @@ interface UseUserPostsResult {
   refetch: () => Promise<void>;
 }
 
-export function useUserPosts(username: string, limit: number = 5): UseUserPostsResult {
+interface UseUserPostsOptions {
+  isHiveUser?: boolean;
+  userId?: string; // For soft users, use their Firebase user ID
+}
+
+export function useUserPosts(
+  username: string,
+  limit: number = 5,
+  options: UseUserPostsOptions = {}
+): UseUserPostsResult {
+  const { isHiveUser = true, userId } = options;
   const [posts, setPosts] = useState<SportsblockPost[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPosts = useCallback(async () => {
-    if (!username) {
+    if (!username && !userId) {
       setPosts([]);
       return;
     }
@@ -23,7 +33,17 @@ export function useUserPosts(username: string, limit: number = 5): UseUserPostsR
     setError(null);
 
     try {
-      const response = await fetch(`/api/hive/posts?username=${encodeURIComponent(username)}&limit=${limit}`);
+      let response: Response;
+
+      if (isHiveUser) {
+        // Fetch from Hive API for Hive users
+        response = await fetch(`/api/hive/posts?username=${encodeURIComponent(username)}&limit=${limit}`);
+      } else {
+        // Fetch from Firebase API for soft users
+        const identifier = userId || username;
+        response = await fetch(`/api/posts?authorId=${encodeURIComponent(identifier)}&limit=${limit}`);
+      }
+
       if (!response.ok) {
         throw new Error(`Failed to fetch posts: ${response.status}`);
       }
@@ -35,11 +55,11 @@ export function useUserPosts(username: string, limit: number = 5): UseUserPostsR
     } finally {
       setIsLoading(false);
     }
-  }, [username, limit]);
+  }, [username, userId, limit, isHiveUser]);
 
   useEffect(() => {
     fetchPosts();
-  }, [username, limit, fetchPosts]);
+  }, [fetchPosts]);
 
   return {
     posts,

@@ -42,7 +42,7 @@ export function useIsFollowingUser(username: string, follower: string) {
 
 export function useInvalidateUserProfile() {
   const queryClient = useQueryClient();
-  
+
   return {
     invalidateAll: () => queryClient.invalidateQueries({ queryKey: queryKeys.users.all }),
     invalidateUser: (username: string) =>
@@ -52,4 +52,39 @@ export function useInvalidateUserProfile() {
     invalidateFollowing: (username: string) =>
       queryClient.invalidateQueries({ queryKey: queryKeys.users.following(username) }),
   };
+}
+
+/**
+ * Soft user profile interface
+ */
+export interface SoftUserProfile {
+  id: string;
+  username: string;
+  displayName: string;
+  bio?: string;
+  avatarUrl?: string;
+  isHiveUser: boolean;
+  hiveUsername?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Hook to fetch a soft user profile by username
+ */
+export function useSoftUserProfile(username: string) {
+  return useQuery({
+    queryKey: ['softUsers', 'detail', username],
+    queryFn: async (): Promise<SoftUserProfile | null> => {
+      const response = await fetch(`/api/soft/users?username=${encodeURIComponent(username)}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to fetch soft user profile');
+      }
+      const data = await response.json();
+      return data.success ? data.user : null;
+    },
+    enabled: !!username,
+    staleTime: STALE_TIMES.STANDARD,
+  });
 }

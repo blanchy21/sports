@@ -179,6 +179,11 @@ export async function calculateTopAuthors(posts: SportsblockPost[], excludeUser?
   recentPosts.forEach(post => {
     const author = post.author;
 
+    // Skip posts with empty or invalid author
+    if (!author || typeof author !== 'string' || author.trim() === '') {
+      return;
+    }
+
     // Skip the excluded user
     if (excludeUser && author === excludeUser) {
       return;
@@ -203,8 +208,9 @@ export async function calculateTopAuthors(posts: SportsblockPost[], excludeUser?
     stats.totalEngagement += (post.children || 0) * 2 + (post.net_votes || 0);
   });
 
-  // Get top 3 authors by engagement
+  // Get top 3 authors by engagement (filter out any empty usernames as safety check)
   const topAuthors = Object.values(authorStats)
+    .filter(author => author.username && author.username.trim() !== '')
     .sort((a, b) => b.totalEngagement - a.totalEngagement)
     .slice(0, 3);
 

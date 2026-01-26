@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FirebasePosts, CreateSoftPostInput } from '@/lib/firebase/posts';
+import { FieldValue } from 'firebase-admin/firestore';
+import { FirebasePosts } from '@/lib/firebase/posts';
+import { getAdminDb } from '@/lib/firebase/admin';
+import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
 import {
   createRequestContext,
   validationError,
@@ -8,11 +11,16 @@ import {
   forbiddenError,
 } from '@/lib/api/response';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const ROUTE = '/api/posts';
+
+// Soft user post limits
+const FREE_POST_LIMIT = 50;
+const WARNING_THRESHOLD = 40;
 
 // ============================================
 // Validation Schemas
@@ -145,6 +153,69 @@ export async function POST(request: NextRequest) {
         return forbiddenError('You can only create posts as yourself', ctx.requestId);
       }
 
+      // Rate limiting check
+      const rateLimit = checkRateLimit(authenticatedUserId, RATE_LIMITS.posts);
+      if (!rateLimit.allowed) {
+        ctx.log.warn('Rate limit exceeded', {
+          authorId: authenticatedUserId,
+          count: rateLimit.count,
+          resetAt: new Date(rateLimit.resetAt).toISOString(),
+        });
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Rate limit exceeded',
+            message: 'You are posting too frequently. Please wait before creating another post.',
+            retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
+          },
+          {
+            status: 429,
+            headers: getRateLimitHeaders(rateLimit),
+          }
+        );
+      }
+
+      // Use Admin SDK to check post count (bypasses security rules)
+      const adminDbForCount = getAdminDb();
+      if (!adminDbForCount) {
+        ctx.log.error('Firebase Admin SDK not configured');
+        return NextResponse.json(
+          { success: false, error: 'Server configuration error' },
+          { status: 500 }
+        );
+      }
+
+      // Check post limit for soft users
+      const postsSnapshot = await adminDbForCount
+        .collection('soft_posts')
+        .where('authorId', '==', data.authorId)
+        .count()
+        .get();
+      const currentPostCount = postsSnapshot.data().count;
+
+      if (currentPostCount >= FREE_POST_LIMIT) {
+        ctx.log.warn('Post limit reached', {
+          authorId: data.authorId,
+          currentCount: currentPostCount,
+          limit: FREE_POST_LIMIT,
+        });
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Post limit reached',
+            message: `You've reached the limit of ${FREE_POST_LIMIT} posts. Upgrade to Hive for unlimited posts and earn rewards!`,
+            limitReached: true,
+            currentCount: currentPostCount,
+            limit: FREE_POST_LIMIT,
+          },
+          { status: 403 }
+        );
+      }
+
+      // Calculate remaining posts and warning state
+      const remainingPosts = FREE_POST_LIMIT - currentPostCount - 1; // -1 for the post being created
+      const isNearLimit = currentPostCount >= WARNING_THRESHOLD;
+
       ctx.log.info('Creating post', {
         authorId: data.authorId,
         authorUsername: data.authorUsername,
@@ -152,23 +223,76 @@ export async function POST(request: NextRequest) {
         communityId: data.communityId,
       });
 
-      // Build the input for Firebase
-      const input: CreateSoftPostInput = {
+      // Use Admin SDK to bypass Firestore security rules
+      const adminDb = getAdminDb();
+      if (!adminDb) {
+        ctx.log.error('Firebase Admin SDK not configured');
+        return NextResponse.json(
+          { success: false, error: 'Server configuration error' },
+          { status: 500 }
+        );
+      }
+
+      // Generate a unique permlink
+      const permlink = `${data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50)}-${Date.now()}`;
+
+      // Generate excerpt from content (first 200 chars, strip markdown)
+      const excerpt = data.content
+        .replace(/[#*_`~\[\]()>]/g, '')
+        .substring(0, 200)
+        .trim() + (data.content.length > 200 ? '...' : '');
+
+      const postData = {
         authorId: data.authorId,
         authorUsername: data.authorUsername,
-        authorDisplayName: data.authorDisplayName,
-        authorAvatar: data.authorAvatar ?? undefined,
+        authorDisplayName: data.authorDisplayName || data.authorUsername,
+        authorAvatar: data.authorAvatar || null,
         title: data.title,
         content: data.content,
-        tags: data.tags,
+        excerpt,
+        permlink,
+        tags: data.tags || [],
+        sportCategory: data.sportCategory || null,
+        featuredImage: data.featuredImage || null,
+        communityId: data.communityId || null,
+        communitySlug: data.communitySlug || null,
+        communityName: data.communityName || null,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        isPublishedToHive: false,
+        hivePermlink: null,
+        viewCount: 0,
+        likeCount: 0,
+      };
+
+      const docRef = await adminDb.collection('soft_posts').add(postData);
+
+      const post = {
+        id: docRef.id,
+        authorId: data.authorId,
+        authorUsername: data.authorUsername,
+        authorDisplayName: data.authorDisplayName || data.authorUsername,
+        authorAvatar: data.authorAvatar,
+        title: data.title,
+        content: data.content,
+        excerpt,
+        permlink,
+        tags: data.tags || [],
         sportCategory: data.sportCategory,
-        featuredImage: data.featuredImage ?? undefined,
+        featuredImage: data.featuredImage,
         communityId: data.communityId,
         communitySlug: data.communitySlug,
         communityName: data.communityName,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isPublishedToHive: false,
+        hivePermlink: undefined,
+        viewCount: 0,
+        likeCount: 0,
       };
 
-      const post = await FirebasePosts.createPost(input);
+      // Update user's lastActiveAt timestamp
+      await updateUserLastActiveAt(data.authorId);
 
       ctx.log.info('Post created successfully', { postId: post.id });
 
@@ -177,6 +301,16 @@ export async function POST(request: NextRequest) {
           success: true,
           post,
           message: 'Post created successfully',
+          // Include post limit info for UI feedback
+          postLimitInfo: {
+            currentCount: currentPostCount + 1, // Include the post just created
+            limit: FREE_POST_LIMIT,
+            remaining: remainingPosts,
+            isNearLimit,
+            upgradePrompt: isNearLimit
+              ? `You have ${remainingPosts} post${remainingPosts === 1 ? '' : 's'} remaining. Upgrade to Hive for unlimited posts!`
+              : null,
+          },
         },
         { status: 201 }
       );

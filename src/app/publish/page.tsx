@@ -25,7 +25,6 @@ import dynamic from "next/dynamic";
 import { publishPost, canUserPost, validatePostData } from "@/lib/hive-workerbee/posting";
 import { PostData } from "@/lib/hive-workerbee/posting";
 import { useCommunities, useUserCommunities } from "@/lib/react-query/queries/useCommunity";
-import { UnifiedPostingService } from "@/lib/posting/unified";
 import { useUIStore } from "@/stores/uiStore";
 import { FirebasePosts } from "@/lib/firebase/posts";
 import { uploadImage } from "@/lib/hive/imageUpload";
@@ -35,6 +34,7 @@ import { EditorToolbar, FormatType } from "@/components/publish/EditorToolbar";
 import { TagInput } from "@/components/publish/TagInput";
 import { AdvancedOptions, RewardsOption, Beneficiary } from "@/components/publish/AdvancedOptions";
 import { ScheduleModal } from "@/components/publish/ScheduleModal";
+import { UpgradeIncentive, UpgradeIncentiveBanner } from "@/components/UpgradeIncentive";
 
 import remarkGfm from "remark-gfm";
 
@@ -92,6 +92,16 @@ function PublishPageContent() {
     rcPercentage: number;
     message?: string;
   } | null>(null);
+
+  // Soft user post limit tracking
+  const [postLimitInfo, setPostLimitInfo] = useState<{
+    currentCount: number;
+    limit: number;
+    remaining: number;
+    isNearLimit: boolean;
+    upgradePrompt: string | null;
+  } | null>(null);
+  const [showPostPublishedPrompt, setShowPostPublishedPrompt] = useState(false);
 
   // Refs
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -194,6 +204,36 @@ function PublishPageContent() {
       checkRCStatus();
     }
   }, [hiveUser, authType, checkRCStatus]);
+
+  // Fetch post count for soft users to show limit warnings
+  React.useEffect(() => {
+    const fetchPostCount = async () => {
+      if (!user?.id || authType === "hive") return;
+
+      try {
+        const response = await fetch(`/api/posts?authorId=${encodeURIComponent(user.id)}`);
+        const data = await response.json();
+        if (data.success) {
+          const currentCount = data.posts?.length || 0;
+          const limit = 50;
+          const remaining = limit - currentCount;
+          setPostLimitInfo({
+            currentCount,
+            limit,
+            remaining,
+            isNearLimit: remaining <= 10,
+            upgradePrompt: remaining <= 10
+              ? `You have ${remaining} post${remaining === 1 ? '' : 's'} remaining. Upgrade to Hive for unlimited posts!`
+              : null,
+          });
+        }
+      } catch {
+        // Silently fail
+      }
+    };
+
+    fetchPostCount();
+  }, [user?.id, authType]);
 
   // Markdown formatting helpers
   const insertMarkdown = (before: string, after: string = "", placeholder: string = "") => {
@@ -541,27 +581,56 @@ function PublishPageContent() {
           setPublishError(result.error || "Failed to publish post");
         }
       } else {
-        // SOFT USER: Publish to Firebase
-        const result = await UnifiedPostingService.createPost(user, {
-          title: title.trim(),
-          content: content.trim(),
-          tags,
-          sportCategory: selectedSport,
-          featuredImage: coverImage || undefined,
-          communityId: selectedCommunity?.id,
-          communitySlug: selectedCommunity?.slug,
-          communityName: selectedCommunity?.name,
+        // SOFT USER: Publish to Firebase via API directly to get postLimitInfo
+        const response = await fetch('/api/posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.id,
+          },
+          body: JSON.stringify({
+            authorId: user.id,
+            authorUsername: user.username,
+            authorDisplayName: user.displayName,
+            authorAvatar: user.avatar,
+            title: title.trim(),
+            content: content.trim(),
+            tags,
+            sportCategory: selectedSport,
+            featuredImage: coverImage || undefined,
+            communityId: selectedCommunity?.id,
+            communitySlug: selectedCommunity?.slug,
+            communityName: selectedCommunity?.name,
+          }),
         });
 
-        if (result.success) {
+        const data = await response.json();
+
+        if (data.success) {
           // Save used tags
           if (tags.length > 0) {
             addRecentTags(tags);
           }
-          alert("Post published! Connect to Hive to earn rewards on future posts.");
-          router.push("/feed");
+
+          // Track post limit info for upgrade prompts
+          if (data.postLimitInfo) {
+            setPostLimitInfo(data.postLimitInfo);
+          }
+
+          // Show the upgrade prompt instead of alert
+          setShowPostPublishedPrompt(true);
+        } else if (data.limitReached) {
+          // Post limit reached - show specific error
+          setPublishError(data.message || `You've reached the limit of ${data.limit} posts. Upgrade to Hive for unlimited posts!`);
+          setPostLimitInfo({
+            currentCount: data.currentCount,
+            limit: data.limit,
+            remaining: 0,
+            isNearLimit: true,
+            upgradePrompt: data.message,
+          });
         } else {
-          setPublishError(result.error || "Failed to publish post");
+          setPublishError(data.error || "Failed to publish post");
         }
       }
     } catch (error) {
@@ -827,10 +896,29 @@ function PublishPageContent() {
 
             {/* Soft User Notice */}
             {authType !== "hive" && (
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-                <p className="text-sm text-blue-600 dark:text-blue-400">
-                  Your post will be visible to everyone. Connect with Hive to earn rewards!
-                </p>
+              <div className="space-y-3">
+                {/* Post Limit Warning */}
+                {postLimitInfo && postLimitInfo.isNearLimit && (
+                  <UpgradeIncentiveBanner
+                    type={postLimitInfo.remaining <= 5 ? "storage-critical" : "storage-warning"}
+                    postsRemaining={postLimitInfo.remaining}
+                    totalPosts={postLimitInfo.limit}
+                  />
+                )}
+
+                {/* General soft user notice */}
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                      Your post will be visible to everyone. Connect with Hive to earn rewards!
+                    </p>
+                    {postLimitInfo && !postLimitInfo.isNearLimit && (
+                      <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                        {postLimitInfo.remaining}/{postLimitInfo.limit} posts left
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -1172,6 +1260,63 @@ function PublishPageContent() {
         onClose={() => setShowScheduleModal(false)}
         onSchedule={handleSchedule}
       />
+
+      {/* Post Published Success Modal with Upgrade Prompt (Soft Users) */}
+      {showPostPublishedPrompt && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card border rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-3">
+                <Send className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">Post Published!</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Your post is now live on Sportsblock.
+              </p>
+            </div>
+
+            {/* Post Limit Warning */}
+            {postLimitInfo && postLimitInfo.isNearLimit && (
+              <div className="mb-4">
+                <UpgradeIncentiveBanner
+                  type={postLimitInfo.remaining <= 5 ? "storage-critical" : "storage-warning"}
+                  postsRemaining={postLimitInfo.remaining}
+                  totalPosts={postLimitInfo.limit}
+                />
+              </div>
+            )}
+
+            {/* Upgrade Incentive */}
+            <UpgradeIncentive
+              type="post-published"
+              className="mb-4"
+              dismissible={false}
+            />
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPostPublishedPrompt(false);
+                  router.push("/feed");
+                }}
+                className="flex-1"
+              >
+                View Feed
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowPostPublishedPrompt(false);
+                  router.push("/settings?tab=wallet");
+                }}
+                className="flex-1"
+              >
+                Connect Hive
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

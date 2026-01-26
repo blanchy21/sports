@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { StarVoteButton } from "@/components/StarVoteButton";
+import { SoftLikeButton } from "@/components/SoftLikeButton";
 import { ArrowLeft, MessageCircle, Bookmark, Share, Calendar, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 // fetchPost is now accessed via API route
@@ -31,8 +32,11 @@ export default function PostDetailPage() {
   const author = params.author as string;
   const permlink = params.permlink as string;
 
-  // Fetch Hive user profile
+  // Fetch Hive user profile (only for non-soft posts)
   const { profile: hiveProfile, isLoading: isProfileLoading } = useUserProfile(author);
+
+  // Track if this is a soft post for different UI handling
+  const [isSoftPost, setIsSoftPost] = useState(false);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -42,21 +46,63 @@ export default function PostDetailPage() {
 
       setIsLoading(true);
       setError(null);
+      setIsSoftPost(false);
 
       try {
-        const response = await fetch(
+        // First try to fetch from Hive
+        const hiveResponse = await fetch(
           `/api/hive/posts?author=${encodeURIComponent(author)}&permlink=${encodeURIComponent(permlink)}`,
           { signal: abortController.signal }
         );
-        if (!response.ok) {
-          throw new Error(`Failed to fetch post: ${response.status}`);
+
+        if (hiveResponse.ok) {
+          const result = await hiveResponse.json() as { success: boolean; post: SportsblockPost | null };
+          if (result.success && result.post) {
+            setPost(result.post);
+            return;
+          }
         }
-        const result = await response.json() as { success: boolean; post: SportsblockPost | null };
-        if (result.success && result.post) {
-          setPost(result.post);
-        } else {
-          setError("Post not found");
+
+        // If not found on Hive, try soft posts
+        const softResponse = await fetch(
+          `/api/posts/by-permlink?permlink=${encodeURIComponent(permlink)}`,
+          { signal: abortController.signal }
+        );
+
+        if (softResponse.ok) {
+          const softResult = await softResponse.json();
+          if (softResult.success && softResult.post) {
+            // Convert soft post to SportsblockPost format
+            const softPost = softResult.post;
+            setPost({
+              author: softPost.authorUsername,
+              permlink: softPost.permlink,
+              title: softPost.title,
+              body: softPost.content,
+              created: softPost.createdAt,
+              last_update: softPost.updatedAt,
+              category: softPost.sportCategory || 'general',
+              tags: softPost.tags || [],
+              sportCategory: softPost.sportCategory,
+              json_metadata: JSON.stringify({ tags: softPost.tags }),
+              net_votes: softPost.likeCount || 0,
+              children: 0, // We'd need to fetch comments separately
+              pending_payout_value: '0.000 HBD',
+              curator_payout_value: '0.000 HBD',
+              total_payout_value: '0.000 HBD',
+              active_votes: [],
+              // Soft post specific fields
+              id: softPost.id,
+              authorDisplayName: softPost.authorDisplayName,
+              authorAvatar: softPost.authorAvatar,
+              excerpt: softPost.excerpt,
+            } as unknown as SportsblockPost);
+            setIsSoftPost(true);
+            return;
+          }
         }
+
+        setError("Post not found");
       } catch (err) {
         // Ignore abort errors
         if (err instanceof Error && err.name === 'AbortError') return;
@@ -86,10 +132,19 @@ export default function PostDetailPage() {
 
   const handleComment = () => {
     if (!post) return;
-    openModal('comments', {
-      author: post.author,
-      permlink: post.permlink,
-    });
+    if (isSoftPost) {
+      // Open soft comments modal for soft posts
+      openModal('softComments', {
+        postId: (post as unknown as { id: string }).id,
+        postPermlink: post.permlink,
+        postAuthor: post.author,
+      });
+    } else {
+      openModal('comments', {
+        author: post.author,
+        permlink: post.permlink,
+      });
+    }
   };
 
   const handleBookmark = () => {
@@ -156,14 +211,18 @@ export default function PostDetailPage() {
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-4">
             <Avatar
-              src={hiveProfile?.avatar}
+              src={isSoftPost ? (post as unknown as { authorAvatar?: string }).authorAvatar : hiveProfile?.avatar}
               fallback={post.author}
-              alt={hiveProfile?.displayName || post.author}
+              alt={isSoftPost ? (post as unknown as { authorDisplayName?: string }).authorDisplayName || post.author : hiveProfile?.displayName || post.author}
               size="md"
-              className={isProfileLoading ? "animate-pulse" : ""}
+              className={!isSoftPost && isProfileLoading ? "animate-pulse" : ""}
             />
             <div className="flex-1">
-              <h1 className="text-2xl font-bold">{hiveProfile?.displayName || post.author}</h1>
+              <h1 className="text-2xl font-bold">
+                {isSoftPost
+                  ? (post as unknown as { authorDisplayName?: string }).authorDisplayName || post.author
+                  : hiveProfile?.displayName || post.author}
+              </h1>
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <span>@{post.author}</span>
                 <span>•</span>
@@ -176,6 +235,12 @@ export default function PostDetailPage() {
                   <Clock className="h-4 w-4 mr-1" />
                   {formatReadTime(Math.ceil(post.body.length / 1000))}
                 </span>
+                {isSoftPost && (
+                  <>
+                    <span>•</span>
+                    <span className="text-muted-foreground">Community Post</span>
+                  </>
+                )}
               </div>
               {post.sportCategory && (
                 <div className="mt-2">
@@ -184,7 +249,7 @@ export default function PostDetailPage() {
                   </span>
                 </div>
               )}
-              {pendingPayout > 0 && (
+              {!isSoftPost && pendingPayout > 0 && (
                 <div className="mt-2">
                   <span className="text-sm text-accent font-medium">
                     💰 {formatAsset(pendingPayout, 'HIVE', 3)} pending
@@ -210,27 +275,35 @@ export default function PostDetailPage() {
         <div className="border-t pt-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-6">
-              {/* Voting Section */}
-              <div className="flex items-center space-x-2">
-                <StarVoteButton
-                  author={post.author}
-                  permlink={post.permlink}
-                  voteCount={post.net_votes || 0}
-                  onVoteSuccess={handleVoteSuccess}
-                  onVoteError={handleVoteError}
+              {/* Voting/Like Section */}
+              {isSoftPost ? (
+                <SoftLikeButton
+                  targetType="post"
+                  targetId={(post as unknown as { id: string }).id}
+                  initialLikeCount={post.net_votes || 0}
                 />
-                <span className="text-sm text-gray-600">
-                  {post.net_votes || 0} votes
-                </span>
-              </div>
-              
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <StarVoteButton
+                    author={post.author}
+                    permlink={post.permlink}
+                    voteCount={post.net_votes || 0}
+                    onVoteSuccess={handleVoteSuccess}
+                    onVoteError={handleVoteError}
+                  />
+                  <span className="text-sm text-gray-600">
+                    {post.net_votes || 0} votes
+                  </span>
+                </div>
+              )}
+
               <Button
                 variant="ghost"
                 onClick={handleComment}
                 className="flex items-center space-x-2"
               >
                 <MessageCircle className="h-4 w-4" />
-                <span>{post.children || 0} comments</span>
+                <span>{isSoftPost ? 'Comments' : `${post.children || 0} comments`}</span>
               </Button>
 
               <Button

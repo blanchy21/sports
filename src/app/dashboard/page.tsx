@@ -9,9 +9,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useUserPosts } from "@/hooks/useUserPosts";
 import { getProxyImageUrl, shouldProxyImage } from "@/lib/utils/image-proxy";
-import { 
-  Eye, 
-  Heart, 
+import {
+  Eye,
+  Heart,
   MessageCircle,
   DollarSign,
   Calendar,
@@ -22,8 +22,11 @@ import {
   AlertCircle,
   Loader2,
   ExternalLink,
-  Users
+  Users,
+  Zap
 } from "lucide-react";
+import { PotentialEarningsWidget } from "@/components/PotentialEarningsWidget";
+import Link from "next/link";
 
 export default function DashboardPage() {
   const { user, authType, refreshHiveAccount, isLoading: isAuthLoading } = useAuth();
@@ -33,8 +36,12 @@ export default function DashboardPage() {
   
   // Fetch user's recent posts
   const { posts: recentPosts, isLoading: postsLoading, error: postsError, refetch: refetchPosts } = useUserPosts(
-    user?.username || '', 
-    5
+    user?.username || '',
+    5,
+    {
+      isHiveUser: authType === "hive",
+      userId: user?.id
+    }
   );
 
   // Redirect if not authenticated (wait for auth to load first)
@@ -80,14 +87,14 @@ export default function DashboardPage() {
     );
   }
 
-  // Real stats from Hive API data
+  // Stats - different for Hive vs soft users
   const stats: Array<{
     title: string;
     value: string;
     icon: React.ComponentType<{ className?: string }>;
     change: string;
     changeType: "positive" | "negative" | "neutral";
-  }> = [
+  }> = authType === "hive" ? [
     {
       title: "Total Posts",
       value: user.hiveStats?.postCount?.toString() || "0",
@@ -114,6 +121,35 @@ export default function DashboardPage() {
       value: user.hiveStats?.followers?.toString() || "0",
       icon: Eye,
       change: "From Hive blockchain",
+      changeType: "neutral",
+    },
+  ] : [
+    {
+      title: "Total Posts",
+      value: recentPosts.length.toString(),
+      icon: FileText,
+      change: "Your soft posts",
+      changeType: "neutral",
+    },
+    {
+      title: "Total Likes",
+      value: recentPosts.reduce((sum, post) => sum + ((post as unknown as { likeCount?: number }).likeCount || post.net_votes || 0), 0).toString(),
+      icon: Heart,
+      change: "Across all posts",
+      changeType: "neutral",
+    },
+    {
+      title: "Comments",
+      value: recentPosts.reduce((sum, post) => sum + (post.children || 0), 0).toString(),
+      icon: MessageCircle,
+      change: "Total engagement",
+      changeType: "neutral",
+    },
+    {
+      title: "Account Type",
+      value: "Free",
+      icon: Users,
+      change: "Upgrade for rewards",
       changeType: "neutral",
     },
   ];
@@ -277,6 +313,45 @@ export default function DashboardPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Upgrade Prompt for Soft Users */}
+        {authType === "soft" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <PotentialEarningsWidget />
+            <div className="bg-gradient-to-r from-primary to-accent rounded-lg p-6 text-white">
+              <div className="flex items-center space-x-2 mb-3">
+                <Zap className="h-5 w-5" />
+                <h3 className="text-lg font-semibold">Unlock Rewards</h3>
+              </div>
+              <p className="text-white/90 text-sm mb-4">
+                Connect a Hive wallet to start earning cryptocurrency for your content.
+                Your posts, votes, and engagement can all generate real rewards!
+              </p>
+              <ul className="space-y-2 mb-4">
+                <li className="flex items-center gap-2 text-sm text-white/90">
+                  <DollarSign className="h-4 w-4" />
+                  Earn HIVE & HBD for posts
+                </li>
+                <li className="flex items-center gap-2 text-sm text-white/90">
+                  <Heart className="h-4 w-4" />
+                  Get curation rewards for voting
+                </li>
+                <li className="flex items-center gap-2 text-sm text-white/90">
+                  <FileText className="h-4 w-4" />
+                  Unlimited posts on blockchain
+                </li>
+              </ul>
+              <Link href="/auth">
+                <Button
+                  variant="secondary"
+                  className="bg-white text-primary hover:bg-white/90 font-semibold"
+                >
+                  Connect Hive Wallet
+                </Button>
+              </Link>
             </div>
           </div>
         )}

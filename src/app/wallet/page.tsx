@@ -17,8 +17,16 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowRightLeft,
-  Medal
+  Medal,
+  Zap,
+  Star,
+  Users,
+  Gift,
+  Shield,
+  CheckCircle2
 } from "lucide-react";
+import { PotentialEarningsWidget } from "@/components/PotentialEarningsWidget";
+import Link from "next/link";
 import {
   WalletCard as MedalsWalletCard,
   StakingPanel,
@@ -87,12 +95,12 @@ export default function WalletPage() {
     }
   }, [user?.username]);
 
-  // Redirect if not authenticated or not a Hive user (wait for auth to load first)
+  // Redirect only if not authenticated at all (wait for auth to load first)
   useEffect(() => {
-    if (!isAuthLoading && (!isAuthenticated || authType !== "hive" || !user)) {
-      router.push("/");
+    if (!isAuthLoading && !isAuthenticated) {
+      router.push("/auth");
     }
-  }, [isAuthenticated, authType, user, isAuthLoading, router]);
+  }, [isAuthenticated, isAuthLoading, router]);
 
   // Fetch transactions when user is available
   useEffect(() => {
@@ -206,25 +214,256 @@ export default function WalletPage() {
     });
   };
 
-  // Show loading or auth required message
-  if (isAuthLoading || !isAuthenticated || authType !== "hive" || !user) {
+  // Show loading state
+  if (isAuthLoading) {
     return (
       <MainLayout showRightSidebar={false} className="max-w-none">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">
-              {isAuthLoading ? "Loading..." : "Authentication Required"}
-            </h2>
-            <p className="text-muted-foreground">
-              {isAuthLoading 
-                ? "Checking authentication status..." 
-                : "Please connect your Hive account to view wallet information."}
-            </p>
+            <h2 className="text-xl font-semibold mb-2">Loading...</h2>
+            <p className="text-muted-foreground">Checking authentication status...</p>
           </div>
         </div>
       </MainLayout>
     );
+  }
+
+  // Show soft user wallet view with upgrade incentives
+  if (authType === "soft" || authType !== "hive") {
+    return (
+      <MainLayout showRightSidebar={false} className="max-w-none">
+        <div className="space-y-6">
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-bold flex items-center space-x-3">
+              <Wallet className="h-8 w-8 text-primary" />
+              <span>Wallet</span>
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Unlock earning potential by connecting your Hive wallet
+            </p>
+          </div>
+
+          {/* Potential Earnings Widget */}
+          <PotentialEarningsWidget className="max-w-2xl" />
+
+          {/* Upgrade CTA Banner */}
+          <div className="bg-gradient-to-r from-primary via-bright-cobalt to-accent rounded-lg p-6 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                  <Zap className="h-6 w-6" />
+                  Start Earning Real Rewards
+                </h3>
+                <p className="text-white/90 mb-4 max-w-xl">
+                  Connect your Hive wallet to unlock cryptocurrency rewards for your posts,
+                  comments, and engagement. Your content could be earning you money!
+                </p>
+                <Link href="/auth">
+                  <Button
+                    variant="secondary"
+                    className="bg-white text-primary hover:bg-white/90 font-semibold"
+                  >
+                    Connect Hive Wallet
+                  </Button>
+                </Link>
+              </div>
+              <div className="hidden md:block p-4 bg-white/10 rounded-lg">
+                <Gift className="h-12 w-12" />
+              </div>
+            </div>
+          </div>
+
+          {/* Benefits Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Earn HIVE */}
+            <div className="bg-card border rounded-lg p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-green-500/10 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                </div>
+                <h4 className="font-semibold">Earn HIVE & HBD</h4>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Get rewarded in cryptocurrency for every post and comment.
+                Popular content can earn significant rewards.
+              </p>
+            </div>
+
+            {/* Curation Rewards */}
+            <div className="bg-card border rounded-lg p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-amber-500/10 rounded-lg">
+                  <Star className="h-5 w-5 text-amber-500" />
+                </div>
+                <h4 className="font-semibold">Curation Rewards</h4>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Earn rewards for discovering great content early.
+                Vote on posts you like and share in the rewards.
+              </p>
+            </div>
+
+            {/* Unlimited Posts */}
+            <div className="bg-card border rounded-lg p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-blue-500/10 rounded-lg">
+                  <Activity className="h-5 w-5 text-blue-500" />
+                </div>
+                <h4 className="font-semibold">Unlimited Posts</h4>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                No post limits. Share as much content as you want,
+                all stored permanently on the blockchain.
+              </p>
+            </div>
+
+            {/* Community Engagement */}
+            <div className="bg-card border rounded-lg p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-purple-500/10 rounded-lg">
+                  <Users className="h-5 w-5 text-purple-500" />
+                </div>
+                <h4 className="font-semibold">Full Engagement</h4>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Comment and vote on any post in the community.
+                Build your reputation and influence.
+              </p>
+            </div>
+
+            {/* Decentralized */}
+            <div className="bg-card border rounded-lg p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-indigo-500/10 rounded-lg">
+                  <Shield className="h-5 w-5 text-indigo-500" />
+                </div>
+                <h4 className="font-semibold">Own Your Content</h4>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Your posts live on the blockchain forever.
+                No one can delete or censor your content.
+              </p>
+            </div>
+
+            {/* MEDALS Token */}
+            <div className="bg-card border rounded-lg p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-amber-500/10 rounded-lg">
+                  <Medal className="h-5 w-5 text-amber-500" />
+                </div>
+                <h4 className="font-semibold">MEDALS Token</h4>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Access exclusive MEDALS token rewards and staking.
+                The Sportsblock community token.
+              </p>
+            </div>
+          </div>
+
+          {/* How It Works */}
+          <div className="bg-card border rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Zap className="h-5 w-5 text-primary" />
+              How Hive Rewards Work
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">
+                  1
+                </div>
+                <div>
+                  <h4 className="font-medium mb-1">Create Content</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Post sports content, insights, and discussions to the community.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">
+                  2
+                </div>
+                <div>
+                  <h4 className="font-medium mb-1">Get Upvoted</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Community members vote on your content over 7 days.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">
+                  3
+                </div>
+                <div>
+                  <h4 className="font-medium mb-1">Earn Crypto</h4>
+                  <p className="text-sm text-muted-foreground">
+                    After 7 days, rewards are paid out in HIVE and HBD.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Crypto Prices (Preview) */}
+          <div className="bg-card border rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Current Market Prices
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {hivePrice && (
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <Coins className="h-6 w-6 mx-auto mb-2 text-accent" />
+                  <p className="text-sm text-muted-foreground">HIVE</p>
+                  <p className="text-lg font-bold">{formatUSD(hivePrice)}</p>
+                </div>
+              )}
+              {hbdPrice && (
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <DollarSign className="h-6 w-6 mx-auto mb-2 text-primary" />
+                  <p className="text-sm text-muted-foreground">HBD</p>
+                  <p className="text-lg font-bold">{formatUSD(hbdPrice)}</p>
+                </div>
+              )}
+              {bitcoinPrice && (
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <Bitcoin className="h-6 w-6 mx-auto mb-2 text-amber-500" />
+                  <p className="text-sm text-muted-foreground">Bitcoin</p>
+                  <p className="text-lg font-bold">{formatUSD(bitcoinPrice)}</p>
+                </div>
+              )}
+              {ethereumPrice && (
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <Coins className="h-6 w-6 mx-auto mb-2 text-blue-500" />
+                  <p className="text-sm text-muted-foreground">Ethereum</p>
+                  <p className="text-lg font-bold">{formatUSD(ethereumPrice)}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Final CTA */}
+          <div className="text-center py-6">
+            <h3 className="text-xl font-semibold mb-2">Ready to start earning?</h3>
+            <p className="text-muted-foreground mb-4">
+              Connect your Hive wallet and turn your sports knowledge into rewards.
+            </p>
+            <Link href="/auth">
+              <Button size="lg" className="gap-2">
+                <CheckCircle2 className="h-5 w-5" />
+                Connect Hive Wallet Now
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Guard for null user (shouldn't happen at this point, but TypeScript needs it)
+  if (!user) {
+    return null;
   }
 
   // Calculate USD values
