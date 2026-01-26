@@ -6,112 +6,162 @@ import { motion } from "framer-motion";
 import {
   Shield,
   TrendingUp,
-  Filter,
   DollarSign,
   CheckCircle,
   ArrowRight,
-  XCircle,
+  Zap,
   Heart,
-  BarChart3,
   Key,
   User,
   Trophy,
   Coins,
-  Crown,
   Star,
   Gift,
-  Zap
+  Target,
+  Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
+// High-quality Unsplash sports images
 const sports = [
-  { name: "Football", image: "/football.jpg", color: "from-primary/80 to-primary/60" },
-  { name: "Tennis", image: "/tennis.jpg", color: "from-accent/80 to-primary/80" },
-  { name: "Rugby", image: "/rugby.jpg", color: "from-red-500/80 to-red-700/80" },
-  { name: "Golf", image: "/golf.jpg", color: "from-dancing-mist/80 to-bright-cobalt/80" },
-  { name: "American Football", image: "/american-football.jpg", color: "from-accent/80 to-primary/80" },
+  {
+    name: "Football",
+    image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80",
+    color: "from-emerald-600/90 to-emerald-900/90",
+  },
+  {
+    name: "Basketball",
+    image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80",
+    color: "from-orange-500/90 to-red-700/90",
+  },
+  {
+    name: "Tennis",
+    image: "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&q=80",
+    color: "from-lime-500/90 to-green-700/90",
+  },
+  {
+    name: "American Football",
+    image: "https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=800&q=80",
+    color: "from-amber-600/90 to-brown-800/90",
+  },
+  {
+    name: "Golf",
+    image: "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80",
+    color: "from-sky-500/90 to-blue-700/90",
+  },
+  {
+    name: "MMA",
+    image: "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&q=80",
+    color: "from-red-600/90 to-red-900/90",
+  },
 ];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0 },
+};
 
 export default function LandingSections() {
   const router = useRouter();
 
   return (
     <>
-      {/* Mission Section */}
+      {/* Value Proposition Section */}
       <section className="relative py-24 px-6 overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: "url('/football.jpg')" }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/60 to-background/80" />
-        </div>
+        {/* Subtle background pattern */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background" />
 
         <div className="relative z-10 max-w-6xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full text-accent font-semibold mb-6">
+              <Target className="h-4 w-4" />
+              Why Choose Sportsblock
+            </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Why Sportsblock?
+              Built for{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
+                True Sports Fans
+              </span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              We created Sportsblock because we were tired of scrolling through pain, suffering,
-              political propaganda, and religious debates just to read about sports.
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              A sanctuary where your sports passion is celebrated, rewarded, and never drowned out by noise.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-50px" }}
+            className="grid md:grid-cols-3 gap-8"
+          >
             {[
-              {
-                icon: XCircle,
-                title: "No Distractions",
-                description: "No politics, no religion, no negativity. Just pure sports content that lets you escape reality.",
-                color: "text-red-500",
-                delay: 0.2
-              },
               {
                 icon: Heart,
                 title: "Pure Passion",
-                description: "Sports is about excitement, competition, and community. We keep the focus where it belongs.",
+                description:
+                  "No politics. No drama. Just sports content from fans who share your love for the game.",
                 color: "text-pink-500",
-                delay: 0.4
+                bg: "bg-pink-500/10",
+              },
+              {
+                icon: DollarSign,
+                title: "Earn While You Share",
+                description:
+                  "Every post has earning potential. Quality content gets rewarded with real crypto.",
+                color: "text-emerald-500",
+                bg: "bg-emerald-500/10",
               },
               {
                 icon: Shield,
-                title: "Your Safe Space",
-                description: "A dedicated platform where sports fans can share, discuss, and celebrate without interference.",
-                color: "text-accent",
-                delay: 0.6
-              }
+                title: "Truly Yours",
+                description:
+                  "Built on blockchain. Your content, your reputation, your earnings—all permanently yours.",
+                color: "text-blue-500",
+                bg: "bg-blue-500/10",
+              },
             ].map((item, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.6, delay: item.delay }}
-                whileHover={{ y: -10 }}
-                className="bg-card border rounded-xl p-8 hover:shadow-xl transition-all duration-300"
+                variants={itemVariants}
+                whileHover={{ y: -8, scale: 1.02 }}
+                transition={{ duration: 0.3 }}
+                className="bg-card border rounded-2xl p-8 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300"
               >
-                <item.icon className={`h-12 w-12 ${item.color} mb-4`} />
-                <h3 className="text-2xl font-semibold mb-3">{item.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+                <div className={`inline-flex p-3 ${item.bg} rounded-xl mb-5`}>
+                  <item.icon className={`h-7 w-7 ${item.color}`} />
+                </div>
+                <h3 className="text-2xl font-bold mb-3">{item.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {item.description}
+                </p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Blockchain Monetization Section */}
-      <section className="py-24 px-6 bg-muted/30">
+      {/* How Earnings Work Section */}
+      <section className="py-24 px-6 bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30">
         <div className="max-w-6xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
@@ -122,98 +172,154 @@ export default function LandingSections() {
               Powered by Hive Blockchain
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Get Paid for Your Opinions
+              Your Opinions Have{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">
+                Real Value
+              </span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Unlike traditional platforms, you don&apos;t need premium subscriptions or thousands
-              of followers to start earning. Every post has earning potential.
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              No premium subscriptions required. No follower thresholds. Start earning from day one.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left: How it works */}
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
+              initial={{ opacity: 0, x: -40 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
               className="space-y-6"
             >
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <DollarSign className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Earn $0.50 to $200+ Per Post</h3>
-                  <p className="text-muted-foreground">
-                    Your earnings are based purely on engagement. The more upvotes and interaction
-                    your content receives, the more you earn.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-accent" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">No Premium Required</h3>
-                  <p className="text-muted-foreground">
-                    Unlike X (Twitter) and other platforms, you don&apos;t need to pay for premium
-                    memberships or meet follower thresholds to monetize your content.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-purple-500/10 rounded-lg">
-                  <BarChart3 className="h-6 w-6 text-purple-500" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Transparent & Fair</h3>
-                  <p className="text-muted-foreground">
-                    Built on Hive blockchain technology, all rewards are transparent, immutable,
-                    and paid directly to you without middlemen.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl p-8 border-2 border-primary/30"
-            >
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold mb-2">Example Earnings</h3>
-                <p className="text-sm text-muted-foreground">Based on actual user data</p>
-              </div>
-
               {[
-                { engagement: "Low", upvotes: "10-20", earnings: "$0.50 - $2", color: "bg-yellow-500" },
-                { engagement: "Medium", upvotes: "50-100", earnings: "$5 - $20", color: "bg-accent" },
-                { engagement: "High", upvotes: "200-500", earnings: "$30 - $80", color: "bg-red-500" },
-                { engagement: "Viral", upvotes: "1000+", earnings: "$100 - $200+", color: "bg-purple-500" }
-              ].map((tier, index) => (
+                {
+                  icon: Flame,
+                  title: "Share Your Takes",
+                  description:
+                    "Post your sports opinions, analysis, and predictions. Quality content rises to the top.",
+                  step: "01",
+                },
+                {
+                  icon: TrendingUp,
+                  title: "Get Upvoted",
+                  description:
+                    "Community members vote on content they love. More engagement = more rewards.",
+                  step: "02",
+                },
+                {
+                  icon: DollarSign,
+                  title: "Earn Crypto",
+                  description:
+                    "Rewards are distributed in HIVE and HBD cryptocurrency. Cash out anytime.",
+                  step: "03",
+                },
+              ].map((item, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                  className="bg-card/50 backdrop-blur rounded-lg p-4 mb-3 flex items-center justify-between"
+                  transition={{ duration: 0.5, delay: index * 0.15 }}
+                  className="flex gap-5 items-start group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${tier.color}`} />
-                    <div>
-                      <div className="font-semibold">{tier.engagement} Engagement</div>
-                      <div className="text-sm text-muted-foreground">{tier.upvotes} upvotes</div>
+                  <div className="relative">
+                    <div className="w-14 h-14 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary/25 group-hover:scale-110 transition-transform">
+                      {item.step}
                     </div>
                   </div>
-                  <div className="text-lg font-bold text-primary">{tier.earnings}</div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                      <item.icon className="h-5 w-5 text-accent" />
+                      {item.title}
+                    </h3>
+                    <p className="text-muted-foreground">{item.description}</p>
+                  </div>
                 </motion.div>
               ))}
+            </motion.div>
+
+            {/* Right: Earnings Example */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="bg-card border-2 border-primary/20 rounded-3xl p-8 shadow-xl shadow-primary/5"
+            >
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold mb-2">Earning Potential</h3>
+                <p className="text-sm text-muted-foreground">
+                  Based on real user earnings
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  {
+                    level: "Getting Started",
+                    upvotes: "10-30 upvotes",
+                    earnings: "$0.50 - $3",
+                    color: "bg-blue-500",
+                    width: "w-1/4",
+                  },
+                  {
+                    level: "Building Reputation",
+                    upvotes: "50-150 upvotes",
+                    earnings: "$5 - $25",
+                    color: "bg-emerald-500",
+                    width: "w-1/2",
+                  },
+                  {
+                    level: "Established Creator",
+                    upvotes: "200-500 upvotes",
+                    earnings: "$30 - $100",
+                    color: "bg-orange-500",
+                    width: "w-3/4",
+                  },
+                  {
+                    level: "Top Contributor",
+                    upvotes: "1000+ upvotes",
+                    earnings: "$150 - $300+",
+                    color: "bg-purple-500",
+                    width: "w-full",
+                  },
+                ].map((tier, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                    className="group"
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold">{tier.level}</span>
+                      <span className="text-lg font-bold text-primary">
+                        {tier.earnings}
+                      </span>
+                    </div>
+                    <div className="h-3 bg-muted rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: "100%" }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, delay: index * 0.15 }}
+                        className={`h-full ${tier.color} ${tier.width} rounded-full`}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {tier.upvotes}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="mt-8 pt-6 border-t text-center">
+                <p className="text-sm text-muted-foreground">
+                  <Zap className="h-4 w-4 inline mr-1 text-accent" />
+                  Rewards paid in HIVE & HBD cryptocurrency
+                </p>
+              </div>
             </motion.div>
           </div>
         </div>
@@ -223,7 +329,7 @@ export default function LandingSections() {
       <section className="py-24 px-6 bg-background">
         <div className="max-w-6xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
@@ -234,123 +340,102 @@ export default function LandingSections() {
               MEDALS Token
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Stake, Earn & Unlock Premium
+              Stake & Unlock{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-500">
+                Premium Perks
+              </span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              MEDALS is our native utility token. Stake your tokens to earn passive rewards
-              and unlock exclusive premium features.
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              MEDALS is our community token. Stake to earn passive rewards and unlock exclusive features.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-start mb-16">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="space-y-6"
-            >
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-yellow-500/10 rounded-lg">
-                  <Coins className="h-6 w-6 text-yellow-500" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Stake for Passive Income</h3>
-                  <p className="text-muted-foreground">
-                    Stake your MEDALS tokens and earn weekly rewards. The more you stake,
-                    the larger your share of the reward pool.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-purple-500/10 rounded-lg">
-                  <Crown className="h-6 w-6 text-purple-500" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Unlock Premium Tiers</h3>
-                  <p className="text-muted-foreground">
-                    Progress through Bronze, Silver, Gold, and Platinum tiers to unlock
-                    exclusive features like ad-free browsing and priority curation.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <Gift className="h-6 w-6 text-accent" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Weekly Reward Distributions</h3>
-                  <p className="text-muted-foreground">
-                    Rewards are distributed every week to stakers, top content creators,
-                    and community curators. Multiple ways to earn.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="bg-gradient-to-br from-yellow-500/10 via-purple-500/10 to-primary/10 rounded-2xl p-8 border-2 border-yellow-500/30"
-            >
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold mb-2">Premium Tiers</h3>
-                <p className="text-sm text-muted-foreground">Stake MEDALS to unlock benefits</p>
-              </div>
-
-              {[
-                { tier: "Bronze", stake: "1,000", benefits: "Ad-free browsing, Bronze badge", icon: "🥉" },
-                { tier: "Silver", stake: "5,000", benefits: "Priority curation, Early access", icon: "🥈" },
-                { tier: "Gold", stake: "25,000", benefits: "Exclusive contests, Analytics", icon: "🥇" },
-                { tier: "Platinum", stake: "100,000", benefits: "Boosted visibility, VIP support", icon: "💎" }
-              ].map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                  className="bg-card/50 backdrop-blur rounded-lg p-4 mb-3 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{item.icon}</span>
-                    <div>
-                      <div className="font-semibold">{item.tier}</div>
-                      <div className="text-sm text-muted-foreground">{item.benefits}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-primary">{item.stake}</div>
-                    <div className="text-xs text-muted-foreground">MEDALS</div>
-                  </div>
-                </motion.div>
-              ))}
-
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  <Star className="h-4 w-4 inline mr-1 text-yellow-500" />
-                  Higher tiers include all lower-tier benefits
-                </p>
-              </div>
-            </motion.div>
-          </div>
-
+          {/* Premium Tiers Grid */}
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+          >
+            {[
+              {
+                tier: "Bronze",
+                stake: "1,000",
+                icon: "🥉",
+                benefits: ["Ad-free experience", "Bronze badge"],
+                color: "from-amber-600 to-amber-800",
+              },
+              {
+                tier: "Silver",
+                stake: "5,000",
+                icon: "🥈",
+                benefits: ["Priority curation", "Early access"],
+                color: "from-slate-400 to-slate-600",
+              },
+              {
+                tier: "Gold",
+                stake: "25,000",
+                icon: "🥇",
+                benefits: ["Exclusive contests", "Analytics dashboard"],
+                color: "from-yellow-500 to-amber-600",
+              },
+              {
+                tier: "Platinum",
+                stake: "100,000",
+                icon: "💎",
+                benefits: ["Boosted visibility", "VIP support"],
+                color: "from-cyan-400 to-blue-600",
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                variants={itemVariants}
+                whileHover={{ y: -8, scale: 1.03 }}
+                className="relative bg-card border rounded-2xl p-6 overflow-hidden group"
+              >
+                {/* Gradient top bar */}
+                <div
+                  className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${item.color}`}
+                />
+
+                <div className="text-4xl mb-4">{item.icon}</div>
+                <h3 className="text-xl font-bold mb-1">{item.tier}</h3>
+                <div className="flex items-baseline gap-1 mb-4">
+                  <span className="text-2xl font-bold text-primary">
+                    {item.stake}
+                  </span>
+                  <span className="text-sm text-muted-foreground">MEDALS</span>
+                </div>
+
+                <ul className="space-y-2">
+                  {item.benefits.map((benefit, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center gap-2 text-sm text-muted-foreground"
+                    >
+                      <CheckCircle className="h-4 w-4 text-accent flex-shrink-0" />
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Stats Row */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
             className="grid grid-cols-2 md:grid-cols-4 gap-4"
           >
             {[
-              { label: "Staking Rewards", value: "30K+", sublabel: "MEDALS/week", icon: Coins },
-              { label: "Content Rewards", value: "15K+", sublabel: "MEDALS/week", icon: Trophy },
-              { label: "Curator Rewards", value: "100", sublabel: "per quality vote", icon: Star },
-              { label: "Post of the Week", value: "2,000", sublabel: "MEDALS prize", icon: Gift }
+              { label: "Weekly Staking Rewards", value: "30K+", icon: Coins },
+              { label: "Content Creator Pool", value: "15K+", icon: Trophy },
+              { label: "Per Quality Vote", value: "100", icon: Star },
+              { label: "Post of the Week", value: "2,000", icon: Gift },
             ].map((stat, index) => (
               <motion.div
                 key={index}
@@ -358,12 +443,11 @@ export default function LandingSections() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-card border rounded-xl p-6 text-center hover:shadow-lg transition-shadow"
+                className="bg-gradient-to-br from-yellow-500/5 to-orange-500/5 border border-yellow-500/20 rounded-xl p-5 text-center"
               >
-                <stat.icon className="h-8 w-8 mx-auto mb-3 text-yellow-500" />
-                <div className="text-2xl font-bold text-primary">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.sublabel}</div>
-                <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
+                <stat.icon className="h-6 w-6 mx-auto mb-2 text-yellow-500" />
+                <div className="text-xl font-bold text-primary">{stat.value}</div>
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
               </motion.div>
             ))}
           </motion.div>
@@ -374,222 +458,189 @@ export default function LandingSections() {
       <section className="py-24 px-6 bg-muted/30">
         <div className="max-w-6xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-primary font-semibold mb-6">
-              <Filter className="h-4 w-4" />
-              Personalized Experience
-            </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Filter by Your Favorite Sports
+              Your Sports.{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
+                Your Feed.
+              </span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Only interested in tennis? Love basketball? You choose what you see.
-              No more scrolling through sports you don&apos;t care about.
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Follow the sports you love. Filter out the rest.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6"
+          >
             {sports.map((sport, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                variants={itemVariants}
                 whileHover={{ scale: 1.05, y: -5 }}
-                className="relative h-48 rounded-xl overflow-hidden cursor-pointer group"
+                className="relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer group shadow-lg"
               >
                 <div
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
                   style={{ backgroundImage: `url('${sport.image}')` }}
                 />
-                <div className={`absolute inset-0 bg-gradient-to-t ${sport.color} group-hover:opacity-90 transition-opacity`} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <h3 className="text-white text-xl font-bold text-center px-2">{sport.name}</h3>
+                <div
+                  className={`absolute inset-0 bg-gradient-to-t ${sport.color} opacity-70 group-hover:opacity-80 transition-opacity duration-300`}
+                />
+                <div className="absolute inset-0 flex items-end p-6">
+                  <h3 className="text-white text-xl md:text-2xl font-bold drop-shadow-lg">
+                    {sport.name}
+                  </h3>
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-center mt-12"
+            className="text-center mt-10 text-muted-foreground"
           >
-            <p className="text-lg text-muted-foreground mb-6">
-              And many more sports including Cricket, Baseball, Hockey, MMA, and more!
-            </p>
-          </motion.div>
+            Plus Cricket, Rugby, Hockey, Boxing, F1, and many more...
+          </motion.p>
         </div>
       </section>
 
       {/* Authentication CTA Section */}
-      <section className="py-24 px-6 bg-gradient-to-br from-primary/10 via-accent/10 to-accent/10">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-24 px-6 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        <div className="max-w-5xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Ready to Join the Arena?
+              Ready to{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">
+                Join the Arena?
+              </span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Connect with Hive blockchain using any wallet for full earning potential,
-              or use email/Google for instant access.
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Choose how you want to get started
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Hive Auth Card */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              whileHover={{ y: -10 }}
-              className="bg-card border-2 border-primary rounded-2xl p-6 relative overflow-hidden group"
+              whileHover={{ y: -8 }}
+              className="relative bg-card border-2 border-primary rounded-3xl p-8 overflow-hidden"
             >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500" />
-
-              <div className="relative">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 rounded-full text-primary text-sm font-semibold mb-4">
-                  Recommended
-                </div>
-
-                <Shield className="h-10 w-10 text-primary mb-3" />
-                <h3 className="text-xl font-bold mb-2">Hive Blockchain</h3>
-                <p className="text-muted-foreground mb-4 text-sm">
-                  Earn crypto rewards and participate in the decentralized sports community.
-                </p>
-
-                <div className="space-y-2 mb-4">
-                  {["Earn crypto rewards", "Vote on content", "Full community access", "Multiple wallet support"].map((benefit, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-accent" />
-                      <span>{benefit}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button
-                  className="w-full group"
-                  size="sm"
-                  onClick={() => router.push('/auth')}
-                >
-                  <Key className="h-4 w-4 mr-2" />
-                  Connect with Hive
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-
-                <p className="text-xs text-muted-foreground mt-3 text-center">
-                  Supports Keychain, HiveSigner, HiveAuth, Ledger & more
-                </p>
+              {/* Recommended badge */}
+              <div className="absolute top-4 right-4 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
+                RECOMMENDED
               </div>
+
+              <div className="p-3 bg-primary/10 rounded-xl w-fit mb-6">
+                <Key className="h-8 w-8 text-primary" />
+              </div>
+
+              <h3 className="text-2xl font-bold mb-3">Connect with Hive</h3>
+              <p className="text-muted-foreground mb-6">
+                Full platform access with earning capabilities. Use any Hive wallet.
+              </p>
+
+              <ul className="space-y-3 mb-8">
+                {[
+                  "Earn crypto rewards",
+                  "Vote & curate content",
+                  "Build on-chain reputation",
+                  "Multiple wallet support",
+                ].map((benefit, i) => (
+                  <li key={i} className="flex items-center gap-3 text-sm">
+                    <CheckCircle className="h-5 w-5 text-accent flex-shrink-0" />
+                    <span>{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Button
+                className="w-full py-6 text-lg group"
+                onClick={() => router.push("/auth")}
+              >
+                <Shield className="mr-2 h-5 w-5" />
+                Connect Wallet
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+
+              <p className="text-xs text-muted-foreground mt-4 text-center">
+                Keychain • HiveSigner • HiveAuth • Ledger
+              </p>
             </motion.div>
 
-            {/* Hive Wallets Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              whileHover={{ y: -10 }}
-              className="bg-card border rounded-2xl p-6 relative overflow-hidden group"
-            >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/10 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500" />
-
-              <div className="relative">
-                <Shield className="h-10 w-10 text-red-500 mb-3" />
-                <h3 className="text-xl font-bold mb-2">Hive Wallets</h3>
-                <p className="text-muted-foreground mb-4 text-sm">
-                  Connect with any Hive wallet for seamless authentication.
-                </p>
-
-                <div className="space-y-2 mb-4">
-                  {["Multiple wallet options", "Earn crypto rewards", "Full platform access"].map((benefit, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-accent" />
-                      <span>{benefit}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button
-                  variant="outline"
-                  className="w-full group"
-                  size="sm"
-                  onClick={() => router.push('/auth')}
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Choose Wallet
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-
-                <p className="text-xs text-muted-foreground mt-3 text-center">
-                  Keychain, HiveSigner, HiveAuth, Ledger, Peak Vault
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Google/Email Card */}
+            {/* Email/Google Card */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              whileHover={{ y: -10 }}
-              className="bg-card border rounded-2xl p-6 relative overflow-hidden group"
+              transition={{ duration: 0.6, delay: 0.2 }}
+              whileHover={{ y: -8 }}
+              className="bg-card border rounded-3xl p-8"
             >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500" />
-
-              <div className="relative">
-                <User className="h-10 w-10 text-accent mb-3" />
-                <h3 className="text-xl font-bold mb-2">Email & Google</h3>
-                <p className="text-muted-foreground mb-4 text-sm">
-                  Quick signup with email or Google account for instant access.
-                </p>
-
-                <div className="space-y-2 mb-4">
-                  {["Instant access", "Read and create posts", "Upgrade to Hive later"].map((benefit, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-accent" />
-                      <span>{benefit}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button
-                  variant="outline"
-                  className="w-full group"
-                  size="sm"
-                  onClick={() => router.push('/auth')}
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Sign up with Email
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-
-                <p className="text-xs text-muted-foreground mt-3 text-center">
-                  Upgrade to Hive anytime for earnings
-                </p>
+              <div className="p-3 bg-accent/10 rounded-xl w-fit mb-6">
+                <User className="h-8 w-8 text-accent" />
               </div>
+
+              <h3 className="text-2xl font-bold mb-3">Quick Start</h3>
+              <p className="text-muted-foreground mb-6">
+                Jump in instantly with your email or Google account.
+              </p>
+
+              <ul className="space-y-3 mb-8">
+                {[
+                  "Instant access",
+                  "Read & explore content",
+                  "Upgrade to Hive anytime",
+                ].map((benefit, i) => (
+                  <li key={i} className="flex items-center gap-3 text-sm">
+                    <CheckCircle className="h-5 w-5 text-accent flex-shrink-0" />
+                    <span>{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Button
+                variant="outline"
+                className="w-full py-6 text-lg group"
+                onClick={() => router.push("/auth")}
+              >
+                <User className="mr-2 h-5 w-5" />
+                Sign up with Email
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+
+              <p className="text-xs text-muted-foreground mt-4 text-center">
+                Email • Google • Upgrade to earn later
+              </p>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Footer CTA */}
-      <section className="py-16 px-6 bg-background border-t">
+      {/* Final CTA */}
+      <section className="py-20 px-6 bg-gradient-to-r from-fibonacci-blue via-bright-cobalt to-fibonacci-blue text-white">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -597,18 +648,18 @@ export default function LandingSections() {
           transition={{ duration: 0.8 }}
           className="max-w-4xl mx-auto text-center"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Join the Community?
+          <h2 className="text-3xl md:text-5xl font-bold mb-6">
+            The Arena Awaits
           </h2>
-          <p className="text-lg text-muted-foreground mb-8">
-            Start sharing your sports passion and earning rewards in minutes.
+          <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
+            Join thousands of sports fans already earning from their passion.
           </p>
           <Button
             size="lg"
-            className="text-lg px-8 py-6"
-            onClick={() => router.push('/auth')}
+            className="text-lg px-12 py-7 bg-accent hover:bg-accent/90 text-white font-semibold shadow-2xl shadow-accent/30 hover:shadow-accent/50 transition-all duration-300 hover:scale-105"
+            onClick={() => router.push("/auth")}
           >
-            Get Started Now
+            Get Started Free
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </motion.div>

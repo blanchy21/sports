@@ -556,11 +556,50 @@ export const useAuthPage = (): UseAuthPageResult => {
     setErrorMessage(null);
 
     try {
+      // Extract username from various possible locations in the result
+      // AiohaModal's LoginResult may have different shapes depending on provider
+      const rawResult = result as unknown as Record<string, unknown>;
+
+      // Try multiple extraction paths for the username
+      let username: string | undefined = result.username;
+
+      // Try nested result object (some providers return { result: { username } })
+      if (!username && rawResult.result && typeof rawResult.result === 'object') {
+        const nestedResult = rawResult.result as Record<string, unknown>;
+        username = (nestedResult.username as string) || (nestedResult.name as string);
+      }
+
+      // Try user object
+      if (!username && rawResult.user && typeof rawResult.user === 'object') {
+        const userObj = rawResult.user as Record<string, unknown>;
+        username = (userObj.username as string) || (userObj.name as string);
+      }
+
+      // Try account object
+      if (!username && rawResult.account && typeof rawResult.account === 'object') {
+        const accountObj = rawResult.account as Record<string, unknown>;
+        username = (accountObj.name as string) || (accountObj.username as string);
+      }
+
+      // Fallback: try to get username from aioha instance after successful modal login
+      if (!username && aioha) {
+        const aiohaInstance = aioha as {
+          getCurrentUser?: () => string;
+          user?: { username?: string };
+          username?: string;
+        };
+        username = aiohaInstance.getCurrentUser?.()
+          || aiohaInstance.user?.username
+          || aiohaInstance.username;
+      }
+
       // Convert LoginResult to the format expected by loginWithAioha
       const loginResult: AiohaLoginResult = {
-        username: result.username,
+        username: username,
         provider: result.provider,
         success: true,
+        // Pass through the raw result for additional extraction attempts
+        ...rawResult,
       };
 
       await loginWithAioha(loginResult);
@@ -572,7 +611,7 @@ export const useAuthPage = (): UseAuthPageResult => {
     } finally {
       setIsConnecting(false);
     }
-  }, [loginWithAioha, router]);
+  }, [loginWithAioha, router, aioha]);
 
   return {
     mode,

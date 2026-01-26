@@ -223,8 +223,15 @@ export class FirebaseAuth {
         createdAt: new Date(),
         updatedAt: new Date()
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      // Log detailed error info for debugging
       console.error('Firebase Google signin error:', error);
+      if (error && typeof error === 'object') {
+        const firebaseError = error as { code?: string; message?: string; customData?: unknown };
+        console.error('Error code:', firebaseError.code);
+        console.error('Error message:', firebaseError.message);
+        console.error('Custom data:', firebaseError.customData);
+      }
       throw error;
     }
   }

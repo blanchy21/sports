@@ -1,13 +1,19 @@
+"use client";
+
 import React from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Info } from "lucide-react";
 import type { AuthMode, EmailFormState } from "../hooks/useAuthPage";
 
 interface EmailAuthSectionProps {
   mode: AuthMode;
   values: EmailFormState;
   isConnecting: boolean;
-  onFieldChange: <K extends keyof EmailFormState>(field: K, value: EmailFormState[K]) => void;
+  onFieldChange: <K extends keyof EmailFormState>(
+    field: K,
+    value: EmailFormState[K]
+  ) => void;
   onSubmit: () => void;
   onToggleMode: () => void;
   onTogglePasswordVisibility: () => void;
@@ -35,7 +41,7 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
           onClick={onGoogleSignIn}
           disabled={isConnecting}
           variant="outline"
-          className="w-full h-12 text-base font-medium border-input hover:bg-accent flex items-center justify-center gap-3"
+          className="w-full h-12 text-base font-medium border-border hover:bg-muted/50 flex items-center justify-center gap-3 rounded-xl transition-all duration-200 hover:scale-[1.01]"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
@@ -58,39 +64,53 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
           Continue with Google
         </Button>
 
-        <div className="relative">
+        <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+            <span className="bg-background px-3 text-muted-foreground">
+              Or with email
+            </span>
           </div>
         </div>
       </>
     )}
 
-    <div>
-      <label htmlFor="email" className="sr-only">Email address</label>
+    {/* Email Input */}
+    <div className="relative group">
+      <label htmlFor="email" className="sr-only">
+        Email address
+      </label>
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+        <Mail className="h-5 w-5" />
+      </div>
       <input
         id="email"
         type="email"
         value={values.email}
         onChange={(event) => onFieldChange("email", event.target.value)}
-        className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-background text-foreground"
+        className="w-full pl-12 pr-4 py-3.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-background text-foreground transition-all duration-200 placeholder:text-muted-foreground"
         placeholder="Email address"
         autoComplete="email"
         required
       />
     </div>
 
-    <div className="relative">
-      <label htmlFor="password" className="sr-only">Password</label>
+    {/* Password Input */}
+    <div className="relative group">
+      <label htmlFor="password" className="sr-only">
+        Password
+      </label>
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+        <Lock className="h-5 w-5" />
+      </div>
       <input
         id="password"
         type={values.showPassword ? "text" : "password"}
         value={values.password}
         onChange={(event) => onFieldChange("password", event.target.value)}
-        className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none pr-12 bg-background text-foreground"
+        className="w-full pl-12 pr-12 py-3.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-background text-foreground transition-all duration-200 placeholder:text-muted-foreground"
         placeholder="Password"
         autoComplete={mode === "login" ? "current-password" : "new-password"}
         required
@@ -99,36 +119,48 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
       <button
         type="button"
         onClick={onTogglePasswordVisibility}
-        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
         aria-label={values.showPassword ? "Hide password" : "Show password"}
       >
-        {values.showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        {values.showPassword ? (
+          <EyeOff className="h-5 w-5" />
+        ) : (
+          <Eye className="h-5 w-5" />
+        )}
       </button>
     </div>
 
+    {/* Forgot Password Link */}
     {mode === "login" && onForgotPassword && (
       <div className="text-right">
         <button
           type="button"
           onClick={onForgotPassword}
           disabled={isConnecting}
-          className="text-sm text-primary hover:underline font-medium disabled:opacity-50"
+          className="text-sm text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
         >
           Forgot password?
         </button>
       </div>
     )}
 
+    {/* Signup-only fields */}
     {mode === "signup" && (
       <>
-        <div>
-          <label htmlFor="username" className="sr-only">Username</label>
+        {/* Username Input */}
+        <div className="relative group">
+          <label htmlFor="username" className="sr-only">
+            Username
+          </label>
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+            <User className="h-5 w-5" />
+          </div>
           <input
             id="username"
             type="text"
             value={values.username}
             onChange={(event) => onFieldChange("username", event.target.value)}
-            className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-background text-foreground"
+            className="w-full pl-12 pr-4 py-3.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-background text-foreground transition-all duration-200 placeholder:text-muted-foreground"
             placeholder="Choose a username"
             autoComplete="username"
             required
@@ -138,85 +170,126 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
           />
         </div>
 
-        <div>
-          <label htmlFor="displayName" className="sr-only">Display name (optional)</label>
+        {/* Display Name Input */}
+        <div className="relative group">
+          <label htmlFor="displayName" className="sr-only">
+            Display name (optional)
+          </label>
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+            <User className="h-5 w-5" />
+          </div>
           <input
             id="displayName"
             type="text"
             value={values.displayName}
-            onChange={(event) => onFieldChange("displayName", event.target.value)}
-            className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-background text-foreground"
+            onChange={(event) =>
+              onFieldChange("displayName", event.target.value)
+            }
+            className="w-full pl-12 pr-4 py-3.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-background text-foreground transition-all duration-200 placeholder:text-muted-foreground"
             placeholder="Display name (optional)"
             autoComplete="name"
             maxLength={64}
           />
         </div>
+
+        {/* Terms & Newsletter */}
+        <div className="space-y-3 pt-2">
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={values.acceptTerms}
+              onChange={(event) =>
+                onFieldChange("acceptTerms", event.target.checked)
+              }
+              className="mt-1 h-4 w-4 text-primary focus:ring-primary/20 border-input rounded cursor-pointer"
+              required
+            />
+            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+              I agree to the{" "}
+              <a href="#" className="text-primary hover:underline font-medium">
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a href="#" className="text-primary hover:underline font-medium">
+                Privacy Policy
+              </a>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={values.subscribeNewsletter}
+              onChange={(event) =>
+                onFieldChange("subscribeNewsletter", event.target.checked)
+              }
+              className="mt-1 h-4 w-4 text-primary focus:ring-primary/20 border-input rounded cursor-pointer"
+            />
+            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+              Subscribe to our newsletter for sports updates and earning tips
+            </span>
+          </label>
+        </div>
       </>
     )}
 
-    {mode === "signup" && (
-      <div className="space-y-3">
-        <label className="flex items-start space-x-3">
-          <input
-            type="checkbox"
-            checked={values.acceptTerms}
-            onChange={(event) => onFieldChange("acceptTerms", event.target.checked)}
-            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
-            required
-          />
-          <span className="text-sm text-slate-600">
-            I agree to the{" "}
-            <a href="#" className="text-blue-600 hover:underline">
-              Terms of Service
-            </a>{" "}
-            and{" "}
-            <a href="#" className="text-blue-600 hover:underline">
-              Privacy Policy
-            </a>
-          </span>
-        </label>
-
-        <label className="flex items-start space-x-3">
-          <input
-            type="checkbox"
-            checked={values.subscribeNewsletter}
-            onChange={(event) => onFieldChange("subscribeNewsletter", event.target.checked)}
-            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
-          />
-          <span className="text-sm text-slate-600">
-            Subscribe to our newsletter for sports updates and earning tips
-          </span>
-        </label>
-      </div>
-    )}
-
+    {/* Submit Button */}
     <Button
       onClick={onSubmit}
       disabled={isConnecting}
-      className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
+      className="w-full h-12 text-base font-semibold bg-accent hover:bg-accent/90 text-white disabled:opacity-50 rounded-xl shadow-lg shadow-accent/20 hover:shadow-accent/30 transition-all duration-300 hover:scale-[1.02] group mt-2"
     >
-      {isConnecting ? "Processing..." : mode === "login" ? "Sign In" : "Create Account"}
+      {isConnecting ? (
+        <span className="flex items-center gap-2">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+          />
+          Processing...
+        </span>
+      ) : (
+        <span className="flex items-center gap-2">
+          {mode === "login" ? "Sign In" : "Create Account"}
+          <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+        </span>
+      )}
     </Button>
 
-    <p className="text-center text-sm text-muted-foreground">
+    {/* Toggle Mode Link */}
+    <p className="text-center text-sm text-muted-foreground pt-2">
       {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-      <button onClick={onToggleMode} className="text-primary hover:underline font-medium">
+      <button
+        onClick={onToggleMode}
+        className="text-primary hover:text-primary/80 font-semibold transition-colors"
+      >
         {mode === "login" ? "Sign up" : "Sign in"}
       </button>
     </p>
 
+    {/* Info box for signup */}
     {mode === "signup" && (
-      <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-border">
-        <div className="flex items-start space-x-2">
-          <div className="w-4 h-4 text-muted-foreground mt-0.5 text-sm">ℹ️</div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+        className="mt-6 p-4 bg-muted/30 rounded-xl border border-border"
+      >
+        <div className="flex items-start gap-3">
+          <div className="p-1.5 bg-primary/10 rounded-lg">
+            <Info className="h-4 w-4 text-primary" />
+          </div>
           <div>
-            <h4 className="font-medium text-sm text-foreground">Email Account Benefits</h4>
-            <p className="text-xs text-muted-foreground mt-1">
-              Start exploring immediately! You can always upgrade to a Hive account later to unlock earning rewards.
+            <h4 className="font-medium text-sm text-foreground mb-1">
+              Email Account Benefits
+            </h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Start exploring immediately! You can upgrade to a Hive account
+              later to unlock earning rewards and full blockchain features.
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
     )}
   </div>
 );
