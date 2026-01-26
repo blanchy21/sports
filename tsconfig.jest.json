@@ -9,6 +9,6 @@
     "isolatedModules": false,
     "noEmit": true
   },
-  "include": ["jest.setup.ts", "src/**/*", "tests/**/*", "__tests__/**/*"],
+  "include": ["jest.setup.ts", "src/**/*", "tests/**/*", "__tests__/**/*", "tests/mocks/**/*"],
   "exclude": ["node_modules", ".next"]
 }

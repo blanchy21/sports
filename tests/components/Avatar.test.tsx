@@ -21,17 +21,21 @@ describe('Avatar', () => {
     expect(image).toHaveAttribute('src', 'https://example.com/avatar.jpg');
   });
 
-  it('renders first letter of fallback when no src provided', () => {
+  it('renders DiceBear avatar when no src provided but fallback exists', () => {
     renderWithProviders(<Avatar fallback="John Doe" alt="User avatar" />);
 
-    // Component shows first letter only
-    expect(screen.getByText('J')).toBeInTheDocument();
+    // Component generates a DiceBear avatar from the fallback name
+    const image = screen.getByTestId('avatar-image');
+    expect(image).toBeInTheDocument();
+    expect(image.getAttribute('src')).toContain('dicebear.com');
   });
 
-  it('renders single letter fallback for single word name', () => {
+  it('renders DiceBear avatar for single word fallback', () => {
     renderWithProviders(<Avatar fallback="John" alt="User avatar" />);
 
-    expect(screen.getByText('J')).toBeInTheDocument();
+    const image = screen.getByTestId('avatar-image');
+    expect(image).toBeInTheDocument();
+    expect(image.getAttribute('src')).toContain('dicebear.com');
   });
 
   it('applies size classes correctly', () => {
@@ -68,10 +72,12 @@ describe('Avatar', () => {
     expect(image).toHaveAttribute('alt', 'Profile picture');
   });
 
-  it('handles empty src string as no image', () => {
+  it('handles empty src string by using DiceBear fallback', () => {
     renderWithProviders(<Avatar src="" fallback="Test User" alt="Test" />);
 
-    // Component shows first letter only
-    expect(screen.getByText('T')).toBeInTheDocument();
+    // Component generates a DiceBear avatar from the fallback name when src is empty
+    const image = screen.getByTestId('avatar-image');
+    expect(image).toBeInTheDocument();
+    expect(image.getAttribute('src')).toContain('dicebear.com');
   });
 });

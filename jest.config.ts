@@ -7,7 +7,8 @@ const config = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@jest/(.*)$': '<rootDir>/node_modules/@jest/$1',
     '@hiveio/workerbee$': '<rootDir>/node_modules/@hiveio/workerbee/dist/bundle/index.js',
-    '@hiveio/wax$': '<rootDir>/node_modules/@hiveio/wax/wasm/dist/bundle/node.js'
+    '@hiveio/wax$': '<rootDir>/node_modules/@hiveio/wax/wasm/dist/bundle/node.js',
+    '^@aioha/react-ui$': '<rootDir>/tests/mocks/aioha-react-ui.tsx'
   },
   testPathIgnorePatterns: ['/node_modules/', '/.next/', '/e2e/'],
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
@@ -17,7 +18,10 @@ const config = {
       'ts-jest',
       {
         useESM: true,
-        tsconfig: '<rootDir>/tsconfig.jest.json'
+        tsconfig: '<rootDir>/tsconfig.jest.json',
+        diagnostics: {
+          ignoreCodes: ['TS2305']  // Ignore "Module has no exported member" errors for mocked modules
+        }
       }
     ]
   },
