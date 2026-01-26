@@ -50,6 +50,7 @@ Don't just tell me how you'll solve it. *Show me*.
 
 Sportsblock is a Next.js 15 (App Router) sports content platform integrated with the Hive blockchain. Users can authenticate via Hive wallets (Keychain, HiveSigner, HiveAuth) or Firebase email, then read and publish sports-related posts to the Hive blockchain.
 
+
 ## Commands
 
 ```bash
@@ -161,3 +162,12 @@ External images are proxied through `/api/image-proxy` to handle CORS. Allowed d
 - WorkerBee integration tests skipped by default (require `RUN_WORKERBEE_TESTS=true`)
 - E2E tests can set `PLAYWRIGHT_HIVE_USERNAME` for authenticated flows
 - Test utilities in `tests/test-utils.tsx` and `tests/api/test-server.ts`
+
+## Playwright / Browser Testing Restrictions
+
+**DO NOT use Playwright MCP tools to test this application.** The app requires the Hive Keychain browser extension for authentication, which is not available in Playwright's browser environment. Attempting to test with Playwright will result in:
+- Infinite login modal loops (Keychain not detected)
+- Inability to authenticate users
+- Blocked UI flows that require wallet connection
+
+For manual testing, use a real browser with Hive Keychain installed, or use the Firebase email auth flow for basic testing.

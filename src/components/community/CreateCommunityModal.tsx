@@ -122,7 +122,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
     if (!user) return;
 
     try {
-      const community = await createCommunityMutation.mutateAsync({
+      const { community } = await createCommunityMutation.mutateAsync({
         input: {
           name: formData.name.trim(),
           about: formData.about.trim(),

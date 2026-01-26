@@ -18,17 +18,20 @@ import {
   BookOpen,
   BarChart3,
   Users,
-  UserPlus
+  UserPlus,
+  Users2
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserProfilePopup } from "@/components/UserProfilePopup";
 import { Avatar } from "@/components/ui/Avatar";
+import { MyCommunitiesWidget } from "@/components/community/MyCommunitiesWidget";
 
 const navigationItems = [
   { href: "/", icon: Star, label: "Featured", requireAuth: false, featured: true },
   { href: "/new", icon: Clock, label: "New", requireAuth: false, featured: true },
   { href: "/discover", icon: Compass, label: "Discover", requireAuth: false, featured: true },
   { href: "/feed", icon: BookOpen, label: "Feed", requireAuth: false, featured: true },
+  { href: "/communities", icon: Users2, label: "Communities", requireAuth: false, featured: true },
   { href: "/shorts", icon: Zap, label: "Shorts", requireAuth: false },
   { href: "/bookmarks", icon: Bookmark, label: "Bookmarks", requireAuth: false },
   { href: "/publish", icon: Edit, label: "Publish", requireAuth: false },
@@ -84,6 +87,9 @@ export const Sidebar: React.FC = () => {
             );
           })}
         </nav>
+
+        {/* My Communities Widget */}
+        <MyCommunitiesWidget maxItems={5} />
 
         {/* User Profile Section at Bottom */}
         {user && (

@@ -14,11 +14,12 @@ import {
   Users,
   Search,
   X,
-  Menu
+  Menu,
+  Newspaper
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { LazyAuthModal, LazySportsFilterPopup, LazyUpgradeFlow, LazyNotificationDropdown, LazySettingsDropdown } from "@/components/lazy/LazyComponents";
+import { LazyAuthModal, LazySportsFilterPopup, LazyUpgradeFlow, LazyNotificationDropdown, LazySettingsDropdown, LazyLatestNewsDropdown } from "@/components/lazy/LazyComponents";
 import { UpgradePrompt } from "@/components/AccountBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -52,8 +53,10 @@ export const TopNavigation: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showNews, setShowNews] = useState(false);
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
   const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const newsButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const handleSportSelect = (sportId: string) => {
     setSelectedSport(sportId);
@@ -221,6 +224,25 @@ export const TopNavigation: React.FC = () => {
                 <span className="text-[10px] xl:text-xs mt-0.5 font-medium">Community</span>
               </Link>
 
+              {/* Latest News Button */}
+              <div className="relative">
+                <Button
+                  ref={newsButtonRef}
+                  variant="ghost"
+                  onClick={() => setShowNews(!showNews)}
+                  className="flex flex-col items-center justify-center h-auto px-4 py-2 xl:px-5 xl:py-3 text-white/90 hover:bg-white/20 hover:text-white transition-all duration-200 rounded-lg"
+                >
+                  <Newspaper className="h-6 w-6 xl:h-8 xl:w-8" />
+                  <span className="text-[10px] xl:text-xs mt-0.5 font-medium">News</span>
+                </Button>
+
+                <LazyLatestNewsDropdown
+                  isOpen={showNews}
+                  onClose={() => setShowNews(false)}
+                  triggerRef={newsButtonRef}
+                />
+              </div>
+
               {/* Sports Filter Button */}
               <Button
                 variant="ghost"
@@ -386,6 +408,17 @@ export const TopNavigation: React.FC = () => {
             <button
               onClick={() => {
                 setShowMobileMenu(false);
+                setShowNews(true);
+              }}
+              className="flex items-center space-x-3 px-4 py-3 rounded-lg text-white/90 hover:bg-white/20 transition-all duration-200 w-full text-left"
+            >
+              <Newspaper className="h-5 w-5" />
+              <span>Latest News</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setShowMobileMenu(false);
                 setShowSportsPopup(true);
               }}
               className="flex items-center space-x-3 px-4 py-3 rounded-lg text-white/90 hover:bg-white/20 transition-all duration-200 w-full text-left"
@@ -435,6 +468,15 @@ export const TopNavigation: React.FC = () => {
         isOpen={showUpgradeFlow}
         onClose={() => setShowUpgradeFlow(false)}
       />
+
+      {/* Mobile News Dropdown - rendered as modal on mobile */}
+      <div className="lg:hidden">
+        <LazyLatestNewsDropdown
+          isOpen={showNews}
+          onClose={() => setShowNews(false)}
+          triggerRef={newsButtonRef}
+        />
+      </div>
 
       {/* Upgrade Prompt for soft users */}
       {user && !user.isHiveAuth && showUpgradePrompt && (

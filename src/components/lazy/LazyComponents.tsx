@@ -128,3 +128,10 @@ const LazySettingsDropdownBase = dynamic(
   { ssr: false }
 );
 export const LazySettingsDropdown = withLazyErrorBoundary(LazySettingsDropdownBase, 'SettingsDropdown');
+
+// Lazy load LatestNewsDropdown (uses ESPN API, only shown when news opened)
+const LazyLatestNewsDropdownBase = dynamic(
+  () => import('@/components/LatestNewsDropdown').then(mod => ({ default: mod.LatestNewsDropdown })),
+  { ssr: false }
+);
+export const LazyLatestNewsDropdown = withLazyErrorBoundary(LazyLatestNewsDropdownBase, 'LatestNewsDropdown');

@@ -20,6 +20,8 @@ const listMembersSchema = z.object({
   status: z.enum(['active', 'pending', 'banned']).optional(),
   role: z.enum(['admin', 'moderator', 'member']).optional(),
   limit: z.string().optional().transform((val) => val ? parseInt(val, 10) : 50),
+  // Optional: lookup a specific user's membership
+  userId: z.string().optional(),
 });
 
 const joinRequestSchema = z.object({
@@ -59,15 +61,29 @@ export async function GET(
       return validationError(parseResult.error, ctx.requestId);
     }
 
-    const { status, role, limit } = parseResult.data;
-
-    ctx.log.debug('Listing community members', { communityId, status, role, limit });
+    const { status, role, limit, userId } = parseResult.data;
 
     // Check if community exists
     const community = await FirebaseCommunitiesAdmin.getCommunityById(communityId);
     if (!community) {
       return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
     }
+
+    // If userId is provided, lookup single membership directly
+    if (userId) {
+      ctx.log.debug('Looking up single membership', { communityId, userId });
+
+      const membership = await FirebaseCommunitiesAdmin.getMembership(communityId, userId);
+
+      return NextResponse.json({
+        success: true,
+        membership: membership || null,
+        isMember: !!membership && membership.status === 'active',
+      });
+    }
+
+    // Otherwise, list all members
+    ctx.log.debug('Listing community members', { communityId, status, role, limit });
 
     const members = await FirebaseCommunitiesAdmin.getCommunityMembers(communityId, {
       status: status as CommunityMemberStatus | undefined,

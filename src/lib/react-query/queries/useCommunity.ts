@@ -63,8 +63,12 @@ async function checkMembershipAPI(
   userId: string
 ): Promise<CommunityMember | null> {
   try {
-    const members = await fetchCommunityMembersAPI(communityId, { limit: 1000 });
-    return members.find((m) => m.userId === userId) || null;
+    const response = await fetch(`/api/communities/${communityId}/members?userId=${encodeURIComponent(userId)}`);
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    return data.membership || null;
   } catch {
     return null;
   }
@@ -151,10 +155,19 @@ export function useCreateCommunity() {
       }
 
       const data = await response.json();
-      return data.community as Community;
+      return { community: data.community as Community, creatorId };
     },
-    onSuccess: () => {
+    onSuccess: ({ community, creatorId }) => {
+      // Invalidate communities list
       queryClient.invalidateQueries({ queryKey: queryKeys.communities.all });
+      // Invalidate the new community's membership query so it fetches the creator's admin membership
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.communities.detail(community.id), 'membership', creatorId],
+      });
+      // Invalidate the community members list
+      queryClient.invalidateQueries({ queryKey: queryKeys.communities.members(community.id) });
+      // Invalidate user communities list
+      queryClient.invalidateQueries({ queryKey: ['userCommunities', creatorId] });
     },
   });
 }

@@ -143,6 +143,24 @@ function PublishPageContent() {
     }
   }, [searchParams, user]);
 
+  // Pre-select community from URL parameter
+  React.useEffect(() => {
+    const communitySlug = searchParams.get("community");
+    if (communitySlug && !selectedCommunity) {
+      // Find community in user communities or all communities
+      const allAvailableCommunities = [
+        ...(userCommunities || []),
+        ...(allCommunities?.communities || []),
+      ];
+      const community = allAvailableCommunities.find(
+        (c) => c.slug === communitySlug || c.id === communitySlug
+      );
+      if (community) {
+        setSelectedCommunity(community);
+      }
+    }
+  }, [searchParams, userCommunities, allCommunities, selectedCommunity]);
+
   // Close menu on click outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
