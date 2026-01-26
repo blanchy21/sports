@@ -59,7 +59,7 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
         request.resource.data.authorId == request.auth.uid &&
         validString(request.resource.data.title, 500) &&
-        validString(request.resource.data.body, 100000);
+        validString(request.resource.data.content, 100000);
       allow update: if isAuthenticated() &&
         resource.data.authorId == request.auth.uid;
       allow delete: if isAuthenticated() &&

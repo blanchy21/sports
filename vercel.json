@@ -15,6 +15,14 @@
     {
       "path": "/api/cron/staking-rewards",
       "schedule": "0 0 * * 0"
+    },
+    {
+      "path": "/api/cron/inactivity-check",
+      "schedule": "0 2 * * 3"
+    },
+    {
+      "path": "/api/cron/notification-cleanup",
+      "schedule": "0 3 * * *"
     }
   ]
 }

@@ -38,19 +38,23 @@ let validationRun = false;
 
 /**
  * Public environment variables (available on client)
+ *
+ * IMPORTANT: Next.js requires static access to NEXT_PUBLIC_* variables
+ * to inline them in the client bundle. Do NOT use dynamic access like
+ * process.env[key] for these variables.
  */
 export const publicEnv = {
   firebase: {
-    apiKey: getOptionalEnv('NEXT_PUBLIC_FIREBASE_API_KEY'),
-    authDomain: getOptionalEnv('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'),
-    projectId: getOptionalEnv('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
-    storageBucket: getOptionalEnv('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),
-    messagingSenderId: getOptionalEnv('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
-    appId: getOptionalEnv('NEXT_PUBLIC_FIREBASE_APP_ID'),
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   },
   debug: {
-    notifications: getOptionalEnv('NEXT_PUBLIC_NOTIFICATIONS_DEBUG') === 'true',
-    workerbee: getOptionalEnv('NEXT_PUBLIC_WORKERBEE_DEBUG') === 'true',
+    notifications: process.env.NEXT_PUBLIC_NOTIFICATIONS_DEBUG === 'true',
+    workerbee: process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true',
   },
 } as const;
 
