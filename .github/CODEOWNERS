@@ -1,0 +1,6 @@
+# Default owner for everything in the repo
+* @paulblanche
+
+# Specific paths can have different owners
+# /src/lib/hive-workerbee/ @blockchain-team
+# /src/components/ @frontend-team

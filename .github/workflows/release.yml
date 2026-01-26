@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Generate Release Notes
+        id: release_notes
+        env:
+          REPO: ${{ github.repository }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          # Get the previous tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            # First release - get all commits
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            # Get commits since last tag
+            COMMITS=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          # Categorize commits
+          FEATURES=$(echo "$COMMITS" | grep -iE "^- (feat|add|new)" || true)
+          FIXES=$(echo "$COMMITS" | grep -iE "^- (fix|bug|patch)" || true)
+          IMPROVEMENTS=$(echo "$COMMITS" | grep -iE "^- (improve|update|enhance|refactor)" || true)
+          DOCS=$(echo "$COMMITS" | grep -iE "^- (doc|readme)" || true)
+          OTHER=$(echo "$COMMITS" | grep -ivE "^- (feat|add|new|fix|bug|patch|improve|update|enhance|refactor|doc|readme)" || true)
+
+          # Build release notes
+          NOTES=""
+
+          if [ -n "$FEATURES" ]; then
+            NOTES="${NOTES}## ✨ New Features\n${FEATURES}\n\n"
+          fi
+
+          if [ -n "$FIXES" ]; then
+            NOTES="${NOTES}## 🐛 Bug Fixes\n${FIXES}\n\n"
+          fi
+
+          if [ -n "$IMPROVEMENTS" ]; then
+            NOTES="${NOTES}## 🔧 Improvements\n${IMPROVEMENTS}\n\n"
+          fi
+
+          if [ -n "$DOCS" ]; then
+            NOTES="${NOTES}## 📚 Documentation\n${DOCS}\n\n"
+          fi
+
+          if [ -n "$OTHER" ]; then
+            NOTES="${NOTES}## 📦 Other Changes\n${OTHER}\n\n"
+          fi
+
+          # Add footer using env vars
+          NOTES="${NOTES}---\n\n**Full Changelog**: https://github.com/${REPO}/compare/${PREVIOUS_TAG}...${TAG_NAME}"
+
+          # Save to file for multi-line output
+          echo -e "$NOTES" > release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

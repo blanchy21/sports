@@ -1,23 +1,20 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { TrendingUp, Users, Calendar, Trophy, Star, AlertCircle, RefreshCw } from "lucide-react";
-import { useRealtimeEvents } from "@/hooks/useUpcomingEvents";
-import { useAuth } from "@/contexts/AuthContext";
-import { useFollowUser, useUnfollowUser } from "@/lib/react-query/queries/useFollowers";
-import { useIsFollowingUser } from "@/lib/react-query/queries/useUserProfile";
-import { useSidebarAnalytics } from "@/lib/react-query/queries/useSidebarAnalytics";
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { TrendingUp, Users, Calendar, Trophy, Star, AlertCircle, RefreshCw } from 'lucide-react';
+import { useRealtimeEvents } from '@/hooks/useUpcomingEvents';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFollowUser, useUnfollowUser } from '@/lib/react-query/queries/useFollowers';
+import { useIsFollowingUser } from '@/lib/react-query/queries/useUserProfile';
+import { useSidebarAnalytics } from '@/lib/react-query/queries/useSidebarAnalytics';
 
 export const RightSidebar: React.FC = () => {
   const { user } = useAuth();
-  
+
   // Use React Query for analytics data - cached across navigations
-  const { 
-    data: analyticsData, 
-    isLoading, 
-    error: analyticsError 
-  } = useSidebarAnalytics();
-  
+  const { data: analyticsData, isLoading, error: analyticsError } = useSidebarAnalytics();
+
   // Extract data from cached query
   const trendingSports = analyticsData?.trendingSports || [];
   const trendingTopics = analyticsData?.trendingTopics || [];
@@ -28,7 +25,7 @@ export const RightSidebar: React.FC = () => {
     totalRewards: 0,
     activeToday: 0,
   };
-  
+
   // Convert error to string for display
   const error = analyticsError ? 'Failed to load sidebar data' : null;
 
@@ -39,7 +36,7 @@ export const RightSidebar: React.FC = () => {
   // Follow button component
   const FollowButton: React.FC<{ username: string }> = ({ username }) => {
     // Only check Hive follow status for Hive users
-    const hiveFollower = user?.isHiveAuth ? (user.hiveUsername || user.username) : '';
+    const hiveFollower = user?.isHiveAuth ? user.hiveUsername || user.username : '';
     const { data: isFollowing } = useIsFollowingUser(username, hiveFollower);
     const [isFollowingState, setIsFollowingState] = useState(false);
     const [hasAttemptedFollow, setHasAttemptedFollow] = useState(false);
@@ -60,14 +57,14 @@ export const RightSidebar: React.FC = () => {
         if (isFollowingState) {
           await unfollowMutation.mutateAsync({
             username,
-            follower: user.username
+            follower: user.username,
           });
           setIsFollowingState(false);
           setHasAttemptedFollow(false);
         } else {
           await followMutation.mutateAsync({
             username,
-            follower: user.username
+            follower: user.username,
           });
           setIsFollowingState(true);
           setHasAttemptedFollow(true);
@@ -85,12 +82,12 @@ export const RightSidebar: React.FC = () => {
     const displayState = hasAttemptedFollow || isFollowingState;
 
     return (
-      <button 
+      <button
         onClick={handleFollowToggle}
         disabled={isLoading}
-        className={`px-3 py-1 text-xs rounded-md transition-colors disabled:opacity-50 ${
-          displayState 
-            ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
+        className={`rounded-md px-3 py-1 text-xs transition-colors disabled:opacity-50 ${
+          displayState
+            ? 'bg-muted text-muted-foreground hover:bg-muted/80'
             : 'bg-primary text-primary-foreground hover:bg-primary/90'
         }`}
       >
@@ -100,35 +97,35 @@ export const RightSidebar: React.FC = () => {
   };
 
   // Real-time events data
-  const { 
-    events: upcomingEvents, 
-    isLoading: eventsLoading, 
-    error: eventsError, 
-    refreshEvents, 
+  const {
+    events: upcomingEvents,
+    isLoading: eventsLoading,
+    error: eventsError,
+    refreshEvents,
     isRefreshing,
-    lastUpdated 
+    lastUpdated,
   } = useRealtimeEvents({ limit: 5 });
 
   // Loading skeleton component
   const LoadingSkeleton = () => (
     <div className="animate-pulse">
-      <div className="h-4 bg-muted rounded mb-2"></div>
+      <div className="mb-2 h-4 rounded bg-muted"></div>
       <div className="space-y-2">
-        <div className="h-3 bg-muted rounded"></div>
-        <div className="h-3 bg-muted rounded"></div>
-        <div className="h-3 bg-muted rounded"></div>
+        <div className="h-3 rounded bg-muted"></div>
+        <div className="h-3 rounded bg-muted"></div>
+        <div className="h-3 rounded bg-muted"></div>
       </div>
     </div>
   );
 
   return (
-    <aside className="hidden xl:flex xl:flex-col xl:w-80 2xl:w-[28rem] xl:fixed xl:right-0 xl:top-20 2xl:top-24 xl:h-[calc(100vh-5rem)] 2xl:h-[calc(100vh-6rem)] xl:overflow-y-auto xl:border-l bg-background xl:p-4 2xl:p-6">
+    <aside className="hidden bg-background xl:fixed xl:right-0 xl:top-20 xl:flex xl:h-[calc(100vh-5rem)] xl:w-80 xl:flex-col xl:overflow-y-auto xl:border-l xl:p-4 2xl:top-24 2xl:h-[calc(100vh-6rem)] 2xl:w-[28rem] 2xl:p-6">
       <div className="space-y-6">
         {/* Trending Topics */}
-        <div className="bg-card border rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-4">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="mb-4 flex items-center space-x-2">
             <TrendingUp className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-base">Trending Topics</h3>
+            <h3 className="text-base font-semibold">Trending Topics</h3>
           </div>
           {isLoading ? (
             <LoadingSkeleton />
@@ -143,10 +140,10 @@ export const RightSidebar: React.FC = () => {
                 {trendingTopics.map((topic) => (
                   <div
                     key={topic.id}
-                    className="flex items-center justify-between p-2 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                    className="flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-accent"
                   >
                     <div>
-                      <div className="font-medium text-sm">#{topic.name}</div>
+                      <div className="text-sm font-medium">#{topic.name}</div>
                       <div className="text-xs text-muted-foreground">
                         {topic.posts.toLocaleString()} posts
                       </div>
@@ -154,7 +151,7 @@ export const RightSidebar: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <button className="w-full mt-3 text-sm text-primary hover:underline">
+              <button className="mt-3 w-full text-sm text-primary hover:underline">
                 Show more
               </button>
             </>
@@ -164,10 +161,10 @@ export const RightSidebar: React.FC = () => {
         </div>
 
         {/* Trending Sports */}
-        <div className="bg-card border rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-4">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="mb-4 flex items-center space-x-2">
             <Star className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-base">Trending Sports</h3>
+            <h3 className="text-base font-semibold">Trending Sports</h3>
           </div>
           {isLoading ? (
             <LoadingSkeleton />
@@ -179,14 +176,15 @@ export const RightSidebar: React.FC = () => {
           ) : trendingSports.length > 0 ? (
             <div className="space-y-3">
               {trendingSports.map((item) => (
-                <div key={item.sport.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent transition-colors cursor-pointer">
+                <div
+                  key={item.sport.id}
+                  className="flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-accent"
+                >
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{item.sport.icon}</span>
                     <div>
                       <div className="text-sm font-medium">{item.sport.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {item.posts} posts
-                      </div>
+                      <div className="text-xs text-muted-foreground">{item.posts} posts</div>
                     </div>
                   </div>
                   {item.trending && (
@@ -204,10 +202,10 @@ export const RightSidebar: React.FC = () => {
         </div>
 
         {/* Top Authors */}
-        <div className="bg-card border rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-4">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="mb-4 flex items-center space-x-2">
             <Users className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-base">Top Authors</h3>
+            <h3 className="text-base font-semibold">Top Authors</h3>
           </div>
           {isLoading ? (
             <LoadingSkeleton />
@@ -222,17 +220,15 @@ export const RightSidebar: React.FC = () => {
                 {topAuthors.map((author) => (
                   <div
                     key={author.id}
-                    className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                    className="flex cursor-pointer items-center space-x-3 rounded-md p-2 transition-colors hover:bg-accent"
                   >
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-primary font-semibold text-sm">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <span className="text-sm font-semibold text-primary">
                         {author.displayName.charAt(0)}
                       </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">
-                        {author.displayName}
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{author.displayName}</div>
                       <div className="text-xs text-muted-foreground">
                         @{author.username} • {author.posts} posts
                       </div>
@@ -241,7 +237,7 @@ export const RightSidebar: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <button className="w-full mt-3 text-sm text-primary hover:underline">
+              <button className="mt-3 w-full text-sm text-primary hover:underline">
                 View all authors
               </button>
             </>
@@ -251,22 +247,24 @@ export const RightSidebar: React.FC = () => {
         </div>
 
         {/* Upcoming Events */}
-        <div className="bg-card border rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Calendar className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-base">Upcoming Events</h3>
+              <h3 className="text-base font-semibold">Upcoming Events</h3>
             </div>
             <button
               onClick={refreshEvents}
               disabled={isRefreshing}
-              className="p-1 hover:bg-accent rounded-md transition-colors disabled:opacity-50"
+              className="rounded-md p-1 transition-colors hover:bg-accent disabled:opacity-50"
               title="Refresh events"
             >
-              <RefreshCw className={`h-4 w-4 text-muted-foreground ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 text-muted-foreground ${isRefreshing ? 'animate-spin' : ''}`}
+              />
             </button>
           </div>
-          
+
           {eventsLoading ? (
             <LoadingSkeleton />
           ) : eventsError ? (
@@ -283,7 +281,7 @@ export const RightSidebar: React.FC = () => {
                   const diffMs = eventDate.getTime() - now.getTime();
                   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
                   const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                  
+
                   // Format relative time
                   let timeDisplay: string;
                   if (event.status === 'live') {
@@ -299,41 +297,41 @@ export const RightSidebar: React.FC = () => {
                       month: 'short',
                       day: 'numeric',
                       hour: 'numeric',
-                      minute: '2-digit'
+                      minute: '2-digit',
                     });
                   }
-                  
+
                   return (
                     <div
                       key={event.id}
-                      className={`flex items-start space-x-3 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer ${
-                        event.status === 'live' ? 'bg-red-500/5 border border-red-500/20' : ''
+                      className={`flex cursor-pointer items-start space-x-3 rounded-md p-2 transition-colors hover:bg-accent ${
+                        event.status === 'live' ? 'border border-red-500/20 bg-red-500/5' : ''
                       }`}
                     >
                       <div className="text-2xl">{event.icon}</div>
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           {event.status === 'live' && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white bg-red-500 rounded animate-pulse">
-                              <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+                            <span className="inline-flex animate-pulse items-center gap-1 rounded bg-red-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                              <span className="h-1.5 w-1.5 animate-ping rounded-full bg-white" />
                               Live
                             </span>
                           )}
-                          <span className="font-medium text-sm truncate">{event.league || event.sport}</span>
+                          <span className="truncate text-sm font-medium">
+                            {event.league || event.sport}
+                          </span>
                         </div>
                         {event.teams ? (
-                          <div className="text-xs text-foreground mt-0.5">
+                          <div className="mt-0.5 text-xs text-foreground">
                             {event.teams.home} vs {event.teams.away}
                           </div>
                         ) : (
-                          <div className="text-xs text-foreground mt-0.5 truncate">
+                          <div className="mt-0.5 truncate text-xs text-foreground">
                             {event.name}
                           </div>
                         )}
                         {timeDisplay && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {timeDisplay}
-                          </div>
+                          <div className="mt-0.5 text-xs text-muted-foreground">{timeDisplay}</div>
                         )}
                       </div>
                     </div>
@@ -341,7 +339,7 @@ export const RightSidebar: React.FC = () => {
                 })}
               </div>
               {lastUpdated && (
-                <div className="text-xs text-muted-foreground mt-3 pt-2 border-t">
+                <div className="mt-3 border-t pt-2 text-xs text-muted-foreground">
                   Last updated: {lastUpdated.toLocaleTimeString()}
                 </div>
               )}
@@ -352,16 +350,16 @@ export const RightSidebar: React.FC = () => {
         </div>
 
         {/* Stats Card */}
-        <div className="bg-gradient-to-r from-primary via-bright-cobalt to-accent rounded-lg p-4 text-white">
-          <div className="flex items-center space-x-2 mb-3">
+        <div className="rounded-lg bg-gradient-to-r from-primary via-bright-cobalt to-accent p-4 text-white">
+          <div className="mb-3 flex items-center space-x-2">
             <Trophy className="h-5 w-5" />
-            <h3 className="font-semibold text-base">Community Stats</h3>
+            <h3 className="text-base font-semibold">Community Stats</h3>
           </div>
           {isLoading ? (
             <div className="space-y-2">
-              <div className="h-4 bg-white/20 rounded animate-pulse"></div>
-              <div className="h-4 bg-white/20 rounded animate-pulse"></div>
-              <div className="h-4 bg-white/20 rounded animate-pulse"></div>
+              <div className="h-4 animate-pulse rounded bg-white/20"></div>
+              <div className="h-4 animate-pulse rounded bg-white/20"></div>
+              <div className="h-4 animate-pulse rounded bg-white/20"></div>
             </div>
           ) : error ? (
             <div className="text-sm opacity-75">Unable to load stats</div>
@@ -382,8 +380,29 @@ export const RightSidebar: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Legal Links */}
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <Link href="/legal/terms" className="transition-colors hover:text-foreground">
+            Terms
+          </Link>
+          <span>·</span>
+          <Link href="/legal/privacy" className="transition-colors hover:text-foreground">
+            Privacy
+          </Link>
+          <span>·</span>
+          <Link href="/legal/cookies" className="transition-colors hover:text-foreground">
+            Cookies
+          </Link>
+          <span>·</span>
+          <Link
+            href="/legal/community-guidelines"
+            className="transition-colors hover:text-foreground"
+          >
+            Guidelines
+          </Link>
+        </div>
       </div>
     </aside>
   );
 };
-
