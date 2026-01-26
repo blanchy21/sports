@@ -67,6 +67,62 @@ service cloud.firestore {
     }
 
     // ============================================
+    // SOFT COMMENTS
+    // ============================================
+
+    match /soft_comments/{commentId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+        request.resource.data.authorId == request.auth.uid &&
+        validString(request.resource.data.body, 10000);
+      allow update: if isAuthenticated() &&
+        resource.data.authorId == request.auth.uid;
+      allow delete: if isAuthenticated() &&
+        resource.data.authorId == request.auth.uid;
+    }
+
+    // ============================================
+    // SOFT LIKES
+    // ============================================
+
+    match /soft_likes/{likeId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ============================================
+    // SOFT FOLLOWS
+    // ============================================
+
+    match /soft_follows/{followId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+        request.resource.data.followerId == request.auth.uid;
+      allow delete: if isAuthenticated() &&
+        resource.data.followerId == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ============================================
+    // SOFT NOTIFICATIONS
+    // ============================================
+
+    match /soft_notifications/{notificationId} {
+      allow read: if isAuthenticated() &&
+        resource.data.recipientId == request.auth.uid;
+      allow update: if isAuthenticated() &&
+        resource.data.recipientId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
+      allow delete: if isAuthenticated() &&
+        resource.data.recipientId == request.auth.uid;
+      allow create: if false; // Server-side only via Admin SDK
+    }
+
+    // ============================================
     // BOOKMARKS
     // ============================================
 
