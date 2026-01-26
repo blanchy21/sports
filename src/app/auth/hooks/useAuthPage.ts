@@ -74,6 +74,7 @@ interface UseAuthPageResult {
   toggleMode: () => void;
   isConnecting: boolean;
   errorMessage: string | null;
+  successMessage: string | null;
   dismissError: () => void;
   availableProviders: string[];
   isAiohaReady: boolean;
@@ -88,6 +89,8 @@ interface UseAuthPageResult {
   updateEmailField: <K extends keyof EmailFormState>(field: K, value: EmailFormState[K]) => void;
   togglePasswordVisibility: () => void;
   handleEmailSubmit: () => Promise<void>;
+  handleGoogleSignIn: () => Promise<void>;
+  handleForgotPassword: () => Promise<void>;
   showAiohaModal: boolean;
   openAiohaModal: () => void;
   closeAiohaModal: () => void;
@@ -108,6 +111,7 @@ export const useAuthPage = (): UseAuthPageResult => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [isConnecting, setIsConnecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [availableProviders, setAvailableProviders] = useState<string[]>([]);
 
   const [showHiveUsernameInput, setShowHiveUsernameInput] = useState(false);
@@ -188,10 +192,14 @@ export const useAuthPage = (): UseAuthPageResult => {
   const toggleMode = useCallback(() => {
     setMode((prev) => (prev === "login" ? "signup" : "login"));
     setErrorMessage(null);
+    setSuccessMessage(null);
     resetEmailForm();
   }, [resetEmailForm]);
 
-  const dismissError = useCallback(() => setErrorMessage(null), []);
+  const dismissError = useCallback(() => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  }, []);
 
   const openAiohaModal = useCallback(() => setShowAiohaModal(true), []);
   const closeAiohaModal = useCallback(() => setShowAiohaModal(false), []);
@@ -330,6 +338,58 @@ export const useAuthPage = (): UseAuthPageResult => {
       setIsConnecting(false);
     }
   }, [emailForm, loginWithFirebase, mode, router, validateEmailForm]);
+
+  const handleGoogleSignIn = useCallback(async () => {
+    setIsConnecting(true);
+    setErrorMessage(null);
+
+    try {
+      const authUser = await FirebaseAuth.signInWithGoogle();
+      loginWithFirebase(authUser);
+      router.push("/feed");
+    } catch (error) {
+      console.error("Google sign-in failed:", error);
+      // Handle specific Firebase errors
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      if (errorMessage.includes("popup-closed-by-user")) {
+        setErrorMessage("Sign-in cancelled. Please try again.");
+      } else if (errorMessage.includes("popup-blocked")) {
+        setErrorMessage("Pop-up blocked. Please allow pop-ups for this site and try again.");
+      } else {
+        setErrorMessage("Google sign-in failed: " + errorMessage);
+      }
+    } finally {
+      setIsConnecting(false);
+    }
+  }, [loginWithFirebase, router]);
+
+  const handleForgotPassword = useCallback(async () => {
+    if (!emailForm.email) {
+      setErrorMessage("Please enter your email address first");
+      return;
+    }
+
+    setIsConnecting(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      await FirebaseAuth.sendPasswordReset(emailForm.email);
+      setSuccessMessage("Password reset email sent! Check your inbox.");
+    } catch (error) {
+      console.error("Password reset failed:", error);
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      if (errorMsg.includes("user-not-found")) {
+        setErrorMessage("No account found with this email address.");
+      } else if (errorMsg.includes("invalid-email")) {
+        setErrorMessage("Please enter a valid email address.");
+      } else {
+        setErrorMessage("Failed to send reset email: " + errorMsg);
+      }
+    } finally {
+      setIsConnecting(false);
+    }
+  }, [emailForm.email]);
 
   const resetConnectionState = useCallback(() => {
     setIsConnecting(false);
@@ -519,6 +579,7 @@ export const useAuthPage = (): UseAuthPageResult => {
     toggleMode,
     isConnecting,
     errorMessage,
+    successMessage,
     dismissError,
     availableProviders,
     isAiohaReady,
@@ -533,6 +594,8 @@ export const useAuthPage = (): UseAuthPageResult => {
     updateEmailField,
     togglePasswordVisibility,
     handleEmailSubmit,
+    handleGoogleSignIn,
+    handleForgotPassword,
     showAiohaModal,
     openAiohaModal,
     closeAiohaModal,

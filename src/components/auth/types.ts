@@ -54,3 +54,12 @@ export interface ProviderButtonsProps {
   onProviderSelect: (provider: string) => void;
   isConnecting: boolean;
 }
+
+export interface HiveAuthState {
+  hiveUsername: string;
+  showHiveUsernameInput: boolean;
+  showAccountDiscovery: boolean;
+  discoveredAccounts: DiscoveredAccount[];
+  availableProviders: string[];
+  selectedProvider: string | null;
+}

@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Wallet } from "lucide-react";
+import { ArrowLeft, Wallet, CheckCircle } from "lucide-react";
 import { KeyTypes } from "@aioha/aioha";
 import { AiohaModal } from "@aioha/react-ui";
 import { Button } from "@/components/ui/Button";
@@ -40,6 +40,7 @@ function AuthPageContent() {
     toggleMode,
     isConnecting,
     errorMessage,
+    successMessage,
     dismissError,
     showAiohaModal,
     setShowAiohaModal,
@@ -48,6 +49,8 @@ function AuthPageContent() {
     updateEmailField,
     togglePasswordVisibility,
     handleEmailSubmit,
+    handleGoogleSignIn,
+    handleForgotPassword,
   } = useAuthPage();
 
   return (
@@ -71,6 +74,21 @@ function AuthPageContent() {
             <AuthHeading mode={mode} />
 
             {errorMessage && <ErrorAlert message={errorMessage} onDismiss={dismissError} />}
+
+            {successMessage && (
+              <div className="mb-4 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg flex items-start space-x-3">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-green-800 dark:text-green-200 text-sm">{successMessage}</p>
+                </div>
+                <button
+                  onClick={dismissError}
+                  className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
+                >
+                  ×
+                </button>
+              </div>
+            )}
 
             {/* Hive Wallet Connect Section */}
             <div className="mb-8">
@@ -105,6 +123,8 @@ function AuthPageContent() {
               onSubmit={handleEmailSubmit}
               onToggleMode={toggleMode}
               onTogglePasswordVisibility={togglePasswordVisibility}
+              onGoogleSignIn={handleGoogleSignIn}
+              onForgotPassword={handleForgotPassword}
             />
           </div>
         </div>
