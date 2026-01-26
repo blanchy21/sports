@@ -1,0 +1,323 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/Button";
+import { BaseModal, ModalFooter } from "@/components/ui/BaseModal";
+import { Avatar } from "@/components/ui/Avatar";
+import { useToast, toast } from "@/components/ui/Toast";
+import { Loader2, User, FileText, MapPin, Link as LinkIcon, Image as ImageIcon, Camera } from "lucide-react";
+import { updateHiveProfile, ProfileUpdateData } from "@/lib/hive-workerbee/social";
+
+interface EditProfileModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  data?: Record<string, unknown> | null;
+}
+
+export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) => {
+  const { user, authType, refreshHiveAccount } = useAuth();
+  const { addToast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    about: "",
+    location: "",
+    website: "",
+    profile_image: "",
+    cover_image: "",
+  });
+
+  // Initialize form with current profile data when modal opens
+  useEffect(() => {
+    if (isOpen && user) {
+      setFormData({
+        name: user.hiveProfile?.name || user.displayName || "",
+        about: user.hiveProfile?.about || user.bio || "",
+        location: user.hiveProfile?.location || "",
+        website: user.hiveProfile?.website || "",
+        profile_image: user.hiveProfile?.profileImage || user.avatar || "",
+        cover_image: user.hiveProfile?.coverImage || "",
+      });
+    }
+  }, [isOpen, user]);
+
+  const handleInputChange = (field: keyof typeof formData) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user?.username) {
+      addToast(toast.error("Authentication Required", "You must be logged in to update your profile"));
+      return;
+    }
+
+    if (authType !== "hive") {
+      addToast(toast.error("Hive Account Required", "Profile editing is only available for Hive users"));
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Prepare profile data - only include changed fields
+      const profileData: ProfileUpdateData = {};
+
+      if (formData.name !== (user.hiveProfile?.name || "")) {
+        profileData.name = formData.name;
+      }
+      if (formData.about !== (user.hiveProfile?.about || "")) {
+        profileData.about = formData.about;
+      }
+      if (formData.location !== (user.hiveProfile?.location || "")) {
+        profileData.location = formData.location;
+      }
+      if (formData.website !== (user.hiveProfile?.website || "")) {
+        profileData.website = formData.website;
+      }
+      if (formData.profile_image !== (user.hiveProfile?.profileImage || "")) {
+        profileData.profile_image = formData.profile_image;
+      }
+      if (formData.cover_image !== (user.hiveProfile?.coverImage || "")) {
+        profileData.cover_image = formData.cover_image;
+      }
+
+      // Check if anything changed
+      if (Object.keys(profileData).length === 0) {
+        addToast(toast.info("No Changes", "No changes were made to your profile"));
+        onClose();
+        return;
+      }
+
+      const result = await updateHiveProfile(user.username, profileData);
+
+      if (result.success) {
+        addToast(toast.success("Profile Updated", "Your changes will appear on the blockchain shortly."));
+
+        // Refresh profile data after a short delay to allow blockchain propagation
+        setTimeout(async () => {
+          try {
+            await refreshHiveAccount();
+          } catch (err) {
+            console.error("Error refreshing profile:", err);
+          }
+        }, 3000);
+
+        onClose();
+      } else {
+        addToast(toast.error("Update Failed", result.error || "Failed to update profile"));
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      addToast(toast.error("Error", error instanceof Error ? error.message : "An unexpected error occurred"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Only show for Hive users
+  if (authType !== "hive") {
+    return (
+      <BaseModal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Edit Profile"
+        size="md"
+      >
+        <div className="text-center py-8">
+          <div className="text-6xl mb-4">🔐</div>
+          <h3 className="text-lg font-semibold mb-2">Hive Account Required</h3>
+          <p className="text-muted-foreground">
+            Profile editing is only available for users logged in with a Hive account.
+          </p>
+        </div>
+        <ModalFooter>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </ModalFooter>
+      </BaseModal>
+    );
+  }
+
+  return (
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit Profile"
+      description="Update your Hive profile information. Changes are stored on the blockchain."
+      size="lg"
+      className="max-h-[90vh]"
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Preview Section */}
+        <div className="relative bg-muted/30 rounded-lg overflow-hidden">
+          {/* Cover Image Preview */}
+          <div
+            className="h-24 bg-gradient-to-r from-primary via-bright-cobalt to-accent"
+            style={formData.cover_image ? {
+              backgroundImage: `url(${formData.cover_image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            } : {}}
+          />
+
+          {/* Avatar Preview */}
+          <div className="absolute bottom-0 left-4 translate-y-1/2">
+            <Avatar
+              src={formData.profile_image}
+              alt={formData.name || user?.username || "Profile"}
+              fallback={user?.username || "U"}
+              size="lg"
+              className="w-16 h-16 border-4 border-background"
+            />
+          </div>
+        </div>
+
+        <div className="pt-8 space-y-4">
+          {/* Display Name */}
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              Display Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              placeholder="Your display name"
+              value={formData.name}
+              onChange={handleInputChange("name")}
+              maxLength={50}
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          {/* Bio */}
+          <div className="space-y-2">
+            <label htmlFor="about" className="text-sm font-medium flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              Bio
+            </label>
+            <textarea
+              id="about"
+              placeholder="Tell us about yourself..."
+              value={formData.about}
+              onChange={handleInputChange("about")}
+              rows={3}
+              maxLength={500}
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground resize-none"
+            />
+            <p className="text-xs text-muted-foreground text-right">
+              {formData.about.length}/500
+            </p>
+          </div>
+
+          {/* Location */}
+          <div className="space-y-2">
+            <label htmlFor="location" className="text-sm font-medium flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              Location
+            </label>
+            <input
+              id="location"
+              type="text"
+              placeholder="Where are you based?"
+              value={formData.location}
+              onChange={handleInputChange("location")}
+              maxLength={100}
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          {/* Website */}
+          <div className="space-y-2">
+            <label htmlFor="website" className="text-sm font-medium flex items-center gap-2">
+              <LinkIcon className="h-4 w-4 text-muted-foreground" />
+              Website
+            </label>
+            <input
+              id="website"
+              type="url"
+              placeholder="https://yourwebsite.com"
+              value={formData.website}
+              onChange={handleInputChange("website")}
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          {/* Profile Image URL */}
+          <div className="space-y-2">
+            <label htmlFor="profile_image" className="text-sm font-medium flex items-center gap-2">
+              <Camera className="h-4 w-4 text-muted-foreground" />
+              Profile Image URL
+            </label>
+            <input
+              id="profile_image"
+              type="url"
+              placeholder="https://example.com/your-avatar.jpg"
+              value={formData.profile_image}
+              onChange={handleInputChange("profile_image")}
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+            />
+            <p className="text-xs text-muted-foreground">
+              Enter a URL to an image. You can upload images to services like Imgur or use existing image URLs.
+            </p>
+          </div>
+
+          {/* Cover Image URL */}
+          <div className="space-y-2">
+            <label htmlFor="cover_image" className="text-sm font-medium flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+              Cover Image URL
+            </label>
+            <input
+              id="cover_image"
+              type="url"
+              placeholder="https://example.com/your-cover.jpg"
+              value={formData.cover_image}
+              onChange={handleInputChange("cover_image")}
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
+            />
+            <p className="text-xs text-muted-foreground">
+              Recommended size: 1500x500 pixels for best results.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
+        </div>
+      </form>
+    </BaseModal>
+  );
+};

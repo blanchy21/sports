@@ -3,7 +3,7 @@ import { devtools, persist } from 'zustand/middleware';
 
 interface ModalState {
   isOpen: boolean;
-  type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'keychainLogin' | null;
+  type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'keychainLogin' | 'softComments' | 'softFollowersList' | 'editProfile' | null;
   data: Record<string, unknown> | null;
 }
 
@@ -15,6 +15,9 @@ interface UIState {
     userProfile: ModalState;
     followersList: ModalState;
     keychainLogin: ModalState;
+    softComments: ModalState;
+    softFollowersList: ModalState;
+    editProfile: ModalState;
   };
   sidebarOpen: boolean;
   rightSidebarOpen: boolean;
@@ -49,6 +52,9 @@ export const useUIStore = create<UIState & UIActions>()(
         userProfile: { isOpen: false, type: null, data: null },
         followersList: { isOpen: false, type: null, data: null },
         keychainLogin: { isOpen: false, type: null, data: null },
+        softComments: { isOpen: false, type: null, data: null },
+        softFollowersList: { isOpen: false, type: null, data: null },
+        editProfile: { isOpen: false, type: null, data: null },
       },
       sidebarOpen: true,
       rightSidebarOpen: true,
@@ -92,6 +98,9 @@ export const useUIStore = create<UIState & UIActions>()(
             userProfile: { isOpen: false, type: null, data: null },
             followersList: { isOpen: false, type: null, data: null },
             keychainLogin: { isOpen: false, type: null, data: null },
+            softComments: { isOpen: false, type: null, data: null },
+            softFollowersList: { isOpen: false, type: null, data: null },
+            editProfile: { isOpen: false, type: null, data: null },
           },
         }));
       },

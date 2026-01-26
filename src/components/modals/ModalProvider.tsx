@@ -23,10 +23,19 @@ const FollowersListModal = dynamic(() => import("./FollowersListModal").then(mod
 const KeychainLoginModal = dynamic(() => import("./KeychainLoginModal").then(mod => ({ default: mod.KeychainLoginModal })), {
   ssr: false,
 });
+const SoftCommentsModal = dynamic(() => import("./SoftCommentsModal").then(mod => ({ default: mod.SoftCommentsModal })), {
+  ssr: false,
+});
+const SoftFollowersListModal = dynamic(() => import("./SoftFollowersListModal").then(mod => ({ default: mod.SoftFollowersListModal })), {
+  ssr: false,
+});
+const EditProfileModal = dynamic(() => import("./EditProfileModal").then(mod => ({ default: mod.EditProfileModal })), {
+  ssr: false,
+});
 
 interface ModalContextType {
-  openModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'followersList' | 'keychainLogin', data?: Record<string, unknown>) => void;
-  closeModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'followersList' | 'keychainLogin') => void;
+  openModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'followersList' | 'keychainLogin' | 'softComments' | 'softFollowersList' | 'editProfile', data?: Record<string, unknown>) => void;
+  closeModal: (type: 'comments' | 'upvoteList' | 'description' | 'userProfile' | 'followersList' | 'keychainLogin' | 'softComments' | 'softFollowersList' | 'editProfile') => void;
   closeAllModals: () => void;
 }
 
@@ -103,6 +112,32 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
           isOpen={modals.keychainLogin.isOpen}
           onClose={() => closeModal('keychainLogin')}
           data={modals.keychainLogin.data}
+        />
+      )}
+
+      {modals.softComments.isOpen && (
+        <SoftCommentsModal
+          isOpen={modals.softComments.isOpen}
+          onClose={() => closeModal('softComments')}
+          data={modals.softComments.data}
+        />
+      )}
+
+      {modals.softFollowersList.isOpen && (
+        <SoftFollowersListModal
+          isOpen={modals.softFollowersList.isOpen}
+          onClose={() => closeModal('softFollowersList')}
+          userId={modals.softFollowersList.data?.userId as string || ''}
+          username={modals.softFollowersList.data?.username as string || ''}
+          type={(modals.softFollowersList.data?.type as 'followers' | 'following') || 'followers'}
+        />
+      )}
+
+      {modals.editProfile.isOpen && (
+        <EditProfileModal
+          isOpen={modals.editProfile.isOpen}
+          onClose={() => closeModal('editProfile')}
+          data={modals.editProfile.data}
         />
       )}
     </ModalContext.Provider>

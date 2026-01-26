@@ -9,12 +9,14 @@ import { Avatar } from "@/components/ui/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { useModal } from "@/components/modals/ModalProvider";
 // getUserPosts is now accessed via API route
 import { SportsblockPost } from "@/lib/shared/types";
 
 export default function ProfilePage() {
   const { user, authType, refreshHiveAccount, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
+  const { openModal } = useModal();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [userPosts, setUserPosts] = useState<SportsblockPost[]>([]);
@@ -30,24 +32,53 @@ export default function ProfilePage() {
 
   const loadUserPosts = React.useCallback(async () => {
     if (!user?.username) return;
-    
+
     setIsLoadingPosts(true);
     setPostsError(null);
-    
+
     try {
-      const response = await fetch(`/api/hive/posts?username=${encodeURIComponent(user.username)}&limit=20`);
+      // Use unified endpoint for all users - it handles both Hive and soft posts
+      const endpoint = authType === "hive"
+        ? `/api/unified/posts?username=${encodeURIComponent(user.username)}&limit=20&includeHive=true&includeSoft=true`
+        : `/api/unified/posts?username=${encodeURIComponent(user.username)}&limit=20&includeSoft=true&includeHive=false`;
+
+      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error(`Failed to fetch posts: ${response.status}`);
       }
-      const result = await response.json() as { success: boolean; posts: SportsblockPost[] };
-      setUserPosts(result.success ? result.posts : []);
+      const result = await response.json();
+      // Map unified posts to SportsblockPost format for PostCard compatibility
+      const posts = result.success ? (result.posts || []).map((p: Record<string, unknown>) => ({
+        ...p,
+        author: p.author,
+        permlink: p.permlink,
+        title: p.title,
+        body: p.body,
+        created: p.created,
+        isSportsblockPost: p.isHivePost || false,
+        postType: p.isHivePost ? 'sportsblock' : 'soft',
+        // Map fields for PostCard compatibility
+        net_votes: p.netVotes || 0,
+        children: p.children || 0,
+        pending_payout_value: p.pendingPayout || '0.000 HBD',
+        active_votes: p.activeVotes || [],
+        tags: p.tags || [],
+        sport_category: p.sportCategory,
+        img_url: p.featuredImage,
+        // Soft post specific
+        likeCount: p.likeCount || 0,
+        viewCount: p.viewCount || 0,
+        _isSoftPost: p.isSoftPost || false,
+        _softPostId: p.softPostId,
+      })) : [];
+      setUserPosts(posts);
     } catch (error) {
       console.error("Error loading user posts:", error);
       setPostsError("Failed to load posts. Please try again.");
     } finally {
       setIsLoadingPosts(false);
     }
-  }, [user?.username]);
+  }, [user?.username, authType]);
 
   const handleRefreshProfile = async () => {
     if (authType !== "hive") return;
@@ -192,30 +223,55 @@ export default function ProfilePage() {
                   
                   {/* Stats Section */}
                   <div className="flex items-center space-x-6 mt-6 pt-4 border-t border-border">
-                    <button 
-                      onClick={() => router.push('/following')}
-                      className="text-center hover:opacity-70 transition-opacity cursor-pointer"
-                    >
-                      <div className="text-2xl font-bold text-foreground">
-                        {isRefreshing ? '...' : (user.hiveStats?.following || 0).toLocaleString()}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Following</div>
-                    </button>
-                    <button 
-                      onClick={() => router.push('/followers')}
-                      className="text-center hover:opacity-70 transition-opacity cursor-pointer"
-                    >
-                      <div className="text-2xl font-bold text-foreground">
-                        {isRefreshing ? '...' : (user.hiveStats?.followers || 0).toLocaleString()}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Followers</div>
-                    </button>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-foreground">
-                        {isRefreshing ? '...' : (user.hiveStats?.postCount || 0).toLocaleString()}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Posts</div>
-                    </div>
+                    {authType === "hive" ? (
+                      <>
+                        <button
+                          onClick={() => router.push('/following')}
+                          className="text-center hover:opacity-70 transition-opacity cursor-pointer"
+                        >
+                          <div className="text-2xl font-bold text-foreground">
+                            {isRefreshing ? '...' : (user.hiveStats?.following || 0).toLocaleString()}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Following</div>
+                        </button>
+                        <button
+                          onClick={() => router.push('/followers')}
+                          className="text-center hover:opacity-70 transition-opacity cursor-pointer"
+                        >
+                          <div className="text-2xl font-bold text-foreground">
+                            {isRefreshing ? '...' : (user.hiveStats?.followers || 0).toLocaleString()}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Followers</div>
+                        </button>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-foreground">
+                            {isRefreshing ? '...' : (user.hiveStats?.postCount || 0).toLocaleString()}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Posts</div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-foreground">
+                            {userPosts.length}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Posts</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-foreground">
+                            {userPosts.reduce((sum, p) => sum + ((p as unknown as {likeCount?: number}).likeCount || 0), 0)}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Likes</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-foreground">
+                            {userPosts.reduce((sum, p) => sum + ((p as unknown as {viewCount?: number}).viewCount || 0), 0)}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Views</div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
 
@@ -234,7 +290,11 @@ export default function ProfilePage() {
                     <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
                   </Button>
                 )}
-                <Button variant="outline" className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  className="flex items-center space-x-2"
+                  onClick={() => openModal('editProfile')}
+                >
                   <Edit className="h-4 w-4" />
                   <span>Edit Profile</span>
                 </Button>
