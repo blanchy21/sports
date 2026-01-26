@@ -32,6 +32,7 @@ type SearchResult = {
   reputation?: string;
   followers: number;
   following: number;
+  isHiveUser?: boolean;
 };
 
 export const TopNavigation: React.FC = () => {
@@ -70,25 +71,60 @@ export const TopNavigation: React.FC = () => {
     }
   };
 
-  // Search functionality
+  // Search functionality - searches both Hive and soft users
   React.useEffect(() => {
     const timer = setTimeout(async () => {
       if (searchQuery && searchQuery.length >= 3) {
         setIsSearching(true);
         try {
-          const accountData = await fetchUserAccount(searchQuery);
-          if (accountData) {
-            setSearchResults([{
+          const results: SearchResult[] = [];
+
+          // Search Hive and soft users in parallel
+          const [hiveResult, softResult] = await Promise.allSettled([
+            // Hive user search
+            fetchUserAccount(searchQuery).catch(() => null),
+            // Soft user search via API
+            fetch(`/api/soft/users?search=${encodeURIComponent(searchQuery)}`)
+              .then(r => r.ok ? r.json() : { users: [] })
+              .catch(() => ({ users: [] }))
+          ]);
+
+          // Add Hive user if found
+          if (hiveResult.status === 'fulfilled' && hiveResult.value) {
+            const accountData = hiveResult.value;
+            results.push({
               username: searchQuery,
               displayName: accountData.profile?.name || searchQuery,
               avatar: accountData.profile?.profileImage,
               reputation: accountData.reputationFormatted,
               followers: accountData.stats?.followers || 0,
               following: accountData.stats?.following || 0,
-            }]);
-          } else {
-            setSearchResults([]);
+              isHiveUser: true,
+            });
           }
+
+          // Add soft users if found
+          if (softResult.status === 'fulfilled' && softResult.value?.users?.length > 0) {
+            softResult.value.users.forEach((user: {
+              username: string;
+              displayName: string;
+              avatarUrl?: string;
+            }) => {
+              // Don't add if we already have this user from Hive
+              if (!results.some(r => r.username.toLowerCase() === user.username.toLowerCase())) {
+                results.push({
+                  username: user.username,
+                  displayName: user.displayName || user.username,
+                  avatar: user.avatarUrl,
+                  followers: 0,
+                  following: 0,
+                  isHiveUser: false,
+                });
+              }
+            });
+          }
+
+          setSearchResults(results);
         } catch (error) {
           console.error('Search error:', error);
           setSearchResults([]);
@@ -466,15 +502,27 @@ export const TopNavigation: React.FC = () => {
                           size="md"
                         />
                         <div className="flex-1 text-left">
-                          <div className="font-semibold text-foreground">
-                            {result.displayName || result.username}
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground">
+                              {result.displayName || result.username}
+                            </span>
+                            {result.isHiveUser ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-[10px] font-medium text-white">
+                                <Zap className="h-2.5 w-2.5" />
+                                Hive
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-[10px] font-medium text-blue-600 dark:text-blue-400">
+                                Sportsblock
+                              </span>
+                            )}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             @{result.username}
                           </div>
                         </div>
                         <div className="text-right text-sm text-muted-foreground">
-                          {result.followers || 0} followers
+                          {result.isHiveUser ? `${result.followers || 0} followers` : ''}
                         </div>
                       </button>
                     ))}

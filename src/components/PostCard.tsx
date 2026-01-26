@@ -6,6 +6,7 @@ import { MessageCircle, Bookmark, MapPin } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { StarVoteButton } from "@/components/StarVoteButton";
+import { SoftLikeButton } from "@/components/SoftLikeButton";
 import { Post } from "@/types";
 import { cn, formatDate, formatReadTime } from "@/lib/utils";
 import { calculatePendingPayout, formatAsset } from "@/lib/shared/utils";
@@ -16,6 +17,8 @@ import { useModal } from "@/components/modals/ModalProvider";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { usePremiumTier } from "@/lib/premium/hooks";
 import { PremiumBadge } from "@/components/medals";
+import { HiveUpgradePrompt, useHiveUpgradePrompt } from "@/components/HiveUpgradePrompt";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PostCardProps {
   post: Post | SportsblockPost;
@@ -35,8 +38,20 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
   const { addToast } = useToast();
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
+  const { isAuthenticated, authType } = useAuth();
+  const { isPromptOpen, promptAction, showPromptIfNeeded, closePrompt } = useHiveUpgradePrompt();
   const isHivePost = 'isSportsblockPost' in post;
-  const pendingPayout = isHivePost ? calculatePendingPayout(post) : 0;
+
+  // Check if this is a soft post (from unified feed)
+  // Soft posts have _isSoftPost flag set by the unified post converter
+  const isSoftPost = (post as SportsblockPost & { _isSoftPost?: boolean })._isSoftPost === true;
+  const softPostId = (post as SportsblockPost & { _softPostId?: string })._softPostId;
+  const softLikeCount = (post as SportsblockPost & { _likeCount?: number })._likeCount || 0;
+
+  // For engagement, treat soft posts differently than Hive posts
+  const isActualHivePost = isHivePost && !isSoftPost;
+
+  const pendingPayout = isActualHivePost ? calculatePendingPayout(post as SportsblockPost) : 0;
 
   // Get author username for Hive posts
   const authorUsername = isHivePost ? post.author : (typeof post.author === 'string' ? post.author : post.author.username);
@@ -83,21 +98,35 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
   };
 
   const handleComment = () => {
-    if (isHivePost) {
+    if (isSoftPost) {
+      // Soft posts use the soft comments modal
+      openModal('softComments', {
+        postId: softPostId || (post as SportsblockPost).permlink,
+        permlink: (post as SportsblockPost).permlink,
+        author: (post as SportsblockPost).author,
+      });
+    } else if (isActualHivePost) {
+      // Check if soft user is trying to comment on Hive post
+      if (isAuthenticated && authType === 'soft') {
+        showPromptIfNeeded('comment on');
+        return;
+      }
+      // Hive posts use the blockchain comments modal
       openModal('comments', {
-        author: post.author,
-        permlink: post.permlink,
+        author: (post as SportsblockPost).author,
+        permlink: (post as SportsblockPost).permlink,
       });
     }
-    // Non-Hive posts don't support commenting yet
+    // Other non-Hive posts don't support commenting yet
   };
 
   const handleUpvoteList = () => {
-    if (isHivePost) {
+    // Only Hive posts have upvote lists (soft posts just show like count)
+    if (isActualHivePost) {
       openModal('upvoteList', {
-        author: post.author,
-        permlink: post.permlink,
-        voteCount: post.net_votes || 0,
+        author: (post as SportsblockPost).author,
+        permlink: (post as SportsblockPost).permlink,
+        voteCount: (post as SportsblockPost).net_votes || 0,
       });
     }
   };
@@ -151,15 +180,15 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
                 </span>
               </div>
             )}
-            {isHivePost && post.sportCategory && (
+            {isHivePost && (post as SportsblockPost).sportCategory && (
               <div className="flex items-center space-x-1 mt-1">
                 <MapPin className="h-3 w-3 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">
-                  {post.sportCategory}
+                  {(post as SportsblockPost).sportCategory}
                 </span>
               </div>
             )}
-            {isHivePost && pendingPayout > 0 && (
+            {isActualHivePost && pendingPayout > 0 && (
               <div className="flex items-center space-x-1 mt-1">
                 <span className="text-xs text-accent font-medium">
                   💰 {formatAsset(pendingPayout, 'HIVE', 3)} pending
@@ -225,9 +254,9 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
           {/* Tags */}
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {post.tags.slice(0, 3).map((tag) => (
+              {post.tags.slice(0, 3).map((tag, index) => (
                 <span
-                  key={tag}
+                  key={`${tag}-${index}`}
                   className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground"
                 >
                   #{tag}
@@ -246,13 +275,27 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
       <div className="px-4 py-3 border-t bg-muted/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            {/* Voting Section */}
-            {isHivePost ? (
+            {/* Voting/Like Section */}
+            {isSoftPost ? (
+              // Soft posts use the heart-based like system
+              <SoftLikeButton
+                targetType="post"
+                targetId={softPostId || (post as SportsblockPost).permlink}
+                initialLikeCount={softLikeCount}
+                onLikeSuccess={(liked, count) => {
+                  addToast(toast.success(liked ? "Liked!" : "Unliked", `Post now has ${count} likes`));
+                }}
+                onLikeError={(error) => {
+                  addToast(toast.error("Like Failed", error));
+                }}
+              />
+            ) : isActualHivePost ? (
+              // Hive posts use the star-based voting system
               <div className="flex items-center space-x-1">
                 <StarVoteButton
-                  author={post.author}
-                  permlink={post.permlink}
-                  voteCount={post.net_votes || 0}
+                  author={(post as SportsblockPost).author}
+                  permlink={(post as SportsblockPost).permlink}
+                  voteCount={(post as SportsblockPost).net_votes || 0}
                   onVoteSuccess={handleVoteSuccess}
                   onVoteError={handleVoteError}
                 />
@@ -260,17 +303,18 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
                   onClick={handleUpvoteList}
                   className="text-xs text-muted-foreground hover:text-primary transition-colors"
                 >
-                  ({post.net_votes || 0})
+                  ({(post as SportsblockPost).net_votes || 0})
                 </button>
               </div>
             ) : (
+              // Legacy non-Hive posts
               <Button
                 variant="ghost"
                 size="sm"
                 className="flex items-center space-x-1 text-muted-foreground"
                 disabled
               >
-                <span>{post.upvotes}</span>
+                <span>{(post as Post).upvotes}</span>
               </Button>
             )}
             
@@ -281,7 +325,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
               className="flex items-center space-x-1 text-muted-foreground hover:text-accent"
             >
               <MessageCircle className="h-4 w-4" />
-              <span>{isHivePost ? post.children : post.comments}</span>
+              <span>{isHivePost ? (post as SportsblockPost).children : (post as Post).comments}</span>
             </Button>
           </div>
 
@@ -297,6 +341,13 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
           </Button>
         </div>
       </div>
+
+      {/* Hive Upgrade Prompt for soft users trying to interact with Hive posts */}
+      <HiveUpgradePrompt
+        isOpen={isPromptOpen}
+        onClose={closePrompt}
+        action={promptAction}
+      />
     </article>
   );
 };

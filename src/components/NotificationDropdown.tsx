@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Check, Trash2, MessageSquare, ThumbsUp, FileText, AtSign, Zap } from "lucide-react";
+import { Bell, Check, Trash2, MessageSquare, ThumbsUp, FileText, AtSign, Zap, Heart, UserPlus, Info } from "lucide-react";
 import { useNotifications, Notification } from "@/contexts/NotificationContext";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "./ui/Button";
@@ -18,6 +18,34 @@ function getNotificationUrl(notification: Notification): string | null {
   const data = notification.data;
   if (!data) return null;
 
+  // Handle soft notification types
+  if (notification.source === 'soft') {
+    switch (notification.type) {
+      case 'like':
+      case 'comment':
+      case 'reply':
+        // Navigate to the post
+        if (data.postPermlink) {
+          // Soft posts use a different URL structure
+          return `/post/soft/${data.postId || data.postPermlink}`;
+        }
+        break;
+      case 'follow':
+        // Navigate to the follower's profile
+        if (data.sourceUsername) {
+          return `/user/${data.sourceUsername}`;
+        }
+        break;
+      case 'mention':
+        if (data.postPermlink) {
+          return `/post/soft/${data.postId || data.postPermlink}`;
+        }
+        break;
+    }
+    return null;
+  }
+
+  // Handle Hive notification types
   switch (notification.type) {
     case 'vote':
     case 'post':
@@ -85,6 +113,15 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return <FileText className="h-4 w-4 text-purple-500" />;
       case 'mention':
         return <AtSign className="h-4 w-4 text-accent" />;
+      // Soft notification types
+      case 'like':
+        return <Heart className="h-4 w-4 text-red-500" />;
+      case 'reply':
+        return <MessageSquare className="h-4 w-4 text-blue-500" />;
+      case 'follow':
+        return <UserPlus className="h-4 w-4 text-green-500" />;
+      case 'system':
+        return <Info className="h-4 w-4 text-gray-500" />;
       default:
         return <Bell className="h-4 w-4 text-gray-500" />;
     }
@@ -102,6 +139,15 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return 'bg-purple-50 border-purple-200';
       case 'mention':
         return 'bg-accent/10 border-accent/20';
+      // Soft notification types
+      case 'like':
+        return 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800';
+      case 'reply':
+        return 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800';
+      case 'follow':
+        return 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800';
+      case 'system':
+        return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
       default:
         return 'bg-gray-50 border-gray-200';
     }
@@ -205,6 +251,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                     
                     {notification.data && (
                       <div className="mt-2 flex items-center space-x-2">
+                        {/* Hive notification badges */}
                         {notification.data.author && (
                           <Badge variant="outline" className="text-xs">
                             @{notification.data.author}
@@ -213,6 +260,12 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                         {notification.data.weight && (
                           <Badge variant="outline" className="text-xs">
                             {notification.data.weight}% vote
+                          </Badge>
+                        )}
+                        {/* Soft notification badges */}
+                        {notification.data.sourceUsername && !notification.data.author && (
+                          <Badge variant="outline" className="text-xs">
+                            @{notification.data.sourceUsername}
                           </Badge>
                         )}
                       </div>

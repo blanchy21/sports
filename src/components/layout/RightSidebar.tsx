@@ -38,7 +38,9 @@ export const RightSidebar: React.FC = () => {
 
   // Follow button component
   const FollowButton: React.FC<{ username: string }> = ({ username }) => {
-    const { data: isFollowing } = useIsFollowingUser(username, user?.username || '');
+    // Only check Hive follow status for Hive users
+    const hiveFollower = user?.isHiveAuth ? (user.hiveUsername || user.username) : '';
+    const { data: isFollowing } = useIsFollowingUser(username, hiveFollower);
     const [isFollowingState, setIsFollowingState] = useState(false);
     const [hasAttemptedFollow, setHasAttemptedFollow] = useState(false);
 

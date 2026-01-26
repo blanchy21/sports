@@ -23,10 +23,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const { data: followerCount } = useUserFollowerCount(username || '');
   const { data: followingCount } = useUserFollowingCount(username || '');
   
-  // Follow/unfollow functionality
+  // Follow/unfollow functionality - only check Hive follow status for Hive users
+  const hiveFollower = currentUser?.isHiveAuth ? (currentUser.hiveUsername || currentUser.username) : '';
   const { data: isFollowing, isLoading: isCheckingFollow, refetch: refetchIsFollowing } = useIsFollowingUser(
     username || '',
-    currentUser?.username || ''
+    hiveFollower
   );
   
   const followMutation = useFollowUser();
