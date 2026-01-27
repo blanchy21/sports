@@ -121,7 +121,29 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
       })),
       {
         name: 'sportsblock-bookmarks',
-        version: 2, // Bump version for migration
+        version: 2,
+        // Migration function to handle version changes
+        migrate: (persistedState: unknown, version: number) => {
+          const state = persistedState as BookmarkState;
+          if (version < 2) {
+            // v1 -> v2: Add bookmarkIndex if missing
+            const newIndex: Record<string, boolean> = {};
+            if (state.bookmarks) {
+              state.bookmarks.forEach((bookmark) => {
+                const key = createBookmarkKey(bookmark.id, bookmark.userId);
+                newIndex[key] = true;
+              });
+            }
+            return {
+              ...state,
+              bookmarks: state.bookmarks || [],
+              bookmarkIndex: newIndex,
+              isLoading: false,
+              error: null,
+            };
+          }
+          return state;
+        },
         // Rebuild index on rehydration from localStorage
         onRehydrateStorage: () => (state) => {
           if (state) {

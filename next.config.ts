@@ -1,11 +1,12 @@
-import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
+import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 // Bundle analyzer - only enabled when ANALYZE=true
-const withBundleAnalyzer = process.env.ANALYZE === 'true'
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  ? require('@next/bundle-analyzer')({ enabled: true })
-  : (config: NextConfig) => config;
+const withBundleAnalyzer =
+  process.env.ANALYZE === 'true'
+    ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@next/bundle-analyzer')({ enabled: true })
+    : (config: NextConfig) => config;
 
 const nextConfig: NextConfig = {
   // Security headers including CSP
@@ -27,11 +28,11 @@ const nextConfig: NextConfig = {
               // Styles - self and inline (required for styled-jsx and Tailwind)
               "style-src 'self' 'unsafe-inline'",
               // Images - self, data URIs, and allowed image hosts
-              "img-src 'self' data: blob: https://images.unsplash.com https://cdn.steemitimages.com https://steemitimages.com https://images.hive.blog https://gateway.ipfs.io https://ipfs.io https://files.peakd.com https://files.ecency.com https://files.3speak.tv https://files.dtube.tv https://api.dicebear.com https://*.espncdn.com",
+              "img-src 'self' data: blob: https://images.unsplash.com https://cdn.steemitimages.com https://steemitimages.com https://images.hive.blog https://gateway.ipfs.io https://ipfs.io https://ipfs.busy.org https://files.peakd.com https://files.ecency.com https://files.3speak.tv https://files.dtube.tv https://api.dicebear.com https://*.espncdn.com",
               // Fonts - self and data URIs
               "font-src 'self' data:",
               // Connect - API endpoints, Hive nodes, and Sentry
-              "connect-src 'self' https://api.hive.blog https://api.deathwing.me https://api.openhive.network https://anyx.io https://rpc.ausbit.dev https://api.coingecko.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://*.sentry.io https://*.ingest.sentry.io https://site.api.espn.com",
+              "connect-src 'self' https://api.hive.blog https://api.deathwing.me https://api.openhive.network https://anyx.io https://rpc.ausbit.dev https://api.c0ff33a.uk https://api.coingecko.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://*.sentry.io https://*.ingest.sentry.io https://site.api.espn.com",
               // Frames - restricted to video embeds
               "frame-src 'self' https://www.youtube.com https://youtube.com https://player.vimeo.com https://3speak.tv https://emb.3speak.tv",
               // Object - none
@@ -44,7 +45,9 @@ const nextConfig: NextConfig = {
               "frame-ancestors 'self'",
               // Upgrade insecure requests in production
               process.env.NODE_ENV === 'production' ? 'upgrade-insecure-requests' : '',
-            ].filter(Boolean).join('; '),
+            ]
+              .filter(Boolean)
+              .join('; '),
           },
           {
             key: 'X-Frame-Options',
@@ -112,7 +115,7 @@ const nextConfig: NextConfig = {
         '@hiveio/workerbee': false,
         '@hiveio/wax': false,
       };
-      
+
       // Ignore WASM files on client side
       config.module.rules.push({
         test: /\.wasm$/,
@@ -121,7 +124,7 @@ const nextConfig: NextConfig = {
           filename: 'static/wasm/[name][ext]',
         },
       });
-      
+
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
@@ -134,20 +137,23 @@ const nextConfig: NextConfig = {
         ...config.experiments,
         asyncWebAssembly: true,
       };
-      
+
       // Handle WASM files properly on server
       config.module.rules.push({
         test: /\.wasm$/,
         type: 'webassembly/async',
       });
-      
+
       // Externalize WorkerBee and Wax packages on server
       config.externals = config.externals || [];
       if (typeof config.externals === 'function') {
         const originalExternals = config.externals;
         config.externals = [
           originalExternals,
-          ({ request }: { request?: string }, callback: (err: null | Error, result?: string) => void) => {
+          (
+            { request }: { request?: string },
+            callback: (err: null | Error, result?: string) => void
+          ) => {
             if (request?.includes('@hiveio/workerbee') || request?.includes('@hiveio/wax')) {
               return callback(null, `commonjs ${request}`);
             }
@@ -158,7 +164,7 @@ const nextConfig: NextConfig = {
         config.externals.push('@hiveio/workerbee', '@hiveio/wax');
       }
     }
-    
+
     return config;
   },
   experimental: {
@@ -221,6 +227,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'ipfs.io',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ipfs.busy.org',
         port: '',
         pathname: '/**',
       },

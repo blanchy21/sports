@@ -256,6 +256,7 @@ export async function getAllStakers(
 
 /**
  * Get total staked amount for a token
+ * Uses pagination to fetch all stakers (Hive Engine max limit is 1000)
  */
 export async function getTotalStaked(symbol: string = MEDALS_CONFIG.SYMBOL): Promise<number> {
   const tokenInfo = await getTokenInfo(symbol);
@@ -264,10 +265,22 @@ export async function getTotalStaked(symbol: string = MEDALS_CONFIG.SYMBOL): Pro
     return 0;
   }
 
-  // The supply minus circulating gives us locked tokens
-  // For a more accurate count, we'd need to sum all stakes
-  const stakers = await getAllStakers(symbol, { limit: 10000 });
-  const totalStaked = stakers.reduce((sum, s) => sum + parseQuantity(s.stake), 0);
+  // Fetch all stakers with pagination (Hive Engine max limit is 1000)
+  const BATCH_SIZE = 1000;
+  let totalStaked = 0;
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const stakers = await getAllStakers(symbol, { limit: BATCH_SIZE, offset });
+    totalStaked += stakers.reduce((sum, s) => sum + parseQuantity(s.stake), 0);
+
+    if (stakers.length < BATCH_SIZE) {
+      hasMore = false;
+    } else {
+      offset += BATCH_SIZE;
+    }
+  }
 
   return totalStaked;
 }
@@ -279,7 +292,9 @@ export async function getTotalStaked(symbol: string = MEDALS_CONFIG.SYMBOL): Pro
 /**
  * Get token information
  */
-export async function getTokenInfo(symbol: string = MEDALS_CONFIG.SYMBOL): Promise<TokenInfo | null> {
+export async function getTokenInfo(
+  symbol: string = MEDALS_CONFIG.SYMBOL
+): Promise<TokenInfo | null> {
   const client = getHiveEngineClient();
 
   const token = await client.findOne<TokenInfo>(CONTRACTS.TOKENS, 'tokens', {

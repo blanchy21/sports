@@ -125,9 +125,11 @@ export const userAccountDataSchema = z.object({
 export const hiveActiveVoteSchema = z
   .object({
     voter: z.string(),
-    weight: z.number(),
+    // weight is optional and can be string or number (Hive API is inconsistent)
+    weight: z.union([z.string(), z.number()]).optional(),
     rshares: z.union([z.string(), z.number()]),
-    percent: z.number().optional(),
+    // percent can be string or number (Hive API returns strings like "4000")
+    percent: z.union([z.string(), z.number()]).optional(),
     reputation: z.union([z.string(), z.number()]).optional(),
     time: z.string().optional(),
   })
@@ -151,8 +153,9 @@ export const hiveRawPostSchema = z
     active: z.string().optional(),
     depth: z.number().optional(),
     children: z.number().optional(),
-    net_votes: z.number(),
-    net_rshares: z.union([z.string(), z.number()]).optional(),
+    // net_votes can be null in Hive API responses, default to 0
+    net_votes: z.number().nullable().default(0),
+    net_rshares: z.union([z.string(), z.number()]).nullable().optional(),
     pending_payout_value: z.string().optional(),
     total_payout_value: z.string().optional(),
     curator_payout_value: z.string().optional(),
@@ -251,8 +254,9 @@ export const hiveRawCommentSchema = z
     active: z.string().optional(),
     depth: z.number().optional(),
     children: z.number().optional(),
-    net_votes: z.number(),
-    net_rshares: z.union([z.string(), z.number()]).optional(),
+    // net_votes can be null in Hive API responses, default to 0
+    net_votes: z.number().nullable().default(0),
+    net_rshares: z.union([z.string(), z.number()]).nullable().optional(),
     pending_payout_value: z.string().optional(),
     total_payout_value: z.string().optional(),
     curator_payout_value: z.string().optional(),
