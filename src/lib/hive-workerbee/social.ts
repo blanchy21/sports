@@ -377,7 +377,17 @@ export async function fetchFollowing(
       total,
     };
   } catch (error) {
-    logError('Error fetching following', undefined, error instanceof Error ? error : undefined);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : JSON.stringify(error);
+    logError(
+      `Error fetching following: ${errorMessage}`,
+      'getFollowing',
+      error instanceof Error ? error : new Error(errorMessage)
+    );
     return {
       relationships: [],
       hasMore: false,
@@ -408,10 +418,16 @@ export async function getFollowerCount(username: string): Promise<number> {
     logInfo(`getFollowerCount found ${count} followers for ${username}`);
     return count;
   } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : JSON.stringify(error);
     logError(
-      `Error fetching follower count for "${username}"`,
-      undefined,
-      error instanceof Error ? error : undefined
+      `Error fetching follower count for "${username}": ${errorMessage}`,
+      'getFollowerCount',
+      error instanceof Error ? error : new Error(errorMessage)
     );
     return 0;
   }
@@ -440,10 +456,16 @@ export async function getFollowingCount(username: string): Promise<number> {
     logInfo(`getFollowingCount found ${count} accounts for ${username}`);
     return count;
   } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : JSON.stringify(error);
     logError(
-      `Error fetching following count for "${username}"`,
-      undefined,
-      error instanceof Error ? error : undefined
+      `Error fetching following count for "${username}": ${errorMessage}`,
+      'getFollowingCount',
+      error instanceof Error ? error : new Error(errorMessage)
     );
     return 0;
   }
