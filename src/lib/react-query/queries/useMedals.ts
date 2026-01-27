@@ -8,6 +8,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
 import { STALE_TIMES } from '@/lib/constants/cache';
+import { aioha } from '@/lib/aioha/config';
 
 // Types for MEDALS data
 export interface MedalsBalance {
@@ -192,6 +193,7 @@ export function useStakeMedals() {
 
   return useMutation({
     mutationFn: async (operation: StakeOperation) => {
+      // Step 1: Build the operation via API
       const response = await fetch('/api/hive-engine/stake', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -203,7 +205,53 @@ export function useStakeMedals() {
         throw new Error(error.error || 'Failed to build stake operation');
       }
 
-      return response.json();
+      const data = await response.json();
+
+      if (!data.success || !data.operation) {
+        throw new Error(data.error || 'Failed to build stake operation');
+      }
+
+      // Step 2: Sign and broadcast with Aioha
+      if (!aioha) {
+        throw new Error('Wallet not connected. Please connect your Hive wallet and try again.');
+      }
+
+      const customJsonOp = data.operation;
+
+      // Build the operation array for Aioha
+      // Hive-Engine operations use custom_json with active key
+      const operations = [
+        [
+          'custom_json',
+          {
+            id: customJsonOp.id,
+            required_auths: customJsonOp.required_auths,
+            required_posting_auths: customJsonOp.required_posting_auths,
+            json: customJsonOp.json,
+          },
+        ],
+      ];
+
+      // Sign and broadcast with active key (required for Hive-Engine token operations)
+      const result = await (
+        aioha as {
+          signAndBroadcastTx: (
+            ops: unknown[],
+            keyType: string
+          ) => Promise<{ success: boolean; result?: string; error?: string }>;
+        }
+      ).signAndBroadcastTx(operations, 'active');
+
+      if (!result.success) {
+        throw new Error(result.error || 'Transaction failed');
+      }
+
+      return {
+        success: true,
+        transactionId: result.result,
+        action: data.action,
+        message: data.message,
+      };
     },
     onSuccess: (_, variables) => {
       // Invalidate related queries after successful operation
@@ -219,6 +267,7 @@ export function useTransferMedals() {
 
   return useMutation({
     mutationFn: async (operation: TransferOperation) => {
+      // Step 1: Build the operation via API
       const response = await fetch('/api/hive-engine/transfer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -230,7 +279,53 @@ export function useTransferMedals() {
         throw new Error(error.error || 'Failed to build transfer operation');
       }
 
-      return response.json();
+      const data = await response.json();
+
+      if (!data.success || !data.operation) {
+        throw new Error(data.error || 'Failed to build transfer operation');
+      }
+
+      // Step 2: Sign and broadcast with Aioha
+      if (!aioha) {
+        throw new Error('Wallet not connected. Please connect your Hive wallet and try again.');
+      }
+
+      const customJsonOp = data.operation;
+
+      // Build the operation array for Aioha
+      // Hive-Engine operations use custom_json with active key
+      const operations = [
+        [
+          'custom_json',
+          {
+            id: customJsonOp.id,
+            required_auths: customJsonOp.required_auths,
+            required_posting_auths: customJsonOp.required_posting_auths,
+            json: customJsonOp.json,
+          },
+        ],
+      ];
+
+      // Sign and broadcast with active key (required for Hive-Engine token operations)
+      const result = await (
+        aioha as {
+          signAndBroadcastTx: (
+            ops: unknown[],
+            keyType: string
+          ) => Promise<{ success: boolean; result?: string; error?: string }>;
+        }
+      ).signAndBroadcastTx(operations, 'active');
+
+      if (!result.success) {
+        throw new Error(result.error || 'Transaction failed');
+      }
+
+      return {
+        success: true,
+        transactionId: result.result,
+        action: data.action,
+        message: data.message,
+      };
     },
     onSuccess: (_, variables) => {
       // Invalidate sender's queries
@@ -254,13 +349,15 @@ export function useInvalidateMedals() {
       queryClient.invalidateQueries({ queryKey: queryKeys.medals.stake(account) }),
     invalidateHistory: (account: string) =>
       queryClient.invalidateQueries({ queryKey: queryKeys.medals.history(account) }),
-    invalidateMarket: () =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.medals.market() }),
+    invalidateMarket: () => queryClient.invalidateQueries({ queryKey: queryKeys.medals.market() }),
   };
 }
 
 // Helper to calculate HIVE value from MEDALS balance
-export function calculateHiveValue(balance: MedalsBalance | undefined, market: MedalsMarket | undefined): string {
+export function calculateHiveValue(
+  balance: MedalsBalance | undefined,
+  market: MedalsMarket | undefined
+): string {
   if (!balance || !market) return '0.000';
 
   const totalMedals = parseFloat(balance.total) || 0;

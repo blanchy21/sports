@@ -144,6 +144,94 @@ export interface WaxTransactionResult {
   trxNum?: number;
 }
 
+// Power Up/Down operation types
+export interface WaxTransferToVestingOperation {
+  from: string;
+  to: string;
+  amount: string; // e.g., "10.000 HIVE"
+}
+
+export interface WaxWithdrawVestingOperation {
+  account: string;
+  vesting_shares: string; // e.g., "10000.000000 VESTS"
+}
+
+/**
+ * Format HIVE amount with proper precision (3 decimals)
+ */
+export function formatHiveAmount(amount: number): string {
+  return `${amount.toFixed(3)} HIVE`;
+}
+
+/**
+ * Format VESTS amount with proper precision (6 decimals)
+ */
+export function formatVestsAmount(amount: number): string {
+  return `${amount.toFixed(6)} VESTS`;
+}
+
+/**
+ * Create a Power Up (transfer_to_vesting) operation
+ * Converts liquid HIVE to HIVE Power (vesting shares)
+ *
+ * @param from - Account sending HIVE
+ * @param to - Account receiving HIVE Power (usually same as from)
+ * @param amount - Amount of HIVE to power up (number, will be formatted)
+ */
+export function createPowerUpOperation(powerUpData: {
+  from: string;
+  to?: string; // Defaults to 'from' if not specified
+  amount: number; // HIVE amount
+}): WaxTransferToVestingOperation {
+  if (powerUpData.amount <= 0) {
+    throw new Error('Power up amount must be greater than 0');
+  }
+
+  if (powerUpData.amount < 0.001) {
+    throw new Error('Minimum power up amount is 0.001 HIVE');
+  }
+
+  return {
+    from: powerUpData.from,
+    to: powerUpData.to || powerUpData.from,
+    amount: formatHiveAmount(powerUpData.amount),
+  };
+}
+
+/**
+ * Create a Power Down (withdraw_vesting) operation
+ * Starts the 13-week power down process to convert HIVE Power to liquid HIVE
+ *
+ * @param account - Account powering down
+ * @param vestingShares - Amount of VESTS to power down (number, will be formatted)
+ */
+export function createPowerDownOperation(powerDownData: {
+  account: string;
+  vestingShares: number; // VESTS amount
+}): WaxWithdrawVestingOperation {
+  if (powerDownData.vestingShares < 0) {
+    throw new Error('Power down amount cannot be negative');
+  }
+
+  return {
+    account: powerDownData.account,
+    vesting_shares: formatVestsAmount(powerDownData.vestingShares),
+  };
+}
+
+/**
+ * Create a Cancel Power Down operation
+ * Cancels an active power down by setting vesting_shares to 0
+ *
+ * @param account - Account to cancel power down for
+ */
+export function createCancelPowerDownOperation(account: string): WaxWithdrawVestingOperation {
+  return {
+    account,
+    vesting_shares: '0.000000 VESTS',
+  };
+}
+
 /**
  * Get Wax instance with proper error handling
  * Attempts to initialize WorkerBee and access the Wax chain interface

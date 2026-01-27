@@ -33,6 +33,7 @@ import {
   MarketInfo,
   TransferModal,
 } from '@/components/medals';
+import { PowerPanel } from '@/components/wallet';
 import { Button } from '@/components/core/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePriceContext } from '@/contexts/PriceContext';
@@ -622,6 +623,15 @@ export default function WalletPage() {
                 </p>
               )}
             </div>
+          </div>
+
+          {/* Power Up/Down Panel */}
+          <div className="mt-6">
+            <PowerPanel
+              account={user.username}
+              liquidHive={user.liquidHiveBalance}
+              onOperationComplete={() => refreshAccountData()}
+            />
           </div>
         </div>
 
