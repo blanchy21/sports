@@ -147,28 +147,80 @@ export class InternalError extends ApiError {
   }
 }
 
+// ============================================================================
+// Standard API Response Envelope Types
+// ============================================================================
+
 /**
- * Structured API error
+ * Standard metadata for API responses
+ */
+export interface ApiResponseMeta {
+  /** Request tracking ID */
+  requestId?: string;
+  /** Response timestamp */
+  timestamp?: string;
+  /** Whether response was from cache */
+  cached?: boolean;
+  /** Whether cached data is stale */
+  stale?: boolean;
+}
+
+/**
+ * Pagination metadata for list responses
+ */
+export interface PaginationMeta {
+  /** Total number of items */
+  total: number;
+  /** Current page (1-indexed) */
+  page: number;
+  /** Items per page */
+  limit: number;
+  /** Whether there are more pages */
+  hasMore: boolean;
+}
+
+/**
+ * Structured API error response envelope
+ * All error responses MUST follow this structure
  */
 export interface ApiErrorResponse {
+  success: false;
+  error: {
+    message: string;
+    code: ApiErrorCode;
+    details?: unknown;
+  };
+  meta?: ApiResponseMeta;
+}
+
+/**
+ * Structured API success response envelope
+ * All success responses MUST follow this structure
+ */
+export interface ApiSuccessResponse<T> {
+  success: true;
+  data: T;
+  meta?: ApiResponseMeta & {
+    pagination?: PaginationMeta;
+    count?: number;
+  };
+}
+
+/**
+ * Union type for all API responses
+ */
+export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
+
+/**
+ * Legacy error response format (for backward compatibility during migration)
+ * @deprecated Use ApiErrorResponse instead
+ */
+export interface LegacyApiErrorResponse {
   success: false;
   error: string;
   code: ApiErrorCode;
   details?: unknown;
   requestId?: string;
-}
-
-/**
- * Structured API success response
- */
-export interface ApiSuccessResponse<T> {
-  success: true;
-  data?: T;
-  meta?: {
-    cached?: boolean;
-    stale?: boolean;
-    count?: number;
-  };
 }
 
 /**
@@ -230,24 +282,29 @@ export const apiLogger = {
   },
 
   error(route: string, message: string, error?: unknown, data?: Record<string, unknown>) {
-    const errorInfo = error instanceof Error
-      ? { errorMessage: error.message, errorName: error.name }
-      : { errorMessage: String(error) };
+    const errorInfo =
+      error instanceof Error
+        ? { errorMessage: error.message, errorName: error.name }
+        : { errorMessage: String(error) };
 
     this.log('error', route, message, { ...errorInfo, ...data });
   },
 };
 
+// ============================================================================
+// Legacy Error Response Functions (for backward compatibility)
+// These return the flat error format used by existing routes
+// ============================================================================
+
 /**
  * Create a validation error response (400)
+ * @deprecated Use apiError() for new routes
  */
 export function validationError(
   error: ZodError | string,
   requestId?: string
-): NextResponse<ApiErrorResponse> {
-  const message = error instanceof ZodError
-    ? formatValidationErrors(error)
-    : error;
+): NextResponse<LegacyApiErrorResponse> {
+  const message = error instanceof ZodError ? formatValidationErrors(error) : error;
 
   const details = error instanceof ZodError ? error.issues : undefined;
 
@@ -265,11 +322,12 @@ export function validationError(
 
 /**
  * Create a not found error response (404)
+ * @deprecated Use apiError() for new routes
  */
 export function notFoundError(
   message: string,
   requestId?: string
-): NextResponse<ApiErrorResponse> {
+): NextResponse<LegacyApiErrorResponse> {
   return NextResponse.json(
     {
       success: false as const,
@@ -283,11 +341,12 @@ export function notFoundError(
 
 /**
  * Create an unauthorized error response (401)
+ * @deprecated Use apiError() for new routes
  */
 export function unauthorizedError(
   message = 'Authentication required',
   requestId?: string
-): NextResponse<ApiErrorResponse> {
+): NextResponse<LegacyApiErrorResponse> {
   return NextResponse.json(
     {
       success: false as const,
@@ -301,11 +360,12 @@ export function unauthorizedError(
 
 /**
  * Create a forbidden error response (403)
+ * @deprecated Use apiError() for new routes
  */
 export function forbiddenError(
   message: string,
   requestId?: string
-): NextResponse<ApiErrorResponse> {
+): NextResponse<LegacyApiErrorResponse> {
   return NextResponse.json(
     {
       success: false as const,
@@ -319,11 +379,12 @@ export function forbiddenError(
 
 /**
  * Create a rate limited error response (429)
+ * @deprecated Use apiError() for new routes
  */
 export function rateLimitedError(
   message = 'Too many requests',
   requestId?: string
-): NextResponse<ApiErrorResponse> {
+): NextResponse<LegacyApiErrorResponse> {
   return NextResponse.json(
     {
       success: false as const,
@@ -337,11 +398,12 @@ export function rateLimitedError(
 
 /**
  * Create a timeout error response (504)
+ * @deprecated Use apiError() for new routes
  */
 export function timeoutError(
   message = 'Request timeout',
   requestId?: string
-): NextResponse<ApiErrorResponse> {
+): NextResponse<LegacyApiErrorResponse> {
   return NextResponse.json(
     {
       success: false as const,
@@ -355,11 +417,12 @@ export function timeoutError(
 
 /**
  * Create an upstream error response (502)
+ * @deprecated Use apiError() for new routes
  */
 export function upstreamError(
   message: string,
   requestId?: string
-): NextResponse<ApiErrorResponse> {
+): NextResponse<LegacyApiErrorResponse> {
   return NextResponse.json(
     {
       success: false as const,
@@ -373,11 +436,12 @@ export function upstreamError(
 
 /**
  * Create an internal error response (500)
+ * @deprecated Use apiError() for new routes
  */
 export function internalError(
   message = 'Internal server error',
   requestId?: string
-): NextResponse<ApiErrorResponse> {
+): NextResponse<LegacyApiErrorResponse> {
   return NextResponse.json(
     {
       success: false as const,
@@ -390,16 +454,125 @@ export function internalError(
 }
 
 /**
- * Create a success response with data
+ * Create a success response with data (legacy - spreads data at root)
+ * @deprecated Use apiSuccess() for standard envelope responses
  */
-export function successResponse<T>(
-  data: T,
-  meta?: ApiSuccessResponse<T>['meta']
-): NextResponse {
+export function successResponse<T>(data: T, meta?: ApiSuccessResponse<T>['meta']): NextResponse {
   return NextResponse.json({
     success: true,
     ...data,
     ...(meta && { meta }),
+  });
+}
+
+// ============================================================================
+// Standard API Response Functions (New)
+// ============================================================================
+
+/**
+ * Create a standardized success response with data wrapped in envelope
+ *
+ * @example
+ * // Simple response
+ * return apiSuccess({ posts: [...], total: 10 });
+ *
+ * // With metadata
+ * return apiSuccess(
+ *   { posts: [...] },
+ *   { pagination: { total: 100, page: 1, limit: 20, hasMore: true } }
+ * );
+ */
+export function apiSuccess<T>(
+  data: T,
+  options?: {
+    meta?: ApiSuccessResponse<T>['meta'];
+    status?: number;
+    headers?: HeadersInit;
+  }
+): NextResponse<ApiSuccessResponse<T>> {
+  const response: ApiSuccessResponse<T> = {
+    success: true,
+    data,
+  };
+
+  if (options?.meta) {
+    response.meta = {
+      ...options.meta,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  return NextResponse.json(response, {
+    status: options?.status ?? 200,
+    headers: options?.headers,
+  });
+}
+
+/**
+ * Create a standardized error response
+ *
+ * @example
+ * return apiError('User not found', 'NOT_FOUND', 404);
+ */
+export function apiError(
+  message: string,
+  code: ApiErrorCode,
+  status: number,
+  options?: {
+    details?: unknown;
+    requestId?: string;
+    headers?: HeadersInit;
+  }
+): NextResponse<ApiErrorResponse> {
+  const errorObj: ApiErrorResponse['error'] = {
+    message,
+    code,
+  };
+
+  if (options?.details !== undefined) {
+    errorObj.details = options.details;
+  }
+
+  const response: ApiErrorResponse = {
+    success: false,
+    error: errorObj,
+    meta: {
+      requestId: options?.requestId,
+      timestamp: new Date().toISOString(),
+    },
+  };
+
+  return NextResponse.json(response, {
+    status,
+    headers: options?.headers,
+  });
+}
+
+/**
+ * Create a paginated success response
+ *
+ * @example
+ * return apiPaginated(posts, { total: 100, page: 1, limit: 20 });
+ */
+export function apiPaginated<T>(
+  data: T,
+  pagination: Omit<PaginationMeta, 'hasMore'>,
+  options?: {
+    requestId?: string;
+    cached?: boolean;
+  }
+): NextResponse<ApiSuccessResponse<T>> {
+  const hasMore = pagination.page * pagination.limit < pagination.total;
+
+  return apiSuccess(data, {
+    meta: {
+      requestId: options?.requestId,
+      cached: options?.cached,
+      pagination: {
+        ...pagination,
+        hasMore,
+      },
+    },
   });
 }
 
@@ -417,23 +590,33 @@ export function handleApiError(
   route: string,
   error: unknown,
   requestId?: string
-): NextResponse<ApiErrorResponse> {
+): NextResponse<LegacyApiErrorResponse> {
   // Enhanced error logging with stack traces
-  const errorDetails = error instanceof Error ? {
-    name: error.name,
-    message: error.message,
-    stack: error.stack,
-    cause: error.cause,
-  } : {
-    type: typeof error,
-    value: String(error),
-  };
+  const errorDetails =
+    error instanceof Error
+      ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          cause: error.cause,
+        }
+      : {
+          type: typeof error,
+          value: String(error),
+        };
 
-  console.error(`[API Error] ${route}`, JSON.stringify({
-    requestId,
-    timestamp: new Date().toISOString(),
-    error: errorDetails,
-  }, null, 2));
+  console.error(
+    `[API Error] ${route}`,
+    JSON.stringify(
+      {
+        requestId,
+        timestamp: new Date().toISOString(),
+        error: errorDetails,
+      },
+      null,
+      2
+    )
+  );
 
   // Log the error using apiLogger as well
   apiLogger.error(route, 'Request failed', error, { requestId });
@@ -490,11 +673,7 @@ export function handleApiError(
     }
 
     // Upstream/blockchain errors
-    if (
-      message.includes('hive') ||
-      message.includes('blockchain') ||
-      message.includes('node')
-    ) {
+    if (message.includes('hive') || message.includes('blockchain') || message.includes('node')) {
       return upstreamError(error.message, requestId);
     }
   }
@@ -525,3 +704,110 @@ export function createRequestContext(route: string) {
     handleError: (error: unknown) => handleApiError(route, error, requestId),
   };
 }
+
+// ============================================================================
+// API Route Handler Wrapper
+// ============================================================================
+
+/**
+ * Context passed to API route handlers
+ */
+export interface ApiHandlerContext {
+  /** Unique request ID for tracking */
+  requestId: string;
+  /** Structured logger */
+  log: {
+    debug: (message: string, data?: Record<string, unknown>) => void;
+    info: (message: string, data?: Record<string, unknown>) => void;
+    warn: (message: string, data?: Record<string, unknown>) => void;
+    error: (message: string, error?: unknown, data?: Record<string, unknown>) => void;
+  };
+}
+
+/**
+ * Type for API route handler functions
+ */
+export type ApiRouteHandler<T = unknown> = (
+  request: Request,
+  context: ApiHandlerContext
+) => Promise<NextResponse<ApiSuccessResponse<T>> | NextResponse<ApiErrorResponse>>;
+
+/**
+ * Create a wrapped API route handler with automatic error handling
+ *
+ * This wrapper:
+ * - Generates a unique request ID for tracking
+ * - Provides a structured logger
+ * - Catches all errors and returns standardized error responses
+ * - Enforces response envelope structure
+ *
+ * @example
+ * // In your route.ts file:
+ * export const GET = createApiHandler('/api/posts', async (request, ctx) => {
+ *   ctx.log.info('Fetching posts');
+ *
+ *   const posts = await fetchPosts();
+ *
+ *   return apiSuccess({ posts, total: posts.length });
+ * });
+ */
+export function createApiHandler<T = unknown>(
+  route: string,
+  handler: ApiRouteHandler<T>
+): (request: Request) => Promise<NextResponse> {
+  return async (request: Request): Promise<NextResponse> => {
+    const requestId = generateRequestId();
+    const startTime = Date.now();
+
+    const ctx: ApiHandlerContext = {
+      requestId,
+      log: {
+        debug: (message: string, data?: Record<string, unknown>) =>
+          apiLogger.debug(route, message, { ...data, requestId }),
+        info: (message: string, data?: Record<string, unknown>) =>
+          apiLogger.info(route, message, { ...data, requestId }),
+        warn: (message: string, data?: Record<string, unknown>) =>
+          apiLogger.warn(route, message, { ...data, requestId }),
+        error: (message: string, error?: unknown, data?: Record<string, unknown>) =>
+          apiLogger.error(route, message, error, { ...data, requestId }),
+      },
+    };
+
+    try {
+      ctx.log.debug('Request started', { method: request.method });
+
+      const response = await handler(request, ctx);
+
+      const duration = Date.now() - startTime;
+      ctx.log.debug('Request completed', { duration, status: response.status });
+
+      return response;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      ctx.log.error('Request failed', error, { duration });
+
+      return handleApiError(route, error, requestId);
+    }
+  };
+}
+
+/**
+ * Helper to throw structured API errors in handlers
+ *
+ * @example
+ * if (!user) {
+ *   throw new NotFoundError('User not found');
+ * }
+ *
+ * Available error classes:
+ * - ApiError (base class)
+ * - ValidationError (400)
+ * - NotFoundError (404)
+ * - AuthError / UnauthorizedError (401)
+ * - ForbiddenError (403)
+ * - RateLimitError (429)
+ * - TimeoutError (504)
+ * - UpstreamError (502)
+ * - HiveError (502)
+ * - InternalError (500)
+ */

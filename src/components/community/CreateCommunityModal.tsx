@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { X, Users, Image as ImageIcon, Loader2, Globe, Lock, Mail } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { useAuth } from "@/contexts/AuthContext";
-import { useCreateCommunity } from "@/lib/react-query/queries/useCommunity";
-import { SPORT_CATEGORIES, CommunityType } from "@/types";
-import { cn } from "@/lib/utils";
+import React, { useState } from 'react';
+import { X, Users, Image as ImageIcon, Loader2, Globe, Lock, Mail } from 'lucide-react';
+import { Button } from '@/components/core/Button';
+import { Card } from '@/components/core/Card';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCreateCommunity } from '@/lib/react-query/queries/useCommunity';
+import { SPORT_CATEGORIES, CommunityType } from '@/types';
+import { cn } from '@/lib/utils/client';
 
 interface CreateCommunityModalProps {
   isOpen: boolean;
@@ -15,7 +15,12 @@ interface CreateCommunityModalProps {
   onSuccess?: (community: { id: string; slug: string }) => void;
 }
 
-const COMMUNITY_TYPES: { value: CommunityType; label: string; description: string; icon: React.ReactNode }[] = [
+const COMMUNITY_TYPES: {
+  value: CommunityType;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+}[] = [
   {
     value: 'public',
     label: 'Public',
@@ -161,19 +166,17 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-card">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <Card className="max-h-[90vh] w-full max-w-2xl overflow-y-auto bg-card">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-card z-10">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card p-6">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
+            <div className="rounded-lg bg-primary/10 p-2">
               <Users className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h2 className="text-xl font-semibold">Create Community</h2>
-              <p className="text-sm text-muted-foreground">
-                Build your own sports community
-              </p>
+              <p className="text-sm text-muted-foreground">Build your own sports community</p>
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -182,10 +185,10 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 p-6">
           {/* Community Name */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="mb-2 block text-sm font-medium">
               Community Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -195,18 +198,16 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               onChange={handleInputChange}
               placeholder="e.g., Tottenham Supporters Club"
               className={cn(
-                "w-full px-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary",
-                errors.name && "border-red-500"
+                'w-full rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary',
+                errors.name && 'border-red-500'
               )}
             />
-            {errors.name && (
-              <p className="text-sm text-red-500 mt-1">{errors.name}</p>
-            )}
+            {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
           </div>
 
           {/* Short Description */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="mb-2 block text-sm font-medium">
               Short Description <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -216,40 +217,32 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               placeholder="Brief description of your community (10-500 characters)"
               rows={2}
               className={cn(
-                "w-full px-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none",
-                errors.about && "border-red-500"
+                'w-full resize-none rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary',
+                errors.about && 'border-red-500'
               )}
             />
-            <div className="flex justify-between mt-1">
-              {errors.about ? (
-                <p className="text-sm text-red-500">{errors.about}</p>
-              ) : (
-                <span />
-              )}
-              <span className="text-xs text-muted-foreground">
-                {formData.about.length}/500
-              </span>
+            <div className="mt-1 flex justify-between">
+              {errors.about ? <p className="text-sm text-red-500">{errors.about}</p> : <span />}
+              <span className="text-xs text-muted-foreground">{formData.about.length}/500</span>
             </div>
           </div>
 
           {/* Extended Description */}
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Extended Description / Rules
-            </label>
+            <label className="mb-2 block text-sm font-medium">Extended Description / Rules</label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleInputChange}
               placeholder="Community guidelines, rules, and detailed description..."
               rows={4}
-              className="w-full px-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              className="w-full resize-none rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           {/* Sport Category */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="mb-2 block text-sm font-medium">
               Sport Category <span className="text-red-500">*</span>
             </label>
             <select
@@ -257,8 +250,8 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               value={formData.sportCategory}
               onChange={handleInputChange}
               className={cn(
-                "w-full px-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary",
-                errors.sportCategory && "border-red-500"
+                'w-full rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary',
+                errors.sportCategory && 'border-red-500'
               )}
             >
               <option value="">Select a sport</option>
@@ -269,32 +262,34 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               ))}
             </select>
             {errors.sportCategory && (
-              <p className="text-sm text-red-500 mt-1">{errors.sportCategory}</p>
+              <p className="mt-1 text-sm text-red-500">{errors.sportCategory}</p>
             )}
           </div>
 
           {/* Community Type */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="mb-2 block text-sm font-medium">
               Community Type <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {COMMUNITY_TYPES.map((type) => (
                 <button
                   key={type.value}
                   type="button"
                   onClick={() => handleTypeChange(type.value)}
                   className={cn(
-                    "p-4 border rounded-lg text-left transition-all",
+                    'rounded-lg border p-4 text-left transition-all',
                     formData.type === type.value
-                      ? "border-primary bg-primary/5 ring-2 ring-primary"
-                      : "border-border hover:border-primary/50"
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary'
+                      : 'border-border hover:border-primary/50'
                   )}
                 >
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className={cn(
-                      formData.type === type.value ? "text-primary" : "text-muted-foreground"
-                    )}>
+                  <div className="mb-2 flex items-center space-x-2">
+                    <span
+                      className={cn(
+                        formData.type === type.value ? 'text-primary' : 'text-muted-foreground'
+                      )}
+                    >
                       {type.icon}
                     </span>
                     <span className="font-medium">{type.label}</span>
@@ -306,10 +301,10 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
           </div>
 
           {/* Images */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium mb-2">
-                <ImageIcon className="h-4 w-4 inline mr-1" />
+              <label className="mb-2 block text-sm font-medium">
+                <ImageIcon className="mr-1 inline h-4 w-4" />
                 Avatar URL
               </label>
               <input
@@ -319,18 +314,16 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
                 onChange={handleInputChange}
                 placeholder="https://example.com/avatar.jpg"
                 className={cn(
-                  "w-full px-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary text-sm",
-                  errors.avatar && "border-red-500"
+                  'w-full rounded-lg border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary',
+                  errors.avatar && 'border-red-500'
                 )}
               />
-              {errors.avatar && (
-                <p className="text-sm text-red-500 mt-1">{errors.avatar}</p>
-              )}
+              {errors.avatar && <p className="mt-1 text-sm text-red-500">{errors.avatar}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
-                <ImageIcon className="h-4 w-4 inline mr-1" />
+              <label className="mb-2 block text-sm font-medium">
+                <ImageIcon className="mr-1 inline h-4 w-4" />
                 Cover Image URL
               </label>
               <input
@@ -340,25 +333,25 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
                 onChange={handleInputChange}
                 placeholder="https://example.com/cover.jpg"
                 className={cn(
-                  "w-full px-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary text-sm",
-                  errors.coverImage && "border-red-500"
+                  'w-full rounded-lg border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary',
+                  errors.coverImage && 'border-red-500'
                 )}
               />
               {errors.coverImage && (
-                <p className="text-sm text-red-500 mt-1">{errors.coverImage}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.coverImage}</p>
               )}
             </div>
           </div>
 
           {/* Submit Error */}
           {errors.submit && (
-            <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
               <p className="text-sm text-red-600 dark:text-red-400">{errors.submit}</p>
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
+          <div className="flex justify-end space-x-3 border-t pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
@@ -369,12 +362,12 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
             >
               {createCommunityMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
                 </>
               ) : (
                 <>
-                  <Users className="h-4 w-4 mr-2" />
+                  <Users className="mr-2 h-4 w-4" />
                   Create Community
                 </>
               )}

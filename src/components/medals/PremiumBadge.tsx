@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import React from "react";
-import { cn } from "@/lib/utils";
-import { PREMIUM_TIERS, type PremiumTier } from "@/lib/hive-engine/constants";
-import { Crown, Award, Star, Medal, Sparkles } from "lucide-react";
+import React from 'react';
+import { cn } from '@/lib/utils/client';
+import { PREMIUM_TIERS, type PremiumTier } from '@/lib/hive-engine/constants';
+import { Crown, Award, Star, Medal, Sparkles } from 'lucide-react';
 
 interface PremiumBadgeProps {
   /** The premium tier to display */
   tier: PremiumTier | null | undefined;
   /** Size variant */
-  size?: "sm" | "md" | "lg";
+  size?: 'sm' | 'md' | 'lg';
   /** Show the tier label text */
   showLabel?: boolean;
   /** Show the staked amount threshold */
@@ -34,40 +34,40 @@ const TIER_CONFIG: Record<
   }
 > = {
   BRONZE: {
-    label: "Bronze",
+    label: 'Bronze',
     icon: Medal,
-    bgGradient: "bg-gradient-to-r from-amber-700 to-amber-600",
-    textColor: "text-amber-900",
-    borderColor: "border-amber-600",
-    iconColor: "text-amber-700",
-    glowColor: "shadow-amber-500/20",
+    bgGradient: 'bg-gradient-to-r from-amber-700 to-amber-600',
+    textColor: 'text-amber-900',
+    borderColor: 'border-amber-600',
+    iconColor: 'text-amber-700',
+    glowColor: 'shadow-amber-500/20',
   },
   SILVER: {
-    label: "Silver",
+    label: 'Silver',
     icon: Star,
-    bgGradient: "bg-gradient-to-r from-slate-400 to-slate-300",
-    textColor: "text-slate-700",
-    borderColor: "border-slate-400",
-    iconColor: "text-slate-500",
-    glowColor: "shadow-slate-400/30",
+    bgGradient: 'bg-gradient-to-r from-slate-400 to-slate-300',
+    textColor: 'text-slate-700',
+    borderColor: 'border-slate-400',
+    iconColor: 'text-slate-500',
+    glowColor: 'shadow-slate-400/30',
   },
   GOLD: {
-    label: "Gold",
+    label: 'Gold',
     icon: Award,
-    bgGradient: "bg-gradient-to-r from-yellow-500 to-amber-400",
-    textColor: "text-yellow-900",
-    borderColor: "border-yellow-500",
-    iconColor: "text-yellow-600",
-    glowColor: "shadow-yellow-500/40",
+    bgGradient: 'bg-gradient-to-r from-yellow-500 to-amber-400',
+    textColor: 'text-yellow-900',
+    borderColor: 'border-yellow-500',
+    iconColor: 'text-yellow-600',
+    glowColor: 'shadow-yellow-500/40',
   },
   PLATINUM: {
-    label: "Platinum",
+    label: 'Platinum',
     icon: Crown,
-    bgGradient: "bg-gradient-to-r from-purple-500 via-indigo-400 to-cyan-400",
-    textColor: "text-white",
-    borderColor: "border-purple-400",
-    iconColor: "text-purple-500",
-    glowColor: "shadow-purple-500/50",
+    bgGradient: 'bg-gradient-to-r from-purple-500 via-indigo-400 to-cyan-400',
+    textColor: 'text-white',
+    borderColor: 'border-purple-400',
+    iconColor: 'text-purple-500',
+    glowColor: 'shadow-purple-500/50',
   },
 };
 
@@ -76,19 +76,19 @@ const TIER_CONFIG: Record<
  */
 const SIZE_CONFIG = {
   sm: {
-    badge: "px-2 py-0.5 text-xs",
-    icon: "h-3 w-3",
-    iconOnly: "w-5 h-5",
+    badge: 'px-2 py-0.5 text-xs',
+    icon: 'h-3 w-3',
+    iconOnly: 'w-5 h-5',
   },
   md: {
-    badge: "px-2.5 py-1 text-sm",
-    icon: "h-4 w-4",
-    iconOnly: "w-6 h-6",
+    badge: 'px-2.5 py-1 text-sm',
+    icon: 'h-4 w-4',
+    iconOnly: 'w-6 h-6',
   },
   lg: {
-    badge: "px-3 py-1.5 text-base",
-    icon: "h-5 w-5",
-    iconOnly: "w-8 h-8",
+    badge: 'px-3 py-1.5 text-base',
+    icon: 'h-5 w-5',
+    iconOnly: 'w-8 h-8',
   },
 };
 
@@ -96,10 +96,10 @@ const SIZE_CONFIG = {
  * Get premium tier based on staked amount
  */
 export function getPremiumTier(stakedAmount: number): PremiumTier | null {
-  if (stakedAmount >= PREMIUM_TIERS.PLATINUM) return "PLATINUM";
-  if (stakedAmount >= PREMIUM_TIERS.GOLD) return "GOLD";
-  if (stakedAmount >= PREMIUM_TIERS.SILVER) return "SILVER";
-  if (stakedAmount >= PREMIUM_TIERS.BRONZE) return "BRONZE";
+  if (stakedAmount >= PREMIUM_TIERS.PLATINUM) return 'PLATINUM';
+  if (stakedAmount >= PREMIUM_TIERS.GOLD) return 'GOLD';
+  if (stakedAmount >= PREMIUM_TIERS.SILVER) return 'SILVER';
+  if (stakedAmount >= PREMIUM_TIERS.BRONZE) return 'BRONZE';
   return null;
 }
 
@@ -115,7 +115,7 @@ function formatThreshold(amount: number): string {
  */
 export const PremiumBadge: React.FC<PremiumBadgeProps> = ({
   tier,
-  size = "md",
+  size = 'md',
   showLabel = true,
   showThreshold = false,
   className,
@@ -132,7 +132,7 @@ export const PremiumBadge: React.FC<PremiumBadgeProps> = ({
     return (
       <div
         className={cn(
-          "inline-flex items-center justify-center rounded-full",
+          'inline-flex items-center justify-center rounded-full',
           config.bgGradient,
           `shadow-lg ${config.glowColor}`,
           sizeConfig.iconOnly,
@@ -140,7 +140,7 @@ export const PremiumBadge: React.FC<PremiumBadgeProps> = ({
         )}
         title={`${config.label} tier - ${formatThreshold(PREMIUM_TIERS[tier])}+ MEDALS staked`}
       >
-        <Icon className={cn(sizeConfig.icon, "text-white drop-shadow-sm")} />
+        <Icon className={cn(sizeConfig.icon, 'text-white drop-shadow-sm')} />
       </div>
     );
   }
@@ -148,7 +148,7 @@ export const PremiumBadge: React.FC<PremiumBadgeProps> = ({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full font-semibold",
+        'inline-flex items-center gap-1.5 rounded-full font-semibold',
         config.bgGradient,
         `shadow-md ${config.glowColor}`,
         sizeConfig.badge,
@@ -156,10 +156,10 @@ export const PremiumBadge: React.FC<PremiumBadgeProps> = ({
       )}
       title={`${formatThreshold(PREMIUM_TIERS[tier])}+ MEDALS staked`}
     >
-      <Icon className={cn(sizeConfig.icon, "text-white drop-shadow-sm")} />
+      <Icon className={cn(sizeConfig.icon, 'text-white drop-shadow-sm')} />
       <span className="text-white drop-shadow-sm">{config.label}</span>
       {showThreshold && (
-        <span className="text-white/80 text-xs ml-1">
+        <span className="ml-1 text-xs text-white/80">
           ({formatThreshold(PREMIUM_TIERS[tier])}+)
         </span>
       )}
@@ -172,7 +172,7 @@ export const PremiumBadge: React.FC<PremiumBadgeProps> = ({
  */
 export const PremiumBadgeOutline: React.FC<PremiumBadgeProps> = ({
   tier,
-  size = "md",
+  size = 'md',
   showLabel = true,
   showThreshold = false,
   className,
@@ -187,7 +187,7 @@ export const PremiumBadgeOutline: React.FC<PremiumBadgeProps> = ({
     return (
       <div
         className={cn(
-          "inline-flex items-center justify-center rounded-full border-2 bg-white",
+          'inline-flex items-center justify-center rounded-full border-2 bg-white',
           config.borderColor,
           sizeConfig.iconOnly,
           className
@@ -202,7 +202,7 @@ export const PremiumBadgeOutline: React.FC<PremiumBadgeProps> = ({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full font-semibold border-2 bg-white",
+        'inline-flex items-center gap-1.5 rounded-full border-2 bg-white font-semibold',
         config.borderColor,
         config.textColor,
         sizeConfig.badge,
@@ -213,9 +213,7 @@ export const PremiumBadgeOutline: React.FC<PremiumBadgeProps> = ({
       <Icon className={cn(sizeConfig.icon, config.iconColor)} />
       <span>{config.label}</span>
       {showThreshold && (
-        <span className="opacity-70 text-xs ml-1">
-          ({formatThreshold(PREMIUM_TIERS[tier])}+)
-        </span>
+        <span className="ml-1 text-xs opacity-70">({formatThreshold(PREMIUM_TIERS[tier])}+)</span>
       )}
     </div>
   );
@@ -237,9 +235,7 @@ export const PremiumTierProgress: React.FC<PremiumTierProgressProps> = ({
 
   // Determine next tier and progress
   const tiers = Object.entries(PREMIUM_TIERS) as [PremiumTier, number][];
-  const currentTierIndex = currentTier
-    ? tiers.findIndex(([t]) => t === currentTier)
-    : -1;
+  const currentTierIndex = currentTier ? tiers.findIndex(([t]) => t === currentTier) : -1;
 
   const nextTierEntry = tiers[currentTierIndex + 1];
   const currentTierEntry = currentTier ? tiers[currentTierIndex] : null;
@@ -247,8 +243,8 @@ export const PremiumTierProgress: React.FC<PremiumTierProgressProps> = ({
   // If already at max tier
   if (!nextTierEntry) {
     return (
-      <div className={cn("text-center", className)}>
-        <div className="flex items-center justify-center gap-2 mb-2">
+      <div className={cn('text-center', className)}>
+        <div className="mb-2 flex items-center justify-center gap-2">
           <Sparkles className="h-5 w-5 text-purple-500" />
           <span className="font-semibold text-purple-600">Maximum Tier Achieved!</span>
         </div>
@@ -268,7 +264,7 @@ export const PremiumTierProgress: React.FC<PremiumTierProgressProps> = ({
   const nextConfig = TIER_CONFIG[nextTierName];
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn('space-y-3', className)}>
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-2">
           {currentTier ? (
@@ -283,10 +279,10 @@ export const PremiumTierProgress: React.FC<PremiumTierProgressProps> = ({
         </div>
       </div>
 
-      <div className="relative h-3 bg-slate-200 rounded-full overflow-hidden">
+      <div className="relative h-3 overflow-hidden rounded-full bg-slate-200">
         <div
           className={cn(
-            "absolute h-full rounded-full transition-all duration-500",
+            'absolute h-full rounded-full transition-all duration-500',
             nextConfig.bgGradient
           )}
           style={{ width: `${progressPercent}%` }}
@@ -295,7 +291,9 @@ export const PremiumTierProgress: React.FC<PremiumTierProgressProps> = ({
 
       <div className="flex items-center justify-between text-xs text-slate-500">
         <span>{formatThreshold(currentStaked)} MEDALS staked</span>
-        <span>{formatThreshold(remaining)} more to {nextConfig.label}</span>
+        <span>
+          {formatThreshold(remaining)} more to {nextConfig.label}
+        </span>
       </div>
     </div>
   );

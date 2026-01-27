@@ -9,7 +9,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/core/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Trophy,
@@ -215,7 +215,7 @@ export default function MedalsAdminDashboard() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex min-h-[60vh] items-center justify-center">
           <RefreshCw className="h-8 w-8 animate-spin text-primary" />
         </div>
       </MainLayout>
@@ -225,9 +225,9 @@ export default function MedalsAdminDashboard() {
   if (!isAdmin) {
     return (
       <MainLayout>
-        <div className="text-center py-12">
-          <AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
+        <div className="py-12 text-center">
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+          <h1 className="mb-2 text-2xl font-bold">Access Denied</h1>
           <p className="text-muted-foreground">
             You don&apos;t have permission to access the admin dashboard.
           </p>
@@ -243,32 +243,28 @@ export default function MedalsAdminDashboard() {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
+            <h1 className="flex items-center gap-2 text-3xl font-bold">
               <Settings className="h-8 w-8" />
               MEDALS Admin Dashboard
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="mt-1 text-muted-foreground">
               Platform Year {platformYear} • Manage rewards and monitor token economy
             </p>
           </div>
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <Button onClick={handleRefresh} variant="outline" disabled={isRefreshing}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
+          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
             <div>
               <p className="font-medium text-red-800 dark:text-red-200">Error fetching metrics</p>
               <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
@@ -278,41 +274,43 @@ export default function MedalsAdminDashboard() {
 
         {/* Cron Status */}
         {cronStatus && (
-          <div className={`border rounded-lg p-3 text-sm ${
-            cronStatus.includes('error')
-              ? 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
-              : 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
-          }`}>
+          <div
+            className={`rounded-lg border p-3 text-sm ${
+              cronStatus.includes('error')
+                ? 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200'
+                : 'border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200'
+            }`}
+          >
             {cronStatus}
           </div>
         )}
 
         {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-card border rounded-lg p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="rounded-lg border bg-card p-4">
+            <div className="mb-2 flex items-center gap-2 text-muted-foreground">
               <TrendingUp className="h-4 w-4" />
               <span className="text-sm">Platform Year</span>
             </div>
             <p className="text-3xl font-bold">{platformYear}</p>
           </div>
-          <div className="bg-card border rounded-lg p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+          <div className="rounded-lg border bg-card p-4">
+            <div className="mb-2 flex items-center gap-2 text-muted-foreground">
               <Coins className="h-4 w-4" />
               <span className="text-sm">Weekly Staking Pool</span>
             </div>
             <p className="text-3xl font-bold">{weeklyStakingPool.toLocaleString()}</p>
           </div>
-          <div className="bg-card border rounded-lg p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+          <div className="rounded-lg border bg-card p-4">
+            <div className="mb-2 flex items-center gap-2 text-muted-foreground">
               <Users className="h-4 w-4" />
               <span className="text-sm">Curator Reward</span>
             </div>
             <p className="text-3xl font-bold">{curatorRewardAmount}</p>
             <p className="text-xs text-muted-foreground">per vote</p>
           </div>
-          <div className="bg-card border rounded-lg p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+          <div className="rounded-lg border bg-card p-4">
+            <div className="mb-2 flex items-center gap-2 text-muted-foreground">
               <BarChart3 className="h-4 w-4" />
               <span className="text-sm">Active Curators</span>
             </div>
@@ -321,28 +319,29 @@ export default function MedalsAdminDashboard() {
         </div>
 
         {/* Cron Jobs Management */}
-        <div className="bg-card border rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <div className="rounded-lg border bg-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
             <Clock className="h-5 w-5" />
             Scheduled Jobs
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Staking Rewards */}
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
+            <div className="rounded-lg border p-4">
+              <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-semibold">Staking Rewards</h3>
-                <span className="text-xs bg-muted px-2 py-1 rounded">
-                  Sundays 00:00 UTC
-                </span>
+                <span className="rounded bg-muted px-2 py-1 text-xs">Sundays 00:00 UTC</span>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="mb-3 text-sm text-muted-foreground">
                 Distributes {weeklyStakingPool.toLocaleString()} MEDALS weekly to stakers
               </p>
-              <div className="flex items-center gap-2 text-sm mb-3">
+              <div className="mb-3 flex items-center gap-2 text-sm">
                 {metrics?.stakingRewards.lastDistribution ? (
                   <>
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>Last run: {new Date(metrics.stakingRewards.lastDistribution).toLocaleDateString()}</span>
+                    <span>
+                      Last run:{' '}
+                      {new Date(metrics.stakingRewards.lastDistribution).toLocaleDateString()}
+                    </span>
                   </>
                 ) : (
                   <>
@@ -361,17 +360,15 @@ export default function MedalsAdminDashboard() {
             </div>
 
             {/* Curator Rewards */}
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
+            <div className="rounded-lg border p-4">
+              <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-semibold">Curator Rewards</h3>
-                <span className="text-xs bg-muted px-2 py-1 rounded">
-                  Every 15 min
-                </span>
+                <span className="rounded bg-muted px-2 py-1 text-xs">Every 15 min</span>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="mb-3 text-sm text-muted-foreground">
                 Processes curator votes and queues rewards
               </p>
-              <div className="flex items-center gap-2 text-sm mb-3">
+              <div className="mb-3 flex items-center gap-2 text-sm">
                 <BarChart3 className="h-4 w-4 text-blue-500" />
                 <span>Today: {metrics?.curatorRewards.todayVotes || 0} votes processed</span>
               </div>
@@ -385,17 +382,15 @@ export default function MedalsAdminDashboard() {
             </div>
 
             {/* Weekly Content Rewards */}
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
+            <div className="rounded-lg border p-4">
+              <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-semibold">Content Rewards</h3>
-                <span className="text-xs bg-muted px-2 py-1 rounded">
-                  Mondays 00:00 UTC
-                </span>
+                <span className="rounded bg-muted px-2 py-1 text-xs">Mondays 00:00 UTC</span>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="mb-3 text-sm text-muted-foreground">
                 Generates leaderboards and calculates content rewards
               </p>
-              <div className="flex items-center gap-2 text-sm mb-3">
+              <div className="mb-3 flex items-center gap-2 text-sm">
                 {metrics?.contentRewards.pendingDistributions ? (
                   <>
                     <AlertCircle className="h-4 w-4 text-yellow-500" />
@@ -420,24 +415,25 @@ export default function MedalsAdminDashboard() {
         </div>
 
         {/* Curator Management */}
-        <div className="bg-card border rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <div className="rounded-lg border bg-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
             <Users className="h-5 w-5" />
             Curator Management
           </h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Curators earn post authors {curatorRewardAmount} MEDALS per qualifying upvote (max {5} votes/day each).
+          <p className="mb-4 text-sm text-muted-foreground">
+            Curators earn post authors {curatorRewardAmount} MEDALS per qualifying upvote (max {5}{' '}
+            votes/day each).
           </p>
 
           {/* Current Curators */}
-          <div className="space-y-2 mb-4">
+          <div className="mb-4 space-y-2">
             {curators.length === 0 ? (
               <p className="text-sm text-muted-foreground">No curators configured.</p>
             ) : (
               curators.map((curator) => (
                 <div
                   key={curator}
-                  className="flex items-center justify-between border rounded-md px-3 py-2"
+                  className="flex items-center justify-between rounded-md border px-3 py-2"
                 >
                   <span className="font-mono text-sm">@{curator}</span>
                   <Button
@@ -445,7 +441,7 @@ export default function MedalsAdminDashboard() {
                     variant="ghost"
                     onClick={() => handleRemoveCurator(curator)}
                     disabled={curatorLoading}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                    className="text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -461,7 +457,7 @@ export default function MedalsAdminDashboard() {
               value={newCurator}
               onChange={(e) => setNewCurator(e.target.value)}
               placeholder="Hive username"
-              className="flex-1 border rounded-md px-3 py-2 text-sm bg-background"
+              className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleAddCurator();
               }}
@@ -471,31 +467,31 @@ export default function MedalsAdminDashboard() {
               onClick={handleAddCurator}
               disabled={curatorLoading || !newCurator.trim()}
             >
-              <UserPlus className="h-4 w-4 mr-2" />
+              <UserPlus className="mr-2 h-4 w-4" />
               Add
             </Button>
           </div>
         </div>
 
         {/* Quick Links */}
-        <div className="bg-card border rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">Quick Links</h2>
+        <div className="rounded-lg border bg-card p-6">
+          <h2 className="mb-4 text-xl font-bold">Quick Links</h2>
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" onClick={() => router.push('/leaderboard')}>
-              <Trophy className="h-4 w-4 mr-2" />
+              <Trophy className="mr-2 h-4 w-4" />
               View Leaderboards
             </Button>
             <Button variant="outline" onClick={() => router.push('/wallet')}>
-              <Coins className="h-4 w-4 mr-2" />
+              <Coins className="mr-2 h-4 w-4" />
               Wallet
             </Button>
           </div>
         </div>
 
         {/* Environment Info */}
-        <div className="bg-muted/50 rounded-lg p-4 text-sm">
-          <h3 className="font-medium mb-2">Environment</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="rounded-lg bg-muted/50 p-4 text-sm">
+          <h3 className="mb-2 font-medium">Environment</h3>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div>
               <span className="text-muted-foreground">Mode:</span>{' '}
               <span className="font-mono">{environmentInfo?.nodeEnv ?? '...'}</span>

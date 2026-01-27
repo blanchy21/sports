@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React, { useState, Suspense } from "react";
-import { Button } from "@/components/ui/Button";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, Suspense } from 'react';
+import { Button } from '@/components/core/Button';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Eye,
@@ -17,40 +17,40 @@ import {
   Link as LinkIcon,
   Upload,
   Loader2,
-} from "lucide-react";
-import { Community, SPORT_CATEGORIES } from "@/types";
-import { cn } from "@/lib/utils";
-import { validateImageUrl, validateUrl } from "@/lib/utils/sanitize";
-import dynamic from "next/dynamic";
-import { publishPost, canUserPost, validatePostData } from "@/lib/hive-workerbee/posting";
-import { PostData } from "@/lib/hive-workerbee/posting";
-import { useCommunities, useUserCommunities } from "@/lib/react-query/queries/useCommunity";
-import { useUIStore } from "@/stores/uiStore";
-import { FirebasePosts } from "@/lib/firebase/posts";
-import { uploadImage } from "@/lib/hive/imageUpload";
+} from 'lucide-react';
+import { Community, SPORT_CATEGORIES } from '@/types';
+import { cn } from '@/lib/utils/client';
+import { validateImageUrl, validateUrl } from '@/lib/utils/sanitize';
+import dynamic from 'next/dynamic';
+import { publishPost, canUserPost, validatePostData } from '@/lib/hive-workerbee/posting';
+import { PostData } from '@/lib/hive-workerbee/posting';
+import { useCommunities, useUserCommunities } from '@/lib/react-query/queries/useCommunity';
+import { useUIStore } from '@/stores/uiStore';
+import { FirebasePosts } from '@/lib/firebase/posts';
+import { uploadImage } from '@/lib/hive/imageUpload';
 
 // Import new components
-import { EditorToolbar, FormatType } from "@/components/publish/EditorToolbar";
-import { TagInput } from "@/components/publish/TagInput";
-import { AdvancedOptions, RewardsOption, Beneficiary } from "@/components/publish/AdvancedOptions";
-import { ScheduleModal } from "@/components/publish/ScheduleModal";
-import { UpgradeIncentive, UpgradeIncentiveBanner } from "@/components/UpgradeIncentive";
+import { EditorToolbar, FormatType } from '@/components/publish/EditorToolbar';
+import { TagInput } from '@/components/publish/TagInput';
+import { AdvancedOptions, RewardsOption, Beneficiary } from '@/components/publish/AdvancedOptions';
+import { ScheduleModal } from '@/components/publish/ScheduleModal';
+import { UpgradeIncentive, UpgradeIncentiveBanner } from '@/components/upgrade/UpgradeIncentive';
 
-import remarkGfm from "remark-gfm";
+import remarkGfm from 'remark-gfm';
 
 // Loading skeleton for markdown preview
 function MarkdownLoadingSkeleton() {
   return (
     <div className="animate-pulse space-y-3">
-      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+      <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-700"></div>
+      <div className="h-4 w-full rounded bg-gray-200 dark:bg-gray-700"></div>
+      <div className="h-4 w-5/6 rounded bg-gray-200 dark:bg-gray-700"></div>
     </div>
   );
 }
 
 // Dynamically import heavy dependencies
-const ReactMarkdown = dynamic(() => import("react-markdown"), {
+const ReactMarkdown = dynamic(() => import('react-markdown'), {
   ssr: false,
   loading: () => <MarkdownLoadingSkeleton />,
 });
@@ -61,16 +61,16 @@ function PublishPageContent() {
   const searchParams = useSearchParams();
 
   // Form state
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [excerpt, setExcerpt] = useState("");
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [excerpt, setExcerpt] = useState('');
   const [tags, setTags] = useState<string[]>([]);
-  const [selectedSport, setSelectedSport] = useState("");
+  const [selectedSport, setSelectedSport] = useState('');
   const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
-  const [coverImage, setCoverImage] = useState("");
-  const [rewardsOption, setRewardsOption] = useState<RewardsOption>("50_50");
+  const [coverImage, setCoverImage] = useState('');
+  const [rewardsOption, setRewardsOption] = useState<RewardsOption>('50_50');
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
-    { account: "sportsblock", weight: 5 },
+    { account: 'sportsblock', weight: 5 },
   ]);
 
   // UI state
@@ -78,13 +78,13 @@ function PublishPageContent() {
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
-  const [imageAlt, setImageAlt] = useState("");
-  const [imageTab, setImageTab] = useState<"url" | "upload">("url");
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageAlt, setImageAlt] = useState('');
+  const [imageTab, setImageTab] = useState<'url' | 'upload'>('url');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [linkUrl, setLinkUrl] = useState("");
-  const [linkText, setLinkText] = useState("");
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkText, setLinkText] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [rcStatus, setRcStatus] = useState<{
@@ -112,7 +112,7 @@ function PublishPageContent() {
   const { recentTags, addRecentTags } = useUIStore();
 
   // Fetch communities
-  const { data: userCommunities } = useUserCommunities(user?.id || "");
+  const { data: userCommunities } = useUserCommunities(user?.id || '');
   const { data: allCommunities } = useCommunities({ limit: 50 });
 
   // Detect images from content
@@ -131,13 +131,13 @@ function PublishPageContent() {
   // Redirect if not authenticated
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
-      router.push("/");
+      router.push('/');
     }
   }, [user, isAuthLoading, router]);
 
   // Load draft if draft ID is provided
   React.useEffect(() => {
-    const draftId = searchParams.get("draft");
+    const draftId = searchParams.get('draft');
     if (draftId && user) {
       setTimeout(() => loadDraft(draftId), 100);
     }
@@ -145,7 +145,7 @@ function PublishPageContent() {
 
   // Pre-select community from URL parameter
   React.useEffect(() => {
-    const communitySlug = searchParams.get("community");
+    const communitySlug = searchParams.get('community');
     if (communitySlug && !selectedCommunity) {
       // Find community in user communities or all communities
       const allAvailableCommunities = [
@@ -168,15 +168,15 @@ function PublishPageContent() {
         setShowMenu(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const loadDraft = (draftId: string) => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
     try {
-      const savedDrafts = localStorage.getItem("drafts");
+      const savedDrafts = localStorage.getItem('drafts');
       if (savedDrafts) {
         const parsedDrafts = JSON.parse(savedDrafts);
         let draft = parsedDrafts.find((d: { id?: string }) => d.id === draftId);
@@ -192,16 +192,16 @@ function PublishPageContent() {
         }
 
         if (draft) {
-          setTitle(draft.title || "");
-          setContent(draft.content || "");
-          setExcerpt(draft.excerpt || "");
-          setSelectedSport(draft.sport || "");
+          setTitle(draft.title || '');
+          setContent(draft.content || '');
+          setExcerpt(draft.excerpt || '');
+          setSelectedSport(draft.sport || '');
           setTags(Array.isArray(draft.tags) ? draft.tags : []);
-          setCoverImage(draft.imageUrl || "");
+          setCoverImage(draft.imageUrl || '');
         }
       }
     } catch (err) {
-      console.error("Error loading draft:", err);
+      console.error('Error loading draft:', err);
     }
   };
 
@@ -212,13 +212,13 @@ function PublishPageContent() {
       const status = await canUserPost(hiveUser.username);
       setRcStatus(status);
     } catch (error) {
-      console.error("Error checking RC status:", error);
+      console.error('Error checking RC status:', error);
     }
   }, [hiveUser?.username]);
 
   // Check RC status for Hive users
   React.useEffect(() => {
-    if (hiveUser?.username && authType === "hive") {
+    if (hiveUser?.username && authType === 'hive') {
       checkRCStatus();
     }
   }, [hiveUser, authType, checkRCStatus]);
@@ -226,7 +226,7 @@ function PublishPageContent() {
   // Fetch post count for soft users to show limit warnings
   React.useEffect(() => {
     const fetchPostCount = async () => {
-      if (!user?.id || authType === "hive") return;
+      if (!user?.id || authType === 'hive') return;
 
       try {
         const response = await fetch(`/api/posts?authorId=${encodeURIComponent(user.id)}`);
@@ -240,9 +240,10 @@ function PublishPageContent() {
             limit,
             remaining,
             isNearLimit: remaining <= 10,
-            upgradePrompt: remaining <= 10
-              ? `You have ${remaining} post${remaining === 1 ? '' : 's'} remaining. Upgrade to Hive for unlimited posts!`
-              : null,
+            upgradePrompt:
+              remaining <= 10
+                ? `You have ${remaining} post${remaining === 1 ? '' : 's'} remaining. Upgrade to Hive for unlimited posts!`
+                : null,
           });
         }
       } catch {
@@ -254,7 +255,7 @@ function PublishPageContent() {
   }, [user?.id, authType]);
 
   // Markdown formatting helpers
-  const insertMarkdown = (before: string, after: string = "", placeholder: string = "") => {
+  const insertMarkdown = (before: string, after: string = '', placeholder: string = '') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -291,38 +292,38 @@ function PublishPageContent() {
   // Format handlers
   const handleFormat = (type: FormatType) => {
     switch (type) {
-      case "bold":
-        insertMarkdown("**", "**", "bold text");
+      case 'bold':
+        insertMarkdown('**', '**', 'bold text');
         break;
-      case "italic":
-        insertMarkdown("*", "*", "italic text");
+      case 'italic':
+        insertMarkdown('*', '*', 'italic text');
         break;
-      case "underline":
-        insertMarkdown("<u>", "</u>", "underlined text");
+      case 'underline':
+        insertMarkdown('<u>', '</u>', 'underlined text');
         break;
-      case "strikethrough":
-        insertMarkdown("~~", "~~", "strikethrough text");
+      case 'strikethrough':
+        insertMarkdown('~~', '~~', 'strikethrough text');
         break;
-      case "code":
-        insertMarkdown("`", "`", "code");
+      case 'code':
+        insertMarkdown('`', '`', 'code');
         break;
-      case "quote":
-        insertAtCursor("\n> ");
+      case 'quote':
+        insertAtCursor('\n> ');
         break;
-      case "h1":
-        insertAtCursor("\n# ");
+      case 'h1':
+        insertAtCursor('\n# ');
         break;
-      case "h2":
-        insertAtCursor("\n## ");
+      case 'h2':
+        insertAtCursor('\n## ');
         break;
-      case "h3":
-        insertAtCursor("\n### ");
+      case 'h3':
+        insertAtCursor('\n### ');
         break;
-      case "bulletList":
-        insertAtCursor("\n- ");
+      case 'bulletList':
+        insertAtCursor('\n- ');
         break;
-      case "numberedList":
-        insertAtCursor("\n1. ");
+      case 'numberedList':
+        insertAtCursor('\n1. ');
         break;
     }
   };
@@ -338,11 +339,11 @@ function PublishPageContent() {
     // Validate the image URL
     const validation = validateImageUrl(imageUrl);
     if (!validation.valid) {
-      setUploadError(validation.error || "Invalid image URL");
+      setUploadError(validation.error || 'Invalid image URL');
       return;
     }
 
-    const alt = imageAlt || "image";
+    const alt = imageAlt || 'image';
     const markdown = `\n![${alt}](${validation.url})\n`;
 
     // Use saved cursor position since textarea lost focus to dialog
@@ -360,9 +361,9 @@ function PublishPageContent() {
       }
     }, 0);
 
-    setImageUrl("");
-    setImageAlt("");
-    setImageTab("url");
+    setImageUrl('');
+    setImageAlt('');
+    setImageTab('url');
     setUploadError(null);
     setShowImageDialog(false);
   };
@@ -371,14 +372,14 @@ function PublishPageContent() {
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith("image/")) {
-      setUploadError("Please select an image file");
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please select an image file');
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setUploadError("Image must be less than 5MB");
+      setUploadError('Image must be less than 5MB');
       return;
     }
 
@@ -390,16 +391,16 @@ function PublishPageContent() {
 
       if (result.success && result.url) {
         setImageUrl(result.url);
-        setImageAlt(file.name.replace(/\.[^/.]+$/, "")); // Use filename without extension as alt
+        setImageAlt(file.name.replace(/\.[^/.]+$/, '')); // Use filename without extension as alt
       } else {
-        throw new Error(result.error || "Upload failed");
+        throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
-      console.error("Image upload error:", error);
+      console.error('Image upload error:', error);
       setUploadError(
         error instanceof Error
           ? error.message
-          : "Failed to upload image. Please try again or use a URL instead."
+          : 'Failed to upload image. Please try again or use a URL instead.'
       );
     } finally {
       setIsUploadingImage(false);
@@ -416,14 +417,14 @@ function PublishPageContent() {
     // Validate the URL
     const validation = validateUrl(linkUrl);
     if (!validation.valid) {
-      setPublishError(validation.error || "Invalid URL");
+      setPublishError(validation.error || 'Invalid URL');
       return;
     }
 
     const text = linkText || validation.url!;
-    insertMarkdown("[", `](${validation.url})`, text);
-    setLinkUrl("");
-    setLinkText("");
+    insertMarkdown('[', `](${validation.url})`, text);
+    setLinkUrl('');
+    setLinkText('');
     setShowLinkDialog(false);
     setPublishError(null);
   };
@@ -433,18 +434,18 @@ function PublishPageContent() {
   };
 
   const handleUndo = () => {
-    document.execCommand("undo");
+    document.execCommand('undo');
   };
 
   const handleRedo = () => {
-    document.execCommand("redo");
+    document.execCommand('redo');
   };
 
   const handleSaveDraft = () => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
-    const draftId = searchParams.get("draft");
-    const existingDrafts = JSON.parse(localStorage.getItem("drafts") || "[]");
+    const draftId = searchParams.get('draft');
+    const existingDrafts = JSON.parse(localStorage.getItem('drafts') || '[]');
 
     const draftData = {
       id: draftId || Date.now().toString(),
@@ -467,20 +468,20 @@ function PublishPageContent() {
         draft.id === draftId ? draftData : draft
       );
       try {
-        localStorage.setItem("drafts", JSON.stringify(updatedDrafts));
-        alert("Draft updated!");
+        localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
+        alert('Draft updated!');
       } catch (error) {
-        console.error("Error saving draft:", error);
-        alert("Failed to save draft.");
+        console.error('Error saving draft:', error);
+        alert('Failed to save draft.');
       }
     } else {
       existingDrafts.push(draftData);
       try {
-        localStorage.setItem("drafts", JSON.stringify(existingDrafts));
-        alert("Draft saved!");
+        localStorage.setItem('drafts', JSON.stringify(existingDrafts));
+        alert('Draft saved!');
       } catch (error) {
-        console.error("Error saving draft:", error);
-        alert("Failed to save draft.");
+        console.error('Error saving draft:', error);
+        alert('Failed to save draft.');
       }
     }
   };
@@ -491,15 +492,15 @@ function PublishPageContent() {
     try {
       // Basic validation
       if (!title.trim()) {
-        setPublishError("Title is required");
+        setPublishError('Title is required');
         return;
       }
       if (!content.trim()) {
-        setPublishError("Content is required");
+        setPublishError('Content is required');
         return;
       }
       if (!selectedSport) {
-        setPublishError("Please select a sport category");
+        setPublishError('Please select a sport category');
         return;
       }
 
@@ -529,10 +530,10 @@ function PublishPageContent() {
       }
 
       alert(`Post scheduled for ${scheduledAt.toLocaleString()}`);
-      router.push("/feed");
+      router.push('/feed');
     } catch (error) {
-      console.error("Error scheduling post:", error);
-      setPublishError("Failed to schedule post");
+      console.error('Error scheduling post:', error);
+      setPublishError('Failed to schedule post');
     }
   };
 
@@ -545,19 +546,19 @@ function PublishPageContent() {
     try {
       // Basic validation
       if (!title.trim()) {
-        setPublishError("Title is required");
+        setPublishError('Title is required');
         return;
       }
       if (!content.trim()) {
-        setPublishError("Content is required");
+        setPublishError('Content is required');
         return;
       }
       if (!selectedSport) {
-        setPublishError("Please select a sport category");
+        setPublishError('Please select a sport category');
         return;
       }
 
-      if (authType === "hive" && hiveUser?.username) {
+      if (authType === 'hive' && hiveUser?.username) {
         // HIVE USER: Publish to blockchain
         const postData: PostData = {
           title: title.trim(),
@@ -577,12 +578,12 @@ function PublishPageContent() {
 
         const validation = validatePostData(postData);
         if (!validation.isValid) {
-          setPublishError(validation.errors.join(", "));
+          setPublishError(validation.errors.join(', '));
           return;
         }
 
         if (rcStatus && !rcStatus.canPost) {
-          setPublishError(rcStatus.message || "Insufficient Resource Credits to post.");
+          setPublishError(rcStatus.message || 'Insufficient Resource Credits to post.');
           return;
         }
 
@@ -594,9 +595,9 @@ function PublishPageContent() {
             addRecentTags(tags);
           }
           alert(`Post published to Hive! View: ${result.url}`);
-          router.push("/feed");
+          router.push('/feed');
         } else {
-          setPublishError(result.error || "Failed to publish post");
+          setPublishError(result.error || 'Failed to publish post');
         }
       } else {
         // SOFT USER: Publish to Firebase via API directly to get postLimitInfo
@@ -639,7 +640,10 @@ function PublishPageContent() {
           setShowPostPublishedPrompt(true);
         } else if (data.limitReached) {
           // Post limit reached - show specific error
-          setPublishError(data.message || `You've reached the limit of ${data.limit} posts. Upgrade to Hive for unlimited posts!`);
+          setPublishError(
+            data.message ||
+              `You've reached the limit of ${data.limit} posts. Upgrade to Hive for unlimited posts!`
+          );
           setPostLimitInfo({
             currentCount: data.currentCount,
             limit: data.limit,
@@ -648,12 +652,12 @@ function PublishPageContent() {
             upgradePrompt: data.message,
           });
         } else {
-          setPublishError(data.error || "Failed to publish post");
+          setPublishError(data.error || 'Failed to publish post');
         }
       }
     } catch (error) {
-      console.error("Error publishing post:", error);
-      setPublishError("An unexpected error occurred while publishing.");
+      console.error('Error publishing post:', error);
+      setPublishError('An unexpected error occurred while publishing.');
     } finally {
       setIsPublishing(false);
     }
@@ -667,23 +671,23 @@ function PublishPageContent() {
   // User not authenticated
   if (!user) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
-          <p className="text-muted-foreground mb-4">Please sign in to create and publish posts.</p>
-          <Button onClick={() => router.push("/")}>Go Home</Button>
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+          <h2 className="mb-2 text-xl font-semibold">Authentication Required</h2>
+          <p className="mb-4 text-muted-foreground">Please sign in to create and publish posts.</p>
+          <Button onClick={() => router.push('/')}>Go Home</Button>
         </div>
       </div>
     );
   }
 
   // Generate preview link - always show Sportsblock URL
-  const username = hiveUser?.username || user?.username || "username";
+  const username = hiveUser?.username || user?.username || 'username';
   const previewLink = `sportsblock.com/@${username}/[post-slug]`;
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="flex h-screen flex-col bg-background">
       {/* Minimal Header */}
       <div className="border-b bg-card">
         <div className="flex items-center justify-between px-4 py-3">
@@ -691,15 +695,15 @@ function PublishPageContent() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push("/feed")}
+              onClick={() => router.push('/feed')}
               className="h-8 w-8 p-0"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm text-foreground">
-              Write a new post in{" "}
+              Write a new post in{' '}
               <select
-                value={selectedCommunity?.id || ""}
+                value={selectedCommunity?.id || ''}
                 onChange={(e) => {
                   const communityId = e.target.value;
                   if (!communityId) {
@@ -712,7 +716,7 @@ function PublishPageContent() {
                     setSelectedCommunity(community || null);
                   }
                 }}
-                className="bg-transparent font-medium text-primary hover:underline cursor-pointer border-none outline-none"
+                className="cursor-pointer border-none bg-transparent font-medium text-primary outline-none hover:underline"
               >
                 <option value="">Sportsblock</option>
                 {userCommunities?.map((c) => (
@@ -736,13 +740,13 @@ function PublishPageContent() {
             </Button>
 
             {showMenu && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-card border rounded-lg shadow-lg py-1 z-50">
+              <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border bg-card py-1 shadow-lg">
                 <button
                   onClick={() => {
                     handleSaveDraft();
                     setShowMenu(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
                 >
                   <Save className="h-4 w-4" />
                   Save Draft
@@ -752,7 +756,7 @@ function PublishPageContent() {
                     setShowScheduleModal(true);
                     setShowMenu(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
                 >
                   <Calendar className="h-4 w-4" />
                   Schedule Post
@@ -764,9 +768,9 @@ function PublishPageContent() {
       </div>
 
       {/* Main Content - Split View */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
         {/* Left Side - Editor (60%) */}
-        <div className="w-3/5 flex flex-col border-r overflow-hidden">
+        <div className="flex w-3/5 flex-col overflow-hidden border-r">
           {/* Title Input */}
           <div className="border-b px-6 py-4">
             <input
@@ -774,7 +778,7 @@ function PublishPageContent() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Post Title"
-              className="w-full text-2xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground"
+              className="w-full border-none bg-transparent text-2xl font-bold outline-none placeholder:text-muted-foreground"
             />
           </div>
 
@@ -795,18 +799,16 @@ function PublishPageContent() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Write your post using Markdown..."
-              className="w-full h-full px-6 py-4 bg-background border-none outline-none resize-none font-mono text-sm leading-relaxed"
+              className="h-full w-full resize-none border-none bg-background px-6 py-4 font-mono text-sm leading-relaxed outline-none"
             />
           </div>
 
           {/* Bottom Fields */}
-          <div className="border-t px-6 py-4 space-y-4 max-h-[45%] overflow-auto">
+          <div className="max-h-[45%] space-y-4 overflow-auto border-t px-6 py-4">
             {/* Short Description / Excerpt */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">
-                  Short Description
-                </label>
+                <label className="text-sm font-medium text-foreground">Short Description</label>
                 <span className="text-xs text-muted-foreground">{excerpt.length}/120</span>
               </div>
               <input
@@ -815,8 +817,8 @@ function PublishPageContent() {
                 onChange={(e) => setExcerpt(e.target.value.slice(0, 120))}
                 placeholder="Brief description of your post (optional)"
                 className={cn(
-                  "w-full px-3 py-2 rounded-lg border bg-background",
-                  "text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  'w-full rounded-lg border bg-background px-3 py-2',
+                  'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
                 )}
                 maxLength={120}
               />
@@ -831,9 +833,9 @@ function PublishPageContent() {
                 value={selectedSport}
                 onChange={(e) => setSelectedSport(e.target.value)}
                 className={cn(
-                  "w-full px-3 py-2.5 rounded-lg border bg-background",
-                  "text-sm focus:outline-none focus:ring-2 focus:ring-ring",
-                  !selectedSport && "text-muted-foreground"
+                  'w-full rounded-lg border bg-background px-3 py-2.5',
+                  'text-sm focus:outline-none focus:ring-2 focus:ring-ring',
+                  !selectedSport && 'text-muted-foreground'
                 )}
               >
                 <option value="">Select a sport category</option>
@@ -872,34 +874,34 @@ function PublishPageContent() {
               coverImage={coverImage}
               onCoverImageChange={setCoverImage}
               detectedImages={detectedImages}
-              isHiveUser={authType === "hive"}
+              isHiveUser={authType === 'hive'}
             />
 
             {/* Error Display */}
             {publishError && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+              <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
+                  <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
                   <p className="text-sm text-destructive">{publishError}</p>
                 </div>
               </div>
             )}
 
             {/* RC Status (Hive users) */}
-            {authType === "hive" && rcStatus && (
+            {authType === 'hive' && rcStatus && (
               <div
                 className={cn(
-                  "rounded-lg p-3",
+                  'rounded-lg p-3',
                   rcStatus.canPost
-                    ? "bg-green-500/10 border border-green-500/20"
-                    : "bg-destructive/10 border border-destructive/20"
+                    ? 'border border-green-500/20 bg-green-500/10'
+                    : 'border border-destructive/20 bg-destructive/10'
                 )}
               >
                 <div className="flex items-center gap-2">
                   <div
                     className={cn(
-                      "h-2 w-2 rounded-full",
-                      rcStatus.canPost ? "bg-green-500" : "bg-destructive"
+                      'h-2 w-2 rounded-full',
+                      rcStatus.canPost ? 'bg-green-500' : 'bg-destructive'
                     )}
                   />
                   <span className="text-sm">
@@ -907,31 +909,31 @@ function PublishPageContent() {
                   </span>
                 </div>
                 {rcStatus.message && (
-                  <p className="text-xs text-muted-foreground mt-1">{rcStatus.message}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{rcStatus.message}</p>
                 )}
               </div>
             )}
 
             {/* Soft User Notice */}
-            {authType !== "hive" && (
+            {authType !== 'hive' && (
               <div className="space-y-3">
                 {/* Post Limit Warning */}
                 {postLimitInfo && postLimitInfo.isNearLimit && (
                   <UpgradeIncentiveBanner
-                    type={postLimitInfo.remaining <= 5 ? "storage-critical" : "storage-warning"}
+                    type={postLimitInfo.remaining <= 5 ? 'storage-critical' : 'storage-warning'}
                     postsRemaining={postLimitInfo.remaining}
                     totalPosts={postLimitInfo.limit}
                   />
                 )}
 
                 {/* General soft user notice */}
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-blue-600 dark:text-blue-400">
                       Your post will be visible to everyone. Connect with Hive to earn rewards!
                     </p>
                     {postLimitInfo && !postLimitInfo.isNearLimit && (
-                      <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                      <span className="ml-2 whitespace-nowrap text-xs text-muted-foreground">
                         {postLimitInfo.remaining}/{postLimitInfo.limit} posts left
                       </span>
                     )}
@@ -943,38 +945,38 @@ function PublishPageContent() {
         </div>
 
         {/* Right Side - Preview (40%) */}
-        <div className="w-2/5 flex flex-col bg-muted/30 overflow-hidden">
+        <div className="flex w-2/5 flex-col overflow-hidden bg-muted/30">
           {/* Preview Header */}
-          <div className="border-b px-6 py-3 bg-background">
+          <div className="border-b bg-background px-6 py-3">
             <div className="flex items-center gap-2 text-sm">
               <Eye className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Preview</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1 truncate">Link: {previewLink}</p>
+            <p className="mt-1 truncate text-xs text-muted-foreground">Link: {previewLink}</p>
           </div>
 
           {/* Preview Content */}
           <div className="flex-1 overflow-auto px-6 py-4">
             {coverImage && (
-              <div className="mb-4 rounded-lg overflow-hidden border">
+              <div className="mb-4 overflow-hidden rounded-lg border">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={coverImage}
                   alt="Cover"
-                  className="w-full h-40 object-cover"
+                  className="h-40 w-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
+                    (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
               </div>
             )}
 
-            {title && <h1 className="text-2xl font-bold mb-4">{title}</h1>}
+            {title && <h1 className="mb-4 text-2xl font-bold">{title}</h1>}
 
-            {excerpt && <p className="text-muted-foreground text-sm mb-4 italic">{excerpt}</p>}
+            {excerpt && <p className="mb-4 text-sm italic text-muted-foreground">{excerpt}</p>}
 
             {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-4">
+              <div className="mb-4 flex flex-wrap gap-1">
                 {tags.map((tag) => (
                   <span key={tag} className="text-xs text-primary">
                     #{tag}
@@ -984,11 +986,11 @@ function PublishPageContent() {
             )}
 
             {content ? (
-              <div className="prose prose-sm prose-slate dark:prose-invert max-w-none">
+              <div className="prose prose-sm prose-slate max-w-none dark:prose-invert">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
               </div>
             ) : (
-              <p className="text-muted-foreground italic">Start writing to see the preview...</p>
+              <p className="italic text-muted-foreground">Start writing to see the preview...</p>
             )}
           </div>
         </div>
@@ -1003,7 +1005,7 @@ function PublishPageContent() {
             disabled={!title && !content}
             className="min-w-[120px]"
           >
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="mr-2 h-4 w-4" />
             Save Draft
           </Button>
 
@@ -1013,7 +1015,7 @@ function PublishPageContent() {
             disabled={!title || !content || !selectedSport}
             className="min-w-[120px]"
           >
-            <Calendar className="h-4 w-4 mr-2" />
+            <Calendar className="mr-2 h-4 w-4" />
             Schedule
           </Button>
 
@@ -1024,32 +1026,28 @@ function PublishPageContent() {
               !content ||
               !selectedSport ||
               isPublishing ||
-              (authType === "hive" && rcStatus !== null && !rcStatus.canPost)
+              (authType === 'hive' && rcStatus !== null && !rcStatus.canPost)
             }
             className="min-w-[140px]"
           >
-            <Send className="h-4 w-4 mr-2" />
-            {isPublishing
-              ? "Publishing..."
-              : authType === "hive"
-                ? "Publish to Hive"
-                : "Publish"}
+            <Send className="mr-2 h-4 w-4" />
+            {isPublishing ? 'Publishing...' : authType === 'hive' ? 'Publish to Hive' : 'Publish'}
           </Button>
         </div>
       </div>
 
       {/* Image Dialog */}
       {showImageDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card border rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 w-full max-w-md rounded-lg border bg-card p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold">Insert Image</h3>
               <button
                 onClick={() => {
                   setShowImageDialog(false);
-                  setImageUrl("");
-                  setImageAlt("");
-                  setImageTab("url");
+                  setImageUrl('');
+                  setImageAlt('');
+                  setImageTab('url');
                   setUploadError(null);
                 }}
                 className="text-muted-foreground hover:text-foreground"
@@ -1059,55 +1057,55 @@ function PublishPageContent() {
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b mb-4">
+            <div className="mb-4 flex border-b">
               <button
-                onClick={() => setImageTab("url")}
+                onClick={() => setImageTab('url')}
                 className={cn(
-                  "flex-1 py-2 text-sm font-medium border-b-2 transition-colors",
-                  imageTab === "url"
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                  'flex-1 border-b-2 py-2 text-sm font-medium transition-colors',
+                  imageTab === 'url'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 )}
               >
-                <LinkIcon className="h-4 w-4 inline mr-2" />
+                <LinkIcon className="mr-2 inline h-4 w-4" />
                 From URL
               </button>
               <button
-                onClick={() => setImageTab("upload")}
+                onClick={() => setImageTab('upload')}
                 className={cn(
-                  "flex-1 py-2 text-sm font-medium border-b-2 transition-colors",
-                  imageTab === "upload"
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                  'flex-1 border-b-2 py-2 text-sm font-medium transition-colors',
+                  imageTab === 'upload'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 )}
               >
-                <Upload className="h-4 w-4 inline mr-2" />
+                <Upload className="mr-2 inline h-4 w-4" />
                 Upload File
               </button>
             </div>
 
             <div className="space-y-4">
-              {imageTab === "url" ? (
+              {imageTab === 'url' ? (
                 <div>
-                  <label className="block text-sm font-medium mb-2">Image URL</label>
+                  <label className="mb-2 block text-sm font-medium">Image URL</label>
                   <input
                     type="text"
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
                     placeholder="https://example.com/image.jpg"
-                    className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                     autoFocus
                   />
                 </div>
               ) : (
                 <div>
-                  <label className="block text-sm font-medium mb-2">Upload Image</label>
+                  <label className="mb-2 block text-sm font-medium">Upload Image</label>
                   <div
                     className={cn(
-                      "relative border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                      'relative rounded-lg border-2 border-dashed p-6 text-center transition-colors',
                       isUploadingImage
-                        ? "border-primary/50 bg-primary/5"
-                        : "border-muted-foreground/25 hover:border-primary/50"
+                        ? 'border-primary/50 bg-primary/5'
+                        : 'border-muted-foreground/25 hover:border-primary/50'
                     )}
                   >
                     {isUploadingImage ? (
@@ -1117,8 +1115,8 @@ function PublishPageContent() {
                       </div>
                     ) : (
                       <>
-                        <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground mb-2">
+                        <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                        <p className="mb-2 text-sm text-muted-foreground">
                           Drag and drop or click to select
                         </p>
                         <input
@@ -1128,17 +1126,17 @@ function PublishPageContent() {
                             const file = e.target.files?.[0];
                             if (file) handleFileUpload(file);
                           }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          style={{ position: "absolute" }}
+                          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                          style={{ position: 'absolute' }}
                         />
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const input = document.createElement("input");
-                            input.type = "file";
-                            input.accept = "image/*";
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*';
                             input.onchange = (e) => {
                               const file = (e.target as HTMLInputElement).files?.[0];
                               if (file) handleFileUpload(file);
@@ -1148,39 +1146,37 @@ function PublishPageContent() {
                         >
                           Choose File
                         </Button>
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="mt-2 text-xs text-muted-foreground">
                           Max 5MB • JPG, PNG, GIF, WebP
                         </p>
                       </>
                     )}
                   </div>
-                  {uploadError && (
-                    <p className="text-sm text-destructive mt-2">{uploadError}</p>
-                  )}
+                  {uploadError && <p className="mt-2 text-sm text-destructive">{uploadError}</p>}
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium mb-2">Alt Text</label>
+                <label className="mb-2 block text-sm font-medium">Alt Text</label>
                 <input
                   type="text"
                   value={imageAlt}
                   onChange={(e) => setImageAlt(e.target.value)}
                   placeholder="Describe the image"
-                  className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 
               {imageUrl && (
-                <div className="border rounded-lg p-2">
-                  <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+                <div className="rounded-lg border p-2">
+                  <p className="mb-2 text-xs text-muted-foreground">Preview:</p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imageUrl}
-                    alt={imageAlt || "Preview"}
-                    className="w-full rounded max-h-48 object-contain"
+                    alt={imageAlt || 'Preview'}
+                    className="max-h-48 w-full rounded object-contain"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
+                      (e.target as HTMLImageElement).style.display = 'none';
                     }}
                   />
                 </div>
@@ -1191,16 +1187,16 @@ function PublishPageContent() {
                   variant="outline"
                   onClick={() => {
                     setShowImageDialog(false);
-                    setImageUrl("");
-                    setImageAlt("");
-                    setImageTab("url");
+                    setImageUrl('');
+                    setImageAlt('');
+                    setImageTab('url');
                     setUploadError(null);
                   }}
                 >
                   Cancel
                 </Button>
                 <Button onClick={handleImageInsert} disabled={!imageUrl || isUploadingImage}>
-                  <ImageIcon className="h-4 w-4 mr-2" />
+                  <ImageIcon className="mr-2 h-4 w-4" />
                   Insert
                 </Button>
               </div>
@@ -1211,15 +1207,15 @@ function PublishPageContent() {
 
       {/* Link Dialog */}
       {showLinkDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card border rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 w-full max-w-md rounded-lg border bg-card p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold">Insert Link</h3>
               <button
                 onClick={() => {
                   setShowLinkDialog(false);
-                  setLinkUrl("");
-                  setLinkText("");
+                  setLinkUrl('');
+                  setLinkText('');
                 }}
                 className="text-muted-foreground hover:text-foreground"
               >
@@ -1229,25 +1225,25 @@ function PublishPageContent() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">URL</label>
+                <label className="mb-2 block text-sm font-medium">URL</label>
                 <input
                   type="text"
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
                   placeholder="https://example.com"
-                  className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Link Text (optional)</label>
+                <label className="mb-2 block text-sm font-medium">Link Text (optional)</label>
                 <input
                   type="text"
                   value={linkText}
                   onChange={(e) => setLinkText(e.target.value)}
                   placeholder="Click here"
-                  className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 
@@ -1256,14 +1252,14 @@ function PublishPageContent() {
                   variant="outline"
                   onClick={() => {
                     setShowLinkDialog(false);
-                    setLinkUrl("");
-                    setLinkText("");
+                    setLinkUrl('');
+                    setLinkText('');
                   }}
                 >
                   Cancel
                 </Button>
                 <Button onClick={handleLinkInsert} disabled={!linkUrl}>
-                  <LinkIcon className="h-4 w-4 mr-2" />
+                  <LinkIcon className="mr-2 h-4 w-4" />
                   Insert
                 </Button>
               </div>
@@ -1281,14 +1277,14 @@ function PublishPageContent() {
 
       {/* Post Published Success Modal with Upgrade Prompt (Soft Users) */}
       {showPostPublishedPrompt && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card border rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
-            <div className="text-center mb-4">
-              <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 w-full max-w-md rounded-lg border bg-card p-6 shadow-xl">
+            <div className="mb-4 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
                 <Send className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">Post Published!</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Your post is now live on Sportsblock.
               </p>
             </div>
@@ -1297,7 +1293,7 @@ function PublishPageContent() {
             {postLimitInfo && postLimitInfo.isNearLimit && (
               <div className="mb-4">
                 <UpgradeIncentiveBanner
-                  type={postLimitInfo.remaining <= 5 ? "storage-critical" : "storage-warning"}
+                  type={postLimitInfo.remaining <= 5 ? 'storage-critical' : 'storage-warning'}
                   postsRemaining={postLimitInfo.remaining}
                   totalPosts={postLimitInfo.limit}
                 />
@@ -1305,18 +1301,14 @@ function PublishPageContent() {
             )}
 
             {/* Upgrade Incentive */}
-            <UpgradeIncentive
-              type="post-published"
-              className="mb-4"
-              dismissible={false}
-            />
+            <UpgradeIncentive type="post-published" className="mb-4" dismissible={false} />
 
             <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => {
                   setShowPostPublishedPrompt(false);
-                  router.push("/feed");
+                  router.push('/feed');
                 }}
                 className="flex-1"
               >
@@ -1325,7 +1317,7 @@ function PublishPageContent() {
               <Button
                 onClick={() => {
                   setShowPostPublishedPrompt(false);
-                  router.push("/settings?tab=wallet");
+                  router.push('/settings?tab=wallet');
                 }}
                 className="flex-1"
               >
@@ -1341,7 +1333,9 @@ function PublishPageContent() {
 
 export default function PublishPage() {
   return (
-    <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense
+      fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}
+    >
       <PublishPageContent />
     </Suspense>
   );

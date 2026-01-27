@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
-import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils/client';
 
 export interface TagInputProps {
   value: string[];
@@ -18,16 +18,16 @@ export function TagInput({
   onChange,
   maxTags = 10,
   recentTags = [],
-  placeholder = "Add tags...",
+  placeholder = 'Add tags...',
   className,
 }: TagInputProps) {
-  const [inputValue, setInputValue] = React.useState("");
+  const [inputValue, setInputValue] = React.useState('');
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     // If the user types a comma or space, add the tag
-    if (newValue.endsWith(",") || newValue.endsWith(" ")) {
+    if (newValue.endsWith(',') || newValue.endsWith(' ')) {
       const tag = newValue.slice(0, -1).trim().toLowerCase();
       addTag(tag);
     } else {
@@ -36,11 +36,11 @@ export function TagInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       const tag = inputValue.trim().toLowerCase();
       addTag(tag);
-    } else if (e.key === "Backspace" && inputValue === "" && value.length > 0) {
+    } else if (e.key === 'Backspace' && inputValue === '' && value.length > 0) {
       // Remove the last tag when backspace is pressed on empty input
       removeTag(value[value.length - 1]);
     }
@@ -50,15 +50,13 @@ export function TagInput({
     if (!tag) return;
 
     // Clean the tag (remove special characters, limit length)
-    const cleanTag = tag
-      .replace(/[^a-z0-9-]/g, "")
-      .slice(0, 24);
+    const cleanTag = tag.replace(/[^a-z0-9-]/g, '').slice(0, 24);
 
     if (!cleanTag) return;
 
     // Check if tag already exists or max reached
     if (value.includes(cleanTag)) {
-      setInputValue("");
+      setInputValue('');
       return;
     }
 
@@ -67,7 +65,7 @@ export function TagInput({
     }
 
     onChange([...value, cleanTag]);
-    setInputValue("");
+    setInputValue('');
   };
 
   const removeTag = (tagToRemove: string) => {
@@ -81,12 +79,10 @@ export function TagInput({
   };
 
   // Filter recent tags to exclude already selected ones
-  const availableRecentTags = recentTags.filter(
-    (tag) => !value.includes(tag)
-  );
+  const availableRecentTags = recentTags.filter((tag) => !value.includes(tag));
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       {/* Tag count label */}
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-foreground">Tags</label>
@@ -98,9 +94,9 @@ export function TagInput({
       {/* Tag input container */}
       <div
         className={cn(
-          "flex flex-wrap gap-1.5 p-2 min-h-[42px] rounded-lg border bg-background",
-          "focus-within:ring-2 focus-within:ring-ring focus-within:border-transparent",
-          "transition-colors cursor-text"
+          'flex min-h-[42px] flex-wrap gap-1.5 rounded-lg border bg-background p-2',
+          'focus-within:border-transparent focus-within:ring-2 focus-within:ring-ring',
+          'cursor-text transition-colors'
         )}
         onClick={() => inputRef.current?.focus()}
       >
@@ -109,8 +105,8 @@ export function TagInput({
           <span
             key={tag}
             className={cn(
-              "inline-flex items-center gap-1 px-2 py-0.5 rounded-md",
-              "bg-primary/10 text-primary text-sm font-medium"
+              'inline-flex items-center gap-1 rounded-md px-2 py-0.5',
+              'bg-primary/10 text-sm font-medium text-primary'
             )}
           >
             #{tag}
@@ -120,7 +116,7 @@ export function TagInput({
                 e.stopPropagation();
                 removeTag(tag);
               }}
-              className="hover:bg-primary/20 rounded p-0.5 transition-colors"
+              className="rounded p-0.5 transition-colors hover:bg-primary/20"
             >
               <X className="h-3 w-3" />
             </button>
@@ -135,10 +131,10 @@ export function TagInput({
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder={value.length === 0 ? placeholder : ""}
+            placeholder={value.length === 0 ? placeholder : ''}
             className={cn(
-              "flex-1 min-w-[120px] bg-transparent border-none outline-none",
-              "text-sm placeholder:text-muted-foreground"
+              'min-w-[120px] flex-1 border-none bg-transparent outline-none',
+              'text-sm placeholder:text-muted-foreground'
             )}
           />
         )}
@@ -155,9 +151,9 @@ export function TagInput({
                 type="button"
                 onClick={() => handleRecentTagClick(tag)}
                 className={cn(
-                  "px-2 py-0.5 rounded-md text-xs",
-                  "bg-muted hover:bg-muted/80 text-muted-foreground",
-                  "transition-colors"
+                  'rounded-md px-2 py-0.5 text-xs',
+                  'bg-muted text-muted-foreground hover:bg-muted/80',
+                  'transition-colors'
                 )}
               >
                 #{tag}

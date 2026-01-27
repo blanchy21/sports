@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { Avatar } from "@/components/ui/Avatar";
-import { Button } from "@/components/ui/Button";
-import { Loading } from "@/components/ui/Loading";
-import { StarVoteButton } from "@/components/StarVoteButton";
-import { SoftLikeButton } from "@/components/SoftLikeButton";
-import { ArrowLeft, MessageCircle, Bookmark, Share, Calendar, Clock } from "lucide-react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { Avatar } from '@/components/core/Avatar';
+import { Button } from '@/components/core/Button';
+import { Loading } from '@/components/core/Loading';
+import { StarVoteButton } from '@/components/voting/StarVoteButton';
+import { SoftLikeButton } from '@/components/voting/SoftLikeButton';
+import { ArrowLeft, MessageCircle, Bookmark, Share, Calendar, Clock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 // fetchPost is now accessed via API route
-import { SportsblockPost } from "@/lib/shared/types";
-import { calculatePendingPayout, formatAsset } from "@/lib/shared/utils";
-import { useUserProfile } from "@/hooks/useUserProfile";
-import { useModal } from "@/components/modals/ModalProvider";
-import { useBookmarks } from "@/hooks/useBookmarks";
-import { formatDate, formatReadTime } from "@/lib/utils";
-import { proxyImagesInContent } from "@/lib/utils/image-proxy";
-import { sanitizePostContent } from "@/lib/utils/sanitize";
+import { SportsblockPost } from '@/lib/shared/types';
+import { calculatePendingPayout, formatAsset } from '@/lib/utils/hive';
+import { useUserProfile } from '@/features/user/hooks/useUserProfile';
+import { useModal } from '@/components/modals/ModalProvider';
+import { useBookmarks } from '@/hooks/useBookmarks';
+import { formatDate, formatReadTime } from '@/lib/utils/client';
+import { proxyImagesInContent } from '@/lib/utils/image-proxy';
+import { sanitizePostContent } from '@/lib/utils/sanitize';
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -56,7 +56,10 @@ export default function PostDetailPage() {
         );
 
         if (hiveResponse.ok) {
-          const result = await hiveResponse.json() as { success: boolean; post: SportsblockPost | null };
+          const result = (await hiveResponse.json()) as {
+            success: boolean;
+            post: SportsblockPost | null;
+          };
           if (result.success && result.post) {
             setPost(result.post);
             return;
@@ -102,7 +105,7 @@ export default function PostDetailPage() {
           }
         }
 
-        setError("Post not found");
+        setError('Post not found');
       } catch (err) {
         // Ignore abort errors
         if (err instanceof Error && err.name === 'AbortError') return;
@@ -168,7 +171,7 @@ export default function PostDetailPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="mx-auto max-w-4xl p-6">
           <Loading text="Loading post..." skeleton skeletonLines={5} />
         </div>
       </MainLayout>
@@ -178,12 +181,14 @@ export default function PostDetailPage() {
   if (error || !post) {
     return (
       <MainLayout>
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="mx-auto max-w-4xl p-6">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Post Not Found</h1>
-            <p className="text-gray-600 mb-6">{error || "The post you're looking for doesn't exist."}</p>
+            <h1 className="mb-4 text-2xl font-bold text-red-600">Post Not Found</h1>
+            <p className="mb-6 text-gray-600">
+              {error || "The post you're looking for doesn't exist."}
+            </p>
             <Button onClick={() => router.back()}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="mr-2 h-4 w-4" />
               Go Back
             </Button>
           </div>
@@ -196,43 +201,49 @@ export default function PostDetailPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="mx-auto max-w-4xl p-6">
         {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="mb-6"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+        <Button variant="ghost" onClick={() => router.back()} className="mb-6">
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
 
         {/* Post Header */}
         <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
+          <div className="mb-4 flex items-center space-x-3">
             <Avatar
-              src={isSoftPost ? (post as unknown as { authorAvatar?: string }).authorAvatar : hiveProfile?.avatar}
+              src={
+                isSoftPost
+                  ? (post as unknown as { authorAvatar?: string }).authorAvatar
+                  : hiveProfile?.avatar
+              }
               fallback={post.author}
-              alt={isSoftPost ? (post as unknown as { authorDisplayName?: string }).authorDisplayName || post.author : hiveProfile?.displayName || post.author}
+              alt={
+                isSoftPost
+                  ? (post as unknown as { authorDisplayName?: string }).authorDisplayName ||
+                    post.author
+                  : hiveProfile?.displayName || post.author
+              }
               size="md"
-              className={!isSoftPost && isProfileLoading ? "animate-pulse" : ""}
+              className={!isSoftPost && isProfileLoading ? 'animate-pulse' : ''}
             />
             <div className="flex-1">
               <h1 className="text-2xl font-bold">
                 {isSoftPost
-                  ? (post as unknown as { authorDisplayName?: string }).authorDisplayName || post.author
+                  ? (post as unknown as { authorDisplayName?: string }).authorDisplayName ||
+                    post.author
                   : hiveProfile?.displayName || post.author}
               </h1>
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <span>@{post.author}</span>
                 <span>•</span>
                 <span className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
+                  <Calendar className="mr-1 h-4 w-4" />
                   {formatDate(new Date(post.created))}
                 </span>
                 <span>•</span>
                 <span className="flex items-center">
-                  <Clock className="h-4 w-4 mr-1" />
+                  <Clock className="mr-1 h-4 w-4" />
                   {formatReadTime(Math.ceil(post.body.length / 1000))}
                 </span>
                 {isSoftPost && (
@@ -244,14 +255,14 @@ export default function PostDetailPage() {
               </div>
               {post.sportCategory && (
                 <div className="mt-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-accent/20 text-accent">
+                  <span className="inline-flex items-center rounded-full bg-accent/20 px-2 py-1 text-xs text-accent">
                     {post.sportCategory}
                   </span>
                 </div>
               )}
               {!isSoftPost && pendingPayout > 0 && (
                 <div className="mt-2">
-                  <span className="text-sm text-accent font-medium">
+                  <span className="text-sm font-medium text-accent">
                     💰 {formatAsset(pendingPayout, 'HIVE', 3)} pending
                   </span>
                 </div>
@@ -259,14 +270,14 @@ export default function PostDetailPage() {
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold mb-6">{post.title}</h1>
+          <h1 className="mb-6 text-3xl font-bold">{post.title}</h1>
         </div>
 
         {/* Post Content */}
-        <div className="prose prose-lg max-w-none mb-8">
+        <div className="prose prose-lg mb-8 max-w-none">
           <div
             dangerouslySetInnerHTML={{
-              __html: proxyImagesInContent(sanitizePostContent(post.body))
+              __html: proxyImagesInContent(sanitizePostContent(post.body)),
             }}
           />
         </div>
@@ -291,9 +302,7 @@ export default function PostDetailPage() {
                     onVoteSuccess={handleVoteSuccess}
                     onVoteError={handleVoteError}
                   />
-                  <span className="text-sm text-gray-600">
-                    {post.net_votes || 0} votes
-                  </span>
+                  <span className="text-sm text-gray-600">{post.net_votes || 0} votes</span>
                 </div>
               )}
 
@@ -313,15 +322,13 @@ export default function PostDetailPage() {
                   post && isBookmarked(post) ? 'text-yellow-500' : ''
                 }`}
               >
-                <Bookmark className={`h-4 w-4 ${post && isBookmarked(post) ? 'fill-current' : ''}`} />
+                <Bookmark
+                  className={`h-4 w-4 ${post && isBookmarked(post) ? 'fill-current' : ''}`}
+                />
                 <span>{post && isBookmarked(post) ? 'Bookmarked' : 'Bookmark'}</span>
               </Button>
 
-              <Button
-                variant="ghost"
-                onClick={handleShare}
-                className="flex items-center space-x-2"
-              >
+              <Button variant="ghost" onClick={handleShare} className="flex items-center space-x-2">
                 <Share className="h-4 w-4" />
                 <span>Share</span>
               </Button>

@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useFollowing } from "@/lib/react-query/queries/useFollowers";
-import { Avatar } from "@/components/ui/Avatar";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { Users, UserPlus, ArrowLeft, UserMinus, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useUnfollowUser } from "@/lib/react-query/queries/useFollowers";
+import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFollowing } from '@/lib/react-query/queries/useFollowers';
+import { Avatar } from '@/components/core/Avatar';
+import { Button } from '@/components/core/Button';
+import { Card } from '@/components/core/Card';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { Users, UserPlus, ArrowLeft, UserMinus, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useUnfollowUser } from '@/lib/react-query/queries/useFollowers';
 
 export default function FollowingPage() {
   const { user } = useAuth();
@@ -21,11 +21,8 @@ export default function FollowingPage() {
     error,
     fetchNextPage,
     isFetchingNextPage,
-    hasNextPage
-  } = useFollowing(
-    user?.username || '',
-    { enabled: !!user?.username }
-  );
+    hasNextPage,
+  } = useFollowing(user?.username || '', { enabled: !!user?.username });
 
   const unfollowMutation = useUnfollowUser();
 
@@ -39,7 +36,7 @@ export default function FollowingPage() {
     try {
       await unfollowMutation.mutateAsync({
         username,
-        follower: user.username
+        follower: user.username,
       });
     } catch {
       // Error handled by mutation
@@ -55,11 +52,11 @@ export default function FollowingPage() {
   if (!user) {
     return (
       <MainLayout showRightSidebar={false}>
-        <div className="max-w-4xl mx-auto text-center py-12">
-          <h2 className="text-xl font-semibold mb-2">Please sign in to view who you&apos;re following</h2>
-          <Button onClick={() => router.push("/auth")}>
-            Sign In
-          </Button>
+        <div className="mx-auto max-w-4xl py-12 text-center">
+          <h2 className="mb-2 text-xl font-semibold">
+            Please sign in to view who you&apos;re following
+          </h2>
+          <Button onClick={() => router.push('/auth')}>Sign In</Button>
         </div>
       </MainLayout>
     );
@@ -67,9 +64,9 @@ export default function FollowingPage() {
 
   return (
     <MainLayout showRightSidebar={false}>
-      <div className="max-w-4xl mx-auto py-6">
+      <div className="mx-auto max-w-4xl py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
@@ -84,9 +81,7 @@ export default function FollowingPage() {
               <Users className="h-8 w-8 text-primary" />
               <div>
                 <h1 className="text-3xl font-bold">Following</h1>
-                <p className="text-muted-foreground">
-                  People @{user.username} is following
-                </p>
+                <p className="text-muted-foreground">People @{user.username} is following</p>
               </div>
             </div>
           </div>
@@ -101,38 +96,36 @@ export default function FollowingPage() {
         {/* Content */}
         <Card className="p-6">
           {isLoading ? (
-            <div className="space-y-4 animate-pulse">
+            <div className="animate-pulse space-y-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+                  <div className="h-12 w-12 rounded-full bg-gray-300"></div>
                   <div className="flex-1">
-                    <div className="h-4 bg-gray-300 rounded w-1/3 mb-2"></div>
-                    <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                    <div className="mb-2 h-4 w-1/3 rounded bg-gray-300"></div>
+                    <div className="h-3 w-1/2 rounded bg-gray-300"></div>
                   </div>
-                  <div className="w-20 h-8 bg-gray-300 rounded"></div>
+                  <div className="h-8 w-20 rounded bg-gray-300"></div>
                 </div>
               ))}
             </div>
           ) : error ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">😞</div>
-              <h3 className="text-xl font-semibold mb-2">Error Loading Following</h3>
-              <p className="text-muted-foreground mb-4">
+            <div className="py-12 text-center">
+              <div className="mb-4 text-6xl">😞</div>
+              <h3 className="mb-2 text-xl font-semibold">Error Loading Following</h3>
+              <p className="mb-4 text-muted-foreground">
                 There was an error loading who you&apos;re following. Please try again.
               </p>
-              <Button onClick={() => window.location.reload()}>
-                Try Again
-              </Button>
+              <Button onClick={() => window.location.reload()}>Try Again</Button>
             </div>
           ) : followingData?.relationships.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">👤</div>
-              <h3 className="text-xl font-semibold mb-2">Not Following Anyone</h3>
-              <p className="text-muted-foreground mb-4">
+            <div className="py-12 text-center">
+              <div className="mb-4 text-6xl">👤</div>
+              <h3 className="mb-2 text-xl font-semibold">Not Following Anyone</h3>
+              <p className="mb-4 text-muted-foreground">
                 You&apos;re not following anyone yet. Discover interesting users to follow!
               </p>
-              <Button onClick={() => router.push("/discover")}>
-                <UserPlus className="h-4 w-4 mr-2" />
+              <Button onClick={() => router.push('/discover')}>
+                <UserPlus className="mr-2 h-4 w-4" />
                 Discover Users
               </Button>
             </div>
@@ -141,21 +134,15 @@ export default function FollowingPage() {
               {followingData?.relationships.map((rel) => (
                 <div
                   key={`${rel.follower}-${rel.following}`}
-                  className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between rounded-lg p-4 transition-colors hover:bg-muted/50"
                 >
-                  <div 
-                    className="flex items-center space-x-4 flex-1 cursor-pointer"
+                  <div
+                    className="flex flex-1 cursor-pointer items-center space-x-4"
                     onClick={() => handleUserClick(rel.following)}
                   >
-                    <Avatar
-                      fallback={rel.following}
-                      alt={rel.following}
-                      size="lg"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-lg">
-                        @{rel.following}
-                      </div>
+                    <Avatar fallback={rel.following} alt={rel.following} size="lg" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-lg font-semibold">@{rel.following}</div>
                       <div className="text-sm text-muted-foreground">
                         You&apos;re following this user
                       </div>
@@ -174,9 +161,9 @@ export default function FollowingPage() {
                       size="sm"
                       onClick={() => handleUnfollow(rel.following)}
                       disabled={unfollowMutation.isPending}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
                     >
-                      <UserMinus className="h-4 w-4 mr-1" />
+                      <UserMinus className="mr-1 h-4 w-4" />
                       Unfollow
                     </Button>
                   </div>
@@ -185,15 +172,11 @@ export default function FollowingPage() {
 
               {/* Load More Button */}
               {hasNextPage && (
-                <div className="text-center pt-6">
-                  <Button
-                    variant="outline"
-                    onClick={handleLoadMore}
-                    disabled={isFetchingNextPage}
-                  >
+                <div className="pt-6 text-center">
+                  <Button variant="outline" onClick={handleLoadMore} disabled={isFetchingNextPage}>
                     {isFetchingNextPage ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Loading...
                       </>
                     ) : (

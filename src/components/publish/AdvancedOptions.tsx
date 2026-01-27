@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import React from "react";
-import { ChevronDown, ChevronUp, Plus, X, Image as ImageIcon } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Community } from "@/types";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { ChevronDown, ChevronUp, Plus, X, Image as ImageIcon } from 'lucide-react';
+import { Button } from '@/components/core/Button';
+import { Community } from '@/types';
+import { cn } from '@/lib/utils/client';
 
-export type RewardsOption = "50_50" | "power_up" | "decline";
+export type RewardsOption = '50_50' | 'power_up' | 'decline';
 
 export interface Beneficiary {
   account: string;
@@ -42,19 +42,19 @@ export interface AdvancedOptionsProps {
 
 const REWARDS_OPTIONS = [
   {
-    value: "50_50" as const,
-    label: "50% HBD / 50% HP",
-    description: "Receive half in liquid HBD and half in Hive Power",
+    value: '50_50' as const,
+    label: '50% HBD / 50% HP',
+    description: 'Receive half in liquid HBD and half in Hive Power',
   },
   {
-    value: "power_up" as const,
-    label: "100% Power Up",
-    description: "Receive all rewards as Hive Power",
+    value: 'power_up' as const,
+    label: '100% Power Up',
+    description: 'Receive all rewards as Hive Power',
   },
   {
-    value: "decline" as const,
-    label: "Decline Payout",
-    description: "No rewards - altruistic posting",
+    value: 'decline' as const,
+    label: 'Decline Payout',
+    description: 'No rewards - altruistic posting',
   },
 ];
 
@@ -74,7 +74,7 @@ export function AdvancedOptions({
   defaultExpanded = false,
 }: AdvancedOptionsProps) {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
-  const [newBeneficiary, setNewBeneficiary] = React.useState({ account: "", weight: 5 });
+  const [newBeneficiary, setNewBeneficiary] = React.useState({ account: '', weight: 5 });
 
   const handleAddBeneficiary = () => {
     if (!newBeneficiary.account.trim()) return;
@@ -94,28 +94,28 @@ export function AdvancedOptions({
       ...beneficiaries,
       { account: newBeneficiary.account.trim().toLowerCase(), weight: newBeneficiary.weight },
     ]);
-    setNewBeneficiary({ account: "", weight: 5 });
+    setNewBeneficiary({ account: '', weight: 5 });
   };
 
   const handleRemoveBeneficiary = (account: string) => {
     // Don't allow removing the default sportsblock beneficiary
-    if (account === "sportsblock") return;
+    if (account === 'sportsblock') return;
     onBeneficiariesChange(beneficiaries.filter((b) => b.account !== account));
   };
 
   const totalBeneficiaryWeight = beneficiaries.reduce((sum, b) => sum + b.weight, 0);
 
   return (
-    <div className="border rounded-lg bg-card">
+    <div className="rounded-lg border bg-card">
       {/* Toggle header */}
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
-          "w-full flex items-center justify-between px-4 py-3",
-          "text-sm font-medium text-foreground",
-          "hover:bg-muted/50 transition-colors",
-          isExpanded && "border-b"
+          'flex w-full items-center justify-between px-4 py-3',
+          'text-sm font-medium text-foreground',
+          'transition-colors hover:bg-muted/50',
+          isExpanded && 'border-b'
         )}
       >
         <span>ADVANCED OPTIONS</span>
@@ -128,14 +128,12 @@ export function AdvancedOptions({
 
       {/* Content */}
       {isExpanded && (
-        <div className="p-4 space-y-6">
+        <div className="space-y-6 p-4">
           {/* Community Selection */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Community (Optional)
-            </label>
+            <label className="text-sm font-medium text-foreground">Community (Optional)</label>
             <select
-              value={selectedCommunity?.id || ""}
+              value={selectedCommunity?.id || ''}
               onChange={(e) => {
                 const communityId = e.target.value;
                 if (!communityId) {
@@ -148,8 +146,8 @@ export function AdvancedOptions({
                 }
               }}
               className={cn(
-                "w-full px-3 py-2 rounded-lg border bg-background",
-                "text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                'w-full rounded-lg border bg-background px-3 py-2',
+                'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
               )}
             >
               <option value="">Main Sportsblock Feed</option>
@@ -179,15 +177,13 @@ export function AdvancedOptions({
           {/* Rewards Distribution (Hive users only) */}
           {isHiveUser && (
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Rewards Distribution
-              </label>
+              <label className="text-sm font-medium text-foreground">Rewards Distribution</label>
               <select
                 value={rewardsOption}
                 onChange={(e) => onRewardsChange(e.target.value as RewardsOption)}
                 className={cn(
-                  "w-full px-3 py-2 rounded-lg border bg-background",
-                  "text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  'w-full rounded-lg border bg-background px-3 py-2',
+                  'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
                 )}
               >
                 {REWARDS_OPTIONS.map((option) => (
@@ -206,9 +202,7 @@ export function AdvancedOptions({
           {isHiveUser && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">
-                  Beneficiaries
-                </label>
+                <label className="text-sm font-medium text-foreground">Beneficiaries</label>
                 <span className="text-xs text-muted-foreground">
                   {totalBeneficiaryWeight}% allocated
                 </span>
@@ -220,25 +214,25 @@ export function AdvancedOptions({
                   <div
                     key={ben.account}
                     className={cn(
-                      "flex items-center justify-between px-3 py-2 rounded-lg",
-                      "bg-muted/50"
+                      'flex items-center justify-between rounded-lg px-3 py-2',
+                      'bg-muted/50'
                     )}
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">@{ben.account}</span>
-                      {ben.account === "sportsblock" && (
-                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                      {ben.account === 'sportsblock' && (
+                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                           Platform
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">{ben.weight}%</span>
-                      {ben.account !== "sportsblock" && (
+                      {ben.account !== 'sportsblock' && (
                         <button
                           type="button"
                           onClick={() => handleRemoveBeneficiary(ben.account)}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          className="text-muted-foreground transition-colors hover:text-destructive"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -259,8 +253,8 @@ export function AdvancedOptions({
                     }
                     placeholder="Username"
                     className={cn(
-                      "flex-1 px-3 py-2 rounded-lg border bg-background",
-                      "text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      'flex-1 rounded-lg border bg-background px-3 py-2',
+                      'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
                     )}
                   />
                   <input
@@ -269,14 +263,17 @@ export function AdvancedOptions({
                     onChange={(e) =>
                       setNewBeneficiary({
                         ...newBeneficiary,
-                        weight: Math.min(100 - totalBeneficiaryWeight, Math.max(1, parseInt(e.target.value) || 1)),
+                        weight: Math.min(
+                          100 - totalBeneficiaryWeight,
+                          Math.max(1, parseInt(e.target.value) || 1)
+                        ),
                       })
                     }
                     min={1}
                     max={100 - totalBeneficiaryWeight}
                     className={cn(
-                      "w-16 px-3 py-2 rounded-lg border bg-background",
-                      "text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring"
+                      'w-16 rounded-lg border bg-background px-3 py-2',
+                      'text-center text-sm focus:outline-none focus:ring-2 focus:ring-ring'
                     )}
                   />
                   <span className="text-sm text-muted-foreground">%</span>
@@ -306,22 +303,22 @@ export function AdvancedOptions({
 
             {/* Current cover image */}
             {coverImage && (
-              <div className="relative rounded-lg overflow-hidden border">
+              <div className="relative overflow-hidden rounded-lg border">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={coverImage}
                   alt="Cover"
-                  className="w-full h-32 object-cover"
+                  className="h-32 w-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
+                    (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
                 <button
                   type="button"
-                  onClick={() => onCoverImageChange("")}
+                  onClick={() => onCoverImageChange('')}
                   className={cn(
-                    "absolute top-2 right-2 p-1 rounded-full",
-                    "bg-black/50 text-white hover:bg-black/70 transition-colors"
+                    'absolute right-2 top-2 rounded-full p-1',
+                    'bg-black/50 text-white transition-colors hover:bg-black/70'
                   )}
                 >
                   <X className="h-4 w-4" />
@@ -336,17 +333,15 @@ export function AdvancedOptions({
               onChange={(e) => onCoverImageChange(e.target.value)}
               placeholder="Enter image URL or select from detected images"
               className={cn(
-                "w-full px-3 py-2 rounded-lg border bg-background",
-                "text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                'w-full rounded-lg border bg-background px-3 py-2',
+                'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
               )}
             />
 
             {/* Detected images from content */}
             {detectedImages.length > 0 && (
               <div className="space-y-2">
-                <span className="text-xs text-muted-foreground">
-                  Detected images in content:
-                </span>
+                <span className="text-xs text-muted-foreground">Detected images in content:</span>
                 <div className="flex flex-wrap gap-2">
                   {detectedImages.slice(0, 4).map((img, index) => (
                     <button
@@ -354,22 +349,24 @@ export function AdvancedOptions({
                       type="button"
                       onClick={() => onCoverImageChange(img)}
                       className={cn(
-                        "relative w-16 h-16 rounded-lg overflow-hidden border-2",
-                        "transition-all hover:border-primary",
-                        coverImage === img ? "border-primary ring-2 ring-primary/20" : "border-border"
+                        'relative h-16 w-16 overflow-hidden rounded-lg border-2',
+                        'transition-all hover:border-primary',
+                        coverImage === img
+                          ? 'border-primary ring-2 ring-primary/20'
+                          : 'border-border'
                       )}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={img}
                         alt={`Detected ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        className="h-full w-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).parentElement!.style.display = "none";
+                          (e.target as HTMLImageElement).parentElement!.style.display = 'none';
                         }}
                       />
                       {coverImage === img && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                        <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
                           <ImageIcon className="h-4 w-4 text-primary" />
                         </div>
                       )}

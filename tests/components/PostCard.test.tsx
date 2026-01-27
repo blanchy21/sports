@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { PostCard } from '@/components/PostCard';
+import { PostCard } from '@/components/posts/PostCard';
 import { renderWithProviders } from '../test-utils';
 
 // Mock the hooks
@@ -15,7 +15,7 @@ jest.mock('@/contexts/AuthContext', () => ({
   }),
 }));
 
-jest.mock('@/hooks/useUserProfile', () => ({
+jest.mock('@/features/user/hooks/useUserProfile', () => ({
   useUserProfile: () => ({
     profile: { avatar: null, displayName: 'Test User' },
     isLoading: false,
@@ -35,7 +35,7 @@ jest.mock('@/components/modals/ModalProvider', () => ({
   }),
 }));
 
-jest.mock('@/components/ui/Toast', () => ({
+jest.mock('@/components/core/Toast', () => ({
   useToast: () => ({
     addToast: jest.fn(),
   }),
@@ -46,7 +46,7 @@ jest.mock('@/components/ui/Toast', () => ({
 }));
 
 // Mock StarVoteButton
-jest.mock('@/components/StarVoteButton', () => ({
+jest.mock('@/components/voting/StarVoteButton', () => ({
   StarVoteButton: () => <button data-testid="star-vote-button">Vote</button>,
 }));
 
@@ -221,9 +221,7 @@ describe('PostCard', () => {
 
       // Bookmark button should be present
       const buttons = screen.getAllByRole('button');
-      const bookmarkButton = buttons.find(btn =>
-        btn.querySelector('svg.lucide-bookmark')
-      );
+      const bookmarkButton = buttons.find((btn) => btn.querySelector('svg.lucide-bookmark'));
       expect(bookmarkButton).toBeTruthy();
     });
 

@@ -1,11 +1,11 @@
 /**
  * WorkerBee Monitoring and Error Handling
- * 
+ *
  * This module provides comprehensive monitoring, error handling,
  * and alerting for WorkerBee operations.
  */
 
-import { HiveError } from '../shared/utils';
+import { HiveError } from '../utils/hive';
 import { warn as logWarn, error as logError } from './logger';
 
 // Error types
@@ -16,7 +16,7 @@ export enum ErrorType {
   TIMEOUT_ERROR = 'TIMEOUT_ERROR',
   RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR',
   AUTHENTICATION_ERROR = 'AUTHENTICATION_ERROR',
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR'
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
 
 // Error severity levels
@@ -24,7 +24,7 @@ export enum ErrorSeverity {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL'
+  CRITICAL = 'CRITICAL',
 }
 
 // Error entry interface
@@ -66,7 +66,7 @@ export class WorkerBeeMonitor {
     errorThreshold: 10,
     performanceThreshold: 5000, // 5 seconds
     timeWindow: 5 * 60 * 1000, // 5 minutes
-    enabled: true
+    enabled: true,
   };
   private maxEntries = 1000;
 
@@ -90,7 +90,7 @@ export class WorkerBeeMonitor {
       context,
       timestamp: Date.now(),
       resolved: false,
-      retryCount: 0
+      retryCount: 0,
     };
 
     this.errors.push(error);
@@ -100,7 +100,7 @@ export class WorkerBeeMonitor {
     logError(`[WorkerBee Monitor] ${severity} ${type}: ${message}`, 'WorkerBeeMonitor', undefined, {
       errorId,
       context,
-      stack
+      stack,
     });
 
     return errorId;
@@ -122,7 +122,7 @@ export class WorkerBeeMonitor {
       duration,
       success,
       timestamp: Date.now(),
-      metadata
+      metadata,
     };
 
     this.performance.push(entry);
@@ -130,10 +130,14 @@ export class WorkerBeeMonitor {
     this.checkAlerts();
 
     if (!success || duration > this.alertConfig.performanceThreshold) {
-      logWarn(`[WorkerBee Monitor] Performance issue: ${operation} took ${duration}ms`, 'WorkerBeeMonitor', {
-        entryId,
-        metadata
-      });
+      logWarn(
+        `[WorkerBee Monitor] Performance issue: ${operation} took ${duration}ms`,
+        'WorkerBeeMonitor',
+        {
+          entryId,
+          metadata,
+        }
+      );
     }
 
     return entryId;
@@ -143,7 +147,7 @@ export class WorkerBeeMonitor {
    * Mark error as resolved
    */
   resolveError(errorId: string): boolean {
-    const error = this.errors.find(e => e.id === errorId);
+    const error = this.errors.find((e) => e.id === errorId);
     if (error) {
       error.resolved = true;
       return true;
@@ -155,7 +159,7 @@ export class WorkerBeeMonitor {
    * Increment retry count for error
    */
   incrementRetryCount(errorId: string): boolean {
-    const error = this.errors.find(e => e.id === errorId);
+    const error = this.errors.find((e) => e.id === errorId);
     if (error) {
       error.retryCount++;
       return true;
@@ -175,24 +179,30 @@ export class WorkerBeeMonitor {
   } {
     const now = Date.now();
     const recentWindow = 24 * 60 * 60 * 1000; // 24 hours
-    const recentErrors = this.errors.filter(e => now - e.timestamp < recentWindow);
+    const recentErrors = this.errors.filter((e) => now - e.timestamp < recentWindow);
 
-    const byType = Object.values(ErrorType).reduce((acc, type) => {
-      acc[type] = recentErrors.filter(e => e.type === type).length;
-      return acc;
-    }, {} as Record<ErrorType, number>);
+    const byType = Object.values(ErrorType).reduce(
+      (acc, type) => {
+        acc[type] = recentErrors.filter((e) => e.type === type).length;
+        return acc;
+      },
+      {} as Record<ErrorType, number>
+    );
 
-    const bySeverity = Object.values(ErrorSeverity).reduce((acc, severity) => {
-      acc[severity] = recentErrors.filter(e => e.severity === severity).length;
-      return acc;
-    }, {} as Record<ErrorSeverity, number>);
+    const bySeverity = Object.values(ErrorSeverity).reduce(
+      (acc, severity) => {
+        acc[severity] = recentErrors.filter((e) => e.severity === severity).length;
+        return acc;
+      },
+      {} as Record<ErrorSeverity, number>
+    );
 
     return {
       total: this.errors.length,
-      unresolved: this.errors.filter(e => !e.resolved).length,
+      unresolved: this.errors.filter((e) => !e.resolved).length,
       byType,
       bySeverity,
-      recentErrors: recentErrors.slice(-10) // Last 10 errors
+      recentErrors: recentErrors.slice(-10), // Last 10 errors
     };
   }
 
@@ -208,17 +218,19 @@ export class WorkerBeeMonitor {
   } {
     const now = Date.now();
     const recentWindow = 24 * 60 * 60 * 1000; // 24 hours
-    const recentPerformance = this.performance.filter(p => now - p.timestamp < recentWindow);
+    const recentPerformance = this.performance.filter((p) => now - p.timestamp < recentWindow);
 
     const totalOperations = recentPerformance.length;
-    const averageDuration = totalOperations > 0 
-      ? recentPerformance.reduce((sum, p) => sum + p.duration, 0) / totalOperations 
-      : 0;
-    const successRate = totalOperations > 0 
-      ? (recentPerformance.filter(p => p.success).length / totalOperations) * 100 
-      : 100;
+    const averageDuration =
+      totalOperations > 0
+        ? recentPerformance.reduce((sum, p) => sum + p.duration, 0) / totalOperations
+        : 0;
+    const successRate =
+      totalOperations > 0
+        ? (recentPerformance.filter((p) => p.success).length / totalOperations) * 100
+        : 100;
     const slowOperations = recentPerformance
-      .filter(p => p.duration > this.alertConfig.performanceThreshold)
+      .filter((p) => p.duration > this.alertConfig.performanceThreshold)
       .slice(-10);
 
     return {
@@ -226,7 +238,7 @@ export class WorkerBeeMonitor {
       averageDuration,
       successRate,
       slowOperations,
-      recentPerformance: recentPerformance.slice(-10)
+      recentPerformance: recentPerformance.slice(-10),
     };
   }
 
@@ -274,7 +286,7 @@ export class WorkerBeeMonitor {
     return {
       status,
       issues,
-      recommendations
+      recommendations,
     };
   }
 
@@ -306,7 +318,7 @@ export class WorkerBeeMonitor {
       errors: [...this.errors],
       performance: [...this.performance],
       config: this.alertConfig,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -324,12 +336,10 @@ export class WorkerBeeMonitor {
     const now = Date.now();
     const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-    this.errors = this.errors
-      .filter(e => now - e.timestamp < maxAge)
-      .slice(-this.maxEntries);
+    this.errors = this.errors.filter((e) => now - e.timestamp < maxAge).slice(-this.maxEntries);
 
     this.performance = this.performance
-      .filter(p => now - p.timestamp < maxAge)
+      .filter((p) => now - p.timestamp < maxAge)
       .slice(-this.maxEntries);
   }
 
@@ -343,18 +353,26 @@ export class WorkerBeeMonitor {
 
     const now = Date.now();
     const timeWindow = this.alertConfig.timeWindow;
-    const recentErrors = this.errors.filter(e => now - e.timestamp < timeWindow);
-    const recentPerformance = this.performance.filter(p => now - p.timestamp < timeWindow);
+    const recentErrors = this.errors.filter((e) => now - e.timestamp < timeWindow);
+    const recentPerformance = this.performance.filter((p) => now - p.timestamp < timeWindow);
 
     // Check error threshold
     if (recentErrors.length >= this.alertConfig.errorThreshold) {
-      logWarn(`[WorkerBee Monitor] Alert: High error rate detected (${recentErrors.length} errors in ${timeWindow}ms)`, 'WorkerBeeMonitor');
+      logWarn(
+        `[WorkerBee Monitor] Alert: High error rate detected (${recentErrors.length} errors in ${timeWindow}ms)`,
+        'WorkerBeeMonitor'
+      );
     }
 
     // Check performance threshold
-    const slowOperations = recentPerformance.filter(p => p.duration > this.alertConfig.performanceThreshold);
+    const slowOperations = recentPerformance.filter(
+      (p) => p.duration > this.alertConfig.performanceThreshold
+    );
     if (slowOperations.length > 0) {
-      logWarn(`[WorkerBee Monitor] Alert: ${slowOperations.length} slow operations detected`, 'WorkerBeeMonitor');
+      logWarn(
+        `[WorkerBee Monitor] Alert: ${slowOperations.length} slow operations detected`,
+        'WorkerBeeMonitor'
+      );
     }
   }
 }
@@ -376,7 +394,7 @@ export function withErrorHandling<T extends unknown[], R>(
     try {
       const result = await fn(...args);
       const duration = Date.now() - startTime;
-      
+
       globalMonitor.logPerformance(operation, duration, true, context);
       return result;
     } catch (error) {
@@ -478,10 +496,14 @@ export function getMonitoringStats(): {
     return {
       errors: globalMonitor.getErrorStats(),
       performance: globalMonitor.getPerformanceStats(),
-      health: globalMonitor.getHealthStatus()
+      health: globalMonitor.getHealthStatus(),
     };
   } catch (error) {
-    logError('Error getting monitoring stats', 'WorkerBeeMonitor', error instanceof Error ? error : undefined);
+    logError(
+      'Error getting monitoring stats',
+      'WorkerBeeMonitor',
+      error instanceof Error ? error : undefined
+    );
     // Return default data if monitoring fails
     return {
       errors: {
@@ -489,20 +511,20 @@ export function getMonitoringStats(): {
         unresolved: 0,
         byType: {},
         bySeverity: {},
-        recentErrors: []
+        recentErrors: [],
       },
       performance: {
         totalOperations: 0,
         averageDuration: 0,
         successRate: 100,
         slowOperations: [],
-        recentPerformance: []
+        recentPerformance: [],
       },
       health: {
         status: 'healthy',
         issues: [],
-        recommendations: []
-      }
+        recommendations: [],
+      },
     };
   }
 }

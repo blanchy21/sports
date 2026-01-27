@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import { ErrorBoundary, CompactErrorFallback } from '@/components/ErrorBoundary';
+import { ErrorBoundary, CompactErrorFallback } from '@/components/feedback/ErrorBoundary';
 
 /**
  * Loading spinner component for lazy-loaded content
@@ -7,7 +7,7 @@ import { ErrorBoundary, CompactErrorFallback } from '@/components/ErrorBoundary'
 function LoadingSpinner({ text = 'Loading...' }: { text?: string }) {
   return (
     <div className="flex items-center justify-center p-4">
-      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mr-2" />
+      <div className="mr-2 h-5 w-5 animate-spin rounded-full border-b-2 border-primary" />
       <span className="text-sm text-muted-foreground">{text}</span>
     </div>
   );
@@ -31,7 +31,7 @@ function withLazyErrorBoundary<P extends object>(
 
 // Lazy load heavy components with error boundaries
 const LazyAuthModalBase = dynamic(
-  () => import('@/components/AuthModal').then(mod => ({ default: mod.AuthModal })),
+  () => import('@/components/auth/AuthModal').then((mod) => ({ default: mod.AuthModal })),
   {
     ssr: false,
     loading: () => <LoadingSpinner text="Loading authentication..." />,
@@ -40,7 +40,7 @@ const LazyAuthModalBase = dynamic(
 export const LazyAuthModal = withLazyErrorBoundary(LazyAuthModalBase, 'AuthModal');
 
 const LazyVotingDemoBase = dynamic(
-  () => import('@/components/VotingDemo').then(mod => ({ default: mod.VotingDemo })),
+  () => import('@/components/voting/VotingDemo').then((mod) => ({ default: mod.VotingDemo })),
   {
     ssr: false,
     loading: () => <LoadingSpinner text="Loading voting demo..." />,
@@ -49,7 +49,7 @@ const LazyVotingDemoBase = dynamic(
 export const LazyVotingDemo = withLazyErrorBoundary(LazyVotingDemoBase, 'VotingDemo');
 
 const LazyRealtimeFeedBase = dynamic(
-  () => import('@/components/RealtimeFeed').then(mod => ({ default: mod.RealtimeFeed })),
+  () => import('@/components/posts/RealtimeFeed').then((mod) => ({ default: mod.RealtimeFeed })),
   {
     ssr: false,
     loading: () => <LoadingSpinner text="Loading feed..." />,
@@ -59,79 +59,131 @@ export const LazyRealtimeFeed = withLazyErrorBoundary(LazyRealtimeFeedBase, 'Rea
 
 // Lazy load modals with error boundaries
 const LazyCommentsModalBase = dynamic(
-  () => import('@/components/modals/CommentsModal').then(mod => ({ default: mod.CommentsModal })),
+  () => import('@/components/modals/CommentsModal').then((mod) => ({ default: mod.CommentsModal })),
   { ssr: false }
 );
 export const LazyCommentsModal = withLazyErrorBoundary(LazyCommentsModalBase, 'CommentsModal');
 
 const LazyUpvoteListModalBase = dynamic(
-  () => import('@/components/modals/UpvoteListModal').then(mod => ({ default: mod.UpvoteListModal })),
+  () =>
+    import('@/components/modals/UpvoteListModal').then((mod) => ({ default: mod.UpvoteListModal })),
   { ssr: false }
 );
-export const LazyUpvoteListModal = withLazyErrorBoundary(LazyUpvoteListModalBase, 'UpvoteListModal');
+export const LazyUpvoteListModal = withLazyErrorBoundary(
+  LazyUpvoteListModalBase,
+  'UpvoteListModal'
+);
 
 const LazyUserProfileModalBase = dynamic(
-  () => import('@/components/modals/UserProfileModal').then(mod => ({ default: mod.UserProfileModal })),
+  () =>
+    import('@/components/modals/UserProfileModal').then((mod) => ({
+      default: mod.UserProfileModal,
+    })),
   { ssr: false }
 );
-export const LazyUserProfileModal = withLazyErrorBoundary(LazyUserProfileModalBase, 'UserProfileModal');
+export const LazyUserProfileModal = withLazyErrorBoundary(
+  LazyUserProfileModalBase,
+  'UserProfileModal'
+);
 
 const LazyDescriptionModalBase = dynamic(
-  () => import('@/components/modals/DescriptionModal').then(mod => ({ default: mod.DescriptionModal })),
+  () =>
+    import('@/components/modals/DescriptionModal').then((mod) => ({
+      default: mod.DescriptionModal,
+    })),
   { ssr: false }
 );
-export const LazyDescriptionModal = withLazyErrorBoundary(LazyDescriptionModalBase, 'DescriptionModal');
+export const LazyDescriptionModal = withLazyErrorBoundary(
+  LazyDescriptionModalBase,
+  'DescriptionModal'
+);
 
 // Lazy load community components with error boundaries
 const LazyCommunityDetailBase = dynamic(
-  () => import('@/components/community/CommunityDetail').then(mod => ({ default: mod.CommunityDetail })),
+  () =>
+    import('@/components/community/CommunityDetail').then((mod) => ({
+      default: mod.CommunityDetail,
+    })),
   {
     ssr: false,
     loading: () => <LoadingSpinner text="Loading community..." />,
   }
 );
-export const LazyCommunityDetail = withLazyErrorBoundary(LazyCommunityDetailBase, 'CommunityDetail');
+export const LazyCommunityDetail = withLazyErrorBoundary(
+  LazyCommunityDetailBase,
+  'CommunityDetail'
+);
 
 const LazyCommunitiesListBase = dynamic(
-  () => import('@/components/community/CommunitiesList').then(mod => ({ default: mod.CommunitiesList })),
+  () =>
+    import('@/components/community/CommunitiesList').then((mod) => ({
+      default: mod.CommunitiesList,
+    })),
   {
     ssr: false,
     loading: () => <LoadingSpinner text="Loading communities..." />,
   }
 );
-export const LazyCommunitiesList = withLazyErrorBoundary(LazyCommunitiesListBase, 'CommunitiesList');
+export const LazyCommunitiesList = withLazyErrorBoundary(
+  LazyCommunitiesListBase,
+  'CommunitiesList'
+);
 
 // Lazy load SportsFilterPopup (uses framer-motion, only shown when opened)
 const LazySportsFilterPopupBase = dynamic(
-  () => import('@/components/SportsFilterPopup').then(mod => ({ default: mod.SportsFilterPopup })),
+  () =>
+    import('@/components/navigation/SportsFilterPopup').then((mod) => ({
+      default: mod.SportsFilterPopup,
+    })),
   { ssr: false }
 );
-export const LazySportsFilterPopup = withLazyErrorBoundary(LazySportsFilterPopupBase, 'SportsFilterPopup');
+export const LazySportsFilterPopup = withLazyErrorBoundary(
+  LazySportsFilterPopupBase,
+  'SportsFilterPopup'
+);
 
 // Lazy load UpgradeFlow (uses Aioha wallet library, only shown when upgrading)
 const LazyUpgradeFlowBase = dynamic(
-  () => import('@/components/UpgradeFlow').then(mod => ({ default: mod.UpgradeFlow })),
+  () => import('@/components/upgrade/UpgradeFlow').then((mod) => ({ default: mod.UpgradeFlow })),
   { ssr: false }
 );
 export const LazyUpgradeFlow = withLazyErrorBoundary(LazyUpgradeFlowBase, 'UpgradeFlow');
 
 // Lazy load NotificationDropdown (uses date-fns, only shown when notifications opened)
 const LazyNotificationDropdownBase = dynamic(
-  () => import('@/components/NotificationDropdown').then(mod => ({ default: mod.NotificationDropdown })),
+  () =>
+    import('@/components/navigation/NotificationDropdown').then((mod) => ({
+      default: mod.NotificationDropdown,
+    })),
   { ssr: false }
 );
-export const LazyNotificationDropdown = withLazyErrorBoundary(LazyNotificationDropdownBase, 'NotificationDropdown');
+export const LazyNotificationDropdown = withLazyErrorBoundary(
+  LazyNotificationDropdownBase,
+  'NotificationDropdown'
+);
 
 // Lazy load SettingsDropdown (only shown when settings opened)
 const LazySettingsDropdownBase = dynamic(
-  () => import('@/components/SettingsDropdown').then(mod => ({ default: mod.SettingsDropdown })),
+  () =>
+    import('@/components/navigation/SettingsDropdown').then((mod) => ({
+      default: mod.SettingsDropdown,
+    })),
   { ssr: false }
 );
-export const LazySettingsDropdown = withLazyErrorBoundary(LazySettingsDropdownBase, 'SettingsDropdown');
+export const LazySettingsDropdown = withLazyErrorBoundary(
+  LazySettingsDropdownBase,
+  'SettingsDropdown'
+);
 
 // Lazy load LatestNewsDropdown (uses ESPN API, only shown when news opened)
 const LazyLatestNewsDropdownBase = dynamic(
-  () => import('@/components/LatestNewsDropdown').then(mod => ({ default: mod.LatestNewsDropdown })),
+  () =>
+    import('@/components/navigation/LatestNewsDropdown').then((mod) => ({
+      default: mod.LatestNewsDropdown,
+    })),
   { ssr: false }
 );
-export const LazyLatestNewsDropdown = withLazyErrorBoundary(LazyLatestNewsDropdownBase, 'LatestNewsDropdown');
+export const LazyLatestNewsDropdown = withLazyErrorBoundary(
+  LazyLatestNewsDropdownBase,
+  'LatestNewsDropdown'
+);

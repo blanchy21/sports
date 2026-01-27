@@ -1,19 +1,16 @@
-"use client";
+'use client';
 
-import React from "react";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/Button";
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Info } from "lucide-react";
-import type { AuthMode, EmailFormState } from "../hooks/useAuthPage";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/core/Button';
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Info } from 'lucide-react';
+import type { AuthMode, EmailFormState } from '../hooks/useAuthPage';
 
 interface EmailAuthSectionProps {
   mode: AuthMode;
   values: EmailFormState;
   isConnecting: boolean;
-  onFieldChange: <K extends keyof EmailFormState>(
-    field: K,
-    value: EmailFormState[K]
-  ) => void;
+  onFieldChange: <K extends keyof EmailFormState>(field: K, value: EmailFormState[K]) => void;
   onSubmit: () => void;
   onToggleMode: () => void;
   onTogglePasswordVisibility: () => void;
@@ -41,7 +38,7 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
           onClick={onGoogleSignIn}
           disabled={isConnecting}
           variant="outline"
-          className="w-full h-12 text-base font-medium border-border hover:bg-muted/50 flex items-center justify-center gap-3 rounded-xl transition-all duration-200 hover:scale-[1.01]"
+          className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border-border text-base font-medium transition-all duration-200 hover:scale-[1.01] hover:bg-muted/50"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
@@ -69,28 +66,26 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
             <span className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-3 text-muted-foreground">
-              Or with email
-            </span>
+            <span className="bg-background px-3 text-muted-foreground">Or with email</span>
           </div>
         </div>
       </>
     )}
 
     {/* Email Input */}
-    <div className="relative group">
+    <div className="group relative">
       <label htmlFor="email" className="sr-only">
         Email address
       </label>
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary">
         <Mail className="h-5 w-5" />
       </div>
       <input
         id="email"
         type="email"
         value={values.email}
-        onChange={(event) => onFieldChange("email", event.target.value)}
-        className="w-full pl-12 pr-4 py-3.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-background text-foreground transition-all duration-200 placeholder:text-muted-foreground"
+        onChange={(event) => onFieldChange('email', event.target.value)}
+        className="w-full rounded-xl border border-input bg-background py-3.5 pl-12 pr-4 text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
         placeholder="Email address"
         autoComplete="email"
         required
@@ -98,46 +93,42 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
     </div>
 
     {/* Password Input */}
-    <div className="relative group">
+    <div className="group relative">
       <label htmlFor="password" className="sr-only">
         Password
       </label>
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary">
         <Lock className="h-5 w-5" />
       </div>
       <input
         id="password"
-        type={values.showPassword ? "text" : "password"}
+        type={values.showPassword ? 'text' : 'password'}
         value={values.password}
-        onChange={(event) => onFieldChange("password", event.target.value)}
-        className="w-full pl-12 pr-12 py-3.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-background text-foreground transition-all duration-200 placeholder:text-muted-foreground"
+        onChange={(event) => onFieldChange('password', event.target.value)}
+        className="w-full rounded-xl border border-input bg-background py-3.5 pl-12 pr-12 text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
         placeholder="Password"
-        autoComplete={mode === "login" ? "current-password" : "new-password"}
+        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
         required
         minLength={6}
       />
       <button
         type="button"
         onClick={onTogglePasswordVisibility}
-        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-        aria-label={values.showPassword ? "Hide password" : "Show password"}
+        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+        aria-label={values.showPassword ? 'Hide password' : 'Show password'}
       >
-        {values.showPassword ? (
-          <EyeOff className="h-5 w-5" />
-        ) : (
-          <Eye className="h-5 w-5" />
-        )}
+        {values.showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
       </button>
     </div>
 
     {/* Forgot Password Link */}
-    {mode === "login" && onForgotPassword && (
+    {mode === 'login' && onForgotPassword && (
       <div className="text-right">
         <button
           type="button"
           onClick={onForgotPassword}
           disabled={isConnecting}
-          className="text-sm text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
+          className="text-sm font-medium text-primary transition-colors hover:text-primary/80 disabled:opacity-50"
         >
           Forgot password?
         </button>
@@ -145,22 +136,22 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
     )}
 
     {/* Signup-only fields */}
-    {mode === "signup" && (
+    {mode === 'signup' && (
       <>
         {/* Username Input */}
-        <div className="relative group">
+        <div className="group relative">
           <label htmlFor="username" className="sr-only">
             Username
           </label>
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary">
             <User className="h-5 w-5" />
           </div>
           <input
             id="username"
             type="text"
             value={values.username}
-            onChange={(event) => onFieldChange("username", event.target.value)}
-            className="w-full pl-12 pr-4 py-3.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-background text-foreground transition-all duration-200 placeholder:text-muted-foreground"
+            onChange={(event) => onFieldChange('username', event.target.value)}
+            className="w-full rounded-xl border border-input bg-background py-3.5 pl-12 pr-4 text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
             placeholder="Choose a username"
             autoComplete="username"
             required
@@ -171,21 +162,19 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
         </div>
 
         {/* Display Name Input */}
-        <div className="relative group">
+        <div className="group relative">
           <label htmlFor="displayName" className="sr-only">
             Display name (optional)
           </label>
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary">
             <User className="h-5 w-5" />
           </div>
           <input
             id="displayName"
             type="text"
             value={values.displayName}
-            onChange={(event) =>
-              onFieldChange("displayName", event.target.value)
-            }
-            className="w-full pl-12 pr-4 py-3.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-background text-foreground transition-all duration-200 placeholder:text-muted-foreground"
+            onChange={(event) => onFieldChange('displayName', event.target.value)}
+            className="w-full rounded-xl border border-input bg-background py-3.5 pl-12 pr-4 text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
             placeholder="Display name (optional)"
             autoComplete="name"
             maxLength={64}
@@ -194,38 +183,34 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
 
         {/* Terms & Newsletter */}
         <div className="space-y-3 pt-2">
-          <label className="flex items-start gap-3 cursor-pointer group">
+          <label className="group flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               checked={values.acceptTerms}
-              onChange={(event) =>
-                onFieldChange("acceptTerms", event.target.checked)
-              }
-              className="mt-1 h-4 w-4 text-primary focus:ring-primary/20 border-input rounded cursor-pointer"
+              onChange={(event) => onFieldChange('acceptTerms', event.target.checked)}
+              className="mt-1 h-4 w-4 cursor-pointer rounded border-input text-primary focus:ring-primary/20"
               required
             />
-            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-              I agree to the{" "}
-              <a href="#" className="text-primary hover:underline font-medium">
+            <span className="text-sm text-muted-foreground transition-colors group-hover:text-foreground">
+              I agree to the{' '}
+              <a href="#" className="font-medium text-primary hover:underline">
                 Terms of Service
-              </a>{" "}
-              and{" "}
-              <a href="#" className="text-primary hover:underline font-medium">
+              </a>{' '}
+              and{' '}
+              <a href="#" className="font-medium text-primary hover:underline">
                 Privacy Policy
               </a>
             </span>
           </label>
 
-          <label className="flex items-start gap-3 cursor-pointer group">
+          <label className="group flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               checked={values.subscribeNewsletter}
-              onChange={(event) =>
-                onFieldChange("subscribeNewsletter", event.target.checked)
-              }
-              className="mt-1 h-4 w-4 text-primary focus:ring-primary/20 border-input rounded cursor-pointer"
+              onChange={(event) => onFieldChange('subscribeNewsletter', event.target.checked)}
+              className="mt-1 h-4 w-4 cursor-pointer rounded border-input text-primary focus:ring-primary/20"
             />
-            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+            <span className="text-sm text-muted-foreground transition-colors group-hover:text-foreground">
               Subscribe to our newsletter for sports updates and earning tips
             </span>
           </label>
@@ -237,55 +222,53 @@ export const EmailAuthSection: React.FC<EmailAuthSectionProps> = ({
     <Button
       onClick={onSubmit}
       disabled={isConnecting}
-      className="w-full h-12 text-base font-semibold bg-accent hover:bg-accent/90 text-white disabled:opacity-50 rounded-xl shadow-lg shadow-accent/20 hover:shadow-accent/30 transition-all duration-300 hover:scale-[1.02] group mt-2"
+      className="group mt-2 h-12 w-full rounded-xl bg-accent text-base font-semibold text-white shadow-lg shadow-accent/20 transition-all duration-300 hover:scale-[1.02] hover:bg-accent/90 hover:shadow-accent/30 disabled:opacity-50"
     >
       {isConnecting ? (
         <span className="flex items-center gap-2">
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white"
           />
           Processing...
         </span>
       ) : (
         <span className="flex items-center gap-2">
-          {mode === "login" ? "Sign In" : "Create Account"}
-          <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+          {mode === 'login' ? 'Sign In' : 'Create Account'}
+          <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
         </span>
       )}
     </Button>
 
     {/* Toggle Mode Link */}
-    <p className="text-center text-sm text-muted-foreground pt-2">
-      {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+    <p className="pt-2 text-center text-sm text-muted-foreground">
+      {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
       <button
         onClick={onToggleMode}
-        className="text-primary hover:text-primary/80 font-semibold transition-colors"
+        className="font-semibold text-primary transition-colors hover:text-primary/80"
       >
-        {mode === "login" ? "Sign up" : "Sign in"}
+        {mode === 'login' ? 'Sign up' : 'Sign in'}
       </button>
     </p>
 
     {/* Info box for signup */}
-    {mode === "signup" && (
+    {mode === 'signup' && (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
-        className="mt-6 p-4 bg-muted/30 rounded-xl border border-border"
+        className="mt-6 rounded-xl border border-border bg-muted/30 p-4"
       >
         <div className="flex items-start gap-3">
-          <div className="p-1.5 bg-primary/10 rounded-lg">
+          <div className="rounded-lg bg-primary/10 p-1.5">
             <Info className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h4 className="font-medium text-sm text-foreground mb-1">
-              Email Account Benefits
-            </h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Start exploring immediately! You can upgrade to a Hive account
-              later to unlock earning rewards and full blockchain features.
+            <h4 className="mb-1 text-sm font-medium text-foreground">Email Account Benefits</h4>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Start exploring immediately! You can upgrade to a Hive account later to unlock earning
+              rewards and full blockchain features.
             </p>
           </div>
         </div>

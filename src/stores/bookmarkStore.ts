@@ -11,8 +11,17 @@ export interface BookmarkItem {
   userId: string;
 }
 
+/**
+ * Create a lookup key for O(1) bookmark checks
+ */
+function createBookmarkKey(postId: string, userId: string): string {
+  return `${userId}:${postId}`;
+}
+
 interface BookmarkState {
   bookmarks: BookmarkItem[];
+  /** O(1) lookup index - keys are `userId:postId` */
+  bookmarkIndex: Record<string, boolean>;
   isLoading: boolean;
   error: string | null;
 }
@@ -31,21 +40,23 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
   devtools(
     persist(
       immer((set, get) => ({
-      // State
-      bookmarks: [],
-      isLoading: false,
-      error: null,
+        // State
+        bookmarks: [],
+        bookmarkIndex: {},
+        isLoading: false,
+        error: null,
 
-      // Actions - using immer for safe mutable-style updates
-      addBookmark: (post, userId) => {
-        const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
+        // Actions - using immer for safe mutable-style updates
+        addBookmark: (post, userId) => {
+          const postId =
+            'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
+          const key = createBookmarkKey(postId, userId);
 
-        // Check if already bookmarked using get() since we need to read-then-write
-        const existingBookmark = get().bookmarks.find(
-          bookmark => bookmark.id === postId && bookmark.userId === userId
-        );
+          // O(1) check if already bookmarked
+          if (get().bookmarkIndex[key]) {
+            return;
+          }
 
-        if (!existingBookmark) {
           const newBookmark: BookmarkItem = {
             id: postId,
             post,
@@ -55,46 +66,74 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
 
           set((state) => {
             state.bookmarks.push(newBookmark);
+            state.bookmarkIndex[key] = true;
           });
-        }
-      },
+        },
 
-      removeBookmark: (postId, userId) => set((state) => {
-        const index = state.bookmarks.findIndex(
-          bookmark => bookmark.id === postId && bookmark.userId === userId
-        );
-        if (index !== -1) {
-          state.bookmarks.splice(index, 1);
-        }
-      }),
+        removeBookmark: (postId, userId) =>
+          set((state) => {
+            const key = createBookmarkKey(postId, userId);
+            const index = state.bookmarks.findIndex(
+              (bookmark) => bookmark.id === postId && bookmark.userId === userId
+            );
+            if (index !== -1) {
+              state.bookmarks.splice(index, 1);
+              delete state.bookmarkIndex[key];
+            }
+          }),
 
-      isBookmarked: (postId, userId) => {
-        return get().bookmarks.some(
-          bookmark => bookmark.id === postId && bookmark.userId === userId
-        );
-      },
+        // O(1) lookup using index
+        isBookmarked: (postId, userId) => {
+          const key = createBookmarkKey(postId, userId);
+          return !!get().bookmarkIndex[key];
+        },
 
-      getBookmarks: (userId) => {
-        return get().bookmarks
-          .filter(bookmark => bookmark.userId === userId)
-          .sort((a, b) => new Date(b.bookmarkedAt).getTime() - new Date(a.bookmarkedAt).getTime());
-      },
+        getBookmarks: (userId) => {
+          return get()
+            .bookmarks.filter((bookmark) => bookmark.userId === userId)
+            .sort(
+              (a, b) => new Date(b.bookmarkedAt).getTime() - new Date(a.bookmarkedAt).getTime()
+            );
+        },
 
-      clearBookmarks: (userId) => set((state) => {
-        state.bookmarks = state.bookmarks.filter(bookmark => bookmark.userId !== userId);
-      }),
+        clearBookmarks: (userId) =>
+          set((state) => {
+            // Remove from index first
+            state.bookmarks.forEach((bookmark) => {
+              if (bookmark.userId === userId) {
+                const key = createBookmarkKey(bookmark.id, userId);
+                delete state.bookmarkIndex[key];
+              }
+            });
+            // Then remove from array
+            state.bookmarks = state.bookmarks.filter((bookmark) => bookmark.userId !== userId);
+          }),
 
-      setLoading: (loading) => set((state) => {
-        state.isLoading = loading;
-      }),
+        setLoading: (loading) =>
+          set((state) => {
+            state.isLoading = loading;
+          }),
 
-      setError: (error) => set((state) => {
-        state.error = error;
-      }),
-    })),
+        setError: (error) =>
+          set((state) => {
+            state.error = error;
+          }),
+      })),
       {
         name: 'sportsblock-bookmarks',
-        version: 1,
+        version: 2, // Bump version for migration
+        // Rebuild index on rehydration from localStorage
+        onRehydrateStorage: () => (state) => {
+          if (state) {
+            // Rebuild the index from bookmarks array
+            const newIndex: Record<string, boolean> = {};
+            state.bookmarks.forEach((bookmark) => {
+              const key = createBookmarkKey(bookmark.id, bookmark.userId);
+              newIndex[key] = true;
+            });
+            state.bookmarkIndex = newIndex;
+          }
+        },
       }
     ),
     { name: 'BookmarkStore', enabled: process.env.NODE_ENV === 'development' }

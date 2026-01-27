@@ -78,7 +78,11 @@ window.requestAnimationFrame = (callback) => {
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 
 // Test component that exposes auth methods
-function AuthTestComponent({ onAuthChange }: { onAuthChange?: (auth: ReturnType<typeof useAuth>) => void }) {
+function AuthTestComponent({
+  onAuthChange,
+}: {
+  onAuthChange?: (auth: ReturnType<typeof useAuth>) => void;
+}) {
   const auth = useAuth();
 
   React.useEffect(() => {
@@ -111,11 +115,12 @@ describe('Auth Race Conditions', () => {
         user: { id: 'olduser', username: 'olduser', isHiveAuth: true },
         authType: 'hive',
         hiveUser: { username: 'olduser', isAuthenticated: true },
-        loginAt: Date.now() - (31 * 60 * 1000), // 31 minutes ago (expired)
+        loginAt: Date.now() - 31 * 60 * 1000, // 31 minutes ago (expired)
       };
       localStorageMock.setItem('authState', JSON.stringify(expiredSession));
 
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      // Logger uses console.info for info level messages
+      const consoleSpy = jest.spyOn(console, 'info').mockImplementation();
 
       render(
         <AuthProvider>
@@ -131,9 +136,10 @@ describe('Auth Race Conditions', () => {
       // Should be in guest state due to expired session
       expect(screen.getByTestId('auth-state')).toHaveTextContent('guest');
 
-      // Should have logged session expiration
+      // Should have logged session expiration (logger.info outputs to console.info)
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Session expired')
+        expect.stringContaining('Session expired'),
+        expect.anything()
       );
 
       consoleSpy.mockRestore();
@@ -171,7 +177,7 @@ describe('Auth Race Conditions', () => {
         user: { id: 'testuser', username: 'testuser', isHiveAuth: true },
         authType: 'hive',
         hiveUser: { username: 'testuser', isAuthenticated: true },
-        loginAt: Date.now() - (5 * 60 * 1000), // 5 minutes ago (not expired)
+        loginAt: Date.now() - 5 * 60 * 1000, // 5 minutes ago (not expired)
       };
       localStorageMock.setItem('authState', JSON.stringify(validSession));
 
@@ -205,7 +211,11 @@ describe('Auth Race Conditions', () => {
 
       render(
         <AuthProvider>
-          <AuthTestComponent onAuthChange={(auth) => { authRef = auth; }} />
+          <AuthTestComponent
+            onAuthChange={(auth) => {
+              authRef = auth;
+            }}
+          />
         </AuthProvider>
       );
 
@@ -239,7 +249,11 @@ describe('Auth Race Conditions', () => {
 
       render(
         <AuthProvider>
-          <AuthTestComponent onAuthChange={(auth) => { authRef = auth; }} />
+          <AuthTestComponent
+            onAuthChange={(auth) => {
+              authRef = auth;
+            }}
+          />
         </AuthProvider>
       );
 

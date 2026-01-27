@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/core/Card';
 import { renderWithProviders } from '../../test-utils';
 
 describe('Card', () => {

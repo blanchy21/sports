@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { X, Users, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
-import { FollowButtonCompact } from "@/components/FollowButton";
-import { useAuth } from "@/contexts/AuthContext";
+import React, { useState, useEffect } from 'react';
+import { X, Users, Loader2 } from 'lucide-react';
+import { Button } from '@/components/core/Button';
+import { Avatar } from '@/components/core/Avatar';
+import { FollowButtonCompact } from '@/components/user/FollowButton';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SoftFollowersListModalProps {
   isOpen: boolean;
@@ -88,9 +88,9 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
       const response = await fetch(`/api/soft/follows?${params}`, { headers });
       if (response.ok) {
         const data = await response.json();
-        setUsers(prev => [...prev, ...(data.users || [])]);
+        setUsers((prev) => [...prev, ...(data.users || [])]);
         setHasMore(data.pagination?.hasMore || false);
-        setOffset(prev => prev + 20);
+        setOffset((prev) => prev + 20);
       }
     } catch (error) {
       console.error('Failed to load more followers:', error);
@@ -107,15 +107,12 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-card border border-border rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden">
+      <div className="relative max-h-[80vh] w-full max-w-md overflow-hidden rounded-lg border border-border bg-card shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <div className="flex items-center space-x-2">
             <Users className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">
@@ -129,18 +126,16 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[60vh]">
+        <div className="max-h-[60vh] overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : users.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+            <div className="py-12 text-center">
+              <Users className="mx-auto mb-3 h-12 w-12 text-muted-foreground/50" />
               <p className="text-muted-foreground">
-                {type === 'followers'
-                  ? 'No followers yet'
-                  : 'Not following anyone yet'}
+                {type === 'followers' ? 'No followers yet' : 'Not following anyone yet'}
               </p>
             </div>
           ) : (
@@ -148,20 +143,15 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
               {users.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
                 >
                   <div
-                    className="flex items-center space-x-3 cursor-pointer flex-1"
+                    className="flex flex-1 cursor-pointer items-center space-x-3"
                     onClick={() => handleUserClick(user.username)}
                   >
-                    <Avatar
-                      fallback={user.username}
-                      size="sm"
-                    />
+                    <Avatar fallback={user.username} size="sm" />
                     <div>
-                      <p className="font-medium text-foreground">
-                        @{user.username}
-                      </p>
+                      <p className="font-medium text-foreground">@{user.username}</p>
                     </div>
                   </div>
                   {currentUser?.id !== user.userId && (
@@ -179,12 +169,8 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
 
         {/* Load More */}
         {hasMore && !isLoading && (
-          <div className="p-4 border-t border-border">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={loadMore}
-            >
+          <div className="border-t border-border p-4">
+            <Button variant="outline" className="w-full" onClick={loadMore}>
               Load More
             </Button>
           </div>

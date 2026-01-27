@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Button } from "@/components/ui/Button";
+import React from 'react';
+import { Button } from '@/components/core/Button';
 import {
   Bold,
   Italic,
@@ -19,11 +19,11 @@ import {
   Heading1,
   Heading2,
   Heading3,
-} from "lucide-react";
-import dynamic from "next/dynamic";
+} from 'lucide-react';
+import dynamic from 'next/dynamic';
 
 // Import emoji picker dynamically (~300KB uncompressed)
-const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 export interface EditorToolbarProps {
   onFormat: (type: FormatType) => void;
@@ -35,17 +35,17 @@ export interface EditorToolbarProps {
 }
 
 export type FormatType =
-  | "bold"
-  | "italic"
-  | "underline"
-  | "strikethrough"
-  | "code"
-  | "quote"
-  | "h1"
-  | "h2"
-  | "h3"
-  | "bulletList"
-  | "numberedList";
+  | 'bold'
+  | 'italic'
+  | 'underline'
+  | 'strikethrough'
+  | 'code'
+  | 'quote'
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'bulletList'
+  | 'numberedList';
 
 export function EditorToolbar({
   onFormat,
@@ -65,14 +65,14 @@ export function EditorToolbar({
         showEmojiPicker &&
         emojiButtonRef.current &&
         !emojiButtonRef.current.contains(event.target as Node) &&
-        !(event.target as Element).closest(".EmojiPickerReact")
+        !(event.target as Element).closest('.EmojiPickerReact')
       ) {
         setShowEmojiPicker(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showEmojiPicker]);
 
   const handleEmojiSelect = (emojiData: { emoji: string }) => {
@@ -84,7 +84,7 @@ export function EditorToolbar({
     onClick,
     title,
     children,
-    className = "",
+    className = '',
   }: {
     onClick: () => void;
     title: string;
@@ -103,60 +103,54 @@ export function EditorToolbar({
     </Button>
   );
 
-  const Separator = () => <div className="w-px h-5 bg-border mx-1" />;
+  const Separator = () => <div className="mx-1 h-5 w-px bg-border" />;
 
   return (
-    <div className="flex items-center gap-0.5 px-3 py-2 border-b bg-muted/30 flex-wrap">
+    <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/30 px-3 py-2">
       {/* Text formatting */}
-      <ToolbarButton onClick={() => onFormat("bold")} title="Bold (Ctrl+B)">
+      <ToolbarButton onClick={() => onFormat('bold')} title="Bold (Ctrl+B)">
         <Bold className="h-4 w-4" />
       </ToolbarButton>
 
-      <ToolbarButton onClick={() => onFormat("italic")} title="Italic (Ctrl+I)">
+      <ToolbarButton onClick={() => onFormat('italic')} title="Italic (Ctrl+I)">
         <Italic className="h-4 w-4" />
       </ToolbarButton>
 
-      <ToolbarButton onClick={() => onFormat("underline")} title="Underline">
+      <ToolbarButton onClick={() => onFormat('underline')} title="Underline">
         <UnderlineIcon className="h-4 w-4" />
       </ToolbarButton>
 
-      <ToolbarButton
-        onClick={() => onFormat("strikethrough")}
-        title="Strikethrough"
-      >
+      <ToolbarButton onClick={() => onFormat('strikethrough')} title="Strikethrough">
         <Strikethrough className="h-4 w-4" />
       </ToolbarButton>
 
       <Separator />
 
       {/* Headings */}
-      <ToolbarButton onClick={() => onFormat("h1")} title="Heading 1">
+      <ToolbarButton onClick={() => onFormat('h1')} title="Heading 1">
         <Heading1 className="h-4 w-4" />
       </ToolbarButton>
 
-      <ToolbarButton onClick={() => onFormat("h2")} title="Heading 2">
+      <ToolbarButton onClick={() => onFormat('h2')} title="Heading 2">
         <Heading2 className="h-4 w-4" />
       </ToolbarButton>
 
-      <ToolbarButton onClick={() => onFormat("h3")} title="Heading 3">
+      <ToolbarButton onClick={() => onFormat('h3')} title="Heading 3">
         <Heading3 className="h-4 w-4" />
       </ToolbarButton>
 
       <Separator />
 
       {/* Lists and blocks */}
-      <ToolbarButton onClick={() => onFormat("quote")} title="Quote">
+      <ToolbarButton onClick={() => onFormat('quote')} title="Quote">
         <Quote className="h-4 w-4" />
       </ToolbarButton>
 
-      <ToolbarButton onClick={() => onFormat("bulletList")} title="Bullet List">
+      <ToolbarButton onClick={() => onFormat('bulletList')} title="Bullet List">
         <List className="h-4 w-4" />
       </ToolbarButton>
 
-      <ToolbarButton
-        onClick={() => onFormat("numberedList")}
-        title="Numbered List"
-      >
+      <ToolbarButton onClick={() => onFormat('numberedList')} title="Numbered List">
         <ListOrdered className="h-4 w-4" />
       </ToolbarButton>
 
@@ -171,7 +165,7 @@ export function EditorToolbar({
         <Upload className="h-4 w-4" />
       </ToolbarButton>
 
-      <ToolbarButton onClick={() => onFormat("code")} title="Code">
+      <ToolbarButton onClick={() => onFormat('code')} title="Code">
         <Code className="h-4 w-4" />
       </ToolbarButton>
 
@@ -203,10 +197,10 @@ export function EditorToolbar({
         </Button>
 
         {showEmojiPicker && (
-          <div className="absolute top-full left-0 mt-2 z-50">
+          <div className="absolute left-0 top-full z-50 mt-2">
             <EmojiPicker
               onEmojiClick={handleEmojiSelect}
-              emojiStyle={"native" as unknown as import("emoji-picker-react").EmojiStyle}
+              emojiStyle={'native' as unknown as import('emoji-picker-react').EmojiStyle}
               lazyLoadEmojis={true}
             />
           </div>

@@ -3,7 +3,7 @@ import { useBookmarkStore } from '@/stores/bookmarkStore';
 import { Post } from '@/types';
 import { SportsblockPost } from '@/lib/shared/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast, toast } from '@/components/ui/Toast';
+import { useToast, toast } from '@/components/core/Toast';
 
 // Type for posts that can be bookmarked (both regular posts and Hive posts)
 type BookmarkablePost = Post | SportsblockPost;
@@ -24,77 +24,93 @@ export const useBookmarks = () => {
     setError,
   } = useBookmarkStore();
 
-  const addBookmark = useCallback(async (post: BookmarkablePost) => {
-    if (!user) {
-      addToast(toast.error("Authentication Required", "Please sign in to bookmark posts."));
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
-      
-      // Check if already bookmarked
-      if (storeIsBookmarked(postId, user.id)) {
-        addToast(toast.info("Already Bookmarked", "This post is already in your bookmarks."));
+  const addBookmark = useCallback(
+    async (post: BookmarkablePost) => {
+      if (!user) {
+        addToast(toast.error('Authentication Required', 'Please sign in to bookmark posts.'));
         return;
       }
 
-      storeAddBookmark(post, user.id);
-      addToast(toast.success("Bookmarked!", "Post added to your bookmarks."));
-    } catch (err) {
-      console.error('Error adding bookmark:', err);
-      setError('Failed to bookmark post. Please try again.');
-      addToast(toast.error("Bookmark Failed", "Failed to bookmark post. Please try again."));
-    } finally {
-      setLoading(false);
-    }
-  }, [user, storeAddBookmark, storeIsBookmarked, addToast, setLoading, setError]);
+      try {
+        setLoading(true);
+        setError(null);
 
-  const removeBookmark = useCallback(async (post: BookmarkablePost) => {
-    if (!user) {
-      addToast(toast.error("Authentication Required", "Please sign in to manage bookmarks."));
-      return;
-    }
+        const postId =
+          'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
 
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
-      storeRemoveBookmark(postId, user.id);
-      addToast(toast.success("Removed", "Post removed from your bookmarks."));
-    } catch (err) {
-      console.error('Error removing bookmark:', err);
-      setError('Failed to remove bookmark. Please try again.');
-      addToast(toast.error("Remove Failed", "Failed to remove bookmark. Please try again."));
-    } finally {
-      setLoading(false);
-    }
-  }, [user, storeRemoveBookmark, addToast, setLoading, setError]);
+        // Check if already bookmarked
+        if (storeIsBookmarked(postId, user.id)) {
+          addToast(toast.info('Already Bookmarked', 'This post is already in your bookmarks.'));
+          return;
+        }
 
-  const toggleBookmark = useCallback(async (post: BookmarkablePost) => {
-    if (!user) {
-      addToast(toast.error("Authentication Required", "Please sign in to bookmark posts."));
-      return;
-    }
+        storeAddBookmark(post, user.id);
+        addToast(toast.success('Bookmarked!', 'Post added to your bookmarks.'));
+      } catch (err) {
+        console.error('Error adding bookmark:', err);
+        setError('Failed to bookmark post. Please try again.');
+        addToast(toast.error('Bookmark Failed', 'Failed to bookmark post. Please try again.'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user, storeAddBookmark, storeIsBookmarked, addToast, setLoading, setError]
+  );
 
-    const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
-    
-    if (storeIsBookmarked(postId, user.id)) {
-      await removeBookmark(post);
-    } else {
-      await addBookmark(post);
-    }
-  }, [user, storeIsBookmarked, addBookmark, removeBookmark, addToast]);
+  const removeBookmark = useCallback(
+    async (post: BookmarkablePost) => {
+      if (!user) {
+        addToast(toast.error('Authentication Required', 'Please sign in to manage bookmarks.'));
+        return;
+      }
 
-  const isBookmarked = useCallback((post: BookmarkablePost) => {
-    if (!user) return false;
-    const postId = 'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
-    return storeIsBookmarked(postId, user.id);
-  }, [user, storeIsBookmarked]);
+      try {
+        setLoading(true);
+        setError(null);
+
+        const postId =
+          'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
+        storeRemoveBookmark(postId, user.id);
+        addToast(toast.success('Removed', 'Post removed from your bookmarks.'));
+      } catch (err) {
+        console.error('Error removing bookmark:', err);
+        setError('Failed to remove bookmark. Please try again.');
+        addToast(toast.error('Remove Failed', 'Failed to remove bookmark. Please try again.'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user, storeRemoveBookmark, addToast, setLoading, setError]
+  );
+
+  const toggleBookmark = useCallback(
+    async (post: BookmarkablePost) => {
+      if (!user) {
+        addToast(toast.error('Authentication Required', 'Please sign in to bookmark posts.'));
+        return;
+      }
+
+      const postId =
+        'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
+
+      if (storeIsBookmarked(postId, user.id)) {
+        await removeBookmark(post);
+      } else {
+        await addBookmark(post);
+      }
+    },
+    [user, storeIsBookmarked, addBookmark, removeBookmark, addToast]
+  );
+
+  const isBookmarked = useCallback(
+    (post: BookmarkablePost) => {
+      if (!user) return false;
+      const postId =
+        'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
+      return storeIsBookmarked(postId, user.id);
+    },
+    [user, storeIsBookmarked]
+  );
 
   const getUserBookmarks = useCallback(() => {
     if (!user) return [];
@@ -103,7 +119,7 @@ export const useBookmarks = () => {
 
   const clearAllBookmarks = useCallback(async () => {
     if (!user) {
-      addToast(toast.error("Authentication Required", "Please sign in to manage bookmarks."));
+      addToast(toast.error('Authentication Required', 'Please sign in to manage bookmarks.'));
       return;
     }
 
@@ -111,11 +127,11 @@ export const useBookmarks = () => {
       setLoading(true);
       setError(null);
       storeClearBookmarks(user.id);
-      addToast(toast.success("Cleared", "All bookmarks have been cleared."));
+      addToast(toast.success('Cleared', 'All bookmarks have been cleared.'));
     } catch (err) {
       console.error('Error clearing bookmarks:', err);
       setError('Failed to clear bookmarks. Please try again.');
-      addToast(toast.error("Clear Failed", "Failed to clear bookmarks. Please try again."));
+      addToast(toast.error('Clear Failed', 'Failed to clear bookmarks. Please try again.'));
     } finally {
       setLoading(false);
     }

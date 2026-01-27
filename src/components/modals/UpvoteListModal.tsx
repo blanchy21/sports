@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Avatar } from "@/components/ui/Avatar";
-import { Heart, TrendingUp } from "lucide-react";
-import { formatDate } from "@/lib/utils";
-import { BaseModal } from "@/components/ui/BaseModal";
+import React from 'react';
+import { Avatar } from '@/components/core/Avatar';
+import { Heart, TrendingUp } from 'lucide-react';
+import { formatDate } from '@/lib/utils/client';
+import { BaseModal } from '@/components/core/BaseModal';
 
 interface UpvoteListModalProps {
   isOpen: boolean;
@@ -62,16 +62,14 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
         <div className="flex items-center space-x-2">
           <Heart className="h-5 w-5 text-red-500" />
           <span>Upvotes</span>
-          <span className="text-sm text-muted-foreground">
-            ({totalVotes})
-          </span>
+          <span className="text-sm text-muted-foreground">({totalVotes})</span>
         </div>
       }
       size="md"
-      className="max-h-[80vh] flex flex-col"
+      className="flex max-h-[80vh] flex-col"
     >
       {/* Stats */}
-      <div className="p-6 border-b bg-muted/30">
+      <div className="border-b bg-muted/30 p-6">
         <div className="flex items-center justify-between">
           <div className="text-center">
             <div className="text-2xl font-bold text-red-500">{totalVotes}</div>
@@ -86,61 +84,51 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-          {votes.length > 0 ? (
-            <div className="space-y-4">
-              {votes.map((vote, index) => (
-                <div key={`${vote.voter}-${vote.time}`} className="flex items-center space-x-3">
+        {votes.length > 0 ? (
+          <div className="space-y-4">
+            {votes.map((vote, index) => (
+              <div key={`${vote.voter}-${vote.time}`} className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <span className="w-6 text-sm font-medium text-muted-foreground">
+                    #{index + 1}
+                  </span>
+                  <Avatar fallback={vote.voter} alt={vote.voter} size="sm" />
+                </div>
+
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-muted-foreground w-6">
-                      #{index + 1}
+                    <span className="text-sm font-medium">@{vote.voter}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(new Date(vote.time))}
                     </span>
-                    <Avatar
-                      fallback={vote.voter}
-                      alt={vote.voter}
-                      size="sm"
-                    />
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-medium text-sm">@{vote.voter}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(new Date(vote.time))}
-                      </span>
+                  <div className="mt-1 flex items-center space-x-4">
+                    <div className="flex items-center space-x-1">
+                      <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">{vote.percent}% weight</span>
                     </div>
-                    <div className="flex items-center space-x-4 mt-1">
-                      <div className="flex items-center space-x-1">
-                        <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
-                          {vote.percent}% weight
-                        </span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Rep: {vote.reputation}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-red-500">
-                      {vote.weight / 100}%
-                    </div>
+                    <div className="text-xs text-muted-foreground">Rep: {vote.reputation}</div>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">💔</div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                No Upvotes Yet
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                This post hasn&apos;t received any upvotes yet.
-              </p>
-            </div>
-          )}
-        </div>
+
+                <div className="text-right">
+                  <div className="text-sm font-medium text-red-500">{vote.weight / 100}%</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-12 text-center">
+            <div className="mb-4 text-6xl">💔</div>
+            <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+              No Upvotes Yet
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              This post hasn&apos;t received any upvotes yet.
+            </p>
+          </div>
+        )}
+      </div>
     </BaseModal>
   );
 };

@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import React, { Suspense } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { ArrowLeft, Wallet, CheckCircle, Sparkles } from "lucide-react";
-import { KeyTypes } from "@aioha/aioha";
-import { AiohaModal } from "@aioha/react-ui";
-import { Button } from "@/components/ui/Button";
-import { useAioha } from "@/contexts/AiohaProvider";
-import { AuthHero } from "./components/AuthHero";
-import { ErrorAlert } from "./components/ErrorAlert";
-import { EmailAuthSection } from "./components/EmailAuthSection";
-import { useAuthPage } from "./hooks/useAuthPage";
+import React, { Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Wallet, CheckCircle, Sparkles } from 'lucide-react';
+import { KeyTypes } from '@aioha/aioha';
+import { AiohaModal } from '@aioha/react-ui';
+import { Button } from '@/components/core/Button';
+import { useAioha } from '@/contexts/AiohaProvider';
+import { AuthHero } from './components/AuthHero';
+import { ErrorAlert } from './components/ErrorAlert';
+import { EmailAuthSection } from './components/EmailAuthSection';
+import { useAuthPage } from './hooks/useAuthPage';
 
 export default function AuthPage() {
   return (
@@ -49,12 +49,12 @@ function AuthPageContent() {
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.4 }}
-        className="absolute top-0 left-0 z-20 p-6"
+        className="absolute left-0 top-0 z-20 p-6"
       >
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          className="flex items-center gap-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back</span>
@@ -66,7 +66,7 @@ function AuthPageContent() {
         <AuthHero />
 
         {/* Right side - Auth forms */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 lg:p-12">
+        <div className="flex w-full items-center justify-center p-6 sm:p-8 lg:w-1/2 lg:p-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -74,27 +74,25 @@ function AuthPageContent() {
             className="w-full max-w-md"
           >
             {/* Mobile brand header */}
-            <div className="lg:hidden text-center mb-8">
-              <h1 className="text-3xl font-black tracking-tight mb-2">
+            <div className="mb-8 text-center lg:hidden">
+              <h1 className="mb-2 text-3xl font-black tracking-tight">
                 <span className="text-foreground">SPORTS</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-aegean-sky">
+                <span className="bg-gradient-to-r from-accent to-aegean-sky bg-clip-text text-transparent">
                   BLOCK
                 </span>
               </h1>
-              <p className="text-muted-foreground text-sm">
-                The arena where your passion pays off
-              </p>
+              <p className="text-sm text-muted-foreground">The arena where your passion pays off</p>
             </div>
 
             {/* Heading */}
-            <div className="text-center mb-8">
+            <div className="mb-8 text-center">
               <motion.h2
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
-                className="text-2xl sm:text-3xl font-bold text-foreground mb-2"
+                className="mb-2 text-2xl font-bold text-foreground sm:text-3xl"
               >
-                {mode === "login" ? "Welcome Back" : "Join the Arena"}
+                {mode === 'login' ? 'Welcome Back' : 'Join the Arena'}
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
@@ -102,18 +100,15 @@ function AuthPageContent() {
                 transition={{ duration: 0.4, delay: 0.2 }}
                 className="text-muted-foreground"
               >
-                {mode === "login"
-                  ? "Sign in to continue your journey"
-                  : "Create your account and start earning"}
+                {mode === 'login'
+                  ? 'Sign in to continue your journey'
+                  : 'Create your account and start earning'}
               </motion.p>
             </div>
 
             {/* Alerts */}
             {errorMessage && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-              >
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                 <ErrorAlert message={errorMessage} onDismiss={dismissError} />
               </motion.div>
             )}
@@ -122,17 +117,15 @@ function AuthPageContent() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-start gap-3"
+                className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/50"
               >
-                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
                 <div className="flex-1">
-                  <p className="text-emerald-800 dark:text-emerald-200 text-sm">
-                    {successMessage}
-                  </p>
+                  <p className="text-sm text-emerald-800 dark:text-emerald-200">{successMessage}</p>
                 </div>
                 <button
                   onClick={dismissError}
-                  className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 text-lg leading-none"
+                  className="text-lg leading-none text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200"
                 >
                   &times;
                 </button>
@@ -149,15 +142,15 @@ function AuthPageContent() {
               <div className="relative">
                 {/* Recommended badge */}
                 <div className="absolute -top-3 left-4 z-10">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent text-white text-xs font-semibold rounded-full shadow-lg shadow-accent/25">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white shadow-lg shadow-accent/25">
                     <Sparkles className="h-3 w-3" />
                     Recommended
                   </span>
                 </div>
 
-                <div className="bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20 rounded-2xl p-6 pt-8">
-                  <div className="text-center mb-5">
-                    <h3 className="text-lg font-semibold text-foreground mb-1">
+                <div className="rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 p-6 pt-8">
+                  <div className="mb-5 text-center">
+                    <h3 className="mb-1 text-lg font-semibold text-foreground">
                       Connect with Hive
                     </h3>
                     <p className="text-sm text-muted-foreground">
@@ -168,23 +161,21 @@ function AuthPageContent() {
                   <Button
                     onClick={() => setShowAiohaModal(true)}
                     disabled={isConnecting || !aioha}
-                    className="w-full h-14 flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02]"
+                    className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-primary/30"
                   >
                     <Wallet className="h-5 w-5" />
                     <span>Connect Hive Wallet</span>
                   </Button>
 
                   <div className="mt-4 flex flex-wrap justify-center gap-2">
-                    {["Keychain", "HiveSigner", "HiveAuth", "Ledger"].map(
-                      (wallet) => (
-                        <span
-                          key={wallet}
-                          className="px-2 py-1 bg-muted/50 text-muted-foreground text-xs rounded-md"
-                        >
-                          {wallet}
-                        </span>
-                      )
-                    )}
+                    {['Keychain', 'HiveSigner', 'HiveAuth', 'Ledger'].map((wallet) => (
+                      <span
+                        key={wallet}
+                        className="rounded-md bg-muted/50 px-2 py-1 text-xs text-muted-foreground"
+                      >
+                        {wallet}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -201,7 +192,7 @@ function AuthPageContent() {
                 <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-background text-muted-foreground">
+                <span className="bg-background px-4 text-muted-foreground">
                   Or continue with email
                 </span>
               </div>
@@ -236,7 +227,7 @@ function AuthPageContent() {
           loginTitle="Connect to Sportsblock"
           arrangement="grid"
           loginOptions={{
-            msg: "Login to Sportsblock",
+            msg: 'Login to Sportsblock',
             keyType: KeyTypes.Posting,
           }}
           onLogin={handleAiohaModalLogin}

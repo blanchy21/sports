@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getMonitoringStats,
   clearMonitoringData,
-  exportMonitoringData
+  exportMonitoringData,
 } from '@/lib/hive-workerbee/monitoring';
 import {
   getOptimizationMetrics,
-  clearOptimizationCache as clearOptCache
+  clearOptimizationCache as clearOptCache,
 } from '@/lib/hive-workerbee/optimization';
 import { getMemoryCache } from '@/lib/cache';
 import { getTieredCache } from '@/lib/cache';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
           size: 0,
           maxSize: 1000,
           hitRate: 0,
-          redisAvailable: false
+          redisAvailable: false,
         };
 
         try {
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
             size: memoryCacheStats.size,
             maxSize: memoryCacheStats.maxEntries,
             hitRate: tieredStats.hitRate * 100,
-            redisAvailable: tieredCache.isRedisAvailable()
+            redisAvailable: tieredCache.isRedisAvailable(),
           };
         } catch {
           // Cache not available, use defaults
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
           monitoring: monitoringStats,
           optimization: optimizationStats,
           cache: cacheStats,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
 
       case 'export':
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           monitoring: exportData,
           optimization: exportOptStats,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
 
       default:
@@ -75,11 +76,12 @@ export async function GET(request: NextRequest) {
         );
     }
   } catch (error) {
-    console.error('Error in monitoring API:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch monitoring data' },
-      { status: 500 }
+    logger.error(
+      'Error in monitoring API',
+      'monitoring',
+      error instanceof Error ? error : undefined
     );
+    return NextResponse.json({ error: 'Failed to fetch monitoring data' }, { status: 500 });
   }
 }
 
@@ -90,14 +92,11 @@ export async function POST(request: NextRequest) {
 
       switch (action) {
         case 'clear':
-          await Promise.all([
-            clearMonitoringData(),
-            clearOptCache()
-          ]);
+          await Promise.all([clearMonitoringData(), clearOptCache()]);
 
           return NextResponse.json({
             success: true,
-            message: 'All monitoring data cleared'
+            message: 'All monitoring data cleared',
           });
 
         case 'clear-cache':
@@ -105,7 +104,7 @@ export async function POST(request: NextRequest) {
 
           return NextResponse.json({
             success: true,
-            message: 'Cache cleared'
+            message: 'Cache cleared',
           });
 
         case 'clear-monitoring':
@@ -113,18 +112,19 @@ export async function POST(request: NextRequest) {
 
           return NextResponse.json({
             success: true,
-            message: 'Monitoring data cleared'
+            message: 'Monitoring data cleared',
           });
 
         default:
           return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
       }
     } catch (error) {
-      console.error('Error in monitoring API POST:', error);
-      return NextResponse.json(
-        { error: 'Failed to perform action' },
-        { status: 500 }
+      logger.error(
+        'Error in monitoring API POST',
+        'monitoring',
+        error instanceof Error ? error : undefined
       );
+      return NextResponse.json({ error: 'Failed to perform action' }, { status: 500 });
     }
   });
 }

@@ -5,6 +5,7 @@ import {
   stopRealtimeMonitoring,
 } from '@/lib/hive-workerbee/realtime';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,11 @@ export async function POST(request: NextRequest) {
       const status = getRealtimeMonitor().getStatus();
       return NextResponse.json({ success: true, started: true, status });
     } catch (error) {
-      console.error('[API] Failed to start realtime monitoring:', error);
+      logger.error(
+        'Failed to start realtime monitoring',
+        'realtime',
+        error instanceof Error ? error : undefined
+      );
       const message = error instanceof Error ? error.message : 'Unknown realtime error';
       return NextResponse.json({ success: false, error: message }, { status: 502 });
     }
@@ -36,7 +41,11 @@ export async function DELETE(request: NextRequest) {
       const status = getRealtimeMonitor().getStatus();
       return NextResponse.json({ success: true, stopped: true, status });
     } catch (error) {
-      console.error('[API] Failed to stop realtime monitoring:', error);
+      logger.error(
+        'Failed to stop realtime monitoring',
+        'realtime',
+        error instanceof Error ? error : undefined
+      );
       const message = error instanceof Error ? error.message : 'Unknown realtime error';
       return NextResponse.json({ success: false, error: message }, { status: 502 });
     }

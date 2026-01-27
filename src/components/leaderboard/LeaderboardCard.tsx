@@ -8,7 +8,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Avatar } from '@/components/ui/Avatar';
+import { Avatar } from '@/components/core/Avatar';
 import { Trophy, TrendingUp, Eye, MessageCircle, Share2, Star, Sparkles } from 'lucide-react';
 import type { LeaderboardEntry, RewardCategory } from '@/lib/metrics/types';
 import { CONTENT_REWARDS } from '@/lib/rewards/config';
@@ -104,28 +104,26 @@ export function LeaderboardCard({
 
   if (displayEntries.length === 0) {
     return (
-      <div className="bg-card border rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-4">
+      <div className="rounded-lg border bg-card p-4">
+        <div className="mb-4 flex items-center gap-2">
           <Icon className={`h-5 w-5 ${config.color}`} />
           <h3 className="font-semibold">{config.title}</h3>
         </div>
-        <p className="text-sm text-muted-foreground text-center py-4">
-          No entries yet this week
-        </p>
+        <p className="py-4 text-center text-sm text-muted-foreground">No entries yet this week</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-card border rounded-lg p-4">
+    <div className="rounded-lg border bg-card p-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className={`h-5 w-5 ${config.color}`} />
           <h3 className="font-semibold">{config.title}</h3>
         </div>
         {showReward && reward && (
-          <div className="flex items-center gap-1 text-sm bg-accent/10 text-accent px-2 py-1 rounded-full">
+          <div className="flex items-center gap-1 rounded-full bg-accent/10 px-2 py-1 text-sm text-accent">
             <Trophy className="h-3.5 w-3.5" />
             <span>{reward.toLocaleString()} MEDALS</span>
           </div>
@@ -139,11 +137,11 @@ export function LeaderboardCard({
             key={`${entry.account}-${entry.postId || entry.rank}`}
             className={`flex items-center gap-3 ${
               compact ? 'py-1' : 'py-2'
-            } ${entry.rank === 1 ? 'bg-accent/5 -mx-2 px-2 rounded-lg' : ''}`}
+            } ${entry.rank === 1 ? '-mx-2 rounded-lg bg-accent/5 px-2' : ''}`}
           >
             {/* Rank Badge */}
             <div
-              className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${getRankBadgeClass(
+              className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${getRankBadgeClass(
                 entry.rank
               )}`}
             >
@@ -153,26 +151,17 @@ export function LeaderboardCard({
             {/* User Info */}
             <Link
               href={`/user/${entry.account}`}
-              className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity"
+              className="flex min-w-0 flex-1 items-center gap-2 transition-opacity hover:opacity-80"
             >
-              <Avatar
-                alt={entry.account}
-                fallback={entry.account}
-                size="sm"
-                className="h-7 w-7"
-              />
-              <span className="font-medium truncate">@{entry.account}</span>
+              <Avatar alt={entry.account} fallback={entry.account} size="sm" className="h-7 w-7" />
+              <span className="truncate font-medium">@{entry.account}</span>
             </Link>
 
             {/* Value */}
             <div className="flex-shrink-0 text-right">
-              <span className="text-sm font-semibold">
-                {entry.value.toLocaleString()}
-              </span>
+              <span className="text-sm font-semibold">{entry.value.toLocaleString()}</span>
               {!compact && (
-                <span className="text-xs text-muted-foreground ml-1">
-                  {config.metric}
-                </span>
+                <span className="ml-1 text-xs text-muted-foreground">{config.metric}</span>
               )}
             </div>
           </div>
@@ -181,7 +170,7 @@ export function LeaderboardCard({
 
       {/* View All Link (if more entries exist) */}
       {entries.length > maxEntries && (
-        <div className="mt-3 pt-3 border-t">
+        <div className="mt-3 border-t pt-3">
           <Link
             href={`/leaderboard?category=${category}`}
             className="text-sm text-primary hover:underline"

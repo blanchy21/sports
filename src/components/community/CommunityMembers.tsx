@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import React from "react";
-import Link from "next/link";
-import { useCommunityMembers } from "@/lib/react-query/queries/useCommunity";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
-import { Users, Crown, Shield, User } from "lucide-react";
-import { CommunityMember } from "@/types";
+import React from 'react';
+import Link from 'next/link';
+import { useCommunityMembers } from '@/lib/react-query/queries/useCommunity';
+import { Button } from '@/components/core/Button';
+import { Card } from '@/components/core/Card';
+import { Avatar } from '@/components/core/Avatar';
+import { Badge } from '@/components/core/Badge';
+import { Users, Crown, Shield, User } from 'lucide-react';
+import { CommunityMember } from '@/types';
 
 interface CommunityMembersProps {
   communityId: string;
@@ -22,12 +22,12 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
     return (
       <div className={`space-y-4 ${className}`}>
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="bg-card border rounded-lg p-4 animate-pulse">
+          <div key={i} className="animate-pulse rounded-lg border bg-card p-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+              <div className="h-10 w-10 rounded-full bg-gray-300"></div>
               <div className="flex-1">
-                <div className="h-4 bg-gray-300 rounded w-1/4 mb-2"></div>
-                <div className="h-3 bg-gray-300 rounded w-1/3"></div>
+                <div className="mb-2 h-4 w-1/4 rounded bg-gray-300"></div>
+                <div className="h-3 w-1/3 rounded bg-gray-300"></div>
               </div>
             </div>
           </div>
@@ -38,17 +38,15 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
 
   if (error) {
     return (
-      <div className={`text-center py-12 ${className}`}>
-        <div className="text-6xl mb-4">⚠️</div>
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+      <div className={`py-12 text-center ${className}`}>
+        <div className="mb-4 text-6xl">⚠️</div>
+        <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
           Error Loading Members
         </h3>
-        <p className="text-gray-500 dark:text-gray-400 mb-6">
+        <p className="mb-6 text-gray-500 dark:text-gray-400">
           Failed to load community members. Please try again later.
         </p>
-        <Button onClick={() => window.location.reload()}>
-          Try Again
-        </Button>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
       </div>
     );
   }
@@ -58,7 +56,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold flex items-center space-x-2">
+        <h2 className="flex items-center space-x-2 text-xl font-semibold">
           <Users className="h-5 w-5" />
           <span>Members ({membersList.length})</span>
         </h2>
@@ -71,9 +69,9 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">👥</div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="py-12 text-center">
+          <div className="mb-4 text-6xl">👥</div>
+          <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
             No Members Yet
           </h3>
           <p className="text-gray-500 dark:text-gray-400">
@@ -91,24 +89,17 @@ interface MemberCardProps {
 
 const MemberCard: React.FC<MemberCardProps> = ({ member }) => {
   return (
-    <Card className="p-4 hover:shadow-md transition-shadow">
+    <Card className="p-4 transition-shadow hover:shadow-md">
       <Link href={`/user/${member.username}`}>
         <div className="flex items-center space-x-3">
-          <Avatar
-            fallback={member.username}
-            alt={member.username}
-            size="md"
-          />
-          
-          <div className="flex-1 min-w-0">
+          <Avatar fallback={member.username} alt={member.username} size="md" />
+
+          <div className="min-w-0 flex-1">
             <div className="flex items-center space-x-2">
-              <span className="font-medium hover:text-primary transition-colors">
+              <span className="font-medium transition-colors hover:text-primary">
                 @{member.username}
               </span>
-              <Badge 
-                variant="secondary" 
-                className={`text-xs ${getRoleColor(member.role)}`}
-              >
+              <Badge variant="secondary" className={`text-xs ${getRoleColor(member.role)}`}>
                 <div className="flex items-center space-x-1">
                   {getRoleIcon(member.role)}
                   <span className="capitalize">{member.role}</span>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { BaseModal } from '@/components/ui/BaseModal';
+import { BaseModal } from '@/components/core/BaseModal';
 import { EmailAuthForm } from './EmailAuthForm';
 import { HiveAuthSection } from './HiveAuthSection';
 import { AuthModalProps } from './types';
@@ -43,12 +43,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isLoginMode ? "Login to Sportsblock" : "Join Sportsblock"}
+      title={isLoginMode ? 'Login to Sportsblock' : 'Join Sportsblock'}
       size="xl"
       className="max-h-[90vh] overflow-y-auto"
       showCloseButton={true}
     >
-      <div className="grid md:grid-cols-2 gap-0">
+      <div className="grid gap-0 md:grid-cols-2">
         {/* Left Column - Email Login/Signup */}
         <EmailAuthForm
           isLoginMode={isLoginMode}

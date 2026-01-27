@@ -292,12 +292,63 @@ export interface SportsblockPost extends HivePost {
   isSportsblockPost: true;
 }
 
+/**
+ * Processed user account data returned from the account API.
+ * This is the parsed/normalized version of HiveAccount with computed fields.
+ */
+export interface UserAccountData {
+  username: string;
+  reputation: number;
+  reputationFormatted: string;
+  liquidHiveBalance: number;
+  liquidHbdBalance: number;
+  savingsHiveBalance: number;
+  savingsHbdBalance: number;
+  hiveBalance: number;
+  hbdBalance: number;
+  hivePower: number;
+  resourceCredits: number;
+  resourceCreditsFormatted: string;
+  hasEnoughRC: boolean;
+  savingsApr?: number;
+  pendingWithdrawals?: Array<{
+    id: string;
+    amount: string;
+    to: string;
+    memo: string;
+    requestId: number;
+    from: string;
+    timestamp: string;
+  }>;
+  profile: {
+    name?: string;
+    about?: string;
+    location?: string;
+    website?: string;
+    coverImage?: string;
+    profileImage?: string;
+  };
+  stats: {
+    postCount: number;
+    commentCount: number;
+    voteCount: number;
+    followers?: number;
+    following?: number;
+  };
+  createdAt: Date;
+  lastPost?: Date;
+  lastVote?: Date;
+  canVote: boolean;
+  votingPower: number;
+}
+
 export interface HiveAuthUser {
   username: string;
   postingKey?: string; // Deprecated: Aioha manages keys internally
   activeKey?: string; // Deprecated: Aioha manages keys internally
   isAuthenticated: boolean;
-  account?: HiveAccount;
+  /** Processed account data from the API (not raw HiveAccount) */
+  account?: UserAccountData;
   resourceCredits?: HiveResourceCredit;
   // Aioha-specific properties
   provider?: string; // 'keychain', 'hivesigner', 'hiveauth', 'ledger', 'peakvault'

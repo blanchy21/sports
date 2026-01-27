@@ -6,7 +6,7 @@ export const queryClient = new QueryClient({
       // Optimized caching strategy
       staleTime: 2 * 60 * 1000, // 2 minutes - shorter for real-time data
       gcTime: 5 * 60 * 1000, // 5 minutes - reduced memory usage
-      
+
       // Smart retry logic
       retry: (failureCount, error) => {
         // Don't retry on 4xx errors
@@ -18,12 +18,12 @@ export const queryClient = new QueryClient({
         // Exponential backoff for network errors
         return failureCount < 2;
       },
-      
+
       // Performance optimizations
       refetchOnWindowFocus: false,
       refetchOnMount: false, // Prevent unnecessary refetches
       refetchOnReconnect: true,
-      
+
       // Network optimizations
       networkMode: 'online',
     },
@@ -59,7 +59,8 @@ export const queryKeys = {
   communities: {
     all: ['communities'] as const,
     lists: () => [...queryKeys.communities.all, 'list'] as const,
-    list: (filters: Record<string, unknown>) => [...queryKeys.communities.lists(), filters] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...queryKeys.communities.lists(), filters] as const,
     details: () => [...queryKeys.communities.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.communities.details(), id] as const,
     members: (id: string) => [...queryKeys.communities.detail(id), 'members'] as const,
@@ -68,6 +69,9 @@ export const queryKeys = {
     all: ['votes'] as const,
     lists: () => [...queryKeys.votes.all, 'list'] as const,
     list: (postId: string) => [...queryKeys.votes.lists(), postId] as const,
+    status: (author: string, permlink: string, voter: string) =>
+      [...queryKeys.votes.all, 'status', author, permlink, voter] as const,
+    eligibility: (voter: string) => [...queryKeys.votes.all, 'eligibility', voter] as const,
   },
   medals: {
     all: ['medals'] as const,

@@ -1,37 +1,34 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Users, UserPlus, UserMinus, Clock, Loader2, Ban } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { useAuth } from "@/contexts/AuthContext";
+import React from 'react';
+import { Users, UserPlus, UserMinus, Clock, Loader2, Ban } from 'lucide-react';
+import { Button } from '@/components/core/Button';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   useMembership,
   useJoinCommunity,
   useLeaveCommunity,
-} from "@/lib/react-query/queries/useCommunity";
-import { Community } from "@/types";
-import { cn } from "@/lib/utils";
+} from '@/lib/react-query/queries/useCommunity';
+import { Community } from '@/types';
+import { cn } from '@/lib/utils/client';
 
 interface JoinButtonProps {
   community: Community;
   className?: string;
-  size?: "sm" | "default" | "lg";
+  size?: 'sm' | 'default' | 'lg';
   showIcon?: boolean;
 }
 
 export const JoinButton: React.FC<JoinButtonProps> = ({
   community,
   className,
-  size = "default",
+  size = 'default',
   showIcon = true,
 }) => {
   const { user, hiveUser, isLoading: isAuthLoading } = useAuth();
   const userId = user?.id || '';
 
-  const { data: membership, isLoading: isMembershipLoading } = useMembership(
-    community.id,
-    userId
-  );
+  const { data: membership, isLoading: isMembershipLoading } = useMembership(community.id, userId);
 
   const joinMutation = useJoinCommunity();
   const leaveMutation = useLeaveCommunity();
@@ -69,13 +66,8 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
   // Not authenticated
   if (isAuthLoading || !user) {
     return (
-      <Button
-        variant="outline"
-        size={size}
-        className={className}
-        disabled
-      >
-        {showIcon && <UserPlus className="h-4 w-4 mr-2" />}
+      <Button variant="outline" size={size} className={className} disabled>
+        {showIcon && <UserPlus className="mr-2 h-4 w-4" />}
         Sign in to Join
       </Button>
     );
@@ -84,13 +76,8 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
   // Loading state
   if (isLoading) {
     return (
-      <Button
-        variant="outline"
-        size={size}
-        className={className}
-        disabled
-      >
-        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+      <Button variant="outline" size={size} className={className} disabled>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         Loading...
       </Button>
     );
@@ -102,10 +89,10 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
       <Button
         variant="outline"
         size={size}
-        className={cn("text-red-500 border-red-500", className)}
+        className={cn('border-red-500 text-red-500', className)}
         disabled
       >
-        {showIcon && <Ban className="h-4 w-4 mr-2" />}
+        {showIcon && <Ban className="mr-2 h-4 w-4" />}
         Banned
       </Button>
     );
@@ -117,10 +104,10 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
       <Button
         variant="outline"
         size={size}
-        className={cn("text-yellow-600 border-yellow-600", className)}
+        className={cn('border-yellow-600 text-yellow-600', className)}
         disabled
       >
-        {showIcon && <Clock className="h-4 w-4 mr-2" />}
+        {showIcon && <Clock className="mr-2 h-4 w-4" />}
         Pending Approval
       </Button>
     );
@@ -128,35 +115,32 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
 
   // Active member
   if (membership?.status === 'active') {
-    const roleLabel = membership.role === 'admin' 
-      ? 'Admin' 
-      : membership.role === 'moderator' 
-        ? 'Moderator' 
-        : 'Member';
+    const roleLabel =
+      membership.role === 'admin'
+        ? 'Admin'
+        : membership.role === 'moderator'
+          ? 'Moderator'
+          : 'Member';
 
     return (
-      <div className={cn("flex items-center gap-2", className)}>
-        <Button
-          variant="outline"
-          size={size}
-          onClick={handleLeave}
-          className="group"
-        >
-          {showIcon && <Users className="h-4 w-4 mr-2 group-hover:hidden" />}
-          {showIcon && <UserMinus className="h-4 w-4 mr-2 hidden group-hover:block" />}
+      <div className={cn('flex items-center gap-2', className)}>
+        <Button variant="outline" size={size} onClick={handleLeave} className="group">
+          {showIcon && <Users className="mr-2 h-4 w-4 group-hover:hidden" />}
+          {showIcon && <UserMinus className="mr-2 hidden h-4 w-4 group-hover:block" />}
           <span className="group-hover:hidden">{roleLabel}</span>
-          <span className="hidden group-hover:block text-red-500">Leave</span>
+          <span className="hidden text-red-500 group-hover:block">Leave</span>
         </Button>
       </div>
     );
   }
 
   // Not a member - show join button
-  const buttonLabel = community.type === 'public' 
-    ? 'Join' 
-    : community.type === 'private'
-      ? 'Request to Join'
-      : 'Invite Only';
+  const buttonLabel =
+    community.type === 'public'
+      ? 'Join'
+      : community.type === 'private'
+        ? 'Request to Join'
+        : 'Invite Only';
 
   const isInviteOnly = community.type === 'invite-only';
 
@@ -168,7 +152,7 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
       disabled={isInviteOnly}
       className={className}
     >
-      {showIcon && <UserPlus className="h-4 w-4 mr-2" />}
+      {showIcon && <UserPlus className="mr-2 h-4 w-4" />}
       {buttonLabel}
     </Button>
   );

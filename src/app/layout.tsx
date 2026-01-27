@@ -1,34 +1,31 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import "./globals.css";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AiohaProvider } from "@/contexts/AiohaProvider";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { PriceProvider } from "@/contexts/PriceContext";
-import { NotificationProvider } from "@/contexts/NotificationContext";
-import { ToastProvider } from "@/components/ui/Toast";
-import { QueryClientProvider } from "@/lib/react-query/QueryClientProvider";
-import { ModalProvider } from "@/components/modals/ModalProvider";
-import { ServiceWorkerInitializer } from "@/components/ServiceWorkerInitializer";
-import { NodeHealthInitializer } from "@/components/NodeHealthInitializer";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { NavigationProgress } from "@/components/NavigationProgress";
-import { GlobalErrorHandlerInitializer } from "@/components/GlobalErrorHandlerInitializer";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
+import './globals.css';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { AiohaProvider } from '@/contexts/AiohaProvider';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { PriceProvider } from '@/contexts/PriceContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
+import { ToastProvider } from '@/components/core/Toast';
+import { QueryClientProvider } from '@/lib/react-query/QueryClientProvider';
+import { ModalProvider } from '@/components/modals/ModalProvider';
+import { ServiceWorkerInitializer } from '@/components/initializers/ServiceWorkerInitializer';
+import { NodeHealthInitializer } from '@/components/initializers/NodeHealthInitializer';
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
+import { NavigationProgress } from '@/components/feedback/NavigationProgress';
+import { GlobalErrorHandlerInitializer } from '@/components/feedback/GlobalErrorHandlerInitializer';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Sportsblock - Where Sports Meets Blockchain",
-  description: "Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.",
-  keywords: ["sports", "blogging", "blockchain", "hive", "crypto", "rewards"],
+  title: 'Sportsblock - Where Sports Meets Blockchain',
+  description:
+    'Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.',
+  keywords: ['sports', 'blogging', 'blockchain', 'hive', 'crypto', 'rewards'],
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={inter.className}>

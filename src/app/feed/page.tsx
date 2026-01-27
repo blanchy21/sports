@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import React from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { PostCard } from "@/components/PostCard";
-import { Button } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
-import { Plus, TrendingUp, Users, Award, Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
-import { SPORT_CATEGORIES } from "@/types";
-import { SportsblockPost } from "@/lib/shared/types";
-import { CommunityStats } from "@/lib/hive-workerbee/analytics";
-import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
-import { useFeedPosts } from "@/lib/react-query/queries/usePosts";
+import React from 'react';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { PostCard } from '@/components/posts/PostCard';
+import { Button } from '@/components/core/Button';
+import { Avatar } from '@/components/core/Avatar';
+import { Plus, TrendingUp, Users, Award, Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { SPORT_CATEGORIES } from '@/types';
+import { SportsblockPost } from '@/lib/shared/types';
+import { CommunityStats } from '@/lib/hive-workerbee/analytics';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useFeedPosts } from '@/lib/react-query/queries/usePosts';
 
 export default function FeedPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
-  const [selectedSport, setSelectedSport] = React.useState<string>("");
+  const [selectedSport, setSelectedSport] = React.useState<string>('');
   const [communityStats, setCommunityStats] = React.useState<CommunityStats>({
     totalPosts: 0,
     totalAuthors: 0,
@@ -45,10 +45,10 @@ export default function FeedPage() {
   // Flatten paginated data into a single array
   const posts = React.useMemo(() => {
     if (!data?.pages) return [];
-    const allPosts = data.pages.flatMap(page => page.posts);
+    const allPosts = data.pages.flatMap((page) => page.posts);
     // Dedupe posts
     const seen = new Set<string>();
-    return allPosts.filter(post => {
+    return allPosts.filter((post) => {
       const key = `${post.author}/${post.permlink}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -117,28 +117,31 @@ export default function FeedPage() {
   };
 
   // Dynamic stats based on real data
-  const stats = React.useMemo(() => [
-    {
-      label: "Posts Today",
-      value: statsLoading ? "..." : formatNumber(communityStats.activeToday),
-      icon: TrendingUp
-    },
-    {
-      label: "Active Users",
-      value: statsLoading ? "..." : formatNumber(communityStats.totalAuthors),
-      icon: Users
-    },
-    {
-      label: "Total Rewards",
-      value: statsLoading ? "..." : formatCurrency(communityStats.totalRewards),
-      icon: Award
-    },
-  ], [communityStats, statsLoading]);
+  const stats = React.useMemo(
+    () => [
+      {
+        label: 'Posts Today',
+        value: statsLoading ? '...' : formatNumber(communityStats.activeToday),
+        icon: TrendingUp,
+      },
+      {
+        label: 'Active Users',
+        value: statsLoading ? '...' : formatNumber(communityStats.totalAuthors),
+        icon: Users,
+      },
+      {
+        label: 'Total Rewards',
+        value: statsLoading ? '...' : formatCurrency(communityStats.totalRewards),
+        icon: Award,
+      },
+    ],
+    [communityStats, statsLoading]
+  );
 
   // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
-      router.push("/");
+      router.push('/');
     }
   }, [user, isAuthLoading, router]);
 
@@ -178,7 +181,7 @@ export default function FeedPage() {
   // Get the selected sport name for display
   const selectedSportName = React.useMemo(() => {
     if (!selectedSport) return null;
-    return SPORT_CATEGORIES.find(sport => sport.id === selectedSport)?.name;
+    return SPORT_CATEGORIES.find((sport) => sport.id === selectedSport)?.name;
   }, [selectedSport]);
 
   // Show skeleton while auth is loading (handled by loading.tsx for initial load)
@@ -192,57 +195,56 @@ export default function FeedPage() {
   }
 
   const errorMessage = isError
-    ? (error instanceof Error ? error.message : 'Failed to load posts. Please try again later.')
+    ? error instanceof Error
+      ? error.message
+      : 'Failed to load posts. Please try again later.'
     : null;
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="mx-auto max-w-4xl space-y-6">
         {/* Write Post Section */}
-        <div className="bg-card border rounded-lg p-4">
+        <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center space-x-3">
             <Avatar
               src={user?.avatar}
-              fallback={user?.username || "?"}
-              alt={user?.displayName || user?.username || "Guest"}
+              fallback={user?.username || '?'}
+              alt={user?.displayName || user?.username || 'Guest'}
               size="md"
             />
             <div className="flex-1">
               <input
                 type="text"
                 placeholder="What's happening in sports today?"
-                className="w-full px-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                className="w-full cursor-pointer rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={!user}
-                onClick={() => user && router.push("/shorts")}
+                onClick={() => user && router.push('/shorts')}
                 readOnly
               />
             </div>
-            <Button
-              disabled={!user}
-              onClick={() => router.push("/shorts")}
-            >
-              <Plus className="h-4 w-4 mr-2" />
+            <Button disabled={!user} onClick={() => router.push('/shorts')}>
+              <Plus className="mr-2 h-4 w-4" />
               Short
             </Button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={index} className="bg-card border rounded-lg p-4">
+              <div key={index} className="rounded-lg border bg-card p-4">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
+                  <div className="rounded-lg bg-primary/10 p-2">
                     <Icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <div className="text-2xl font-bold">
                       {statsLoading ? (
-                        <div className="h-8 w-16 bg-gray-300 dark:bg-gray-600 rounded animate-pulse"></div>
+                        <div className="h-8 w-16 animate-pulse rounded bg-gray-300 dark:bg-gray-600"></div>
                       ) : statsError ? (
-                        <span className="text-red-500 text-lg">Error</span>
+                        <span className="text-lg text-red-500">Error</span>
                       ) : (
                         stat.value
                       )}
@@ -260,15 +262,15 @@ export default function FeedPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-semibold">
-                {selectedSportName ? `${selectedSportName} Posts` : "Featured Posts"}
+                {selectedSportName ? `${selectedSportName} Posts` : 'Featured Posts'}
               </h2>
               {selectedSportName && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                  <span>{SPORT_CATEGORIES.find(s => s.id === selectedSport)?.icon}</span>
+                <div className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+                  <span>{SPORT_CATEGORIES.find((s) => s.id === selectedSport)?.icon}</span>
                   <span>{selectedSportName}</span>
                   <button
-                    onClick={() => setSelectedSport("")}
-                    className="ml-1 text-primary/70 hover:text-primary transition-colors"
+                    onClick={() => setSelectedSport('')}
+                    className="ml-1 text-primary/70 transition-colors hover:text-primary"
                   >
                     ×
                   </button>
@@ -284,52 +286,49 @@ export default function FeedPage() {
             {isLoading ? (
               // Loading skeleton
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-card border rounded-lg p-6 animate-pulse">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                <div key={i} className="animate-pulse rounded-lg border bg-card p-6">
+                  <div className="mb-4 flex items-center space-x-3">
+                    <div className="h-10 w-10 rounded-full bg-gray-300"></div>
                     <div className="flex-1">
-                      <div className="h-4 bg-gray-300 rounded w-1/4 mb-2"></div>
-                      <div className="h-3 bg-gray-300 rounded w-1/3"></div>
+                      <div className="mb-2 h-4 w-1/4 rounded bg-gray-300"></div>
+                      <div className="h-3 w-1/3 rounded bg-gray-300"></div>
                     </div>
                   </div>
-                  <div className="h-6 bg-gray-300 rounded w-3/4 mb-3"></div>
-                  <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+                  <div className="mb-3 h-6 w-3/4 rounded bg-gray-300"></div>
+                  <div className="mb-2 h-4 w-full rounded bg-gray-300"></div>
+                  <div className="h-4 w-2/3 rounded bg-gray-300"></div>
                 </div>
               ))
             ) : errorMessage ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">⚠️</div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              <div className="py-12 text-center">
+                <div className="mb-4 text-6xl">⚠️</div>
+                <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
                   Error Loading Posts
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-6">
-                  {errorMessage}
-                </p>
-                <Button onClick={() => refetch()}>
-                  Try Again
-                </Button>
+                <p className="mb-6 text-gray-500 dark:text-gray-400">{errorMessage}</p>
+                <Button onClick={() => refetch()}>Try Again</Button>
               </div>
             ) : filteredPosts.length > 0 ? (
               filteredPosts.map((post) => (
                 <PostCard key={`${post.author}/${post.permlink}`} post={post} />
               ))
             ) : (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">
-                  {selectedSport ? SPORT_CATEGORIES.find(s => s.id === selectedSport)?.icon : "🏆"}
+              <div className="py-12 text-center">
+                <div className="mb-4 text-6xl">
+                  {selectedSport
+                    ? SPORT_CATEGORIES.find((s) => s.id === selectedSport)?.icon
+                    : '🏆'}
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                  {selectedSportName ? `No ${selectedSportName} posts yet` : "No posts available"}
+                <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+                  {selectedSportName ? `No ${selectedSportName} posts yet` : 'No posts available'}
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                <p className="mb-6 text-gray-500 dark:text-gray-400">
                   {selectedSportName
                     ? `Be the first to share something about ${selectedSportName}!`
-                    : "Check back later for new content."
-                  }
+                    : 'Check back later for new content.'}
                 </p>
-                <Button onClick={() => router.push("/publish")}>
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button onClick={() => router.push('/publish')}>
+                  <Plus className="mr-2 h-4 w-4" />
                   Create Post
                 </Button>
               </div>
@@ -339,7 +338,7 @@ export default function FeedPage() {
 
         {/* Infinite Scroll Loading Indicator */}
         {isFetchingNextPage && (
-          <div className="flex justify-center mt-8">
+          <div className="mt-8 flex justify-center">
             <div className="flex items-center text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Loading more posts...
@@ -349,8 +348,8 @@ export default function FeedPage() {
 
         {/* End of feed indicator */}
         {!hasNextPage && posts.length > 0 && (
-          <div className="flex justify-center mt-8">
-            <div className="text-muted-foreground text-sm">
+          <div className="mt-8 flex justify-center">
+            <div className="text-sm text-muted-foreground">
               You&apos;ve reached the end of the feed
             </div>
           </div>

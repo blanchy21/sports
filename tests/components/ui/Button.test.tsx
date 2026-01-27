@@ -1,5 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/core/Button';
 import { renderWithProviders } from '../../test-utils';
 
 describe('Button', () => {

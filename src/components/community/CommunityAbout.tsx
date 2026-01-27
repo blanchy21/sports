@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useCommunity } from "@/lib/react-query/queries/useCommunity";
-import { Card } from "@/components/ui/Card";
-import { Avatar } from "@/components/ui/Avatar";
-import { Users, FileText, Calendar, Globe } from "lucide-react";
+import React from 'react';
+import { useCommunity } from '@/lib/react-query/queries/useCommunity';
+import { Card } from '@/components/core/Card';
+import { Avatar } from '@/components/core/Avatar';
+import { Users, FileText, Calendar, Globe } from 'lucide-react';
 
 interface CommunityAboutProps {
   communityId: string;
@@ -17,12 +17,12 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
   if (isLoading) {
     return (
       <div className={`space-y-6 ${className}`}>
-        <Card className="p-6 animate-pulse">
-          <div className="h-6 bg-gray-300 rounded w-1/3 mb-4"></div>
+        <Card className="animate-pulse p-6">
+          <div className="mb-4 h-6 w-1/3 rounded bg-gray-300"></div>
           <div className="space-y-2">
-            <div className="h-4 bg-gray-300 rounded w-full"></div>
-            <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+            <div className="h-4 w-full rounded bg-gray-300"></div>
+            <div className="h-4 w-3/4 rounded bg-gray-300"></div>
+            <div className="h-4 w-1/2 rounded bg-gray-300"></div>
           </div>
         </Card>
       </div>
@@ -31,9 +31,9 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
 
   if (error || !community) {
     return (
-      <div className={`text-center py-12 ${className}`}>
-        <div className="text-6xl mb-4">⚠️</div>
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+      <div className={`py-12 text-center ${className}`}>
+        <div className="mb-4 text-6xl">⚠️</div>
+        <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
           Community Not Found
         </h3>
         <p className="text-gray-500 dark:text-gray-400">
@@ -47,13 +47,13 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
     <div className={`space-y-6 ${className}`}>
       {/* Community Info */}
       <Card className="p-6">
-        <div className="flex items-center space-x-4 mb-6">
+        <div className="mb-6 flex items-center space-x-4">
           <Avatar
             src={community.avatar}
             fallback={community.name}
             alt={community.title}
             size="lg"
-            className="w-16 h-16"
+            className="h-16 w-16"
           />
           <div>
             <h2 className="text-2xl font-bold">{community.title}</h2>
@@ -62,29 +62,27 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
         </div>
 
         <div className="prose prose-sm max-w-none">
-          <p className="text-muted-foreground leading-relaxed mb-6">
-            {community.description}
-          </p>
+          <p className="mb-6 leading-relaxed text-muted-foreground">{community.description}</p>
         </div>
 
         {/* Community Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t">
+        <div className="grid grid-cols-2 gap-4 border-t pt-6 md:grid-cols-4">
           <div className="text-center">
-            <div className="flex items-center justify-center space-x-1 text-muted-foreground mb-1">
+            <div className="mb-1 flex items-center justify-center space-x-1 text-muted-foreground">
               <Users className="h-4 w-4" />
               <span className="text-sm">Subscribers</span>
             </div>
             <div className="text-2xl font-bold">{community.subscribers.toLocaleString()}</div>
           </div>
           <div className="text-center">
-            <div className="flex items-center justify-center space-x-1 text-muted-foreground mb-1">
+            <div className="mb-1 flex items-center justify-center space-x-1 text-muted-foreground">
               <FileText className="h-4 w-4" />
               <span className="text-sm">Posts</span>
             </div>
             <div className="text-2xl font-bold">{community.posts.toLocaleString()}</div>
           </div>
           <div className="text-center">
-            <div className="flex items-center justify-center space-x-1 text-muted-foreground mb-1">
+            <div className="mb-1 flex items-center justify-center space-x-1 text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span className="text-sm">Created</span>
             </div>
@@ -93,7 +91,7 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
             </div>
           </div>
           <div className="text-center">
-            <div className="flex items-center justify-center space-x-1 text-muted-foreground mb-1">
+            <div className="mb-1 flex items-center justify-center space-x-1 text-muted-foreground">
               <Globe className="h-4 w-4" />
               <span className="text-sm">Status</span>
             </div>
@@ -105,25 +103,23 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
       {/* Community Team */}
       {community.team && community.team.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Community Team</h3>
+          <h3 className="mb-4 text-lg font-semibold">Community Team</h3>
           <div className="space-y-3">
             {community.team.map((member) => (
               <div key={member.username} className="flex items-center space-x-3">
-                <Avatar
-                  fallback={member.username}
-                  alt={member.username}
-                  size="md"
-                />
+                <Avatar fallback={member.username} alt={member.username} size="md" />
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <span className="font-medium">@{member.username}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      member.role === 'admin' 
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                        : member.role === 'moderator'
-                        ? 'bg-accent/20 text-accent dark:bg-accent/20 dark:text-accent'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                    }`}>
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-medium ${
+                        member.role === 'admin'
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          : member.role === 'moderator'
+                            ? 'bg-accent/20 text-accent dark:bg-accent/20 dark:text-accent'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                      }`}
+                    >
                       {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                     </span>
                   </div>
@@ -139,7 +135,7 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
 
       {/* Community Rules/Guidelines */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Community Guidelines</h3>
+        <h3 className="mb-4 text-lg font-semibold">Community Guidelines</h3>
         <div className="prose prose-sm max-w-none">
           <ul className="space-y-2 text-muted-foreground">
             <li>• Be respectful and constructive in your discussions</li>

@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { Avatar } from '@/components/ui/Avatar';
+import { Avatar } from '@/components/core/Avatar';
 import { renderWithProviders } from '../test-utils';
 
 // Mock next/image

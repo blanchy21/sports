@@ -1,4 +1,3 @@
-
 // Type definitions for better type safety
 
 interface RcAccountData {
@@ -65,7 +64,7 @@ interface HiveTransaction {
 
 import { makeHiveApiCall } from './api';
 import { HiveAccount } from '../shared/types';
-import { calculateReputation } from '../shared/utils';
+import { calculateReputation } from '../utils/hive';
 import { getAccountOptimized, getContentOptimized } from './optimization';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 
@@ -77,7 +76,11 @@ const debugLog = (...args: unknown[]) => {
     return;
   }
   const [message, ...rest] = args;
-  workerBeeLog(String(message), 'WorkerBeeAccount', rest.length === 1 ? rest[0] : rest.length > 1 ? rest : undefined);
+  workerBeeLog(
+    String(message),
+    'WorkerBeeAccount',
+    rest.length === 1 ? rest[0] : rest.length > 1 ? rest : undefined
+  );
 };
 
 interface VestingDelegation {
@@ -152,15 +155,19 @@ function parseAsset(assetString: string): { amount: number; symbol: string } {
   const [amount, symbol] = assetString.split(' ');
   return {
     amount: parseFloat(amount || '0'),
-    symbol: symbol || 'HIVE'
+    symbol: symbol || 'HIVE',
   };
 }
 
-function vestingSharesToHive(vestingShares: string, totalVestingShares: string, totalVestingFundHive: string): number {
+function vestingSharesToHive(
+  vestingShares: string,
+  totalVestingShares: string,
+  totalVestingFundHive: string
+): number {
   const vestingSharesFloat = parseFloat(vestingShares);
   const totalVestingSharesFloat = parseFloat(totalVestingShares);
   const totalVestingFundHiveFloat = parseFloat(totalVestingFundHive);
-  
+
   return (vestingSharesFloat / totalVestingSharesFloat) * totalVestingFundHiveFloat;
 }
 
@@ -211,8 +218,12 @@ function calculatePendingWithdrawals(
   // Calculate how much HIVE this represents
   let rateHive = 0;
   if (globalProps && rateVests.amount > 0) {
-    const totalVestingShares = parseFloat((globalProps as { total_vesting_shares?: string }).total_vesting_shares || '0');
-    const totalVestingFundHive = parseFloat((globalProps as { total_vesting_fund_hive?: string }).total_vesting_fund_hive || '0');
+    const totalVestingShares = parseFloat(
+      (globalProps as { total_vesting_shares?: string }).total_vesting_shares || '0'
+    );
+    const totalVestingFundHive = parseFloat(
+      (globalProps as { total_vesting_fund_hive?: string }).total_vesting_fund_hive || '0'
+    );
     if (totalVestingShares > 0) {
       rateHive = (rateVests.amount / totalVestingShares) * totalVestingFundHive;
     }
@@ -220,9 +231,8 @@ function calculatePendingWithdrawals(
 
   // Calculate remaining withdrawals
   const remainingVests = toWithdraw - withdrawn;
-  const weeksRemaining = rateVests.amount > 0
-    ? Math.ceil(Number(remainingVests) / 1000000 / rateVests.amount)
-    : 0;
+  const weeksRemaining =
+    rateVests.amount > 0 ? Math.ceil(Number(remainingVests) / 1000000 / rateVests.amount) : 0;
 
   // Create entries for each remaining week
   const nextDate = new Date(nextVestingWithdrawal);
@@ -252,16 +262,15 @@ function calculatePendingWithdrawals(
  */
 export async function fetchUserAccount(username: string): Promise<UserAccountData | null> {
   try {
-    
     // Get account info using optimized caching
     const account = await getAccountOptimized(username);
-    
+
     if (!account) {
       throw new Error(`Account ${username} not found`);
     }
 
     const accountData = account;
-    
+
     // Debug: Log specific fields we're interested in
 
     // PERFORMANCE OPTIMIZATION: Run all supplemental API calls in parallel
@@ -274,7 +283,11 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
           return data && data.length > 0 ? data[0] : null;
         })
         .catch((error) => {
-          logWarn('[WorkerBee fetchUserAccount] Failed to get reputation', 'fetchUserAccount', error);
+          logWarn(
+            '[WorkerBee fetchUserAccount] Failed to get reputation',
+            'fetchUserAccount',
+            error
+          );
           return null;
         }),
 
@@ -284,11 +297,15 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
           const data = result as FollowCountData;
           return {
             followers: data.follower_count || 0,
-            following: data.following_count || 0
+            following: data.following_count || 0,
           };
         })
         .catch((error) => {
-          logWarn('[WorkerBee fetchUserAccount] Failed to get follow stats', 'fetchUserAccount', error);
+          logWarn(
+            '[WorkerBee fetchUserAccount] Failed to get follow stats',
+            'fetchUserAccount',
+            error
+          );
           return { followers: 0, following: 0 };
         }),
 
@@ -305,8 +322,8 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       // Note: rc_api uses object params { accounts: [username] }, not array params
       Promise.race([
         makeHiveApiCall('rc_api', 'find_rc_accounts', { accounts: [username] }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 500))
-      ]).catch(() => null)
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 500)),
+      ]).catch(() => null),
     ]);
 
     // Process results from parallel calls
@@ -315,7 +332,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     const globalProps = globalPropsResult;
 
     // Calculate savings APR from global props
-    const savingsApr = globalProps ? ((globalProps.hbd_interest_rate || 0) / 100) : 0;
+    const savingsApr = globalProps ? (globalProps.hbd_interest_rate || 0) / 100 : 0;
 
     // Use account stats directly - skip expensive calculateUserStats call
     // The get_discussions_by_author_before_date API is unreliable and causes 15+ second delays
@@ -334,20 +351,23 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
 
     // Parse profile metadata from both json_metadata and posting_json_metadata
     debugLog(`[WorkerBee fetchUserAccount] Raw json_metadata:`, accountData.json_metadata);
-    debugLog(`[WorkerBee fetchUserAccount] Raw posting_json_metadata:`, accountData.posting_json_metadata);
-    
+    debugLog(
+      `[WorkerBee fetchUserAccount] Raw posting_json_metadata:`,
+      accountData.posting_json_metadata
+    );
+
     const profileMetadata = parseJsonMetadata(accountData.json_metadata as string);
     const postingProfileMetadata = parseJsonMetadata(accountData.posting_json_metadata as string);
-    
+
     debugLog(`[WorkerBee fetchUserAccount] Parsed json_metadata:`, profileMetadata);
     debugLog(`[WorkerBee fetchUserAccount] Parsed posting_json_metadata:`, postingProfileMetadata);
-    
+
     // Merge profile data, prioritizing posting_json_metadata for profile info
     const profile = {
       ...(profileMetadata.profile || {}),
-      ...(postingProfileMetadata.profile || {})
+      ...(postingProfileMetadata.profile || {}),
     } as Record<string, unknown>;
-    
+
     debugLog(`[WorkerBee fetchUserAccount] Merged profile data:`, profile);
 
     // Calculate HIVE POWER from vesting shares
@@ -362,19 +382,26 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
 
     // Process Resource Credits from parallel call result (already completed above)
     let rcPercentage = 100; // Default to 100% if RC fetch failed
-    
+
     if (rcResult) {
       try {
         const rcData = rcResult as { rc_accounts?: RcAccountData[] };
         debugLog(`[WorkerBee fetchUserAccount] RC API response:`, rcData);
-        
-        if (rcData.rc_accounts && Array.isArray(rcData.rc_accounts) && rcData.rc_accounts.length > 0) {
-          const rc = rcData.rc_accounts[0] as { rc_manabar?: { current_mana: string }; max_rc?: string };
-          
+
+        if (
+          rcData.rc_accounts &&
+          Array.isArray(rcData.rc_accounts) &&
+          rcData.rc_accounts.length > 0
+        ) {
+          const rc = rcData.rc_accounts[0] as {
+            rc_manabar?: { current_mana: string };
+            max_rc?: string;
+          };
+
           if (rc.rc_manabar && rc.max_rc) {
             const currentMana = parseFloat(rc.rc_manabar.current_mana);
             const maxRc = parseFloat(rc.max_rc);
-            
+
             if (maxRc > 0) {
               rcPercentage = (currentMana / maxRc) * 100;
               debugLog(
@@ -390,35 +417,54 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
           debugLog(`[WorkerBee fetchUserAccount] No RC data from rc_api, setting RC to 100%`);
         }
       } catch (rcError) {
-        debugLog(`[WorkerBee fetchUserAccount] Error processing RC result, setting RC to 100%: ${rcError}`);
+        debugLog(
+          `[WorkerBee fetchUserAccount] Error processing RC result, setting RC to 100%: ${rcError}`
+        );
       }
     } else {
-      debugLog(`[WorkerBee fetchUserAccount] RC fetch timed out or failed, setting RC to 100% as fallback`);
+      debugLog(
+        `[WorkerBee fetchUserAccount] RC fetch timed out or failed, setting RC to 100% as fallback`
+      );
     }
     // Use reputation from the dedicated API call if available, otherwise fall back to account data
     let rawReputation: string | number;
     if (accountReputation && accountReputation.reputation) {
       rawReputation = accountReputation.reputation;
-      debugLog(`[WorkerBee fetchUserAccount] Using reputation from get_account_reputations API:`, rawReputation);
+      debugLog(
+        `[WorkerBee fetchUserAccount] Using reputation from get_account_reputations API:`,
+        rawReputation
+      );
     } else {
       rawReputation = accountData.reputation as string | number;
-      debugLog(`[WorkerBee fetchUserAccount] Using reputation from get_accounts API:`, rawReputation);
+      debugLog(
+        `[WorkerBee fetchUserAccount] Using reputation from get_accounts API:`,
+        rawReputation
+      );
     }
-    
-    debugLog(`[WorkerBee fetchUserAccount] Raw reputation for ${username}:`, rawReputation, 'Type:', typeof rawReputation);
-    
+
+    debugLog(
+      `[WorkerBee fetchUserAccount] Raw reputation for ${username}:`,
+      rawReputation,
+      'Type:',
+      typeof rawReputation
+    );
+
     // Debug: Show what raw value would produce the expected vs actual reputation
     if (rawReputation && rawReputation !== 0 && rawReputation !== '0') {
       const calculated = calculateReputation(rawReputation);
-      debugLog(`[WorkerBee fetchUserAccount] DEBUG: Raw ${rawReputation} → Calculated ${calculated}`);
-      
+      debugLog(
+        `[WorkerBee fetchUserAccount] DEBUG: Raw ${rawReputation} → Calculated ${calculated}`
+      );
+
       // If the calculated reputation seems too high, let's check if we need to adjust the formula
       if (calculated > 100) {
-        debugLog(`[WorkerBee fetchUserAccount] WARNING: Calculated reputation ${calculated} seems unusually high`);
+        debugLog(
+          `[WorkerBee fetchUserAccount] WARNING: Calculated reputation ${calculated} seems unusually high`
+        );
         debugLog(`[WorkerBee fetchUserAccount] Expected range: 25-100 for most users`);
       }
     }
-    
+
     // Handle case where reputation is 0 or undefined
     let reputation: number;
     if (!rawReputation || rawReputation === 0 || rawReputation === '0') {
@@ -430,7 +476,7 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
     debugLog(`[WorkerBee fetchUserAccount] Final reputation for ${username}:`, reputation);
 
     debugLog(`[WorkerBee fetchUserAccount] Final RC percentage: ${rcPercentage.toFixed(2)}%`);
-    
+
     return {
       username: accountData.name as string,
       reputation,
@@ -461,19 +507,26 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       },
       stats: {
         postCount: (accountData.post_count as number) || 0,
-        commentCount: calculatedStats.commentCount > 0 ? calculatedStats.commentCount : accountCommentCount,
+        commentCount:
+          calculatedStats.commentCount > 0 ? calculatedStats.commentCount : accountCommentCount,
         voteCount: calculatedStats.voteCount > 0 ? calculatedStats.voteCount : accountVoteCount,
         followers: followStats?.followers || 0,
         following: followStats?.following || 0,
       },
       createdAt: accountData.created ? new Date(accountData.created as string) : new Date(),
       lastPost: accountData.last_post ? new Date(accountData.last_post as string) : undefined,
-      lastVote: accountData.last_vote_time ? new Date(accountData.last_vote_time as string) : undefined,
+      lastVote: accountData.last_vote_time
+        ? new Date(accountData.last_vote_time as string)
+        : undefined,
       canVote: (accountData.can_vote as boolean) || false,
       votingPower: (accountData.voting_power as number) || 0,
     };
   } catch (error) {
-    logError('Error fetching user account with WorkerBee', 'fetchUserAccount', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching user account with WorkerBee',
+      'fetchUserAccount',
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -494,10 +547,14 @@ export async function fetchUserBalances(username: string): Promise<{
     // Note: rc_api uses object params { accounts: [username] }, not array params
     const [account, rc] = await Promise.all([
       getAccountOptimized(username),
-      makeHiveApiCall('rc_api', 'find_rc_accounts', { accounts: [username] }).then((result: unknown) => {
-        const rcResult = result as { rc_accounts?: RcAccountData[] };
-        return rcResult && rcResult.rc_accounts && rcResult.rc_accounts.length > 0 ? rcResult.rc_accounts[0] : null;
-      }).catch(() => null)
+      makeHiveApiCall('rc_api', 'find_rc_accounts', { accounts: [username] })
+        .then((result: unknown) => {
+          const rcResult = result as { rc_accounts?: RcAccountData[] };
+          return rcResult && rcResult.rc_accounts && rcResult.rc_accounts.length > 0
+            ? rcResult.rc_accounts[0]
+            : null;
+        })
+        .catch(() => null),
     ]);
 
     if (!account) return null;
@@ -510,7 +567,10 @@ export async function fetchUserBalances(username: string): Promise<{
 
     let hivePower = 0;
     if (accountData.vesting_shares) {
-      const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
+      const globalProps = (await makeHiveApiCall(
+        'condenser_api',
+        'get_dynamic_global_properties'
+      )) as GlobalProperties;
       hivePower = vestingSharesToHive(
         accountData.vesting_shares as string,
         globalProps.total_vesting_shares || '0',
@@ -523,7 +583,7 @@ export async function fetchUserBalances(username: string): Promise<{
     if (rc && rc.rc_manabar && rc.max_rc) {
       const currentMana = parseFloat(rc.rc_manabar.current_mana);
       const maxRc = parseFloat(rc.max_rc);
-      
+
       if (maxRc > 0) {
         rcPercentage = (currentMana / maxRc) * 100;
         debugLog(
@@ -544,7 +604,11 @@ export async function fetchUserBalances(username: string): Promise<{
       resourceCredits: rcPercentage,
     };
   } catch (error) {
-    logError('Error fetching user balances with WorkerBee', 'fetchUserBalances', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching user balances with WorkerBee',
+      'fetchUserBalances',
+      error instanceof Error ? error : undefined
+    );
     return null;
   }
 }
@@ -563,7 +627,6 @@ export async function fetchUserProfile(username: string): Promise<{
   profileImage?: string;
 } | null> {
   try {
-
     const account = await getAccountOptimized(username);
     if (!account) return null;
 
@@ -571,7 +634,11 @@ export async function fetchUserProfile(username: string): Promise<{
     const profileMetadata = parseJsonMetadata(accountData.json_metadata as string);
     return profileMetadata.profile || {};
   } catch (error) {
-    logError('Error fetching user profile with WorkerBee', 'fetchUserProfile', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching user profile with WorkerBee',
+      'fetchUserProfile',
+      error instanceof Error ? error : undefined
+    );
     return null;
   }
 }
@@ -583,8 +650,9 @@ export async function fetchUserProfile(username: string): Promise<{
  */
 export async function userExists(username: string): Promise<boolean> {
   try {
-
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
+    const account = (await makeHiveApiCall('condenser_api', 'get_accounts', [
+      [username],
+    ])) as HiveAccount[];
     return account && account.length > 0;
   } catch {
     return false;
@@ -603,20 +671,28 @@ export async function getUserFollowStats(username: string): Promise<{
   try {
     debugLog(`[WorkerBee getUserFollowStats] Fetching follow stats for: ${username}`);
 
-    const result = await makeHiveApiCall('condenser_api', 'get_follow_count', [username]) as FollowCountData;
+    const result = (await makeHiveApiCall('condenser_api', 'get_follow_count', [
+      username,
+    ])) as FollowCountData;
     debugLog(`[WorkerBee getUserFollowStats] Raw follow stats result:`, result);
 
     const followers = result.follower_count || 0;
     const following = result.following_count || 0;
 
-    debugLog(`[WorkerBee getUserFollowStats] Follow stats: ${followers} followers, ${following} following`);
-    
+    debugLog(
+      `[WorkerBee getUserFollowStats] Follow stats: ${followers} followers, ${following} following`
+    );
+
     return {
       followers,
-      following
+      following,
     };
   } catch (error) {
-    logError('Error fetching follow stats with WorkerBee', 'getUserFollowStats', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching follow stats with WorkerBee',
+      'getUserFollowStats',
+      error instanceof Error ? error : undefined
+    );
     return null;
   }
 }
@@ -629,12 +705,19 @@ export async function getHbdSavingsApr(): Promise<number> {
   try {
     debugLog(`[WorkerBee getHbdSavingsApr] Fetching HBD savings APR...`);
 
-    const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
+    const globalProps = (await makeHiveApiCall(
+      'condenser_api',
+      'get_dynamic_global_properties'
+    )) as GlobalProperties;
     const apr = (globalProps.hbd_interest_rate || 0) / 100;
     debugLog(`[WorkerBee getHbdSavingsApr] HBD savings APR: ${apr}%`);
     return apr;
   } catch (error) {
-    logError('Error fetching HBD savings APR with WorkerBee', 'getHbdSavingsApr', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching HBD savings APR with WorkerBee',
+      'getHbdSavingsApr',
+      error instanceof Error ? error : undefined
+    );
     return 0;
   }
 }
@@ -649,27 +732,38 @@ export async function getUserDelegations(username: string): Promise<{
   given: Array<{ delegatee: string; vesting_shares: string; min_delegation_time: string }>;
 } | null> {
   try {
-
     // Get received delegations
-    const receivedDelegations = await makeHiveApiCall('condenser_api', 'get_vesting_delegations', [username, '', 100]) as VestingDelegation[];
-    
+    const receivedDelegations = (await makeHiveApiCall('condenser_api', 'get_vesting_delegations', [
+      username,
+      '',
+      100,
+    ])) as VestingDelegation[];
+
     // Get given delegations (expiring delegations)
-    const givenDelegations = await makeHiveApiCall('condenser_api', 'get_expiring_vesting_delegations', [username, new Date().toISOString(), 100]) as VestingDelegation[];
+    const givenDelegations = (await makeHiveApiCall(
+      'condenser_api',
+      'get_expiring_vesting_delegations',
+      [username, new Date().toISOString(), 100]
+    )) as VestingDelegation[];
 
     return {
       received: (receivedDelegations as VestingDelegation[]).map((d) => ({
         delegator: d.delegator,
         vesting_shares: String(d.vesting_shares),
-        min_delegation_time: d.min_delegation_time
+        min_delegation_time: d.min_delegation_time,
       })),
       given: (givenDelegations as VestingDelegation[]).map((d) => ({
         delegatee: d.delegatee,
         vesting_shares: String(d.vesting_shares),
-        min_delegation_time: d.min_delegation_time
-      }))
+        min_delegation_time: d.min_delegation_time,
+      })),
     };
   } catch (error) {
-    logError('Error fetching delegations with WorkerBee', 'getUserDelegations', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching delegations with WorkerBee',
+      'getUserDelegations',
+      error instanceof Error ? error : undefined
+    );
     return null;
   }
 }
@@ -682,8 +776,8 @@ export async function getUserDelegations(username: string): Promise<{
  * @returns Array of account operations
  */
 export async function getAccountHistory(
-  username: string, 
-  limit: number = 50, 
+  username: string,
+  limit: number = 50,
   start?: number
 ): Promise<Array<{
   id: number;
@@ -694,17 +788,23 @@ export async function getAccountHistory(
   transactionId: string;
 }> | null> {
   try {
-    debugLog(`[WorkerBee getAccountHistory] Fetching history for: ${username}, limit: ${limit}, start: ${start}`);
-    
+    debugLog(
+      `[WorkerBee getAccountHistory] Fetching history for: ${username}, limit: ${limit}, start: ${start}`
+    );
+
     // Get account history using Hive API
-    const history = await makeHiveApiCall('condenser_api', 'get_account_history', [
-      username, 
-      start || -1, 
-      limit
-    ]) as Array<[number, HiveTransaction]>;
-    
-    debugLog(`[WorkerBee getAccountHistory] Raw history received:`, history?.length || 0, 'operations');
-    
+    const history = (await makeHiveApiCall('condenser_api', 'get_account_history', [
+      username,
+      start || -1,
+      limit,
+    ])) as Array<[number, HiveTransaction]>;
+
+    debugLog(
+      `[WorkerBee getAccountHistory] Raw history received:`,
+      history?.length || 0,
+      'operations'
+    );
+
     if (!history || !Array.isArray(history)) {
       debugLog(`[WorkerBee getAccountHistory] No history found for ${username}`);
       return [];
@@ -714,21 +814,27 @@ export async function getAccountHistory(
     const operations = history.map(([id, operationData]) => {
       const { timestamp, op } = operationData;
       const [operationType, operationDetails] = op;
-      
+
       return {
         id,
         timestamp,
         type: operationType,
         operation: operationDetails,
         blockNumber: operationData.block,
-        transactionId: operationData.trx_id
+        transactionId: operationData.trx_id,
       };
     });
 
-    debugLog(`[WorkerBee getAccountHistory] Processed ${operations.length} operations for ${username}`);
+    debugLog(
+      `[WorkerBee getAccountHistory] Processed ${operations.length} operations for ${username}`
+    );
     return operations;
   } catch (error) {
-    logError('Error fetching account history with WorkerBee', 'getAccountHistory', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching account history with WorkerBee',
+      'getAccountHistory',
+      error instanceof Error ? error : undefined
+    );
     return null;
   }
 }
@@ -741,14 +847,21 @@ export async function getAccountHistory(
 async function convertVestsToHive(vestingShares: string): Promise<number> {
   try {
     // Get global properties for conversion
-    const globalProps = await makeHiveApiCall('condenser_api', 'get_dynamic_global_properties') as GlobalProperties;
+    const globalProps = (await makeHiveApiCall(
+      'condenser_api',
+      'get_dynamic_global_properties'
+    )) as GlobalProperties;
     return vestingSharesToHive(
       vestingShares,
       globalProps.total_vesting_shares || '0',
       globalProps.total_vesting_fund_hive || '0'
     );
   } catch (error) {
-    logError('Error converting VESTS to HIVE', 'convertVestsToHive', error instanceof Error ? error : undefined);
+    logError(
+      'Error converting VESTS to HIVE',
+      'convertVestsToHive',
+      error instanceof Error ? error : undefined
+    );
     return 0;
   }
 }
@@ -760,7 +873,7 @@ async function convertVestsToHive(vestingShares: string): Promise<number> {
  * @returns Array of recent account operations
  */
 export async function getRecentOperations(
-  username: string, 
+  username: string,
   limit: number = 500
 ): Promise<Array<{
   id: number;
@@ -773,156 +886,167 @@ export async function getRecentOperations(
 }> | null> {
   try {
     debugLog(`[WorkerBee getRecentOperations] Fetching recent operations for: ${username}`);
-    
+
     const operations = await getAccountHistory(username, limit);
     if (!operations) return null;
 
     // Define monetary operation types (transactions that involve actual money/assets changes)
     const monetaryOperationTypes = [
-      'transfer',                    // HIVE/HBD transfers
-      'claim_reward_balance',        // Claiming rewards (actual wallet balance change) - shows final claimed amounts
-      'author_reward',               // Author rewards (actual balance change) - contains actual payout amounts
-      'comment_reward',              // Comment rewards (actual balance change)
-      'producer_reward',             // Block producer rewards (actual balance change)
-      'fill_convert_request',        // HBD conversion (actual balance change)
-      'fill_order',                  // Market orders (actual balance change)
-      'fill_vesting_withdraw',       // Power down withdrawals (actual balance change)
-      'fill_transfer_from_savings',  // Savings withdrawals (actual balance change)
-      'delegate_vesting_shares',     // HP delegations (has monetary value)
-      'return_vesting_delegation',   // Return HP delegations (actual balance change)
-      'power_up',                    // Buying HP (monetary - actual balance change)
-      'power_down',                  // Selling HP (monetary - actual balance change)
-      'transfer_to_vesting',         // Converting HIVE to HP (actual balance change)
-      'transfer_to_savings',         // Moving to savings (actual balance change)
-      'transfer_from_savings',       // Moving from savings (actual balance change)
+      'transfer', // HIVE/HBD transfers
+      'claim_reward_balance', // Claiming rewards (actual wallet balance change) - shows final claimed amounts
+      'author_reward', // Author rewards (actual balance change) - contains actual payout amounts
+      'comment_reward', // Comment rewards (actual balance change)
+      'producer_reward', // Block producer rewards (actual balance change)
+      'fill_convert_request', // HBD conversion (actual balance change)
+      'fill_order', // Market orders (actual balance change)
+      'fill_vesting_withdraw', // Power down withdrawals (actual balance change)
+      'fill_transfer_from_savings', // Savings withdrawals (actual balance change)
+      'delegate_vesting_shares', // HP delegations (has monetary value)
+      'return_vesting_delegation', // Return HP delegations (actual balance change)
+      'power_up', // Buying HP (monetary - actual balance change)
+      'power_down', // Selling HP (monetary - actual balance change)
+      'transfer_to_vesting', // Converting HIVE to HP (actual balance change)
+      'transfer_to_savings', // Moving to savings (actual balance change)
+      'transfer_from_savings', // Moving from savings (actual balance change)
       'cancel_transfer_from_savings', // Cancel savings withdrawal
-      'set_withdraw_vesting_route',  // Set power down route
-      'escrow_transfer',             // Escrow transfers (actual balance change)
-      'escrow_release',              // Escrow releases (actual balance change)
-      'escrow_dispute',              // Escrow disputes
-      'escrow_approve',              // Escrow approvals
-      'convert',                     // HBD conversion requests
-      'collateralized_convert',      // Collateralized conversions
-      'recurrent_transfer',          // Recurring transfers (actual balance change)
-      'fill_recurrent_transfer',     // Recurring transfer fills (actual balance change)
+      'set_withdraw_vesting_route', // Set power down route
+      'escrow_transfer', // Escrow transfers (actual balance change)
+      'escrow_release', // Escrow releases (actual balance change)
+      'escrow_dispute', // Escrow disputes
+      'escrow_approve', // Escrow approvals
+      'convert', // HBD conversion requests
+      'collateralized_convert', // Collateralized conversions
+      'recurrent_transfer', // Recurring transfers (actual balance change)
+      'fill_recurrent_transfer', // Recurring transfer fills (actual balance change)
       // Note: Removed 'curation_reward' to avoid double counting with 'claim_reward_balance'
       // Note: Removed 'comment_payout_update' as it doesn't contain actual payout amounts
       // Note: Removed 'effective_comment_vote' as it shows potential payouts, not actual claimed rewards
     ];
 
     // Filter for monetary operations only
-    const monetaryOperations = operations.filter(op => 
-      monetaryOperationTypes.includes(op.type)
-    );
+    const monetaryOperations = operations.filter((op) => monetaryOperationTypes.includes(op.type));
 
     debugLog(
       `[WorkerBee getRecentOperations] Filtered ${monetaryOperations.length} monetary operations from ${operations.length} total operations for ${username}`
     );
 
     // Process operations to add human-readable descriptions
-    const processedOperations = await Promise.all(monetaryOperations.map(async (op) => {
-      let description = `${op.type}`;
-      
-      // Add more descriptive text based on operation type
-      switch (op.type) {
-        case 'transfer':
-          description = `Transfer ${op.operation.amount} from ${op.operation.from} to ${op.operation.to}`;
-          break;
-        case 'claim_reward_balance':
-          const rewards = [];
-          if (op.operation.reward_hive && op.operation.reward_hive !== '0.000 HIVE') {
-            rewards.push(op.operation.reward_hive);
-          }
-          if (op.operation.reward_hbd && op.operation.reward_hbd !== '0.000 HBD') {
-            rewards.push(op.operation.reward_hbd);
-          }
-          if (op.operation.reward_vests && typeof op.operation.reward_vests === 'string' && op.operation.reward_vests !== '0.000000 VESTS') {
+    const processedOperations = await Promise.all(
+      monetaryOperations.map(async (op) => {
+        let description = `${op.type}`;
+
+        // Add more descriptive text based on operation type
+        switch (op.type) {
+          case 'transfer':
+            description = `Transfer ${op.operation.amount} from ${op.operation.from} to ${op.operation.to}`;
+            break;
+          case 'claim_reward_balance':
+            const rewards = [];
+            if (op.operation.reward_hive && op.operation.reward_hive !== '0.000 HIVE') {
+              rewards.push(op.operation.reward_hive);
+            }
+            if (op.operation.reward_hbd && op.operation.reward_hbd !== '0.000 HBD') {
+              rewards.push(op.operation.reward_hbd);
+            }
+            if (
+              op.operation.reward_vests &&
+              typeof op.operation.reward_vests === 'string' &&
+              op.operation.reward_vests !== '0.000000 VESTS'
+            ) {
+              // Convert VESTS to HIVE equivalent
+              const hiveAmount = await convertVestsToHive(op.operation.reward_vests);
+              rewards.push(`${hiveAmount.toFixed(3)} HIVE`);
+            }
+            description =
+              rewards.length > 0 ? `Claimed rewards: ${rewards.join(', ')}` : 'Claimed rewards';
+            break;
+          case 'fill_convert_request':
+            description = `Converted ${op.operation.amount_in} to ${op.operation.amount_out}`;
+            break;
+          case 'fill_order':
+            description = `Market order: ${op.operation.current_pays} for ${op.operation.open_pays}`;
+            break;
+          case 'fill_vesting_withdraw':
+            description = `Power down withdrawal: ${op.operation.deposited}`;
+            break;
+          case 'fill_transfer_from_savings':
+            description = `Savings withdrawal: ${op.operation.amount}`;
+            break;
+          case 'delegate_vesting_shares':
+            description = `Delegated ${op.operation.vesting_shares} to ${op.operation.delegatee}`;
+            break;
+          case 'return_vesting_delegation':
+            description = `Returned delegation: ${op.operation.vesting_shares}`;
+            break;
+          case 'power_up':
+            description = `Powered up ${op.operation.vesting_shares}`;
+            break;
+          case 'power_down':
+            description = `Started power down: ${op.operation.vesting_shares}`;
+            break;
+          case 'transfer_to_vesting':
+            description = `Converted ${op.operation.amount} to HP`;
+            break;
+          case 'transfer_to_savings':
+            description = `Transferred ${op.operation.amount} to savings`;
+            break;
+          case 'transfer_from_savings':
+            description = `Withdrew ${op.operation.amount} from savings`;
+            break;
+          case 'cancel_transfer_from_savings':
+            description = `Cancelled savings withdrawal`;
+            break;
+          case 'set_withdraw_vesting_route':
+            description = `Set power down route to ${op.operation.to_account}`;
+            break;
+          case 'producer_reward':
             // Convert VESTS to HIVE equivalent
-            const hiveAmount = await convertVestsToHive(op.operation.reward_vests);
-            rewards.push(`${hiveAmount.toFixed(3)} HIVE`);
-          }
-          description = rewards.length > 0 ? `Claimed rewards: ${rewards.join(', ')}` : 'Claimed rewards';
-          break;
-        case 'fill_convert_request':
-          description = `Converted ${op.operation.amount_in} to ${op.operation.amount_out}`;
-          break;
-        case 'fill_order':
-          description = `Market order: ${op.operation.current_pays} for ${op.operation.open_pays}`;
-          break;
-        case 'fill_vesting_withdraw':
-          description = `Power down withdrawal: ${op.operation.deposited}`;
-          break;
-        case 'fill_transfer_from_savings':
-          description = `Savings withdrawal: ${op.operation.amount}`;
-          break;
-        case 'delegate_vesting_shares':
-          description = `Delegated ${op.operation.vesting_shares} to ${op.operation.delegatee}`;
-          break;
-        case 'return_vesting_delegation':
-          description = `Returned delegation: ${op.operation.vesting_shares}`;
-          break;
-        case 'power_up':
-          description = `Powered up ${op.operation.vesting_shares}`;
-          break;
-        case 'power_down':
-          description = `Started power down: ${op.operation.vesting_shares}`;
-          break;
-        case 'transfer_to_vesting':
-          description = `Converted ${op.operation.amount} to HP`;
-          break;
-        case 'transfer_to_savings':
-          description = `Transferred ${op.operation.amount} to savings`;
-          break;
-        case 'transfer_from_savings':
-          description = `Withdrew ${op.operation.amount} from savings`;
-          break;
-        case 'cancel_transfer_from_savings':
-          description = `Cancelled savings withdrawal`;
-          break;
-        case 'set_withdraw_vesting_route':
-          description = `Set power down route to ${op.operation.to_account}`;
-          break;
-        case 'producer_reward':
-          // Convert VESTS to HIVE equivalent
-          if (op.operation.vesting_shares && typeof op.operation.vesting_shares === 'string') {
-            const producerHiveAmount = await convertVestsToHive(op.operation.vesting_shares);
-            description = `Block producer reward: ${producerHiveAmount.toFixed(3)} HIVE`;
-          } else {
-            description = 'Block producer reward';
-          }
-          break;
-        case 'author_reward':
-          description = `Author reward: ${op.operation.hbd_payout}, ${op.operation.hive_payout}`;
-          break;
-        case 'comment_reward':
-          description = `Comment reward: ${op.operation.hbd_payout}, ${op.operation.hive_payout}`;
-          break;
-        case 'escrow_transfer':
-          description = `Escrow transfer: ${op.operation.amount}`;
-          break;
-        case 'escrow_release':
-          description = `Escrow release: ${op.operation.amount}`;
-          break;
-        case 'convert':
-          description = `Conversion request: ${op.operation.amount}`;
-          break;
-        case 'recurrent_transfer':
-          description = `Recurring transfer: ${op.operation.amount}`;
-          break;
-        default:
-          description = op.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      }
+            if (op.operation.vesting_shares && typeof op.operation.vesting_shares === 'string') {
+              const producerHiveAmount = await convertVestsToHive(op.operation.vesting_shares);
+              description = `Block producer reward: ${producerHiveAmount.toFixed(3)} HIVE`;
+            } else {
+              description = 'Block producer reward';
+            }
+            break;
+          case 'author_reward':
+            description = `Author reward: ${op.operation.hbd_payout}, ${op.operation.hive_payout}`;
+            break;
+          case 'comment_reward':
+            description = `Comment reward: ${op.operation.hbd_payout}, ${op.operation.hive_payout}`;
+            break;
+          case 'escrow_transfer':
+            description = `Escrow transfer: ${op.operation.amount}`;
+            break;
+          case 'escrow_release':
+            description = `Escrow release: ${op.operation.amount}`;
+            break;
+          case 'convert':
+            description = `Conversion request: ${op.operation.amount}`;
+            break;
+          case 'recurrent_transfer':
+            description = `Recurring transfer: ${op.operation.amount}`;
+            break;
+          default:
+            description = op.type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+        }
 
-      return {
-        ...op,
-        description
-      }
-    }));
+        return {
+          ...op,
+          description,
+        };
+      })
+    );
 
-    debugLog(`[WorkerBee getRecentOperations] Processed ${processedOperations.length} monetary operations for ${username}`);
+    debugLog(
+      `[WorkerBee getRecentOperations] Processed ${processedOperations.length} monetary operations for ${username}`
+    );
     return processedOperations;
   } catch (error) {
-    logError('Error fetching recent operations with WorkerBee', 'getRecentOperations', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching recent operations with WorkerBee',
+      'getRecentOperations',
+      error instanceof Error ? error : undefined
+    );
     return null;
   }
 }
@@ -938,31 +1062,37 @@ async function _calculateUserStats(username: string): Promise<{
 }> {
   try {
     debugLog(`[WorkerBee calculateUserStats] Calculating stats for: ${username}`);
-    
+
     // Fetch user's posts to calculate actual stats
-    const posts = await makeHiveApiCall('condenser_api', 'get_discussions_by_author_before_date', [
+    const posts = (await makeHiveApiCall('condenser_api', 'get_discussions_by_author_before_date', [
       username,
       '', // before date (empty for most recent)
       '', // before permlink (empty for most recent)
-      100 // limit to 100 posts for calculation
-    ]) as HivePost[];
-    
+      100, // limit to 100 posts for calculation
+    ])) as HivePost[];
+
     debugLog(`[WorkerBee calculateUserStats] Found ${posts.length} posts for ${username}`);
-    
+
     const totalVotes = posts.reduce((sum, post) => sum + (post.net_votes || 0), 0);
     const totalComments = posts.reduce((sum, post) => sum + (post.children || 0), 0);
-    
-    debugLog(`[WorkerBee calculateUserStats] Calculated stats for ${username}: ${totalComments} comments, ${totalVotes} votes`);
-    
+
+    debugLog(
+      `[WorkerBee calculateUserStats] Calculated stats for ${username}: ${totalComments} comments, ${totalVotes} votes`
+    );
+
     return {
       commentCount: totalComments,
-      voteCount: totalVotes
+      voteCount: totalVotes,
     };
   } catch (error) {
-    logError('Error calculating user stats', 'calculateUserStats', error instanceof Error ? error : undefined);
+    logError(
+      'Error calculating user stats',
+      'calculateUserStats',
+      error instanceof Error ? error : undefined
+    );
     return {
       commentCount: 0,
-      voteCount: 0
+      voteCount: 0,
     };
   }
 }
@@ -987,12 +1117,18 @@ export async function updateUserProfile(
   postingKey: string
 ): Promise<{ success: boolean; transactionId?: string; error?: string }> {
   try {
-    
     // Note: postingKey parameter is required for actual transaction signing
-    debugLog('Profile update for user:', username, 'with posting key:', postingKey ? 'provided' : 'missing');
+    debugLog(
+      'Profile update for user:',
+      username,
+      'with posting key:',
+      postingKey ? 'provided' : 'missing'
+    );
 
     // Get current account to preserve existing metadata
-    const account = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
+    const account = (await makeHiveApiCall('condenser_api', 'get_accounts', [
+      [username],
+    ])) as HiveAccount[];
     if (!account || account.length === 0) throw new Error('Account not found');
 
     const accountData = account[0];
@@ -1003,12 +1139,12 @@ export async function updateUserProfile(
     const updatedProfile = {
       ...currentProfile,
       ...profileData,
-      version: 2 // Increment version
+      version: 2, // Increment version
     };
 
     const updatedMetadata = {
       ...currentMetadata,
-      profile: updatedProfile
+      profile: updatedProfile,
     };
 
     // Create account update operation using Wax
@@ -1026,13 +1162,17 @@ export async function updateUserProfile(
     debugLog('Profile update operation prepared:', operation);
     // const client = await initializeWorkerBeeClient();
     // await client.broadcast(operation);
-    
+
     return { success: true, transactionId: 'broadcasted' };
   } catch (error) {
-    logError('Error updating user profile with WorkerBee', 'updateUserProfile', error instanceof Error ? error : undefined);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : String(error) 
+    logError(
+      'Error updating user profile with WorkerBee',
+      'updateUserProfile',
+      error instanceof Error ? error : undefined
+    );
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }

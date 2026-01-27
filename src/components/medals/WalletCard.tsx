@@ -1,11 +1,15 @@
-"use client";
+'use client';
 
-import React from "react";
-import { cn } from "@/lib/utils";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { PremiumBadge, getPremiumTier } from "./PremiumBadge";
-import { useMedalsBalance, useMedalsMarket, calculateHiveValue } from "@/lib/react-query/queries/useMedals";
+import React from 'react';
+import { cn } from '@/lib/utils/client';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/core/Card';
+import { Button } from '@/components/core/Button';
+import { PremiumBadge, getPremiumTier } from './PremiumBadge';
+import {
+  useMedalsBalance,
+  useMedalsMarket,
+  calculateHiveValue,
+} from '@/lib/react-query/queries/useMedals';
 import {
   Wallet,
   Lock,
@@ -14,7 +18,7 @@ import {
   RefreshCw,
   AlertCircle,
   Coins,
-} from "lucide-react";
+} from 'lucide-react';
 
 interface WalletCardProps {
   /** Hive account username */
@@ -33,9 +37,9 @@ interface WalletCardProps {
  * Format a token amount to 3 decimal places
  */
 function formatAmount(amount: string | number | undefined): string {
-  if (!amount) return "0.000";
-  const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  if (isNaN(num)) return "0.000";
+  if (!amount) return '0.000';
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return '0.000';
   return num.toFixed(3);
 }
 
@@ -51,8 +55,8 @@ interface StatProps {
 }
 
 const Stat: React.FC<StatProps> = ({ label, value, icon, subValue, className }) => (
-  <div className={cn("flex flex-col", className)}>
-    <span className="text-xs text-slate-500 flex items-center gap-1">
+  <div className={cn('flex flex-col', className)}>
+    <span className="flex items-center gap-1 text-xs text-slate-500">
       {icon}
       {label}
     </span>
@@ -65,27 +69,27 @@ const Stat: React.FC<StatProps> = ({ label, value, icon, subValue, className }) 
  * Loading skeleton for the wallet card
  */
 const WalletCardSkeleton: React.FC<{ compact?: boolean }> = ({ compact }) => (
-  <Card className={cn("w-full", compact ? "p-3" : "")}>
-    <CardHeader className={compact ? "p-0 pb-3" : ""}>
+  <Card className={cn('w-full', compact ? 'p-3' : '')}>
+    <CardHeader className={compact ? 'p-0 pb-3' : ''}>
       <div className="flex items-center justify-between">
-        <div className="h-6 w-32 bg-slate-200 rounded animate-pulse" />
-        <div className="h-6 w-20 bg-slate-200 rounded-full animate-pulse" />
+        <div className="h-6 w-32 animate-pulse rounded bg-slate-200" />
+        <div className="h-6 w-20 animate-pulse rounded-full bg-slate-200" />
       </div>
     </CardHeader>
-    <CardContent className={compact ? "p-0" : ""}>
+    <CardContent className={compact ? 'p-0' : ''}>
       <div className="grid grid-cols-2 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="space-y-2">
-            <div className="h-3 w-16 bg-slate-200 rounded animate-pulse" />
-            <div className="h-6 w-24 bg-slate-200 rounded animate-pulse" />
+            <div className="h-3 w-16 animate-pulse rounded bg-slate-200" />
+            <div className="h-6 w-24 animate-pulse rounded bg-slate-200" />
           </div>
         ))}
       </div>
     </CardContent>
     {!compact && (
       <CardFooter className="gap-2">
-        <div className="h-9 flex-1 bg-slate-200 rounded animate-pulse" />
-        <div className="h-9 flex-1 bg-slate-200 rounded animate-pulse" />
+        <div className="h-9 flex-1 animate-pulse rounded bg-slate-200" />
+        <div className="h-9 flex-1 animate-pulse rounded bg-slate-200" />
       </CardFooter>
     )}
   </Card>
@@ -94,20 +98,17 @@ const WalletCardSkeleton: React.FC<{ compact?: boolean }> = ({ compact }) => (
 /**
  * Error state component
  */
-const WalletCardError: React.FC<{ error: Error; onRetry: () => void }> = ({
-  error,
-  onRetry,
-}) => (
+const WalletCardError: React.FC<{ error: Error; onRetry: () => void }> = ({ error, onRetry }) => (
   <Card className="w-full">
     <CardContent className="py-8">
-      <div className="flex flex-col items-center text-center space-y-3">
+      <div className="flex flex-col items-center space-y-3 text-center">
         <AlertCircle className="h-10 w-10 text-red-400" />
         <div>
           <p className="font-medium text-slate-900">Failed to load wallet</p>
           <p className="text-sm text-slate-500">{error.message}</p>
         </div>
         <Button variant="outline" size="sm" onClick={onRetry}>
-          <RefreshCw className="h-4 w-4 mr-2" />
+          <RefreshCw className="mr-2 h-4 w-4" />
           Retry
         </Button>
       </div>
@@ -132,10 +133,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
     refetch: refetchBalance,
   } = useMedalsBalance(account);
 
-  const {
-    data: market,
-    isLoading: marketLoading,
-  } = useMedalsMarket();
+  const { data: market, isLoading: marketLoading } = useMedalsMarket();
 
   const isLoading = balanceLoading || marketLoading;
 
@@ -144,12 +142,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
   }
 
   if (balanceError) {
-    return (
-      <WalletCardError
-        error={balanceError as Error}
-        onRetry={() => refetchBalance()}
-      />
-    );
+    return <WalletCardError error={balanceError as Error} onRetry={() => refetchBalance()} />;
   }
 
   const liquid = formatAmount(balance?.liquid);
@@ -157,16 +150,16 @@ export const WalletCard: React.FC<WalletCardProps> = ({
   const total = formatAmount(balance?.total);
   const pendingUnstake = formatAmount(balance?.pendingUnstake);
   const hiveValue = calculateHiveValue(balance, market);
-  const stakedNum = parseFloat(balance?.staked || "0");
+  const stakedNum = parseFloat(balance?.staked || '0');
   const premiumTier = getPremiumTier(stakedNum);
-  const estimatedAPY = balance?.estimatedAPY || "0.0";
+  const estimatedAPY = balance?.estimatedAPY || '0.0';
 
   // Compact mode for sidebars
   if (compact) {
     return (
-      <Card className={cn("w-full", className)}>
+      <Card className={cn('w-full', className)}>
         <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-amber-500" />
               <span className="font-semibold text-slate-900">MEDALS</span>
@@ -175,41 +168,31 @@ export const WalletCard: React.FC<WalletCardProps> = ({
           </div>
 
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span className="text-sm text-slate-500">Total</span>
               <span className="font-semibold text-slate-900">{total}</span>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span className="text-sm text-slate-500">Liquid</span>
               <span className="text-slate-700">{liquid}</span>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span className="text-sm text-slate-500">Staked</span>
               <span className="text-slate-700">{staked}</span>
             </div>
-            <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between border-t border-slate-100 pt-2">
               <span className="text-sm text-slate-500">Value</span>
-              <span className="text-green-600 font-medium">{hiveValue} HIVE</span>
+              <span className="font-medium text-green-600">{hiveValue} HIVE</span>
             </div>
           </div>
 
-          <div className="flex gap-2 mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={onStakeClick}
-            >
-              <Lock className="h-3 w-3 mr-1" />
+          <div className="mt-4 flex gap-2">
+            <Button variant="outline" size="sm" className="flex-1" onClick={onStakeClick}>
+              <Lock className="mr-1 h-3 w-3" />
               Stake
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={onSendClick}
-            >
-              <ArrowUpRight className="h-3 w-3 mr-1" />
+            <Button variant="outline" size="sm" className="flex-1" onClick={onSendClick}>
+              <ArrowUpRight className="mr-1 h-3 w-3" />
               Send
             </Button>
           </div>
@@ -220,7 +203,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
 
   // Full mode
   return (
-    <Card className={cn("w-full", className)}>
+    <Card className={cn('w-full', className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-xl">
@@ -232,7 +215,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
       </CardHeader>
 
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <Stat
             label="Liquid Balance"
             value={liquid}
@@ -261,7 +244,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
         </div>
 
         {/* Total Balance Highlight */}
-        <div className="mt-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-amber-100">
+        <div className="mt-6 rounded-lg border border-amber-100 bg-gradient-to-r from-amber-50 to-yellow-50 p-4">
           <div className="flex items-center justify-between">
             <div>
               <span className="text-sm text-amber-700">Total Balance</span>
@@ -279,15 +262,20 @@ export const WalletCard: React.FC<WalletCardProps> = ({
         </div>
 
         {/* Delegations if present */}
-        {(parseFloat(balance?.delegatedIn || "0") > 0 || parseFloat(balance?.delegatedOut || "0") > 0) && (
-          <div className="mt-4 p-3 bg-slate-50 rounded-lg text-sm">
+        {(parseFloat(balance?.delegatedIn || '0') > 0 ||
+          parseFloat(balance?.delegatedOut || '0') > 0) && (
+          <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm">
             <div className="flex justify-between">
               <span className="text-slate-500">Delegated In:</span>
-              <span className="font-medium text-green-600">+{formatAmount(balance?.delegatedIn)}</span>
+              <span className="font-medium text-green-600">
+                +{formatAmount(balance?.delegatedIn)}
+              </span>
             </div>
-            <div className="flex justify-between mt-1">
+            <div className="mt-1 flex justify-between">
               <span className="text-slate-500">Delegated Out:</span>
-              <span className="font-medium text-red-600">-{formatAmount(balance?.delegatedOut)}</span>
+              <span className="font-medium text-red-600">
+                -{formatAmount(balance?.delegatedOut)}
+              </span>
             </div>
           </div>
         )}
@@ -295,11 +283,11 @@ export const WalletCard: React.FC<WalletCardProps> = ({
 
       <CardFooter className="gap-3">
         <Button className="flex-1" onClick={onStakeClick}>
-          <Lock className="h-4 w-4 mr-2" />
+          <Lock className="mr-2 h-4 w-4" />
           Stake / Unstake
         </Button>
         <Button variant="outline" className="flex-1" onClick={onSendClick}>
-          <ArrowUpRight className="h-4 w-4 mr-2" />
+          <ArrowUpRight className="mr-2 h-4 w-4" />
           Send MEDALS
         </Button>
       </CardFooter>

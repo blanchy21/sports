@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { MainLayout } from '@/components/layout/MainLayout';
 import {
   Wallet,
   ArrowUpRight,
@@ -23,28 +23,28 @@ import {
   Users,
   Gift,
   Shield,
-  CheckCircle2
-} from "lucide-react";
-import { PotentialEarningsWidget } from "@/components/PotentialEarningsWidget";
-import Link from "next/link";
+  CheckCircle2,
+} from 'lucide-react';
+import { PotentialEarningsWidget } from '@/components/widgets/PotentialEarningsWidget';
+import Link from 'next/link';
 import {
   WalletCard as MedalsWalletCard,
   StakingPanel,
   MarketInfo,
   TransferModal,
-} from "@/components/medals";
-import { Button } from "@/components/ui/Button";
-import { useAuth } from "@/contexts/AuthContext";
-import { usePriceContext } from "@/contexts/PriceContext";
-import { 
-  formatUSD, 
-  formatCrypto, 
+} from '@/components/medals';
+import { Button } from '@/components/core/Button';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePriceContext } from '@/contexts/PriceContext';
+import {
+  formatUSD,
+  formatCrypto,
   formatPercentage,
   formatLargeNumber,
   calculateUSDValue,
-  formatTime
-} from "@/lib/utils";
-import { useRouter } from "next/navigation";
+  formatTime,
+} from '@/lib/utils/client';
+import { useRouter } from 'next/navigation';
 
 interface TransactionOperation {
   id: number;
@@ -57,8 +57,24 @@ interface TransactionOperation {
 }
 
 export default function WalletPage() {
-  const { user, isAuthenticated, authType, refreshHiveAccount, hiveUser, isLoading: isAuthLoading } = useAuth();
-  const { bitcoinPrice, ethereumPrice, hivePrice, hbdPrice, isLoading: pricesLoading, error: priceError, lastUpdated, refreshPrices } = usePriceContext();
+  const {
+    user,
+    isAuthenticated,
+    authType,
+    refreshHiveAccount,
+    hiveUser,
+    isLoading: isAuthLoading,
+  } = useAuth();
+  const {
+    bitcoinPrice,
+    ethereumPrice,
+    hivePrice,
+    hbdPrice,
+    isLoading: pricesLoading,
+    error: priceError,
+    lastUpdated,
+    refreshPrices,
+  } = usePriceContext();
   const router = useRouter();
   const [showBalances, setShowBalances] = useState(true);
   const [transactions, setTransactions] = useState<TransactionOperation[]>([]);
@@ -74,14 +90,14 @@ export default function WalletPage() {
   // Function to fetch transaction history
   const fetchTransactions = useCallback(async () => {
     if (!user?.username) return;
-    
+
     setTransactionsLoading(true);
     setTransactionsError(null);
-    
+
     try {
-            const response = await fetch(`/api/hive/account/history?username=${user.username}&limit=500`);
+      const response = await fetch(`/api/hive/account/history?username=${user.username}&limit=500`);
       const data = await response.json();
-      
+
       if (data.success) {
         setTransactions(data.operations || []);
       } else {
@@ -98,13 +114,13 @@ export default function WalletPage() {
   // Redirect only if not authenticated at all (wait for auth to load first)
   useEffect(() => {
     if (!isAuthLoading && !isAuthenticated) {
-      router.push("/auth");
+      router.push('/auth');
     }
   }, [isAuthenticated, isAuthLoading, router]);
 
   // Fetch transactions when user is available
   useEffect(() => {
-    if (user?.username && isAuthenticated && authType === "hive") {
+    if (user?.username && isAuthenticated && authType === 'hive') {
       fetchTransactions();
     }
   }, [user?.username, isAuthenticated, authType, fetchTransactions]);
@@ -119,7 +135,7 @@ export default function WalletPage() {
       await refreshHiveAccount();
       setLastAccountRefresh(new Date());
     } catch (error) {
-      console.error("Error refreshing Hive account data:", error);
+      console.error('Error refreshing Hive account data:', error);
     } finally {
       setIsRefreshingAccount(false);
     }
@@ -132,7 +148,7 @@ export default function WalletPage() {
 
   // Initial refresh on mount and automatic refresh interval
   useEffect(() => {
-    if (!isAuthenticated || authType !== "hive" || !hiveUser?.username) {
+    if (!isAuthenticated || authType !== 'hive' || !hiveUser?.username) {
       // Clear interval if user logs out or is not authenticated
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
@@ -210,7 +226,7 @@ export default function WalletPage() {
       timeZone: 'UTC',
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -218,10 +234,10 @@ export default function WalletPage() {
   if (isAuthLoading) {
     return (
       <MainLayout showRightSidebar={false} className="max-w-none">
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex min-h-[400px] items-center justify-center">
           <div className="text-center">
-            <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Loading...</h2>
+            <Wallet className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <h2 className="mb-2 text-xl font-semibold">Loading...</h2>
             <p className="text-muted-foreground">Checking authentication status...</p>
           </div>
         </div>
@@ -230,17 +246,17 @@ export default function WalletPage() {
   }
 
   // Show soft user wallet view with upgrade incentives
-  if (authType === "soft" || authType !== "hive") {
+  if (authType === 'soft' || authType !== 'hive') {
     return (
       <MainLayout showRightSidebar={false} className="max-w-none">
         <div className="space-y-6">
           {/* Header */}
           <div>
-            <h1 className="text-3xl font-bold flex items-center space-x-3">
+            <h1 className="flex items-center space-x-3 text-3xl font-bold">
               <Wallet className="h-8 w-8 text-primary" />
               <span>Wallet</span>
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="mt-2 text-muted-foreground">
               Unlock earning potential by connecting your Hive wallet
             </p>
           </div>
@@ -249,154 +265,151 @@ export default function WalletPage() {
           <PotentialEarningsWidget className="max-w-2xl" />
 
           {/* Upgrade CTA Banner */}
-          <div className="bg-gradient-to-r from-primary via-bright-cobalt to-accent rounded-lg p-6 text-white">
+          <div className="rounded-lg bg-gradient-to-r from-primary via-bright-cobalt to-accent p-6 text-white">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                <h3 className="mb-2 flex items-center gap-2 text-2xl font-bold">
                   <Zap className="h-6 w-6" />
                   Start Earning Real Rewards
                 </h3>
-                <p className="text-white/90 mb-4 max-w-xl">
+                <p className="mb-4 max-w-xl text-white/90">
                   Connect your Hive wallet to unlock cryptocurrency rewards for your posts,
                   comments, and engagement. Your content could be earning you money!
                 </p>
                 <Link href="/auth">
                   <Button
                     variant="secondary"
-                    className="bg-white text-primary hover:bg-white/90 font-semibold"
+                    className="bg-white font-semibold text-primary hover:bg-white/90"
                   >
                     Connect Hive Wallet
                   </Button>
                 </Link>
               </div>
-              <div className="hidden md:block p-4 bg-white/10 rounded-lg">
+              <div className="hidden rounded-lg bg-white/10 p-4 md:block">
                 <Gift className="h-12 w-12" />
               </div>
             </div>
           </div>
 
           {/* Benefits Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {/* Earn HIVE */}
-            <div className="bg-card border rounded-lg p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-green-500/10 rounded-lg">
+            <div className="rounded-lg border bg-card p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="rounded-lg bg-green-500/10 p-2">
                   <DollarSign className="h-5 w-5 text-green-600" />
                 </div>
                 <h4 className="font-semibold">Earn HIVE & HBD</h4>
               </div>
               <p className="text-sm text-muted-foreground">
-                Get rewarded in cryptocurrency for every post and comment.
-                Popular content can earn significant rewards.
+                Get rewarded in cryptocurrency for every post and comment. Popular content can earn
+                significant rewards.
               </p>
             </div>
 
             {/* Curation Rewards */}
-            <div className="bg-card border rounded-lg p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-amber-500/10 rounded-lg">
+            <div className="rounded-lg border bg-card p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="rounded-lg bg-amber-500/10 p-2">
                   <Star className="h-5 w-5 text-amber-500" />
                 </div>
                 <h4 className="font-semibold">Curation Rewards</h4>
               </div>
               <p className="text-sm text-muted-foreground">
-                Earn rewards for discovering great content early.
-                Vote on posts you like and share in the rewards.
+                Earn rewards for discovering great content early. Vote on posts you like and share
+                in the rewards.
               </p>
             </div>
 
             {/* Unlimited Posts */}
-            <div className="bg-card border rounded-lg p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-blue-500/10 rounded-lg">
+            <div className="rounded-lg border bg-card p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="rounded-lg bg-blue-500/10 p-2">
                   <Activity className="h-5 w-5 text-blue-500" />
                 </div>
                 <h4 className="font-semibold">Unlimited Posts</h4>
               </div>
               <p className="text-sm text-muted-foreground">
-                No post limits. Share as much content as you want,
-                all stored permanently on the blockchain.
+                No post limits. Share as much content as you want, all stored permanently on the
+                blockchain.
               </p>
             </div>
 
             {/* Community Engagement */}
-            <div className="bg-card border rounded-lg p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-purple-500/10 rounded-lg">
+            <div className="rounded-lg border bg-card p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="rounded-lg bg-purple-500/10 p-2">
                   <Users className="h-5 w-5 text-purple-500" />
                 </div>
                 <h4 className="font-semibold">Full Engagement</h4>
               </div>
               <p className="text-sm text-muted-foreground">
-                Comment and vote on any post in the community.
-                Build your reputation and influence.
+                Comment and vote on any post in the community. Build your reputation and influence.
               </p>
             </div>
 
             {/* Decentralized */}
-            <div className="bg-card border rounded-lg p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-indigo-500/10 rounded-lg">
+            <div className="rounded-lg border bg-card p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="rounded-lg bg-indigo-500/10 p-2">
                   <Shield className="h-5 w-5 text-indigo-500" />
                 </div>
                 <h4 className="font-semibold">Own Your Content</h4>
               </div>
               <p className="text-sm text-muted-foreground">
-                Your posts live on the blockchain forever.
-                No one can delete or censor your content.
+                Your posts live on the blockchain forever. No one can delete or censor your content.
               </p>
             </div>
 
             {/* MEDALS Token */}
-            <div className="bg-card border rounded-lg p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-amber-500/10 rounded-lg">
+            <div className="rounded-lg border bg-card p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="rounded-lg bg-amber-500/10 p-2">
                   <Medal className="h-5 w-5 text-amber-500" />
                 </div>
                 <h4 className="font-semibold">MEDALS Token</h4>
               </div>
               <p className="text-sm text-muted-foreground">
-                Access exclusive MEDALS token rewards and staking.
-                The Sportsblock community token.
+                Access exclusive MEDALS token rewards and staking. The Sportsblock community token.
               </p>
             </div>
           </div>
 
           {/* How It Works */}
-          <div className="bg-card border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <div className="rounded-lg border bg-card p-6">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
               <Zap className="h-5 w-5 text-primary" />
               How Hive Rewards Work
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
                   1
                 </div>
                 <div>
-                  <h4 className="font-medium mb-1">Create Content</h4>
+                  <h4 className="mb-1 font-medium">Create Content</h4>
                   <p className="text-sm text-muted-foreground">
                     Post sports content, insights, and discussions to the community.
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
                   2
                 </div>
                 <div>
-                  <h4 className="font-medium mb-1">Get Upvoted</h4>
+                  <h4 className="mb-1 font-medium">Get Upvoted</h4>
                   <p className="text-sm text-muted-foreground">
                     Community members vote on your content over 7 days.
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
                   3
                 </div>
                 <div>
-                  <h4 className="font-medium mb-1">Earn Crypto</h4>
+                  <h4 className="mb-1 font-medium">Earn Crypto</h4>
                   <p className="text-sm text-muted-foreground">
                     After 7 days, rewards are paid out in HIVE and HBD.
                   </p>
@@ -406,36 +419,36 @@ export default function WalletPage() {
           </div>
 
           {/* Current Crypto Prices (Preview) */}
-          <div className="bg-card border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <div className="rounded-lg border bg-card p-6">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
               <TrendingUp className="h-5 w-5 text-primary" />
               Current Market Prices
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               {hivePrice && (
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <Coins className="h-6 w-6 mx-auto mb-2 text-accent" />
+                <div className="rounded-lg bg-muted/50 p-4 text-center">
+                  <Coins className="mx-auto mb-2 h-6 w-6 text-accent" />
                   <p className="text-sm text-muted-foreground">HIVE</p>
                   <p className="text-lg font-bold">{formatUSD(hivePrice)}</p>
                 </div>
               )}
               {hbdPrice && (
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <DollarSign className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <div className="rounded-lg bg-muted/50 p-4 text-center">
+                  <DollarSign className="mx-auto mb-2 h-6 w-6 text-primary" />
                   <p className="text-sm text-muted-foreground">HBD</p>
                   <p className="text-lg font-bold">{formatUSD(hbdPrice)}</p>
                 </div>
               )}
               {bitcoinPrice && (
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <Bitcoin className="h-6 w-6 mx-auto mb-2 text-amber-500" />
+                <div className="rounded-lg bg-muted/50 p-4 text-center">
+                  <Bitcoin className="mx-auto mb-2 h-6 w-6 text-amber-500" />
                   <p className="text-sm text-muted-foreground">Bitcoin</p>
                   <p className="text-lg font-bold">{formatUSD(bitcoinPrice)}</p>
                 </div>
               )}
               {ethereumPrice && (
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <Coins className="h-6 w-6 mx-auto mb-2 text-blue-500" />
+                <div className="rounded-lg bg-muted/50 p-4 text-center">
+                  <Coins className="mx-auto mb-2 h-6 w-6 text-blue-500" />
                   <p className="text-sm text-muted-foreground">Ethereum</p>
                   <p className="text-lg font-bold">{formatUSD(ethereumPrice)}</p>
                 </div>
@@ -444,9 +457,9 @@ export default function WalletPage() {
           </div>
 
           {/* Final CTA */}
-          <div className="text-center py-6">
-            <h3 className="text-xl font-semibold mb-2">Ready to start earning?</h3>
-            <p className="text-muted-foreground mb-4">
+          <div className="py-6 text-center">
+            <h3 className="mb-2 text-xl font-semibold">Ready to start earning?</h3>
+            <p className="mb-4 text-muted-foreground">
               Connect your Hive wallet and turn your sports knowledge into rewards.
             </p>
             <Link href="/auth">
@@ -467,10 +480,14 @@ export default function WalletPage() {
   }
 
   // Calculate USD values
-  const hiveUSDValue = user.liquidHiveBalance && hivePrice ? calculateUSDValue(user.liquidHiveBalance, hivePrice) : 0;
-  const hivePowerUSDValue = user.hivePower && hivePrice ? calculateUSDValue(user.hivePower, hivePrice) : 0;
-  const hbdUSDValue = user.liquidHbdBalance && hbdPrice ? calculateUSDValue(user.liquidHbdBalance, hbdPrice) : 0;
-  const savingsHbdUSDValue = user.savingsHbdBalance && hbdPrice ? calculateUSDValue(user.savingsHbdBalance, hbdPrice) : 0;
+  const hiveUSDValue =
+    user.liquidHiveBalance && hivePrice ? calculateUSDValue(user.liquidHiveBalance, hivePrice) : 0;
+  const hivePowerUSDValue =
+    user.hivePower && hivePrice ? calculateUSDValue(user.hivePower, hivePrice) : 0;
+  const hbdUSDValue =
+    user.liquidHbdBalance && hbdPrice ? calculateUSDValue(user.liquidHbdBalance, hbdPrice) : 0;
+  const savingsHbdUSDValue =
+    user.savingsHbdBalance && hbdPrice ? calculateUSDValue(user.savingsHbdBalance, hbdPrice) : 0;
   const totalWalletValue = hiveUSDValue + hivePowerUSDValue + hbdUSDValue + savingsHbdUSDValue;
 
   return (
@@ -479,17 +496,17 @@ export default function WalletPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold flex items-center space-x-3">
+            <h1 className="flex items-center space-x-3 text-3xl font-bold">
               <Wallet className="h-8 w-8 text-primary" />
               <span>Wallet</span>
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="mt-2 text-muted-foreground">
               Manage your Hive assets and track cryptocurrency prices
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowBalances(!showBalances)}
               className="flex items-center space-x-2"
             >
@@ -505,8 +522,8 @@ export default function WalletPage() {
               <RefreshCw className={`h-4 w-4 ${isRefreshingAccount ? 'animate-spin' : ''}`} />
               <span>{isRefreshingAccount ? 'Refreshing' : 'Refresh Balances'}</span>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={refreshPrices}
               disabled={pricesLoading}
               className="flex items-center space-x-2"
@@ -519,9 +536,9 @@ export default function WalletPage() {
 
         {/* Price Error Alert */}
         {priceError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4">
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <div className="h-2 w-2 rounded-full bg-red-500"></div>
               <p className="text-sm text-red-700">
                 Error loading cryptocurrency prices: {priceError}
               </p>
@@ -529,35 +546,34 @@ export default function WalletPage() {
           </div>
         )}
 
-
         {/* Total Portfolio Value */}
-        <div className="bg-gradient-to-r from-primary via-bright-cobalt to-accent rounded-lg p-6 text-white">
+        <div className="rounded-lg bg-gradient-to-r from-primary via-bright-cobalt to-accent p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold mb-2">Total Portfolio Value</h3>
+              <h3 className="mb-2 text-lg font-semibold">Total Portfolio Value</h3>
               <p className="text-4xl font-bold">
-                {showBalances ? (pricesLoading ? "Loading..." : formatUSD(totalWalletValue)) : "••••••"}
+                {showBalances
+                  ? pricesLoading
+                    ? 'Loading...'
+                    : formatUSD(totalWalletValue)
+                  : '••••••'}
               </p>
-              <div className="text-sm opacity-90 mt-2 space-y-1">
-                {lastUpdated && (
-                  <p>Prices updated {formatTime(lastUpdated)}</p>
-                )}
-                {lastAccountRefresh && (
-                  <p>Balances refreshed {formatTime(lastAccountRefresh)}</p>
-                )}
+              <div className="mt-2 space-y-1 text-sm opacity-90">
+                {lastUpdated && <p>Prices updated {formatTime(lastUpdated)}</p>}
+                {lastAccountRefresh && <p>Balances refreshed {formatTime(lastAccountRefresh)}</p>}
               </div>
             </div>
-            <div className="p-4 bg-white/10 rounded-lg">
+            <div className="rounded-lg bg-white/10 p-4">
               <BarChart3 className="h-8 w-8" />
             </div>
           </div>
         </div>
 
         {/* HIVE Row */}
-        <div className="bg-card border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="rounded-lg border bg-card p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-3 bg-accent/10 rounded-lg">
+              <div className="rounded-lg bg-accent/10 p-3">
                 <Coins className="h-6 w-6 text-accent" />
               </div>
               <div>
@@ -566,14 +582,12 @@ export default function WalletPage() {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold">
-                {hivePrice ? formatUSD(hivePrice) : "N/A"}
-              </p>
+              <p className="text-2xl font-bold">{hivePrice ? formatUSD(hivePrice) : 'N/A'}</p>
               <p className="text-sm text-muted-foreground">Current Price</p>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Liquid HIVE */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -581,12 +595,10 @@ export default function WalletPage() {
                 <p className="text-xs text-muted-foreground">Available</p>
               </div>
               <p className="text-2xl font-bold">
-                {showBalances ? formatCrypto(user.liquidHiveBalance || 0, 'HIVE', 3) : "••••"}
+                {showBalances ? formatCrypto(user.liquidHiveBalance || 0, 'HIVE', 3) : '••••'}
               </p>
               {hivePrice && showBalances && (
-                <p className="text-sm text-muted-foreground">
-                  {formatUSD(hiveUSDValue)}
-                </p>
+                <p className="text-sm text-muted-foreground">{formatUSD(hiveUSDValue)}</p>
               )}
             </div>
 
@@ -594,15 +606,15 @@ export default function WalletPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">Hive Power</p>
-                <p className="text-xs text-muted-foreground">Staked • {user.votingPower || 0}% VP</p>
+                <p className="text-xs text-muted-foreground">
+                  Staked • {user.votingPower || 0}% VP
+                </p>
               </div>
               <p className="text-2xl font-bold">
-                {showBalances ? formatCrypto(user.hivePower || 0, 'HP', 2) : "••••"}
+                {showBalances ? formatCrypto(user.hivePower || 0, 'HP', 2) : '••••'}
               </p>
               {hivePrice && showBalances && (
-                <p className="text-sm text-muted-foreground">
-                  {formatUSD(hivePowerUSDValue)}
-                </p>
+                <p className="text-sm text-muted-foreground">{formatUSD(hivePowerUSDValue)}</p>
               )}
               {showBalances && (
                 <p className="text-xs text-muted-foreground">
@@ -614,26 +626,27 @@ export default function WalletPage() {
         </div>
 
         {/* HBD Row */}
-        <div className="bg-card border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="rounded-lg border bg-card p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-3 bg-primary/10 rounded-lg">
+              <div className="rounded-lg bg-primary/10 p-3">
                 <DollarSign className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">HBD</h3>
-                <p className="text-sm text-muted-foreground">Hive Backed Dollar • {user.savingsApr ? formatPercentage(user.savingsApr, 1) : "N/A"} APR</p>
+                <p className="text-sm text-muted-foreground">
+                  Hive Backed Dollar •{' '}
+                  {user.savingsApr ? formatPercentage(user.savingsApr, 1) : 'N/A'} APR
+                </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold">
-                {hbdPrice ? formatUSD(hbdPrice) : "N/A"}
-              </p>
+              <p className="text-2xl font-bold">{hbdPrice ? formatUSD(hbdPrice) : 'N/A'}</p>
               <p className="text-sm text-muted-foreground">Current Price</p>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Liquid HBD */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -641,12 +654,10 @@ export default function WalletPage() {
                 <p className="text-xs text-muted-foreground">Available</p>
               </div>
               <p className="text-2xl font-bold">
-                {showBalances ? formatCrypto(user.liquidHbdBalance || 0, 'HBD', 2) : "••••"}
+                {showBalances ? formatCrypto(user.liquidHbdBalance || 0, 'HBD', 2) : '••••'}
               </p>
               {hbdPrice && showBalances && (
-                <p className="text-sm text-muted-foreground">
-                  {formatUSD(hbdUSDValue)}
-                </p>
+                <p className="text-sm text-muted-foreground">{formatUSD(hbdUSDValue)}</p>
               )}
             </div>
 
@@ -657,35 +668,33 @@ export default function WalletPage() {
                 <p className="text-xs text-muted-foreground">Earning Interest</p>
               </div>
               <p className="text-2xl font-bold">
-                {showBalances ? formatCrypto(user.savingsHbdBalance || 0, 'HBD', 2) : "••••"}
+                {showBalances ? formatCrypto(user.savingsHbdBalance || 0, 'HBD', 2) : '••••'}
               </p>
               {hbdPrice && showBalances && (
-                <p className="text-sm text-muted-foreground">
-                  {formatUSD(savingsHbdUSDValue)}
-                </p>
+                <p className="text-sm text-muted-foreground">{formatUSD(savingsHbdUSDValue)}</p>
               )}
             </div>
           </div>
         </div>
 
         {/* MEDALS Token Section */}
-        <div className="bg-card border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="rounded-lg border bg-card p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-3 bg-amber-500/10 rounded-lg">
+              <div className="rounded-lg bg-amber-500/10 p-3">
                 <Medal className="h-6 w-6 text-amber-500" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">MEDALS Token</h3>
-                <p className="text-sm text-muted-foreground">Sportsblock Platform Token • Hive Engine</p>
+                <p className="text-sm text-muted-foreground">
+                  Sportsblock Platform Token • Hive Engine
+                </p>
               </div>
             </div>
-            <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-              Preview
-            </div>
+            <div className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-600">Preview</div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* MEDALS Wallet Card */}
             <MedalsWalletCard
               account={user.username}
@@ -704,11 +713,11 @@ export default function WalletPage() {
         </div>
 
         {/* Crypto Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* Bitcoin */}
           {bitcoinPrice && (
-            <div className="bg-gradient-to-r from-primary to-accent rounded-lg p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
+            <div className="rounded-lg bg-gradient-to-r from-primary to-accent p-6 text-white">
+              <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Bitcoin className="h-8 w-8" />
                   <div>
@@ -730,8 +739,8 @@ export default function WalletPage() {
 
           {/* Ethereum */}
           {ethereumPrice && (
-            <div className="bg-gradient-to-r from-primary to-accent rounded-lg p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
+            <div className="rounded-lg bg-gradient-to-r from-primary to-accent p-6 text-white">
+              <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Coins className="h-8 w-8" />
                   <div>
@@ -753,74 +762,71 @@ export default function WalletPage() {
         </div>
 
         {/* Transaction History */}
-        <div className="bg-card border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold flex items-center">
-              <Activity className="h-5 w-5 mr-2" />
+        <div className="rounded-lg border bg-card p-6">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="flex items-center text-lg font-semibold">
+              <Activity className="mr-2 h-5 w-5" />
               Recent Monetary Transactions
             </h3>
             <div className="flex items-center space-x-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={fetchTransactions}
                 disabled={transactionsLoading}
               >
-                <RefreshCw className={`h-4 w-4 mr-1 ${transactionsLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`mr-1 h-4 w-4 ${transactionsLoading ? 'animate-spin' : ''}`}
+                />
                 Refresh
               </Button>
               <Button variant="outline" size="sm">
                 View All
-                <ArrowUpRight className="h-4 w-4 ml-1" />
+                <ArrowUpRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
           </div>
-          
+
           <div className="space-y-4">
             {transactionsLoading ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <RefreshCw className="h-8 w-8 mx-auto mb-4 animate-spin" />
+              <div className="py-12 text-center text-muted-foreground">
+                <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin" />
                 <p className="text-lg font-medium">Loading transactions...</p>
                 <p className="text-sm">Fetching your transaction history</p>
               </div>
             ) : transactionsError ? (
-              <div className="text-center py-12 text-red-500">
-                <Activity className="h-8 w-8 mx-auto mb-4 opacity-50" />
+              <div className="py-12 text-center text-red-500">
+                <Activity className="mx-auto mb-4 h-8 w-8 opacity-50" />
                 <p className="text-lg font-medium">Error loading transactions</p>
                 <p className="text-sm">{transactionsError}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={fetchTransactions}
-                  className="mt-4"
-                >
+                <Button variant="outline" size="sm" onClick={fetchTransactions} className="mt-4">
                   Try Again
                 </Button>
               </div>
             ) : transactions.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Activity className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <div className="py-12 text-center text-muted-foreground">
+                <Activity className="mx-auto mb-4 h-16 w-16 opacity-50" />
                 <p className="text-lg font-medium">No monetary transactions yet</p>
                 <p className="text-sm">Your monetary transaction history will appear here</p>
-                <p className="text-xs mt-2 opacity-75">
+                <p className="mt-2 text-xs opacity-75">
                   Shows transfers, rewards, payouts, and other monetary activities
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {transactions.map((transaction) => (
-                  <div 
+                  <div
                     key={transaction.id}
-                    className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border hover:bg-muted/70 transition-colors"
+                    className="flex items-center justify-between rounded-lg border bg-muted/50 p-4 transition-colors hover:bg-muted/70"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
+                      <div className="rounded-lg bg-primary/10 p-2">
                         {getTransactionIcon(transaction.type)}
                       </div>
                       <div>
-                        <p className="font-medium text-sm">{transaction.description}</p>
-                        <p className="text-xs text-muted-foreground flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
+                        <p className="text-sm font-medium">{transaction.description}</p>
+                        <p className="flex items-center text-xs text-muted-foreground">
+                          <Clock className="mr-1 h-3 w-3" />
                           {formatTransactionTime(transaction.timestamp)}
                         </p>
                       </div>
@@ -829,7 +835,7 @@ export default function WalletPage() {
                       <p className="text-xs text-muted-foreground">
                         Block #{transaction.blockNumber}
                       </p>
-                      <p className="text-xs text-muted-foreground font-mono">
+                      <p className="font-mono text-xs text-muted-foreground">
                         {transaction.transactionId.slice(0, 8)}...
                       </p>
                     </div>

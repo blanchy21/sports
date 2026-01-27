@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import React, { useCallback, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { BaseModal } from "@/components/ui/BaseModal";
-import { Button } from "@/components/ui/Button";
-import { useKeychainLogin } from "@/hooks/useKeychainLogin";
-import { CheckCircle, XCircle, ExternalLink, X, Loader2 } from "lucide-react";
+import React, { useCallback, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { BaseModal } from '@/components/core/BaseModal';
+import { Button } from '@/components/core/Button';
+import { useKeychainLogin } from '@/features/auth/hooks/useKeychainLogin';
+import { CheckCircle, XCircle, ExternalLink, X, Loader2 } from 'lucide-react';
 
 interface KeychainLoginModalProps {
   isOpen: boolean;
@@ -14,10 +14,7 @@ interface KeychainLoginModalProps {
   data?: Record<string, unknown> | null;
 }
 
-export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
-  isOpen,
-  onClose,
-}) => {
+export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -53,7 +50,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter" && hiveUsername.trim() && !isConnecting) {
+      if (e.key === 'Enter' && hiveUsername.trim() && !isConnecting) {
         performKeychainLogin();
       }
     },
@@ -62,7 +59,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
 
   const handleAlternativeLogin = useCallback(() => {
     onClose();
-    router.push("/auth");
+    router.push('/auth');
   }, [onClose, router]);
 
   const isLoginDisabled = !hiveUsername.trim() || isConnecting || !isAiohaReady;
@@ -76,16 +73,16 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
       className="overflow-hidden"
     >
       {/* Custom Header */}
-      <div className="flex items-center justify-between p-4 sm:p-6 border-b">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div className="flex items-center justify-between border-b p-4 sm:p-6">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Image
             src="/hive-keychain-logo.svg"
             alt="Hive Keychain"
             width={28}
             height={28}
-            className="rounded-md flex-shrink-0 sm:w-8 sm:h-8"
+            className="flex-shrink-0 rounded-md sm:h-8 sm:w-8"
           />
-          <h2 className="text-base sm:text-lg font-semibold text-foreground truncate">
+          <h2 className="truncate text-base font-semibold text-foreground sm:text-lg">
             Sign in with Keychain
           </h2>
         </div>
@@ -93,7 +90,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="h-8 w-8 p-0 flex-shrink-0"
+          className="h-8 w-8 flex-shrink-0 p-0"
           aria-label="Close modal"
         >
           <X className="h-4 w-4" />
@@ -101,27 +98,23 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
       </div>
 
       {/* Content */}
-      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="space-y-4 p-4 sm:space-y-6 sm:p-6">
         {/* Keychain Status */}
         <div className="flex items-center gap-2 text-sm">
           {isKeychainAvailable ? (
             <>
               <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-muted-foreground">
-                Hive Keychain extension detected
-              </span>
+              <span className="text-muted-foreground">Hive Keychain extension detected</span>
             </>
           ) : (
             <>
               <XCircle className="h-4 w-4 text-destructive" />
-              <span className="text-muted-foreground">
-                Hive Keychain not detected
-              </span>
+              <span className="text-muted-foreground">Hive Keychain not detected</span>
               <a
                 href="https://hive-keychain.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline inline-flex items-center gap-1"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
               >
                 Install
                 <ExternalLink className="h-3 w-3" />
@@ -132,10 +125,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
 
         {/* Username Input */}
         <div className="space-y-2">
-          <label
-            htmlFor="hive-username"
-            className="block text-sm font-medium text-foreground"
-          >
+          <label htmlFor="hive-username" className="block text-sm font-medium text-foreground">
             Hive Username
           </label>
           <input
@@ -146,7 +136,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
             onChange={(e) => setHiveUsername(e.target.value.toLowerCase())}
             onKeyDown={handleKeyDown}
             placeholder="Enter your Hive username"
-            className="w-full px-4 py-3 border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow"
+            className="w-full rounded-lg border bg-background px-4 py-3 text-foreground transition-shadow placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             disabled={isConnecting}
             autoComplete="username"
           />
@@ -154,9 +144,9 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
 
         {/* Error Message */}
         {errorMessage && (
-          <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-            <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-destructive flex-1">{errorMessage}</p>
+          <div className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+            <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive" />
+            <p className="flex-1 text-sm text-destructive">{errorMessage}</p>
             <Button
               variant="ghost"
               size="sm"
@@ -178,11 +168,11 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
         >
           {isConnecting ? (
             <>
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Connecting...
             </>
           ) : (
-            "Connect with Keychain"
+            'Connect with Keychain'
           )}
         </Button>
 
@@ -197,11 +187,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({
         </div>
 
         {/* Alternative Login */}
-        <Button
-          variant="outline"
-          onClick={handleAlternativeLogin}
-          className="w-full"
-        >
+        <Button variant="outline" onClick={handleAlternativeLogin} className="w-full">
           Alternative login methods
         </Button>
       </div>

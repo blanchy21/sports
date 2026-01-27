@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React, { useState, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
-import { useAuth } from "@/contexts/AuthContext";
+import React, { useState, useRef, useCallback } from 'react';
+import { Button } from '@/components/core/Button';
+import { Avatar } from '@/components/core/Avatar';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Image as ImageIcon,
   Smile,
@@ -14,20 +14,21 @@ import {
   Upload,
   Link as LinkIcon,
   Film,
-  Search
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { SPORT_CATEGORIES } from "@/types";
-import { SHORTS_CONFIG, createShortOperation, validateShortContent } from "@/lib/hive-workerbee/shorts";
-import { uploadImage } from "@/lib/hive/imageUpload";
-import { validateImageUrl } from "@/lib/utils/sanitize";
-import dynamic from "next/dynamic";
+  Search,
+} from 'lucide-react';
+import { cn } from '@/lib/utils/client';
+import { SPORT_CATEGORIES } from '@/types';
+import {
+  SHORTS_CONFIG,
+  createShortOperation,
+  validateShortContent,
+} from '@/lib/hive-workerbee/shorts';
+import { uploadImage } from '@/lib/hive/imageUpload';
+import { validateImageUrl } from '@/lib/utils/sanitize';
+import dynamic from 'next/dynamic';
 
 // Import emoji picker dynamically
-const EmojiPicker = dynamic(
-  () => import("emoji-picker-react"),
-  { ssr: false }
-);
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 // Tenor GIF result type
 interface TenorGif {
@@ -47,22 +48,22 @@ interface ComposeShortProps {
 
 export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
   const { user, authType, hiveUser } = useAuth();
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
-  const [sportCategory, setSportCategory] = useState("");
+  const [sportCategory, setSportCategory] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showSportPicker, setShowSportPicker] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState('');
   const [showImageInput, setShowImageInput] = useState(false);
-  const [imageInputMode, setImageInputMode] = useState<"upload" | "url">("upload");
+  const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   // GIF picker state
   const [gifs, setGifs] = useState<string[]>([]);
   const [showGifPicker, setShowGifPicker] = useState(false);
-  const [gifSearchQuery, setGifSearchQuery] = useState("");
+  const [gifSearchQuery, setGifSearchQuery] = useState('');
   const [gifResults, setGifResults] = useState<TenorGif[]>([]);
   const [isLoadingGifs, setIsLoadingGifs] = useState(false);
   const [gifError, setGifError] = useState<string | null>(null);
@@ -79,9 +80,9 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
 
   // Character count color based on remaining
   const getCharCountColor = () => {
-    if (remainingChars < 0) return "text-red-500";
-    if (remainingChars <= 20) return "text-yellow-500";
-    return "text-muted-foreground";
+    if (remainingChars < 0) return 'text-red-500';
+    if (remainingChars <= 20) return 'text-yellow-500';
+    return 'text-muted-foreground';
   };
 
   // Circular progress indicator values
@@ -95,7 +96,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       const start = textarea.selectionStart;
       const newContent = content.slice(0, start) + emojiData.emoji + content.slice(start);
       setContent(newContent);
-      
+
       // Move cursor after emoji
       setTimeout(() => {
         textarea.focus();
@@ -113,12 +114,12 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     // Validate the URL
     const validation = validateImageUrl(imageUrl.trim());
     if (!validation.valid) {
-      setUploadError(validation.error || "Invalid image URL");
+      setUploadError(validation.error || 'Invalid image URL');
       return;
     }
 
     setImages([...images, validation.url!]);
-    setImageUrl("");
+    setImageUrl('');
     setUploadError(null);
   };
 
@@ -126,14 +127,14 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith("image/")) {
-      setUploadError("Please select an image file");
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please select an image file');
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setUploadError("Image must be less than 5MB");
+      setUploadError('Image must be less than 5MB');
       return;
     }
 
@@ -147,14 +148,14 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
         setImages([...images, result.url]);
         setUploadError(null);
       } else {
-        throw new Error(result.error || "Upload failed");
+        throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
-      console.error("Image upload error:", error);
+      console.error('Image upload error:', error);
       setUploadError(
         error instanceof Error
           ? error.message
-          : "Failed to upload image. Please try again or use a URL."
+          : 'Failed to upload image. Please try again or use a URL.'
       );
     } finally {
       setIsUploadingImage(false);
@@ -181,18 +182,18 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to search GIFs");
+        throw new Error('Failed to search GIFs');
       }
 
       const data = await response.json();
       if (data.success) {
         setGifResults(data.data || []);
       } else {
-        throw new Error(data.error || "Failed to search GIFs");
+        throw new Error(data.error || 'Failed to search GIFs');
       }
     } catch (error) {
-      console.error("GIF search error:", error);
-      setGifError("Failed to load GIFs. Please try again.");
+      console.error('GIF search error:', error);
+      setGifError('Failed to load GIFs. Please try again.');
       setGifResults([]);
     } finally {
       setIsLoadingGifs(false);
@@ -208,18 +209,18 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       const response = await fetch('/api/tenor?type=featured&limit=20');
 
       if (!response.ok) {
-        throw new Error("Failed to load trending GIFs");
+        throw new Error('Failed to load trending GIFs');
       }
 
       const data = await response.json();
       if (data.success) {
         setGifResults(data.data || []);
       } else {
-        throw new Error(data.error || "Failed to load trending GIFs");
+        throw new Error(data.error || 'Failed to load trending GIFs');
       }
     } catch (error) {
-      console.error("Trending GIF error:", error);
-      setGifError("Failed to load GIFs. Please try again.");
+      console.error('Trending GIF error:', error);
+      setGifError('Failed to load GIFs. Please try again.');
     } finally {
       setIsLoadingGifs(false);
     }
@@ -230,7 +231,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     if (gifUrl) {
       setGifs([...gifs, gifUrl]);
       setShowGifPicker(false);
-      setGifSearchQuery("");
+      setGifSearchQuery('');
       setGifResults([]);
     }
   };
@@ -241,13 +242,13 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
 
   const handlePublish = useCallback(async () => {
     if (!user || !hiveUser?.username) {
-      onError?.("Please connect with Hive to post shorts");
+      onError?.('Please connect with Hive to post shorts');
       return;
     }
 
     const validation = validateShortContent(content);
     if (!validation.isValid) {
-      onError?.(validation.errors.join(", "));
+      onError?.(validation.errors.join(', '));
       return;
     }
 
@@ -264,34 +265,33 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       });
 
       // Import aioha for broadcasting
-      const { aioha } = await import("@/lib/aioha/config");
-      
+      const { aioha } = await import('@/lib/aioha/config');
+
       // Type assertion for Aioha instance
-      const aiohaInstance = aioha as { signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown> } | null;
-      
+      const aiohaInstance = aioha as {
+        signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
+      } | null;
+
       if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
-        throw new Error("Hive authentication not available. Please reconnect.");
+        throw new Error('Hive authentication not available. Please reconnect.');
       }
 
       // Broadcast the transaction
-      const result = await aiohaInstance.signAndBroadcastTx(
-        [['comment', operation]],
-        'posting'
-      );
+      const result = await aiohaInstance.signAndBroadcastTx([['comment', operation]], 'posting');
 
       if (!result || (result as { error?: string }).error) {
-        throw new Error((result as { error?: string }).error || "Failed to broadcast");
+        throw new Error((result as { error?: string }).error || 'Failed to broadcast');
       }
 
       // Success - clear form
-      setContent("");
+      setContent('');
       setImages([]);
       setGifs([]);
-      setSportCategory("");
+      setSportCategory('');
       onSuccess?.();
     } catch (error) {
-      console.error("Error publishing short:", error);
-      onError?.(error instanceof Error ? error.message : "Failed to publish short");
+      console.error('Error publishing short:', error);
+      onError?.(error instanceof Error ? error.message : 'Failed to publish short');
     } finally {
       setIsPublishing(false);
     }
@@ -322,10 +322,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       }
 
       // Close GIF picker
-      if (
-        showGifPicker &&
-        !target.closest('[data-gif-picker]')
-      ) {
+      if (showGifPicker && !target.closest('[data-gif-picker]')) {
         setShowGifPicker(false);
         // Clear debounce timeout when closing picker
         if (gifSearchTimeoutRef.current) {
@@ -347,37 +344,32 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     }
   }, [content]);
 
-  const canPublish = 
-    content.trim().length > 0 && 
-    remainingChars >= 0 && 
-    authType === "hive" && 
-    !isPublishing;
+  const canPublish =
+    content.trim().length > 0 && remainingChars >= 0 && authType === 'hive' && !isPublishing;
 
   if (!user) {
     return (
-      <div className="bg-card border rounded-xl p-6 text-center">
-        <p className="text-muted-foreground">
-          Sign in to post shorts
-        </p>
+      <div className="rounded-xl border bg-card p-6 text-center">
+        <p className="text-muted-foreground">Sign in to post shorts</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-card border rounded-xl">
+    <div className="rounded-xl border bg-card">
       <div className="p-4">
         <div className="flex gap-3">
           {/* Avatar */}
           <Avatar
             src={user.avatar}
-            fallback={user.username || "?"}
-            alt={user.displayName || user.username || "User"}
+            fallback={user.username || '?'}
+            alt={user.displayName || user.username || 'User'}
             size="md"
             className="flex-shrink-0"
           />
 
           {/* Content area */}
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             {/* Textarea */}
             <textarea
               ref={textareaRef}
@@ -385,33 +377,30 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
               onChange={(e) => setContent(e.target.value)}
               placeholder="What's happening in sports?"
               className={cn(
-                "w-full bg-transparent border-none outline-none resize-none",
-                "text-lg placeholder:text-muted-foreground/60",
-                "min-h-[60px] max-h-[200px]"
+                'w-full resize-none border-none bg-transparent outline-none',
+                'text-lg placeholder:text-muted-foreground/60',
+                'max-h-[200px] min-h-[60px]'
               )}
               disabled={isPublishing}
             />
 
             {/* Image previews */}
             {images.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {images.map((img, index) => (
-                  <div
-                    key={index}
-                    className="relative group rounded-lg overflow-hidden border"
-                  >
+                  <div key={index} className="group relative overflow-hidden rounded-lg border">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={img}
                       alt={`Attached ${index + 1}`}
-                      className="w-20 h-20 object-cover"
+                      className="h-20 w-20 object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/placeholder-image.png';
                       }}
                     />
                     <button
                       onClick={() => handleRemoveImage(index)}
-                      className="absolute top-1 right-1 p-1 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute right-1 top-1 rounded-full bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <X className="h-3 w-3 text-white" />
                     </button>
@@ -422,24 +411,20 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
 
             {/* GIF previews */}
             {gifs.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {gifs.map((gif, index) => (
                   <div
                     key={index}
-                    className="relative group rounded-lg overflow-hidden border border-purple-500/30"
+                    className="group relative overflow-hidden rounded-lg border border-purple-500/30"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={gif}
-                      alt={`GIF ${index + 1}`}
-                      className="w-24 h-24 object-cover"
-                    />
-                    <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-purple-600/80 rounded text-[10px] text-white font-medium">
+                    <img src={gif} alt={`GIF ${index + 1}`} className="h-24 w-24 object-cover" />
+                    <div className="absolute left-1 top-1 rounded bg-purple-600/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
                       GIF
                     </div>
                     <button
                       onClick={() => handleRemoveGif(index)}
-                      className="absolute top-1 right-1 p-1 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute right-1 top-1 rounded-full bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <X className="h-3 w-3 text-white" />
                     </button>
@@ -450,13 +435,13 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
 
             {/* Sport category badge */}
             {sportCategory && (
-              <div className="flex items-center gap-2 mt-3">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-sm">
+              <div className="mt-3 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-sm text-primary">
                   <MapPin className="h-3 w-3" />
-                  {SPORT_CATEGORIES.find(s => s.id === sportCategory)?.icon}{" "}
-                  {SPORT_CATEGORIES.find(s => s.id === sportCategory)?.name}
+                  {SPORT_CATEGORIES.find((s) => s.id === sportCategory)?.icon}{' '}
+                  {SPORT_CATEGORIES.find((s) => s.id === sportCategory)?.name}
                   <button
-                    onClick={() => setSportCategory("")}
+                    onClick={() => setSportCategory('')}
                     className="ml-1 hover:text-primary/70"
                   >
                     <X className="h-3 w-3" />
@@ -467,17 +452,17 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
 
             {/* Image input panel */}
             {showImageInput && (
-              <div className="mt-3 p-3 bg-muted/50 rounded-lg border">
+              <div className="mt-3 rounded-lg border bg-muted/50 p-3">
                 {/* Tab buttons */}
-                <div className="flex gap-1 mb-3">
+                <div className="mb-3 flex gap-1">
                   <button
                     type="button"
-                    onClick={() => setImageInputMode("upload")}
+                    onClick={() => setImageInputMode('upload')}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                      imageInputMode === "upload"
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted"
+                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                      imageInputMode === 'upload'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted'
                     )}
                   >
                     <Upload className="h-4 w-4" />
@@ -485,29 +470,33 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setImageInputMode("url")}
+                    onClick={() => setImageInputMode('url')}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                      imageInputMode === "url"
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted"
+                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                      imageInputMode === 'url'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted'
                     )}
                   >
                     <LinkIcon className="h-4 w-4" />
                     URL
                   </button>
                   <div className="flex-1" />
-                  <Button size="sm" variant="ghost" onClick={() => {
-                    setShowImageInput(false);
-                    setUploadError(null);
-                    setImageUrl("");
-                  }}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowImageInput(false);
+                      setUploadError(null);
+                      setImageUrl('');
+                    }}
+                  >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
 
                 {/* Upload mode */}
-                {imageInputMode === "upload" && (
+                {imageInputMode === 'upload' && (
                   <div className="space-y-2">
                     <input
                       ref={fileInputRef}
@@ -517,7 +506,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) handleFileUpload(file);
-                        e.target.value = "";
+                        e.target.value = '';
                       }}
                     />
                     <button
@@ -525,11 +514,11 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploadingImage}
                       className={cn(
-                        "w-full flex flex-col items-center justify-center gap-2 p-4",
-                        "border-2 border-dashed border-muted-foreground/30 rounded-lg",
-                        "hover:border-primary/50 hover:bg-primary/5 transition-colors",
-                        "text-muted-foreground",
-                        isUploadingImage && "opacity-50 cursor-not-allowed"
+                        'flex w-full flex-col items-center justify-center gap-2 p-4',
+                        'rounded-lg border-2 border-dashed border-muted-foreground/30',
+                        'transition-colors hover:border-primary/50 hover:bg-primary/5',
+                        'text-muted-foreground',
+                        isUploadingImage && 'cursor-not-allowed opacity-50'
                       )}
                     >
                       {isUploadingImage ? (
@@ -549,14 +538,14 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                 )}
 
                 {/* URL mode */}
-                {imageInputMode === "url" && (
+                {imageInputMode === 'url' && (
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={imageUrl}
                       onChange={(e) => setImageUrl(e.target.value)}
                       placeholder="Paste image URL..."
-                      className="flex-1 px-3 py-2 bg-background rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary border"
+                      className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -571,9 +560,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                 )}
 
                 {/* Error message */}
-                {uploadError && (
-                  <p className="text-sm text-destructive mt-2">{uploadError}</p>
-                )}
+                {uploadError && <p className="mt-2 text-sm text-destructive">{uploadError}</p>}
               </div>
             )}
           </div>
@@ -581,7 +568,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
+      <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-3">
         <div className="flex items-center gap-1">
           {/* Image button */}
           <Button
@@ -608,10 +595,10 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             </Button>
 
             {showEmojiPicker && (
-              <div className="absolute top-full left-0 mt-2 z-50">
+              <div className="absolute left-0 top-full z-50 mt-2">
                 <EmojiPicker
                   onEmojiClick={handleEmojiSelect}
-                  emojiStyle={"native" as unknown as import("emoji-picker-react").EmojiStyle}
+                  emojiStyle={'native' as unknown as import('emoji-picker-react').EmojiStyle}
                   lazyLoadEmojis={true}
                 />
               </div>
@@ -624,18 +611,18 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
               variant="ghost"
               size="sm"
               disabled
-              className="h-9 w-9 p-0 text-muted-foreground/50 cursor-not-allowed"
+              className="h-9 w-9 cursor-not-allowed p-0 text-muted-foreground/50"
               title="GIFs temporarily unavailable"
             >
               <Film className="h-5 w-5" />
             </Button>
 
             {showGifPicker && (
-              <div className="absolute top-full left-0 mt-2 z-50 bg-card border rounded-lg shadow-lg w-80 max-h-96 overflow-hidden">
+              <div className="absolute left-0 top-full z-50 mt-2 max-h-96 w-80 overflow-hidden rounded-lg border bg-card shadow-lg">
                 {/* Search input */}
-                <div className="p-2 border-b">
+                <div className="border-b p-2">
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <input
                       type="text"
                       value={gifSearchQuery}
@@ -658,24 +645,22 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                         }, 300);
                       }}
                       placeholder="Search GIFs..."
-                      className="w-full pl-8 pr-3 py-2 bg-muted rounded-md text-sm outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full rounded-md bg-muted py-2 pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
 
                 {/* GIF results */}
-                <div className="p-2 overflow-y-auto max-h-72">
+                <div className="max-h-72 overflow-y-auto p-2">
                   {isLoadingGifs ? (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                   ) : gifError ? (
-                    <div className="text-center py-8 text-sm text-muted-foreground">
-                      {gifError}
-                    </div>
+                    <div className="py-8 text-center text-sm text-muted-foreground">{gifError}</div>
                   ) : gifResults.length === 0 ? (
-                    <div className="text-center py-8 text-sm text-muted-foreground">
-                      {gifSearchQuery ? "No GIFs found" : "Search for GIFs"}
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      {gifSearchQuery ? 'No GIFs found' : 'Search for GIFs'}
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-1">
@@ -684,13 +669,13 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                           key={gif.id}
                           type="button"
                           onClick={() => handleGifSelect(gif)}
-                          className="relative aspect-square overflow-hidden rounded hover:opacity-80 transition-opacity"
+                          className="relative aspect-square overflow-hidden rounded transition-opacity hover:opacity-80"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={gif.media_formats.tinygif?.url || gif.media_formats.gif?.url}
                             alt={gif.title}
-                            className="w-full h-full object-cover"
+                            className="h-full w-full object-cover"
                             loading="lazy"
                           />
                         </button>
@@ -700,7 +685,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                 </div>
 
                 {/* Tenor attribution */}
-                <div className="px-2 py-1.5 border-t bg-muted/50 text-center">
+                <div className="border-t bg-muted/50 px-2 py-1.5 text-center">
                   <span className="text-[10px] text-muted-foreground">Powered by Tenor</span>
                 </div>
               </div>
@@ -720,7 +705,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             </Button>
 
             {showSportPicker && (
-              <div className="absolute top-full left-0 mt-2 z-50 bg-card border rounded-lg shadow-lg p-2 max-h-60 overflow-y-auto w-48">
+              <div className="absolute left-0 top-full z-50 mt-2 max-h-60 w-48 overflow-y-auto rounded-lg border bg-card p-2 shadow-lg">
                 {SPORT_CATEGORIES.map((sport) => (
                   <button
                     key={sport.id}
@@ -729,9 +714,9 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                       setShowSportPicker(false);
                     }}
                     className={cn(
-                      "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-left",
-                      "hover:bg-muted transition-colors",
-                      sportCategory === sport.id && "bg-primary/10 text-primary"
+                      'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm',
+                      'transition-colors hover:bg-muted',
+                      sportCategory === sport.id && 'bg-primary/10 text-primary'
                     )}
                   >
                     <span>{sport.icon}</span>
@@ -749,7 +734,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             {charCount > 0 && (
               <>
                 {/* Circular progress */}
-                <svg className="w-6 h-6 -rotate-90" viewBox="0 0 24 24">
+                <svg className="h-6 w-6 -rotate-90" viewBox="0 0 24 24">
                   <circle
                     cx="12"
                     cy="12"
@@ -770,16 +755,18 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                     strokeDashoffset={strokeDashoffset}
                     strokeLinecap="round"
                     className={cn(
-                      remainingChars < 0 ? "text-red-500" :
-                      remainingChars <= 20 ? "text-yellow-500" :
-                      "text-primary"
+                      remainingChars < 0
+                        ? 'text-red-500'
+                        : remainingChars <= 20
+                          ? 'text-yellow-500'
+                          : 'text-primary'
                     )}
                   />
                 </svg>
-                
+
                 {/* Show remaining chars when close to limit */}
                 {remainingChars <= 20 && (
-                  <span className={cn("text-sm font-medium", getCharCountColor())}>
+                  <span className={cn('text-sm font-medium', getCharCountColor())}>
                     {remainingChars}
                   </span>
                 )}
@@ -788,27 +775,22 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
           </div>
 
           {/* Divider */}
-          {charCount > 0 && (
-            <div className="w-px h-6 bg-border" />
-          )}
+          {charCount > 0 && <div className="h-6 w-px bg-border" />}
 
           {/* Post button */}
           <Button
             onClick={handlePublish}
             disabled={!canPublish}
-            className={cn(
-              "px-5 font-semibold",
-              authType !== "hive" && "opacity-50"
-            )}
+            className={cn('px-5 font-semibold', authType !== 'hive' && 'opacity-50')}
           >
             {isPublishing ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Posting...
               </>
             ) : (
               <>
-                <Send className="h-4 w-4 mr-2" />
+                <Send className="mr-2 h-4 w-4" />
                 Post
               </>
             )}
@@ -817,8 +799,8 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       </div>
 
       {/* Hive auth warning */}
-      {authType !== "hive" && (
-        <div className="px-4 py-2 bg-yellow-50 dark:bg-yellow-950/30 border-t border-yellow-200 dark:border-yellow-800">
+      {authType !== 'hive' && (
+        <div className="border-t border-yellow-200 bg-yellow-50 px-4 py-2 dark:border-yellow-800 dark:bg-yellow-950/30">
           <p className="text-xs text-yellow-700 dark:text-yellow-300">
             Connect with Hive Keychain to post shorts and earn rewards
           </p>

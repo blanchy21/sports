@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/core/Button';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { EmailAuthFormProps } from './types';
 import { useAuthForm } from './hooks/useAuthForm';
@@ -39,12 +39,8 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
   onSuccess,
   onError,
 }) => {
-  const {
-    formState,
-    updateField,
-    togglePasswordVisibility,
-    validateForm,
-  } = useAuthForm(isLoginMode);
+  const { formState, updateField, togglePasswordVisibility, validateForm } =
+    useAuthForm(isLoginMode);
 
   const { loginWithFirebase } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,10 +57,7 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
     try {
       if (isLoginMode) {
         // Sign in existing user
-        const authUser = await FirebaseAuth.signIn(
-          formState.email,
-          formState.password
-        );
+        const authUser = await FirebaseAuth.signIn(formState.email, formState.password);
         loginWithFirebase(authUser);
       } else {
         // Sign up new user
@@ -99,14 +92,16 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
 
   return (
     <div className="p-6">
-      <h3 className="text-lg font-semibold mb-2">
-        {isLoginMode ? "Login with Email" : "Join Sportsblock"}
+      <h3 className="mb-2 text-lg font-semibold">
+        {isLoginMode ? 'Login with Email' : 'Join Sportsblock'}
       </h3>
-      
+
       {/* Social Proof - only for signup */}
       {!isLoginMode && (
-        <div className="bg-accent/10 border border-accent/20 rounded-lg p-2 mb-4">
-          <p className="text-accent-foreground text-sm font-medium">🎉 47 new members joined this week</p>
+        <div className="mb-4 rounded-lg border border-accent/20 bg-accent/10 p-2">
+          <p className="text-sm font-medium text-accent-foreground">
+            🎉 47 new members joined this week
+          </p>
         </div>
       )}
 
@@ -116,23 +111,23 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
             type="email"
             value={formState.email}
             onChange={(e) => updateField('email', e.target.value)}
-            className="w-full px-3 py-2 border-0 border-b-2 border-gray-300 focus:border-primary focus:outline-none bg-transparent"
+            className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-3 py-2 focus:border-primary focus:outline-none"
             placeholder="Email or username"
           />
         </div>
 
         <div className="relative">
           <input
-            type={formState.showPassword ? "text" : "password"}
+            type={formState.showPassword ? 'text' : 'password'}
             value={formState.password}
             onChange={(e) => updateField('password', e.target.value)}
-            className="w-full px-3 py-2 border-0 border-b-2 border-gray-300 focus:border-primary focus:outline-none bg-transparent pr-10"
+            className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-3 py-2 pr-10 focus:border-primary focus:outline-none"
             placeholder="Password"
           />
           <button
             type="button"
             onClick={togglePasswordVisibility}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-2 top-1/2 -translate-y-1/2 transform text-gray-400 hover:text-gray-600"
           >
             {formState.showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -145,7 +140,7 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
               type="text"
               value={formState.username}
               onChange={(e) => updateField('username', e.target.value)}
-              className="w-full px-3 py-2 border-0 border-b-2 border-gray-300 focus:border-primary focus:outline-none bg-transparent"
+              className="w-full border-0 border-b-2 border-gray-300 bg-transparent px-3 py-2 focus:border-primary focus:outline-none"
               placeholder="Choose a username"
             />
           </div>
@@ -159,12 +154,18 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
                 type="checkbox"
                 checked={formState.acceptTerms}
                 onChange={(e) => updateField('acceptTerms', e.target.checked)}
-                className="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <span className="text-xs text-gray-600">
-                I have read and accept the{" "}
-                <a href="#" className="text-primary hover:underline">terms of service</a> and{" "}
-                <a href="#" className="text-primary hover:underline">privacy policy</a>.
+                I have read and accept the{' '}
+                <a href="#" className="text-primary hover:underline">
+                  terms of service
+                </a>{' '}
+                and{' '}
+                <a href="#" className="text-primary hover:underline">
+                  privacy policy
+                </a>
+                .
               </span>
             </label>
 
@@ -173,7 +174,7 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
                 type="checkbox"
                 checked={formState.subscribeNewsletter}
                 onChange={(e) => updateField('subscribeNewsletter', e.target.checked)}
-                className="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <span className="text-xs text-gray-600">
                 Optional: Subscribe to our newsletter for sports updates and earning tips.
@@ -181,7 +182,7 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
             </label>
 
             {/* reCAPTCHA placeholder */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 flex items-center justify-between">
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-2">
               <div className="flex items-center space-x-2">
                 <input type="checkbox" className="h-3 w-3" />
                 <span className="text-xs">I&apos;m not a robot</span>
@@ -189,9 +190,13 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
               <div className="flex items-center space-x-1 text-xs text-gray-500">
                 <span>Protected by reCAPTCHA</span>
                 <div className="flex space-x-1">
-                  <a href="#" className="text-accent hover:underline">Privacy</a>
+                  <a href="#" className="text-accent hover:underline">
+                    Privacy
+                  </a>
                   <span>•</span>
-                  <a href="#" className="text-accent hover:underline">Terms</a>
+                  <a href="#" className="text-accent hover:underline">
+                    Terms
+                  </a>
                 </div>
               </div>
             </div>
@@ -201,25 +206,24 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
         <Button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="w-full py-3 text-base font-semibold bg-primary hover:bg-primary/90"
+          className="w-full bg-primary py-3 text-base font-semibold hover:bg-primary/90"
         >
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {isLoginMode ? "Logging in..." : "Creating account..."}
+              {isLoginMode ? 'Logging in...' : 'Creating account...'}
             </>
+          ) : isLoginMode ? (
+            'LOGIN'
           ) : (
-            isLoginMode ? "LOGIN" : "SIGN UP"
+            'SIGN UP'
           )}
         </Button>
 
         <p className="text-center text-sm text-gray-600">
-          {isLoginMode ? "NO ACCOUNT? " : "ALREADY HAVE AN ACCOUNT? "}
-          <button 
-            onClick={onToggleMode}
-            className="text-primary hover:underline font-medium"
-          >
-            {isLoginMode ? "Create your free account now" : "Sign in instead"}
+          {isLoginMode ? 'NO ACCOUNT? ' : 'ALREADY HAVE AN ACCOUNT? '}
+          <button onClick={onToggleMode} className="font-medium text-primary hover:underline">
+            {isLoginMode ? 'Create your free account now' : 'Sign in instead'}
           </button>
         </p>
       </div>

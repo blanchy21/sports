@@ -1,37 +1,34 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { 
-  Activity, 
-  Database, 
-  AlertTriangle, 
-  CheckCircle, 
-  XCircle, 
+import { Card } from '@/components/core/Card';
+import { Button } from '@/components/core/Button';
+import { Badge } from '@/components/core/Badge';
+import {
+  Activity,
+  Database,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
   RefreshCw,
   BarChart3,
   Clock,
   TrendingUp,
   Server,
   Download,
-  Trash2
+  Trash2,
 } from 'lucide-react';
-import { 
-  getMonitoringStats, 
+import {
+  getMonitoringStats,
   clearMonitoringData,
-  exportMonitoringData
+  exportMonitoringData,
 } from '@/lib/hive-workerbee/monitoring';
-import { 
+import {
   getCacheStatistics as getCacheStats,
-  clearOptimizationCache as clearOptCache
+  clearOptimizationCache as clearOptCache,
 } from '@/lib/hive-workerbee/optimization';
-import { 
-  getHiveNodeHealthReport,
-  startHiveNodeHealthMonitoring
-} from '@/lib/hive-workerbee/api';
+import { getHiveNodeHealthReport, startHiveNodeHealthMonitoring } from '@/lib/hive-workerbee/api';
 import { LazyRealtimeFeed } from '@/components/lazy/LazyComponents';
 
 interface MonitoringData {
@@ -96,7 +93,11 @@ interface NodeHealthData {
 
 export default function MonitoringPage() {
   const [monitoringData, setMonitoringData] = useState<MonitoringData | null>(null);
-  const [cacheStats, setCacheStats] = useState<{ size: number; maxSize: number; hitRate: number } | null>(null);
+  const [cacheStats, setCacheStats] = useState<{
+    size: number;
+    maxSize: number;
+    hitRate: number;
+  } | null>(null);
   const [nodeHealthData, setNodeHealthData] = useState<NodeHealthData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -105,12 +106,12 @@ export default function MonitoringPage() {
   const fetchMonitoringData = async () => {
     try {
       setIsLoading(true);
-      
+
       // Fetch all monitoring data
       const [monitoring, cache, nodeHealth] = await Promise.all([
         getMonitoringStats(),
         getCacheStats(),
-        Promise.resolve(getHiveNodeHealthReport())
+        Promise.resolve(getHiveNodeHealthReport()),
       ]);
 
       setMonitoringData(monitoring);
@@ -126,12 +127,12 @@ export default function MonitoringPage() {
 
   useEffect(() => {
     setIsClient(true);
-    
+
     // Start node health monitoring
     startHiveNodeHealthMonitoring();
-    
+
     fetchMonitoringData();
-    
+
     // Auto-refresh every 30 seconds
     const interval = setInterval(fetchMonitoringData, 30000);
     return () => clearInterval(interval);
@@ -139,10 +140,7 @@ export default function MonitoringPage() {
 
   const handleClearData = async () => {
     try {
-      await Promise.all([
-        clearMonitoringData(),
-        clearOptCache()
-      ]);
+      await Promise.all([clearMonitoringData(), clearOptCache()]);
       await fetchMonitoringData();
     } catch (error) {
       console.error('Error clearing data:', error);
@@ -195,8 +193,8 @@ export default function MonitoringPage() {
   if (isLoading && !monitoringData) {
     return (
       <MainLayout>
-        <div className="max-w-7xl mx-auto p-6">
-          <div className="flex items-center justify-center h-64">
+        <div className="mx-auto max-w-7xl p-6">
+          <div className="flex h-64 items-center justify-center">
             <RefreshCw className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-2 text-lg">Loading monitoring data...</span>
           </div>
@@ -207,33 +205,24 @@ export default function MonitoringPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6 p-6">
         <LazyRealtimeFeed className="shadow-sm" />
 
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">WorkerBee Monitoring Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="mt-1 text-muted-foreground">
               Real-time performance monitoring and optimization metrics
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <Button
-              onClick={fetchMonitoringData}
-              disabled={isLoading}
-              variant="outline"
-              size="sm"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            <Button onClick={fetchMonitoringData} disabled={isLoading} variant="outline" size="sm">
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button
-              onClick={handleExportData}
-              variant="outline"
-              size="sm"
-            >
-              <Download className="h-4 w-4 mr-2" />
+            <Button onClick={handleExportData} variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
             <Button
@@ -242,7 +231,7 @@ export default function MonitoringPage() {
               size="sm"
               className="text-red-600 hover:text-red-700"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="mr-2 h-4 w-4" />
               Clear Data
             </Button>
           </div>
@@ -258,9 +247,9 @@ export default function MonitoringPage() {
         {/* Health Status */}
         {monitoringData && (
           <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold flex items-center">
-                <Server className="h-5 w-5 mr-2" />
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="flex items-center text-xl font-semibold">
+                <Server className="mr-2 h-5 w-5" />
                 System Health
               </h2>
               <Badge className={getHealthStatusColor(monitoringData.health.status)}>
@@ -268,24 +257,28 @@ export default function MonitoringPage() {
                 <span className="ml-1 capitalize">{monitoringData.health.status}</span>
               </Badge>
             </div>
-            
+
             {monitoringData.health.issues.length > 0 && (
               <div className="mb-4">
-                <h3 className="font-medium text-red-600 mb-2">Issues:</h3>
-                <ul className="list-disc list-inside space-y-1">
+                <h3 className="mb-2 font-medium text-red-600">Issues:</h3>
+                <ul className="list-inside list-disc space-y-1">
                   {monitoringData.health.issues.map((issue, index) => (
-                    <li key={index} className="text-sm text-red-600">{issue}</li>
+                    <li key={index} className="text-sm text-red-600">
+                      {issue}
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
-            
+
             {monitoringData.health.recommendations.length > 0 && (
               <div>
-                <h3 className="font-medium text-blue-600 mb-2">Recommendations:</h3>
-                <ul className="list-disc list-inside space-y-1">
+                <h3 className="mb-2 font-medium text-blue-600">Recommendations:</h3>
+                <ul className="list-inside list-disc space-y-1">
                   {monitoringData.health.recommendations.map((rec, index) => (
-                    <li key={index} className="text-sm text-blue-600">{rec}</li>
+                    <li key={index} className="text-sm text-blue-600">
+                      {rec}
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -296,9 +289,9 @@ export default function MonitoringPage() {
         {/* Node Health Status */}
         {nodeHealthData && (
           <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold flex items-center">
-                <Activity className="h-5 w-5 mr-2" />
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="flex items-center text-xl font-semibold">
+                <Activity className="mr-2 h-5 w-5" />
                 Hive Node Health
               </h2>
               <div className="flex items-center space-x-4">
@@ -311,24 +304,30 @@ export default function MonitoringPage() {
                   <p className="text-xs text-muted-foreground">Unhealthy</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">{nodeHealthData.averageLatency.toFixed(0)}ms</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {nodeHealthData.averageLatency.toFixed(0)}ms
+                  </p>
                   <p className="text-xs text-muted-foreground">Avg Latency</p>
                 </div>
               </div>
             </div>
-            
+
             {/* Node Status List */}
             <div className="space-y-3">
               {nodeHealthData.nodeStatuses.map((node) => (
-                <div key={node.url} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div
+                  key={node.url}
+                  className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
+                >
                   <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${node.isHealthy ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <div
+                      className={`h-3 w-3 rounded-full ${node.isHealthy ? 'bg-green-500' : 'bg-red-500'}`}
+                    />
                     <div>
-                      <p className="font-medium text-sm">{node.url}</p>
+                      <p className="text-sm font-medium">{node.url}</p>
                       <p className="text-xs text-muted-foreground">
-                        Health Score: {node.healthScore.toFixed(0)}% | 
-                        Success Rate: {node.successRate.toFixed(1)}% | 
-                        Latency: {node.latency}ms
+                        Health Score: {node.healthScore.toFixed(0)}% | Success Rate:{' '}
+                        {node.successRate.toFixed(1)}% | Latency: {node.latency}ms
                       </p>
                     </div>
                   </div>
@@ -337,7 +336,7 @@ export default function MonitoringPage() {
                       {node.isHealthy ? 'Healthy' : 'Unhealthy'}
                     </Badge>
                     {node.lastError && (
-                      <p className="text-xs text-red-600 mt-1 truncate max-w-48">
+                      <p className="mt-1 max-w-48 truncate text-xs text-red-600">
                         {node.lastError}
                       </p>
                     )}
@@ -345,23 +344,23 @@ export default function MonitoringPage() {
                 </div>
               ))}
             </div>
-            
+
             {/* Best/Worst Node Info */}
             <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="p-3 bg-green-50 rounded-lg">
-                <h4 className="font-medium text-green-800 mb-1">Best Node</h4>
-                <p className="text-sm text-green-700 truncate">{nodeHealthData.bestNode}</p>
+              <div className="rounded-lg bg-green-50 p-3">
+                <h4 className="mb-1 font-medium text-green-800">Best Node</h4>
+                <p className="truncate text-sm text-green-700">{nodeHealthData.bestNode}</p>
               </div>
-              <div className="p-3 bg-red-50 rounded-lg">
-                <h4 className="font-medium text-red-800 mb-1">Worst Node</h4>
-                <p className="text-sm text-red-700 truncate">{nodeHealthData.worstNode}</p>
+              <div className="rounded-lg bg-red-50 p-3">
+                <h4 className="mb-1 font-medium text-red-800">Worst Node</h4>
+                <p className="truncate text-sm text-red-700">{nodeHealthData.worstNode}</p>
               </div>
             </div>
           </Card>
         )}
 
         {/* Performance Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Total Operations */}
           <Card className="p-6">
             <div className="flex items-center justify-between">
@@ -406,9 +405,7 @@ export default function MonitoringPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Cache Hit Rate</p>
-                <p className="text-2xl font-bold">
-                  {cacheStats?.hitRate || '0%'}
-                </p>
+                <p className="text-2xl font-bold">{cacheStats?.hitRate || '0%'}</p>
               </div>
               <Database className="h-8 w-8 text-blue-600" />
             </div>
@@ -418,16 +415,14 @@ export default function MonitoringPage() {
         {/* Error Statistics */}
         {monitoringData && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <AlertTriangle className="h-5 w-5 mr-2" />
+            <h2 className="mb-4 flex items-center text-xl font-semibold">
+              <AlertTriangle className="mr-2 h-5 w-5" />
               Error Statistics
             </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+
+            <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="text-center">
-                <p className="text-3xl font-bold text-red-600">
-                  {monitoringData.errors.total}
-                </p>
+                <p className="text-3xl font-bold text-red-600">{monitoringData.errors.total}</p>
                 <p className="text-sm text-muted-foreground">Total Errors</p>
               </div>
               <div className="text-center">
@@ -447,12 +442,17 @@ export default function MonitoringPage() {
             {/* Recent Errors */}
             {monitoringData.errors.recentErrors.length > 0 && (
               <div>
-                <h3 className="font-medium mb-3">Recent Errors:</h3>
+                <h3 className="mb-3 font-medium">Recent Errors:</h3>
                 <div className="space-y-2">
                   {monitoringData.errors.recentErrors.slice(0, 5).map((error) => (
-                    <div key={error.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                    <div
+                      key={error.id}
+                      className="flex items-center justify-between rounded-lg bg-red-50 p-3"
+                    >
                       <div className="flex items-center space-x-3">
-                        <Badge variant={error.severity === 'CRITICAL' ? 'destructive' : 'secondary'}>
+                        <Badge
+                          variant={error.severity === 'CRITICAL' ? 'destructive' : 'secondary'}
+                        >
                           {error.severity}
                         </Badge>
                         <span className="text-sm font-medium">{error.type}</span>
@@ -472,28 +472,22 @@ export default function MonitoringPage() {
         {/* Cache Statistics */}
         {cacheStats && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <Database className="h-5 w-5 mr-2" />
+            <h2 className="mb-4 flex items-center text-xl font-semibold">
+              <Database className="mr-2 h-5 w-5" />
               Cache Statistics
             </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="text-center">
-                <p className="text-3xl font-bold text-blue-600">
-                  {cacheStats.size}
-                </p>
+                <p className="text-3xl font-bold text-blue-600">{cacheStats.size}</p>
                 <p className="text-sm text-muted-foreground">Cache Size</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-purple-600">
-                  {cacheStats.maxSize}
-                </p>
+                <p className="text-3xl font-bold text-purple-600">{cacheStats.maxSize}</p>
                 <p className="text-sm text-muted-foreground">Max Size</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-green-600">
-                  {cacheStats.hitRate}
-                </p>
+                <p className="text-3xl font-bold text-green-600">{cacheStats.hitRate}</p>
                 <p className="text-sm text-muted-foreground">Hit Rate</p>
               </div>
             </div>
@@ -503,14 +497,17 @@ export default function MonitoringPage() {
         {/* Performance History */}
         {monitoringData && monitoringData.performance.slowOperations.length > 0 && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <Clock className="h-5 w-5 mr-2" />
+            <h2 className="mb-4 flex items-center text-xl font-semibold">
+              <Clock className="mr-2 h-5 w-5" />
               Slow Operations
             </h2>
-            
+
             <div className="space-y-2">
               {monitoringData.performance.slowOperations.slice(0, 10).map((op) => (
-                <div key={op.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                <div
+                  key={op.id}
+                  className="flex items-center justify-between rounded-lg bg-yellow-50 p-3"
+                >
                   <div className="flex items-center space-x-3">
                     <Badge variant={op.success ? 'default' : 'destructive'}>
                       {op.success ? 'Success' : 'Failed'}
@@ -518,9 +515,7 @@ export default function MonitoringPage() {
                     <span className="text-sm font-medium">{op.operation}</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className="text-sm text-muted-foreground">
-                      {op.duration}ms
-                    </span>
+                    <span className="text-sm text-muted-foreground">{op.duration}ms</span>
                     <span className="text-xs text-muted-foreground">
                       {new Date(op.timestamp).toLocaleString()}
                     </span>

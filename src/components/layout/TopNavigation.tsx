@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React, { useState, useRef } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import React, { useState, useRef } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   LayoutDashboard,
@@ -15,16 +15,23 @@ import {
   Search,
   X,
   Menu,
-  Newspaper
-} from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
-import { LazyAuthModal, LazySportsFilterPopup, LazyUpgradeFlow, LazyNotificationDropdown, LazySettingsDropdown, LazyLatestNewsDropdown } from "@/components/lazy/LazyComponents";
-import { UpgradePrompt } from "@/components/AccountBadge";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNotifications } from "@/contexts/NotificationContext";
-import { cn } from "@/lib/utils";
-import { fetchUserAccount } from "@/lib/hive-workerbee/account";
+  Newspaper,
+} from 'lucide-react';
+import { Button } from '@/components/core/Button';
+import { Avatar } from '@/components/core/Avatar';
+import {
+  LazyAuthModal,
+  LazySportsFilterPopup,
+  LazyUpgradeFlow,
+  LazyNotificationDropdown,
+  LazySettingsDropdown,
+  LazyLatestNewsDropdown,
+} from '@/components/lazy/LazyComponents';
+import { UpgradePrompt } from '@/components/user/AccountBadge';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNotifications } from '@/contexts/NotificationContext';
+import { cn } from '@/lib/utils/client';
+import { fetchUserAccount } from '@/lib/hive-workerbee/account';
 
 type SearchResult = {
   username: string;
@@ -46,9 +53,9 @@ export const TopNavigation: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUpgradeFlow, setShowUpgradeFlow] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
-  const [selectedSport, setSelectedSport] = useState<string>("");
+  const [selectedSport, setSelectedSport] = useState<string>('');
   const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -88,8 +95,8 @@ export const TopNavigation: React.FC = () => {
             fetchUserAccount(searchQuery).catch(() => null),
             // Soft user search via API
             fetch(`/api/soft/users?search=${encodeURIComponent(searchQuery)}`)
-              .then(r => r.ok ? r.json() : { users: [] })
-              .catch(() => ({ users: [] }))
+              .then((r) => (r.ok ? r.json() : { users: [] }))
+              .catch(() => ({ users: [] })),
           ]);
 
           // Add Hive user if found
@@ -108,23 +115,23 @@ export const TopNavigation: React.FC = () => {
 
           // Add soft users if found
           if (softResult.status === 'fulfilled' && softResult.value?.users?.length > 0) {
-            softResult.value.users.forEach((user: {
-              username: string;
-              displayName: string;
-              avatarUrl?: string;
-            }) => {
-              // Don't add if we already have this user from Hive
-              if (!results.some(r => r.username.toLowerCase() === user.username.toLowerCase())) {
-                results.push({
-                  username: user.username,
-                  displayName: user.displayName || user.username,
-                  avatar: user.avatarUrl,
-                  followers: 0,
-                  following: 0,
-                  isHiveUser: false,
-                });
+            softResult.value.users.forEach(
+              (user: { username: string; displayName: string; avatarUrl?: string }) => {
+                // Don't add if we already have this user from Hive
+                if (
+                  !results.some((r) => r.username.toLowerCase() === user.username.toLowerCase())
+                ) {
+                  results.push({
+                    username: user.username,
+                    displayName: user.displayName || user.username,
+                    avatar: user.avatarUrl,
+                    followers: 0,
+                    following: 0,
+                    isHiveUser: false,
+                  });
+                }
               }
-            });
+            );
           }
 
           setSearchResults(results);
@@ -145,7 +152,7 @@ export const TopNavigation: React.FC = () => {
   const handleUserClick = (username: string) => {
     window.location.href = `/user/${username}`;
     setShowSearch(false);
-    setSearchQuery("");
+    setSearchQuery('');
   };
 
   return (
@@ -157,7 +164,7 @@ export const TopNavigation: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="lg:hidden text-white/90 hover:bg-white/20 hover:text-white w-10 h-10 mr-2"
+            className="mr-2 h-10 w-10 text-white/90 hover:bg-white/20 hover:text-white lg:hidden"
             aria-label="Menu"
           >
             <Menu className="h-6 w-6" />
@@ -165,63 +172,67 @@ export const TopNavigation: React.FC = () => {
 
           {/* Left - Logo */}
           <div className="flex-shrink-0 lg:w-80">
-            <Link href="/" className="flex items-center space-x-2 sm:space-x-3" suppressHydrationWarning>
+            <Link
+              href="/"
+              className="flex items-center space-x-2 sm:space-x-3"
+              suppressHydrationWarning
+            >
               <Image
                 src="/sportsblock-logo.png"
                 alt="SportsBlock Logo"
                 width={72}
                 height={72}
-                className="w-10 h-10 sm:w-14 sm:h-14 lg:w-18 lg:h-18"
+                className="lg:w-18 lg:h-18 h-10 w-10 sm:h-14 sm:w-14"
               />
-              <div className="text-xl sm:text-2xl lg:text-4xl font-bold text-white hidden sm:block">
+              <div className="hidden text-xl font-bold text-white sm:block sm:text-2xl lg:text-4xl">
                 Sportsblock
               </div>
             </Link>
           </div>
 
           {/* Center - Navigation (desktop only) */}
-          <div className="flex-1 hidden lg:flex justify-center">
+          <div className="hidden flex-1 justify-center lg:flex">
             <nav className="flex items-center space-x-4 xl:space-x-6">
               <Link
                 href="/"
                 className={cn(
-                  "flex flex-col items-center justify-center px-4 py-2 xl:px-5 xl:py-3 rounded-lg transition-all duration-200",
-                  pathname === "/"
-                    ? "bg-card text-primary shadow-md"
-                    : "text-white/90 hover:bg-white/20 hover:text-white"
+                  'flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
+                  pathname === '/'
+                    ? 'bg-card text-primary shadow-md'
+                    : 'text-white/90 hover:bg-white/20 hover:text-white'
                 )}
                 suppressHydrationWarning
               >
                 <Home className="h-6 w-6 xl:h-8 xl:w-8" />
-                <span className="text-[10px] xl:text-xs mt-0.5 font-medium">Home</span>
+                <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Home</span>
               </Link>
 
               <Link
                 href="/dashboard"
                 className={cn(
-                  "flex flex-col items-center justify-center px-4 py-2 xl:px-5 xl:py-3 rounded-lg transition-all duration-200",
-                  pathname === "/dashboard"
-                    ? "bg-card text-primary shadow-md"
-                    : "text-white/90 hover:bg-white/20 hover:text-white"
+                  'flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
+                  pathname === '/dashboard'
+                    ? 'bg-card text-primary shadow-md'
+                    : 'text-white/90 hover:bg-white/20 hover:text-white'
                 )}
                 suppressHydrationWarning
               >
                 <LayoutDashboard className="h-6 w-6 xl:h-8 xl:w-8" />
-                <span className="text-[10px] xl:text-xs mt-0.5 font-medium">Dashboard</span>
+                <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Dashboard</span>
               </Link>
 
               <Link
                 href="/communities"
                 className={cn(
-                  "flex flex-col items-center justify-center px-4 py-2 xl:px-5 xl:py-3 rounded-lg transition-all duration-200",
-                  pathname === "/communities"
-                    ? "bg-card text-primary shadow-md"
-                    : "text-white/90 hover:bg-white/20 hover:text-white"
+                  'flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
+                  pathname === '/communities'
+                    ? 'bg-card text-primary shadow-md'
+                    : 'text-white/90 hover:bg-white/20 hover:text-white'
                 )}
                 suppressHydrationWarning
               >
                 <Users className="h-6 w-6 xl:h-8 xl:w-8" />
-                <span className="text-[10px] xl:text-xs mt-0.5 font-medium">Community</span>
+                <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Community</span>
               </Link>
 
               {/* Latest News Button */}
@@ -230,10 +241,10 @@ export const TopNavigation: React.FC = () => {
                   ref={newsButtonRef}
                   variant="ghost"
                   onClick={() => setShowNews(!showNews)}
-                  className="flex flex-col items-center justify-center h-auto px-4 py-2 xl:px-5 xl:py-3 text-white/90 hover:bg-white/20 hover:text-white transition-all duration-200 rounded-lg"
+                  className="flex h-auto flex-col items-center justify-center rounded-lg px-4 py-2 text-white/90 transition-all duration-200 hover:bg-white/20 hover:text-white xl:px-5 xl:py-3"
                 >
                   <Newspaper className="h-6 w-6 xl:h-8 xl:w-8" />
-                  <span className="text-[10px] xl:text-xs mt-0.5 font-medium">News</span>
+                  <span className="mt-0.5 text-[10px] font-medium xl:text-xs">News</span>
                 </Button>
 
                 <LazyLatestNewsDropdown
@@ -247,21 +258,21 @@ export const TopNavigation: React.FC = () => {
               <Button
                 variant="ghost"
                 onClick={() => setShowSportsPopup(true)}
-                className="flex flex-col items-center justify-center h-auto px-4 py-2 xl:px-5 xl:py-3 text-white/90 hover:bg-white/20 hover:text-white transition-all duration-200 rounded-lg"
+                className="flex h-auto flex-col items-center justify-center rounded-lg px-4 py-2 text-white/90 transition-all duration-200 hover:bg-white/20 hover:text-white xl:px-5 xl:py-3"
               >
                 <Zap className="h-6 w-6 xl:h-8 xl:w-8" />
-                <span className="text-[10px] xl:text-xs mt-0.5 font-medium">Sports</span>
+                <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Sports</span>
               </Button>
             </nav>
           </div>
 
           {/* Right - User Actions */}
-          <div className="flex-1 lg:flex-none lg:w-auto xl:w-[28rem] flex justify-end items-center space-x-2 sm:space-x-4">
+          <div className="flex flex-1 items-center justify-end space-x-2 sm:space-x-4 lg:w-auto lg:flex-none xl:w-[28rem]">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowSearch(true)}
-              className="text-white/90 hover:bg-white/20 hover:text-white w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16"
+              className="h-10 w-10 text-white/90 hover:bg-white/20 hover:text-white sm:h-12 sm:w-12 lg:h-16 lg:w-16"
               aria-label="Search"
             >
               <Search className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
@@ -275,12 +286,12 @@ export const TopNavigation: React.FC = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="text-white/90 hover:bg-white/20 hover:text-white w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 relative"
+                    className="relative h-10 w-10 text-white/90 hover:bg-white/20 hover:text-white sm:h-12 sm:w-12 lg:h-16 lg:w-16"
                     aria-label="Notifications"
                   >
                     <Bell className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-4 h-4 sm:min-w-5 sm:h-5 px-1 flex items-center justify-center animate-pulse text-[10px] sm:text-xs">
+                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-xs text-white sm:h-5 sm:min-w-5 sm:text-xs">
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
@@ -294,7 +305,12 @@ export const TopNavigation: React.FC = () => {
                 </div>
 
                 <Link href="/publish" className="hidden sm:block">
-                  <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 hover:text-white w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16" aria-label="Create new post">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 text-white/90 hover:bg-white/20 hover:text-white sm:h-12 sm:w-12 lg:h-16 lg:w-16"
+                    aria-label="Create new post"
+                  >
                     <Plus className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
                   </Button>
                 </Link>
@@ -305,7 +321,7 @@ export const TopNavigation: React.FC = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowSettings(!showSettings)}
-                    className="text-white/90 hover:bg-white/20 hover:text-white w-12 h-12 xl:w-16 xl:h-16"
+                    className="h-12 w-12 text-white/90 hover:bg-white/20 hover:text-white xl:h-16 xl:w-16"
                     aria-label="Settings"
                   >
                     <Settings className="h-6 w-6 xl:h-8 xl:w-8" />
@@ -318,21 +334,23 @@ export const TopNavigation: React.FC = () => {
                   />
                 </div>
 
-                <Link href="/profile" className="flex items-center space-x-2 sm:space-x-3 hover:opacity-80 transition-opacity" suppressHydrationWarning>
+                <Link
+                  href="/profile"
+                  className="flex items-center space-x-2 transition-opacity hover:opacity-80 sm:space-x-3"
+                  suppressHydrationWarning
+                >
                   <Avatar
                     src={user.avatar}
                     fallback={user.username}
                     alt={user.displayName || user.username}
                     size="md"
-                    className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12"
+                    className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
                   />
-                  <div className="hidden xl:flex flex-col">
-                    <div className="text-white font-semibold text-base lg:text-lg">
+                  <div className="hidden flex-col xl:flex">
+                    <div className="text-base font-semibold text-white lg:text-lg">
                       {user.displayName || user.username}
                     </div>
-                    <div className="text-white/70 text-xs lg:text-sm">
-                      @{user.username}
-                    </div>
+                    <div className="text-xs text-white/70 lg:text-sm">@{user.username}</div>
                   </div>
                 </Link>
               </>
@@ -342,14 +360,14 @@ export const TopNavigation: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => router.push('/auth')}
-                  className="hidden sm:flex border-white bg-white text-primary hover:bg-white/90 hover:text-primary/80 font-medium text-xs sm:text-sm"
+                  className="hidden border-white bg-white text-xs font-medium text-primary hover:bg-white/90 hover:text-primary/80 sm:flex sm:text-sm"
                 >
                   Sign In
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => router.push('/auth')}
-                  className="bg-white text-primary hover:bg-white/90 font-medium text-xs sm:text-sm"
+                  className="bg-white text-xs font-medium text-primary hover:bg-white/90 sm:text-sm"
                 >
                   Get Started
                 </Button>
@@ -361,16 +379,14 @@ export const TopNavigation: React.FC = () => {
 
       {/* Mobile Navigation Menu */}
       {showMobileMenu && (
-        <div className="lg:hidden border-t border-white/20 bg-gradient-to-r from-primary to-bright-cobalt">
-          <nav className="flex flex-col p-4 space-y-2">
+        <div className="border-t border-white/20 bg-gradient-to-r from-primary to-bright-cobalt lg:hidden">
+          <nav className="flex flex-col space-y-2 p-4">
             <Link
               href="/"
               onClick={() => setShowMobileMenu(false)}
               className={cn(
-                "flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200",
-                pathname === "/"
-                  ? "bg-card text-primary"
-                  : "text-white/90 hover:bg-white/20"
+                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
+                pathname === '/' ? 'bg-card text-primary' : 'text-white/90 hover:bg-white/20'
               )}
             >
               <Home className="h-5 w-5" />
@@ -381,10 +397,10 @@ export const TopNavigation: React.FC = () => {
               href="/dashboard"
               onClick={() => setShowMobileMenu(false)}
               className={cn(
-                "flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200",
-                pathname === "/dashboard"
-                  ? "bg-card text-primary"
-                  : "text-white/90 hover:bg-white/20"
+                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
+                pathname === '/dashboard'
+                  ? 'bg-card text-primary'
+                  : 'text-white/90 hover:bg-white/20'
               )}
             >
               <LayoutDashboard className="h-5 w-5" />
@@ -395,10 +411,10 @@ export const TopNavigation: React.FC = () => {
               href="/communities"
               onClick={() => setShowMobileMenu(false)}
               className={cn(
-                "flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200",
-                pathname === "/communities"
-                  ? "bg-card text-primary"
-                  : "text-white/90 hover:bg-white/20"
+                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
+                pathname === '/communities'
+                  ? 'bg-card text-primary'
+                  : 'text-white/90 hover:bg-white/20'
               )}
             >
               <Users className="h-5 w-5" />
@@ -410,7 +426,7 @@ export const TopNavigation: React.FC = () => {
                 setShowMobileMenu(false);
                 setShowNews(true);
               }}
-              className="flex items-center space-x-3 px-4 py-3 rounded-lg text-white/90 hover:bg-white/20 transition-all duration-200 w-full text-left"
+              className="flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-left text-white/90 transition-all duration-200 hover:bg-white/20"
             >
               <Newspaper className="h-5 w-5" />
               <span>Latest News</span>
@@ -421,7 +437,7 @@ export const TopNavigation: React.FC = () => {
                 setShowMobileMenu(false);
                 setShowSportsPopup(true);
               }}
-              className="flex items-center space-x-3 px-4 py-3 rounded-lg text-white/90 hover:bg-white/20 transition-all duration-200 w-full text-left"
+              className="flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-left text-white/90 transition-all duration-200 hover:bg-white/20"
             >
               <Zap className="h-5 w-5" />
               <span>Choose Sport</span>
@@ -432,7 +448,7 @@ export const TopNavigation: React.FC = () => {
                 <Link
                   href="/publish"
                   onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-white/90 hover:bg-white/20 transition-all duration-200"
+                  className="flex items-center space-x-3 rounded-lg px-4 py-3 text-white/90 transition-all duration-200 hover:bg-white/20"
                 >
                   <Plus className="h-5 w-5" />
                   <span>Create Post</span>
@@ -441,7 +457,7 @@ export const TopNavigation: React.FC = () => {
                 <Link
                   href="/profile"
                   onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-white/90 hover:bg-white/20 transition-all duration-200"
+                  className="flex items-center space-x-3 rounded-lg px-4 py-3 text-white/90 transition-all duration-200 hover:bg-white/20"
                 >
                   <Settings className="h-5 w-5" />
                   <span>Settings</span>
@@ -451,11 +467,8 @@ export const TopNavigation: React.FC = () => {
           </nav>
         </div>
       )}
-      
-      <LazyAuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-      />
+
+      <LazyAuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <LazySportsFilterPopup
         isOpen={showSportsPopup}
@@ -464,10 +477,7 @@ export const TopNavigation: React.FC = () => {
         selectedSport={selectedSport}
       />
 
-      <LazyUpgradeFlow
-        isOpen={showUpgradeFlow}
-        onClose={() => setShowUpgradeFlow(false)}
-      />
+      <LazyUpgradeFlow isOpen={showUpgradeFlow} onClose={() => setShowUpgradeFlow(false)} />
 
       {/* Mobile News Dropdown - rendered as modal on mobile */}
       <div className="lg:hidden">
@@ -480,7 +490,7 @@ export const TopNavigation: React.FC = () => {
 
       {/* Upgrade Prompt for soft users */}
       {user && !user.isHiveAuth && showUpgradePrompt && (
-        <div className="fixed top-20 right-4 z-40 max-w-sm">
+        <div className="fixed right-4 top-20 z-40 max-w-sm">
           <UpgradePrompt
             user={user}
             onUpgrade={() => {
@@ -496,17 +506,17 @@ export const TopNavigation: React.FC = () => {
       {showSearch && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
           <div className="fixed inset-0 bg-black/50" onClick={() => setShowSearch(false)} />
-          <div className="relative z-10 w-full max-w-2xl mx-4">
-            <div className="bg-card border rounded-lg shadow-2xl overflow-hidden">
+          <div className="relative z-10 mx-4 w-full max-w-2xl">
+            <div className="overflow-hidden rounded-lg border bg-card shadow-2xl">
               {/* Search Input */}
-              <div className="p-4 border-b flex items-center space-x-4">
+              <div className="flex items-center space-x-4 border-b p-4">
                 <Search className="h-6 w-6 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search users..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none text-lg"
+                  className="flex-1 border-none bg-transparent text-lg outline-none"
                   autoFocus
                 />
                 <Button
@@ -520,13 +530,11 @@ export const TopNavigation: React.FC = () => {
               </div>
 
               {/* Search Results */}
-              <div className="p-4 max-h-96 overflow-y-auto">
+              <div className="max-h-96 overflow-y-auto p-4">
                 {isSearching ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Searching...
-                  </div>
+                  <div className="py-8 text-center text-muted-foreground">Searching...</div>
                 ) : searchQuery.length < 3 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="py-8 text-center text-muted-foreground">
                     Start typing to search for users...
                   </div>
                 ) : searchResults.length > 0 ? (
@@ -535,7 +543,7 @@ export const TopNavigation: React.FC = () => {
                       <button
                         key={result.username}
                         onClick={() => handleUserClick(result.username)}
-                        className="w-full flex items-center space-x-3 p-3 hover:bg-muted rounded-lg transition-colors"
+                        className="flex w-full items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-muted"
                       >
                         <Avatar
                           src={result.avatar}
@@ -549,19 +557,17 @@ export const TopNavigation: React.FC = () => {
                               {result.displayName || result.username}
                             </span>
                             {result.isHiveUser ? (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-[10px] font-medium text-white">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-red-500 to-red-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
                                 <Zap className="h-2.5 w-2.5" />
                                 Hive
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-[10px] font-medium text-blue-600 dark:text-blue-400">
+                              <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
                                 Sportsblock
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            @{result.username}
-                          </div>
+                          <div className="text-sm text-muted-foreground">@{result.username}</div>
                         </div>
                         <div className="text-right text-sm text-muted-foreground">
                           {result.isHiveUser ? `${result.followers || 0} followers` : ''}
@@ -570,7 +576,7 @@ export const TopNavigation: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="py-8 text-center text-muted-foreground">
                     No user found with that username
                   </div>
                 )}

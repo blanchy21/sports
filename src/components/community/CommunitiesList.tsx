@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { useCommunities } from "@/lib/react-query/queries/useCommunity";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Avatar } from "@/components/ui/Avatar";
-import { JoinButton } from "./JoinButton";
-import { 
-  Users, 
-  FileText, 
-  Calendar, 
-  Search, 
-  Globe, 
-  Lock, 
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { useCommunities } from '@/lib/react-query/queries/useCommunity';
+import { Button } from '@/components/core/Button';
+import { Card } from '@/components/core/Card';
+import { Avatar } from '@/components/core/Avatar';
+import { JoinButton } from './JoinButton';
+import {
+  Users,
+  FileText,
+  Calendar,
+  Search,
+  Globe,
+  Lock,
   Mail,
   SlidersHorizontal,
-  X
-} from "lucide-react";
-import { Community, SPORT_CATEGORIES, CommunityType, CommunityFilters } from "@/types";
-import { cn } from "@/lib/utils";
+  X,
+} from 'lucide-react';
+import { Community, SPORT_CATEGORIES, CommunityType, CommunityFilters } from '@/types';
+import { cn } from '@/lib/utils/client';
 
 interface CommunitiesListProps {
   className?: string;
@@ -34,7 +34,7 @@ const SORT_OPTIONS = [
   { value: 'name', label: 'Name A-Z' },
 ] as const;
 
-export const CommunitiesList: React.FC<CommunitiesListProps> = ({ 
+export const CommunitiesList: React.FC<CommunitiesListProps> = ({
   className,
   showFilters = true,
   initialFilters = {},
@@ -79,13 +79,13 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
     return (
       <div className={`space-y-4 ${className}`}>
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="bg-card border rounded-lg p-6 animate-pulse">
+          <div key={i} className="animate-pulse rounded-lg border bg-card p-6">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
+              <div className="h-16 w-16 rounded-full bg-gray-300 dark:bg-gray-700"></div>
               <div className="flex-1">
-                <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/3 mb-2"></div>
-                <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-2/3 mb-2"></div>
-                <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2"></div>
+                <div className="mb-2 h-6 w-1/3 rounded bg-gray-300 dark:bg-gray-700"></div>
+                <div className="mb-2 h-4 w-2/3 rounded bg-gray-300 dark:bg-gray-700"></div>
+                <div className="h-4 w-1/2 rounded bg-gray-300 dark:bg-gray-700"></div>
               </div>
             </div>
           </div>
@@ -96,17 +96,17 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
 
   if (error) {
     return (
-      <div className={`text-center py-12 ${className}`}>
-        <div className="text-6xl mb-4">⚠️</div>
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+      <div className={`py-12 text-center ${className}`}>
+        <div className="mb-4 text-6xl">⚠️</div>
+        <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
           Error Loading Communities
         </h3>
-        <p className="text-gray-500 dark:text-gray-400 mb-6">
-          {error instanceof Error ? error.message : 'Failed to load communities. Please try again later.'}
+        <p className="mb-6 text-gray-500 dark:text-gray-400">
+          {error instanceof Error
+            ? error.message
+            : 'Failed to load communities. Please try again later.'}
         </p>
-        <Button onClick={() => refetch()}>
-          Try Again
-        </Button>
+        <Button onClick={() => refetch()}>Try Again</Button>
       </div>
     );
   }
@@ -121,20 +121,20 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
           {/* Search Bar */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search communities..."
                 value={filters.search || ''}
                 onChange={handleSearchChange}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-lg border bg-background py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
             <Button
-              variant={showAdvancedFilters ? "default" : "outline"}
+              variant={showAdvancedFilters ? 'default' : 'outline'}
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             >
-              <SlidersHorizontal className="h-4 w-4 mr-2" />
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
               Filters
             </Button>
           </div>
@@ -155,12 +155,12 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
 
           {/* Advanced Filters */}
           {showAdvancedFilters && (
-            <Card className="p-4 space-y-4">
+            <Card className="space-y-4 p-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-medium">Advanced Filters</h3>
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters}>
-                    <X className="h-4 w-4 mr-1" />
+                    <X className="mr-1 h-4 w-4" />
                     Clear All
                   </Button>
                 )}
@@ -168,7 +168,7 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
 
               {/* Sport Category Filter */}
               <div>
-                <label className="block text-sm font-medium mb-2">Sport Category</label>
+                <label className="mb-2 block text-sm font-medium">Sport Category</label>
                 <div className="flex flex-wrap gap-2">
                   {SPORT_CATEGORIES.slice(0, 10).map((sport) => (
                     <Button
@@ -185,14 +185,14 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
 
               {/* Community Type Filter */}
               <div>
-                <label className="block text-sm font-medium mb-2">Community Type</label>
+                <label className="mb-2 block text-sm font-medium">Community Type</label>
                 <div className="flex gap-2">
                   <Button
                     variant={filters.type === 'public' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => handleTypeChange('public')}
                   >
-                    <Globe className="h-4 w-4 mr-1" />
+                    <Globe className="mr-1 h-4 w-4" />
                     Public
                   </Button>
                   <Button
@@ -200,7 +200,7 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
                     size="sm"
                     onClick={() => handleTypeChange('private')}
                   >
-                    <Lock className="h-4 w-4 mr-1" />
+                    <Lock className="mr-1 h-4 w-4" />
                     Private
                   </Button>
                   <Button
@@ -208,7 +208,7 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
                     size="sm"
                     onClick={() => handleTypeChange('invite-only')}
                   >
-                    <Mail className="h-4 w-4 mr-1" />
+                    <Mail className="mr-1 h-4 w-4" />
                     Invite Only
                   </Button>
                 </div>
@@ -221,22 +221,19 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
       {/* Communities List */}
       <div className="space-y-4">
         {communities.length > 0 ? (
-          communities.map((community) => (
-            <CommunityCard key={community.id} community={community} />
-          ))
+          communities.map((community) => <CommunityCard key={community.id} community={community} />)
         ) : (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🏘️</div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          <div className="py-12 text-center">
+            <div className="mb-4 text-6xl">🏘️</div>
+            <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
               No Communities Found
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
-              {filters.search 
+              {filters.search
                 ? `No communities match "${filters.search}"`
                 : hasActiveFilters
-                  ? "No communities match your filters. Try adjusting them."
-                  : "No communities available yet. Be the first to create one!"
-              }
+                  ? 'No communities match your filters. Try adjusting them.'
+                  : 'No communities available yet. Be the first to create one!'}
             </p>
           </div>
         )}
@@ -244,10 +241,13 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
 
       {/* Load More */}
       {data?.hasMore && (
-        <div className="text-center pt-4">
-          <Button variant="outline" onClick={() => {
-            setFilters((prev) => ({ ...prev, limit: (prev.limit || 20) + 20 }));
-          }}>
+        <div className="pt-4 text-center">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setFilters((prev) => ({ ...prev, limit: (prev.limit || 20) + 20 }));
+            }}
+          >
             Load More
           </Button>
         </div>
@@ -261,55 +261,63 @@ interface CommunityCardProps {
 }
 
 const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
-  const typeIcon = community.type === 'public' 
-    ? <Globe className="h-4 w-4" /> 
-    : community.type === 'private' 
-      ? <Lock className="h-4 w-4" />
-      : <Mail className="h-4 w-4" />;
+  const typeIcon =
+    community.type === 'public' ? (
+      <Globe className="h-4 w-4" />
+    ) : community.type === 'private' ? (
+      <Lock className="h-4 w-4" />
+    ) : (
+      <Mail className="h-4 w-4" />
+    );
 
   const sportCategory = SPORT_CATEGORIES.find((s) => s.id === community.sportCategory);
 
   return (
-    <Card className="p-6 hover:shadow-md transition-shadow">
+    <Card className="p-6 transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between">
-        <Link href={`/community/${community.slug || community.id}`} className="flex items-start space-x-4 flex-1">
+        <Link
+          href={`/community/${community.slug || community.id}`}
+          className="flex flex-1 items-start space-x-4"
+        >
           <Avatar
             src={community.avatar}
             fallback={community.name}
             alt={community.name}
             size="lg"
-            className="w-16 h-16"
+            className="h-16 w-16"
           />
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-xl font-semibold hover:text-primary transition-colors">
+
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-2">
+              <h3 className="text-xl font-semibold transition-colors hover:text-primary">
                 {community.name}
               </h3>
-              <span className={cn(
-                "text-muted-foreground",
-                community.type === 'private' && "text-yellow-600",
-                community.type === 'invite-only' && "text-purple-600"
-              )}>
+              <span
+                className={cn(
+                  'text-muted-foreground',
+                  community.type === 'private' && 'text-yellow-600',
+                  community.type === 'invite-only' && 'text-purple-600'
+                )}
+              >
                 {typeIcon}
               </span>
               {community.isVerified && (
-                <span className="text-blue-500" title="Verified Community">✓</span>
+                <span className="text-blue-500" title="Verified Community">
+                  ✓
+                </span>
               )}
             </div>
 
             {sportCategory && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+              <div className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
                 <span>{sportCategory.icon}</span>
                 <span>{sportCategory.name}</span>
               </div>
             )}
 
-            <p className="text-muted-foreground mb-4 line-clamp-2">
-              {community.about}
-            </p>
-            
-            <div className="flex items-center flex-wrap gap-4 text-sm text-muted-foreground">
+            <p className="mb-4 line-clamp-2 text-muted-foreground">{community.about}</p>
+
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center space-x-1">
                 <Users className="h-4 w-4" />
                 <span>{community.memberCount?.toLocaleString() || 0} members</span>
@@ -320,9 +328,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
               </div>
               <div className="flex items-center space-x-1">
                 <Calendar className="h-4 w-4" />
-                <span>
-                  Created {new Date(community.createdAt).toLocaleDateString()}
-                </span>
+                <span>Created {new Date(community.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
           </div>

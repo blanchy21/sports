@@ -1,5 +1,5 @@
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { VoteButton, SimpleVoteButton } from '@/components/VoteButton';
+import { VoteButton, SimpleVoteButton } from '@/components/voting/VoteButton';
 import { renderWithProviders } from '../test-utils';
 
 // Mock the useVoting hook
@@ -8,7 +8,7 @@ const mockDownvote = jest.fn();
 const mockRemoveVote = jest.fn();
 const mockCheckVoteStatus = jest.fn();
 
-jest.mock('@/hooks/useVoting', () => ({
+jest.mock('@/features/hive/hooks/useVoting', () => ({
   useVoting: () => ({
     voteState: {
       isVoting: false,
@@ -34,26 +34,20 @@ describe('VoteButton', () => {
   });
 
   it('renders with vote count', () => {
-    renderWithProviders(
-      <VoteButton author="testuser" permlink="test-post" voteCount={42} />
-    );
+    renderWithProviders(<VoteButton author="testuser" permlink="test-post" voteCount={42} />);
 
     expect(screen.getByText('42')).toBeInTheDocument();
   });
 
   it('renders upvote and downvote buttons', () => {
-    renderWithProviders(
-      <VoteButton author="testuser" permlink="test-post" voteCount={10} />
-    );
+    renderWithProviders(<VoteButton author="testuser" permlink="test-post" voteCount={10} />);
 
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThanOrEqual(2);
   });
 
   it('shows voting power indicator when user can vote', () => {
-    renderWithProviders(
-      <VoteButton author="testuser" permlink="test-post" voteCount={10} />
-    );
+    renderWithProviders(<VoteButton author="testuser" permlink="test-post" voteCount={10} />);
 
     expect(screen.getByText('100.0%')).toBeInTheDocument();
   });
@@ -127,12 +121,7 @@ describe('VoteButton', () => {
     const onVoteError = jest.fn();
 
     renderWithProviders(
-      <VoteButton
-        author="testuser"
-        permlink="test-post"
-        voteCount={10}
-        onVoteError={onVoteError}
-      />
+      <VoteButton author="testuser" permlink="test-post" voteCount={10} onVoteError={onVoteError} />
     );
 
     const buttons = screen.getAllByRole('button');
@@ -144,21 +133,14 @@ describe('VoteButton', () => {
   });
 
   it('checks vote status on mount', () => {
-    renderWithProviders(
-      <VoteButton author="testuser" permlink="test-post" voteCount={10} />
-    );
+    renderWithProviders(<VoteButton author="testuser" permlink="test-post" voteCount={10} />);
 
     expect(mockCheckVoteStatus).toHaveBeenCalledWith('testuser', 'test-post');
   });
 
   it('applies custom className', () => {
     const { container } = renderWithProviders(
-      <VoteButton
-        author="testuser"
-        permlink="test-post"
-        voteCount={10}
-        className="custom-class"
-      />
+      <VoteButton author="testuser" permlink="test-post" voteCount={10} className="custom-class" />
     );
 
     expect(container.querySelector('.custom-class')).toBeInTheDocument();
@@ -172,26 +154,20 @@ describe('SimpleVoteButton', () => {
   });
 
   it('renders with vote count', () => {
-    renderWithProviders(
-      <SimpleVoteButton author="testuser" permlink="test-post" voteCount={25} />
-    );
+    renderWithProviders(<SimpleVoteButton author="testuser" permlink="test-post" voteCount={25} />);
 
     expect(screen.getByText('25')).toBeInTheDocument();
   });
 
   it('renders a single button', () => {
-    renderWithProviders(
-      <SimpleVoteButton author="testuser" permlink="test-post" voteCount={10} />
-    );
+    renderWithProviders(<SimpleVoteButton author="testuser" permlink="test-post" voteCount={10} />);
 
     const button = screen.getByRole('button');
     expect(button).toBeInTheDocument();
   });
 
   it('calls upvote when clicked', async () => {
-    renderWithProviders(
-      <SimpleVoteButton author="testuser" permlink="test-post" voteCount={10} />
-    );
+    renderWithProviders(<SimpleVoteButton author="testuser" permlink="test-post" voteCount={10} />);
 
     const button = screen.getByRole('button');
     fireEvent.click(button);
