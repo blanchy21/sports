@@ -27,6 +27,17 @@ import {
 } from 'lucide-react';
 import { PotentialEarningsWidget } from '@/components/widgets/PotentialEarningsWidget';
 import Link from 'next/link';
+import type { SportsblockPost } from '@/lib/shared/types';
+
+/**
+ * Get the like/vote count from a post.
+ * Handles both soft posts (likeCount) and Hive posts (net_votes).
+ */
+function getPostLikeCount(post: SportsblockPost): number {
+  // Soft posts may have likeCount, Hive posts have net_votes
+  const likeCount = (post as { likeCount?: number }).likeCount;
+  return likeCount ?? post.net_votes ?? 0;
+}
 
 export default function DashboardPage() {
   const { user, authType, refreshHiveAccount, isLoading: isAuthLoading } = useAuth();
@@ -133,14 +144,7 @@ export default function DashboardPage() {
           },
           {
             title: 'Total Likes',
-            value: recentPosts
-              .reduce(
-                (sum, post) =>
-                  sum +
-                  ((post as unknown as { likeCount?: number }).likeCount || post.net_votes || 0),
-                0
-              )
-              .toString(),
+            value: recentPosts.reduce((sum, post) => sum + getPostLikeCount(post), 0).toString(),
             icon: Heart,
             change: 'Across all posts',
             changeType: 'neutral',

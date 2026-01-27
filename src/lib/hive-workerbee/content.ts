@@ -3,96 +3,23 @@ import { SPORT_CATEGORIES } from '@/types';
 import { makeWorkerBeeApiCall } from './api';
 import { getContentOptimized } from './optimization';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
+import {
+  HivePost,
+  HiveComment,
+  SportsblockPost,
+  toHivePosts,
+  toHiveComments,
+  toSportsblockPost,
+  isHivePost,
+} from '@/lib/shared/types';
+import {
+  validateHivePosts,
+  validateHiveComments,
+  validatePostData,
+} from '@/lib/validation/hive-schemas';
 
-interface HiveVote {
-  voter: string;
-  weight: number;
-  rshares: string;
-  percent: number;
-  reputation: string;
-  time: string;
-}
-
-interface HivePost {
-  id: number;
-  author: string;
-  permlink: string;
-  title: string;
-  body: string;
-  json_metadata: string;
-  created: string;
-  last_update: string;
-  depth: number;
-  children: number;
-  net_votes: number;
-  active_votes: HiveVote[];
-  pending_payout_value: string;
-  total_pending_payout_value: string;
-  curator_payout_value: string;
-  author_payout_value: string;
-  max_accepted_payout: string;
-  percent_hbd: number;
-  parent_author: string;
-  parent_permlink: string;
-  author_reputation: string;
-}
-
-// Types matching the original content.ts interface
-export interface SportsblockPost {
-  /** Discriminant for Post union types */
-  postType: 'sportsblock';
-  id: number;
-  author: string;
-  permlink: string;
-  title: string;
-  body: string;
-  created: string;
-  last_update: string;
-  depth: number;
-  children: number;
-  net_votes: number;
-  active_votes: HiveVote[];
-  pending_payout_value: string;
-  total_pending_payout_value: string;
-  curator_payout_value: string;
-  author_payout_value: string;
-  max_accepted_payout: string;
-  percent_hbd: number;
-  allow_votes: boolean;
-  allow_curation_rewards: boolean;
-  json_metadata: string;
-  parent_author: string;
-  parent_permlink: string;
-  sportCategory?: string;
-  /** @deprecated Use postType === 'sportsblock' instead */
-  isSportsblockPost: true;
-}
-
-export interface HiveComment {
-  id: string;
-  author: string;
-  permlink: string;
-  title: string;
-  body: string;
-  created: string;
-  last_update: string;
-  depth: number;
-  children: number;
-  net_votes: number;
-  active_votes: HiveVote[];
-  pending_payout_value: string;
-  total_pending_payout_value: string;
-  curator_payout_value: string;
-  author_payout_value: string;
-  max_accepted_payout: string;
-  percent_hbd: number;
-  allow_votes: boolean;
-  allow_curation_rewards: boolean;
-  json_metadata: string;
-  parent_author: string;
-  parent_permlink: string;
-  author_reputation: string;
-}
+// Re-export types for backwards compatibility
+export type { SportsblockPost, HiveComment } from '@/lib/shared/types';
 
 export interface ContentFilters {
   sportCategory?: string;
@@ -118,44 +45,73 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
   }
 }
 
-function isSportsblockPost(post: HivePost): boolean {
+/**
+ * Check if a post belongs to the Sportsblock community
+ */
+function isSportsblockCommunityPost(post: HivePost): boolean {
   const metadata = parseJsonMetadata(post.json_metadata);
-  const tags = metadata.tags as string[] | undefined;
-  return tags?.includes('sportsblock') || 
-         tags?.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME) ||
-         post.parent_permlink === SPORTS_ARENA_CONFIG.COMMUNITY_NAME;
+  const tags = Array.isArray(metadata.tags) ? metadata.tags : [];
+  return (
+    tags.includes('sportsblock') ||
+    tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME) ||
+    post.parent_permlink === SPORTS_ARENA_CONFIG.COMMUNITY_NAME
+  );
 }
 
+/**
+ * Get the sport category from a post's metadata
+ */
 function getSportCategory(post: HivePost): string | null {
   const metadata = parseJsonMetadata(post.json_metadata);
-  
+
   // First check if sport_category is explicitly set in metadata
-  if (metadata.sport_category) {
-    return metadata.sport_category as string;
+  if (typeof metadata.sport_category === 'string') {
+    return metadata.sport_category;
   }
-  
+
   // If not, check tags array for sport names
-  const tags = metadata.tags as string[] | undefined;
-  if (tags) {
-    // Check if any tag matches a sport category
-    for (const tag of tags) {
-      // Check against known sport categories
-      const sportCategory = SPORT_CATEGORIES.find(sport => 
-        sport.id === tag || 
-        sport.name.toLowerCase() === tag.toLowerCase() ||
-        sport.slug === tag
-      );
-      if (sportCategory) {
-        return sportCategory.id;
-      }
+  const tags = Array.isArray(metadata.tags) ? metadata.tags : [];
+  for (const tag of tags) {
+    if (typeof tag !== 'string') continue;
+    // Check against known sport categories
+    const sportCategory = SPORT_CATEGORIES.find(
+      (sport) =>
+        sport.id === tag || sport.name.toLowerCase() === tag.toLowerCase() || sport.slug === tag
+    );
+    if (sportCategory) {
+      return sportCategory.id;
     }
   }
-  
+
   return null;
 }
 
+/**
+ * Calculate pending payout from a post
+ */
 function calculatePendingPayout(post: HivePost | SportsblockPost): number {
   return parseFloat(post.pending_payout_value || '0');
+}
+
+/**
+ * Convert API response to typed HivePost array with Zod validation
+ * Validates each post at runtime, filtering out invalid entries
+ */
+function toTypedHivePosts(data: unknown): HivePost[] {
+  // First validate with Zod schema for runtime type safety
+  const validatedPosts = Array.isArray(data) ? validateHivePosts(data) : [];
+  // Then transform to application types
+  return toHivePosts(validatedPosts);
+}
+
+/**
+ * Convert HivePost array to SportsblockPost array,
+ * filtering only sportsblock community posts
+ */
+function toTypedSportsblockPosts(posts: HivePost[]): SportsblockPost[] {
+  return posts
+    .filter(isSportsblockCommunityPost)
+    .map((post) => toSportsblockPost(post, getSportCategory(post)));
 }
 
 /**
@@ -166,19 +122,19 @@ function calculatePendingPayout(post: HivePost | SportsblockPost): number {
 export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promise<ContentResult> {
   const limit = Math.min(filters.limit || 20, 100); // Max 100 posts per request
   let fetchedAsTrending = false; // Track if we fetched trending posts from API
-  
+
   try {
     let posts: HivePost[] = [];
-    
+
     if (filters.author) {
       // Fetch posts by specific author using optimized caching
       const accountPosts = await getContentOptimized('get_discussions_by_author_before_date', [
         filters.author,
         filters.before || '',
         '',
-        limit
+        limit,
       ]);
-      posts = (accountPosts || []) as unknown as HivePost[];
+      posts = toTypedHivePosts(accountPosts);
     } else if (filters.sort === 'trending') {
       // Use get_discussions_by_trending for trending posts
       // Note: get_discussions_by_trending doesn't support pagination with start_author/start_permlink
@@ -186,10 +142,10 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       const trendingPosts = await getContentOptimized('get_discussions_by_trending', [
         {
           tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-          limit: limit
-        }
+          limit: limit,
+        },
       ]);
-      posts = (trendingPosts || []) as unknown as HivePost[];
+      posts = toTypedHivePosts(trendingPosts);
       fetchedAsTrending = true; // Mark that we fetched trending posts
     } else {
       // Fetch posts from Sportsblock community using optimized caching
@@ -197,7 +153,7 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       if (filters.before) {
         // Parse the cursor to get author and permlink for pagination
         const [author, permlink] = filters.before.split('/');
-        
+
         if (author && permlink) {
           // Use start_author and start_permlink for pagination
           // get_discussions_by_created requires tag, limit, start_author, and start_permlink
@@ -206,10 +162,10 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
               tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
               limit: limit,
               start_author: author,
-              start_permlink: permlink
-            }
+              start_permlink: permlink,
+            },
           ]);
-          posts = (communityPosts || []) as unknown as HivePost[];
+          posts = toTypedHivePosts(communityPosts);
         } else {
           // Invalid cursor format, fallback to regular fetch
           // get_discussions_by_created requires tag, limit, start_author, and start_permlink
@@ -218,10 +174,10 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
               tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
               limit: limit,
               start_author: '',
-              start_permlink: ''
-            }
+              start_permlink: '',
+            },
           ]);
-          posts = (communityPosts || []) as unknown as HivePost[];
+          posts = toTypedHivePosts(communityPosts);
         }
       } else {
         // First page - use get_discussions_by_created for chronological order
@@ -231,37 +187,28 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
             tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
             limit: limit,
             start_author: '',
-            start_permlink: ''
-          }
+            start_permlink: '',
+          },
         ]);
-        posts = (communityPosts || []) as unknown as HivePost[];
+        posts = toTypedHivePosts(communityPosts);
       }
     }
 
-    // Filter to only Sportsblock posts
-    const sportsblockPosts: SportsblockPost[] = posts
-      .filter(isSportsblockPost)
-      .map((post: HivePost) => ({
-        ...post,
-        sportCategory: getSportCategory(post) || undefined,
-        postType: 'sportsblock',
-        isSportsblockPost: true,
-      } as unknown as SportsblockPost));
+    // Filter to only Sportsblock posts and transform
+    const sportsblockPosts = toTypedSportsblockPosts(posts);
 
     // Apply additional filters
     let filteredPosts = sportsblockPosts;
 
     if (filters.sportCategory) {
-      filteredPosts = filteredPosts.filter(post => 
-        post.sportCategory === filters.sportCategory
-      );
+      filteredPosts = filteredPosts.filter((post) => post.sportCategory === filters.sportCategory);
     }
 
     if (filters.tag) {
-      filteredPosts = filteredPosts.filter(post => {
+      filteredPosts = filteredPosts.filter((post) => {
         const metadata = parseJsonMetadata(post.json_metadata);
-        const tags = metadata.tags as string[] | undefined;
-        return tags?.includes(filters.tag!);
+        const tags = Array.isArray(metadata.tags) ? metadata.tags : [];
+        return tags.includes(filters.tag!);
       });
     }
 
@@ -275,9 +222,10 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
     const hasMore = posts.length === limit;
 
     // Generate next cursor for pagination
-    const nextCursor = hasMore && filteredPosts.length > 0 
-      ? `${filteredPosts[filteredPosts.length - 1].author}/${filteredPosts[filteredPosts.length - 1].permlink}`
-      : undefined;
+    const nextCursor =
+      hasMore && filteredPosts.length > 0
+        ? `${filteredPosts[filteredPosts.length - 1].author}/${filteredPosts[filteredPosts.length - 1].permlink}`
+        : undefined;
 
     return {
       posts: filteredPosts,
@@ -286,18 +234,21 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
     };
   } catch (error) {
     // Better error handling - convert non-Error instances to Error
-    const errorObj = error instanceof Error 
-      ? error 
-      : new Error(error ? String(error) : 'Unknown error occurred while fetching Sportsblock posts');
-    
+    const errorObj =
+      error instanceof Error
+        ? error
+        : new Error(
+            error ? String(error) : 'Unknown error occurred while fetching Sportsblock posts'
+          );
+
     // Log with more context including filters used
     logError(
-      `Error fetching Sportsblock posts with WorkerBee: ${errorObj.message}`, 
-      'fetchSportsblockPosts', 
+      `Error fetching Sportsblock posts with WorkerBee: ${errorObj.message}`,
+      'fetchSportsblockPosts',
       errorObj,
       { filters, limit }
     );
-    
+
     // Re-throw as Error instance for consistent error handling
     throw errorObj;
   }
@@ -314,20 +265,17 @@ export async function fetchTrendingPosts(limit: number = 20): Promise<Sportsbloc
     const trendingPosts = await makeWorkerBeeApiCall<unknown[]>('get_discussions_by_trending', [
       {
         tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-        limit
-      }
+        limit,
+      },
     ]);
 
-    return ((trendingPosts || []) as unknown as HivePost[])
-      .filter(isSportsblockPost)
-      .map((post: HivePost) => ({
-        ...post,
-        sportCategory: getSportCategory(post) || undefined,
-        postType: 'sportsblock',
-        isSportsblockPost: true,
-      } as unknown as SportsblockPost));
+    return toTypedSportsblockPosts(toTypedHivePosts(trendingPosts));
   } catch (error) {
-    logError('Error fetching trending posts with WorkerBee', 'getTrendingPosts', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching trending posts with WorkerBee',
+      'getTrendingPosts',
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -343,20 +291,17 @@ export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost
     const hotPosts = await makeWorkerBeeApiCall<unknown[]>('get_discussions_by_hot', [
       {
         tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-        limit
-      }
+        limit,
+      },
     ]);
 
-    return ((hotPosts || []) as unknown as HivePost[])
-      .filter(isSportsblockPost)
-      .map((post: HivePost) => ({
-        ...post,
-        sportCategory: getSportCategory(post) || undefined,
-        postType: 'sportsblock',
-        isSportsblockPost: true,
-      } as unknown as SportsblockPost));
+    return toTypedSportsblockPosts(toTypedHivePosts(hotPosts));
   } catch (error) {
-    logError('Error fetching hot posts with WorkerBee', 'getHotPosts', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching hot posts with WorkerBee',
+      'getHotPosts',
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -371,19 +316,30 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
   try {
     // Use WorkerBee API call for better node management
     const post = await makeWorkerBeeApiCall<unknown>('get_content', [author, permlink]);
-    
-    if (!post || !isSportsblockPost(post as unknown as HivePost)) {
+
+    // Validate with Zod schema for runtime type safety
+    const validatedPost = validatePostData(post);
+    if (!validatedPost) {
       return null;
     }
 
-    return {
-      ...(post as unknown as HivePost),
-      sportCategory: getSportCategory(post as unknown as HivePost),
-      postType: 'sportsblock',
-        isSportsblockPost: true,
-    } as unknown as SportsblockPost;
+    // Transform to HivePost type and verify structure
+    if (!isHivePost(validatedPost)) {
+      return null;
+    }
+
+    // Check if it's a sportsblock community post
+    if (!isSportsblockCommunityPost(validatedPost)) {
+      return null;
+    }
+
+    return toSportsblockPost(validatedPost, getSportCategory(validatedPost));
   } catch (error) {
-    logError('Error fetching post with WorkerBee', 'getPostByAuthorPermlink', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching post with WorkerBee',
+      'getPostByAuthorPermlink',
+      error instanceof Error ? error : undefined
+    );
     return null;
   }
 }
@@ -398,43 +354,67 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
 export async function fetchComments(author: string, permlink: string): Promise<HiveComment[]> {
   try {
     workerBeeLog(`[fetchComments] Fetching comments for ${author}/${permlink}`);
-    
+
     // Use WorkerBee API call for better node management
     // First, get direct replies to the post
-    const directReplies = await makeWorkerBeeApiCall<unknown[]>('get_content_replies', [author, permlink]);
-    
-    workerBeeLog('[fetchComments] Direct replies', undefined, Array.isArray(directReplies) ? directReplies.length : 0);
-    
+    const directReplies = await makeWorkerBeeApiCall<unknown[]>('get_content_replies', [
+      author,
+      permlink,
+    ]);
+
+    workerBeeLog(
+      '[fetchComments] Direct replies',
+      undefined,
+      Array.isArray(directReplies) ? directReplies.length : 0
+    );
+
     if (!Array.isArray(directReplies) || directReplies.length === 0) {
       return [];
     }
 
     // Now get nested replies for each direct reply
     const allComments: unknown[] = [...directReplies];
-    
+
     for (const reply of directReplies) {
       try {
         const replyData = reply as { author: string; permlink: string };
-        workerBeeLog(`[fetchComments] Fetching nested replies for ${replyData.author}/${replyData.permlink}`);
-        const nestedReplies = await makeWorkerBeeApiCall<unknown[]>('get_content_replies', [replyData.author, replyData.permlink]);
-        
+        workerBeeLog(
+          `[fetchComments] Fetching nested replies for ${replyData.author}/${replyData.permlink}`
+        );
+        const nestedReplies = await makeWorkerBeeApiCall<unknown[]>('get_content_replies', [
+          replyData.author,
+          replyData.permlink,
+        ]);
+
         if (Array.isArray(nestedReplies) && nestedReplies.length > 0) {
-          workerBeeLog(`[fetchComments] Found ${nestedReplies.length} nested replies for ${replyData.author}/${replyData.permlink}`);
+          workerBeeLog(
+            `[fetchComments] Found ${nestedReplies.length} nested replies for ${replyData.author}/${replyData.permlink}`
+          );
           allComments.push(...nestedReplies);
         }
       } catch (error) {
         const replyData = reply as { author: string; permlink: string };
-        logWarn(`[fetchComments] Error fetching nested replies for ${replyData.author}/${replyData.permlink}`, 'fetchComments', error);
+        logWarn(
+          `[fetchComments] Error fetching nested replies for ${replyData.author}/${replyData.permlink}`,
+          'fetchComments',
+          error
+        );
         // Continue with other replies even if one fails
       }
     }
-    
+
     workerBeeLog('[fetchComments] Total comments found', undefined, allComments.length);
     workerBeeLog('[fetchComments] All comments', undefined, allComments);
-    
-    return allComments as unknown as HiveComment[];
+
+    // Validate with Zod schema for runtime type safety, then transform
+    const validatedComments = validateHiveComments(allComments);
+    return toHiveComments(validatedComments);
   } catch (error) {
-    logError('Error fetching comments with WorkerBee', 'fetchComments', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching comments with WorkerBee',
+      'fetchComments',
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -445,23 +425,30 @@ export async function fetchComments(author: string, permlink: string): Promise<H
  * @param filters - Additional filters
  * @returns Search results
  */
-export async function searchPosts(query: string, filters: ContentFilters = {}): Promise<ContentResult> {
+export async function searchPosts(
+  query: string,
+  filters: ContentFilters = {}
+): Promise<ContentResult> {
   try {
     // Hive doesn't have built-in search, so we'll fetch recent posts and filter
     const allPosts = await fetchSportsblockPosts({ ...filters, limit: 100 });
-    
+
     const searchTerms = query.toLowerCase().split(' ');
-    const searchResults = (allPosts.posts as unknown as HivePost[]).filter(post => {
+    const searchResults = allPosts.posts.filter((post) => {
       const searchableText = `${post.title} ${post.body}`.toLowerCase();
-      return searchTerms.some(term => searchableText.includes(term));
+      return searchTerms.some((term) => searchableText.includes(term));
     });
 
     return {
-      posts: searchResults as unknown as SportsblockPost[],
+      posts: searchResults,
       hasMore: false,
     };
   } catch (error) {
-    logError('Error searching posts with WorkerBee', 'searchPosts', error instanceof Error ? error : undefined);
+    logError(
+      'Error searching posts with WorkerBee',
+      'searchPosts',
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -472,17 +459,24 @@ export async function searchPosts(query: string, filters: ContentFilters = {}): 
  * @param limit - Number of posts to fetch
  * @returns Posts in the sport category
  */
-export async function getPostsBySport(sportCategory: string, limit: number = 20): Promise<SportsblockPost[]> {
+export async function getPostsBySport(
+  sportCategory: string,
+  limit: number = 20
+): Promise<SportsblockPost[]> {
   try {
     const result = await fetchSportsblockPosts({
       sportCategory,
       limit,
       sort: 'created',
     });
-    
+
     return result.posts;
   } catch (error) {
-    logError('Error fetching posts by sport with WorkerBee', 'getPostsBySport', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching posts by sport with WorkerBee',
+      'getPostsBySport',
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -494,67 +488,67 @@ export async function getPostsBySport(sportCategory: string, limit: number = 20)
  * @param limit - Number of sportsblock posts to find
  * @returns User's sportsblock posts
  */
-export async function getUserPosts(username: string, limit: number = 20): Promise<SportsblockPost[]> {
+export async function getUserPosts(
+  username: string,
+  limit: number = 20
+): Promise<SportsblockPost[]> {
   try {
     const sportsblockPosts: SportsblockPost[] = [];
     let startPermlink = '';
     const maxPages = 10; // Maximum pages to fetch (10 * 20 = 200 posts max)
     const postsPerPage = 20; // Hive API limit
-    
+
     for (let page = 0; page < maxPages && sportsblockPosts.length < limit; page++) {
       // Fetch a page of user posts
       const accountPosts = await getContentOptimized('get_discussions_by_author_before_date', [
         username,
         startPermlink,
         '',
-        postsPerPage
-      ]) as HivePost[] | null;
-      
-      const posts = accountPosts || [];
-      
+        postsPerPage,
+      ]);
+
+      const posts = toTypedHivePosts(accountPosts);
+
       // No more posts available
       if (posts.length === 0) {
         break;
       }
-      
+
       // Skip the first post on subsequent pages (it's a duplicate from the previous page)
       const newPosts = page === 0 ? posts : posts.slice(1);
-      
+
       if (newPosts.length === 0) {
         break;
       }
-      
+
       // Filter for sportsblock posts and add them
       for (const post of newPosts) {
-        if (isSportsblockPost(post)) {
-          sportsblockPosts.push({
-            ...post,
-            sportCategory: getSportCategory(post) || undefined,
-            postType: 'sportsblock',
-        isSportsblockPost: true,
-            allow_votes: true,
-            allow_curation_rewards: true,
-          } as unknown as SportsblockPost);
-          
+        if (isSportsblockCommunityPost(post)) {
+          sportsblockPosts.push(toSportsblockPost(post, getSportCategory(post)));
+
           // Stop if we have enough
           if (sportsblockPosts.length >= limit) {
             break;
           }
         }
       }
-      
+
       // Set up pagination for the next page
       startPermlink = posts[posts.length - 1].permlink;
-      
+
       // If we got fewer posts than requested, we've reached the end
       if (posts.length < postsPerPage) {
         break;
       }
     }
-    
+
     return sportsblockPosts;
   } catch (error) {
-    logError('Error fetching user posts with WorkerBee', 'getUserPosts', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching user posts with WorkerBee',
+      'getUserPosts',
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -564,23 +558,27 @@ export async function getUserPosts(username: string, limit: number = 20): Promis
  * @param limit - Number of tags to fetch
  * @returns Popular tags
  */
-export async function getPopularTags(limit: number = 20): Promise<Array<{ tag: string; count: number }>> {
+export async function getPopularTags(
+  limit: number = 20
+): Promise<Array<{ tag: string; count: number }>> {
   try {
     // Fetch recent posts to analyze tags
     const posts = await fetchSportsblockPosts({ limit: 100 });
-    
+
     const tagCount: Record<string, number> = {};
-    
-    (posts.posts as unknown as HivePost[]).forEach((post: HivePost) => {
+
+    posts.posts.forEach((post) => {
       const metadata = parseJsonMetadata(post.json_metadata);
-      const tags = metadata.tags as string[] | undefined;
-      if (tags) {
-        tags.forEach((tag: string) => {
-          if (tag !== 'sportsblock' && tag !== SPORTS_ARENA_CONFIG.COMMUNITY_NAME) {
-            tagCount[tag] = (tagCount[tag] || 0) + 1;
-          }
-        });
-      }
+      const tags = Array.isArray(metadata.tags) ? metadata.tags : [];
+      tags.forEach((tag) => {
+        if (
+          typeof tag === 'string' &&
+          tag !== 'sportsblock' &&
+          tag !== SPORTS_ARENA_CONFIG.COMMUNITY_NAME
+        ) {
+          tagCount[tag] = (tagCount[tag] || 0) + 1;
+        }
+      });
     });
 
     return Object.entries(tagCount)
@@ -588,7 +586,11 @@ export async function getPopularTags(limit: number = 20): Promise<Array<{ tag: s
       .slice(0, limit)
       .map(([tag, count]) => ({ tag, count }));
   } catch (error) {
-    logError('Error fetching popular tags with WorkerBee', 'getPopularTags', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching popular tags with WorkerBee',
+      'getPopularTags',
+      error instanceof Error ? error : undefined
+    );
     return [];
   }
 }
@@ -606,9 +608,9 @@ export async function getCommunityStats(): Promise<{
   try {
     // Fetch recent posts to calculate stats
     const recentPosts = await fetchSportsblockPosts({ limit: 100 });
-    
-    const authors = new Set((recentPosts.posts as unknown as HivePost[]).map(post => post.author));
-    const totalRewards = (recentPosts.posts as unknown as HivePost[]).reduce((sum, post) => {
+
+    const authors = new Set(recentPosts.posts.map((post) => post.author));
+    const totalRewards = recentPosts.posts.reduce((sum, post) => {
       return sum + calculatePendingPayout(post);
     }, 0);
 
@@ -616,14 +618,18 @@ export async function getCommunityStats(): Promise<{
       totalPosts: recentPosts.posts.length,
       totalAuthors: authors.size,
       totalRewards,
-      activeToday: recentPosts.posts.filter(post => {
+      activeToday: recentPosts.posts.filter((post) => {
         const postDate = new Date(post.created);
         const today = new Date();
         return postDate.toDateString() === today.toDateString();
       }).length,
     };
   } catch (error) {
-    logError('Error fetching community stats with WorkerBee', 'getCommunityStats', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching community stats with WorkerBee',
+      'getCommunityStats',
+      error instanceof Error ? error : undefined
+    );
     return {
       totalPosts: 0,
       totalAuthors: 0,
@@ -639,11 +645,16 @@ export async function getCommunityStats(): Promise<{
  * @param limit - Number of related posts
  * @returns Related posts
  */
-export async function getRelatedPosts(post: SportsblockPost, limit: number = 5): Promise<SportsblockPost[]> {
+export async function getRelatedPosts(
+  post: SportsblockPost,
+  limit: number = 5
+): Promise<SportsblockPost[]> {
   try {
     const metadata = parseJsonMetadata(post.json_metadata);
-    const tags = (metadata.tags as string[]) || [];
-    
+    const tags: string[] = Array.isArray(metadata.tags)
+      ? metadata.tags.filter((t): t is string => typeof t === 'string')
+      : [];
+
     // Fetch posts with similar tags or sport category
     const relatedPosts = await fetchSportsblockPosts({
       sportCategory: post.sportCategory || undefined,
@@ -651,25 +662,31 @@ export async function getRelatedPosts(post: SportsblockPost, limit: number = 5):
     });
 
     // Filter out the original post and rank by similarity
-    const filtered = (relatedPosts.posts as unknown as HivePost[])
-      .filter(p => p.id !== post.id)
-      .map(p => {
+    const filtered = relatedPosts.posts
+      .filter((p) => p.id !== post.id)
+      .map((p) => {
         const pMetadata = parseJsonMetadata(p.json_metadata);
-        const pTags = (pMetadata.tags as string[]) || [];
-        
+        const pTags: string[] = Array.isArray(pMetadata.tags)
+          ? pMetadata.tags.filter((t): t is string => typeof t === 'string')
+          : [];
+
         // Calculate similarity score
-        const commonTags = tags.filter((tag: string) => pTags.includes(tag)).length;
-        const similarityScore = commonTags / Math.max(tags.length, pTags.length);
-        
+        const commonTags = tags.filter((tag) => pTags.includes(tag)).length;
+        const similarityScore = commonTags / Math.max(tags.length, pTags.length, 1);
+
         return { post: p, score: similarityScore };
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, limit)
-      .map(item => item.post);
+      .map((item) => item.post);
 
-    return filtered as unknown as SportsblockPost[];
+    return filtered;
   } catch (error) {
-    logError('Error fetching related posts with WorkerBee', 'getRelatedPosts', error instanceof Error ? error : undefined);
+    logError(
+      'Error fetching related posts with WorkerBee',
+      'getRelatedPosts',
+      error instanceof Error ? error : undefined
+    );
     return [];
   }
 }
@@ -680,7 +697,10 @@ export async function getRelatedPosts(post: SportsblockPost, limit: number = 5):
  * @param sortBy - Sort criteria
  * @returns Sorted posts
  */
-function sortPosts(posts: (HivePost | SportsblockPost)[], sortBy: string): (HivePost | SportsblockPost)[] {
+function sortPosts(
+  posts: (HivePost | SportsblockPost)[],
+  sortBy: string
+): (HivePost | SportsblockPost)[] {
   switch (sortBy) {
     case 'trending':
       return posts.sort((a, b) => {
@@ -689,17 +709,17 @@ function sortPosts(posts: (HivePost | SportsblockPost)[], sortBy: string): (Hive
         const scoreB = b.net_votes * Math.log(Date.now() - new Date(b.created).getTime() + 1);
         return scoreB - scoreA;
       });
-    
+
     case 'payout':
       return posts.sort((a, b) => {
         const payoutA = calculatePendingPayout(a);
         const payoutB = calculatePendingPayout(b);
         return payoutB - payoutA;
       });
-    
+
     case 'votes':
       return posts.sort((a, b) => b.net_votes - a.net_votes);
-    
+
     case 'created':
     default:
       return posts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());

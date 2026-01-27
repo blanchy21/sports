@@ -1,6 +1,6 @@
 /**
  * WorkerBee Performance Optimizations
- * 
+ *
  * This module provides performance optimizations for WorkerBee operations
  * including connection pooling, caching, and request batching.
  */
@@ -42,7 +42,7 @@ class WorkerBeeOptimizer {
     averageResponseTime: 0,
     cacheHitRate: 0,
     errorRate: 0,
-    lastUpdated: Date.now()
+    lastUpdated: Date.now(),
   };
   private responseTimes: number[] = [];
 
@@ -56,17 +56,17 @@ class WorkerBeeOptimizer {
    */
   private getCached<T>(key: string): T | null {
     const entry = this.cache.get(key) as CacheEntry<T> | undefined;
-    
+
     if (!entry) {
       return null;
     }
-    
+
     const now = Date.now();
     if (now - entry.timestamp > entry.ttl) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return entry.data;
   }
 
@@ -81,11 +81,11 @@ class WorkerBeeOptimizer {
         this.cache.delete(firstKey);
       }
     }
-    
+
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl
+      ttl,
     });
   }
 
@@ -119,7 +119,7 @@ class WorkerBeeOptimizer {
 
     // Batch processing disabled - use direct API calls instead
     // See method documentation above for rationale
-    batch.forEach(request => {
+    batch.forEach((request) => {
       request.reject(new Error('Batch processing is disabled. Use direct API calls with caching.'));
     });
   }
@@ -134,7 +134,7 @@ class WorkerBeeOptimizer {
         method,
         params,
         resolve,
-        reject
+        reject,
       };
 
       this.batchQueue.push(request);
@@ -154,15 +154,16 @@ class WorkerBeeOptimizer {
   private updateMetrics(): void {
     const now = Date.now();
     const totalRequests = this.metrics.requestCount + 1;
-    const totalResponseTime = this.metrics.averageResponseTime * this.metrics.requestCount + 
+    const totalResponseTime =
+      this.metrics.averageResponseTime * this.metrics.requestCount +
       (this.responseTimes[this.responseTimes.length - 1] || 0);
-    
+
     this.metrics = {
       requestCount: totalRequests,
       averageResponseTime: totalResponseTime / totalRequests,
       cacheHitRate: this.calculateCacheHitRate(),
       errorRate: this.calculateErrorRate(),
-      lastUpdated: now
+      lastUpdated: now,
     };
 
     // Keep only last 100 response times
@@ -203,7 +204,9 @@ class WorkerBeeOptimizer {
       const startTime = Date.now();
       // Direct API call without batching
       const { makeHiveApiCall } = await import('./api');
-      const result = await makeHiveApiCall('condenser_api', 'get_accounts', [[username]]) as HiveAccount[];
+      const result = (await makeHiveApiCall('condenser_api', 'get_accounts', [
+        [username],
+      ])) as HiveAccount[];
       const responseTime = Date.now() - startTime;
 
       this.responseTimes.push(responseTime);
@@ -217,7 +220,11 @@ class WorkerBeeOptimizer {
 
       return account;
     } catch (error) {
-      logError('Error fetching account', 'WorkerBeeOptimizer', error instanceof Error ? error : undefined);
+      logError(
+        'Error fetching account',
+        'WorkerBeeOptimizer',
+        error instanceof Error ? error : undefined
+      );
       return null;
     }
   }
@@ -249,7 +256,11 @@ class WorkerBeeOptimizer {
 
       return result;
     } catch (error) {
-      logError('Error fetching content', 'WorkerBeeOptimizer', error instanceof Error ? error : undefined);
+      logError(
+        'Error fetching content',
+        'WorkerBeeOptimizer',
+        error instanceof Error ? error : undefined
+      );
       throw error;
     }
   }
@@ -275,7 +286,7 @@ class WorkerBeeOptimizer {
     return {
       size: this.cache.size,
       maxSize: this.MAX_CACHE_SIZE,
-      hitRate: this.metrics.cacheHitRate
+      hitRate: this.metrics.cacheHitRate,
     };
   }
 
@@ -292,7 +303,7 @@ class WorkerBeeOptimizer {
       }
     }
 
-    expiredKeys.forEach(key => this.cache.delete(key));
+    expiredKeys.forEach((key) => this.cache.delete(key));
   }
 }
 
@@ -304,6 +315,67 @@ const globalOptimizer = new WorkerBeeOptimizer();
  */
 export async function getAccountOptimized(username: string): Promise<HiveAccount | null> {
   return globalOptimizer.fetchAccountOptimized(username);
+}
+
+/**
+ * Batch fetch multiple accounts in a single API call.
+ * The Hive API supports fetching multiple accounts at once via condenser_api.get_accounts.
+ * This dramatically reduces N+1 queries when rendering feeds.
+ *
+ * @param usernames - Array of usernames to fetch
+ * @returns Map of username to account data
+ */
+export async function getAccountsBatch(usernames: string[]): Promise<Map<string, HiveAccount>> {
+  const results = new Map<string, HiveAccount>();
+
+  // Deduplicate and filter
+  const uniqueUsernames = [...new Set(usernames.filter(Boolean))];
+  if (uniqueUsernames.length === 0) {
+    return results;
+  }
+
+  // Separate cached vs uncached
+  const uncached: string[] = [];
+  for (const username of uniqueUsernames) {
+    const cached = globalOptimizer['getCached']<HiveAccount>(
+      globalOptimizer['getCacheKey']('get_accounts', [[username]])
+    );
+    if (cached) {
+      results.set(username, cached);
+    } else {
+      uncached.push(username);
+    }
+  }
+
+  // Fetch all uncached in a single batch request
+  if (uncached.length > 0) {
+    try {
+      const { makeHiveApiCall } = await import('./api');
+      const accounts = (await makeHiveApiCall(
+        'condenser_api',
+        'get_accounts',
+        [uncached] // Hive API accepts array of usernames
+      )) as HiveAccount[];
+
+      // Cache each account individually and add to results
+      for (const account of accounts) {
+        if (account && account.name) {
+          const cacheKey = globalOptimizer['getCacheKey']('get_accounts', [[account.name]]);
+          globalOptimizer['setCached'](cacheKey, account, 5 * 60 * 1000);
+          results.set(account.name, account);
+        }
+      }
+    } catch (error) {
+      logError(
+        'Error batch fetching accounts',
+        'WorkerBeeOptimizer',
+        error instanceof Error ? error : undefined
+      );
+      // Don't throw - return what we have from cache
+    }
+  }
+
+  return results;
 }
 
 /**
@@ -327,13 +399,17 @@ export function getOptimizationMetrics(): PerformanceMetrics {
   try {
     return globalOptimizer.getMetrics();
   } catch (error) {
-    logError('Error getting optimization metrics', 'WorkerBeeOptimizer', error instanceof Error ? error : undefined);
+    logError(
+      'Error getting optimization metrics',
+      'WorkerBeeOptimizer',
+      error instanceof Error ? error : undefined
+    );
     return {
       requestCount: 0,
       averageResponseTime: 0,
       cacheHitRate: 0,
       errorRate: 0,
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
     };
   }
 }
@@ -345,11 +421,15 @@ export function getCacheStatistics(): { size: number; maxSize: number; hitRate: 
   try {
     return globalOptimizer.getCacheStats();
   } catch (error) {
-    logError('Error getting cache statistics', 'WorkerBeeOptimizer', error instanceof Error ? error : undefined);
+    logError(
+      'Error getting cache statistics',
+      'WorkerBeeOptimizer',
+      error instanceof Error ? error : undefined
+    );
     return {
       size: 0,
       maxSize: 1000,
-      hitRate: 0
+      hitRate: 0,
     };
   }
 }
@@ -388,15 +468,19 @@ export class ConnectionPool {
     try {
       const client = getWorkerBeeClient();
       this.connections.set(node, client);
-      
+
       // Set timeout to remove connection
       setTimeout(() => {
         this.connections.delete(node);
       }, this.connectionTimeout);
-      
+
       return client;
     } catch (error) {
-      logError('Failed to create connection', 'WorkerBeeConnectionPool', error instanceof Error ? error : undefined);
+      logError(
+        'Failed to create connection',
+        'WorkerBeeConnectionPool',
+        error instanceof Error ? error : undefined
+      );
       throw error;
     }
   }
@@ -414,7 +498,7 @@ export class ConnectionPool {
   getStats(): { activeConnections: number; maxConnections: number } {
     return {
       activeConnections: this.connections.size,
-      maxConnections: this.maxConnections
+      maxConnections: this.maxConnections,
     };
   }
 }

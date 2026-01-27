@@ -9,6 +9,12 @@
 
 import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
+import {
+  createAuthMockFetch,
+  createValidSession,
+  createExpiredSession,
+  createMockLocalStorage,
+} from './auth-test-utils';
 
 // Mock WorkerBee before any other imports
 jest.mock('@/lib/hive-workerbee/client', () => ({
@@ -41,32 +47,8 @@ jest.mock('@/lib/firebase/auth', () => ({
   },
 }));
 
-// Mock API fetch
-const mockFetch = jest.fn();
-global.fetch = mockFetch;
-
-// Mock localStorage
-interface MockLocalStorage {
-  store: Record<string, string>;
-  getItem: jest.Mock<string | null, [string]>;
-  setItem: jest.Mock<void, [string, string]>;
-  removeItem: jest.Mock<void, [string]>;
-  clear: jest.Mock<void, []>;
-}
-
-const localStorageMock: MockLocalStorage = {
-  store: {} as Record<string, string>,
-  getItem: jest.fn((key: string): string | null => localStorageMock.store[key] ?? null),
-  setItem: jest.fn((key: string, value: string): void => {
-    localStorageMock.store[key] = value;
-  }),
-  removeItem: jest.fn((key: string): void => {
-    delete localStorageMock.store[key];
-  }),
-  clear: jest.fn((): void => {
-    localStorageMock.store = {};
-  }),
-};
+// Setup localStorage mock
+const localStorageMock = createMockLocalStorage();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 // Mock requestAnimationFrame
@@ -100,24 +82,23 @@ function AuthTestComponent({
 }
 
 describe('Auth Race Conditions', () => {
+  let authMock: ReturnType<typeof createAuthMockFetch>;
+
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.clear();
-    mockFetch.mockReset();
     mockAioha.logout.mockReset();
     mockAioha.user = null;
+
+    // Create fresh mock for each test
+    authMock = createAuthMockFetch();
+    global.fetch = authMock.mockFetch as unknown as typeof fetch;
   });
 
   describe('Session Expiration', () => {
     it('clears session when expired and prevents stale auth state', async () => {
-      // Set up an expired session in localStorage
-      const expiredSession = {
-        user: { id: 'olduser', username: 'olduser', isHiveAuth: true },
-        authType: 'hive',
-        hiveUser: { username: 'olduser', isAuthenticated: true },
-        loginAt: Date.now() - 31 * 60 * 1000, // 31 minutes ago (expired)
-      };
-      localStorageMock.setItem('authState', JSON.stringify(expiredSession));
+      // Set up an expired session via the mock
+      authMock.setSessionState(createExpiredSession('olduser'));
 
       // Logger uses console.info for info level messages
       const consoleSpy = jest.spyOn(console, 'info').mockImplementation();
@@ -147,11 +128,9 @@ describe('Auth Race Conditions', () => {
   });
 
   describe('Invalid Session Data', () => {
-    it('handles corrupted localStorage data gracefully', async () => {
-      // Set up corrupted data
-      localStorageMock.setItem('authState', 'not-valid-json');
-
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    it('handles missing session gracefully', async () => {
+      // Start with no session
+      authMock.clearSession();
 
       render(
         <AuthProvider>
@@ -165,21 +144,13 @@ describe('Auth Race Conditions', () => {
 
       // Should fallback to guest state
       expect(screen.getByTestId('auth-state')).toHaveTextContent('guest');
-
-      consoleWarnSpy.mockRestore();
     });
   });
 
   describe('Valid Session Restoration', () => {
-    it('restores valid session from localStorage', async () => {
-      // Set up a valid session in localStorage
-      const validSession = {
-        user: { id: 'testuser', username: 'testuser', isHiveAuth: true },
-        authType: 'hive',
-        hiveUser: { username: 'testuser', isAuthenticated: true },
-        loginAt: Date.now() - 5 * 60 * 1000, // 5 minutes ago (not expired)
-      };
-      localStorageMock.setItem('authState', JSON.stringify(validSession));
+    it('restores valid session from cookie API', async () => {
+      // Set up a valid session via the mock
+      authMock.setSessionState(createValidSession('testuser'));
 
       render(
         <AuthProvider>
@@ -199,12 +170,47 @@ describe('Auth Race Conditions', () => {
 
   describe('Profile Load Failure Flag', () => {
     it('user remains logged in even if profile fetch fails', async () => {
-      // Setup a failing profile fetch
-      mockFetch.mockImplementation((url: string) => {
-        if (url.includes('/api/hive/account/summary')) {
+      // Start with no session (user will log in)
+      authMock.clearSession();
+
+      // Override to make account summary fail
+      authMock.mockFetch.mockImplementation((input: RequestInfo | URL, options?: RequestInit) => {
+        const urlStr =
+          typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+
+        if (urlStr.includes('/api/auth/session')) {
+          const method = options?.method || 'GET';
+          if (method === 'GET') {
+            return Promise.resolve({
+              ok: true,
+              json: () =>
+                Promise.resolve({
+                  success: true,
+                  authenticated: authMock.getSessionState().authenticated,
+                  session: authMock.getSessionState().session,
+                }),
+            });
+          }
+          if (method === 'POST') {
+            const body = options?.body ? JSON.parse(options.body as string) : null;
+            if (body) {
+              authMock.setSessionState({ authenticated: true, session: body });
+            }
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ success: true }),
+            });
+          }
+        }
+
+        if (urlStr.includes('/api/hive/account/summary')) {
           return Promise.reject(new Error('Network error'));
         }
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+        });
       });
 
       let authRef: ReturnType<typeof useAuth> | undefined;
@@ -237,13 +243,7 @@ describe('Auth Race Conditions', () => {
   describe('Logout Clears State', () => {
     it('logout clears all auth state', async () => {
       // Set up an authenticated session
-      const validSession = {
-        user: { id: 'testuser', username: 'testuser', isHiveAuth: true },
-        authType: 'hive',
-        hiveUser: { username: 'testuser', isAuthenticated: true },
-        loginAt: Date.now(),
-      };
-      localStorageMock.setItem('authState', JSON.stringify(validSession));
+      authMock.setSessionState(createValidSession('testuser'));
 
       let authRef: ReturnType<typeof useAuth> | undefined;
 

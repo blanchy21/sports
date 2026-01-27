@@ -24,6 +24,23 @@ import { useModal } from '@/components/modals/ModalProvider';
 // getUserPosts is now accessed via API route
 import { SportsblockPost } from '@/lib/shared/types';
 
+/**
+ * Get the like/vote count from a post.
+ * Handles both soft posts (likeCount) and Hive posts (net_votes).
+ */
+function getPostLikeCount(post: SportsblockPost): number {
+  const likeCount = (post as { likeCount?: number }).likeCount;
+  return likeCount ?? post.net_votes ?? 0;
+}
+
+/**
+ * Get the view count from a post.
+ * Only soft posts have view counts, Hive posts don't track views.
+ */
+function getPostViewCount(post: SportsblockPost): number {
+  return (post as { viewCount?: number }).viewCount ?? 0;
+}
+
 export default function ProfilePage() {
   const { user, authType, refreshHiveAccount, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
@@ -288,21 +305,13 @@ export default function ProfilePage() {
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-foreground">
-                            {userPosts.reduce(
-                              (sum, p) =>
-                                sum + ((p as unknown as { likeCount?: number }).likeCount || 0),
-                              0
-                            )}
+                            {userPosts.reduce((sum, p) => sum + getPostLikeCount(p), 0)}
                           </div>
                           <div className="text-sm text-muted-foreground">Likes</div>
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-foreground">
-                            {userPosts.reduce(
-                              (sum, p) =>
-                                sum + ((p as unknown as { viewCount?: number }).viewCount || 0),
-                              0
-                            )}
+                            {userPosts.reduce((sum, p) => sum + getPostViewCount(p), 0)}
                           </div>
                           <div className="text-sm text-muted-foreground">Views</div>
                         </div>

@@ -362,5 +362,30 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
   );
 };
 
-// Memoize to prevent unnecessary re-renders in lists
-export const PostCard = React.memo(PostCardComponent);
+/**
+ * Custom comparison function for PostCard memoization.
+ * Compares the essential properties that affect rendering,
+ * avoiding unnecessary re-renders when the post object reference changes
+ * but the content remains the same.
+ */
+function arePostsEqual(prevProps: PostCardProps, nextProps: PostCardProps): boolean {
+  const prevPost = prevProps.post;
+  const nextPost = nextProps.post;
+
+  // Compare unique identifiers
+  if (getPostAuthor(prevPost) !== getPostAuthor(nextPost)) return false;
+  if (getPostPermlink(prevPost) !== getPostPermlink(nextPost)) return false;
+
+  // Compare properties that affect visual rendering
+  if (prevPost.title !== nextPost.title) return false;
+  if (getPostVoteCount(prevPost) !== getPostVoteCount(nextPost)) return false;
+  if (getPostCommentCount(prevPost) !== getPostCommentCount(nextPost)) return false;
+
+  // Compare className prop
+  if (prevProps.className !== nextProps.className) return false;
+
+  return true;
+}
+
+// Memoize with custom comparison to prevent unnecessary re-renders in lists
+export const PostCard = React.memo(PostCardComponent, arePostsEqual);

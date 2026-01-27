@@ -171,7 +171,11 @@ function vestingSharesToHive(
   return (vestingSharesFloat / totalVestingSharesFloat) * totalVestingFundHiveFloat;
 }
 
-function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
+/**
+ * Parse JSON metadata string safely
+ * Used for account profile metadata and post metadata
+ */
+export function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
   try {
     return JSON.parse(jsonMetadata || '{}');
   } catch {
@@ -646,7 +650,7 @@ export async function fetchUserProfile(username: string): Promise<{
 /**
  * Check if user exists on Hive blockchain using WorkerBee/Wax
  * @param username - Username to check
- * @returns True if user exists
+ * @returns True if user exists, false if not found or on error
  */
 export async function userExists(username: string): Promise<boolean> {
   try {
@@ -654,7 +658,11 @@ export async function userExists(username: string): Promise<boolean> {
       [username],
     ])) as HiveAccount[];
     return account && account.length > 0;
-  } catch {
+  } catch (error) {
+    // Log API errors separately from "user not found" (which returns empty array)
+    logWarn(`Error checking if user exists: ${username}`, 'userExists', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return false;
   }
 }

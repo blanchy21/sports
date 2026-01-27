@@ -1,15 +1,33 @@
-import WorkerBee from "@hiveio/workerbee";
-import type { IStartConfiguration } from "@hiveio/workerbee";
-import type { IHiveChainInterface } from "@hiveio/wax";
+import WorkerBee from '@hiveio/workerbee';
+import type { IStartConfiguration } from '@hiveio/workerbee';
+import type { IHiveChainInterface } from '@hiveio/wax';
 import { workerBee as workerBeeLog, error as logError } from './logger';
+
+/**
+ * Extended Wax client interface with optional RPC call method.
+ * The Wax library may expose a `call` method for direct RPC access,
+ * but this is not part of the official type definitions.
+ */
+interface WaxWithRpcCall extends IHiveChainInterface {
+  call?: (method: string, params: unknown[]) => Promise<unknown>;
+}
+
+/**
+ * Type guard to check if Wax client has the call method available.
+ */
+function hasRpcCall(
+  wax: IHiveChainInterface | null
+): wax is WaxWithRpcCall & { call: NonNullable<WaxWithRpcCall['call']> } {
+  return wax !== null && typeof (wax as WaxWithRpcCall).call === 'function';
+}
 
 // Hive node endpoints - optimized for reliability and speed
 // arcange.eu excluded due to consistent timeout issues in production
 const HIVE_NODES = [
-  'https://api.hive.blog',           // @blocktrades - most reliable
-  'https://api.openhive.network',    // @gtg - established node
-  'https://api.deathwing.me',        // @deathwing - backup node
-  'https://api.c0ff33a.uk',          // @c0ff33a - backup node
+  'https://api.hive.blog', // @blocktrades - most reliable
+  'https://api.openhive.network', // @gtg - established node
+  'https://api.deathwing.me', // @deathwing - backup node
+  'https://api.c0ff33a.uk', // @c0ff33a - backup node
 ];
 
 // Sportsblock configuration (same as current implementation)
@@ -24,9 +42,9 @@ export const SPORTS_ARENA_CONFIG = {
   DEFAULT_BENEFICIARIES: [
     {
       account: 'sportsblock',
-      weight: 2000 // 20% to platform (per MEDALS whitepaper)
-    }
-  ]
+      weight: 2000, // 20% to platform (per MEDALS whitepaper)
+    },
+  ],
 };
 
 // WorkerBee client instance
@@ -48,10 +66,12 @@ export function getWorkerBeeClient(): InstanceType<typeof WorkerBee> {
  * @returns Wax instance
  */
 export function getWaxFromWorkerBee(client: InstanceType<typeof WorkerBee>): IHiveChainInterface {
-    if (!client.chain) {
-      throw new Error('WorkerBee chain not available. Make sure to call initializeWorkerBeeClient() first.');
-    }
-    return client.chain;
+  if (!client.chain) {
+    throw new Error(
+      'WorkerBee chain not available. Make sure to call initializeWorkerBeeClient() first.'
+    );
+  }
+  return client.chain;
 }
 
 /**
@@ -85,11 +105,16 @@ export async function initializeWorkerBeeClient(): Promise<InstanceType<typeof W
     return client;
   } catch (error) {
     const duration = Date.now() - startTime;
-    logError(`[WorkerBee Client] Initialization failed after ${duration}ms`, 'initializeWorkerBeeClient', error instanceof Error ? error : undefined, {
-      errorType: error instanceof Error ? error.name : typeof error,
-      errorMessage: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
-    });
+    logError(
+      `[WorkerBee Client] Initialization failed after ${duration}ms`,
+      'initializeWorkerBeeClient',
+      error instanceof Error ? error : undefined,
+      {
+        errorType: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      }
+    );
     throw error;
   }
 }
@@ -102,16 +127,22 @@ export async function initializeWorkerBeeClient(): Promise<InstanceType<typeof W
 export async function getWaxClient(): Promise<IHiveChainInterface> {
   try {
     workerBeeLog('[Wax Client] Initializing Wax client...');
-    
+
     // Initialize WorkerBee client first, then return the wax instance
     const client = await initializeWorkerBeeClient();
     const wax = getWaxFromWorkerBee(client);
-    
+
     workerBeeLog('[Wax Client] Wax client initialized successfully');
     return wax;
   } catch (error) {
-    logError('Failed to initialize Wax client', 'getWaxClient', error instanceof Error ? error : undefined);
-    throw new Error(`Failed to initialize Wax client: ${error instanceof Error ? error.message : String(error)}`);
+    logError(
+      'Failed to initialize Wax client',
+      'getWaxClient',
+      error instanceof Error ? error : undefined
+    );
+    throw new Error(
+      `Failed to initialize Wax client: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
@@ -146,7 +177,9 @@ export function getHiveNodes(): string[] {
  * @param options - WorkerBee configuration options
  * @returns New WorkerBee client
  */
-export function createWorkerBeeClient(options?: IStartConfiguration): InstanceType<typeof WorkerBee> {
+export function createWorkerBeeClient(
+  options?: IStartConfiguration
+): InstanceType<typeof WorkerBee> {
   return new WorkerBee(options);
 }
 
@@ -162,7 +195,7 @@ export function getWaxConfiguration(): {
   return {
     nodes: getHiveNodes(),
     timeout: 30000, // 30 seconds
-    retries: 3
+    retries: 3,
   };
 }
 
@@ -178,35 +211,45 @@ export async function getWaxProtocolInfo(): Promise<{
 }> {
   try {
     const wax = await getWaxClient();
-    
+
     // Try to get protocol info using Wax API
-    if (wax && typeof (wax as unknown as { call?: (method: string, params: unknown[]) => Promise<unknown> }).call === 'function') {
-      const result = await (wax as unknown as { call: (method: string, params: unknown[]) => Promise<unknown> }).call('condenser_api.get_dynamic_global_properties', []) as Record<string, unknown>;
-      
+    if (hasRpcCall(wax)) {
+      const result = (await wax.call('condenser_api.get_dynamic_global_properties', [])) as Record<
+        string,
+        unknown
+      >;
+
       if (result) {
         return {
           version: '1.0.0',
           chainId: (result.chain_id as string) || 'unknown',
           headBlockNumber: (result.head_block_number as number) || 0,
-          lastIrreversibleBlockNumber: (result.last_irreversible_block_num as number) || 0
+          lastIrreversibleBlockNumber: (result.last_irreversible_block_num as number) || 0,
         };
       }
     }
-    
+
     throw new Error('Wax protocol info not available');
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     // Only log if it's not a known requestInterceptor issue
-    if (!errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled')) {
-      logError('Failed to get Wax protocol info', 'getWaxProtocolInfo', error instanceof Error ? error : undefined);
+    if (
+      !errorMessage.includes('requestInterceptor') &&
+      !errorMessage.includes('temporarily disabled')
+    ) {
+      logError(
+        'Failed to get Wax protocol info',
+        'getWaxProtocolInfo',
+        error instanceof Error ? error : undefined
+      );
     }
-    
+
     return {
       version: 'unknown',
       chainId: 'unknown',
       headBlockNumber: 0,
-      lastIrreversibleBlockNumber: 0
+      lastIrreversibleBlockNumber: 0,
     };
   }
 }
@@ -221,33 +264,35 @@ export async function checkWaxHealth(): Promise<{
   error?: string;
 }> {
   const startTime = Date.now();
-  
+
   try {
     const wax = await getWaxClient();
-    
+
     // Try a simple API call to check health
-    if (wax && typeof (wax as unknown as { call?: (method: string, params: unknown[]) => Promise<unknown> }).call === 'function') {
-      await (wax as unknown as { call: (method: string, params: unknown[]) => Promise<unknown> }).call('condenser_api.get_dynamic_global_properties', []);
+    if (hasRpcCall(wax)) {
+      await wax.call('condenser_api.get_dynamic_global_properties', []);
       const latency = Date.now() - startTime;
-      
+
       return {
         isHealthy: true,
-        latency
+        latency,
       };
     }
-    
+
     throw new Error('Wax health check method not available');
   } catch (error) {
     const latency = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     // Only include error message if it's not a known requestInterceptor issue
-    const shouldIncludeError = !errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled');
-    
+    const shouldIncludeError =
+      !errorMessage.includes('requestInterceptor') &&
+      !errorMessage.includes('temporarily disabled');
+
     return {
       isHealthy: false,
       latency,
-      error: shouldIncludeError ? errorMessage : undefined
+      error: shouldIncludeError ? errorMessage : undefined,
     };
   }
 }

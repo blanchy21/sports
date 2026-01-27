@@ -67,7 +67,7 @@ describe('MemoryCache', () => {
       expect(cache.get('expiring')).toBe('value');
 
       // Wait for TTL to expire
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
       expect(cache.get('expiring')).toBeNull();
     });
@@ -77,11 +77,11 @@ describe('MemoryCache', () => {
       cache.set('custom-ttl', 'value', { ttl: 200 });
 
       // Should still exist well before TTL (use short wait)
-      await new Promise(resolve => setTimeout(resolve, 20));
+      await new Promise((resolve) => setTimeout(resolve, 20));
       expect(cache.get('custom-ttl')).toBe('value');
 
       // Should be gone after TTL expires
-      await new Promise(resolve => setTimeout(resolve, 250));
+      await new Promise((resolve) => setTimeout(resolve, 250));
       expect(cache.get('custom-ttl')).toBeNull();
     });
   });
@@ -340,5 +340,282 @@ describe('getMemoryCache (singleton)', () => {
     const cache = getMemoryCache();
     cache.set('singleton-test', 'value');
     expect(cache.get('singleton-test')).toBe('value');
+  });
+});
+
+// ==========================================================================
+// Additional TieredCache Tests for Invalidation & Stale-While-Revalidate
+// ==========================================================================
+
+describe('TieredCache Advanced', () => {
+  let tieredCache: TieredCache;
+
+  beforeEach(() => {
+    tieredCache = new TieredCache({
+      memory: {
+        maxEntries: 100,
+        defaultTTL: 100, // Short TTL for testing
+      },
+      staleWhileRevalidate: true,
+      maxStaleAge: 500, // 500ms max stale age
+    });
+  });
+
+  afterEach(() => {
+    tieredCache.destroy();
+  });
+
+  describe('invalidation', () => {
+    it('should invalidate by tag correctly', async () => {
+      await tieredCache.set('post-1', { title: 'Post 1' }, { tags: ['posts', 'author-alice'] });
+      await tieredCache.set('post-2', { title: 'Post 2' }, { tags: ['posts', 'author-bob'] });
+      await tieredCache.set('user-alice', { name: 'Alice' }, { tags: ['users', 'author-alice'] });
+
+      // Invalidate all posts
+      const count = await tieredCache.invalidateByTag('posts');
+
+      expect(count).toBe(2);
+      expect(await tieredCache.get('post-1')).toBeNull();
+      expect(await tieredCache.get('post-2')).toBeNull();
+      expect(await tieredCache.get('user-alice')).not.toBeNull();
+    });
+
+    it('should invalidate by author tag', async () => {
+      await tieredCache.set('post-1', { title: 'Post 1' }, { tags: ['posts', 'author-alice'] });
+      await tieredCache.set('post-2', { title: 'Post 2' }, { tags: ['posts', 'author-bob'] });
+      await tieredCache.set('user-alice', { name: 'Alice' }, { tags: ['users', 'author-alice'] });
+
+      // Invalidate all Alice's entries
+      const count = await tieredCache.invalidateByTag('author-alice');
+
+      expect(count).toBe(2);
+      expect(await tieredCache.get('post-1')).toBeNull();
+      expect(await tieredCache.get('post-2')).not.toBeNull();
+      expect(await tieredCache.get('user-alice')).toBeNull();
+    });
+
+    it('should invalidate by pattern correctly', async () => {
+      await tieredCache.set('posts:123:content', 'Content 1');
+      await tieredCache.set('posts:123:metadata', 'Meta 1');
+      await tieredCache.set('posts:456:content', 'Content 2');
+      await tieredCache.set('users:789:profile', 'Profile');
+
+      // Invalidate all entries for post 123
+      const count = await tieredCache.invalidateByPattern(/^posts:123:/);
+
+      expect(count).toBe(2);
+      expect(await tieredCache.get('posts:123:content')).toBeNull();
+      expect(await tieredCache.get('posts:123:metadata')).toBeNull();
+      expect(await tieredCache.get('posts:456:content')).not.toBeNull();
+      expect(await tieredCache.get('users:789:profile')).not.toBeNull();
+    });
+
+    it('should return 0 when no entries match invalidation', async () => {
+      await tieredCache.set('key1', 'value1', { tags: ['tag-a'] });
+
+      const count = await tieredCache.invalidateByTag('nonexistent-tag');
+
+      expect(count).toBe(0);
+    });
+
+    it('should clear all entries', async () => {
+      await tieredCache.set('key1', 'value1');
+      await tieredCache.set('key2', 'value2');
+      await tieredCache.set('key3', 'value3');
+
+      await tieredCache.clear();
+
+      expect(await tieredCache.get('key1')).toBeNull();
+      expect(await tieredCache.get('key2')).toBeNull();
+      expect(await tieredCache.get('key3')).toBeNull();
+    });
+  });
+
+  describe('stale-while-revalidate', () => {
+    it('should return stale data while revalidating', async () => {
+      let fetchCount = 0;
+      const fetcher = jest.fn(async () => {
+        fetchCount++;
+        return `value-${fetchCount}`;
+      });
+
+      // Initial fetch
+      const result1 = await tieredCache.getOrFetch('swr-key', fetcher);
+      expect(result1.value).toBe('value-1');
+      expect(result1.cached).toBe(false);
+
+      // Wait for TTL to expire but stay within maxStaleAge
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // Should get stale data and trigger background revalidation
+      const result2 = await tieredCache.getOrFetch('swr-key', fetcher);
+
+      // Depending on timing, might get stale or fresh data
+      expect(result2.value).toMatch(/value-[12]/);
+    });
+
+    it('should not return stale data beyond maxStaleAge', async () => {
+      const shortStaleCache = new TieredCache({
+        memory: {
+          maxEntries: 100,
+          defaultTTL: 50, // 50ms TTL
+        },
+        staleWhileRevalidate: true,
+        maxStaleAge: 100, // 100ms max stale age
+      });
+
+      let fetchCount = 0;
+      const fetcher = jest.fn(async () => {
+        fetchCount++;
+        return `value-${fetchCount}`;
+      });
+
+      // Initial fetch
+      await shortStaleCache.getOrFetch('swr-key', fetcher);
+
+      // Wait beyond both TTL and maxStaleAge
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // Should fetch fresh data (not stale)
+      const result = await shortStaleCache.getOrFetch('swr-key', fetcher);
+      expect(result.cached).toBe(false);
+      expect(fetcher).toHaveBeenCalledTimes(2);
+
+      shortStaleCache.destroy();
+    });
+
+    it('should handle concurrent requests during revalidation', async () => {
+      let fetchCount = 0;
+      const slowFetcher = jest.fn(async () => {
+        fetchCount++;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return `value-${fetchCount}`;
+      });
+
+      // Initial fetch
+      await tieredCache.getOrFetch('concurrent-key', slowFetcher);
+      expect(fetchCount).toBe(1);
+
+      // Wait for TTL to expire
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // Multiple concurrent requests
+      const results = await Promise.all([
+        tieredCache.getOrFetch('concurrent-key', slowFetcher),
+        tieredCache.getOrFetch('concurrent-key', slowFetcher),
+        tieredCache.getOrFetch('concurrent-key', slowFetcher),
+      ]);
+
+      // All should return valid values
+      results.forEach((result) => {
+        expect(result.value).toMatch(/value-[12]/);
+      });
+    });
+  });
+
+  describe('getWithMeta', () => {
+    it('should return correct metadata for cache hit', async () => {
+      await tieredCache.set('meta-key', 'meta-value');
+
+      const result = await tieredCache.getWithMeta('meta-key');
+
+      expect(result.hit).toBe(true);
+      expect(result.value).toBe('meta-value');
+      expect(result.source).toBe('memory');
+      expect(result.stale).toBe(false);
+      expect(result.age).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should return correct metadata for cache miss', async () => {
+      const result = await tieredCache.getWithMeta('nonexistent');
+
+      expect(result.hit).toBe(false);
+      expect(result.value).toBeNull();
+      expect(result.source).toBe('origin');
+      expect(result.stale).toBe(false);
+    });
+
+    it('should return stale metadata when data is stale', async () => {
+      const shortTtlCache = new TieredCache({
+        memory: {
+          maxEntries: 100,
+          defaultTTL: 50, // 50ms TTL
+        },
+        staleWhileRevalidate: true,
+        maxStaleAge: 500,
+      });
+
+      await shortTtlCache.set('stale-key', 'stale-value');
+
+      // Wait for TTL to expire
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
+      const result = await shortTtlCache.getWithMeta('stale-key');
+
+      expect(result.stale).toBe(true);
+      expect(result.source).toBe('stale');
+      expect(result.value).toBe('stale-value');
+
+      shortTtlCache.destroy();
+    });
+  });
+
+  describe('Redis availability', () => {
+    it('should report Redis as not available when not configured', () => {
+      expect(tieredCache.isRedisAvailable()).toBe(false);
+    });
+
+    it('should include null Redis stats when not available', () => {
+      const stats = tieredCache.getStats();
+
+      expect(stats.redis).toBeNull();
+      expect(stats.memory).toBeDefined();
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle setting null values', async () => {
+      await tieredCache.set('null-key', null);
+      const result = await tieredCache.get('null-key');
+      expect(result).toBeNull();
+    });
+
+    it('should handle setting undefined values', async () => {
+      await tieredCache.set('undefined-key', undefined);
+      const result = await tieredCache.get('undefined-key');
+      expect(result).toBeUndefined();
+    });
+
+    it('should handle complex nested objects', async () => {
+      const complexObj = {
+        level1: {
+          level2: {
+            level3: {
+              array: [1, 2, { nested: 'value' }],
+              date: new Date().toISOString(),
+            },
+          },
+        },
+      };
+
+      await tieredCache.set('complex', complexObj);
+      const result = await tieredCache.get('complex');
+
+      expect(result).toEqual(complexObj);
+    });
+
+    it('should handle empty strings as keys', async () => {
+      // Empty string is technically a valid key
+      await tieredCache.set('', 'empty-key-value');
+      const result = await tieredCache.get('');
+      expect(result).toBe('empty-key-value');
+    });
+
+    it('should handle special characters in keys', async () => {
+      const specialKey = 'user:123:profile:@#$%^&*()';
+      await tieredCache.set(specialKey, 'special-value');
+      const result = await tieredCache.get(specialKey);
+      expect(result).toBe('special-value');
+    });
   });
 });

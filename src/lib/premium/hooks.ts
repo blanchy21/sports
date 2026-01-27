@@ -16,12 +16,7 @@ import {
   getPremiumTier,
   PREMIUM_TIER_INFO,
 } from './checker';
-import {
-  PremiumFeature,
-  hasFeature,
-  getAvailableFeatures,
-  shouldShowAds,
-} from './features';
+import { PremiumFeature, hasFeature, getAvailableFeatures, shouldShowAds } from './features';
 
 /**
  * Fetch staked MEDALS balance for an account
@@ -90,7 +85,7 @@ export function usePremiumStatus(account: string | undefined): {
 export function usePremiumTier(account: string | undefined): {
   tier: PremiumTier | null;
   isLoading: boolean;
-  tierInfo: typeof PREMIUM_TIER_INFO[PremiumTier] | null;
+  tierInfo: (typeof PREMIUM_TIER_INFO)[PremiumTier] | null;
 } {
   const { data: stakedBalance, isLoading } = useStakedBalance(account);
 
@@ -110,7 +105,10 @@ export function usePremiumTier(account: string | undefined): {
  * @param feature - Feature to check
  * @returns True if user has the feature
  */
-export function useHasFeature(account: string | undefined, feature: PremiumFeature): {
+export function useHasFeature(
+  account: string | undefined,
+  feature: PremiumFeature
+): {
   hasAccess: boolean;
   isLoading: boolean;
 } {
@@ -179,4 +177,65 @@ export function useIsPremium(account: string | undefined): {
     isPremium: tier !== null,
     isLoading,
   };
+}
+
+// ============================================================================
+// Batch Prefetching for Feed Optimization
+// ============================================================================
+
+import type { QueryClient } from '@tanstack/react-query';
+
+interface BatchBalanceResponse {
+  success: boolean;
+  balances: Record<string, { staked: number; premiumTier: PremiumTier | null }>;
+}
+
+/**
+ * Prefetch staked balances for multiple accounts at once.
+ * This reduces N+1 queries when rendering a feed with many posts.
+ *
+ * @param accounts - Array of Hive usernames
+ * @param queryClient - React Query client instance
+ */
+export async function prefetchStakedBalances(
+  accounts: string[],
+  queryClient: QueryClient
+): Promise<void> {
+  // Deduplicate and filter
+  const uniqueAccounts = [...new Set(accounts.filter(Boolean))];
+
+  if (uniqueAccounts.length === 0) return;
+
+  // Check which accounts are already cached
+  const uncachedAccounts = uniqueAccounts.filter((account) => {
+    const cached = queryClient.getQueryData(['medals', 'staked', account]);
+    return cached === undefined;
+  });
+
+  if (uncachedAccounts.length === 0) return;
+
+  try {
+    // Fetch all uncached accounts in a single batch request
+    const response = await fetch(
+      `/api/hive-engine/batch-balance?accounts=${uncachedAccounts.join(',')}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch batch balances');
+    }
+
+    const data: BatchBalanceResponse = await response.json();
+
+    if (!data.success || !data.balances) {
+      throw new Error('Invalid batch balance response');
+    }
+
+    // Populate React Query cache for each account
+    for (const [account, balance] of Object.entries(data.balances)) {
+      queryClient.setQueryData(['medals', 'staked', account], balance.staked);
+    }
+  } catch (error) {
+    // Silently fail - individual hooks will fetch on their own
+    console.warn('[Premium] Batch prefetch failed, falling back to individual queries:', error);
+  }
 }

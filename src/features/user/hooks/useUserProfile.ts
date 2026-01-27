@@ -6,7 +6,8 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchUserProfile } from '@/lib/hive-workerbee/account';
+import { fetchUserProfile, parseJsonMetadata } from '@/lib/hive-workerbee/account';
+import { getAccountsBatch } from '@/lib/hive-workerbee/optimization';
 
 export interface UserProfile {
   username: string;
@@ -74,8 +75,11 @@ export function useUserProfile(username: string | null) {
 }
 
 /**
- * Prefetch multiple user profiles at once
- * Use this at the list level to batch prefetch all authors
+ * Prefetch multiple user profiles at once using a single batch API call.
+ * This dramatically reduces N+1 queries when rendering feeds.
+ *
+ * The Hive API's get_accounts endpoint accepts an array of usernames,
+ * allowing us to fetch all profiles in one request instead of N requests.
  *
  * @param usernames - Array of usernames to prefetch
  * @param queryClient - React Query client instance
@@ -87,14 +91,46 @@ export async function prefetchUserProfiles(
   // Deduplicate usernames
   const uniqueUsernames = [...new Set(usernames.filter(Boolean))];
 
-  // Prefetch all profiles in parallel
-  await Promise.allSettled(
-    uniqueUsernames.map((username) =>
-      queryClient.prefetchQuery({
-        queryKey: ['userProfile', username],
-        queryFn: () => fetchProfile(username),
-        staleTime: 5 * 60 * 1000,
-      })
-    )
-  );
+  if (uniqueUsernames.length === 0) return;
+
+  // Check which usernames are not already in cache
+  const uncachedUsernames = uniqueUsernames.filter((username) => {
+    const cached = queryClient.getQueryData(['userProfile', username]);
+    return cached === undefined;
+  });
+
+  if (uncachedUsernames.length === 0) return;
+
+  try {
+    // Batch fetch all uncached accounts in a single API call
+    const accountsMap = await getAccountsBatch(uncachedUsernames);
+
+    // Transform and populate React Query cache for each account
+    for (const [username, accountData] of accountsMap) {
+      let profile: UserProfile | null = null;
+
+      if (accountData) {
+        // Parse the profile metadata from the account
+        const metadata = parseJsonMetadata((accountData.json_metadata as string) || '{}');
+        const profileData = (metadata.profile || {}) as {
+          name?: string;
+          profile_image?: string;
+        };
+
+        profile = {
+          username,
+          displayName: profileData.name,
+          avatar: profileData.profile_image,
+          reputation: 0,
+          reputationFormatted: '0',
+        };
+      }
+
+      // Set in React Query cache
+      queryClient.setQueryData(['userProfile', username], profile);
+    }
+  } catch (error) {
+    // Silently fail - individual hooks will fetch on their own
+    console.warn('[UserProfile] Batch prefetch failed, falling back to individual queries:', error);
+  }
 }

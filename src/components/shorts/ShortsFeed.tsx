@@ -40,6 +40,7 @@ export function ShortsFeed({
   const nextCursorRef = useRef<string | undefined>(undefined);
   const latestShortRef = useRef<string | undefined>(undefined);
   const realtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const newAnimationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Dedupe shorts by ID
   const dedupeShorts = useCallback((shortsList: Short[]) => {
@@ -181,9 +182,15 @@ export function ShortsFeed({
       latestShortRef.current = pendingShorts[0].id;
     }
 
+    // Clear any existing animation timeout before setting a new one
+    if (newAnimationTimeoutRef.current) {
+      clearTimeout(newAnimationTimeoutRef.current);
+    }
+
     // Clear "new" animation after 5 seconds
-    setTimeout(() => {
+    newAnimationTimeoutRef.current = setTimeout(() => {
       setNewShortIds(new Set());
+      newAnimationTimeoutRef.current = null;
     }, 5000);
   }, [pendingShorts, dedupeShorts]);
 
@@ -223,6 +230,16 @@ export function ShortsFeed({
       }
     };
   }, [isLoading, shorts.length, checkForNewShorts]);
+
+  // Cleanup animation timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (newAnimationTimeoutRef.current) {
+        clearTimeout(newAnimationTimeoutRef.current);
+        newAnimationTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Loading state
   if (isLoading) {

@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
+import { createAuthMockFetch, createValidSession, createMockLocalStorage } from './auth-test-utils';
 
 // Mock WorkerBee before any other imports
 jest.mock('@/lib/hive-workerbee/client', () => ({
@@ -55,28 +56,8 @@ jest.mock('@/lib/firebase/auth', () => ({
   FirebaseAuth: mockFirebaseAuth,
 }));
 
-// Mock localStorage
-interface MockLocalStorage {
-  store: Record<string, string>;
-  getItem: jest.Mock<string | null, [string]>;
-  setItem: jest.Mock<void, [string, string]>;
-  removeItem: jest.Mock<void, [string]>;
-  clear: jest.Mock<void, []>;
-}
-
-const localStorageMock: MockLocalStorage = {
-  store: {} as Record<string, string>,
-  getItem: jest.fn((key: string): string | null => localStorageMock.store[key] ?? null),
-  setItem: jest.fn((key: string, value: string): void => {
-    localStorageMock.store[key] = value;
-  }),
-  removeItem: jest.fn((key: string): void => {
-    delete localStorageMock.store[key];
-  }),
-  clear: jest.fn((): void => {
-    localStorageMock.store = {};
-  }),
-};
+// Setup localStorage mock
+const localStorageMock = createMockLocalStorage();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 // Mock requestAnimationFrame
@@ -85,14 +66,14 @@ window.requestAnimationFrame = (callback) => {
   return 0;
 };
 
-// Mock fetch to prevent URL parse errors
-const mockFetch = jest.fn();
-global.fetch = mockFetch;
-
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 
 // Test component that exposes auth methods
-function AuthTestComponent({ onAuthChange }: { onAuthChange?: (auth: ReturnType<typeof useAuth>) => void }) {
+function AuthTestComponent({
+  onAuthChange,
+}: {
+  onAuthChange?: (auth: ReturnType<typeof useAuth>) => void;
+}) {
   const auth = useAuth();
 
   React.useEffect(() => {
@@ -111,6 +92,8 @@ function AuthTestComponent({ onAuthChange }: { onAuthChange?: (auth: ReturnType<
 }
 
 describe('Firebase Authentication Flow', () => {
+  let authMock: ReturnType<typeof createAuthMockFetch>;
+
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.clear();
@@ -119,11 +102,10 @@ describe('Firebase Authentication Flow', () => {
     mockFirebaseAuth.signIn.mockReset();
     mockFirebaseAuth.signOut.mockReset().mockResolvedValue(undefined);
     mockFirebaseAuth.upgradeToHive.mockReset();
-    // Mock fetch to return successful responses
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ success: true, account: {} }),
-    });
+
+    // Create fresh mock for each test
+    authMock = createAuthMockFetch();
+    global.fetch = authMock.mockFetch as unknown as typeof fetch;
   });
 
   describe('Firebase Sign In', () => {
@@ -132,7 +114,11 @@ describe('Firebase Authentication Flow', () => {
 
       render(
         <AuthProvider>
-          <AuthTestComponent onAuthChange={(auth) => { authRef = auth; }} />
+          <AuthTestComponent
+            onAuthChange={(auth) => {
+              authRef = auth;
+            }}
+          />
         </AuthProvider>
       );
 
@@ -163,7 +149,11 @@ describe('Firebase Authentication Flow', () => {
 
       render(
         <AuthProvider>
-          <AuthTestComponent onAuthChange={(auth) => { authRef = auth; }} />
+          <AuthTestComponent
+            onAuthChange={(auth) => {
+              authRef = auth;
+            }}
+          />
         </AuthProvider>
       );
 
@@ -182,12 +172,16 @@ describe('Firebase Authentication Flow', () => {
       expect(screen.getByTestId('is-hive')).toHaveTextContent('hive');
     });
 
-    it('persists Firebase session to localStorage', async () => {
+    it('persists Firebase session to cookie API', async () => {
       let authRef: ReturnType<typeof useAuth> | undefined;
 
       render(
         <AuthProvider>
-          <AuthTestComponent onAuthChange={(auth) => { authRef = auth; }} />
+          <AuthTestComponent
+            onAuthChange={(auth) => {
+              authRef = auth;
+            }}
+          />
         </AuthProvider>
       );
 
@@ -199,34 +193,29 @@ describe('Firebase Authentication Flow', () => {
         authRef?.loginWithFirebase(mockFirebaseUser);
       });
 
-      // Wait for localStorage to be updated (it happens async via useEffect)
+      // Wait for session to be persisted via cookie API
       await waitFor(() => {
-        const storedRaw = localStorage.getItem('authState');
-        expect(storedRaw).not.toBeNull();
+        expect(authMock.mockFetch).toHaveBeenCalledWith(
+          '/api/auth/session',
+          expect.objectContaining({
+            method: 'POST',
+            body: expect.stringContaining('testuser'),
+          })
+        );
       });
 
-      // Check localStorage content
-      const storedRaw = localStorage.getItem('authState');
-      const stored = JSON.parse(storedRaw!);
-      expect(stored.authType).toBe('soft');
-      expect(stored.user.username).toBe('testuser');
+      // Verify the session state was updated
+      const sessionState = authMock.getSessionState();
+      expect(sessionState.authenticated).toBe(true);
+      expect(sessionState.session?.username).toBe('testuser');
+      expect(sessionState.session?.authType).toBe('soft');
     });
   });
 
   describe('Firebase Session Restoration', () => {
-    it('restores valid soft auth session from localStorage', async () => {
-      const validSession = {
-        user: {
-          id: 'firebase-user-123',
-          email: 'test@example.com',
-          username: 'testuser',
-          displayName: 'Test User',
-          isHiveAuth: false,
-        },
-        authType: 'soft',
-        loginAt: Date.now() - (5 * 60 * 1000), // 5 minutes ago
-      };
-      localStorageMock.setItem('authState', JSON.stringify(validSession));
+    it('restores valid soft auth session from cookie API', async () => {
+      // Set up a valid soft auth session via the cookie API mock
+      authMock.setSessionState(createValidSession('testuser', 'soft'));
 
       render(
         <AuthProvider>
@@ -251,7 +240,11 @@ describe('Firebase Authentication Flow', () => {
 
       render(
         <AuthProvider>
-          <AuthTestComponent onAuthChange={(auth) => { authRef = auth; }} />
+          <AuthTestComponent
+            onAuthChange={(auth) => {
+              authRef = auth;
+            }}
+          />
         </AuthProvider>
       );
 
@@ -279,13 +272,14 @@ describe('Firebase Authentication Flow', () => {
 });
 
 describe('Firebase to Hive Upgrade Flow', () => {
+  let authMock: ReturnType<typeof createAuthMockFetch>;
+
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.clear();
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ success: true, account: {} }),
-    });
+
+    authMock = createAuthMockFetch();
+    global.fetch = authMock.mockFetch as unknown as typeof fetch;
   });
 
   it('allows Firebase user to upgrade to Hive auth', async () => {
@@ -295,7 +289,11 @@ describe('Firebase to Hive Upgrade Flow', () => {
 
     render(
       <AuthProvider>
-        <AuthTestComponent onAuthChange={(auth) => { authRef = auth; }} />
+        <AuthTestComponent
+          onAuthChange={(auth) => {
+            authRef = auth;
+          }}
+        />
       </AuthProvider>
     );
 
@@ -324,30 +322,29 @@ describe('Firebase to Hive Upgrade Flow', () => {
 });
 
 describe('Auth Type Switching', () => {
+  let authMock: ReturnType<typeof createAuthMockFetch>;
+
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.clear();
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ success: true, account: {} }),
-    });
+
+    authMock = createAuthMockFetch();
+    global.fetch = authMock.mockFetch as unknown as typeof fetch;
   });
 
   it('can switch from Hive auth to soft auth', async () => {
-    // Start with Hive session
-    const hiveSession = {
-      user: { id: 'hiveuser', username: 'hiveuser', isHiveAuth: true },
-      authType: 'hive',
-      hiveUser: { username: 'hiveuser', isAuthenticated: true },
-      loginAt: Date.now(),
-    };
-    localStorageMock.setItem('authState', JSON.stringify(hiveSession));
+    // Start with Hive session via the cookie API
+    authMock.setSessionState(createValidSession('hiveuser', 'hive'));
 
     let authRef: ReturnType<typeof useAuth> | undefined;
 
     render(
       <AuthProvider>
-        <AuthTestComponent onAuthChange={(auth) => { authRef = auth; }} />
+        <AuthTestComponent
+          onAuthChange={(auth) => {
+            authRef = auth;
+          }}
+        />
       </AuthProvider>
     );
 

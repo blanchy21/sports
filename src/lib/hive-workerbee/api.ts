@@ -23,7 +23,12 @@ async function getWaxHelpers() {
   return waxHelpers;
 }
 import { getNodeHealthManager, recordNodeResult } from './node-health';
-import { workerBee as workerBeeLog, info as logInfo, warn as logWarn, error as logError } from './logger';
+import {
+  workerBee as workerBeeLog,
+  info as logInfo,
+  warn as logWarn,
+  error as logError,
+} from './logger';
 import { RateLimiter, RateLimitPresets } from '@/lib/utils/rate-limiter';
 import type { ApiResult } from '@/lib/utils/result';
 // These are imported for re-export at the bottom of this file
@@ -45,7 +50,11 @@ const apiRateLimiter = new RateLimiter({
 // Previously 15s was causing cumulative delays when nodes were slow/unreachable
 const REQUEST_TIMEOUT_MS = 8000; // 8 seconds
 
-async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs: number = REQUEST_TIMEOUT_MS) {
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs: number = REQUEST_TIMEOUT_MS
+) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -61,6 +70,29 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
 }
 
 /**
+ * Extended Wax client interface for dynamic method access.
+ * The Wax library exposes various methods at runtime that aren't in type definitions.
+ * This interface allows safe access to these dynamic methods.
+ */
+interface WaxDynamicClient {
+  [method: string]: unknown;
+  call?: (method: string, params: unknown[]) => Promise<unknown>;
+  api?: {
+    call?: (method: string, params: unknown[]) => Promise<unknown>;
+  };
+  condenser_api?: Record<string, unknown>;
+}
+
+/**
+ * Cast Wax client to dynamic interface for probing available methods.
+ * This is necessary because the Wax library's type definitions don't expose
+ * all the methods available at runtime.
+ */
+function asWaxDynamic(wax: unknown): WaxDynamicClient {
+  return wax as WaxDynamicClient;
+}
+
+/**
  * Make an API call using WorkerBee's chain (Wax instance)
  * This leverages WorkerBee's built-in node management and failover
  * Falls back to HTTP if WorkerBee chain is unavailable
@@ -68,7 +100,10 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
  * @param params - Parameters to pass to the method
  * @returns Promise with the API response
  */
-export async function makeWorkerBeeApiCall<T = unknown>(method: string, params: unknown[] = []): Promise<T> {
+export async function makeWorkerBeeApiCall<T = unknown>(
+  method: string,
+  params: unknown[] = []
+): Promise<T> {
   // callStartTime can be used for future performance logging
 
   // Only use WorkerBee on server-side
@@ -77,100 +112,125 @@ export async function makeWorkerBeeApiCall<T = unknown>(method: string, params: 
     return makeHiveApiCall('condenser_api', method, params);
   }
 
-  workerBeeLog(`[WorkerBee API] Server-side call: ${method}`, undefined, { paramsLength: params.length });
+  workerBeeLog(`[WorkerBee API] Server-side call: ${method}`, undefined, {
+    paramsLength: params.length,
+  });
 
   try {
     const { initializeWorkerBeeClient, getWaxFromWorkerBee } = await import('./client');
-    
+
     let client;
     try {
       client = await initializeWorkerBeeClient();
     } catch (initError) {
       // If WorkerBee initialization fails, fallback to HTTP
-      logWarn(`WorkerBee client initialization failed for ${method}, using HTTP fallback`, 'makeWorkerBeeApiCall', initError instanceof Error ? initError : undefined);
+      logWarn(
+        `WorkerBee client initialization failed for ${method}, using HTTP fallback`,
+        'makeWorkerBeeApiCall',
+        initError instanceof Error ? initError : undefined
+      );
       return makeHiveApiCall('condenser_api', method, params);
     }
-    
+
     let wax;
     try {
       wax = getWaxFromWorkerBee(client);
     } catch (waxError) {
       // If getting Wax instance fails, fallback to HTTP
-      logWarn(`Failed to get Wax instance for ${method}, using HTTP fallback`, 'makeWorkerBeeApiCall', waxError instanceof Error ? waxError : undefined);
+      logWarn(
+        `Failed to get Wax instance for ${method}, using HTTP fallback`,
+        'makeWorkerBeeApiCall',
+        waxError instanceof Error ? waxError : undefined
+      );
       return makeHiveApiCall('condenser_api', method, params);
     }
-    
+
     workerBeeLog(`[WorkerBee API] Calling ${method}`, undefined, { params });
-    
-    const waxAny = wax as unknown as Record<string, unknown>;
+
+    const waxDynamic = asWaxDynamic(wax);
     const WAX_TIMEOUT_MS = 10000; // 10 seconds timeout
-    
+
     // Pattern 1: Direct method call (e.g., wax.getContent)
-    if (typeof waxAny[method] === 'function') {
+    if (typeof waxDynamic[method] === 'function') {
       const result = await withTimeout(
-        (waxAny[method] as (params: unknown[]) => Promise<T>)(params),
+        (waxDynamic[method] as (params: unknown[]) => Promise<T>)(params),
         WAX_TIMEOUT_MS,
         `WorkerBee API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
       );
       workerBeeLog(`[WorkerBee API] Success ${method}`);
       return result;
     }
-    
+
     // Pattern 2: Using call method with full API path
-    if (typeof waxAny.call === 'function') {
+    if (typeof waxDynamic.call === 'function') {
       const result = await withTimeout(
-        (waxAny.call as (method: string, params: unknown[]) => Promise<T>)(`condenser_api.${method}`, params),
+        (waxDynamic.call as (method: string, params: unknown[]) => Promise<T>)(
+          `condenser_api.${method}`,
+          params
+        ),
         WAX_TIMEOUT_MS,
         `WorkerBee API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
       );
       workerBeeLog(`[WorkerBee API] Success ${method}`);
       return result;
     }
-    
+
     // Pattern 3: Try accessing via api property
-    if (waxAny.api && typeof (waxAny.api as Record<string, unknown>).call === 'function') {
+    if (waxDynamic.api && typeof (waxDynamic.api as Record<string, unknown>).call === 'function') {
       const result = await withTimeout(
-        ((waxAny.api as { call: (method: string, params: unknown[]) => Promise<T> }).call)(`condenser_api.${method}`, params),
+        (waxDynamic.api as { call: (method: string, params: unknown[]) => Promise<T> }).call(
+          `condenser_api.${method}`,
+          params
+        ),
         WAX_TIMEOUT_MS,
         `WorkerBee API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
       );
       workerBeeLog(`[WorkerBee API] Success ${method}`);
       return result;
     }
-    
+
     // Pattern 4: Try accessing condenser_api directly
-    if (waxAny.condenser_api && typeof (waxAny.condenser_api as Record<string, unknown>)[method] === 'function') {
+    if (
+      waxDynamic.condenser_api &&
+      typeof (waxDynamic.condenser_api as Record<string, unknown>)[method] === 'function'
+    ) {
       const result = await withTimeout(
-        ((waxAny.condenser_api as Record<string, unknown>)[method] as (params: unknown[]) => Promise<T>)(params),
+        (
+          (waxDynamic.condenser_api as Record<string, unknown>)[method] as (
+            params: unknown[]
+          ) => Promise<T>
+        )(params),
         WAX_TIMEOUT_MS,
         `WorkerBee API call ${method} timed out after ${WAX_TIMEOUT_MS}ms`
       );
       workerBeeLog(`[WorkerBee API] Success ${method}`);
       return result;
     }
-    
+
     throw new Error(`WorkerBee method ${method} not available - tried multiple access patterns`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     // Check for timeout or requestInterceptor issues
-    const isTimeoutError = 
+    const isTimeoutError =
       errorMessage.includes('timed out') ||
       errorMessage.includes('timeout') ||
       errorMessage.includes('Request timed out');
-    
+
     const isRequestInterceptorIssue = errorMessage.includes('requestInterceptor');
-    
+
     // For known issues, silently fall back to HTTP
     if (isTimeoutError || isRequestInterceptorIssue) {
       logWarn(`[WorkerBee API] ${method} failed (${errorMessage}), using HTTP fallback`);
       return makeHiveApiCall('condenser_api', method, params);
     }
-    
+
     // For other errors, log and fallback
     // Don't log as error if it's a known initialization issue
-    if (!errorMessage.includes('WorkerBee chain not available') && 
-        !errorMessage.includes('Failed to initialize')) {
+    if (
+      !errorMessage.includes('WorkerBee chain not available') &&
+      !errorMessage.includes('Failed to initialize')
+    ) {
       logWarn(`[WorkerBee API] ${method} failed: ${errorMessage}, using HTTP fallback`);
     }
     return makeHiveApiCall('condenser_api', method, params);
@@ -186,7 +246,11 @@ export async function makeWorkerBeeApiCall<T = unknown>(method: string, params: 
  * @param params - Parameters to pass to the method (array for condenser_api, object for rc_api)
  * @returns Promise with the API response
  */
-export async function makeHiveApiCall<T = unknown>(api: string, method: string, params: unknown[] | Record<string, unknown> = []): Promise<T> {
+export async function makeHiveApiCall<T = unknown>(
+  api: string,
+  method: string,
+  params: unknown[] | Record<string, unknown> = []
+): Promise<T> {
   // Generate a unique key for request deduplication
   const requestKey = `hive-api:${api}.${method}:${JSON.stringify(params)}`;
 
@@ -209,10 +273,10 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
     // due to consistent timeout issues observed in production logs
     const apiNodes = [
       bestNode, // Start with healthiest node (from health manager)
-      'https://api.hive.blog',           // @blocktrades - most reliable
-      'https://api.openhive.network',    // @gtg - established node
-      'https://api.deathwing.me',        // @deathwing - good backup
-      'https://api.c0ff33a.uk',          // @c0ff33a - backup node
+      'https://api.hive.blog', // @blocktrades - most reliable
+      'https://api.openhive.network', // @gtg - established node
+      'https://api.deathwing.me', // @deathwing - good backup
+      'https://api.c0ff33a.uk', // @c0ff33a - backup node
       // Note: hive-api.arcange.eu intentionally excluded - known timeout issues
     ];
 
@@ -236,7 +300,7 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
             jsonrpc: '2.0',
             method: `${api}.${method}`,
             params: params,
-            id: Math.floor(Math.random() * 1000000)
+            id: Math.floor(Math.random() * 1000000),
           }),
         });
 
@@ -266,7 +330,9 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
         let categorizedError: string;
         if (isAbortError || /aborted|timeout/i.test(errorMessage)) {
           categorizedError = `Request to ${nodeUrl} timed out after ${REQUEST_TIMEOUT_MS}ms`;
-        } else if (/failed to fetch|network error|ERR_NAME_NOT_RESOLVED|ERR_CONNECTION/i.test(errorMessage)) {
+        } else if (
+          /failed to fetch|network error|ERR_NAME_NOT_RESOLVED|ERR_CONNECTION/i.test(errorMessage)
+        ) {
           // Network/DNS errors
           categorizedError = `Network error connecting to ${nodeUrl}: ${errorMessage}`;
         } else if (/502|503|504|50[0-9]/.test(errorMessage)) {
@@ -283,13 +349,15 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
         attemptedNodes.push(nodeUrl);
 
         // Only log as debug during failover (we'll log as warning if all nodes fail)
-        workerBeeLog(`Hive API failed for ${api}.${method} using ${nodeUrl}, trying next node: ${categorizedError}`);
+        workerBeeLog(
+          `Hive API failed for ${api}.${method} using ${nodeUrl}, trying next node: ${categorizedError}`
+        );
         lastError = new Error(categorizedError);
 
         // Add a small delay before trying the next node to avoid overwhelming nodes
         // Only if this isn't the last node
         if (uniqueNodes.indexOf(nodeUrl) < uniqueNodes.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
+          await new Promise((resolve) => setTimeout(resolve, 100)); // 100ms delay
         }
         // Continue to next node
       }
@@ -300,11 +368,15 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
       method: `${api}.${method}`,
       attemptedNodes: attemptedNodes.length,
       lastError: lastError?.message,
-      timeout: `${REQUEST_TIMEOUT_MS}ms`
+      timeout: `${REQUEST_TIMEOUT_MS}ms`,
     };
-    
-    logWarn(`All Hive API nodes failed for ${api}.${method}. Attempted ${attemptedNodes.length} nodes. Last error: ${lastError?.message}`, undefined, errorDetails);
-    
+
+    logWarn(
+      `All Hive API nodes failed for ${api}.${method}. Attempted ${attemptedNodes.length} nodes. Last error: ${lastError?.message}`,
+      undefined,
+      errorDetails
+    );
+
     const errorMessage = `All Hive API nodes failed (attempted ${attemptedNodes.length} nodes). This may indicate network issues or all nodes are temporarily unavailable. Last error: ${lastError?.message}`;
     throw new Error(errorMessage);
   }, requestKey);
@@ -317,10 +389,10 @@ export async function makeHiveApiCall<T = unknown>(api: string, method: string, 
 export function getHiveApiNodes(): string[] {
   // Optimized node list - arcange.eu excluded due to consistent timeout issues
   return [
-    'https://api.hive.blog',           // @blocktrades - most reliable
-    'https://api.openhive.network',    // @gtg - established node
-    'https://api.deathwing.me',        // @deathwing - backup node
-    'https://api.c0ff33a.uk',          // @c0ff33a - backup node
+    'https://api.hive.blog', // @blocktrades - most reliable
+    'https://api.openhive.network', // @gtg - established node
+    'https://api.deathwing.me', // @deathwing - backup node
+    'https://api.c0ff33a.uk', // @c0ff33a - backup node
   ];
 }
 
@@ -331,27 +403,35 @@ export function getHiveApiNodes(): string[] {
  */
 export async function checkHiveNodeAvailability(nodeUrl: string): Promise<boolean> {
   try {
-    const response = await fetchWithTimeout(nodeUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetchWithTimeout(
+      nodeUrl,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'condenser_api.get_dynamic_global_properties',
+          params: [],
+          id: 1,
+        }),
       },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'condenser_api.get_dynamic_global_properties',
-        params: [],
-        id: 1
-      }),
-    }, 10000); // 10 second timeout for health checks
-    
+      10000
+    ); // 10 second timeout for health checks
+
     if (!response.ok) {
       return false;
     }
-    
+
     // Verify the response is valid JSON and contains expected data
     const result = await response.json();
     return result && result.result && !result.error;
-  } catch {
+  } catch (error) {
+    // Log health check failures for debugging node connectivity issues
+    logWarn(`Hive node health check failed: ${nodeUrl}`, 'checkHiveNodeAvailability', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return false;
   }
 }
@@ -359,12 +439,16 @@ export async function checkHiveNodeAvailability(nodeUrl: string): Promise<boolea
 /**
  * Wrap a promise with a timeout
  */
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  errorMessage: string
+): Promise<T> {
   return Promise.race([
     promise,
     new Promise<T>((_, reject) => {
       setTimeout(() => reject(new Error(errorMessage)), timeoutMs);
-    })
+    }),
   ]);
 }
 
@@ -373,7 +457,10 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessa
  * @deprecated Use makeWorkerBeeApiCall() instead for better WorkerBee integration
  * This function is kept for backward compatibility
  */
-export async function makeWaxApiCall<T = unknown>(method: string, params: unknown[] = []): Promise<T> {
+export async function makeWaxApiCall<T = unknown>(
+  method: string,
+  params: unknown[] = []
+): Promise<T> {
   // Use the new WorkerBee API call function
   return makeWorkerBeeApiCall<T>(method, params);
 }
@@ -396,7 +483,11 @@ export async function getAccountWaxWithFallback(username: string): Promise<unkno
     }
     return await helpers.getAccountWax(username);
   } catch (error) {
-    logError('[Wax API] Failed to get account with Wax, falling back', 'getAccountWaxWithFallback', error instanceof Error ? error : undefined);
+    logError(
+      '[Wax API] Failed to get account with Wax, falling back',
+      'getAccountWaxWithFallback',
+      error instanceof Error ? error : undefined
+    );
     return makeHiveApiCall('condenser_api', 'get_accounts', [[username]]);
   }
 }
@@ -407,7 +498,10 @@ export async function getAccountWaxWithFallback(username: string): Promise<unkno
  * @param permlink - Content permlink
  * @returns Content information
  */
-export async function getContentWaxWithFallback(author: string, permlink: string): Promise<unknown | null> {
+export async function getContentWaxWithFallback(
+  author: string,
+  permlink: string
+): Promise<unknown | null> {
   try {
     // Only use Wax on server-side
     if (typeof window !== 'undefined') {
@@ -420,7 +514,11 @@ export async function getContentWaxWithFallback(author: string, permlink: string
     }
     return await helpers.getContentWax(author, permlink);
   } catch (error) {
-    logError('[Wax API] Failed to get content with Wax, falling back', 'getContentWaxWithFallback', error instanceof Error ? error : undefined);
+    logError(
+      '[Wax API] Failed to get content with Wax, falling back',
+      'getContentWaxWithFallback',
+      error instanceof Error ? error : undefined
+    );
     return makeHiveApiCall('condenser_api', 'get_content', [author, permlink]);
   }
 }
@@ -431,7 +529,10 @@ export async function getContentWaxWithFallback(author: string, permlink: string
  * @param params - Method parameters
  * @returns Discussion results
  */
-export async function getDiscussionsWaxWithFallback(method: string, params: unknown[]): Promise<unknown[]> {
+export async function getDiscussionsWaxWithFallback(
+  method: string,
+  params: unknown[]
+): Promise<unknown[]> {
   try {
     // Only use Wax on server-side
     if (typeof window !== 'undefined') {
@@ -444,7 +545,11 @@ export async function getDiscussionsWaxWithFallback(method: string, params: unkn
     }
     return await helpers.getDiscussionsWax(method, params);
   } catch (error) {
-    logError('[Wax API] Failed to get discussions with Wax, falling back', 'getDiscussionsWaxWithFallback', error instanceof Error ? error : undefined);
+    logError(
+      '[Wax API] Failed to get discussions with Wax, falling back',
+      'getDiscussionsWaxWithFallback',
+      error instanceof Error ? error : undefined
+    );
     return makeHiveApiCall('condenser_api', method, params) as Promise<unknown[]>;
   }
 }
@@ -459,7 +564,11 @@ export async function startHiveNodeHealthMonitoring(): Promise<void> {
     await nodeHealthManager.startProactiveMonitoring();
     logInfo('Node health monitoring started');
   } catch (error) {
-    logError('Failed to start node health monitoring', 'startHiveNodeHealthMonitoring', error instanceof Error ? error : undefined);
+    logError(
+      'Failed to start node health monitoring',
+      'startHiveNodeHealthMonitoring',
+      error instanceof Error ? error : undefined
+    );
   }
 }
 
@@ -477,23 +586,26 @@ export function getHiveNodeHealthReport() {
  * @param expectedType - Expected response type
  * @returns Validation result
  */
-export function validateApiResponse<T>(response: unknown, expectedType: string): {
+export function validateApiResponse<T>(
+  response: unknown,
+  expectedType: string
+): {
   isValid: boolean;
   data?: T;
   errors: string[];
 } {
   const errors: string[] = [];
-  
+
   if (!response) {
     errors.push('Response is null or undefined');
     return { isValid: false, errors };
   }
-  
+
   if (typeof response !== 'object') {
     errors.push('Response is not an object');
     return { isValid: false, errors };
   }
-  
+
   // Add type-specific validation based on expectedType
   switch (expectedType) {
     case 'account':
@@ -515,11 +627,11 @@ export function validateApiResponse<T>(response: unknown, expectedType: string):
       }
       break;
   }
-  
+
   return {
     isValid: errors.length === 0,
     data: response as T,
-    errors
+    errors,
   };
 }
 
@@ -546,15 +658,11 @@ export async function makeHiveApiCallWithFallback<T = unknown>(
 
   const cacheKey = `hive:${api}.${method}:${JSON.stringify(params)}`;
 
-  return getOrFetchWithFallback<T>(
-    cacheKey,
-    () => makeHiveApiCall<T>(api, method, params),
-    {
-      cacheTTL: options?.cacheTTL ?? 5 * 60 * 1000, // 5 minutes default
-      maxStaleAge: options?.maxStaleAge ?? 5 * 60 * 1000, // 5 minutes default
-      tags: options?.tags,
-    }
-  );
+  return getOrFetchWithFallback<T>(cacheKey, () => makeHiveApiCall<T>(api, method, params), {
+    cacheTTL: options?.cacheTTL ?? 5 * 60 * 1000, // 5 minutes default
+    maxStaleAge: options?.maxStaleAge ?? 5 * 60 * 1000, // 5 minutes default
+    tags: options?.tags,
+  });
 }
 
 /**

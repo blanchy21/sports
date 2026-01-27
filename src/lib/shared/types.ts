@@ -355,3 +355,105 @@ export interface HiveAuthUser {
   aiohaUserId?: string; // Aioha's internal user ID
   sessionId?: string; // Aioha session identifier
 }
+
+// ============================================================================
+// Type Guards for Runtime Validation
+// ============================================================================
+
+/**
+ * Type guard to check if a value is a valid HivePost
+ */
+export function isHivePost(value: unknown): value is HivePost {
+  if (!value || typeof value !== 'object') return false;
+  const post = value as Record<string, unknown>;
+  return (
+    typeof post.author === 'string' &&
+    typeof post.permlink === 'string' &&
+    typeof post.title === 'string' &&
+    typeof post.body === 'string'
+  );
+}
+
+/**
+ * Type guard to check if a value is a valid HiveComment
+ */
+export function isHiveComment(value: unknown): value is HiveComment {
+  if (!value || typeof value !== 'object') return false;
+  const comment = value as Record<string, unknown>;
+  return (
+    typeof comment.author === 'string' &&
+    typeof comment.permlink === 'string' &&
+    typeof comment.body === 'string' &&
+    typeof comment.parent_author === 'string'
+  );
+}
+
+/**
+ * Type guard to check if a value is a valid HiveAccount
+ */
+export function isHiveAccount(value: unknown): value is HiveAccount {
+  if (!value || typeof value !== 'object') return false;
+  const account = value as Record<string, unknown>;
+  return (
+    typeof account.name === 'string' &&
+    typeof account.balance === 'string' &&
+    typeof account.reputation === 'string'
+  );
+}
+
+/**
+ * Type guard to check if a value is a valid SportsblockPost
+ */
+export function isSportsblockPost(value: unknown): value is SportsblockPost {
+  if (!isHivePost(value)) return false;
+  // After isHivePost check, we know value has the HivePost shape
+  // Check for SportsblockPost-specific fields
+  const maybePost = value as { postType?: string; isSportsblockPost?: boolean };
+  return maybePost.postType === 'sportsblock' || maybePost.isSportsblockPost === true;
+}
+
+// ============================================================================
+// Type-Safe Transformation Functions
+// ============================================================================
+
+/**
+ * Safely cast an array of unknown values to HivePost array,
+ * filtering out invalid entries.
+ */
+export function toHivePosts(data: unknown): HivePost[] {
+  if (!Array.isArray(data)) return [];
+  return data.filter(isHivePost);
+}
+
+/**
+ * Safely cast an array of unknown values to HiveComment array,
+ * filtering out invalid entries.
+ */
+export function toHiveComments(data: unknown): HiveComment[] {
+  if (!Array.isArray(data)) return [];
+  return data.filter(isHiveComment);
+}
+
+/**
+ * Convert a HivePost to SportsblockPost by adding required fields
+ */
+export function toSportsblockPost(post: HivePost, sportCategory?: string | null): SportsblockPost {
+  return {
+    ...post,
+    postType: 'sportsblock',
+    sportCategory: sportCategory ?? undefined,
+    isSportsblockPost: true,
+  };
+}
+
+/**
+ * Safely convert an array of unknown values to SportsblockPost array.
+ * Filters to valid HivePosts first, then transforms to SportsblockPost.
+ */
+export function toSportsblockPosts(
+  data: unknown,
+  getSportCategory?: (post: HivePost) => string | null
+): SportsblockPost[] {
+  const posts = toHivePosts(data);
+  return posts.map((post) => toSportsblockPost(post, getSportCategory?.(post)));
+}

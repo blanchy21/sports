@@ -13,6 +13,16 @@ import { useRouter } from 'next/navigation';
 // fetchPost is now accessed via API route
 import { SportsblockPost } from '@/lib/shared/types';
 import { calculatePendingPayout, formatAsset } from '@/lib/utils/hive';
+
+/**
+ * Soft post metadata stored separately from the main post state.
+ * This avoids type conflicts with SportsblockPost.
+ */
+interface SoftPostMeta {
+  id: string;
+  authorDisplayName?: string;
+  authorAvatar?: string;
+}
 import { useUserProfile } from '@/features/user/hooks/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
@@ -26,6 +36,7 @@ export default function PostDetailPage() {
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const [post, setPost] = useState<SportsblockPost | null>(null);
+  const [softPostMeta, setSoftPostMeta] = useState<SoftPostMeta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,31 +86,67 @@ export default function PostDetailPage() {
         if (softResponse.ok) {
           const softResult = await softResponse.json();
           if (softResult.success && softResult.post) {
-            // Convert soft post to SportsblockPost format
+            // Convert soft post to SportsblockPost-like format
             const softPost = softResult.post;
+            // Store soft post metadata separately to avoid type conflicts
+            setSoftPostMeta({
+              id: softPost.id,
+              authorDisplayName: softPost.authorDisplayName,
+              authorAvatar: softPost.authorAvatar,
+            });
+            // Create a compatible post object
             setPost({
+              postType: 'sportsblock',
+              isSportsblockPost: true,
+              id: 0, // Soft posts use string IDs stored in softPostMeta
               author: softPost.authorUsername,
               permlink: softPost.permlink,
               title: softPost.title,
               body: softPost.content,
               created: softPost.createdAt,
-              last_update: softPost.updatedAt,
+              last_update: softPost.updatedAt || softPost.createdAt,
               category: softPost.sportCategory || 'general',
               tags: softPost.tags || [],
               sportCategory: softPost.sportCategory,
               json_metadata: JSON.stringify({ tags: softPost.tags }),
               net_votes: softPost.likeCount || 0,
-              children: 0, // We'd need to fetch comments separately
+              children: 0,
               pending_payout_value: '0.000 HBD',
               curator_payout_value: '0.000 HBD',
               total_payout_value: '0.000 HBD',
               active_votes: [],
-              // Soft post specific fields
-              id: softPost.id,
-              authorDisplayName: softPost.authorDisplayName,
-              authorAvatar: softPost.authorAvatar,
-              excerpt: softPost.excerpt,
-            } as unknown as SportsblockPost);
+              // Required HivePost fields with defaults
+              parent_author: '',
+              parent_permlink: softPost.sportCategory || 'general',
+              active: softPost.createdAt,
+              last_payout: '',
+              depth: 0,
+              net_rshares: '0',
+              abs_rshares: '0',
+              vote_rshares: '0',
+              children_abs_rshares: '0',
+              cashout_time: '',
+              max_cashout_time: '',
+              total_vote_weight: '0',
+              reward_weight: 100,
+              author_rewards: '0',
+              root_author: softPost.authorUsername,
+              root_permlink: softPost.permlink,
+              max_accepted_payout: '1000000.000 HBD',
+              percent_hbd: 10000,
+              allow_replies: true,
+              allow_votes: true,
+              allow_curation_rewards: true,
+              beneficiaries: [],
+              url: `/@${softPost.authorUsername}/${softPost.permlink}`,
+              root_title: softPost.title,
+              total_pending_payout_value: '0.000 HBD',
+              replies: [],
+              author_reputation: '0',
+              promoted: '0.000 HBD',
+              body_length: softPost.content?.length || 0,
+              reblogged_by: [],
+            });
             setIsSoftPost(true);
             return;
           }
@@ -135,10 +182,10 @@ export default function PostDetailPage() {
 
   const handleComment = () => {
     if (!post) return;
-    if (isSoftPost) {
+    if (isSoftPost && softPostMeta) {
       // Open soft comments modal for soft posts
       openModal('softComments', {
-        postId: (post as unknown as { id: string }).id,
+        postId: softPostMeta.id,
         postPermlink: post.permlink,
         postAuthor: post.author,
       });
@@ -212,16 +259,11 @@ export default function PostDetailPage() {
         <div className="mb-8">
           <div className="mb-4 flex items-center space-x-3">
             <Avatar
-              src={
-                isSoftPost
-                  ? (post as unknown as { authorAvatar?: string }).authorAvatar
-                  : hiveProfile?.avatar
-              }
+              src={isSoftPost ? softPostMeta?.authorAvatar : hiveProfile?.avatar}
               fallback={post.author}
               alt={
                 isSoftPost
-                  ? (post as unknown as { authorDisplayName?: string }).authorDisplayName ||
-                    post.author
+                  ? softPostMeta?.authorDisplayName || post.author
                   : hiveProfile?.displayName || post.author
               }
               size="md"
@@ -230,8 +272,7 @@ export default function PostDetailPage() {
             <div className="flex-1">
               <h1 className="text-2xl font-bold">
                 {isSoftPost
-                  ? (post as unknown as { authorDisplayName?: string }).authorDisplayName ||
-                    post.author
+                  ? softPostMeta?.authorDisplayName || post.author
                   : hiveProfile?.displayName || post.author}
               </h1>
               <div className="flex items-center space-x-4 text-sm text-gray-600">
@@ -287,10 +328,10 @@ export default function PostDetailPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-6">
               {/* Voting/Like Section */}
-              {isSoftPost ? (
+              {isSoftPost && softPostMeta ? (
                 <SoftLikeButton
                   targetType="post"
-                  targetId={(post as unknown as { id: string }).id}
+                  targetId={softPostMeta.id}
                   initialLikeCount={post.net_votes || 0}
                 />
               ) : (

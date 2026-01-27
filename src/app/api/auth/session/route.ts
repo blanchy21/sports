@@ -35,7 +35,9 @@ function getEncryptionKey(): Buffer {
       throw new Error('SESSION_SECRET environment variable is required in production');
     }
     // Development fallback - NOT SECURE, only for local development
-    console.warn('[Session API] WARNING: Using insecure default key. Set SESSION_SECRET in production.');
+    console.warn(
+      '[Session API] WARNING: Using insecure default key. Set SESSION_SECRET in production.'
+    );
     return crypto.scryptSync('development-only-insecure-key', 'salt', 32);
   }
 
@@ -47,8 +49,9 @@ function getEncryptionKey(): Buffer {
 const sessionSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
   username: z.string().min(1, 'Username is required'),
-  authType: z.enum(['hive', 'firebase', 'guest']),
+  authType: z.enum(['hive', 'soft', 'firebase', 'guest']),
   hiveUsername: z.string().optional(),
+  loginAt: z.number().optional(),
 });
 
 type SessionData = z.infer<typeof sessionSchema>;
@@ -63,10 +66,7 @@ function encryptSession(data: SessionData): string {
   const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, key, iv);
 
   const jsonData = JSON.stringify(data);
-  const encrypted = Buffer.concat([
-    cipher.update(jsonData, 'utf8'),
-    cipher.final()
-  ]);
+  const encrypted = Buffer.concat([cipher.update(jsonData, 'utf8'), cipher.final()]);
 
   const authTag = cipher.getAuthTag();
 
@@ -86,7 +86,9 @@ function decryptSession(encrypted: string): SessionData | null {
 
     // Validate minimum length (IV + authTag + at least 1 byte of data)
     if (combined.length < IV_LENGTH + AUTH_TAG_LENGTH + 1) {
-      console.warn('[Session API] Security: Invalid session token length - possible tampering attempt');
+      console.warn(
+        '[Session API] Security: Invalid session token length - possible tampering attempt'
+      );
       return null;
     }
 
@@ -98,10 +100,9 @@ function decryptSession(encrypted: string): SessionData | null {
     const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, key, iv);
     decipher.setAuthTag(authTag);
 
-    const decrypted = Buffer.concat([
-      decipher.update(encryptedData),
-      decipher.final()
-    ]).toString('utf8');
+    const decrypted = Buffer.concat([decipher.update(encryptedData), decipher.final()]).toString(
+      'utf8'
+    );
 
     const parsed = JSON.parse(decrypted);
     const result = sessionSchema.safeParse(parsed);
@@ -116,7 +117,9 @@ function decryptSession(encrypted: string): SessionData | null {
     // Log security-relevant failures (tampering, corruption, expired keys)
     if (error instanceof Error) {
       if (error.message.includes('Unsupported state') || error.message.includes('auth tag')) {
-        console.warn('[Session API] Security: Session decryption failed - possible tampering attempt');
+        console.warn(
+          '[Session API] Security: Session decryption failed - possible tampering attempt'
+        );
       } else {
         console.warn('[Session API] Security: Session decode failure:', error.message);
       }
@@ -134,10 +137,7 @@ export async function POST(request: NextRequest) {
     const parseResult = sessionSchema.safeParse(body);
 
     if (!parseResult.success) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid session data' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Invalid session data' }, { status: 400 });
     }
 
     const sessionData = parseResult.data;
@@ -205,14 +205,12 @@ export async function GET() {
         username: session.username,
         authType: session.authType,
         hiveUsername: session.hiveUsername,
+        loginAt: session.loginAt,
       },
     });
   } catch (error) {
     console.error('[Session API] Error getting session:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to get session' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to get session' }, { status: 500 });
   }
 }
 
@@ -243,9 +241,6 @@ export async function DELETE(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('[Session API] Error clearing session:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to clear session' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to clear session' }, { status: 500 });
   }
 }

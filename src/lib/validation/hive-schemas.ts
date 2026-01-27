@@ -229,6 +229,39 @@ export const hiveResourceCreditsSchema = z
   .passthrough();
 
 // ============================================================================
+// Comment Schemas
+// ============================================================================
+
+/**
+ * Raw Hive comment from get_content or get_content_replies APIs
+ * Comments have the same structure as posts but with parent_author set
+ */
+export const hiveRawCommentSchema = z
+  .object({
+    author: z.string(),
+    permlink: z.string(),
+    body: z.string(),
+    parent_author: z.string(),
+    parent_permlink: z.string(),
+    category: z.string().optional(),
+    title: z.string().optional(),
+    json_metadata: z.string().optional(),
+    created: z.string(),
+    last_update: z.string().optional(),
+    active: z.string().optional(),
+    depth: z.number().optional(),
+    children: z.number().optional(),
+    net_votes: z.number(),
+    net_rshares: z.union([z.string(), z.number()]).optional(),
+    pending_payout_value: z.string().optional(),
+    total_payout_value: z.string().optional(),
+    curator_payout_value: z.string().optional(),
+    active_votes: z.array(hiveActiveVoteSchema).optional(),
+    author_reputation: z.union([z.string(), z.number()]).optional(),
+  })
+  .passthrough();
+
+// ============================================================================
 // API Response Wrappers
 // ============================================================================
 
@@ -257,6 +290,7 @@ export const postsResponseSchema = z.object({
 
 export type HiveRawAccount = z.infer<typeof hiveRawAccountSchema>;
 export type HiveRawPost = z.infer<typeof hiveRawPostSchema>;
+export type HiveRawComment = z.infer<typeof hiveRawCommentSchema>;
 export type HivePostMetadata = z.infer<typeof hivePostMetadataSchema>;
 export type HiveDynamicProperties = z.infer<typeof hiveDynamicPropertiesSchema>;
 export type HiveResourceCredits = z.infer<typeof hiveResourceCreditsSchema>;
@@ -315,5 +349,55 @@ export function validateDynamicProperties(data: unknown): HiveDynamicProperties 
     return result.data;
   }
   console.warn('Dynamic properties validation failed:', result.error.issues);
+  return null;
+}
+
+/**
+ * Validate and filter an array of posts from API response.
+ * Returns only posts that pass validation, logging warnings for invalid ones.
+ */
+export function validateHivePosts(data: unknown[]): HiveRawPost[] {
+  const validPosts: HiveRawPost[] = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const result = hiveRawPostSchema.safeParse(data[i]);
+    if (result.success) {
+      validPosts.push(result.data);
+    } else {
+      console.warn(`Post at index ${i} failed validation:`, result.error.issues);
+    }
+  }
+
+  return validPosts;
+}
+
+/**
+ * Validate and filter an array of comments from API response.
+ * Returns only comments that pass validation, logging warnings for invalid ones.
+ */
+export function validateHiveComments(data: unknown[]): HiveRawComment[] {
+  const validComments: HiveRawComment[] = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const result = hiveRawCommentSchema.safeParse(data[i]);
+    if (result.success) {
+      validComments.push(result.data);
+    } else {
+      console.warn(`Comment at index ${i} failed validation:`, result.error.issues);
+    }
+  }
+
+  return validComments;
+}
+
+/**
+ * Validate a single comment from API response
+ */
+export function validateCommentData(data: unknown): HiveRawComment | null {
+  const result = hiveRawCommentSchema.safeParse(data);
+  if (result.success) {
+    return result.data;
+  }
+  console.warn('Comment data validation failed:', result.error.issues);
   return null;
 }

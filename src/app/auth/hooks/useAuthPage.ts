@@ -1,17 +1,22 @@
-import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Providers, KeyTypes } from "@aioha/aioha";
-import type { LoginResult } from "@aioha/aioha/build/types";
-import { useAuth } from "@/contexts/AuthContext";
-import { useAioha } from "@/contexts/AiohaProvider";
-import { FirebaseAuth } from "@/lib/firebase/auth";
-import type { HiveAccount } from "@/lib/shared/types";
+import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Providers, KeyTypes } from '@aioha/aioha';
+import type { LoginResult, LoginResultSuccess } from '@aioha/aioha/build/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAioha } from '@/contexts/AiohaProvider';
+import { FirebaseAuth } from '@/lib/firebase/auth';
+import type { HiveAccount } from '@/lib/shared/types';
 
 // Declare Hive Keychain global for browser extension detection
 declare global {
   interface Window {
     hive_keychain?: {
-      requestSignBuffer?: (username: string, message: string, keyType: string, callback: (response: unknown) => void) => void;
+      requestSignBuffer?: (
+        username: string,
+        message: string,
+        keyType: string,
+        callback: (response: unknown) => void
+      ) => void;
       [key: string]: unknown;
     };
   }
@@ -19,6 +24,34 @@ declare global {
 
 // Login timeout in milliseconds (10 seconds)
 const LOGIN_TIMEOUT_MS = 10000;
+
+/**
+ * Map of Providers enum values to their string representations.
+ * Used to convert enum values returned by getProviders() to display strings.
+ */
+const PROVIDER_STRING_MAP: Record<string, string> = {
+  [Providers.Keychain]: 'keychain',
+  [Providers.HiveSigner]: 'hivesigner',
+  [Providers.HiveAuth]: 'hiveauth',
+  [Providers.Ledger]: 'ledger',
+  [Providers.PeakVault]: 'peakvault',
+  [Providers.MetaMaskSnap]: 'metamasksnap',
+  [Providers.ViewOnly]: 'viewonly',
+  [Providers.Custom]: 'custom',
+};
+
+/**
+ * Convert a provider value (enum or string) to its normalized string representation.
+ * The Providers enum values are themselves strings (e.g., Providers.Keychain === 'keychain'),
+ * but this function handles any edge cases.
+ */
+function normalizeProviderToString(provider: Providers | string): string {
+  // First check if it's in our known provider map
+  const mapped = PROVIDER_STRING_MAP[provider];
+  if (mapped) return mapped;
+  // Fallback: if it's already a string not in the map, return as-is
+  return String(provider);
+}
 
 /**
  * Check if Hive Keychain browser extension is installed and available
@@ -34,13 +67,11 @@ function isKeychainExtensionAvailable(): boolean {
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
   return Promise.race([
     promise,
-    new Promise<T>((_, reject) => 
-      setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
-    )
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(errorMessage)), timeoutMs)),
   ]);
 }
 
-export type AuthMode = "login" | "signup";
+export type AuthMode = 'login' | 'signup';
 
 interface AiohaLoginResult {
   user?: {
@@ -99,16 +130,16 @@ interface UseAuthPageResult {
   resetConnectionState: () => void;
 }
 
-const usernameRequiredProviders = new Set(["keychain", "hiveauth"]);
+const usernameRequiredProviders = new Set(['keychain', 'hiveauth']);
 
 export const useAuthPage = (): UseAuthPageResult => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isAddAccountFlow = searchParams.get("addAccount") === "true";
+  const isAddAccountFlow = searchParams.get('addAccount') === 'true';
   const { user, isClient, loginWithAioha, loginWithFirebase } = useAuth();
   const { aioha, isInitialized } = useAioha();
 
-  const [mode, setMode] = useState<AuthMode>("login");
+  const [mode, setMode] = useState<AuthMode>('login');
   const [isConnecting, setIsConnecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -116,14 +147,14 @@ export const useAuthPage = (): UseAuthPageResult => {
 
   const [showHiveUsernameInput, setShowHiveUsernameInput] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
-  const [hiveUsername, setHiveUsername] = useState("");
+  const [hiveUsername, setHiveUsername] = useState('');
   const [showAiohaModal, setShowAiohaModal] = useState(false);
 
   const [emailForm, setEmailForm] = useState<EmailFormState>({
-    email: "",
-    password: "",
-    username: "",
-    displayName: "",
+    email: '',
+    password: '',
+    username: '',
+    displayName: '',
     acceptTerms: false,
     subscribeNewsletter: false,
     showPassword: false,
@@ -140,7 +171,7 @@ export const useAuthPage = (): UseAuthPageResult => {
     // Already logged in via AuthContext - redirect away from auth page
     // Skip redirect when adding a new account to preserve multi-account flow
     if (user?.username && !isAddAccountFlow) {
-      router.replace("/feed");
+      router.replace('/feed');
       return;
     }
 
@@ -154,7 +185,7 @@ export const useAuthPage = (): UseAuthPageResult => {
         setIsConnecting(true);
         loginWithAioha()
           .then(() => {
-            router.replace("/feed");
+            router.replace('/feed');
           })
           .catch(() => {
             // Auto-reconnect failed, let user manually authenticate
@@ -167,7 +198,7 @@ export const useAuthPage = (): UseAuthPageResult => {
   const resetHivePrompt = useCallback(() => {
     setShowHiveUsernameInput(false);
     setSelectedProvider(null);
-    setHiveUsername("");
+    setHiveUsername('');
   }, []);
 
   const updateEmailField = useCallback(
@@ -179,10 +210,10 @@ export const useAuthPage = (): UseAuthPageResult => {
 
   const resetEmailForm = useCallback(() => {
     setEmailForm({
-      email: "",
-      password: "",
-      username: "",
-      displayName: "",
+      email: '',
+      password: '',
+      username: '',
+      displayName: '',
       acceptTerms: false,
       subscribeNewsletter: false,
       showPassword: false,
@@ -190,7 +221,7 @@ export const useAuthPage = (): UseAuthPageResult => {
   }, []);
 
   const toggleMode = useCallback(() => {
-    setMode((prev) => (prev === "login" ? "signup" : "login"));
+    setMode((prev) => (prev === 'login' ? 'signup' : 'login'));
     setErrorMessage(null);
     setSuccessMessage(null);
     resetEmailForm();
@@ -211,26 +242,14 @@ export const useAuthPage = (): UseAuthPageResult => {
     }
 
     try {
-      const providers = (aioha as { getProviders: () => ProviderValue[] }).getProviders();
-      const providerStrings = providers.map((provider: ProviderValue) => {
-        const value = provider as unknown as Providers | string;
-        switch (value) {
-          case Providers.Keychain:
-            return "keychain";
-          case Providers.HiveSigner:
-            return "hivesigner";
-          case Providers.HiveAuth:
-            return "hiveauth";
-          case Providers.Ledger:
-            return "ledger";
-          case Providers.PeakVault:
-            return "peakvault";
-          default:
-            return String(value);
-        }
-      });
+      // getProviders() returns string[] - the Providers enum values are themselves strings
+      // (e.g., Providers.Keychain === 'keychain'), so we can use them directly
+      const providers = (aioha as { getProviders: () => string[] }).getProviders();
+      const providerStrings = providers.map((provider: string) =>
+        normalizeProviderToString(provider)
+      );
 
-      const priorityProviders = ["keychain", "hivesigner", "hiveauth"];
+      const priorityProviders = ['keychain', 'hivesigner', 'hiveauth'];
       const orderedProviders = [
         ...priorityProviders.filter((provider) => providerStrings.includes(provider)),
         ...providerStrings.filter((provider) => !priorityProviders.includes(provider)),
@@ -238,7 +257,7 @@ export const useAuthPage = (): UseAuthPageResult => {
 
       setAvailableProviders(orderedProviders);
     } catch (error) {
-      console.error("Error getting available providers:", error);
+      console.error('Error getting available providers:', error);
       setAvailableProviders([]);
     }
   }, [aioha, isInitialized]);
@@ -259,10 +278,12 @@ export const useAuthPage = (): UseAuthPageResult => {
         await loginWithAioha(loginResult);
         resetHivePrompt();
         closeAiohaModal();
-        router.push("/feed");
+        router.push('/feed');
       } catch (error) {
-        console.error("Aioha login failed:", error);
-        setErrorMessage("Login failed: " + (error instanceof Error ? error.message : "Unknown error"));
+        console.error('Aioha login failed:', error);
+        setErrorMessage(
+          'Login failed: ' + (error instanceof Error ? error.message : 'Unknown error')
+        );
       } finally {
         setIsConnecting(false);
         closeAiohaModal();
@@ -270,9 +291,9 @@ export const useAuthPage = (): UseAuthPageResult => {
     };
 
     const handleAuthError = (error: unknown) => {
-      console.error("Aioha authentication error:", error);
-      const message = error instanceof Error ? error.message : "Unknown error";
-      setErrorMessage("Authentication failed: " + message);
+      console.error('Aioha authentication error:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setErrorMessage('Authentication failed: ' + message);
       setIsConnecting(false);
     };
 
@@ -281,26 +302,26 @@ export const useAuthPage = (): UseAuthPageResult => {
       off: (event: string, handler?: (...args: unknown[]) => void) => void;
     };
 
-    aiohaWithEvents.on("connect", handleAuthSuccess);
-    aiohaWithEvents.on("error", handleAuthError);
+    aiohaWithEvents.on('connect', handleAuthSuccess);
+    aiohaWithEvents.on('error', handleAuthError);
 
     return () => {
-      aiohaWithEvents.off("connect", handleAuthSuccess);
-      aiohaWithEvents.off("error", handleAuthError);
+      aiohaWithEvents.off('connect', handleAuthSuccess);
+      aiohaWithEvents.off('error', handleAuthError);
     };
   }, [aioha, closeAiohaModal, loginWithAioha, resetHivePrompt, router]);
 
   const validateEmailForm = useCallback((): string | null => {
     if (!emailForm.email || !emailForm.password) {
-      return "Please enter both email and password";
+      return 'Please enter both email and password';
     }
 
-    if (mode === "signup") {
+    if (mode === 'signup') {
       if (!emailForm.username) {
-        return "Please choose a username";
+        return 'Please choose a username';
       }
       if (!emailForm.acceptTerms) {
-        return "Please accept the terms of service";
+        return 'Please accept the terms of service';
       }
     }
 
@@ -318,7 +339,7 @@ export const useAuthPage = (): UseAuthPageResult => {
     setErrorMessage(null);
 
     try {
-      if (mode === "login") {
+      if (mode === 'login') {
         const authUser = await FirebaseAuth.signIn(emailForm.email, emailForm.password);
         loginWithFirebase(authUser);
       } else {
@@ -330,10 +351,12 @@ export const useAuthPage = (): UseAuthPageResult => {
         );
         loginWithFirebase(authUser);
       }
-      router.push("/feed");
+      router.push('/feed');
     } catch (error) {
-      console.error("Firebase authentication failed:", error);
-      setErrorMessage("Authentication failed: " + (error instanceof Error ? error.message : "Unknown error"));
+      console.error('Firebase authentication failed:', error);
+      setErrorMessage(
+        'Authentication failed: ' + (error instanceof Error ? error.message : 'Unknown error')
+      );
     } finally {
       setIsConnecting(false);
     }
@@ -346,17 +369,17 @@ export const useAuthPage = (): UseAuthPageResult => {
     try {
       const authUser = await FirebaseAuth.signInWithGoogle();
       loginWithFirebase(authUser);
-      router.push("/feed");
+      router.push('/feed');
     } catch (error) {
-      console.error("Google sign-in failed:", error);
+      console.error('Google sign-in failed:', error);
       // Handle specific Firebase errors
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      if (errorMessage.includes("popup-closed-by-user")) {
-        setErrorMessage("Sign-in cancelled. Please try again.");
-      } else if (errorMessage.includes("popup-blocked")) {
-        setErrorMessage("Pop-up blocked. Please allow pop-ups for this site and try again.");
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('popup-closed-by-user')) {
+        setErrorMessage('Sign-in cancelled. Please try again.');
+      } else if (errorMessage.includes('popup-blocked')) {
+        setErrorMessage('Pop-up blocked. Please allow pop-ups for this site and try again.');
       } else {
-        setErrorMessage("Google sign-in failed: " + errorMessage);
+        setErrorMessage('Google sign-in failed: ' + errorMessage);
       }
     } finally {
       setIsConnecting(false);
@@ -365,7 +388,7 @@ export const useAuthPage = (): UseAuthPageResult => {
 
   const handleForgotPassword = useCallback(async () => {
     if (!emailForm.email) {
-      setErrorMessage("Please enter your email address first");
+      setErrorMessage('Please enter your email address first');
       return;
     }
 
@@ -375,16 +398,16 @@ export const useAuthPage = (): UseAuthPageResult => {
 
     try {
       await FirebaseAuth.sendPasswordReset(emailForm.email);
-      setSuccessMessage("Password reset email sent! Check your inbox.");
+      setSuccessMessage('Password reset email sent! Check your inbox.');
     } catch (error) {
-      console.error("Password reset failed:", error);
-      const errorMsg = error instanceof Error ? error.message : "Unknown error";
-      if (errorMsg.includes("user-not-found")) {
-        setErrorMessage("No account found with this email address.");
-      } else if (errorMsg.includes("invalid-email")) {
-        setErrorMessage("Please enter a valid email address.");
+      console.error('Password reset failed:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMsg.includes('user-not-found')) {
+        setErrorMessage('No account found with this email address.');
+      } else if (errorMsg.includes('invalid-email')) {
+        setErrorMessage('Please enter a valid email address.');
       } else {
-        setErrorMessage("Failed to send reset email: " + errorMsg);
+        setErrorMessage('Failed to send reset email: ' + errorMsg);
       }
     } finally {
       setIsConnecting(false);
@@ -399,14 +422,16 @@ export const useAuthPage = (): UseAuthPageResult => {
   const performAiohaLogin = useCallback(
     async (provider: string) => {
       if (!isInitialized || !aioha) {
-        setErrorMessage("Aioha authentication is not available. Please refresh the page and try again.");
+        setErrorMessage(
+          'Aioha authentication is not available. Please refresh the page and try again.'
+        );
         return;
       }
 
       // Check if Keychain extension is actually installed for Keychain provider
       if (provider === 'keychain' && !isKeychainExtensionAvailable()) {
         setErrorMessage(
-          "Hive Keychain extension not detected. Please install the Hive Keychain browser extension and refresh the page."
+          'Hive Keychain extension not detected. Please install the Hive Keychain browser extension and refresh the page.'
         );
         return;
       }
@@ -428,22 +453,22 @@ export const useAuthPage = (): UseAuthPageResult => {
 
         let providerEnum: Providers;
         switch (provider) {
-          case "keychain":
+          case 'keychain':
             providerEnum = Providers.Keychain;
             break;
-          case "hivesigner":
+          case 'hivesigner':
             providerEnum = Providers.HiveSigner;
             break;
-          case "hiveauth":
+          case 'hiveauth':
             providerEnum = Providers.HiveAuth;
             break;
-          case "ledger":
+          case 'ledger':
             providerEnum = Providers.Ledger;
             break;
-          case "peakvault":
+          case 'peakvault':
             providerEnum = Providers.PeakVault;
             break;
-          case "metamasksnap":
+          case 'metamasksnap':
             providerEnum = Providers.MetaMaskSnap;
             break;
           default:
@@ -451,11 +476,13 @@ export const useAuthPage = (): UseAuthPageResult => {
         }
 
         if (!available.includes(providerEnum)) {
-          throw new Error(`${provider} is not available. Please install the required wallet or try a different provider.`);
+          throw new Error(
+            `${provider} is not available. Please install the required wallet or try a different provider.`
+          );
         }
 
         const usernameToUse =
-          usernameRequiredProviders.has(provider) && hiveUsername.trim() ? hiveUsername.trim() : "";
+          usernameRequiredProviders.has(provider) && hiveUsername.trim() ? hiveUsername.trim() : '';
 
         // Force logout any existing Aioha session to ensure fresh Keychain authorization
         // This is critical for security - the Keychain popup must ALWAYS appear for user approval
@@ -468,15 +495,21 @@ export const useAuthPage = (): UseAuthPageResult => {
             }
           } catch (logoutError) {
             // Ignore logout errors - we're just clearing any stale session
-            console.debug("Aioha logout (pre-login cleanup):", logoutError);
+            console.debug('Aioha logout (pre-login cleanup):', logoutError);
           }
         }
 
         // Wrap login with timeout to handle unresponsive wallet extensions
-        const loginPromise = (aioha as {
-          login: (provider: Providers, username: string, options: { msg: string; keyType: KeyTypes }) => Promise<unknown>;
-        }).login(providerEnum, usernameToUse, {
-          msg: "Login to Sportsblock",
+        const loginPromise = (
+          aioha as {
+            login: (
+              provider: Providers,
+              username: string,
+              options: { msg: string; keyType: KeyTypes }
+            ) => Promise<unknown>;
+          }
+        ).login(providerEnum, usernameToUse, {
+          msg: 'Login to Sportsblock',
           keyType: KeyTypes.Posting,
         });
 
@@ -500,19 +533,24 @@ export const useAuthPage = (): UseAuthPageResult => {
         ) {
           await loginWithAioha(loginResult);
           resetHivePrompt();
-          router.push("/feed");
+          router.push('/feed');
         } else {
           const info = {
             username: (result as { username?: string })?.username,
             success: (result as { success?: boolean })?.success,
             errorCode: (result as { errorCode?: number })?.errorCode,
           };
-          console.debug("Aioha login result validation failed:", info);
-          throw new Error((result as { error?: string })?.error || "Invalid authentication result. Please try again.");
+          console.debug('Aioha login result validation failed:', info);
+          throw new Error(
+            (result as { error?: string })?.error ||
+              'Invalid authentication result. Please try again.'
+          );
         }
       } catch (error) {
-        console.error("Aioha login failed:", error);
-        setErrorMessage("Login failed: " + (error instanceof Error ? error.message : "Unknown error"));
+        console.error('Aioha login failed:', error);
+        setErrorMessage(
+          'Login failed: ' + (error instanceof Error ? error.message : 'Unknown error')
+        );
       } finally {
         setIsConnecting(false);
       }
@@ -539,79 +577,70 @@ export const useAuthPage = (): UseAuthPageResult => {
   }, [resetConnectionState, resetHivePrompt]);
 
   const togglePasswordVisibility = useCallback(() => {
-    updateEmailField("showPassword", !emailForm.showPassword);
+    updateEmailField('showPassword', !emailForm.showPassword);
   }, [emailForm.showPassword, updateEmailField]);
 
   /**
    * Handle login result from AiohaModal
    * This is called when the user successfully authenticates via any provider in the modal
    */
-  const handleAiohaModalLogin = useCallback(async (result: LoginResult) => {
-    if (!result.success) {
-      setErrorMessage("Login failed: " + (result as { error?: string }).error || "Unknown error");
-      return;
-    }
-
-    setIsConnecting(true);
-    setErrorMessage(null);
-
-    try {
-      // Extract username from various possible locations in the result
-      // AiohaModal's LoginResult may have different shapes depending on provider
-      const rawResult = result as unknown as Record<string, unknown>;
-
-      // Try multiple extraction paths for the username
-      let username: string | undefined = result.username;
-
-      // Try nested result object (some providers return { result: { username } })
-      if (!username && rawResult.result && typeof rawResult.result === 'object') {
-        const nestedResult = rawResult.result as Record<string, unknown>;
-        username = (nestedResult.username as string) || (nestedResult.name as string);
+  const handleAiohaModalLogin = useCallback(
+    async (result: LoginResult) => {
+      // LoginResult is a discriminated union - check success first
+      if (!result.success) {
+        // result is now typed as LoginResultError which has error and errorCode
+        setErrorMessage('Login failed: ' + result.error || 'Unknown error');
+        return;
       }
 
-      // Try user object
-      if (!username && rawResult.user && typeof rawResult.user === 'object') {
-        const userObj = rawResult.user as Record<string, unknown>;
-        username = (userObj.username as string) || (userObj.name as string);
-      }
+      // TypeScript now knows result is LoginResultSuccess with username, provider, etc.
+      // LoginResultSuccess.username is required (not optional) per Aioha's types
+      const successResult: LoginResultSuccess = result;
 
-      // Try account object
-      if (!username && rawResult.account && typeof rawResult.account === 'object') {
-        const accountObj = rawResult.account as Record<string, unknown>;
-        username = (accountObj.name as string) || (accountObj.username as string);
-      }
+      setIsConnecting(true);
+      setErrorMessage(null);
 
-      // Fallback: try to get username from aioha instance after successful modal login
-      if (!username && aioha) {
-        const aiohaInstance = aioha as {
-          getCurrentUser?: () => string;
-          user?: { username?: string };
-          username?: string;
+      try {
+        // LoginResultSuccess guarantees username is present
+        let username: string = successResult.username;
+
+        // Fallback: if username is empty string, try to get from aioha instance
+        if (!username && aioha) {
+          const aiohaInstance = aioha as {
+            getCurrentUser?: () => string;
+            user?: { username?: string };
+            username?: string;
+          };
+          const instanceUsername =
+            aiohaInstance.getCurrentUser?.() ||
+            aiohaInstance.user?.username ||
+            aiohaInstance.username;
+          if (instanceUsername) {
+            username = instanceUsername;
+          }
+        }
+
+        // Convert LoginResult to the format expected by loginWithAioha
+        const loginResult: AiohaLoginResult = {
+          username,
+          provider: successResult.provider,
+          success: true,
         };
-        username = aiohaInstance.getCurrentUser?.()
-          || aiohaInstance.user?.username
-          || aiohaInstance.username;
+
+        await loginWithAioha(loginResult);
+        setShowAiohaModal(false);
+        router.push('/feed');
+      } catch (error) {
+        console.error('Aioha modal login failed:', error);
+        setErrorMessage(
+          'Login failed: ' + (error instanceof Error ? error.message : 'Unknown error')
+        );
+      } finally {
+        setIsConnecting(false);
       }
-
-      // Convert LoginResult to the format expected by loginWithAioha
-      const loginResult: AiohaLoginResult = {
-        username: username,
-        provider: result.provider,
-        success: true,
-        // Pass through the raw result for additional extraction attempts
-        ...rawResult,
-      };
-
-      await loginWithAioha(loginResult);
-      setShowAiohaModal(false);
-      router.push("/feed");
-    } catch (error) {
-      console.error("Aioha modal login failed:", error);
-      setErrorMessage("Login failed: " + (error instanceof Error ? error.message : "Unknown error"));
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [loginWithAioha, router, aioha]);
+    },
+    [loginWithAioha, router, aioha]
+  );
 
   return {
     mode,
@@ -643,9 +672,3 @@ export const useAuthPage = (): UseAuthPageResult => {
     resetConnectionState,
   };
 };
-
-type ProviderValue = {
-  toString(): string;
-  [key: string]: unknown;
-};
-

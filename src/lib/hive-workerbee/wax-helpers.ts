@@ -1,6 +1,6 @@
 /**
  * Wax Integration Helpers
- * 
+ *
  * Centralized utilities for Wax library integration with WorkerBee.
  * Provides type-safe operation builders, transaction validation, and error handling.
  */
@@ -8,7 +8,34 @@
 import { getWaxClient } from './client';
 import { SPORTS_ARENA_CONFIG } from './client';
 import { workerBee as workerBeeLog, error as logError } from './logger';
-import type { IHiveChainInterface } from "@hiveio/wax";
+import type { IHiveChainInterface } from '@hiveio/wax';
+
+/**
+ * Extended Wax client interface with optional methods.
+ * These methods may be available at runtime but aren't in the type definitions.
+ */
+interface WaxExtended extends IHiveChainInterface {
+  call?: (method: string, params: unknown[]) => Promise<unknown>;
+  getProtocolVersion?: () => Promise<string>;
+}
+
+/**
+ * Type guard to check if Wax client has the RPC call method.
+ */
+function hasRpcCall(
+  wax: IHiveChainInterface | null
+): wax is WaxExtended & { call: NonNullable<WaxExtended['call']> } {
+  return wax !== null && typeof (wax as WaxExtended).call === 'function';
+}
+
+/**
+ * Type guard to check if Wax client has the getProtocolVersion method.
+ */
+function hasProtocolVersion(
+  wax: IHiveChainInterface | null
+): wax is WaxExtended & { getProtocolVersion: NonNullable<WaxExtended['getProtocolVersion']> } {
+  return wax !== null && typeof (wax as WaxExtended).getProtocolVersion === 'function';
+}
 
 // Wax operation types for better type safety
 export interface WaxVoteOperation {
@@ -83,8 +110,14 @@ export function validateBeneficiaries(beneficiaries: Beneficiary[]): {
     seenAccounts.add(beneficiary.account);
 
     // Validate individual weight (must be positive integer, max 10000)
-    if (!Number.isInteger(beneficiary.weight) || beneficiary.weight < 1 || beneficiary.weight > 10000) {
-      errors.push(`Invalid weight for ${beneficiary.account}: ${beneficiary.weight} (must be 1-10000)`);
+    if (
+      !Number.isInteger(beneficiary.weight) ||
+      beneficiary.weight < 1 ||
+      beneficiary.weight > 10000
+    ) {
+      errors.push(
+        `Invalid weight for ${beneficiary.account}: ${beneficiary.weight} (must be 1-10000)`
+      );
     }
 
     totalWeight += beneficiary.weight;
@@ -92,7 +125,9 @@ export function validateBeneficiaries(beneficiaries: Beneficiary[]): {
 
   // Total weight cannot exceed 10000 (100%)
   if (totalWeight > 10000) {
-    errors.push(`Total beneficiary weight ${totalWeight} exceeds maximum 10000 (${(totalWeight / 100).toFixed(2)}% > 100%)`);
+    errors.push(
+      `Total beneficiary weight ${totalWeight} exceeds maximum 10000 (${(totalWeight / 100).toFixed(2)}% > 100%)`
+    );
   }
 
   return {
@@ -116,23 +151,33 @@ export interface WaxTransactionResult {
 export async function getWaxInstance(): Promise<IHiveChainInterface> {
   try {
     const wax = await getWaxClient();
-    
+
     // Verify the Wax instance is valid
     if (!wax) {
       throw new Error('Wax instance is null or undefined');
     }
-    
+
     return wax;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     // Check if it's a requestInterceptor-related error
     if (errorMessage.includes('requestInterceptor')) {
-      logError('[Wax Helpers] requestInterceptor issue detected - Wax may not be fully compatible in this environment', 'getWaxInstance', error instanceof Error ? error : undefined);
-      throw new Error('Wax requestInterceptor issue: Wax API may not be compatible in this browser environment. Falling back to HTTP API.');
+      logError(
+        '[Wax Helpers] requestInterceptor issue detected - Wax may not be fully compatible in this environment',
+        'getWaxInstance',
+        error instanceof Error ? error : undefined
+      );
+      throw new Error(
+        'Wax requestInterceptor issue: Wax API may not be compatible in this browser environment. Falling back to HTTP API.'
+      );
     }
-    
-    logError('[Wax Helpers] Failed to get Wax instance', 'getWaxInstance', error instanceof Error ? error : undefined);
+
+    logError(
+      '[Wax Helpers] Failed to get Wax instance',
+      'getWaxInstance',
+      error instanceof Error ? error : undefined
+    );
     throw new Error(`Unable to initialize Wax client: ${errorMessage}`);
   }
 }
@@ -178,13 +223,13 @@ export function createCommentOperation(commentData: {
 }): WaxCommentOperation {
   // Generate permlink if not provided
   const permlink = commentData.permlink || generatePermlink(commentData.title || 'comment');
-  
+
   // Build JSON metadata
   const metadata = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
     format: 'markdown',
     tags: ['sportsblock'],
-    ...(commentData.jsonMetadata ? JSON.parse(commentData.jsonMetadata) : {})
+    ...(commentData.jsonMetadata ? JSON.parse(commentData.jsonMetadata) : {}),
   };
 
   return {
@@ -199,7 +244,7 @@ export function createCommentOperation(commentData: {
     percent_hbd: commentData.percentHbd || 10000, // 100% HBD
     allow_votes: commentData.allowVotes !== false,
     allow_curation_rewards: commentData.allowCurationRewards !== false,
-    extensions: commentData.extensions || []
+    extensions: commentData.extensions || [],
   };
 }
 
@@ -235,7 +280,7 @@ export function createPostOperation(postData: {
 }): WaxPostOperation {
   // Generate permlink if not provided
   const permlink = postData.permlink || generatePermlink(postData.title);
-  
+
   // Build tags array, including sub-community slug if provided
   const tags = [
     ...(postData.tags || []),
@@ -244,7 +289,7 @@ export function createPostOperation(postData: {
     // Add sub-community slug as a tag for discoverability
     ...(postData.subCommunity ? [postData.subCommunity.slug] : []),
   ];
-  
+
   // Build JSON metadata
   const metadata: Record<string, unknown> = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
@@ -255,7 +300,7 @@ export function createPostOperation(postData: {
     image: postData.featuredImage ? [postData.featuredImage] : undefined,
     ...(postData.jsonMetadata ? JSON.parse(postData.jsonMetadata) : {}),
   };
-  
+
   // Add sub-community data to metadata if provided
   if (postData.subCommunity) {
     metadata.sub_community = postData.subCommunity.slug;
@@ -275,7 +320,7 @@ export function createPostOperation(postData: {
     percent_hbd: postData.percentHbd || 10000, // 100% HBD
     allow_votes: postData.allowVotes !== false,
     allow_curation_rewards: postData.allowCurationRewards !== false,
-    extensions: [] // Beneficiaries are set via comment_options operation
+    extensions: [], // Beneficiaries are set via comment_options operation
   };
 }
 
@@ -302,9 +347,7 @@ export function createCommentOptionsOperation(optionsData: {
   }
 
   // Beneficiaries must be sorted by account name alphabetically
-  const sortedBeneficiaries = [...beneficiaries].sort((a, b) =>
-    a.account.localeCompare(b.account)
-  );
+  const sortedBeneficiaries = [...beneficiaries].sort((a, b) => a.account.localeCompare(b.account));
 
   return {
     author: optionsData.author,
@@ -313,7 +356,7 @@ export function createCommentOptionsOperation(optionsData: {
     percent_hbd: optionsData.percentHbd || 10000, // 100% HBD
     allow_votes: optionsData.allowVotes !== false,
     allow_curation_rewards: optionsData.allowCurationRewards !== false,
-    extensions: sortedBeneficiaries.length > 0 ? [[0, { beneficiaries: sortedBeneficiaries }]] : []
+    extensions: sortedBeneficiaries.length > 0 ? [[0, { beneficiaries: sortedBeneficiaries }]] : [],
   };
 }
 
@@ -328,7 +371,7 @@ export function generatePermlink(title: string): string {
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Replace multiple hyphens with single
     .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
-  
+
   // Add timestamp to ensure uniqueness
   const timestamp = Date.now();
   return `${basePermlink}-${timestamp}`;
@@ -337,7 +380,9 @@ export function generatePermlink(title: string): string {
 /**
  * Validate operation data before broadcasting
  */
-export function validateOperation(operation: WaxVoteOperation | WaxCommentOperation | WaxPostOperation): {
+export function validateOperation(
+  operation: WaxVoteOperation | WaxCommentOperation | WaxPostOperation
+): {
   isValid: boolean;
   errors: string[];
 } {
@@ -364,7 +409,7 @@ export function validateOperation(operation: WaxVoteOperation | WaxCommentOperat
     if (!operation.body || operation.body.trim().length === 0) {
       errors.push('Body is required');
     }
-    
+
     if (operation.body.length > 65535) {
       errors.push('Body is too long (max 65535 characters)');
     }
@@ -376,7 +421,7 @@ export function validateOperation(operation: WaxVoteOperation | WaxCommentOperat
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -388,7 +433,7 @@ export async function broadcastWaxTransaction(
 ): Promise<WaxTransactionResult> {
   try {
     // const wax = await getWaxInstance(); // Temporarily disabled
-    
+
     // Validate all operations before broadcasting
     for (const operation of operations) {
       const validation = validateOperation(operation);
@@ -398,7 +443,7 @@ export async function broadcastWaxTransaction(
     }
 
     // Format operations for Wax
-    const waxOperations = operations.map(op => {
+    const waxOperations = operations.map((op) => {
       if ('weight' in op) {
         return ['vote', op];
       } else {
@@ -413,14 +458,18 @@ export async function broadcastWaxTransaction(
       success: true,
       transactionId: 'wax-operation-created',
       blockNum: 0,
-      trxNum: 0
+      trxNum: 0,
     };
   } catch (error) {
-    logError('[Wax Helpers] Transaction broadcast failed', 'broadcastWaxTransaction', error instanceof Error ? error : undefined);
-    
+    logError(
+      '[Wax Helpers] Transaction broadcast failed',
+      'broadcastWaxTransaction',
+      error instanceof Error ? error : undefined
+    );
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
@@ -434,20 +483,27 @@ export async function getAccountWax(username: string): Promise<unknown | null> {
     // Use makeWaxApiCall which handles multiple access patterns and fallback
     const { makeWaxApiCall } = await import('./api');
     const result = await makeWaxApiCall<unknown[]>('get_accounts', [[username]]);
-    
+
     if (Array.isArray(result) && result.length > 0) {
       return result[0];
     }
-    
+
     return null;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     // Only log if it's not a known requestInterceptor issue
-    if (!errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled')) {
-      logError('[Wax Helpers] Failed to get account', 'getAccountWax', error instanceof Error ? error : undefined);
+    if (
+      !errorMessage.includes('requestInterceptor') &&
+      !errorMessage.includes('temporarily disabled')
+    ) {
+      logError(
+        '[Wax Helpers] Failed to get account',
+        'getAccountWax',
+        error instanceof Error ? error : undefined
+      );
     }
-    
+
     return null;
   }
 }
@@ -461,16 +517,23 @@ export async function getContentWax(author: string, permlink: string): Promise<u
     // Use makeWaxApiCall which handles multiple access patterns and fallback
     const { makeWaxApiCall } = await import('./api');
     const result = await makeWaxApiCall<unknown>('get_content', [author, permlink]);
-    
+
     return result || null;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     // Only log if it's not a known requestInterceptor issue
-    if (!errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled')) {
-      logError('[Wax Helpers] Failed to get content', 'getContentWax', error instanceof Error ? error : undefined);
+    if (
+      !errorMessage.includes('requestInterceptor') &&
+      !errorMessage.includes('temporarily disabled')
+    ) {
+      logError(
+        '[Wax Helpers] Failed to get content',
+        'getContentWax',
+        error instanceof Error ? error : undefined
+      );
     }
-    
+
     return null;
   }
 }
@@ -479,24 +542,28 @@ export async function getContentWax(author: string, permlink: string): Promise<u
  * Get discussions using Wax
  * Uses makeWaxApiCall for consistent API access
  */
-export async function getDiscussionsWax(
-  method: string,
-  params: unknown[]
-): Promise<unknown[]> {
+export async function getDiscussionsWax(method: string, params: unknown[]): Promise<unknown[]> {
   try {
     // Use makeWaxApiCall which handles multiple access patterns and fallback
     const { makeWaxApiCall } = await import('./api');
     const result = await makeWaxApiCall<unknown[]>(method, params);
-    
+
     return Array.isArray(result) ? result : [];
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     // Only log if it's not a known requestInterceptor issue
-    if (!errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled')) {
-      logError('[Wax Helpers] Failed to get discussions', 'getDiscussionsWax', error instanceof Error ? error : undefined);
+    if (
+      !errorMessage.includes('requestInterceptor') &&
+      !errorMessage.includes('temporarily disabled')
+    ) {
+      logError(
+        '[Wax Helpers] Failed to get discussions',
+        'getDiscussionsWax',
+        error instanceof Error ? error : undefined
+      );
     }
-    
+
     return [];
   }
 }
@@ -514,7 +581,9 @@ export async function checkResourceCreditsWax(username: string): Promise<{
     // RC data must be fetched from rc_api, not condenser_api
     // Note: rc_api uses object params, not array params like condenser_api
     const { makeHiveApiCall } = await import('./api');
-    const rcResult = await makeHiveApiCall('rc_api', 'find_rc_accounts', { accounts: [username] }) as {
+    const rcResult = (await makeHiveApiCall('rc_api', 'find_rc_accounts', {
+      accounts: [username],
+    })) as {
       rc_accounts?: Array<{
         account: string;
         rc_manabar: {
@@ -530,7 +599,7 @@ export async function checkResourceCreditsWax(username: string): Promise<{
       return {
         canPost: false,
         rcPercentage: 0,
-        message: 'Account not found'
+        message: 'Account not found',
       };
     }
 
@@ -542,7 +611,7 @@ export async function checkResourceCreditsWax(username: string): Promise<{
       return {
         canPost: false,
         rcPercentage: 0,
-        message: 'Resource Credits information not available'
+        message: 'Resource Credits information not available',
       };
     }
 
@@ -566,16 +635,14 @@ export async function checkResourceCreditsWax(username: string): Promise<{
       }
     }
 
-    const rcPercentage = maxMana > 0n
-      ? Number((regeneratedMana * 10000n) / maxMana) / 100
-      : 0;
+    const rcPercentage = maxMana > 0n ? Number((regeneratedMana * 10000n) / maxMana) / 100 : 0;
 
     // Users typically need at least 10% RC to post
     if (rcPercentage < 10) {
       return {
         canPost: false,
         rcPercentage,
-        message: 'Insufficient Resource Credits. You need more HIVE POWER or delegation to post.'
+        message: 'Insufficient Resource Credits. You need more HIVE POWER or delegation to post.',
       };
     }
 
@@ -584,11 +651,15 @@ export async function checkResourceCreditsWax(username: string): Promise<{
       rcPercentage,
     };
   } catch (error) {
-    logError('[Wax Helpers] Failed to check RC', 'checkResourceCreditsWax', error instanceof Error ? error : undefined);
+    logError(
+      '[Wax Helpers] Failed to check RC',
+      'checkResourceCreditsWax',
+      error instanceof Error ? error : undefined
+    );
     return {
       canPost: false,
       rcPercentage: 0,
-      message: 'Error checking Resource Credits'
+      message: 'Error checking Resource Credits',
     };
   }
 }
@@ -598,15 +669,19 @@ export async function checkResourceCreditsWax(username: string): Promise<{
  */
 export async function getVotingPowerWax(username: string): Promise<number> {
   try {
-    const account = await getAccountWax(username) as Record<string, unknown>;
-    
+    const account = (await getAccountWax(username)) as Record<string, unknown>;
+
     if (!account || !account.voting_power) {
       return 0;
     }
-    
-    return ((account.voting_power as number) / 100); // Convert from 0-10000 to 0-100
+
+    return (account.voting_power as number) / 100; // Convert from 0-10000 to 0-100
   } catch (error) {
-    logError('[Wax Helpers] Failed to get voting power', 'getVotingPowerWax', error instanceof Error ? error : undefined);
+    logError(
+      '[Wax Helpers] Failed to get voting power',
+      'getVotingPowerWax',
+      error instanceof Error ? error : undefined
+    );
     return 0;
   }
 }
@@ -635,29 +710,36 @@ export function formatJsonMetadata(metadata: Record<string, unknown>): string {
 export async function getWaxProtocolVersion(): Promise<string> {
   try {
     const wax = await getWaxInstance();
-    
+
     // Try to get protocol version from Wax
-    if (wax && typeof (wax as unknown as { getProtocolVersion?: () => Promise<string> }).getProtocolVersion === 'function') {
-      return await (wax as unknown as { getProtocolVersion: () => Promise<string> }).getProtocolVersion();
+    if (hasProtocolVersion(wax)) {
+      return await wax.getProtocolVersion();
     }
-    
+
     // Fallback: try using call method to get dynamic global properties
-    if (wax && typeof (wax as unknown as { call?: (method: string, params: unknown[]) => Promise<unknown> }).call === 'function') {
-      const result = await (wax as unknown as { call: (method: string, params: unknown[]) => Promise<unknown> }).call('condenser_api.get_dynamic_global_properties', []);
+    if (hasRpcCall(wax)) {
+      const result = await wax.call('condenser_api.get_dynamic_global_properties', []);
       if (result && typeof result === 'object' && 'head_block_number' in result) {
         return '1.0.0'; // Return a default version if we can connect
       }
     }
-    
+
     return 'unknown';
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     // Only log if it's not a known requestInterceptor issue
-    if (!errorMessage.includes('requestInterceptor') && !errorMessage.includes('temporarily disabled')) {
-      logError('[Wax Helpers] Failed to get protocol version', 'getWaxProtocolVersion', error instanceof Error ? error : undefined);
+    if (
+      !errorMessage.includes('requestInterceptor') &&
+      !errorMessage.includes('temporarily disabled')
+    ) {
+      logError(
+        '[Wax Helpers] Failed to get protocol version',
+        'getWaxProtocolVersion',
+        error instanceof Error ? error : undefined
+      );
     }
-    
+
     return 'unknown';
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PostCard } from '@/components/posts/PostCard';
 import { Button } from '@/components/core/Button';
@@ -13,10 +14,13 @@ import { SportsblockPost } from '@/lib/shared/types';
 import { CommunityStats } from '@/lib/hive-workerbee/analytics';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useFeedPosts } from '@/lib/react-query/queries/usePosts';
+import { prefetchUserProfiles } from '@/features/user/hooks/useUserProfile';
+import { prefetchStakedBalances } from '@/lib/premium/hooks';
 
 export default function FeedPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [selectedSport, setSelectedSport] = React.useState<string>('');
   const [communityStats, setCommunityStats] = React.useState<CommunityStats>({
     totalPosts: 0,
@@ -55,6 +59,27 @@ export default function FeedPage() {
       return true;
     });
   }, [data?.pages]);
+
+  // Prefetch user profiles and MEDALS balances for all authors in the feed
+  // This reduces N+1 queries by batching requests at the feed level
+  React.useEffect(() => {
+    if (posts.length === 0) return;
+
+    // Extract unique authors from posts
+    const authors = [...new Set(posts.map((post) => post.author).filter(Boolean))];
+
+    if (authors.length > 0) {
+      // Batch prefetch both profiles and MEDALS balances
+      // These run in parallel and populate React Query cache
+      Promise.all([
+        prefetchUserProfiles(authors, queryClient),
+        prefetchStakedBalances(authors, queryClient),
+      ]).catch((error) => {
+        // Silent fail - individual hooks will fetch on their own
+        console.warn('[Feed] Batch prefetch failed:', error);
+      });
+    }
+  }, [posts, queryClient]);
 
   // Memoized callback for infinite scroll
   const handleLoadMore = React.useCallback(() => {
