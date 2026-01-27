@@ -14,26 +14,70 @@ const DEFAULT_CONFIG = {
   // Allowed tags for rich content
   ALLOWED_TAGS: [
     // Text formatting
-    'p', 'br', 'hr', 'span', 'div',
-    'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del',
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'p',
+    'br',
+    'hr',
+    'span',
+    'div',
+    'strong',
+    'b',
+    'em',
+    'i',
+    'u',
+    's',
+    'strike',
+    'del',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
     // Lists
-    'ul', 'ol', 'li',
+    'ul',
+    'ol',
+    'li',
     // Links and media
-    'a', 'img', 'video', 'source', 'iframe',
+    'a',
+    'img',
+    'video',
+    'source',
+    'iframe',
     // Tables
-    'table', 'thead', 'tbody', 'tr', 'th', 'td',
+    'table',
+    'thead',
+    'tbody',
+    'tr',
+    'th',
+    'td',
     // Code
-    'pre', 'code', 'blockquote',
+    'pre',
+    'code',
+    'blockquote',
     // Other
-    'sup', 'sub', 'mark',
+    'sup',
+    'sub',
+    'mark',
   ],
   // Allowed attributes
   ALLOWED_ATTR: [
-    'href', 'src', 'alt', 'title', 'class', 'id',
-    'width', 'height', 'target', 'rel',
-    'style', 'align', 'colspan', 'rowspan',
-    'frameborder', 'allowfullscreen', 'loading',
+    'href',
+    'src',
+    'alt',
+    'title',
+    'class',
+    'id',
+    'width',
+    'height',
+    'target',
+    'rel',
+    'style',
+    'align',
+    'colspan',
+    'rowspan',
+    'frameborder',
+    'allowfullscreen',
+    'loading',
   ],
   // Allow data: URLs for images (base64 embedded)
   ALLOW_DATA_ATTR: false,
@@ -72,22 +116,19 @@ export function sanitizeHtml(dirty: string, strict = false): string {
   let clean = DOMPurify.sanitize(dirty, config);
 
   // Post-process: ensure all links have security attributes
-  clean = clean.replace(
-    /<a\s+([^>]*?)>/gi,
-    (match, attrs) => {
-      // Add target="_blank" if not present
-      if (!attrs.includes('target=')) {
-        attrs += ' target="_blank"';
-      }
-      // Add rel="noopener noreferrer" if not present
-      if (!attrs.includes('rel=')) {
-        attrs += ' rel="noopener noreferrer"';
-      } else if (!attrs.includes('noopener')) {
-        attrs = attrs.replace(/rel="([^"]*)"/, 'rel="$1 noopener noreferrer"');
-      }
-      return `<a ${attrs}>`;
+  clean = clean.replace(/<a\s+([^>]*?)>/gi, (match, attrs) => {
+    // Add target="_blank" if not present
+    if (!attrs.includes('target=')) {
+      attrs += ' target="_blank"';
     }
-  );
+    // Add rel="noopener noreferrer" if not present
+    if (!attrs.includes('rel=')) {
+      attrs += ' rel="noopener noreferrer"';
+    } else if (!attrs.includes('noopener')) {
+      attrs = attrs.replace(/rel="([^"]*)"/, 'rel="$1 noopener noreferrer"');
+    }
+    return `<a ${attrs}>`;
+  });
 
   return clean;
 }
@@ -98,6 +139,9 @@ export function sanitizeHtml(dirty: string, strict = false): string {
  * This handles common Hive post patterns like:
  * - <center> tags (non-standard HTML)
  * - Markdown image syntax ![alt](url)
+ * - Markdown link syntax [text](url)
+ * - Horizontal rules (---, ***, ___)
+ * - Headers (#, ##, ###, etc.)
  *
  * @param content - Raw post content (may contain markdown/HTML mix)
  * @returns Sanitized HTML ready for rendering
@@ -106,15 +150,27 @@ export function sanitizePostContent(content: string): string {
   if (!content) return '';
 
   // Transform common patterns before sanitization
-  const processed = content
+  let processed = content
     // Convert <center> to div (non-standard but common in Hive)
     .replace(/<center>/gi, '<div class="text-center my-4">')
     .replace(/<\/center>/gi, '</div>')
-    // Convert markdown images to HTML
+    // Convert markdown images to HTML (must be before links to avoid collision)
     .replace(
       /!\[([^\]]*)\]\(([^)]+)\)/g,
       '<img src="$2" alt="$1" class="max-w-full h-auto rounded-lg shadow-md my-4" loading="lazy" />'
-    );
+    )
+    // Convert markdown links to HTML [text](url)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+    // Convert horizontal rules (3 or more consecutive dashes, asterisks, or underscores)
+    // More lenient: matches lines that START with 3+ rule chars, ignoring trailing content
+    // Use [ \t]* instead of \s* to avoid matching newlines
+    .replace(/^[ \t]*([-]{3,}|[*]{3,}|[_]{3,})[ \t]*.*$/gm, '<hr class="my-4" />');
+
+  // Convert headers (h1-h6) - must process line by line
+  processed = processed.replace(/^(#{1,6})\s+(.+)$/gm, (_, hashes, text) => {
+    const level = hashes.length;
+    return `<h${level} class="font-bold my-2">${text}</h${level}>`;
+  });
 
   // Sanitize the processed content
   return sanitizeHtml(processed);
@@ -159,7 +215,7 @@ export function hasSuspiciousContent(content: string): boolean {
     /<iframe[^>]*src\s*=\s*["'](?!https:\/\/(www\.)?(youtube|vimeo|3speak))/i,
   ];
 
-  return suspiciousPatterns.some(pattern => pattern.test(content));
+  return suspiciousPatterns.some((pattern) => pattern.test(content));
 }
 
 // ============================================
@@ -248,7 +304,17 @@ export function validateUrl(
 /**
  * Common image file extensions
  */
-const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg', '.bmp', '.ico'];
+const IMAGE_EXTENSIONS = [
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+  '.avif',
+  '.svg',
+  '.bmp',
+  '.ico',
+];
 
 /**
  * Hosts that are known to serve images (even without file extensions in URL)
@@ -284,14 +350,14 @@ function looksLikeImageUrl(url: string): boolean {
     const hostname = parsed.hostname.toLowerCase();
 
     // Check if URL has an image extension
-    const hasImageExtension = IMAGE_EXTENSIONS.some(ext => pathname.endsWith(ext));
+    const hasImageExtension = IMAGE_EXTENSIONS.some((ext) => pathname.endsWith(ext));
     if (hasImageExtension) {
       return true;
     }
 
     // Check if it's from a known image host
     const isKnownImageHost = KNOWN_IMAGE_HOSTS.some(
-      host => hostname === host || hostname.endsWith(`.${host}`)
+      (host) => hostname === host || hostname.endsWith(`.${host}`)
     );
     if (isKnownImageHost) {
       return true;
@@ -344,7 +410,8 @@ export function validateImageUrl(url: string): {
   if (!looksLikeImageUrl(result.url!)) {
     return {
       valid: false,
-      error: 'URL does not appear to be an image. Please use a direct link to an image file (e.g., .jpg, .png, .gif)'
+      error:
+        'URL does not appear to be an image. Please use a direct link to an image file (e.g., .jpg, .png, .gif)',
     };
   }
 
