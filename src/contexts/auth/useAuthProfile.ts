@@ -6,6 +6,14 @@ import { fetchWithRetry } from '@/lib/utils/api-retry';
 import { hasValidAccountData } from './auth-type-guards';
 
 /**
+ * Get the Hive avatar URL for a username
+ * This is the standard Hive image service endpoint that works for all users
+ */
+function getHiveAvatarUrl(username: string): string {
+  return `https://images.hive.blog/u/${username}/avatar`;
+}
+
+/**
  * Creates a User object with Hive account data merged in
  */
 export function createUserWithAccountData(
@@ -14,6 +22,13 @@ export function createUserWithAccountData(
   hiveUsername: string,
   existingUser?: User
 ): User {
+  // Avatar fallback chain:
+  // 1. Profile image from Hive metadata (custom avatar)
+  // 2. Existing user avatar (from previous session)
+  // 3. Hive's default avatar endpoint (always works for valid usernames)
+  const avatar =
+    accountData.profile.profileImage || existingUser?.avatar || getHiveAvatarUrl(hiveUsername);
+
   return {
     ...baseUser,
     reputation: accountData.reputation,
@@ -30,7 +45,7 @@ export function createUserWithAccountData(
     pendingWithdrawals: accountData.pendingWithdrawals,
     hiveProfile: accountData.profile,
     hiveStats: accountData.stats,
-    avatar: accountData.profile.profileImage || existingUser?.avatar,
+    avatar,
     displayName: accountData.profile.name || existingUser?.displayName || hiveUsername,
     bio: accountData.profile.about || existingUser?.bio,
     createdAt: accountData.createdAt,

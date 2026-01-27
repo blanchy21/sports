@@ -133,10 +133,15 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
     async (hiveUsername: string) => {
       try {
         const now = Date.now();
+
+        // Use Hive's avatar service as immediate fallback until profile loads
+        const hiveAvatarUrl = `https://images.hive.blog/u/${hiveUsername}/avatar`;
+
         const basicUser: User = {
           id: hiveUsername,
           username: hiveUsername,
           displayName: hiveUsername,
+          avatar: hiveAvatarUrl,
           isHiveAuth: true,
           hiveUsername: hiveUsername,
           createdAt: new Date(),
@@ -218,10 +223,14 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         const { username, sessionId } = extracted;
         const now = Date.now();
 
+        // Use Hive's avatar service as immediate fallback until profile loads
+        const hiveAvatarUrl = `https://images.hive.blog/u/${username}/avatar`;
+
         const basicUser: User = {
           id: username,
           username: username,
           displayName: username,
+          avatar: hiveAvatarUrl,
           isHiveAuth: true,
           hiveUsername: username,
           createdAt: new Date(),
@@ -249,7 +258,19 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         // Fetch profile in background
         fetchProfileInBackground(username, basicUser, newHiveUser);
       } catch (error) {
-        logger.error('Error processing Aioha authentication', 'useAuthActions', error);
+        // Improve error logging for debugging - handle various error types
+        const errorInfo = {
+          type: typeof error,
+          isError: error instanceof Error,
+          message: error instanceof Error ? error.message : String(error),
+          value: error,
+        };
+        logger.error(
+          'Error processing Aioha authentication',
+          'useAuthActions',
+          error instanceof Error ? error : new Error(errorInfo.message),
+          errorInfo
+        );
         throw error;
       }
     },

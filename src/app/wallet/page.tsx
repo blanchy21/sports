@@ -27,12 +27,7 @@ import {
 } from 'lucide-react';
 import { PotentialEarningsWidget } from '@/components/widgets/PotentialEarningsWidget';
 import Link from 'next/link';
-import {
-  WalletCard as MedalsWalletCard,
-  StakingPanel,
-  MarketInfo,
-  TransferModal,
-} from '@/components/medals';
+import { StakingPanel, MarketInfo, TransferModal } from '@/components/medals';
 import { PowerPanel } from '@/components/wallet';
 import { Button } from '@/components/core/Button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -705,20 +700,23 @@ export default function WalletPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* MEDALS Wallet Card */}
-            <MedalsWalletCard
-              account={user.username}
-              onStakeClick={() => {}}
-              onSendClick={() => setTransferModalOpen(true)}
-            />
+            {/* Staking Panel */}
+            <StakingPanel account={user.username} />
 
             {/* MEDALS Market Info */}
-            <MarketInfo showTradeLinks={true} />
-          </div>
+            <div className="space-y-4">
+              <MarketInfo showTradeLinks={true} />
 
-          {/* Staking Panel */}
-          <div className="mt-6">
-            <StakingPanel account={user.username} />
+              {/* Transfer Button */}
+              <Button
+                variant="outline"
+                onClick={() => setTransferModalOpen(true)}
+                className="w-full"
+              >
+                <ArrowRightLeft className="mr-2 h-4 w-4" />
+                Transfer MEDALS
+              </Button>
+            </div>
           </div>
         </div>
 
