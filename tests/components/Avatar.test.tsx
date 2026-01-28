@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { Avatar } from '@/components/core/Avatar';
 import { renderWithProviders } from '../test-utils';
 
@@ -68,6 +68,36 @@ describe('Avatar', () => {
 
     const image = screen.getByAltText('Test');
     expect(image).toBeInTheDocument();
+    expect(image.getAttribute('src')).toContain('dicebear.com');
+  });
+
+  it('falls back to Hive avatar when custom src fails, then DiceBear if that also fails', () => {
+    renderWithProviders(
+      <Avatar src="https://broken-cdn.example/avatar.jpg" fallback="testuser" alt="Test" />
+    );
+
+    const image = screen.getByAltText('Test');
+    expect(image).toHaveAttribute('src', 'https://broken-cdn.example/avatar.jpg');
+
+    // Simulate image load error → should try Hive avatar
+    fireEvent.error(image);
+    expect(image.getAttribute('src')).toBe('https://images.hive.blog/u/testuser/avatar');
+
+    // Simulate Hive avatar also failing → should fall back to DiceBear
+    fireEvent.error(image);
+    expect(image.getAttribute('src')).toContain('dicebear.com');
+  });
+
+  it('skips Hive fallback when src is already a Hive avatar URL', () => {
+    renderWithProviders(
+      <Avatar src="https://images.hive.blog/u/testuser/avatar" fallback="testuser" alt="Test" />
+    );
+
+    const image = screen.getByAltText('Test');
+    expect(image).toHaveAttribute('src', 'https://images.hive.blog/u/testuser/avatar');
+
+    // Simulate error → should go straight to DiceBear (not retry same URL)
+    fireEvent.error(image);
     expect(image.getAttribute('src')).toContain('dicebear.com');
   });
 });

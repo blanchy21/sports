@@ -18,30 +18,38 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
       xl: 'h-16 w-16 text-lg',
     };
 
-    const [imageError, setImageError] = React.useState(false);
+    // Track which fallback stage we're at: 0 = src, 1 = hive avatar, 2 = dicebear
+    const [fallbackStage, setFallbackStage] = React.useState(0);
 
-    // Reset error state when src changes
+    // Reset fallback stage when src changes
     React.useEffect(() => {
-      setImageError(false);
+      setFallbackStage(0);
     }, [src]);
 
+    // Hive avatar URL derived from the fallback (username)
+    const hiveAvatarUrl = fallback ? `https://images.hive.blog/u/${fallback}/avatar` : null;
+
     const handleImageError = () => {
-      setImageError(true);
+      setFallbackStage((prev) => prev + 1);
     };
 
-    // Determine the image URL to use
-    // If we have a src and no error, use it
-    // Otherwise, generate a DiceBear avatar from the fallback (username)
+    // Determine the image URL with cascade: src → hive avatar → dicebear
     const imageUrl = React.useMemo(() => {
-      if (src && !imageError) {
+      // Stage 0: use the provided src
+      if (fallbackStage === 0 && src) {
         return src;
       }
-      // Use fallback (username) to generate a DiceBear avatar
+      // Stage 1: if src failed, try the Hive avatar service as intermediate fallback
+      // (only when we had a src that broke, and it wasn't already the hive URL)
+      if (fallbackStage === 1 && src && hiveAvatarUrl && src !== hiveAvatarUrl) {
+        return hiveAvatarUrl;
+      }
+      // Final fallback: generate a DiceBear avatar
       if (fallback) {
         return getAvatarUrl(null, fallback);
       }
       return null;
-    }, [src, imageError, fallback]);
+    }, [src, fallbackStage, fallback, hiveAvatarUrl]);
 
     return (
       <div
