@@ -433,6 +433,11 @@ function PublishPageContent() {
     insertAtCursor(emoji);
   };
 
+  const handleInsertGif = (gifUrl: string) => {
+    const markdown = `\n![gif](${gifUrl})\n`;
+    insertAtCursor(markdown);
+  };
+
   const handleUndo = () => {
     document.execCommand('undo');
   };
@@ -788,6 +793,7 @@ function PublishPageContent() {
             onInsertImage={handleInsertImage}
             onInsertLink={handleInsertLink}
             onEmoji={handleEmoji}
+            onInsertGif={handleInsertGif}
             onUndo={handleUndo}
             onRedo={handleRedo}
           />

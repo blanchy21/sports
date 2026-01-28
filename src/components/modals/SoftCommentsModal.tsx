@@ -3,13 +3,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
-import { MessageCircle, Send, Loader2, Reply } from 'lucide-react';
+import { MessageCircle, Send, Loader2, Reply, Film } from 'lucide-react';
 import { formatDate } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast, toast } from '@/components/core/Toast';
 import { BaseModal } from '@/components/core/BaseModal';
 import { SoftLikeButtonCompact } from '@/components/voting/SoftLikeButton';
 import { SoftComment } from '@/app/api/soft/comments/route';
+import { GifPicker } from '@/components/gif/GifPicker';
+import { CommentContent } from '@/components/comments/CommentContent';
 
 interface SoftCommentsModalProps {
   isOpen: boolean;
@@ -29,6 +31,12 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<SoftComment | null>(null);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+
+  const handleGifSelect = (gifUrl: string) => {
+    setCommentText((prev) => prev + `\n![gif](${gifUrl})\n`);
+    setShowGifPicker(false);
+  };
 
   // Fetch comments
   const fetchComments = useCallback(async () => {
@@ -224,11 +232,13 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
               )}
             </div>
             <div className="prose prose-sm max-w-none">
-              <p
-                className={`whitespace-pre-wrap text-sm ${comment.isDeleted ? 'italic text-muted-foreground' : 'text-foreground'}`}
-              >
-                {comment.body}
-              </p>
+              {comment.isDeleted ? (
+                <p className="whitespace-pre-wrap text-sm italic text-muted-foreground">
+                  {comment.body}
+                </p>
+              ) : (
+                <CommentContent body={comment.body} />
+              )}
             </div>
             {!comment.isDeleted && (
               <div className="mt-2 flex items-center space-x-4">
@@ -357,6 +367,26 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
                   }}
                   disabled={isSubmitting}
                 />
+                {/* GIF Button */}
+                <div className="relative mt-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowGifPicker(!showGifPicker)}
+                    className="h-8 px-2 text-muted-foreground hover:text-primary"
+                    title="Add GIF"
+                  >
+                    <Film className="mr-1 h-4 w-4" />
+                    <span className="text-xs">GIF</span>
+                  </Button>
+                  <GifPicker
+                    isOpen={showGifPicker}
+                    onClose={() => setShowGifPicker(false)}
+                    onSelect={handleGifSelect}
+                    className="bottom-full left-0 mb-2"
+                  />
+                </div>
               </div>
             </div>
             <Button

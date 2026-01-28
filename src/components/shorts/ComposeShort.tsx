@@ -30,14 +30,16 @@ import dynamic from 'next/dynamic';
 // Import emoji picker dynamically
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
-// Tenor GIF result type
-interface TenorGif {
+// Giphy GIF result type
+interface GiphyGif {
   id: string;
   title: string;
-  media_formats: {
-    gif: { url: string };
-    tinygif: { url: string };
-    nanogif: { url: string };
+  images: {
+    original: { url: string; width: string; height: string };
+    fixed_height: { url: string; width: string; height: string };
+    fixed_height_small: { url: string; width: string; height: string };
+    fixed_width: { url: string; width: string; height: string };
+    preview_gif: { url: string; width: string; height: string };
   };
 }
 
@@ -64,7 +66,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
   const [gifs, setGifs] = useState<string[]>([]);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [gifSearchQuery, setGifSearchQuery] = useState('');
-  const [gifResults, setGifResults] = useState<TenorGif[]>([]);
+  const [gifResults, setGifResults] = useState<GiphyGif[]>([]);
   const [isLoadingGifs, setIsLoadingGifs] = useState(false);
   const [gifError, setGifError] = useState<string | null>(null);
 
@@ -166,47 +168,13 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  // GIF search using server-side API route
-  const searchGifs = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setGifResults([]);
-      return;
-    }
-
-    setIsLoadingGifs(true);
-    setGifError(null);
-
-    try {
-      const response = await fetch(
-        `/api/tenor?type=search&q=${encodeURIComponent(query)}&limit=20`
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to search GIFs');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setGifResults(data.data || []);
-      } else {
-        throw new Error(data.error || 'Failed to search GIFs');
-      }
-    } catch (error) {
-      console.error('GIF search error:', error);
-      setGifError('Failed to load GIFs. Please try again.');
-      setGifResults([]);
-    } finally {
-      setIsLoadingGifs(false);
-    }
-  }, []);
-
   // Load trending GIFs when picker opens
   const loadTrendingGifs = useCallback(async () => {
     setIsLoadingGifs(true);
     setGifError(null);
 
     try {
-      const response = await fetch('/api/tenor?type=featured&limit=20');
+      const response = await fetch('/api/giphy?type=trending&limit=24');
 
       if (!response.ok) {
         throw new Error('Failed to load trending GIFs');
@@ -226,8 +194,45 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     }
   }, []);
 
-  const handleGifSelect = (gif: TenorGif) => {
-    const gifUrl = gif.media_formats.gif?.url || gif.media_formats.tinygif?.url;
+  // GIF search using server-side API route (Giphy)
+  const searchGifs = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        loadTrendingGifs();
+        return;
+      }
+
+      setIsLoadingGifs(true);
+      setGifError(null);
+
+      try {
+        const response = await fetch(
+          `/api/giphy?type=search&q=${encodeURIComponent(query)}&limit=24`
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to search GIFs');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setGifResults(data.data || []);
+        } else {
+          throw new Error(data.error || 'Failed to search GIFs');
+        }
+      } catch (error) {
+        console.error('GIF search error:', error);
+        setGifError('Failed to load GIFs. Please try again.');
+        setGifResults([]);
+      } finally {
+        setIsLoadingGifs(false);
+      }
+    },
+    [loadTrendingGifs]
+  );
+
+  const handleGifSelect = (gif: GiphyGif) => {
+    const gifUrl = gif.images.fixed_height?.url || gif.images.original?.url;
     if (gifUrl) {
       setGifs([...gifs, gifUrl]);
       setShowGifPicker(false);
@@ -605,14 +610,19 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             )}
           </div>
 
-          {/* GIF button - disabled until Tenor API is configured */}
+          {/* GIF button */}
           <div className="relative" data-gif-picker>
             <Button
               variant="ghost"
               size="sm"
-              disabled
-              className="h-9 w-9 cursor-not-allowed p-0 text-muted-foreground/50"
-              title="GIFs temporarily unavailable"
+              onClick={() => {
+                setShowGifPicker(!showGifPicker);
+                if (!showGifPicker) {
+                  loadTrendingGifs();
+                }
+              }}
+              className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
+              title="Add GIF"
             >
               <Film className="h-5 w-5" />
             </Button>
@@ -637,15 +647,12 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
 
                         // Debounce search by 300ms
                         gifSearchTimeoutRef.current = setTimeout(() => {
-                          if (value.trim()) {
-                            searchGifs(value);
-                          } else {
-                            loadTrendingGifs();
-                          }
+                          searchGifs(value);
                         }, 300);
                       }}
                       placeholder="Search GIFs..."
                       className="w-full rounded-md bg-muted py-2 pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+                      autoFocus
                     />
                   </div>
                 </div>
@@ -657,7 +664,16 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                   ) : gifError ? (
-                    <div className="py-8 text-center text-sm text-muted-foreground">{gifError}</div>
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      {gifError}
+                      <button
+                        type="button"
+                        onClick={loadTrendingGifs}
+                        className="mt-2 block w-full text-primary hover:underline"
+                      >
+                        Try again
+                      </button>
+                    </div>
                   ) : gifResults.length === 0 ? (
                     <div className="py-8 text-center text-sm text-muted-foreground">
                       {gifSearchQuery ? 'No GIFs found' : 'Search for GIFs'}
@@ -669,11 +685,11 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                           key={gif.id}
                           type="button"
                           onClick={() => handleGifSelect(gif)}
-                          className="relative aspect-square overflow-hidden rounded transition-opacity hover:opacity-80"
+                          className="relative aspect-square overflow-hidden rounded transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={gif.media_formats.tinygif?.url || gif.media_formats.gif?.url}
+                            src={gif.images.fixed_height_small?.url || gif.images.preview_gif?.url}
                             alt={gif.title}
                             className="h-full w-full object-cover"
                             loading="lazy"
@@ -684,9 +700,16 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                   )}
                 </div>
 
-                {/* Tenor attribution */}
+                {/* Giphy attribution */}
                 <div className="border-t bg-muted/50 px-2 py-1.5 text-center">
-                  <span className="text-[10px] text-muted-foreground">Powered by Tenor</span>
+                  <a
+                    href="https://giphy.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-muted-foreground hover:text-foreground"
+                  >
+                    Powered by GIPHY
+                  </a>
                 </div>
               </div>
             )}

@@ -19,8 +19,10 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Film,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { GifPicker } from '@/components/gif/GifPicker';
 
 // Import emoji picker dynamically (~300KB uncompressed)
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
@@ -30,6 +32,7 @@ export interface EditorToolbarProps {
   onInsertImage: () => void;
   onInsertLink: () => void;
   onEmoji: (emoji: string) => void;
+  onInsertGif?: (gifUrl: string) => void;
   onUndo: () => void;
   onRedo: () => void;
 }
@@ -52,11 +55,14 @@ export function EditorToolbar({
   onInsertImage,
   onInsertLink,
   onEmoji,
+  onInsertGif,
   onUndo,
   onRedo,
 }: EditorToolbarProps) {
   const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
+  const [showGifPicker, setShowGifPicker] = React.useState(false);
   const emojiButtonRef = React.useRef<HTMLButtonElement>(null);
+  const gifButtonRef = React.useRef<HTMLButtonElement>(null);
 
   // Close emoji picker when clicking outside
   React.useEffect(() => {
@@ -74,6 +80,11 @@ export function EditorToolbar({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showEmojiPicker]);
+
+  const handleGifSelect = (gifUrl: string) => {
+    onInsertGif?.(gifUrl);
+    setShowGifPicker(false);
+  };
 
   const handleEmojiSelect = (emojiData: { emoji: string }) => {
     onEmoji(emojiData.emoji);
@@ -206,6 +217,30 @@ export function EditorToolbar({
           </div>
         )}
       </div>
+
+      {/* GIF picker */}
+      {onInsertGif && (
+        <div className="relative">
+          <Button
+            ref={gifButtonRef}
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowGifPicker(!showGifPicker)}
+            title="Insert GIF"
+            className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <Film className="h-4 w-4" />
+          </Button>
+
+          <GifPicker
+            isOpen={showGifPicker}
+            onClose={() => setShowGifPicker(false)}
+            onSelect={handleGifSelect}
+            className="left-0 top-full mt-2"
+          />
+        </div>
+      )}
     </div>
   );
 }

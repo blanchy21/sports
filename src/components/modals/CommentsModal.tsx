@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useComments } from '@/lib/react-query/queries/useComments';
 import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
-import { MessageCircle, Send } from 'lucide-react';
+import { MessageCircle, Send, Film } from 'lucide-react';
 import { formatDate } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast, toast } from '@/components/core/Toast';
@@ -13,6 +13,8 @@ import { useInvalidateComments } from '@/lib/react-query/queries/useComments';
 import { useAioha } from '@/contexts/AiohaProvider';
 import { CommentVoteButton } from '@/components/posts/CommentVoteButton';
 import { BaseModal } from '@/components/core/BaseModal';
+import { GifPicker } from '@/components/gif/GifPicker';
+import { CommentContent } from '@/components/comments/CommentContent';
 
 interface CommentsModalProps {
   isOpen: boolean;
@@ -30,6 +32,12 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
 
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+
+  const handleGifSelect = (gifUrl: string) => {
+    setCommentText((prev) => prev + `\n![gif](${gifUrl})\n`);
+    setShowGifPicker(false);
+  };
 
   const { data: comments, isLoading, error } = useComments(author || '', permlink || '');
 
@@ -184,7 +192,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                       )}
                     </div>
                     <div className="prose prose-sm max-w-none">
-                      <p className="whitespace-pre-wrap text-sm text-foreground">{comment.body}</p>
+                      <CommentContent body={comment.body} />
                     </div>
                     <div className="mt-2 flex items-center space-x-4">
                       <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
@@ -250,6 +258,26 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                 }}
                 disabled={isSubmitting}
               />
+              {/* GIF Button */}
+              <div className="relative mt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowGifPicker(!showGifPicker)}
+                  className="h-8 px-2 text-muted-foreground hover:text-primary"
+                  title="Add GIF"
+                >
+                  <Film className="mr-1 h-4 w-4" />
+                  <span className="text-xs">GIF</span>
+                </Button>
+                <GifPicker
+                  isOpen={showGifPicker}
+                  onClose={() => setShowGifPicker(false)}
+                  onSelect={handleGifSelect}
+                  className="bottom-full left-0 mb-2"
+                />
+              </div>
             </div>
           </div>
           <Button

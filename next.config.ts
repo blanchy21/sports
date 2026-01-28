@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
               // Styles - self and inline (required for styled-jsx and Tailwind)
               "style-src 'self' 'unsafe-inline'",
               // Images - self, data URIs, and allowed image hosts
-              "img-src 'self' data: blob: https://images.unsplash.com https://cdn.steemitimages.com https://steemitimages.com https://images.hive.blog https://gateway.ipfs.io https://ipfs.io https://ipfs.busy.org https://files.peakd.com https://files.ecency.com https://files.3speak.tv https://files.dtube.tv https://api.dicebear.com https://*.espncdn.com",
+              "img-src 'self' data: blob: https://images.unsplash.com https://cdn.steemitimages.com https://steemitimages.com https://images.hive.blog https://gateway.ipfs.io https://ipfs.io https://ipfs.busy.org https://files.peakd.com https://files.ecency.com https://files.3speak.tv https://files.dtube.tv https://api.dicebear.com https://*.espncdn.com https://*.giphy.com",
               // Fonts - self and data URIs
               "font-src 'self' data:",
               // Connect - API endpoints, Hive nodes, and Sentry
@@ -287,6 +287,37 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'media.video-cdn.espn.com',
+        port: '',
+        pathname: '/**',
+      },
+      // Giphy GIF images
+      {
+        protocol: 'https',
+        hostname: 'media0.giphy.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media1.giphy.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media2.giphy.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media3.giphy.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media4.giphy.com',
         port: '',
         pathname: '/**',
       },
