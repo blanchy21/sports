@@ -9,7 +9,7 @@ import {
   getEstimatedRCCost,
   validatePostData,
 } from '@/lib/hive-workerbee/posting';
-import type { PostData, PublishResult } from '@/lib/hive-workerbee/posting';
+import type { PostData } from '@/lib/hive-workerbee/posting';
 
 // Mock dependencies
 jest.mock('@/lib/aioha/config', () => ({
@@ -130,7 +130,6 @@ describe('Posting Module', () => {
     });
 
     it('returns error when aioha is not available', async () => {
-      const originalAioha = { ...mockAioha };
       jest.resetModules();
       jest.doMock('@/lib/aioha/config', () => ({
         aioha: null,

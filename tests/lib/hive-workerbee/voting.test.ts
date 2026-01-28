@@ -14,7 +14,7 @@ import {
   batchVote,
   getVoteHistory,
 } from '@/lib/hive-workerbee/voting';
-import type { VoteData, HiveVote, VoteResult } from '@/lib/hive-workerbee/voting';
+import type { VoteData } from '@/lib/hive-workerbee/voting';
 
 // Mock dependencies
 jest.mock('@/lib/aioha/config', () => ({
@@ -85,8 +85,6 @@ describe('Voting Module', () => {
     });
 
     it('returns error when aioha is not available', async () => {
-      // Temporarily remove aioha
-      const originalAioha = { ...mockAioha };
       jest.resetModules();
       jest.doMock('@/lib/aioha/config', () => ({
         aioha: null,

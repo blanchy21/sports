@@ -20,7 +20,6 @@ import {
   getTestCredentials,
   KNOWN_TEST_ACCOUNTS,
   assertValidHiveAccount,
-  TESTNET_CONFIG,
 } from './setup';
 
 describeIfIntegration('Hive Blockchain Authentication Flows', () => {
@@ -215,8 +214,8 @@ describeIfIntegration('Hive Authenticated Operations', () => {
       // Get required properties for transaction
       const props = await client.database.getDynamicGlobalProperties();
 
-      // Create transaction
-      const transaction = {
+      // Create transaction (demonstrates that we can build valid transaction objects)
+      const _transaction = {
         ref_block_num: props.head_block_number & 0xffff,
         ref_block_prefix: Buffer.from(props.head_block_id, 'hex').readUInt32LE(4),
         expiration: new Date(Date.now() + 60000).toISOString().slice(0, -5),
