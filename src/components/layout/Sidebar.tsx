@@ -16,7 +16,6 @@ import {
   User,
   DollarSign,
   BookOpen,
-  BarChart3,
   Users,
   UserPlus,
   Users2,
@@ -42,7 +41,6 @@ const navigationItems = [
   { href: '/following', icon: UserPlus, label: 'Following', requireAuth: true },
   { href: '/wallet', icon: DollarSign, label: 'Wallet', requireAuth: false },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', requireAuth: false },
-  { href: '/monitoring', icon: BarChart3, label: 'Monitoring', requireAuth: false },
 ];
 
 export const Sidebar: React.FC = () => {

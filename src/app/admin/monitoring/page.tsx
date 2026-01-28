@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card } from '@/components/core/Card';
 import { Button } from '@/components/core/Button';
@@ -24,6 +25,8 @@ import {
   clearMonitoringData,
   exportMonitoringData,
 } from '@/lib/hive-workerbee/monitoring';
+import { useAuth } from '@/contexts/AuthContext';
+import { isAdminAccount } from '@/lib/admin/config';
 import {
   getCacheStatistics as getCacheStats,
   clearOptimizationCache as clearOptCache,
@@ -92,6 +95,8 @@ interface NodeHealthData {
 }
 
 export default function MonitoringPage() {
+  const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [monitoringData, setMonitoringData] = useState<MonitoringData | null>(null);
   const [cacheStats, setCacheStats] = useState<{
     size: number;
@@ -102,6 +107,15 @@ export default function MonitoringPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isClient, setIsClient] = useState(false);
+
+  const username = user?.username;
+  const isAdmin = !!username && isAdminAccount(username);
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      router.push('/');
+    }
+  }, [isAdmin, authLoading, router]);
 
   const fetchMonitoringData = async () => {
     try {
