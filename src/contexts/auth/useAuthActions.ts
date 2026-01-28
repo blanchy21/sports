@@ -215,10 +215,16 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           }
         }
 
-        if (!extracted)
+        if (!extracted) {
+          // If called without a loginResult (e.g., auto-reconnect attempt),
+          // silently return instead of throwing - the user simply isn't logged in
+          if (!loginResult) {
+            return;
+          }
           throw new Error(
             'Unable to determine username from Aioha authentication. Please try again.'
           );
+        }
 
         const { username, sessionId } = extracted;
         const now = Date.now();
@@ -258,6 +264,19 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         // Fetch profile in background
         fetchProfileInBackground(username, basicUser, newHiveUser);
       } catch (error) {
+        // Skip logging for empty object errors - these occur during logout transitions
+        // when Aioha is in an inconsistent state
+        const isEmptyObjectError =
+          error !== null &&
+          typeof error === 'object' &&
+          !(error instanceof Error) &&
+          Object.keys(error as object).length === 0;
+
+        if (isEmptyObjectError) {
+          // Silently return - this is expected during logout
+          return;
+        }
+
         // Improve error logging for debugging - handle various error types
         const errorInfo = {
           type: typeof error,
