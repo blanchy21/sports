@@ -40,6 +40,31 @@ export function useIsFollowingUser(username: string, follower: string) {
   });
 }
 
+/**
+ * Batch check follow status for multiple targets via server-side API route.
+ * Returns a Record<string, boolean> mapping each target to follow status.
+ */
+export function useBatchFollowStatus(targets: string[], follower: string) {
+  const sortedTargets = [...targets].sort();
+  return useQuery({
+    queryKey: ['users', 'followStatus', follower, sortedTargets],
+    queryFn: async (): Promise<Record<string, boolean>> => {
+      const params = new URLSearchParams({
+        follower,
+        targets: sortedTargets.join(','),
+      });
+      const response = await fetch(`/api/hive/follows?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch follow status');
+      }
+      const data = await response.json();
+      return data.followStatus ?? {};
+    },
+    enabled: sortedTargets.length > 0 && !!follower,
+    staleTime: STALE_TIMES.REALTIME,
+  });
+}
+
 export function useInvalidateUserProfile() {
   const queryClient = useQueryClient();
 

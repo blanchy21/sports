@@ -5,17 +5,18 @@ import {
   fetchFollowing,
   followUser,
   unfollowUser,
-  SocialResult
+  SocialResult,
 } from '@/lib/hive-workerbee/social';
 import { STALE_TIMES, PAGINATION } from '@/lib/constants/cache';
 
 export function useFollowers(username: string, options: { enabled?: boolean } = {}) {
   return useInfiniteQuery({
     queryKey: [...queryKeys.users.followers(username)],
-    queryFn: ({ pageParam }) => fetchFollowers(username, {
-      limit: PAGINATION.SOCIAL_PAGE_SIZE,
-      before: pageParam
-    }),
+    queryFn: ({ pageParam }) =>
+      fetchFollowers(username, {
+        limit: PAGINATION.SOCIAL_PAGE_SIZE,
+        before: pageParam,
+      }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: SocialResult) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
@@ -25,7 +26,7 @@ export function useFollowers(username: string, options: { enabled?: boolean } = 
       pages: data.pages,
       pageParams: data.pageParams,
       // Flatten all pages into a single result for easier consumption
-      relationships: data.pages.flatMap(page => page.relationships),
+      relationships: data.pages.flatMap((page) => page.relationships),
       hasMore: data.pages[data.pages.length - 1]?.hasMore ?? false,
       total: data.pages[0]?.total,
     }),
@@ -35,10 +36,11 @@ export function useFollowers(username: string, options: { enabled?: boolean } = 
 export function useFollowing(username: string, options: { enabled?: boolean } = {}) {
   return useInfiniteQuery({
     queryKey: [...queryKeys.users.following(username)],
-    queryFn: ({ pageParam }) => fetchFollowing(username, {
-      limit: PAGINATION.SOCIAL_PAGE_SIZE,
-      before: pageParam
-    }),
+    queryFn: ({ pageParam }) =>
+      fetchFollowing(username, {
+        limit: PAGINATION.SOCIAL_PAGE_SIZE,
+        before: pageParam,
+      }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: SocialResult) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
@@ -48,7 +50,7 @@ export function useFollowing(username: string, options: { enabled?: boolean } = 
       pages: data.pages,
       pageParams: data.pageParams,
       // Flatten all pages into a single result for easier consumption
-      relationships: data.pages.flatMap(page => page.relationships),
+      relationships: data.pages.flatMap((page) => page.relationships),
       hasMore: data.pages[data.pages.length - 1]?.hasMore ?? false,
       total: data.pages[0]?.total,
     }),
@@ -57,7 +59,7 @@ export function useFollowing(username: string, options: { enabled?: boolean } = 
 
 export function useFollowUser() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ username, follower }: { username: string; follower: string }) =>
       followUser(username, follower),
@@ -67,18 +69,21 @@ export function useFollowUser() {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.following(follower) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(username) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(follower) });
-      
+
       // Invalidate the isFollowing check for this specific user pair
-      queryClient.invalidateQueries({ 
-        queryKey: [...queryKeys.users.detail(username), 'following', follower]
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.users.detail(username), 'following', follower],
       });
+
+      // Invalidate batch follow status used by the sidebar
+      queryClient.invalidateQueries({ queryKey: ['users', 'followStatus'] });
     },
   });
 }
 
 export function useUnfollowUser() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ username, follower }: { username: string; follower: string }) =>
       unfollowUser(username, follower),
@@ -88,18 +93,21 @@ export function useUnfollowUser() {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.following(follower) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(username) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(follower) });
-      
+
       // Invalidate the isFollowing check for this specific user pair
-      queryClient.invalidateQueries({ 
-        queryKey: [...queryKeys.users.detail(username), 'following', follower]
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.users.detail(username), 'following', follower],
       });
+
+      // Invalidate batch follow status used by the sidebar
+      queryClient.invalidateQueries({ queryKey: ['users', 'followStatus'] });
     },
   });
 }
 
 export function useInvalidateFollowers() {
   const queryClient = useQueryClient();
-  
+
   return {
     invalidateFollowers: (username: string) =>
       queryClient.invalidateQueries({ queryKey: queryKeys.users.followers(username) }),

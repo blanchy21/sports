@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { TrendingUp, Users, Calendar, Trophy, Star, AlertCircle, RefreshCw } from 'lucide-react';
 import { useRealtimeEvents } from '@/features/sports/hooks/useUpcomingEvents';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFollowUser, useUnfollowUser } from '@/lib/react-query/queries/useFollowers';
-import { useIsFollowingUser } from '@/lib/react-query/queries/useUserProfile';
+import { useBatchFollowStatus } from '@/lib/react-query/queries/useUserProfile';
 import { useSidebarAnalytics } from '@/lib/react-query/queries/useSidebarAnalytics';
 import { Avatar } from '@/components/core/Avatar';
 
@@ -34,65 +34,49 @@ export const RightSidebar: React.FC = () => {
   const followMutation = useFollowUser();
   const unfollowMutation = useUnfollowUser();
 
-  // Follow button component
-  const FollowButton: React.FC<{ username: string }> = ({ username }) => {
-    // Only check Hive follow status for Hive users
-    const hiveFollower = user?.isHiveAuth ? user.hiveUsername || user.username : '';
-    const { data: isFollowing } = useIsFollowingUser(username, hiveFollower);
-    const [isFollowingState, setIsFollowingState] = useState(false);
-    const [hasAttemptedFollow, setHasAttemptedFollow] = useState(false);
+  // Batch follow status query for all top authors
+  const hiveFollower = user?.isHiveAuth ? user.hiveUsername || user.username : '';
+  const authorUsernames = topAuthors.map((a) => a.username);
+  const { data: followStatusMap } = useBatchFollowStatus(authorUsernames, hiveFollower);
 
-    // Only update local state from API if we haven't made any local changes
-    // Since the API always returns false, we'll rely on local state management
-    useEffect(() => {
-      // Only set from API if we haven't attempted any follow operations
-      if (!hasAttemptedFollow) {
-        setIsFollowingState(isFollowing || false);
-      }
-    }, [isFollowing, hasAttemptedFollow]);
-
+  // Follow button component - receives follow state as prop from batch query
+  const FollowButton: React.FC<{ username: string; isFollowing: boolean }> = ({
+    username,
+    isFollowing,
+  }) => {
     const handleFollowToggle = async () => {
       if (!user?.username) return;
 
       try {
-        if (isFollowingState) {
+        if (isFollowing) {
           await unfollowMutation.mutateAsync({
             username,
             follower: user.username,
           });
-          setIsFollowingState(false);
-          setHasAttemptedFollow(false);
         } else {
           await followMutation.mutateAsync({
             username,
             follower: user.username,
           });
-          setIsFollowingState(true);
-          setHasAttemptedFollow(true);
         }
       } catch (error) {
         console.error('Error toggling follow status:', error);
-        // Reset state on error
-        setHasAttemptedFollow(false);
       }
     };
 
-    const isLoading = followMutation.isPending || unfollowMutation.isPending;
-
-    // Use optimistic state: prioritize hasAttemptedFollow for successful operations
-    const displayState = hasAttemptedFollow || isFollowingState;
+    const isMutating = followMutation.isPending || unfollowMutation.isPending;
 
     return (
       <button
         onClick={handleFollowToggle}
-        disabled={isLoading}
+        disabled={isMutating}
         className={`rounded-md px-3 py-1 text-xs transition-colors disabled:opacity-50 ${
-          displayState
+          isFollowing
             ? 'bg-muted text-muted-foreground hover:bg-muted/80'
             : 'bg-primary text-primary-foreground hover:bg-primary/90'
         }`}
       >
-        {isLoading ? '...' : displayState ? 'Following' : 'Follow'}
+        {isMutating ? '...' : isFollowing ? 'Following' : 'Follow'}
       </button>
     );
   };
@@ -235,7 +219,14 @@ export const RightSidebar: React.FC = () => {
                         @{author.username} • {author.posts} posts
                       </div>
                     </div>
-                    <FollowButton username={author.username} />
+                    {user?.isHiveAuth &&
+                      author.username !== user?.username &&
+                      author.username !== user?.hiveUsername && (
+                        <FollowButton
+                          username={author.username}
+                          isFollowing={followStatusMap?.[author.username] ?? false}
+                        />
+                      )}
                   </div>
                 ))}
               </div>
