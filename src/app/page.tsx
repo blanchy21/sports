@@ -151,16 +151,16 @@ export default function LandingPage() {
               onClick={() => openModal('keychainLogin')}
             >
               <Play className="mr-2 h-5 w-5 fill-current" />
-              Enter the Arena
+              Get Started
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
             <Button
               size="lg"
               variant="outline"
               className="border-white/30 bg-white/5 px-10 py-7 text-lg text-white backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/15"
-              onClick={() => openModal('keychainLogin')}
+              onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
             >
-              I Have an Account
+              Learn More
             </Button>
           </motion.div>
 
