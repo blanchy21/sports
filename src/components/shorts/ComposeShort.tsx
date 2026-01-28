@@ -48,9 +48,20 @@ interface ComposeShortProps {
   onError?: (error: string) => void;
 }
 
+// Get the Hive avatar URL for a username
+function getHiveAvatarUrl(username: string): string {
+  return `https://images.hive.blog/u/${username}/avatar`;
+}
+
 export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
   const { user, authType, hiveUser } = useAuth();
   const [content, setContent] = useState('');
+
+  // For Hive users, use Hive avatar URL as fallback while profile loads
+  // Check multiple sources for hive username: hiveUser, user.hiveUsername, or user.username for hive auth
+  const hiveUsername =
+    hiveUser?.username || user?.hiveUsername || (authType === 'hive' ? user?.username : undefined);
+  const avatarUrl = user?.avatar || (hiveUsername ? getHiveAvatarUrl(hiveUsername) : undefined);
   const [images, setImages] = useState<string[]>([]);
   const [sportCategory, setSportCategory] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
@@ -366,7 +377,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
         <div className="flex gap-3">
           {/* Avatar */}
           <Avatar
-            src={user.avatar}
+            src={avatarUrl}
             fallback={user.username || '?'}
             alt={user.displayName || user.username || 'User'}
             size="md"

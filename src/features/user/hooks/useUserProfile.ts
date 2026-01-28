@@ -18,18 +18,34 @@ export interface UserProfile {
 }
 
 /**
+ * Get the Hive avatar URL for a username
+ * This is the standard Hive image service endpoint that works for all users
+ */
+function getHiveAvatarUrl(username: string): string {
+  return `https://images.hive.blog/u/${username}/avatar`;
+}
+
+/**
  * Fetch and transform user profile data
  */
 async function fetchProfile(username: string): Promise<UserProfile | null> {
   const profileData = await fetchUserProfile(username);
   if (!profileData) {
-    return null;
+    // Even if profile fetch fails, return basic profile with Hive avatar
+    return {
+      username: username,
+      displayName: undefined,
+      avatar: getHiveAvatarUrl(username),
+      reputation: 0,
+      reputationFormatted: '0',
+    };
   }
 
   return {
     username: username,
     displayName: profileData.name,
-    avatar: profileData.profileImage,
+    // Use profile image if available, otherwise fallback to Hive avatar URL
+    avatar: profileData.profileImage || getHiveAvatarUrl(username),
     reputation: 0,
     reputationFormatted: '0',
   };
@@ -110,9 +126,15 @@ export async function prefetchUserProfiles(
       let profile: UserProfile | null = null;
 
       if (accountData) {
-        // Parse the profile metadata from the account
+        // Parse profile from both metadata sources (same as fetchUserProfile)
         const metadata = parseJsonMetadata((accountData.json_metadata as string) || '{}');
-        const profileData = (metadata.profile || {}) as {
+        const postingMetadata = parseJsonMetadata(
+          (accountData.posting_json_metadata as string) || '{}'
+        );
+        const profileData = {
+          ...(metadata.profile || {}),
+          ...(postingMetadata.profile || {}),
+        } as {
           name?: string;
           profile_image?: string;
         };
@@ -120,7 +142,7 @@ export async function prefetchUserProfiles(
         profile = {
           username,
           displayName: profileData.name,
-          avatar: profileData.profile_image,
+          avatar: profileData.profile_image || getHiveAvatarUrl(username),
           reputation: 0,
           reputationFormatted: '0',
         };

@@ -66,10 +66,110 @@ import { makeHiveApiCall } from './api';
 import { HiveAccount } from '../shared/types';
 import { calculateReputation } from '../utils/hive';
 import { getAccountOptimized, getContentOptimized } from './optimization';
-import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
+import {
+  workerBee as workerBeeLog,
+  warn as logWarn,
+  error as logError,
+  info as logInfo,
+} from './logger';
 
 const WORKERBEE_DEBUG_ENABLED =
   process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true' || process.env.NODE_ENV === 'development';
+
+// ============================================================================
+// Hive Account Existence Cache
+// ============================================================================
+// Caches whether usernames exist on Hive to avoid repeated API calls
+// Especially useful for soft-auth users who don't have Hive accounts
+
+interface AccountCacheEntry {
+  exists: boolean;
+  checkedAt: number;
+}
+
+// Cache with 30-minute TTL for existing accounts, 5-minute for non-existing
+// (non-existing accounts might be created, existing accounts rarely get deleted)
+const CACHE_TTL_EXISTS = 30 * 60 * 1000; // 30 minutes
+const CACHE_TTL_NOT_EXISTS = 5 * 60 * 1000; // 5 minutes
+const accountExistsCache = new Map<string, AccountCacheEntry>();
+
+/**
+ * Check if a username exists on Hive (with caching)
+ * This is optimized to avoid repeated API calls for soft-auth users
+ * @param username - Username to check
+ * @returns True if account exists on Hive, false otherwise
+ */
+export async function isHiveAccount(username: string): Promise<boolean> {
+  if (!username || typeof username !== 'string') {
+    return false;
+  }
+
+  const normalizedUsername = username.toLowerCase().trim();
+  if (!normalizedUsername) {
+    return false;
+  }
+
+  // Check cache first
+  const cached = accountExistsCache.get(normalizedUsername);
+  if (cached) {
+    const ttl = cached.exists ? CACHE_TTL_EXISTS : CACHE_TTL_NOT_EXISTS;
+    if (Date.now() - cached.checkedAt < ttl) {
+      return cached.exists;
+    }
+    // Cache expired, remove it
+    accountExistsCache.delete(normalizedUsername);
+  }
+
+  // Make API call to check existence
+  try {
+    const accounts = (await makeHiveApiCall('condenser_api', 'get_accounts', [
+      [normalizedUsername],
+    ])) as HiveAccount[];
+
+    const exists = Array.isArray(accounts) && accounts.length > 0;
+
+    // Cache the result
+    accountExistsCache.set(normalizedUsername, {
+      exists,
+      checkedAt: Date.now(),
+    });
+
+    if (!exists) {
+      logInfo(`Account "${username}" does not exist on Hive (cached for 5min)`);
+    }
+
+    return exists;
+  } catch (error) {
+    // On error, assume not exists but don't cache (might be network issue)
+    logWarn(`Error checking Hive account existence for "${username}"`, 'isHiveAccount', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+}
+
+/**
+ * Clear the account existence cache (useful for testing)
+ */
+export function clearAccountExistsCache(): void {
+  accountExistsCache.clear();
+}
+
+/**
+ * Pre-populate cache for known non-Hive accounts (e.g., soft-auth users)
+ * @param usernames - Array of usernames known to not exist on Hive
+ */
+export function markAsNonHiveAccounts(usernames: string[]): void {
+  const now = Date.now();
+  for (const username of usernames) {
+    if (username) {
+      accountExistsCache.set(username.toLowerCase().trim(), {
+        exists: false,
+        checkedAt: now,
+      });
+    }
+  }
+}
 
 const debugLog = (...args: unknown[]) => {
   if (!WORKERBEE_DEBUG_ENABLED || args.length === 0) {
@@ -635,8 +735,25 @@ export async function fetchUserProfile(username: string): Promise<{
     if (!account) return null;
 
     const accountData = account;
+    // Parse profile from both json_metadata and posting_json_metadata
+    // Many users have their profile in posting_json_metadata
     const profileMetadata = parseJsonMetadata(accountData.json_metadata as string);
-    return profileMetadata.profile || {};
+    const postingProfileMetadata = parseJsonMetadata(accountData.posting_json_metadata as string);
+
+    // Merge profile data, prioritizing posting_json_metadata (same as fetchUserAccount)
+    const profile = {
+      ...(profileMetadata.profile || {}),
+      ...(postingProfileMetadata.profile || {}),
+    } as Record<string, unknown>;
+
+    return {
+      name: profile.name as string | undefined,
+      about: profile.about as string | undefined,
+      location: profile.location as string | undefined,
+      website: profile.website as string | undefined,
+      coverImage: profile.cover_image as string | undefined,
+      profileImage: profile.profile_image as string | undefined,
+    };
   } catch (error) {
     logError(
       'Error fetching user profile with WorkerBee',
@@ -678,6 +795,14 @@ export async function getUserFollowStats(username: string): Promise<{
 } | null> {
   try {
     debugLog(`[WorkerBee getUserFollowStats] Fetching follow stats for: ${username}`);
+
+    // Check if account exists on Hive first (uses cache to avoid repeated API calls)
+    // This prevents errors for soft-auth users and deleted accounts
+    const exists = await isHiveAccount(username);
+    if (!exists) {
+      debugLog(`[WorkerBee getUserFollowStats] Skipping non-Hive account: ${username}`);
+      return { followers: 0, following: 0 };
+    }
 
     const result = (await makeHiveApiCall('condenser_api', 'get_follow_count', [
       username,

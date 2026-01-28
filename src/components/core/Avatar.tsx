@@ -1,5 +1,4 @@
 import * as React from 'react';
-import Image from 'next/image';
 import { cn } from '@/lib/utils/client';
 import { getAvatarUrl } from '@/lib/utils/avatar';
 
@@ -55,14 +54,12 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
         {...props}
       >
         {imageUrl ? (
-          <Image
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
             src={imageUrl}
             alt={alt || 'Avatar'}
-            fill
-            sizes="(max-width: 768px) 24px, (max-width: 1200px) 32px, 48px"
-            className="object-cover"
+            className="h-full w-full object-cover"
             onError={handleImageError}
-            unoptimized={imageUrl.includes('dicebear.com')}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">

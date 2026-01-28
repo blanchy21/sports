@@ -116,6 +116,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             displayName: uiHint?.displayHint || username,
             isHiveAuth: isHiveAuth,
             hiveUsername: hiveUsername,
+            // Set Hive avatar immediately so it renders before async profile refresh
+            avatar:
+              isHiveAuth && hiveUsername
+                ? `https://images.hive.blog/u/${hiveUsername}/avatar`
+                : undefined,
             createdAt: new Date(),
             updatedAt: new Date(),
           };

@@ -1,5 +1,6 @@
 import { initializeWorkerBeeClient } from './client';
 import { makeHiveApiCall } from './api';
+import { isHiveAccount } from './account';
 import { FollowRelationship } from '@/types';
 import {
   workerBee as workerBeeLog,
@@ -408,6 +409,14 @@ export async function getFollowerCount(username: string): Promise<number> {
       return 0;
     }
 
+    // Check if account exists on Hive first (uses cache to avoid repeated API calls)
+    // This prevents errors for soft-auth users and deleted accounts
+    const exists = await isHiveAccount(username);
+    if (!exists) {
+      workerBeeLog(`getFollowerCount skipping non-Hive account: ${username}`);
+      return 0;
+    }
+
     const result = await makeHiveApiCall<Record<string, unknown>>(
       'condenser_api',
       'get_follow_count',
@@ -424,6 +433,14 @@ export async function getFollowerCount(username: string): Promise<number> {
         : typeof error === 'string'
           ? error
           : JSON.stringify(error);
+
+    // Handle non-existent accounts gracefully - this is common for soft-auth users
+    // or cached posts from accounts that were renamed/deleted
+    if (errorMessage.includes('does not exist') || errorMessage.includes('Invalid parameters')) {
+      logWarn(`Account "${username}" not found on Hive, returning 0 followers`);
+      return 0;
+    }
+
     logError(
       `Error fetching follower count for "${username}": ${errorMessage}`,
       'getFollowerCount',
@@ -446,6 +463,14 @@ export async function getFollowingCount(username: string): Promise<number> {
       return 0;
     }
 
+    // Check if account exists on Hive first (uses cache to avoid repeated API calls)
+    // This prevents errors for soft-auth users and deleted accounts
+    const exists = await isHiveAccount(username);
+    if (!exists) {
+      workerBeeLog(`getFollowingCount skipping non-Hive account: ${username}`);
+      return 0;
+    }
+
     const result = await makeHiveApiCall<Record<string, unknown>>(
       'condenser_api',
       'get_follow_count',
@@ -462,6 +487,14 @@ export async function getFollowingCount(username: string): Promise<number> {
         : typeof error === 'string'
           ? error
           : JSON.stringify(error);
+
+    // Handle non-existent accounts gracefully - this is common for soft-auth users
+    // or cached posts from accounts that were renamed/deleted
+    if (errorMessage.includes('does not exist') || errorMessage.includes('Invalid parameters')) {
+      logWarn(`Account "${username}" not found on Hive, returning 0 following`);
+      return 0;
+    }
+
     logError(
       `Error fetching following count for "${username}": ${errorMessage}`,
       'getFollowingCount',

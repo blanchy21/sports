@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFollowUser, useUnfollowUser } from '@/lib/react-query/queries/useFollowers';
 import { useIsFollowingUser } from '@/lib/react-query/queries/useUserProfile';
 import { useSidebarAnalytics } from '@/lib/react-query/queries/useSidebarAnalytics';
+import { Avatar } from '@/components/core/Avatar';
 
 export const RightSidebar: React.FC = () => {
   const { user } = useAuth();
@@ -222,11 +223,12 @@ export const RightSidebar: React.FC = () => {
                     key={author.id}
                     className="flex cursor-pointer items-center space-x-3 rounded-md p-2 transition-colors hover:bg-accent"
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                      <span className="text-sm font-semibold text-primary">
-                        {author.displayName.charAt(0)}
-                      </span>
-                    </div>
+                    <Avatar
+                      src={`https://images.hive.blog/u/${author.username}/avatar`}
+                      fallback={author.displayName || author.username}
+                      alt={author.displayName || author.username}
+                      size="md"
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{author.displayName}</div>
                       <div className="text-xs text-muted-foreground">

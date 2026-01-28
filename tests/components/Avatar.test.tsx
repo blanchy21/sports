@@ -2,21 +2,13 @@ import { screen } from '@testing-library/react';
 import { Avatar } from '@/components/core/Avatar';
 import { renderWithProviders } from '../test-utils';
 
-// Mock next/image
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: (props: { alt: string; src: string; className?: string }) => (
-    <img alt={props.alt} src={props.src} className={props.className} data-testid="avatar-image" />
-  ),
-}));
-
 describe('Avatar', () => {
   it('renders image when src is provided', () => {
     renderWithProviders(
       <Avatar src="https://example.com/avatar.jpg" alt="User avatar" fallback="JD" />
     );
 
-    const image = screen.getByTestId('avatar-image');
+    const image = screen.getByAltText('User avatar');
     expect(image).toBeInTheDocument();
     expect(image).toHaveAttribute('src', 'https://example.com/avatar.jpg');
   });
@@ -24,8 +16,7 @@ describe('Avatar', () => {
   it('renders DiceBear avatar when no src provided but fallback exists', () => {
     renderWithProviders(<Avatar fallback="John Doe" alt="User avatar" />);
 
-    // Component generates a DiceBear avatar from the fallback name
-    const image = screen.getByTestId('avatar-image');
+    const image = screen.getByAltText('User avatar');
     expect(image).toBeInTheDocument();
     expect(image.getAttribute('src')).toContain('dicebear.com');
   });
@@ -33,7 +24,7 @@ describe('Avatar', () => {
   it('renders DiceBear avatar for single word fallback', () => {
     renderWithProviders(<Avatar fallback="John" alt="User avatar" />);
 
-    const image = screen.getByTestId('avatar-image');
+    const image = screen.getByAltText('User avatar');
     expect(image).toBeInTheDocument();
     expect(image.getAttribute('src')).toContain('dicebear.com');
   });
@@ -68,15 +59,14 @@ describe('Avatar', () => {
       <Avatar src="https://example.com/avatar.jpg" alt="Profile picture" fallback="PP" />
     );
 
-    const image = screen.getByTestId('avatar-image');
+    const image = screen.getByAltText('Profile picture');
     expect(image).toHaveAttribute('alt', 'Profile picture');
   });
 
   it('handles empty src string by using DiceBear fallback', () => {
     renderWithProviders(<Avatar src="" fallback="Test User" alt="Test" />);
 
-    // Component generates a DiceBear avatar from the fallback name when src is empty
-    const image = screen.getByTestId('avatar-image');
+    const image = screen.getByAltText('Test');
     expect(image).toBeInTheDocument();
     expect(image.getAttribute('src')).toContain('dicebear.com');
   });
