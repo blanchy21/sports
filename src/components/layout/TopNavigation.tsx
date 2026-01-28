@@ -369,7 +369,7 @@ export const TopNavigation: React.FC = () => {
                   onClick={() => router.push('/auth')}
                   className="bg-white text-xs font-medium text-primary hover:bg-white/90 sm:text-sm"
                 >
-                  Get Started
+                  Sign Up
                 </Button>
               </>
             )}

@@ -641,7 +641,7 @@ export default function LandingSections() {
             className="bg-accent px-12 py-7 text-lg font-semibold text-white shadow-2xl shadow-accent/30 transition-all duration-300 hover:scale-105 hover:bg-accent/90 hover:shadow-accent/50"
             onClick={() => router.push('/auth')}
           >
-            Get Started Free
+            Sign Up Free
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </motion.div>
