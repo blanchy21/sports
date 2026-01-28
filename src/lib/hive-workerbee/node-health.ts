@@ -13,7 +13,7 @@ import {
   CircuitBreaker,
   CircuitState,
   CircuitBreakerConfig,
-  CircuitBreakerStats
+  CircuitBreakerStats,
 } from '@/lib/utils/circuit-breaker';
 
 // Node health status interface
@@ -65,7 +65,7 @@ const DEFAULT_CONFIG: NodeHealthConfig = {
   timeout: 15000, // 15 seconds - match REQUEST_TIMEOUT_MS in api.ts
   maxConsecutiveFailures: 3,
   healthCheckEndpoint: 'condenser_api.get_dynamic_global_properties',
-  enableProactiveMonitoring: true
+  enableProactiveMonitoring: true,
 };
 
 /**
@@ -103,11 +103,14 @@ export class NodeHealthManager {
       ...this.config.circuitBreaker,
     };
 
-    this.nodeUrls.forEach(url => {
-      this.circuitBreakers.set(url, new CircuitBreaker({
-        ...circuitConfig,
-        name: new URL(url).hostname,
-      }));
+    this.nodeUrls.forEach((url) => {
+      this.circuitBreakers.set(
+        url,
+        new CircuitBreaker({
+          ...circuitConfig,
+          name: new URL(url).hostname,
+        })
+      );
     });
   }
 
@@ -115,7 +118,7 @@ export class NodeHealthManager {
    * Initialize node health tracking for all nodes
    */
   private initializeNodeHealth(): void {
-    this.nodeUrls.forEach(url => {
+    this.nodeUrls.forEach((url) => {
       this.nodeHealth.set(url, {
         url,
         isHealthy: true, // Assume healthy initially
@@ -154,7 +157,7 @@ export class NodeHealthManager {
     if (history.length === 0) return 0;
 
     // Only consider successful checks for latency average
-    const successfulChecks = history.filter(h => h.success);
+    const successfulChecks = history.filter((h) => h.success);
     if (successfulChecks.length === 0) return 0;
 
     const totalLatency = successfulChecks.reduce((sum, h) => sum + h.latency, 0);
@@ -175,16 +178,18 @@ export class NodeHealthManager {
       return;
     }
 
-    workerBeeLog(`[Node Health] Starting proactive monitoring (interval: ${this.config.checkInterval}ms)`);
-    
+    workerBeeLog(
+      `[Node Health] Starting proactive monitoring (interval: ${this.config.checkInterval}ms)`
+    );
+
     // Initial health check
     await this.checkAllNodes();
-    
+
     // Set up interval
     this.healthCheckInterval = setInterval(async () => {
       await this.checkAllNodes();
     }, this.config.checkInterval);
-    
+
     this.isMonitoring = true;
   }
 
@@ -205,19 +210,25 @@ export class NodeHealthManager {
    */
   public async checkAllNodes(): Promise<NodeHealthReport> {
     const startTime = Date.now();
-    const checkPromises = this.nodeUrls.map(url => this.checkNodeHealth(url));
-    
+    const checkPromises = this.nodeUrls.map((url) => this.checkNodeHealth(url));
+
     try {
       await Promise.allSettled(checkPromises);
     } catch (error) {
-      logError('[Node Health] Error during health check', 'nodeHealth', error instanceof Error ? error : undefined);
+      logError(
+        '[Node Health] Error during health check',
+        'nodeHealth',
+        error instanceof Error ? error : undefined
+      );
     }
 
     const report = this.generateHealthReport();
     const duration = Date.now() - startTime;
-    
-    workerBeeLog(`[Node Health] Health check completed in ${duration}ms - ${report.healthyNodes}/${report.totalNodes} nodes healthy`);
-    
+
+    workerBeeLog(
+      `[Node Health] Health check completed in ${duration}ms - ${report.healthyNodes}/${report.totalNodes} nodes healthy`
+    );
+
     return report;
   }
 
@@ -235,7 +246,7 @@ export class NodeHealthManager {
       // The checkHiveNodeAvailability function uses fetchWithTimeout with 10s timeout
       isHealthy = await checkHiveNodeAvailability(nodeUrl);
       latency = Date.now() - startTime;
-      
+
       // If health check took too long, mark as unhealthy even if it succeeded
       if (latency >= this.config.timeout) {
         isHealthy = false;
@@ -245,9 +256,13 @@ export class NodeHealthManager {
       isHealthy = false;
       latency = Date.now() - startTime;
       error = err instanceof Error ? err.message : String(err);
-      
+
       // Mark timeout errors specifically
-      if (error.includes('timeout') || error.includes('aborted') || latency >= this.config.timeout) {
+      if (
+        error.includes('timeout') ||
+        error.includes('aborted') ||
+        latency >= this.config.timeout
+      ) {
         error = `Health check timed out after ${latency}ms`;
       }
     }
@@ -300,7 +315,7 @@ export class NodeHealthManager {
    */
   public getBestNode(): string {
     const healthyNodes = Array.from(this.nodeHealth.values())
-      .filter(node => {
+      .filter((node) => {
         // Check basic health
         if (!node.isHealthy || node.consecutiveFailures >= this.config.maxConsecutiveFailures) {
           return false;
@@ -316,23 +331,27 @@ export class NodeHealthManager {
 
     if (healthyNodes.length === 0) {
       // Try to find a node in HALF_OPEN state (testing recovery)
-      const halfOpenNodes = Array.from(this.nodeHealth.values())
-        .filter(node => {
-          const circuit = this.circuitBreakers.get(node.url);
-          return circuit?.getState() === CircuitState.HALF_OPEN;
-        });
+      const halfOpenNodes = Array.from(this.nodeHealth.values()).filter((node) => {
+        const circuit = this.circuitBreakers.get(node.url);
+        return circuit?.getState() === CircuitState.HALF_OPEN;
+      });
 
       if (halfOpenNodes.length > 0) {
         workerBeeLog(`[Node Health] Using half-open node: ${halfOpenNodes[0].url}`);
         return halfOpenNodes[0].url;
       }
 
-      logWarn('[Node Health] No healthy nodes available, using first node as fallback', 'nodeHealth');
+      logWarn(
+        '[Node Health] No healthy nodes available, using first node as fallback',
+        'nodeHealth'
+      );
       return this.nodeUrls[0];
     }
 
     const bestNode = healthyNodes[0];
-    workerBeeLog(`[Node Health] Selected best node: ${bestNode.url} (score: ${bestNode.healthScore})`);
+    workerBeeLog(
+      `[Node Health] Selected best node: ${bestNode.url} (score: ${bestNode.healthScore})`
+    );
     return bestNode.url;
   }
 
@@ -385,7 +404,7 @@ export class NodeHealthManager {
    * Reset all circuit breakers
    */
   public resetAllCircuits(): void {
-    this.circuitBreakers.forEach(circuit => circuit.reset());
+    this.circuitBreakers.forEach((circuit) => circuit.reset());
     workerBeeLog('[Node Health] All circuit breakers reset');
   }
 
@@ -440,7 +459,7 @@ export class NodeHealthManager {
     const history = this.nodeHistory.get(nodeUrl) || [];
     if (history.length === 0) return 100; // Assume 100% if no history
 
-    const successCount = history.filter(h => h.success).length;
+    const successCount = history.filter((h) => h.success).length;
     return Math.round((successCount / history.length) * 100);
   }
 
@@ -484,23 +503,49 @@ export class NodeHealthManager {
    */
   private generateHealthReport(): NodeHealthReport {
     const allNodes = Array.from(this.nodeHealth.values());
-    const healthyNodes = allNodes.filter(node => node.isHealthy);
-    const unhealthyNodes = allNodes.filter(node => !node.isHealthy);
+    const healthyNodes = allNodes.filter((node) => node.isHealthy);
+    const unhealthyNodes = allNodes.filter((node) => !node.isHealthy);
 
-    const averageLatency = allNodes.length > 0
-      ? allNodes.reduce((sum, node) => sum + node.latency, 0) / allNodes.length
-      : 0;
+    const averageLatency =
+      allNodes.length > 0
+        ? allNodes.reduce((sum, node) => sum + node.latency, 0) / allNodes.length
+        : 0;
 
-    const bestNode = healthyNodes.length > 0
-      ? healthyNodes.sort((a, b) => b.healthScore - a.healthScore)[0].url
-      : allNodes[0]?.url || '';
+    // Sort copies to avoid mutating original arrays
+    // Best node: highest health score among healthy nodes
+    const sortedHealthy = [...healthyNodes].sort((a, b) => b.healthScore - a.healthScore);
+    const bestNode = sortedHealthy.length > 0 ? sortedHealthy[0].url : allNodes[0]?.url || '';
 
-    const worstNode = allNodes.length > 0
-      ? allNodes.sort((a, b) => a.healthScore - b.healthScore)[0].url
-      : '';
+    // Worst node: lowest health score among all nodes
+    // Use a different metric to ensure it's distinct from best when scores are equal
+    const sortedAll = [...allNodes].sort((a, b) => {
+      // Primary sort: health score ascending (lowest first)
+      if (a.healthScore !== b.healthScore) {
+        return a.healthScore - b.healthScore;
+      }
+      // Secondary sort for ties: prioritize unhealthy nodes
+      if (a.isHealthy !== b.isHealthy) {
+        return a.isHealthy ? 1 : -1;
+      }
+      // Tertiary sort: highest latency first (slower = worse)
+      return b.latency - a.latency;
+    });
+
+    // Determine worst node - if it would be the same as best and there are multiple nodes,
+    // pick from the opposite end of the sorted array to show something different
+    let worstNode = '';
+    if (sortedAll.length > 0) {
+      const candidateWorst = sortedAll[0].url;
+      if (candidateWorst === bestNode && sortedAll.length > 1) {
+        // Pick the last node (which would have higher score or be different)
+        worstNode = sortedAll[sortedAll.length - 1].url;
+      } else {
+        worstNode = candidateWorst;
+      }
+    }
 
     // Add circuit state to node statuses
-    const nodeStatuses = allNodes.map(node => ({
+    const nodeStatuses = allNodes.map((node) => ({
       ...node,
       circuitState: this.circuitBreakers.get(node.url)?.getState(),
     }));
@@ -631,7 +676,9 @@ export function getAdaptiveTimeout(nodeUrl: string): number {
 /**
  * Get health check history for a node
  */
-export function getNodeHistory(nodeUrl: string): { timestamp: number; success: boolean; latency: number }[] {
+export function getNodeHistory(
+  nodeUrl: string
+): { timestamp: number; success: boolean; latency: number }[] {
   const manager = getNodeHealthManager();
   return manager.getNodeHistory(nodeUrl);
 }
