@@ -6,17 +6,20 @@ import {
   SPORTSBITES_CONFIG,
 } from '@/lib/hive-workerbee/sportsbites';
 import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
-import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// In-memory cache of known-created container permlinks for this process.
+// Avoids redundant broadcasts within the same server lifecycle.
+const createdContainers = new Set<string>();
+
 /**
  * Ensures today's sportsbites container exists on Hive.
  *
- * Called by the client before publishing a sportsbite. If the daily
- * container hasn't been created yet (e.g. cron hasn't fired), this
- * endpoint creates it on-demand using the server-side posting key.
+ * Strategy: attempt to create the container directly. If it already
+ * exists, Hive returns a "duplicate" error which we treat as success.
+ * This avoids a fragile pre-check via get_content.
  */
 export async function POST() {
   const postingKey = process.env.SPORTSBITES_POSTING_KEY;
@@ -31,14 +34,8 @@ export async function POST() {
     const today = new Date();
     const permlink = getContainerPermlink(today);
 
-    // Check if container already exists
-    const existing = await makeHiveApiCall<Record<string, unknown>>(
-      'condenser_api',
-      'get_content',
-      [SPORTSBITES_CONFIG.PARENT_AUTHOR, permlink]
-    );
-
-    if (existing && existing.author && (existing.body as string)?.length > 0) {
+    // Fast path: we already created this container in this server process
+    if (createdContainers.has(permlink)) {
       return NextResponse.json({
         success: true,
         permlink,
@@ -46,7 +43,6 @@ export async function POST() {
       });
     }
 
-    // Container doesn't exist — create it
     const title = `Sportsbites Daily Thread - ${formatContainerDate(today)}`;
     const dateStr = today.toISOString().split('T')[0];
     const body = [
@@ -84,18 +80,37 @@ export async function POST() {
       postingKey
     );
 
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to create container');
+    if (result.success) {
+      createdContainers.add(permlink);
+      console.log(`[EnsureContainer] Created container for ${dateStr}: tx=${result.transactionId}`);
+      return NextResponse.json({
+        success: true,
+        permlink,
+        created: true,
+        transactionId: result.transactionId,
+      });
     }
 
-    console.log(`[EnsureContainer] Created container for ${dateStr}: tx=${result.transactionId}`);
+    // Hive returns errors like "You already have a comment with this permlink"
+    // when the container already exists — treat as success.
+    const isDuplicate =
+      result.error &&
+      (result.error.includes('already') ||
+        result.error.includes('duplicate') ||
+        result.error.includes('permlink'));
 
-    return NextResponse.json({
-      success: true,
-      permlink,
-      created: true,
-      transactionId: result.transactionId,
-    });
+    if (isDuplicate) {
+      createdContainers.add(permlink);
+      console.log(`[EnsureContainer] Container already exists for ${dateStr}`);
+      return NextResponse.json({
+        success: true,
+        permlink,
+        alreadyExists: true,
+      });
+    }
+
+    // Genuine failure
+    throw new Error(result.error || 'Failed to create container');
   } catch (error) {
     console.error('[EnsureContainer] Failed:', error);
     return NextResponse.json(
