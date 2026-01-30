@@ -6,7 +6,8 @@ import { ComposeSportsbite, SportsbitesFeed } from '@/components/sportsbites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useToast, toast } from '@/components/core/Toast';
-import { Zap, TrendingUp, Clock, Users, Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import { Zap, TrendingUp, Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { Button } from '@/components/core/Button';
 import { useFollowing } from '@/lib/react-query/queries/useFollowers';
@@ -67,10 +68,13 @@ export default function SportsBitesPage() {
         <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-border/50 bg-background/95 px-4 backdrop-blur-xl">
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
-              <div className="relative rounded-xl bg-gradient-to-br from-primary via-primary to-accent p-2.5 shadow-lg shadow-primary/20">
-                <Zap className="h-6 w-6 text-white" />
-                <Sparkles className="absolute -right-1 -top-1 h-4 w-4 animate-pulse text-yellow-400" />
-              </div>
+              <Image
+                src="/sportsbites-logo.png"
+                alt="Sportsbites"
+                width={44}
+                height={44}
+                className="rounded-xl shadow-lg"
+              />
               <div>
                 <h1 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-2xl font-bold">
                   Sportsbites
