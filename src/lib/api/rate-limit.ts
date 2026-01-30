@@ -55,10 +55,7 @@ export interface RateLimitResult {
 /**
  * Check rate limit for a given identifier
  */
-export function checkRateLimit(
-  identifier: string,
-  config: RateLimitConfig
-): RateLimitResult {
+export function checkRateLimit(identifier: string, config: RateLimitConfig): RateLimitResult {
   scheduleCleanup();
 
   const key = config.prefix ? `${config.prefix}:${identifier}` : identifier;
@@ -126,6 +123,12 @@ export const RATE_LIMITS = {
     maxRequests: 50,
     windowMs: 60 * 60 * 1000, // 1 hour
     prefix: 'follows',
+  },
+  // Sportsbites: 20 per hour
+  sportsbites: {
+    maxRequests: 20,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    prefix: 'sportsbites',
   },
   // General API: 100 per minute
   api: {

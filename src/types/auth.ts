@@ -160,6 +160,24 @@ export interface HivePost {
 
 export type Post = SoftPost | HivePost;
 
+// Soft sportsbite stored in Firestore
+export interface SoftSportsbite {
+  id: string;
+  authorId: string;
+  authorUsername: string;
+  authorDisplayName?: string;
+  authorAvatar?: string;
+  body: string;
+  sportCategory?: string;
+  images?: string[];
+  gifs?: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  likeCount: number;
+  commentCount: number;
+  isDeleted: boolean;
+}
+
 // Upgrade flow types
 export interface UpgradeFlowProps {
   user: User;

@@ -36,7 +36,7 @@ export const SoftLikeButton: React.FC<SoftLikeButtonProps> = ({
   onRequireAuth,
   onPopularPostThreshold,
 }) => {
-  const { user, isAuthenticated, authType } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [hasLiked, setHasLiked] = useState(initialHasLiked);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +54,7 @@ export const SoftLikeButton: React.FC<SoftLikeButtonProps> = ({
         });
 
         const headers: HeadersInit = {};
-        if (isAuthenticated && authType === 'soft' && user?.id) {
+        if (isAuthenticated && user?.id) {
           headers['x-user-id'] = user.id;
         }
 
@@ -70,19 +70,12 @@ export const SoftLikeButton: React.FC<SoftLikeButtonProps> = ({
     };
 
     checkLikeStatus();
-  }, [targetId, targetType, isAuthenticated, authType, user?.id]);
+  }, [targetId, targetType, isAuthenticated, user?.id]);
 
   const handleLike = useCallback(async () => {
     // Check if user is authenticated
     if (!isAuthenticated || !user?.id) {
       onRequireAuth?.();
-      return;
-    }
-
-    // Only soft users can like soft posts
-    if (authType !== 'soft') {
-      setError('Only email users can like posts. Hive users should use the star voting system.');
-      onLikeError?.('Only email users can like posts');
       return;
     }
 
@@ -133,7 +126,6 @@ export const SoftLikeButton: React.FC<SoftLikeButtonProps> = ({
     }
   }, [
     isAuthenticated,
-    authType,
     user?.id,
     targetType,
     targetId,

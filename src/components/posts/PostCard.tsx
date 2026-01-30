@@ -15,8 +15,7 @@ import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { usePremiumTier } from '@/lib/premium/hooks';
 import { PremiumBadge } from '@/components/medals';
-import { HiveUpgradePrompt, useHiveUpgradePrompt } from '@/components/upgrade/HiveUpgradePrompt';
-import { useAuth } from '@/contexts/AuthContext';
+// HiveUpgradePrompt no longer needed - soft users can now interact with all content
 import { getProxyImageUrl, shouldProxyImage } from '@/lib/utils/image-proxy';
 import {
   isSportsblockPost,
@@ -52,8 +51,6 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
   const { addToast } = useToast();
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
-  const { isAuthenticated, authType } = useAuth();
-  const { isPromptOpen, promptAction, showPromptIfNeeded, closePrompt } = useHiveUpgradePrompt();
 
   // Use type-safe helpers
   const isHivePost = isSportsblockPost(post);
@@ -122,12 +119,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
         author: authorUsername,
       });
     } else if (isActualHivePost) {
-      // Check if soft user is trying to comment on Hive post
-      if (isAuthenticated && authType === 'soft') {
-        showPromptIfNeeded('comment on');
-        return;
-      }
-      // Hive posts use the blockchain comments modal
+      // Both Hive and soft users can comment (soft users post via Firebase)
       openModal('comments', {
         author: authorUsername,
         permlink: postPermlink,
@@ -355,9 +347,6 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
           </Button>
         </div>
       </div>
-
-      {/* Hive Upgrade Prompt for soft users trying to interact with Hive posts */}
-      <HiveUpgradePrompt isOpen={isPromptOpen} onClose={closePrompt} action={promptAction} />
     </article>
   );
 };

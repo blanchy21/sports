@@ -66,7 +66,7 @@ export function formatContainerDate(date: Date): string {
 // ---------------------------------------------------------------------------
 
 export interface Sportsbite {
-  id: string; // author/permlink
+  id: string; // author/permlink or soft-{firestoreId}
   author: string;
   permlink: string;
   body: string;
@@ -84,6 +84,14 @@ export interface Sportsbite {
   images?: string[];
   gifs?: string[];
   author_reputation?: string;
+  /** Content source: 'hive' for blockchain, 'soft' for Firebase. Defaults to 'hive'. */
+  source?: 'hive' | 'soft';
+  /** Firestore document ID for soft sportsbites */
+  softId?: string;
+  /** Display name for soft users */
+  authorDisplayName?: string;
+  /** Avatar URL for soft users */
+  authorAvatar?: string;
 }
 
 export interface SportsbiteApiResponse {

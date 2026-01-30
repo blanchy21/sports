@@ -76,7 +76,7 @@ export function SportsbitesFeed({
         if (author) params.append('author', author);
         if (loadMore && cursor) params.append('before', cursor);
 
-        const response = await fetch(`/api/hive/sportsbites?${params.toString()}`);
+        const response = await fetch(`/api/unified/sportsbites?${params.toString()}`);
         if (!response.ok) throw new Error(`Failed to fetch sportsbites: ${response.status}`);
 
         const result: SportsbiteApiResponse = await response.json();
@@ -114,7 +114,7 @@ export function SportsbitesFeed({
       const params = new URLSearchParams({ limit: '10' });
       if (author) params.append('author', author);
 
-      const response = await fetch(`/api/hive/sportsbites?${params.toString()}`);
+      const response = await fetch(`/api/unified/sportsbites?${params.toString()}`);
       if (!response.ok) return;
 
       const result: SportsbiteApiResponse = await response.json();

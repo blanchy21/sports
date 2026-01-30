@@ -14,6 +14,8 @@ import {
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
 import { StarVoteButton } from '@/components/voting/StarVoteButton';
+import { SoftLikeButton } from '@/components/voting/SoftLikeButton';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast, toast } from '@/components/core/Toast';
 import { useUserProfile } from '@/features/user/hooks/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
@@ -34,6 +36,7 @@ interface SportsbiteCardProps {
 export function SportsbiteCard({ sportsbite, className, isNew = false }: SportsbiteCardProps) {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const { authType } = useAuth();
   const { addToast } = useToast();
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
@@ -221,6 +224,14 @@ export function SportsbiteCard({ sportsbite, className, isNew = false }: Sportsb
               <span className="text-sm text-muted-foreground">
                 {formatDate(new Date(sportsbite.created + 'Z'))}
               </span>
+              {sportsbite.source === 'soft' && (
+                <>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:bg-blue-950 dark:text-blue-400">
+                    via email
+                  </span>
+                </>
+              )}
             </div>
 
             <Button
@@ -308,7 +319,7 @@ export function SportsbiteCard({ sportsbite, className, isNew = false }: Sportsb
           </div>
         )}
 
-        {pendingPayout > 0 && (
+        {pendingPayout > 0 && sportsbite.source !== 'soft' && (
           <div className="mt-2">
             <span className="text-xs font-medium text-accent">
               ${pendingPayout.toFixed(2)} pending
@@ -321,13 +332,25 @@ export function SportsbiteCard({ sportsbite, className, isNew = false }: Sportsb
       <div className="flex items-center justify-between border-t bg-gradient-to-r from-muted/30 to-transparent px-4 py-2 pl-[60px]">
         <div className="flex items-center gap-4">
           <div className="group/vote flex items-center gap-1">
-            <StarVoteButton
-              author={sportsbite.author}
-              permlink={sportsbite.permlink}
-              voteCount={sportsbite.net_votes || 0}
-              onVoteSuccess={handleVoteSuccess}
-              onVoteError={handleVoteError}
-            />
+            {authType === 'hive' && sportsbite.source !== 'soft' ? (
+              <StarVoteButton
+                author={sportsbite.author}
+                permlink={sportsbite.permlink}
+                voteCount={sportsbite.net_votes || 0}
+                onVoteSuccess={handleVoteSuccess}
+                onVoteError={handleVoteError}
+              />
+            ) : (
+              <SoftLikeButton
+                targetType="post"
+                targetId={
+                  sportsbite.source === 'soft'
+                    ? sportsbite.softId || sportsbite.id
+                    : `hive-${sportsbite.author}/${sportsbite.permlink}`
+                }
+                initialLikeCount={sportsbite.net_votes || 0}
+              />
+            )}
             <button
               onClick={handleUpvoteList}
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"

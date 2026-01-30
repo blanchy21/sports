@@ -226,8 +226,8 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
   };
 
   const handlePublish = useCallback(async () => {
-    if (!user || !hiveUser?.username) {
-      onError?.('Please connect with Hive to post sportsbites');
+    if (!user) {
+      onError?.('Please sign in to post sportsbites');
       return;
     }
 
@@ -240,35 +240,57 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
     setIsPublishing(true);
 
     try {
-      // Ensure today's container exists before posting
-      const ensureRes = await fetch('/api/hive/sportsbites/ensure-container', { method: 'POST' });
-      const ensureData = await ensureRes.json();
-      if (!ensureData.success) {
-        throw new Error(ensureData.error || 'Failed to prepare daily container');
-      }
+      if (authType === 'hive' && hiveUser?.username) {
+        // HIVE USER: Publish to blockchain
+        const ensureRes = await fetch('/api/hive/sportsbites/ensure-container', { method: 'POST' });
+        const ensureData = await ensureRes.json();
+        if (!ensureData.success) {
+          throw new Error(ensureData.error || 'Failed to prepare daily container');
+        }
 
-      const operation = createSportsbiteOperation({
-        body: content,
-        author: hiveUser.username,
-        sportCategory: sportCategory || undefined,
-        images: images.length > 0 ? images : undefined,
-        gifs: gifs.length > 0 ? gifs : undefined,
-      });
+        const operation = createSportsbiteOperation({
+          body: content,
+          author: hiveUser.username,
+          sportCategory: sportCategory || undefined,
+          images: images.length > 0 ? images : undefined,
+          gifs: gifs.length > 0 ? gifs : undefined,
+        });
 
-      const { aioha } = await import('@/lib/aioha/config');
+        const { aioha } = await import('@/lib/aioha/config');
 
-      const aiohaInstance = aioha as {
-        signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
-      } | null;
+        const aiohaInstance = aioha as {
+          signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
+        } | null;
 
-      if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
-        throw new Error('Hive authentication not available. Please reconnect.');
-      }
+        if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
+          throw new Error('Hive authentication not available. Please reconnect.');
+        }
 
-      const result = await aiohaInstance.signAndBroadcastTx([['comment', operation]], 'posting');
+        const result = await aiohaInstance.signAndBroadcastTx([['comment', operation]], 'posting');
 
-      if (!result || (result as { error?: string }).error) {
-        throw new Error((result as { error?: string }).error || 'Failed to broadcast');
+        if (!result || (result as { error?: string }).error) {
+          throw new Error((result as { error?: string }).error || 'Failed to broadcast');
+        }
+      } else {
+        // SOFT USER: Publish to Firebase
+        const response = await fetch('/api/soft/sportsbites', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.id,
+          },
+          body: JSON.stringify({
+            body: content,
+            sportCategory: sportCategory || undefined,
+            images: images.length > 0 ? images : undefined,
+            gifs: gifs.length > 0 ? gifs : undefined,
+          }),
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || data.message || 'Failed to post sportsbite');
+        }
       }
 
       setContent('');
@@ -282,7 +304,7 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
     } finally {
       setIsPublishing(false);
     }
-  }, [content, images, gifs, sportCategory, user, hiveUser, onSuccess, onError]);
+  }, [content, images, gifs, sportCategory, user, authType, hiveUser, onSuccess, onError]);
 
   React.useEffect(() => {
     return () => {
@@ -318,8 +340,7 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
     }
   }, [content]);
 
-  const canPublish =
-    content.trim().length > 0 && remainingChars >= 0 && authType === 'hive' && !isPublishing;
+  const canPublish = content.trim().length > 0 && remainingChars >= 0 && !!user && !isPublishing;
 
   if (!user) {
     return (
@@ -742,7 +763,7 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
           <Button
             onClick={handlePublish}
             disabled={!canPublish}
-            className={cn('px-5 font-semibold', authType !== 'hive' && 'opacity-50')}
+            className={cn('px-5 font-semibold', !user && 'opacity-50')}
           >
             {isPublishing ? (
               <>
@@ -759,10 +780,10 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
         </div>
       </div>
 
-      {authType !== 'hive' && (
-        <div className="border-t border-yellow-200 bg-yellow-50 px-4 py-2 dark:border-yellow-800 dark:bg-yellow-950/30">
-          <p className="text-xs text-yellow-700 dark:text-yellow-300">
-            Connect with Hive Keychain to post sportsbites and earn rewards
+      {authType !== 'hive' && user && (
+        <div className="border-t border-blue-200 bg-blue-50 px-4 py-2 dark:border-blue-800 dark:bg-blue-950/30">
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            Upgrade to Hive to earn crypto rewards on your sportsbites
           </p>
         </div>
       )}

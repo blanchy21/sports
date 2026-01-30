@@ -60,64 +60,91 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
       return;
     }
 
-    if (authType !== 'hive' || !hiveUser?.username) {
-      addToast({
-        title: 'Hive Authentication Required',
-        description: 'Hive authentication required for commenting',
-        type: 'error',
-      });
-      return;
-    }
-
-    if (!isInitialized || !aioha) {
-      addToast({
-        title: 'Aioha Not Ready',
-        description: 'Aioha authentication is not ready. Please wait a moment and try again.',
-        type: 'error',
-      });
-      return;
-    }
-
-    if (aiohaError) {
-      addToast({
-        title: 'Aioha Error',
-        description: `Aioha authentication error: ${aiohaError}`,
-        type: 'error',
-      });
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      const commentData = {
-        author: hiveUser.username,
-        body: commentText.trim(),
-        parentAuthor: author,
-        parentPermlink: permlink,
-        jsonMetadata: JSON.stringify({
-          app: 'sportsblock/1.0.0',
-          format: 'markdown',
-        }),
-      };
+      if (authType === 'hive' && hiveUser?.username) {
+        // HIVE USER: Publish to blockchain
+        if (!isInitialized || !aioha) {
+          addToast({
+            title: 'Aioha Not Ready',
+            description: 'Aioha authentication is not ready. Please wait a moment and try again.',
+            type: 'error',
+          });
+          setIsSubmitting(false);
+          return;
+        }
 
-      const result = await publishComment(commentData, aioha);
+        if (aiohaError) {
+          addToast({
+            title: 'Aioha Error',
+            description: `Aioha authentication error: ${aiohaError}`,
+            type: 'error',
+          });
+          setIsSubmitting(false);
+          return;
+        }
 
-      if (result.success) {
-        addToast({
-          title: 'Success',
-          description: 'Comment posted successfully!',
-          type: 'success',
-        });
-        setCommentText('');
-        // Invalidate comments to refresh the list
-        invalidatePostComments(author, permlink);
+        const commentData = {
+          author: hiveUser.username,
+          body: commentText.trim(),
+          parentAuthor: author,
+          parentPermlink: permlink,
+          jsonMetadata: JSON.stringify({
+            app: 'sportsblock/1.0.0',
+            format: 'markdown',
+          }),
+        };
+
+        const result = await publishComment(commentData, aioha);
+
+        if (result.success) {
+          addToast({
+            title: 'Success',
+            description: 'Comment posted successfully!',
+            type: 'success',
+          });
+          setCommentText('');
+          invalidatePostComments(author, permlink);
+        } else {
+          addToast({
+            title: 'Comment Failed',
+            description: `Failed to post comment: ${result.error}`,
+            type: 'error',
+          });
+        }
       } else {
-        addToast({
-          title: 'Comment Failed',
-          description: `Failed to post comment: ${result.error}`,
-          type: 'error',
+        // SOFT USER: Publish to Firebase
+        const response = await fetch('/api/soft/comments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.id,
+          },
+          body: JSON.stringify({
+            postId: `hive-${author}/${permlink}`,
+            postPermlink: permlink,
+            body: commentText.trim(),
+          }),
         });
+
+        const data = await response.json();
+
+        if (data.success) {
+          addToast({
+            title: 'Success',
+            description: 'Comment posted!',
+            type: 'success',
+          });
+          setCommentText('');
+          invalidatePostComments(author, permlink);
+        } else {
+          addToast({
+            title: 'Comment Failed',
+            description: data.error || data.message || 'Failed to post comment',
+            type: 'error',
+          });
+        }
       }
     } catch (error) {
       console.error('Error posting comment:', error);
