@@ -240,6 +240,13 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
     setIsPublishing(true);
 
     try {
+      // Ensure today's container exists before posting
+      const ensureRes = await fetch('/api/hive/sportsbites/ensure-container', { method: 'POST' });
+      const ensureData = await ensureRes.json();
+      if (!ensureData.success) {
+        throw new Error(ensureData.error || 'Failed to prepare daily container');
+      }
+
       const operation = createSportsbiteOperation({
         body: content,
         author: hiveUser.username,
