@@ -25,6 +25,10 @@ declare global {
 // Login timeout in milliseconds (10 seconds)
 const LOGIN_TIMEOUT_MS = 10000;
 
+// localStorage keys for remembering credentials across sessions
+const REMEMBERED_EMAIL_KEY = 'sportsblock:rememberedEmail';
+const REMEMBERED_HIVE_USERNAME_KEY = 'sportsblock:rememberedHiveUsername';
+
 /**
  * Map of Providers enum values to their string representations.
  * Used to convert enum values returned by getProviders() to display strings.
@@ -147,18 +151,20 @@ export const useAuthPage = (): UseAuthPageResult => {
 
   const [showHiveUsernameInput, setShowHiveUsernameInput] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
-  const [hiveUsername, setHiveUsername] = useState('');
+  const [hiveUsername, setHiveUsername] = useState(() =>
+    typeof window !== 'undefined' ? (localStorage.getItem(REMEMBERED_HIVE_USERNAME_KEY) ?? '') : ''
+  );
   const [showAiohaModal, setShowAiohaModal] = useState(false);
 
-  const [emailForm, setEmailForm] = useState<EmailFormState>({
-    email: '',
+  const [emailForm, setEmailForm] = useState<EmailFormState>(() => ({
+    email: typeof window !== 'undefined' ? (localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? '') : '',
     password: '',
     username: '',
     displayName: '',
     acceptTerms: false,
     subscribeNewsletter: false,
     showPassword: false,
-  });
+  }));
 
   const isAiohaReady = useMemo(() => Boolean(aioha) && isInitialized, [aioha, isInitialized]);
 
@@ -351,6 +357,12 @@ export const useAuthPage = (): UseAuthPageResult => {
         );
         loginWithFirebase(authUser);
       }
+      // Remember the email for next visit
+      try {
+        localStorage.setItem(REMEMBERED_EMAIL_KEY, emailForm.email);
+      } catch {
+        // localStorage may be unavailable (private browsing, quota exceeded)
+      }
       router.push('/feed');
     } catch (error) {
       console.error('Firebase authentication failed:', error);
@@ -369,6 +381,14 @@ export const useAuthPage = (): UseAuthPageResult => {
     try {
       const authUser = await FirebaseAuth.signInWithGoogle();
       loginWithFirebase(authUser);
+      // Remember the Google email for next visit
+      if (authUser.email) {
+        try {
+          localStorage.setItem(REMEMBERED_EMAIL_KEY, authUser.email);
+        } catch {
+          // localStorage may be unavailable
+        }
+      }
       router.push('/feed');
     } catch (error) {
       console.error('Google sign-in failed:', error);
@@ -532,6 +552,14 @@ export const useAuthPage = (): UseAuthPageResult => {
           (loginResult.success ?? true)
         ) {
           await loginWithAioha(loginResult);
+          // Remember the Hive username for next visit
+          if (usernameToUse) {
+            try {
+              localStorage.setItem(REMEMBERED_HIVE_USERNAME_KEY, usernameToUse);
+            } catch {
+              // localStorage may be unavailable
+            }
+          }
           resetHivePrompt();
           router.push('/feed');
         } else {
@@ -628,6 +656,14 @@ export const useAuthPage = (): UseAuthPageResult => {
         };
 
         await loginWithAioha(loginResult);
+        // Remember the Hive username for next visit
+        if (username) {
+          try {
+            localStorage.setItem(REMEMBERED_HIVE_USERNAME_KEY, username);
+          } catch {
+            // localStorage may be unavailable
+          }
+        }
         setShowAiohaModal(false);
         router.push('/feed');
       } catch (error) {
