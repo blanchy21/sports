@@ -27,8 +27,6 @@ export const aiohaConfig = {
     callbackURL: typeof window !== 'undefined' ? `${window.location.origin}/hivesigner.html` : '',
     scope: ['login', 'vote', 'comment', 'post'],
   },
-  // Enable MetaMask Snap for Hive
-  metamasksnap: true,
 };
 
 let aioha: AiohaInstance | null = null;
