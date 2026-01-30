@@ -19,18 +19,16 @@ import {
 import { cn } from '@/lib/utils/client';
 import { SPORT_CATEGORIES } from '@/types';
 import {
-  SHORTS_CONFIG,
-  createShortOperation,
-  validateShortContent,
-} from '@/lib/hive-workerbee/shorts';
+  SPORTSBITES_CONFIG,
+  createSportsbiteOperation,
+  validateSportsbiteContent,
+} from '@/lib/hive-workerbee/sportsbites';
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { validateImageUrl } from '@/lib/utils/sanitize';
 import dynamic from 'next/dynamic';
 
-// Import emoji picker dynamically
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
-// Giphy GIF result type
 interface GiphyGif {
   id: string;
   title: string;
@@ -43,22 +41,19 @@ interface GiphyGif {
   };
 }
 
-interface ComposeShortProps {
+interface ComposeSportsbiteProps {
   onSuccess?: () => void;
   onError?: (error: string) => void;
 }
 
-// Get the Hive avatar URL for a username
 function getHiveAvatarUrl(username: string): string {
   return `https://images.hive.blog/u/${username}/avatar`;
 }
 
-export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
+export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps) {
   const { user, authType, hiveUser } = useAuth();
   const [content, setContent] = useState('');
 
-  // For Hive users, use Hive avatar URL as fallback while profile loads
-  // Check multiple sources for hive username: hiveUser, user.hiveUsername, or user.username for hive auth
   const hiveUsername =
     hiveUser?.username || user?.hiveUsername || (authType === 'hive' ? user?.username : undefined);
   const avatarUrl = user?.avatar || (hiveUsername ? getHiveAvatarUrl(hiveUsername) : undefined);
@@ -73,7 +68,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  // GIF picker state
   const [gifs, setGifs] = useState<string[]>([]);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [gifSearchQuery, setGifSearchQuery] = useState('');
@@ -87,18 +81,16 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
   const gifSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const charCount = content.length;
-  const maxChars = SHORTS_CONFIG.MAX_CHARS;
+  const maxChars = SPORTSBITES_CONFIG.MAX_CHARS;
   const remainingChars = maxChars - charCount;
   const charPercentage = (charCount / maxChars) * 100;
 
-  // Character count color based on remaining
   const getCharCountColor = () => {
     if (remainingChars < 0) return 'text-red-500';
     if (remainingChars <= 20) return 'text-yellow-500';
     return 'text-muted-foreground';
   };
 
-  // Circular progress indicator values
   const circleRadius = 10;
   const circumference = 2 * Math.PI * circleRadius;
   const strokeDashoffset = circumference - (Math.min(charPercentage, 100) / 100) * circumference;
@@ -109,8 +101,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       const start = textarea.selectionStart;
       const newContent = content.slice(0, start) + emojiData.emoji + content.slice(start);
       setContent(newContent);
-
-      // Move cursor after emoji
       setTimeout(() => {
         textarea.focus();
         textarea.setSelectionRange(start + emojiData.emoji.length, start + emojiData.emoji.length);
@@ -123,14 +113,11 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
 
   const handleAddImage = () => {
     if (!imageUrl.trim()) return;
-
-    // Validate the URL
     const validation = validateImageUrl(imageUrl.trim());
     if (!validation.valid) {
       setUploadError(validation.error || 'Invalid image URL');
       return;
     }
-
     setImages([...images, validation.url!]);
     setImageUrl('');
     setUploadError(null);
@@ -138,14 +125,10 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
-
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       setUploadError('Please select an image file');
       return;
     }
-
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setUploadError('Image must be less than 5MB');
       return;
@@ -156,7 +139,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
 
     try {
       const result = await uploadImage(file, user?.username);
-
       if (result.success && result.url) {
         setImages([...images, result.url]);
         setUploadError(null);
@@ -179,18 +161,12 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  // Load trending GIFs when picker opens
   const loadTrendingGifs = useCallback(async () => {
     setIsLoadingGifs(true);
     setGifError(null);
-
     try {
       const response = await fetch('/api/giphy?type=trending&limit=24');
-
-      if (!response.ok) {
-        throw new Error('Failed to load trending GIFs');
-      }
-
+      if (!response.ok) throw new Error('Failed to load trending GIFs');
       const data = await response.json();
       if (data.success) {
         setGifResults(data.data || []);
@@ -205,26 +181,19 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     }
   }, []);
 
-  // GIF search using server-side API route (Giphy)
   const searchGifs = useCallback(
     async (query: string) => {
       if (!query.trim()) {
         loadTrendingGifs();
         return;
       }
-
       setIsLoadingGifs(true);
       setGifError(null);
-
       try {
         const response = await fetch(
           `/api/giphy?type=search&q=${encodeURIComponent(query)}&limit=24`
         );
-
-        if (!response.ok) {
-          throw new Error('Failed to search GIFs');
-        }
-
+        if (!response.ok) throw new Error('Failed to search GIFs');
         const data = await response.json();
         if (data.success) {
           setGifResults(data.data || []);
@@ -258,11 +227,11 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
 
   const handlePublish = useCallback(async () => {
     if (!user || !hiveUser?.username) {
-      onError?.('Please connect with Hive to post shorts');
+      onError?.('Please connect with Hive to post sportsbites');
       return;
     }
 
-    const validation = validateShortContent(content);
+    const validation = validateSportsbiteContent(content);
     if (!validation.isValid) {
       onError?.(validation.errors.join(', '));
       return;
@@ -271,8 +240,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     setIsPublishing(true);
 
     try {
-      // Create the operation
-      const operation = createShortOperation({
+      const operation = createSportsbiteOperation({
         body: content,
         author: hiveUser.username,
         sportCategory: sportCategory || undefined,
@@ -280,10 +248,8 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
         gifs: gifs.length > 0 ? gifs : undefined,
       });
 
-      // Import aioha for broadcasting
       const { aioha } = await import('@/lib/aioha/config');
 
-      // Type assertion for Aioha instance
       const aiohaInstance = aioha as {
         signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
       } | null;
@@ -292,42 +258,34 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
         throw new Error('Hive authentication not available. Please reconnect.');
       }
 
-      // Broadcast the transaction
       const result = await aiohaInstance.signAndBroadcastTx([['comment', operation]], 'posting');
 
       if (!result || (result as { error?: string }).error) {
         throw new Error((result as { error?: string }).error || 'Failed to broadcast');
       }
 
-      // Success - clear form
       setContent('');
       setImages([]);
       setGifs([]);
       setSportCategory('');
       onSuccess?.();
     } catch (error) {
-      console.error('Error publishing short:', error);
-      onError?.(error instanceof Error ? error.message : 'Failed to publish short');
+      console.error('Error publishing sportsbite:', error);
+      onError?.(error instanceof Error ? error.message : 'Failed to publish sportsbite');
     } finally {
       setIsPublishing(false);
     }
   }, [content, images, gifs, sportCategory, user, hiveUser, onSuccess, onError]);
 
-  // Cleanup debounce timeout on unmount
   React.useEffect(() => {
     return () => {
-      if (gifSearchTimeoutRef.current) {
-        clearTimeout(gifSearchTimeoutRef.current);
-      }
+      if (gifSearchTimeoutRef.current) clearTimeout(gifSearchTimeoutRef.current);
     };
   }, []);
 
-  // Close pickers when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-
-      // Close emoji picker
       if (
         showEmojiPicker &&
         emojiButtonRef.current &&
@@ -336,22 +294,15 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       ) {
         setShowEmojiPicker(false);
       }
-
-      // Close GIF picker
       if (showGifPicker && !target.closest('[data-gif-picker]')) {
         setShowGifPicker(false);
-        // Clear debounce timeout when closing picker
-        if (gifSearchTimeoutRef.current) {
-          clearTimeout(gifSearchTimeoutRef.current);
-        }
+        if (gifSearchTimeoutRef.current) clearTimeout(gifSearchTimeoutRef.current);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showEmojiPicker, showGifPicker]);
 
-  // Auto-resize textarea
   React.useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -366,7 +317,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
   if (!user) {
     return (
       <div className="rounded-xl border bg-card p-6 text-center">
-        <p className="text-muted-foreground">Sign in to post shorts</p>
+        <p className="text-muted-foreground">Sign in to post sportsbites</p>
       </div>
     );
   }
@@ -375,7 +326,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
     <div className="rounded-xl border bg-card">
       <div className="p-4">
         <div className="flex gap-3">
-          {/* Avatar */}
           <Avatar
             src={avatarUrl}
             fallback={user.username || '?'}
@@ -384,9 +334,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             className="flex-shrink-0"
           />
 
-          {/* Content area */}
           <div className="min-w-0 flex-1">
-            {/* Textarea */}
             <textarea
               ref={textareaRef}
               value={content}
@@ -400,7 +348,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
               disabled={isPublishing}
             />
 
-            {/* Image previews */}
             {images.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {images.map((img, index) => (
@@ -425,7 +372,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
               </div>
             )}
 
-            {/* GIF previews */}
             {gifs.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {gifs.map((gif, index) => (
@@ -449,7 +395,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
               </div>
             )}
 
-            {/* Sport category badge */}
             {sportCategory && (
               <div className="mt-3 flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-sm text-primary">
@@ -466,10 +411,8 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
               </div>
             )}
 
-            {/* Image input panel */}
             {showImageInput && (
               <div className="mt-3 rounded-lg border bg-muted/50 p-3">
-                {/* Tab buttons */}
                 <div className="mb-3 flex gap-1">
                   <button
                     type="button"
@@ -511,7 +454,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                   </Button>
                 </div>
 
-                {/* Upload mode */}
                 {imageInputMode === 'upload' && (
                   <div className="space-y-2">
                     <input
@@ -553,7 +495,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                   </div>
                 )}
 
-                {/* URL mode */}
                 {imageInputMode === 'url' && (
                   <div className="flex gap-2">
                     <input
@@ -575,7 +516,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                   </div>
                 )}
 
-                {/* Error message */}
                 {uploadError && <p className="mt-2 text-sm text-destructive">{uploadError}</p>}
               </div>
             )}
@@ -586,7 +526,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
       {/* Toolbar */}
       <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-3">
         <div className="flex items-center gap-1">
-          {/* Image button */}
           <Button
             variant="ghost"
             size="sm"
@@ -597,7 +536,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             <ImageIcon className="h-5 w-5" />
           </Button>
 
-          {/* Emoji button */}
           <div className="relative">
             <Button
               ref={emojiButtonRef}
@@ -621,16 +559,13 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             )}
           </div>
 
-          {/* GIF button */}
           <div className="relative" data-gif-picker>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setShowGifPicker(!showGifPicker);
-                if (!showGifPicker) {
-                  loadTrendingGifs();
-                }
+                if (!showGifPicker) loadTrendingGifs();
               }}
               className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
               title="Add GIF"
@@ -640,7 +575,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
 
             {showGifPicker && (
               <div className="absolute left-0 top-full z-50 mt-2 max-h-96 w-80 overflow-hidden rounded-lg border bg-card shadow-lg">
-                {/* Search input */}
                 <div className="border-b p-2">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -650,13 +584,7 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                       onChange={(e) => {
                         const value = e.target.value;
                         setGifSearchQuery(value);
-
-                        // Clear existing timeout
-                        if (gifSearchTimeoutRef.current) {
-                          clearTimeout(gifSearchTimeoutRef.current);
-                        }
-
-                        // Debounce search by 300ms
+                        if (gifSearchTimeoutRef.current) clearTimeout(gifSearchTimeoutRef.current);
                         gifSearchTimeoutRef.current = setTimeout(() => {
                           searchGifs(value);
                         }, 300);
@@ -668,7 +596,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                   </div>
                 </div>
 
-                {/* GIF results */}
                 <div className="max-h-72 overflow-y-auto p-2">
                   {isLoadingGifs ? (
                     <div className="flex items-center justify-center py-8">
@@ -711,7 +638,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                   )}
                 </div>
 
-                {/* Giphy attribution */}
                 <div className="border-t bg-muted/50 px-2 py-1.5 text-center">
                   <a
                     href="https://giphy.com"
@@ -726,7 +652,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             )}
           </div>
 
-          {/* Sport category button */}
           <div className="relative">
             <Button
               variant="ghost"
@@ -763,11 +688,9 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Character counter */}
           <div className="flex items-center gap-2">
             {charCount > 0 && (
               <>
-                {/* Circular progress */}
                 <svg className="h-6 w-6 -rotate-90" viewBox="0 0 24 24">
                   <circle
                     cx="12"
@@ -798,7 +721,6 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
                   />
                 </svg>
 
-                {/* Show remaining chars when close to limit */}
                 {remainingChars <= 20 && (
                   <span className={cn('text-sm font-medium', getCharCountColor())}>
                     {remainingChars}
@@ -808,10 +730,8 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
             )}
           </div>
 
-          {/* Divider */}
           {charCount > 0 && <div className="h-6 w-px bg-border" />}
 
-          {/* Post button */}
           <Button
             onClick={handlePublish}
             disabled={!canPublish}
@@ -832,11 +752,10 @@ export function ComposeShort({ onSuccess, onError }: ComposeShortProps) {
         </div>
       </div>
 
-      {/* Hive auth warning */}
       {authType !== 'hive' && (
         <div className="border-t border-yellow-200 bg-yellow-50 px-4 py-2 dark:border-yellow-800 dark:bg-yellow-950/30">
           <p className="text-xs text-yellow-700 dark:text-yellow-300">
-            Connect with Hive Keychain to post shorts and earn rewards
+            Connect with Hive Keychain to post sportsbites and earn rewards
           </p>
         </div>
       )}

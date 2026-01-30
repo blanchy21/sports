@@ -243,13 +243,13 @@ export default function FeedPage() {
                 placeholder="What's happening in sports today?"
                 className="w-full cursor-pointer rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={!user}
-                onClick={() => user && router.push('/shorts')}
+                onClick={() => user && router.push('/sportsbites')}
                 readOnly
               />
             </div>
-            <Button disabled={!user} onClick={() => router.push('/shorts')}>
+            <Button disabled={!user} onClick={() => router.push('/sportsbites')}>
               <Plus className="mr-2 h-4 w-4" />
-              Short
+              Sportsbite
             </Button>
           </div>
         </div>

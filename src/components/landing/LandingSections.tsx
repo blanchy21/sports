@@ -156,6 +156,103 @@ export default function LandingSections() {
         </div>
       </section>
 
+      {/* Sportsbites Section */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-muted/30 to-background px-6 py-24">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
+
+        <div className="relative z-10 mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-100px' }}
+            transition={{ duration: 0.8 }}
+            className="mb-16 text-center"
+          >
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 font-semibold text-primary">
+              <Zap className="h-4 w-4" />
+              New Feature
+            </div>
+            <h2 className="mb-6 text-4xl font-bold md:text-5xl">
+              Quick Takes.{' '}
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Real Rewards.
+              </span>
+            </h2>
+            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+              Sportsbites are 280-character posts for live match reactions, hot takes, and instant
+              sports commentary. All stored on Hive, all earning rewards.
+            </p>
+          </motion.div>
+
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            className="mb-12 grid gap-8 md:grid-cols-3"
+          >
+            {[
+              {
+                icon: Zap,
+                title: 'Instant Posts',
+                description:
+                  '280 characters is all you need. React to goals, calls, and clutch moments in real time.',
+                color: 'text-primary',
+                bg: 'bg-primary/10',
+              },
+              {
+                icon: TrendingUp,
+                title: 'Trending Feed',
+                description:
+                  'See what the community is buzzing about. The hottest takes rise to the top.',
+                color: 'text-accent',
+                bg: 'bg-accent/10',
+              },
+              {
+                icon: DollarSign,
+                title: 'Earn Daily',
+                description:
+                  'Fresh reward pools every day. Your quick takes earn HIVE and HBD just like full posts.',
+                color: 'text-emerald-500',
+                bg: 'bg-emerald-500/10',
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                variants={itemVariants}
+                whileHover={{ y: -8, scale: 1.02 }}
+                transition={{ duration: 0.3 }}
+                className="rounded-2xl border bg-card p-8 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5"
+              >
+                <div className={`inline-flex p-3 ${item.bg} mb-5 rounded-xl`}>
+                  <item.icon className={`h-7 w-7 ${item.color}`} />
+                </div>
+                <h3 className="mb-3 text-2xl font-bold">{item.title}</h3>
+                <p className="leading-relaxed text-muted-foreground">{item.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-center"
+          >
+            <Button
+              size="lg"
+              className="group px-8 py-6 text-lg"
+              onClick={() => router.push('/sportsbites')}
+            >
+              <Zap className="mr-2 h-5 w-5" />
+              Try Sportsbites
+              <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </motion.div>
+        </div>
+      </section>
+
       {/* How Earnings Work Section */}
       <section className="bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30 px-6 py-24">
         <div className="mx-auto max-w-6xl">

@@ -21,7 +21,7 @@ const RATE_LIMITED_ROUTES = {
   '/api/hive/posts': 'read',
   '/api/hive/comments': 'read',
   '/api/hive/account': 'read',
-  '/api/hive/shorts': 'read',
+  '/api/hive/sportsbites': 'read',
   '/api/crypto/prices': 'read',
   '/api/analytics': 'read',
   '/api/sports/events': 'read',
@@ -104,11 +104,7 @@ export async function middleware(request: NextRequest) {
   const result = await checkRateLimit(rateLimitKey, config, rateLimitType);
 
   // Add rate limit headers to response
-  const rateLimitHeaders = createRateLimitHeaders(
-    result.remaining,
-    result.reset,
-    config.limit
-  );
+  const rateLimitHeaders = createRateLimitHeaders(result.remaining, result.reset, config.limit);
 
   if (!result.success) {
     // Rate limited - return 429

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { ComposeShort, ShortsFeed } from '@/components/shorts';
+import { ComposeSportsbite, SportsbitesFeed } from '@/components/sportsbites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useToast, toast } from '@/components/core/Toast';
@@ -13,7 +13,7 @@ import { useFollowing } from '@/lib/react-query/queries/useFollowers';
 
 type FeedFilter = 'latest' | 'trending' | 'following';
 
-export default function ShortsPage() {
+export default function SportsBitesPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
@@ -22,10 +22,8 @@ export default function ShortsPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [followingList, setFollowingList] = useState<string[]>([]);
 
-  // Fetch following list for "Following" filter
   const { data: followingData } = useFollowing(user?.username || '', { enabled: !!user?.username });
 
-  // Extract following usernames from the data
   useEffect(() => {
     if (followingData?.pages) {
       const usernames = followingData.pages
@@ -35,14 +33,11 @@ export default function ShortsPage() {
     }
   }, [followingData]);
 
-  // Handle successful post
   const handlePostSuccess = useCallback(() => {
-    addToast(toast.success('Posted!', 'Your short has been published to Hive.'));
-    // Trigger a refresh of the feed
+    addToast(toast.success('Posted!', 'Your sportsbite has been published to Hive.'));
     setRefreshTrigger((prev) => prev + 1);
   }, [addToast]);
 
-  // Handle post error
   const handlePostError = useCallback(
     (error: string) => {
       addToast(toast.error('Post Failed', error));
@@ -50,23 +45,14 @@ export default function ShortsPage() {
     [addToast]
   );
 
-  // Redirect if not authenticated
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
       router.push('/');
     }
   }, [user, isAuthLoading, router]);
 
-  // Show skeleton while auth is loading (handled by loading.tsx for initial load)
-  // This handles subsequent navigations where auth state may still be loading
-  if (isAuthLoading) {
-    return null; // Let loading.tsx handle it
-  }
-
-  // User not authenticated - will redirect
-  if (!user) {
-    return null;
-  }
+  if (isAuthLoading) return null;
+  if (!user) return null;
 
   const filters: { id: FeedFilter; label: string; icon: React.ElementType }[] = [
     { id: 'latest', label: 'Latest', icon: Clock },
@@ -87,13 +73,12 @@ export default function ShortsPage() {
               </div>
               <div>
                 <h1 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-2xl font-bold">
-                  Shorts
+                  Sportsbites
                 </h1>
                 <p className="text-sm text-muted-foreground">Quick takes & live reactions</p>
               </div>
             </div>
 
-            {/* Live indicator */}
             <div className="flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
@@ -103,7 +88,6 @@ export default function ShortsPage() {
             </div>
           </div>
 
-          {/* Filter tabs */}
           <div className="flex gap-1.5 pb-3">
             {filters.map((filter) => {
               const Icon = filter.icon;
@@ -143,17 +127,17 @@ export default function ShortsPage() {
 
         {/* Compose box */}
         <div className="mb-6">
-          <ComposeShort onSuccess={handlePostSuccess} onError={handlePostError} />
+          <ComposeSportsbite onSuccess={handlePostSuccess} onError={handlePostError} />
         </div>
 
-        {/* Info banner for new users */}
+        {/* Info banner */}
         <div className="mb-6 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10 p-4">
           <div className="flex items-start gap-3">
             <div className="rounded-lg bg-primary/20 p-2">
               <Zap className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-primary">What are Shorts?</h3>
+              <h3 className="font-semibold text-primary">What are Sportsbites?</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Quick 280-character posts perfect for live match reactions, hot takes, and instant
                 sports commentary. All posts are stored on the Hive blockchain and can earn rewards!
@@ -163,28 +147,28 @@ export default function ShortsPage() {
         </div>
 
         {/* Feed */}
-        <ShortsFeed
+        <SportsbitesFeed
           refreshTrigger={refreshTrigger}
           filterMode={activeFilter}
           followingList={followingList}
         />
 
-        {/* Feature highlights (shown when feed is empty) */}
+        {/* Feature highlights */}
         <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="rounded-xl border bg-card p-5 text-center">
-            <div className="mb-3 text-3xl">⚡</div>
+            <div className="mb-3 text-3xl">&#9889;</div>
             <h3 className="mb-1 font-semibold">Quick Takes</h3>
             <p className="text-sm text-muted-foreground">280 characters for instant reactions</p>
           </div>
 
           <div className="rounded-xl border bg-card p-5 text-center">
-            <div className="mb-3 text-3xl">🏆</div>
+            <div className="mb-3 text-3xl">&#127942;</div>
             <h3 className="mb-1 font-semibold">Earn Rewards</h3>
             <p className="text-sm text-muted-foreground">Get upvoted and earn HIVE/HBD</p>
           </div>
 
           <div className="rounded-xl border bg-card p-5 text-center">
-            <div className="mb-3 text-3xl">🔗</div>
+            <div className="mb-3 text-3xl">&#128279;</div>
             <h3 className="mb-1 font-semibold">Decentralized</h3>
             <p className="text-sm text-muted-foreground">Stored forever on Hive blockchain</p>
           </div>

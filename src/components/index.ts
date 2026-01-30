@@ -19,7 +19,7 @@ export * from './auth';
 export * from './community';
 export * from './layout';
 export * from './medals';
-export * from './shorts';
+export * from './sportsbites';
 export * from './leaderboard';
 export * from './modals';
 export * from './publish';

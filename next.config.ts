@@ -9,6 +9,16 @@ const withBundleAnalyzer =
     : (config: NextConfig) => config;
 
 const nextConfig: NextConfig = {
+  // Redirect legacy /shorts route to /sportsbites
+  async redirects() {
+    return [
+      {
+        source: '/shorts',
+        destination: '/sportsbites',
+        permanent: true,
+      },
+    ];
+  },
   // Security headers including CSP
   async headers() {
     return [

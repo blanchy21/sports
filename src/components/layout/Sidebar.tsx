@@ -31,7 +31,7 @@ const navigationItems = [
   { href: '/discover', icon: Compass, label: 'Discover', requireAuth: false, featured: true },
   { href: '/feed', icon: BookOpen, label: 'Feed', requireAuth: false, featured: true },
   { href: '/communities', icon: Users2, label: 'Communities', requireAuth: false, featured: true },
-  { href: '/shorts', icon: Zap, label: 'Shorts', requireAuth: false },
+  { href: '/sportsbites', icon: Zap, label: 'Sportsbites', requireAuth: false },
   { href: '/bookmarks', icon: Bookmark, label: 'Bookmarks', requireAuth: false },
   { href: '/publish', icon: Edit, label: 'Publish', requireAuth: false },
   { href: '/drafts', icon: FileEdit, label: 'Drafts', requireAuth: false },
