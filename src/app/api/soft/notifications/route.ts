@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
-import { FirebaseAuth } from '@/lib/firebase/auth';
-import {
-  createRequestContext,
-  validationError,
-  unauthorizedError,
-} from '@/lib/api/response';
+import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -42,9 +37,20 @@ export interface SoftNotification {
 // ============================================
 
 const getNotificationsSchema = z.object({
-  limit: z.string().optional().transform((val) => val ? parseInt(val, 10) : 20).pipe(z.number().int().min(1).max(100)),
-  offset: z.string().optional().transform((val) => val ? parseInt(val, 10) : 0).pipe(z.number().int().min(0)),
-  unreadOnly: z.string().optional().transform((val) => val === 'true'),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 20))
+    .pipe(z.number().int().min(1).max(100)),
+  offset: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 0))
+    .pipe(z.number().int().min(0)),
+  unreadOnly: z
+    .string()
+    .optional()
+    .transform((val) => val === 'true'),
 });
 
 const markReadSchema = z.object({
@@ -61,21 +67,25 @@ const deleteNotificationsSchema = z.object({
 // Helper Functions
 // ============================================
 
-async function getAuthenticatedUser(request: NextRequest): Promise<{ userId: string; username: string } | null> {
+async function getAuthenticatedUser(
+  request: NextRequest
+): Promise<{ userId: string; username: string } | null> {
   const userId = request.headers.get('x-user-id');
   if (!userId) {
     return null;
   }
 
   try {
-    const profile = await FirebaseAuth.getProfileById(userId);
-    if (!profile) {
-      return null;
-    }
+    const db = getAdminDb();
+    if (!db) return null;
 
+    const profileDoc = await db.collection('profiles').doc(userId).get();
+    if (!profileDoc.exists) return null;
+
+    const data = profileDoc.data();
     return {
-      userId: profile.id,
-      username: profile.username,
+      userId: profileDoc.id,
+      username: data?.username ?? '',
     };
   } catch {
     return null;
@@ -113,7 +123,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query
-    let query = db.collection('soft_notifications')
+    let query = db
+      .collection('soft_notifications')
       .where('recipientId', '==', user.userId)
       .orderBy('createdAt', 'desc');
 
@@ -122,14 +133,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Get total count for pagination
-    const countSnapshot = await db.collection('soft_notifications')
+    const countSnapshot = await db
+      .collection('soft_notifications')
       .where('recipientId', '==', user.userId)
       .count()
       .get();
     const totalCount = countSnapshot.data().count;
 
     // Get unread count
-    const unreadCountSnapshot = await db.collection('soft_notifications')
+    const unreadCountSnapshot = await db
+      .collection('soft_notifications')
       .where('recipientId', '==', user.userId)
       .where('read', '==', false)
       .count()
@@ -197,7 +210,10 @@ export async function POST(request: NextRequest) {
     const { notificationIds, markAllRead } = parseResult.data;
 
     if (!notificationIds && !markAllRead) {
-      return validationError('Either notificationIds or markAllRead must be provided', ctx.requestId);
+      return validationError(
+        'Either notificationIds or markAllRead must be provided',
+        ctx.requestId
+      );
     }
 
     const db = getAdminDb();
@@ -212,7 +228,8 @@ export async function POST(request: NextRequest) {
 
     if (markAllRead) {
       // Mark all unread notifications as read
-      const unreadSnapshot = await db.collection('soft_notifications')
+      const unreadSnapshot = await db
+        .collection('soft_notifications')
         .where('recipientId', '==', user.userId)
         .where('read', '==', false)
         .get();
@@ -242,7 +259,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get new unread count
-    const unreadCountSnapshot = await db.collection('soft_notifications')
+    const unreadCountSnapshot = await db
+      .collection('soft_notifications')
       .where('recipientId', '==', user.userId)
       .where('read', '==', false)
       .count()
@@ -281,7 +299,10 @@ export async function DELETE(request: NextRequest) {
     const { notificationIds, deleteAllRead } = parseResult.data;
 
     if (!notificationIds && !deleteAllRead) {
-      return validationError('Either notificationIds or deleteAllRead must be provided', ctx.requestId);
+      return validationError(
+        'Either notificationIds or deleteAllRead must be provided',
+        ctx.requestId
+      );
     }
 
     const db = getAdminDb();
@@ -296,7 +317,8 @@ export async function DELETE(request: NextRequest) {
 
     if (deleteAllRead) {
       // Delete all read notifications
-      const readSnapshot = await db.collection('soft_notifications')
+      const readSnapshot = await db
+        .collection('soft_notifications')
         .where('recipientId', '==', user.userId)
         .where('read', '==', true)
         .get();

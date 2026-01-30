@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
-import { FirebaseAuth } from '@/lib/firebase/auth';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
@@ -50,14 +49,18 @@ async function getAuthenticatedUser(
   if (!userId) return null;
 
   try {
-    const profile = await FirebaseAuth.getProfileById(userId);
-    if (!profile) return null;
+    const db = getAdminDb();
+    if (!db) return null;
 
+    const profileDoc = await db.collection('profiles').doc(userId).get();
+    if (!profileDoc.exists) return null;
+
+    const data = profileDoc.data();
     return {
-      userId: profile.id,
-      username: profile.username,
-      displayName: profile.displayName,
-      avatar: profile.avatarUrl,
+      userId: profileDoc.id,
+      username: data?.username ?? '',
+      displayName: data?.displayName,
+      avatar: data?.avatarUrl,
     };
   } catch {
     return null;

@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
-import { FirebaseAuth } from '@/lib/firebase/auth';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
-import {
-  createRequestContext,
-  validationError,
-  unauthorizedError,
-} from '@/lib/api/response';
+import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
 import { Firestore } from 'firebase-admin/firestore';
 
@@ -42,8 +37,16 @@ const getFollowsSchema = z.object({
   userId: z.string().min(1).optional(),
   username: z.string().min(1).optional(),
   type: z.enum(['followers', 'following']).optional().default('followers'),
-  limit: z.string().optional().transform((val) => val ? parseInt(val, 10) : 20).pipe(z.number().int().min(1).max(100)),
-  offset: z.string().optional().transform((val) => val ? parseInt(val, 10) : 0).pipe(z.number().int().min(0)),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 20))
+    .pipe(z.number().int().min(1).max(100)),
+  offset: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 0))
+    .pipe(z.number().int().min(0)),
 });
 
 const toggleFollowSchema = z.object({
@@ -59,21 +62,25 @@ const checkFollowSchema = z.object({
 // Helper Functions
 // ============================================
 
-async function getAuthenticatedUser(request: NextRequest): Promise<{ userId: string; username: string } | null> {
+async function getAuthenticatedUser(
+  request: NextRequest
+): Promise<{ userId: string; username: string } | null> {
   const userId = request.headers.get('x-user-id');
   if (!userId) {
     return null;
   }
 
   try {
-    const profile = await FirebaseAuth.getProfileById(userId);
-    if (!profile) {
-      return null;
-    }
+    const db = getAdminDb();
+    if (!db) return null;
 
+    const profileDoc = await db.collection('profiles').doc(userId).get();
+    if (!profileDoc.exists) return null;
+
+    const data = profileDoc.data();
     return {
-      userId: profile.id,
-      username: profile.username,
+      userId: profileDoc.id,
+      username: data?.username ?? '',
     };
   } catch {
     return null;
@@ -147,14 +154,15 @@ export async function GET(request: NextRequest) {
     // Resolve userId from username if needed
     let targetUserId = userId;
     if (!targetUserId && username) {
-      const profile = await FirebaseAuth.getProfileByUsername(username);
-      if (!profile) {
-        return NextResponse.json(
-          { success: false, error: 'User not found' },
-          { status: 404 }
-        );
+      const profileSnapshot = await db
+        .collection('profiles')
+        .where('username', '==', username)
+        .limit(1)
+        .get();
+      if (profileSnapshot.empty) {
+        return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
       }
-      targetUserId = profile.id;
+      targetUserId = profileSnapshot.docs[0].id;
     }
 
     // Get the current user to check if they follow these users
@@ -163,7 +171,8 @@ export async function GET(request: NextRequest) {
     // Build query based on type
     const fieldToQuery = type === 'followers' ? 'followedId' : 'followerId';
 
-    const snapshot = await db.collection('soft_follows')
+    const snapshot = await db
+      .collection('soft_follows')
       .where(fieldToQuery, '==', targetUserId)
       .orderBy('createdAt', 'desc')
       .offset(offset)
@@ -201,7 +210,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get total count
-    const countSnapshot = await db.collection('soft_follows')
+    const countSnapshot = await db
+      .collection('soft_follows')
       .where(fieldToQuery, '==', targetUserId)
       .count()
       .get();
@@ -319,7 +329,8 @@ export async function POST(request: NextRequest) {
     await updateUserLastActiveAt(user.userId);
 
     // Get updated follower count for target user
-    const followerCountSnapshot = await db.collection('soft_follows')
+    const followerCountSnapshot = await db
+      .collection('soft_follows')
       .where('followedId', '==', targetUserId)
       .count()
       .get();
@@ -370,12 +381,14 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get follower and following counts for target user
-    const followerCountSnapshot = await db.collection('soft_follows')
+    const followerCountSnapshot = await db
+      .collection('soft_follows')
       .where('followedId', '==', targetUserId)
       .count()
       .get();
 
-    const followingCountSnapshot = await db.collection('soft_follows')
+    const followingCountSnapshot = await db
+      .collection('soft_follows')
       .where('followerId', '==', targetUserId)
       .count()
       .get();

@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
-import { FirebaseAuth } from '@/lib/firebase/auth';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
-import {
-  createRequestContext,
-  validationError,
-  unauthorizedError,
-} from '@/lib/api/response';
+import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
 import { Firestore } from 'firebase-admin/firestore';
 
@@ -49,21 +44,25 @@ const toggleLikeSchema = z.object({
 // Helper Functions
 // ============================================
 
-async function getAuthenticatedUser(request: NextRequest): Promise<{ userId: string; username: string } | null> {
+async function getAuthenticatedUser(
+  request: NextRequest
+): Promise<{ userId: string; username: string } | null> {
   const userId = request.headers.get('x-user-id');
   if (!userId) {
     return null;
   }
 
   try {
-    const profile = await FirebaseAuth.getProfileById(userId);
-    if (!profile) {
-      return null;
-    }
+    const db = getAdminDb();
+    if (!db) return null;
 
+    const profileDoc = await db.collection('profiles').doc(userId).get();
+    if (!profileDoc.exists) return null;
+
+    const data = profileDoc.data();
     return {
-      userId: profile.id,
-      username: profile.username,
+      userId: profileDoc.id,
+      username: data?.username ?? '',
     };
   } catch {
     return null;
@@ -100,7 +99,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get like count
-    const likesSnapshot = await db.collection('soft_likes')
+    const likesSnapshot = await db
+      .collection('soft_likes')
       .where('targetType', '==', targetType)
       .where('targetId', '==', targetId)
       .count()
@@ -208,7 +208,8 @@ export async function POST(request: NextRequest) {
     await updateUserLastActiveAt(user.userId);
 
     // Get updated like count
-    const likesSnapshot = await db.collection('soft_likes')
+    const likesSnapshot = await db
+      .collection('soft_likes')
       .where('targetType', '==', targetType)
       .where('targetId', '==', targetId)
       .count()
@@ -218,11 +219,7 @@ export async function POST(request: NextRequest) {
 
     // Check if post just crossed the popularity threshold
     // Only for posts (not comments) when adding a like
-    if (
-      liked &&
-      targetType === 'post' &&
-      newLikeCount === POPULAR_POST_THRESHOLD
-    ) {
+    if (liked && targetType === 'post' && newLikeCount === POPULAR_POST_THRESHOLD) {
       await createPopularPostNotification(db, targetType, targetId, newLikeCount, now);
     }
 
@@ -241,10 +238,15 @@ export async function POST(request: NextRequest) {
 // ============================================
 
 const batchCheckSchema = z.object({
-  targets: z.array(z.object({
-    targetType: z.enum(['post', 'comment']),
-    targetId: z.string().min(1),
-  })).min(1).max(50),
+  targets: z
+    .array(
+      z.object({
+        targetType: z.enum(['post', 'comment']),
+        targetId: z.string().min(1),
+      })
+    )
+    .min(1)
+    .max(50),
 });
 
 export async function PUT(request: NextRequest) {
@@ -271,28 +273,31 @@ export async function PUT(request: NextRequest) {
     const results: Record<string, { likeCount: number; hasLiked: boolean }> = {};
 
     // Process in parallel for better performance
-    await Promise.all(targets.map(async ({ targetType, targetId }) => {
-      const key = `${targetType}:${targetId}`;
+    await Promise.all(
+      targets.map(async ({ targetType, targetId }) => {
+        const key = `${targetType}:${targetId}`;
 
-      // Get like count
-      const likesSnapshot = await db.collection('soft_likes')
-        .where('targetType', '==', targetType)
-        .where('targetId', '==', targetId)
-        .count()
-        .get();
+        // Get like count
+        const likesSnapshot = await db
+          .collection('soft_likes')
+          .where('targetType', '==', targetType)
+          .where('targetId', '==', targetId)
+          .count()
+          .get();
 
-      const likeCount = likesSnapshot.data().count;
+        const likeCount = likesSnapshot.data().count;
 
-      // Check if user has liked
-      let hasLiked = false;
-      if (user) {
-        const likeId = createLikeId(user.userId, targetType, targetId);
-        const likeDoc = await db.collection('soft_likes').doc(likeId).get();
-        hasLiked = likeDoc.exists;
-      }
+        // Check if user has liked
+        let hasLiked = false;
+        if (user) {
+          const likeId = createLikeId(user.userId, targetType, targetId);
+          const likeDoc = await db.collection('soft_likes').doc(likeId).get();
+          hasLiked = likeDoc.exists;
+        }
 
-      results[key] = { likeCount, hasLiked };
-    }));
+        results[key] = { likeCount, hasLiked };
+      })
+    );
 
     return NextResponse.json({
       success: true,
@@ -361,9 +366,10 @@ async function createLikeNotification(
       recipientId: authorId,
       type: 'like',
       title: 'New Like',
-      message: targetType === 'post'
-        ? `${user.username} liked your post`
-        : `${user.username} liked your comment`,
+      message:
+        targetType === 'post'
+          ? `${user.username} liked your post`
+          : `${user.username} liked your comment`,
       sourceUserId: user.userId,
       sourceUsername: user.username,
       data: {
@@ -406,7 +412,8 @@ async function createPopularPostNotification(
     if (!authorId) return;
 
     // Check if we already sent a popular post notification for this post
-    const existingNotification = await db.collection('soft_notifications')
+    const existingNotification = await db
+      .collection('soft_notifications')
       .where('recipientId', '==', authorId)
       .where('type', '==', 'system')
       .where('data.targetId', '==', targetId)

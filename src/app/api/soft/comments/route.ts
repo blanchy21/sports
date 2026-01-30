@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
-import { FirebaseAuth } from '@/lib/firebase/auth';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
-import {
-  createRequestContext,
-  validationError,
-  unauthorizedError,
-} from '@/lib/api/response';
+import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
 
 export const runtime = 'nodejs';
@@ -43,7 +38,11 @@ const getCommentsSchema = z.object({
   postId: z.string().min(1).optional(),
   postPermlink: z.string().min(1).optional(),
   parentCommentId: z.string().optional(),
-  limit: z.string().optional().transform((val) => val ? parseInt(val, 10) : 50).pipe(z.number().int().min(1).max(100)),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 50))
+    .pipe(z.number().int().min(1).max(100)),
 });
 
 const createCommentSchema = z.object({
@@ -66,24 +65,27 @@ const deleteCommentSchema = z.object({
 // Helper Functions
 // ============================================
 
-async function getAuthenticatedUser(request: NextRequest): Promise<{ userId: string; username: string; displayName?: string; avatar?: string } | null> {
+async function getAuthenticatedUser(
+  request: NextRequest
+): Promise<{ userId: string; username: string; displayName?: string; avatar?: string } | null> {
   const userId = request.headers.get('x-user-id');
   if (!userId) {
     return null;
   }
 
   try {
-    // Get user profile for username and other details
-    const profile = await FirebaseAuth.getProfileById(userId);
-    if (!profile) {
-      return null;
-    }
+    const db = getAdminDb();
+    if (!db) return null;
 
+    const profileDoc = await db.collection('profiles').doc(userId).get();
+    if (!profileDoc.exists) return null;
+
+    const data = profileDoc.data();
     return {
-      userId: profile.id,
-      username: profile.username,
-      displayName: profile.displayName,
-      avatar: profile.avatarUrl,
+      userId: profileDoc.id,
+      username: data?.username ?? '',
+      displayName: data?.displayName,
+      avatar: data?.avatarUrl,
     };
   } catch {
     return null;
@@ -122,8 +124,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let query = db.collection('soft_comments')
-      .where('isDeleted', '==', false);
+    let query = db.collection('soft_comments').where('isDeleted', '==', false);
 
     if (postId) {
       query = query.where('postId', '==', postId);
@@ -222,7 +223,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check comment limit (200 per user)
-    const userCommentsCount = await db.collection('soft_comments')
+    const userCommentsCount = await db
+      .collection('soft_comments')
       .where('authorId', '==', user.userId)
       .where('isDeleted', '==', false)
       .count()
@@ -233,7 +235,8 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Comment limit reached',
-          message: 'You have reached the maximum of 200 comments. Upgrade to Hive for unlimited comments.',
+          message:
+            'You have reached the maximum of 200 comments. Upgrade to Hive for unlimited comments.',
           upgradeRequired: true,
         },
         { status: 403 }
@@ -381,10 +384,7 @@ export async function PATCH(request: NextRequest) {
     const commentDoc = await commentRef.get();
 
     if (!commentDoc.exists) {
-      return NextResponse.json(
-        { success: false, error: 'Comment not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Comment not found' }, { status: 404 });
     }
 
     const commentData = commentDoc.data();
@@ -456,10 +456,7 @@ export async function DELETE(request: NextRequest) {
     const commentDoc = await commentRef.get();
 
     if (!commentDoc.exists) {
-      return NextResponse.json(
-        { success: false, error: 'Comment not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Comment not found' }, { status: 404 });
     }
 
     const commentData = commentDoc.data();
