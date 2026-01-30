@@ -122,7 +122,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
             'x-user-id': user.id,
           },
           body: JSON.stringify({
-            postId: `hive-${author}/${permlink}`,
+            postId: `hive-${author}-${permlink}`,
             postPermlink: permlink,
             body: commentText.trim(),
           }),

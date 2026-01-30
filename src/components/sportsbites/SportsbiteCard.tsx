@@ -346,7 +346,7 @@ export function SportsbiteCard({ sportsbite, className, isNew = false }: Sportsb
                 targetId={
                   sportsbite.source === 'soft'
                     ? sportsbite.softId || sportsbite.id
-                    : `hive-${sportsbite.author}/${sportsbite.permlink}`
+                    : `hive-${sportsbite.author}-${sportsbite.permlink}`
                 }
                 initialLikeCount={sportsbite.net_votes || 0}
               />
