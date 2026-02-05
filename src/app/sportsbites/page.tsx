@@ -6,6 +6,7 @@ import { ComposeSportsbite, SportsbitesFeed } from '@/components/sportsbites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useToast, toast } from '@/components/core/Toast';
+import type { Sportsbite } from '@/lib/hive-workerbee/sportsbites';
 import Image from 'next/image';
 import { Zap, TrendingUp, Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
@@ -20,7 +21,7 @@ export default function SportsBitesPage() {
   const { addToast } = useToast();
 
   const [activeFilter, setActiveFilter] = useState<FeedFilter>('latest');
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [optimisticBite, setOptimisticBite] = useState<Sportsbite | null>(null);
   const [followingList, setFollowingList] = useState<string[]>([]);
 
   const { data: followingData } = useFollowing(user?.username || '', { enabled: !!user?.username });
@@ -34,10 +35,13 @@ export default function SportsBitesPage() {
     }
   }, [followingData]);
 
-  const handlePostSuccess = useCallback(() => {
-    addToast(toast.success('Posted!', 'Your sportsbite has been published to Hive.'));
-    setRefreshTrigger((prev) => prev + 1);
-  }, [addToast]);
+  const handlePostSuccess = useCallback(
+    (bite: Sportsbite) => {
+      addToast(toast.success('Posted!', 'Your sportsbite is live.'));
+      setOptimisticBite(bite);
+    },
+    [addToast]
+  );
 
   const handlePostError = useCallback(
     (error: string) => {
@@ -152,7 +156,7 @@ export default function SportsBitesPage() {
 
         {/* Feed */}
         <SportsbitesFeed
-          refreshTrigger={refreshTrigger}
+          optimisticBite={optimisticBite}
           filterMode={activeFilter}
           followingList={followingList}
         />

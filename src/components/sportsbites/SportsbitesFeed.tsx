@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { SportsbiteCard } from './SportsbiteCard';
-import { Sportsbite, SportsbiteApiResponse } from '@/lib/hive-workerbee/sportsbites';
+import type { Sportsbite, SportsbiteApiResponse } from '@/lib/hive-workerbee/sportsbites';
 import { Loader2, RefreshCw, AlertCircle, Zap, ArrowUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
@@ -15,7 +15,7 @@ interface SportsbitesFeedProps {
   followingList?: string[];
   filterMode?: 'latest' | 'trending' | 'following';
   className?: string;
-  refreshTrigger?: number;
+  optimisticBite?: Sportsbite | null;
 }
 
 export function SportsbitesFeed({
@@ -23,7 +23,7 @@ export function SportsbitesFeed({
   followingList = [],
   filterMode = 'latest',
   className,
-  refreshTrigger = 0,
+  optimisticBite = null,
 }: SportsbitesFeedProps) {
   const [bites, setBites] = useState<Sportsbite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -168,12 +168,22 @@ export function SportsbitesFeed({
   }, [author, filterMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (refreshTrigger > 0) {
-      setPendingBites([]);
-      setNewBitesCount(0);
-      loadBites();
-    }
-  }, [refreshTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!optimisticBite) return;
+
+    // Immediately prepend the new bite with animation
+    const newId = optimisticBite.id;
+    setNewBiteIds(new Set([newId]));
+    setBites((prev) => dedupeBites([optimisticBite, ...prev]));
+    setPendingBites([]);
+    setNewBitesCount(0);
+    latestBiteRef.current = newId;
+
+    if (newAnimationTimeoutRef.current) clearTimeout(newAnimationTimeoutRef.current);
+    newAnimationTimeoutRef.current = setTimeout(() => {
+      setNewBiteIds(new Set());
+      newAnimationTimeoutRef.current = null;
+    }, 5000);
+  }, [optimisticBite]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (isLoading || bites.length === 0) return;

@@ -22,6 +22,7 @@ import {
   SPORTSBITES_CONFIG,
   createSportsbiteOperation,
   validateSportsbiteContent,
+  Sportsbite,
 } from '@/lib/hive-workerbee/sportsbites';
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { validateImageUrl } from '@/lib/utils/sanitize';
@@ -42,7 +43,7 @@ interface GiphyGif {
 }
 
 interface ComposeSportsbiteProps {
-  onSuccess?: () => void;
+  onSuccess?: (bite: Sportsbite) => void;
   onError?: (error: string) => void;
 }
 
@@ -271,6 +272,29 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
         if (!result || (result as { error?: string }).error) {
           throw new Error((result as { error?: string }).error || 'Failed to broadcast');
         }
+
+        // Build optimistic sportsbite for immediate display
+        const optimisticBite: Sportsbite = {
+          id: `${hiveUser.username}/${operation.permlink}`,
+          author: hiveUser.username,
+          permlink: operation.permlink,
+          body: content,
+          created: new Date().toISOString(),
+          net_votes: 0,
+          children: 0,
+          pending_payout_value: '0.000 HBD',
+          active_votes: [],
+          sportCategory: sportCategory || undefined,
+          images: images.length > 0 ? images : undefined,
+          gifs: gifs.length > 0 ? gifs : undefined,
+          source: 'hive',
+        };
+
+        setContent('');
+        setImages([]);
+        setGifs([]);
+        setSportCategory('');
+        onSuccess?.(optimisticBite);
       } else {
         // SOFT USER: Publish to Firebase
         const response = await fetch('/api/soft/sportsbites', {
@@ -291,13 +315,34 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
         if (!data.success) {
           throw new Error(data.error || data.message || 'Failed to post sportsbite');
         }
-      }
 
-      setContent('');
-      setImages([]);
-      setGifs([]);
-      setSportCategory('');
-      onSuccess?.();
+        // Build optimistic sportsbite from API response
+        const softBite = data.sportsbite;
+        const optimisticBite: Sportsbite = {
+          id: `soft-${softBite.id}`,
+          author: softBite.authorUsername || user.username || '',
+          permlink: `soft-${softBite.id}`,
+          body: content,
+          created: new Date().toISOString(),
+          net_votes: 0,
+          children: 0,
+          pending_payout_value: '0.000 HBD',
+          active_votes: [],
+          sportCategory: sportCategory || undefined,
+          images: images.length > 0 ? images : undefined,
+          gifs: gifs.length > 0 ? gifs : undefined,
+          source: 'soft',
+          softId: softBite.id,
+          authorDisplayName: user.displayName || user.username,
+          authorAvatar: user.avatar,
+        };
+
+        setContent('');
+        setImages([]);
+        setGifs([]);
+        setSportCategory('');
+        onSuccess?.(optimisticBite);
+      }
     } catch (error) {
       console.error('Error publishing sportsbite:', error);
       onError?.(error instanceof Error ? error.message : 'Failed to publish sportsbite');
