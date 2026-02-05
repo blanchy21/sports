@@ -80,6 +80,10 @@ When given:
 - **No Laziness** — hunt **root causes**. No band-aids. Senior developer bar.  
 - **Minimal Impact** — touch only what must be touched. Minimize new risk.
 
+## Deployment
+
+Pushing to `main` triggers an automatic deploy via Vercel. Do NOT prompt the user to deploy — it happens on push.
+
 ## Project Overview
 
 Sportsblock is a Next.js 15 (App Router) sports content platform integrated with the Hive blockchain. Users can authenticate via Hive wallets (Keychain, HiveSigner, HiveAuth) or Firebase email, then read and publish sports-related posts to the Hive blockchain.
