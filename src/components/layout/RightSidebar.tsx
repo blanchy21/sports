@@ -236,9 +236,12 @@ export const RightSidebar: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <button className="mt-3 w-full text-sm text-primary hover:underline">
+              <Link
+                href="/authors"
+                className="mt-3 block w-full text-center text-sm text-primary hover:underline"
+              >
                 View all authors
-              </button>
+              </Link>
             </>
           ) : (
             <div className="text-sm text-muted-foreground">No authors found</div>
