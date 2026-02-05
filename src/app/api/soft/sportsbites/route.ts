@@ -4,6 +4,8 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
+import { withCsrfProtection } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { SPORTSBITES_CONFIG } from '@/lib/hive-workerbee/sportsbites';
 import { SoftSportsbite } from '@/types/auth';
 
@@ -37,35 +39,6 @@ const createSportsbiteSchema = z.object({
 const deleteSportsbiteSchema = z.object({
   sportsbiteId: z.string().min(1),
 });
-
-// ============================================
-// Helper Functions
-// ============================================
-
-async function getAuthenticatedUser(
-  request: NextRequest
-): Promise<{ userId: string; username: string; displayName?: string; avatar?: string } | null> {
-  const userId = request.headers.get('x-user-id');
-  if (!userId) return null;
-
-  try {
-    const db = getAdminDb();
-    if (!db) return null;
-
-    const profileDoc = await db.collection('profiles').doc(userId).get();
-    if (!profileDoc.exists) return null;
-
-    const data = profileDoc.data();
-    return {
-      userId: profileDoc.id,
-      username: data?.username ?? '',
-      displayName: data?.displayName,
-      avatar: data?.avatarUrl,
-    };
-  } catch {
-    return null;
-  }
-}
 
 // ============================================
 // GET /api/soft/sportsbites
@@ -163,126 +136,128 @@ export async function GET(request: NextRequest) {
 // ============================================
 
 export async function POST(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return unauthorizedError('Authentication required', ctx.requestId);
-    }
+    try {
+      const user = await getAuthenticatedUserFromSession(request, { includeProfile: true });
+      if (!user) {
+        return unauthorizedError('Authentication required', ctx.requestId);
+      }
 
-    const body = await request.json();
-    const parseResult = createSportsbiteSchema.safeParse(body);
+      const body = await request.json();
+      const parseResult = createSportsbiteSchema.safeParse(body);
 
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
 
-    const { body: biteBody, sportCategory, images, gifs } = parseResult.data;
+      const { body: biteBody, sportCategory, images, gifs } = parseResult.data;
 
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
+      const db = getAdminDb();
+      if (!db) {
+        return NextResponse.json(
+          { success: false, error: 'Database not configured' },
+          { status: 500 }
+        );
+      }
 
-    // Rate limiting
-    const rateLimit = checkRateLimit(user.userId, RATE_LIMITS.sportsbites);
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Rate limit exceeded',
-          message:
-            'You are posting sportsbites too frequently. Please wait before posting another.',
-          retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
-        },
-        {
-          status: 429,
-          headers: getRateLimitHeaders(rateLimit),
-        }
-      );
-    }
-
-    // Check sportsbite limit
-    const userCount = await db
-      .collection('soft_sportsbites')
-      .where('authorId', '==', user.userId)
-      .where('isDeleted', '==', false)
-      .count()
-      .get();
-
-    const currentCount = userCount.data().count;
-    if (currentCount >= SOFT_SPORTSBITE_LIMIT) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Sportsbite limit reached',
-          message: `You have reached the maximum of ${SOFT_SPORTSBITE_LIMIT} sportsbites. Upgrade to Hive for unlimited posting and earn rewards!`,
-          upgradeRequired: true,
-          limitInfo: {
-            current: currentCount,
-            max: SOFT_SPORTSBITE_LIMIT,
-            remaining: 0,
+      // Rate limiting
+      const rateLimit = checkRateLimit(user.userId, RATE_LIMITS.sportsbites);
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Rate limit exceeded',
+            message:
+              'You are posting sportsbites too frequently. Please wait before posting another.',
+            retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
           },
+          {
+            status: 429,
+            headers: getRateLimitHeaders(rateLimit),
+          }
+        );
+      }
+
+      // Check sportsbite limit
+      const userCount = await db
+        .collection('soft_sportsbites')
+        .where('authorId', '==', user.userId)
+        .where('isDeleted', '==', false)
+        .count()
+        .get();
+
+      const currentCount = userCount.data().count;
+      if (currentCount >= SOFT_SPORTSBITE_LIMIT) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Sportsbite limit reached',
+            message: `You have reached the maximum of ${SOFT_SPORTSBITE_LIMIT} sportsbites. Upgrade to Hive for unlimited posting and earn rewards!`,
+            upgradeRequired: true,
+            limitInfo: {
+              current: currentCount,
+              max: SOFT_SPORTSBITE_LIMIT,
+              remaining: 0,
+            },
+          },
+          { status: 403 }
+        );
+      }
+
+      const now = new Date();
+      const sportsbiteData = {
+        authorId: user.userId,
+        authorUsername: user.username,
+        authorDisplayName: user.displayName || null,
+        authorAvatar: user.avatar || null,
+        body: biteBody,
+        sportCategory: sportCategory || null,
+        images: images || [],
+        gifs: gifs || [],
+        createdAt: now,
+        updatedAt: now,
+        likeCount: 0,
+        commentCount: 0,
+        isDeleted: false,
+      };
+
+      const docRef = await db.collection('soft_sportsbites').add(sportsbiteData);
+
+      // Update user activity
+      await updateUserLastActiveAt(user.userId);
+
+      const sportsbite: SoftSportsbite = {
+        id: docRef.id,
+        authorId: user.userId,
+        authorUsername: user.username,
+        authorDisplayName: user.displayName,
+        authorAvatar: user.avatar,
+        body: biteBody,
+        sportCategory: sportCategory,
+        images: images || [],
+        gifs: gifs || [],
+        createdAt: now,
+        updatedAt: now,
+        likeCount: 0,
+        commentCount: 0,
+        isDeleted: false,
+      };
+
+      return NextResponse.json({
+        success: true,
+        sportsbite,
+        limitInfo: {
+          current: currentCount + 1,
+          max: SOFT_SPORTSBITE_LIMIT,
+          remaining: SOFT_SPORTSBITE_LIMIT - currentCount - 1,
         },
-        { status: 403 }
-      );
+      });
+    } catch (error) {
+      return ctx.handleError(error);
     }
-
-    const now = new Date();
-    const sportsbiteData = {
-      authorId: user.userId,
-      authorUsername: user.username,
-      authorDisplayName: user.displayName || null,
-      authorAvatar: user.avatar || null,
-      body: biteBody,
-      sportCategory: sportCategory || null,
-      images: images || [],
-      gifs: gifs || [],
-      createdAt: now,
-      updatedAt: now,
-      likeCount: 0,
-      commentCount: 0,
-      isDeleted: false,
-    };
-
-    const docRef = await db.collection('soft_sportsbites').add(sportsbiteData);
-
-    // Update user activity
-    await updateUserLastActiveAt(user.userId);
-
-    const sportsbite: SoftSportsbite = {
-      id: docRef.id,
-      authorId: user.userId,
-      authorUsername: user.username,
-      authorDisplayName: user.displayName,
-      authorAvatar: user.avatar,
-      body: biteBody,
-      sportCategory: sportCategory,
-      images: images || [],
-      gifs: gifs || [],
-      createdAt: now,
-      updatedAt: now,
-      likeCount: 0,
-      commentCount: 0,
-      isDeleted: false,
-    };
-
-    return NextResponse.json({
-      success: true,
-      sportsbite,
-      limitInfo: {
-        current: currentCount + 1,
-        max: SOFT_SPORTSBITE_LIMIT,
-        remaining: SOFT_SPORTSBITE_LIMIT - currentCount - 1,
-      },
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+  });
 }
 
 // ============================================
@@ -290,57 +265,62 @@ export async function POST(request: NextRequest) {
 // ============================================
 
 export async function DELETE(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return unauthorizedError('Authentication required', ctx.requestId);
+    try {
+      const user = await getAuthenticatedUserFromSession(request, { includeProfile: true });
+      if (!user) {
+        return unauthorizedError('Authentication required', ctx.requestId);
+      }
+
+      const body = await request.json();
+      const parseResult = deleteSportsbiteSchema.safeParse(body);
+
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
+
+      const { sportsbiteId } = parseResult.data;
+
+      const db = getAdminDb();
+      if (!db) {
+        return NextResponse.json(
+          { success: false, error: 'Database not configured' },
+          { status: 500 }
+        );
+      }
+
+      const docRef = db.collection('soft_sportsbites').doc(sportsbiteId);
+      const doc = await docRef.get();
+
+      if (!doc.exists) {
+        return NextResponse.json(
+          { success: false, error: 'Sportsbite not found' },
+          { status: 404 }
+        );
+      }
+
+      const data = doc.data();
+      if (data?.authorId !== user.userId) {
+        return NextResponse.json(
+          { success: false, error: 'You can only delete your own sportsbites' },
+          { status: 403 }
+        );
+      }
+
+      await docRef.update({
+        isDeleted: true,
+        body: '[deleted]',
+        updatedAt: new Date(),
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Sportsbite deleted',
+      });
+    } catch (error) {
+      return ctx.handleError(error);
     }
-
-    const body = await request.json();
-    const parseResult = deleteSportsbiteSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
-
-    const { sportsbiteId } = parseResult.data;
-
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
-
-    const docRef = db.collection('soft_sportsbites').doc(sportsbiteId);
-    const doc = await docRef.get();
-
-    if (!doc.exists) {
-      return NextResponse.json({ success: false, error: 'Sportsbite not found' }, { status: 404 });
-    }
-
-    const data = doc.data();
-    if (data?.authorId !== user.userId) {
-      return NextResponse.json(
-        { success: false, error: 'You can only delete your own sportsbites' },
-        { status: 403 }
-      );
-    }
-
-    await docRef.update({
-      isDeleted: true,
-      body: '[deleted]',
-      updatedAt: new Date(),
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Sportsbite deleted',
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+  });
 }

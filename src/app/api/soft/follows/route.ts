@@ -4,6 +4,8 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
+import { withCsrfProtection } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { Firestore } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
@@ -61,31 +63,6 @@ const checkFollowSchema = z.object({
 // ============================================
 // Helper Functions
 // ============================================
-
-async function getAuthenticatedUser(
-  request: NextRequest
-): Promise<{ userId: string; username: string } | null> {
-  const userId = request.headers.get('x-user-id');
-  if (!userId) {
-    return null;
-  }
-
-  try {
-    const db = getAdminDb();
-    if (!db) return null;
-
-    const profileDoc = await db.collection('profiles').doc(userId).get();
-    if (!profileDoc.exists) return null;
-
-    const data = profileDoc.data();
-    return {
-      userId: profileDoc.id,
-      username: data?.username ?? '',
-    };
-  } catch {
-    return null;
-  }
-}
 
 function createFollowId(followerId: string, followedId: string): string {
   return `${followerId}_${followedId}`;
@@ -166,7 +143,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get the current user to check if they follow these users
-    const currentUser = await getAuthenticatedUser(request);
+    const currentUser = await getAuthenticatedUserFromSession(request);
 
     // Build query based on type
     const fieldToQuery = type === 'followers' ? 'followedId' : 'followerId';
@@ -237,112 +214,114 @@ export async function GET(request: NextRequest) {
 // ============================================
 
 export async function POST(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return unauthorizedError('Authentication required', ctx.requestId);
-    }
+    try {
+      const user = await getAuthenticatedUserFromSession(request);
+      if (!user) {
+        return unauthorizedError('Authentication required', ctx.requestId);
+      }
 
-    const body = await request.json();
-    const parseResult = toggleFollowSchema.safeParse(body);
+      const body = await request.json();
+      const parseResult = toggleFollowSchema.safeParse(body);
 
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
 
-    const { targetUserId, targetUsername } = parseResult.data;
+      const { targetUserId, targetUsername } = parseResult.data;
 
-    // Can't follow yourself
-    if (user.userId === targetUserId) {
-      return NextResponse.json(
-        { success: false, error: 'You cannot follow yourself' },
-        { status: 400 }
-      );
-    }
+      // Can't follow yourself
+      if (user.userId === targetUserId) {
+        return NextResponse.json(
+          { success: false, error: 'You cannot follow yourself' },
+          { status: 400 }
+        );
+      }
 
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
+      const db = getAdminDb();
+      if (!db) {
+        return NextResponse.json(
+          { success: false, error: 'Database not configured' },
+          { status: 500 }
+        );
+      }
 
-    // Rate limiting check
-    const rateLimit = checkRateLimit(user.userId, RATE_LIMITS.follows);
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Rate limit exceeded',
-          message: 'You are following too frequently. Please slow down.',
-          retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
-        },
-        {
-          status: 429,
-          headers: getRateLimitHeaders(rateLimit),
-        }
-      );
-    }
+      // Rate limiting check
+      const rateLimit = checkRateLimit(user.userId, RATE_LIMITS.follows);
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Rate limit exceeded',
+            message: 'You are following too frequently. Please slow down.',
+            retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
+          },
+          {
+            status: 429,
+            headers: getRateLimitHeaders(rateLimit),
+          }
+        );
+      }
 
-    const followId = createFollowId(user.userId, targetUserId);
-    const followRef = db.collection('soft_follows').doc(followId);
-    const followDoc = await followRef.get();
+      const followId = createFollowId(user.userId, targetUserId);
+      const followRef = db.collection('soft_follows').doc(followId);
+      const followDoc = await followRef.get();
 
-    let isFollowing: boolean;
-    const now = new Date();
+      let isFollowing: boolean;
+      const now = new Date();
 
-    if (followDoc.exists) {
-      // Unfollow
-      await followRef.delete();
-      isFollowing = false;
-      await updateFollowCounts(db, user.userId, targetUserId, -1);
-    } else {
-      // Follow
-      await followRef.set({
-        followerId: user.userId,
-        followerUsername: user.username,
-        followedId: targetUserId,
-        followedUsername: targetUsername,
-        createdAt: now,
+      if (followDoc.exists) {
+        // Unfollow
+        await followRef.delete();
+        isFollowing = false;
+        await updateFollowCounts(db, user.userId, targetUserId, -1);
+      } else {
+        // Follow
+        await followRef.set({
+          followerId: user.userId,
+          followerUsername: user.username,
+          followedId: targetUserId,
+          followedUsername: targetUsername,
+          createdAt: now,
+        });
+        isFollowing = true;
+        await updateFollowCounts(db, user.userId, targetUserId, 1);
+
+        // Create notification for the followed user
+        await db.collection('soft_notifications').add({
+          recipientId: targetUserId,
+          type: 'follow',
+          title: 'New Follower',
+          message: `${user.username} started following you`,
+          sourceUserId: user.userId,
+          sourceUsername: user.username,
+          data: {},
+          read: false,
+          createdAt: now,
+        });
+      }
+
+      // Update user's lastActiveAt timestamp
+      await updateUserLastActiveAt(user.userId);
+
+      // Get updated follower count for target user
+      const followerCountSnapshot = await db
+        .collection('soft_follows')
+        .where('followedId', '==', targetUserId)
+        .count()
+        .get();
+
+      return NextResponse.json({
+        success: true,
+        isFollowing,
+        followerCount: followerCountSnapshot.data().count,
       });
-      isFollowing = true;
-      await updateFollowCounts(db, user.userId, targetUserId, 1);
-
-      // Create notification for the followed user
-      await db.collection('soft_notifications').add({
-        recipientId: targetUserId,
-        type: 'follow',
-        title: 'New Follower',
-        message: `${user.username} started following you`,
-        sourceUserId: user.userId,
-        sourceUsername: user.username,
-        data: {},
-        read: false,
-        createdAt: now,
-      });
+    } catch (error) {
+      return ctx.handleError(error);
     }
-
-    // Update user's lastActiveAt timestamp
-    await updateUserLastActiveAt(user.userId);
-
-    // Get updated follower count for target user
-    const followerCountSnapshot = await db
-      .collection('soft_follows')
-      .where('followedId', '==', targetUserId)
-      .count()
-      .get();
-
-    return NextResponse.json({
-      success: true,
-      isFollowing,
-      followerCount: followerCountSnapshot.data().count,
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+  });
 }
 
 // ============================================
@@ -353,7 +332,7 @@ export async function PUT(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
   try {
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthenticatedUserFromSession(request);
 
     const body = await request.json();
     const parseResult = checkFollowSchema.safeParse(body);

@@ -14,6 +14,7 @@ import { cookies } from 'next/headers';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
+import { decryptSession } from '@/lib/api/session-auth';
 
 const SESSION_COOKIE_NAME = 'sb_session';
 const SESSION_MAX_AGE = 30 * 60; // 30 minutes in seconds
@@ -21,7 +22,6 @@ const SESSION_MAX_AGE = 30 * 60; // 30 minutes in seconds
 // Encryption configuration
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16; // 128 bits
-const AUTH_TAG_LENGTH = 16; // 128 bits
 
 /**
  * Get or generate the session encryption key.
@@ -73,59 +73,6 @@ function encryptSession(data: SessionData): string {
   // Combine IV + authTag + encrypted data, then base64 encode
   const combined = Buffer.concat([iv, authTag, encrypted]);
   return combined.toString('base64');
-}
-
-/**
- * Decrypt session data from cookie.
- * Returns null if decryption fails or data is invalid.
- */
-function decryptSession(encrypted: string): SessionData | null {
-  try {
-    const key = getEncryptionKey();
-    const combined = Buffer.from(encrypted, 'base64');
-
-    // Validate minimum length (IV + authTag + at least 1 byte of data)
-    if (combined.length < IV_LENGTH + AUTH_TAG_LENGTH + 1) {
-      console.warn(
-        '[Session API] Security: Invalid session token length - possible tampering attempt'
-      );
-      return null;
-    }
-
-    // Extract components
-    const iv = combined.subarray(0, IV_LENGTH);
-    const authTag = combined.subarray(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
-    const encryptedData = combined.subarray(IV_LENGTH + AUTH_TAG_LENGTH);
-
-    const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, key, iv);
-    decipher.setAuthTag(authTag);
-
-    const decrypted = Buffer.concat([decipher.update(encryptedData), decipher.final()]).toString(
-      'utf8'
-    );
-
-    const parsed = JSON.parse(decrypted);
-    const result = sessionSchema.safeParse(parsed);
-
-    if (!result.success) {
-      console.warn('[Session API] Security: Session data failed validation after decryption');
-      return null;
-    }
-
-    return result.data;
-  } catch (error) {
-    // Log security-relevant failures (tampering, corruption, expired keys)
-    if (error instanceof Error) {
-      if (error.message.includes('Unsupported state') || error.message.includes('auth tag')) {
-        console.warn(
-          '[Session API] Security: Session decryption failed - possible tampering attempt'
-        );
-      } else {
-        console.warn('[Session API] Security: Session decode failure:', error.message);
-      }
-    }
-    return null;
-  }
 }
 
 /**

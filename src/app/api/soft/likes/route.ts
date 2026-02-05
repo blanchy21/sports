@@ -4,6 +4,8 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
+import { withCsrfProtection } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { Firestore } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
@@ -43,31 +45,6 @@ const toggleLikeSchema = z.object({
 // ============================================
 // Helper Functions
 // ============================================
-
-async function getAuthenticatedUser(
-  request: NextRequest
-): Promise<{ userId: string; username: string } | null> {
-  const userId = request.headers.get('x-user-id');
-  if (!userId) {
-    return null;
-  }
-
-  try {
-    const db = getAdminDb();
-    if (!db) return null;
-
-    const profileDoc = await db.collection('profiles').doc(userId).get();
-    if (!profileDoc.exists) return null;
-
-    const data = profileDoc.data();
-    return {
-      userId: profileDoc.id,
-      username: data?.username ?? '',
-    };
-  } catch {
-    return null;
-  }
-}
 
 function createLikeId(userId: string, targetType: string, targetId: string): string {
   return `${userId}_${targetType}_${targetId}`;
@@ -110,7 +87,7 @@ export async function GET(request: NextRequest) {
 
     // Check if current user has liked (if authenticated)
     let hasLiked = false;
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthenticatedUserFromSession(request);
     if (user) {
       const likeId = createLikeId(user.userId, targetType, targetId);
       const likeDoc = await db.collection('soft_likes').doc(likeId).get();
@@ -132,105 +109,107 @@ export async function GET(request: NextRequest) {
 // ============================================
 
 export async function POST(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return unauthorizedError('Authentication required', ctx.requestId);
-    }
+    try {
+      const user = await getAuthenticatedUserFromSession(request);
+      if (!user) {
+        return unauthorizedError('Authentication required', ctx.requestId);
+      }
 
-    const body = await request.json();
-    const parseResult = toggleLikeSchema.safeParse(body);
+      const body = await request.json();
+      const parseResult = toggleLikeSchema.safeParse(body);
 
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
 
-    const { targetType, targetId } = parseResult.data;
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
+      const { targetType, targetId } = parseResult.data;
+      const db = getAdminDb();
+      if (!db) {
+        return NextResponse.json(
+          { success: false, error: 'Database not configured' },
+          { status: 500 }
+        );
+      }
 
-    // Rate limiting check
-    const rateLimit = checkRateLimit(user.userId, RATE_LIMITS.likes);
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Rate limit exceeded',
-          message: 'You are liking too frequently. Please slow down.',
-          retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
-        },
-        {
-          status: 429,
-          headers: getRateLimitHeaders(rateLimit),
-        }
-      );
-    }
+      // Rate limiting check
+      const rateLimit = checkRateLimit(user.userId, RATE_LIMITS.likes);
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Rate limit exceeded',
+            message: 'You are liking too frequently. Please slow down.',
+            retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
+          },
+          {
+            status: 429,
+            headers: getRateLimitHeaders(rateLimit),
+          }
+        );
+      }
 
-    const likeId = createLikeId(user.userId, targetType, targetId);
-    const likeRef = db.collection('soft_likes').doc(likeId);
-    const likeDoc = await likeRef.get();
+      const likeId = createLikeId(user.userId, targetType, targetId);
+      const likeRef = db.collection('soft_likes').doc(likeId);
+      const likeDoc = await likeRef.get();
 
-    let liked: boolean;
-    const now = new Date();
+      let liked: boolean;
+      const now = new Date();
 
-    if (likeDoc.exists) {
-      // Unlike - remove the like
-      await likeRef.delete();
-      liked = false;
+      if (likeDoc.exists) {
+        // Unlike - remove the like
+        await likeRef.delete();
+        liked = false;
 
-      // Decrement like count on target
-      await updateTargetLikeCount(db, targetType, targetId, -1);
-    } else {
-      // Like - add the like
-      await likeRef.set({
-        userId: user.userId,
-        targetType,
-        targetId,
-        createdAt: now,
+        // Decrement like count on target
+        await updateTargetLikeCount(db, targetType, targetId, -1);
+      } else {
+        // Like - add the like
+        await likeRef.set({
+          userId: user.userId,
+          targetType,
+          targetId,
+          createdAt: now,
+        });
+        liked = true;
+
+        // Increment like count on target
+        await updateTargetLikeCount(db, targetType, targetId, 1);
+
+        // Create notification for content owner
+        await createLikeNotification(db, user, targetType, targetId, now);
+      }
+
+      // Update user's lastActiveAt timestamp
+      await updateUserLastActiveAt(user.userId);
+
+      // Get updated like count
+      const likesSnapshot = await db
+        .collection('soft_likes')
+        .where('targetType', '==', targetType)
+        .where('targetId', '==', targetId)
+        .count()
+        .get();
+
+      const newLikeCount = likesSnapshot.data().count;
+
+      // Check if post just crossed the popularity threshold
+      // Only for posts (not comments) when adding a like
+      if (liked && targetType === 'post' && newLikeCount === POPULAR_POST_THRESHOLD) {
+        await createPopularPostNotification(db, targetType, targetId, newLikeCount, now);
+      }
+
+      return NextResponse.json({
+        success: true,
+        liked,
+        likeCount: newLikeCount,
       });
-      liked = true;
-
-      // Increment like count on target
-      await updateTargetLikeCount(db, targetType, targetId, 1);
-
-      // Create notification for content owner
-      await createLikeNotification(db, user, targetType, targetId, now);
+    } catch (error) {
+      return ctx.handleError(error);
     }
-
-    // Update user's lastActiveAt timestamp
-    await updateUserLastActiveAt(user.userId);
-
-    // Get updated like count
-    const likesSnapshot = await db
-      .collection('soft_likes')
-      .where('targetType', '==', targetType)
-      .where('targetId', '==', targetId)
-      .count()
-      .get();
-
-    const newLikeCount = likesSnapshot.data().count;
-
-    // Check if post just crossed the popularity threshold
-    // Only for posts (not comments) when adding a like
-    if (liked && targetType === 'post' && newLikeCount === POPULAR_POST_THRESHOLD) {
-      await createPopularPostNotification(db, targetType, targetId, newLikeCount, now);
-    }
-
-    return NextResponse.json({
-      success: true,
-      liked,
-      likeCount: newLikeCount,
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+  });
 }
 
 // ============================================
@@ -261,7 +240,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const { targets } = parseResult.data;
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthenticatedUserFromSession(request);
     const db = getAdminDb();
     if (!db) {
       return NextResponse.json(

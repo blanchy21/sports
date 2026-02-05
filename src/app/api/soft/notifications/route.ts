@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
+import { withCsrfProtection } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -64,35 +66,6 @@ const deleteNotificationsSchema = z.object({
 });
 
 // ============================================
-// Helper Functions
-// ============================================
-
-async function getAuthenticatedUser(
-  request: NextRequest
-): Promise<{ userId: string; username: string } | null> {
-  const userId = request.headers.get('x-user-id');
-  if (!userId) {
-    return null;
-  }
-
-  try {
-    const db = getAdminDb();
-    if (!db) return null;
-
-    const profileDoc = await db.collection('profiles').doc(userId).get();
-    if (!profileDoc.exists) return null;
-
-    const data = profileDoc.data();
-    return {
-      userId: profileDoc.id,
-      username: data?.username ?? '',
-    };
-  } catch {
-    return null;
-  }
-}
-
-// ============================================
 // GET /api/soft/notifications - Fetch user's notifications
 // ============================================
 
@@ -100,7 +73,7 @@ export async function GET(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
   try {
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthenticatedUserFromSession(request);
     if (!user) {
       return unauthorizedError('Authentication required', ctx.requestId);
     }
@@ -192,88 +165,90 @@ export async function GET(request: NextRequest) {
 // ============================================
 
 export async function POST(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return unauthorizedError('Authentication required', ctx.requestId);
-    }
+    try {
+      const user = await getAuthenticatedUserFromSession(request);
+      if (!user) {
+        return unauthorizedError('Authentication required', ctx.requestId);
+      }
 
-    const body = await request.json();
-    const parseResult = markReadSchema.safeParse(body);
+      const body = await request.json();
+      const parseResult = markReadSchema.safeParse(body);
 
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
 
-    const { notificationIds, markAllRead } = parseResult.data;
+      const { notificationIds, markAllRead } = parseResult.data;
 
-    if (!notificationIds && !markAllRead) {
-      return validationError(
-        'Either notificationIds or markAllRead must be provided',
-        ctx.requestId
-      );
-    }
+      if (!notificationIds && !markAllRead) {
+        return validationError(
+          'Either notificationIds or markAllRead must be provided',
+          ctx.requestId
+        );
+      }
 
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
+      const db = getAdminDb();
+      if (!db) {
+        return NextResponse.json(
+          { success: false, error: 'Database not configured' },
+          { status: 500 }
+        );
+      }
 
-    let updatedCount = 0;
+      let updatedCount = 0;
 
-    if (markAllRead) {
-      // Mark all unread notifications as read
-      const unreadSnapshot = await db
+      if (markAllRead) {
+        // Mark all unread notifications as read
+        const unreadSnapshot = await db
+          .collection('soft_notifications')
+          .where('recipientId', '==', user.userId)
+          .where('read', '==', false)
+          .get();
+
+        const batch = db.batch();
+        unreadSnapshot.forEach((doc) => {
+          batch.update(doc.ref, { read: true });
+          updatedCount++;
+        });
+        await batch.commit();
+      } else if (notificationIds) {
+        // Mark specific notifications as read
+        const batch = db.batch();
+
+        for (const notificationId of notificationIds) {
+          const notificationRef = db.collection('soft_notifications').doc(notificationId);
+          const notificationDoc = await notificationRef.get();
+
+          // Only update if notification exists and belongs to user
+          if (notificationDoc.exists && notificationDoc.data()?.recipientId === user.userId) {
+            batch.update(notificationRef, { read: true });
+            updatedCount++;
+          }
+        }
+
+        await batch.commit();
+      }
+
+      // Get new unread count
+      const unreadCountSnapshot = await db
         .collection('soft_notifications')
         .where('recipientId', '==', user.userId)
         .where('read', '==', false)
+        .count()
         .get();
 
-      const batch = db.batch();
-      unreadSnapshot.forEach((doc) => {
-        batch.update(doc.ref, { read: true });
-        updatedCount++;
+      return NextResponse.json({
+        success: true,
+        updatedCount,
+        unreadCount: unreadCountSnapshot.data().count,
       });
-      await batch.commit();
-    } else if (notificationIds) {
-      // Mark specific notifications as read
-      const batch = db.batch();
-
-      for (const notificationId of notificationIds) {
-        const notificationRef = db.collection('soft_notifications').doc(notificationId);
-        const notificationDoc = await notificationRef.get();
-
-        // Only update if notification exists and belongs to user
-        if (notificationDoc.exists && notificationDoc.data()?.recipientId === user.userId) {
-          batch.update(notificationRef, { read: true });
-          updatedCount++;
-        }
-      }
-
-      await batch.commit();
+    } catch (error) {
+      return ctx.handleError(error);
     }
-
-    // Get new unread count
-    const unreadCountSnapshot = await db
-      .collection('soft_notifications')
-      .where('recipientId', '==', user.userId)
-      .where('read', '==', false)
-      .count()
-      .get();
-
-    return NextResponse.json({
-      success: true,
-      updatedCount,
-      unreadCount: unreadCountSnapshot.data().count,
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+  });
 }
 
 // ============================================
@@ -281,77 +256,79 @@ export async function POST(request: NextRequest) {
 // ============================================
 
 export async function DELETE(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return unauthorizedError('Authentication required', ctx.requestId);
-    }
-
-    const body = await request.json();
-    const parseResult = deleteNotificationsSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
-
-    const { notificationIds, deleteAllRead } = parseResult.data;
-
-    if (!notificationIds && !deleteAllRead) {
-      return validationError(
-        'Either notificationIds or deleteAllRead must be provided',
-        ctx.requestId
-      );
-    }
-
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
-
-    let deletedCount = 0;
-
-    if (deleteAllRead) {
-      // Delete all read notifications
-      const readSnapshot = await db
-        .collection('soft_notifications')
-        .where('recipientId', '==', user.userId)
-        .where('read', '==', true)
-        .get();
-
-      const batch = db.batch();
-      readSnapshot.forEach((doc) => {
-        batch.delete(doc.ref);
-        deletedCount++;
-      });
-      await batch.commit();
-    } else if (notificationIds) {
-      // Delete specific notifications
-      const batch = db.batch();
-
-      for (const notificationId of notificationIds) {
-        const notificationRef = db.collection('soft_notifications').doc(notificationId);
-        const notificationDoc = await notificationRef.get();
-
-        // Only delete if notification exists and belongs to user
-        if (notificationDoc.exists && notificationDoc.data()?.recipientId === user.userId) {
-          batch.delete(notificationRef);
-          deletedCount++;
-        }
+    try {
+      const user = await getAuthenticatedUserFromSession(request);
+      if (!user) {
+        return unauthorizedError('Authentication required', ctx.requestId);
       }
 
-      await batch.commit();
-    }
+      const body = await request.json();
+      const parseResult = deleteNotificationsSchema.safeParse(body);
 
-    return NextResponse.json({
-      success: true,
-      deletedCount,
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
+
+      const { notificationIds, deleteAllRead } = parseResult.data;
+
+      if (!notificationIds && !deleteAllRead) {
+        return validationError(
+          'Either notificationIds or deleteAllRead must be provided',
+          ctx.requestId
+        );
+      }
+
+      const db = getAdminDb();
+      if (!db) {
+        return NextResponse.json(
+          { success: false, error: 'Database not configured' },
+          { status: 500 }
+        );
+      }
+
+      let deletedCount = 0;
+
+      if (deleteAllRead) {
+        // Delete all read notifications
+        const readSnapshot = await db
+          .collection('soft_notifications')
+          .where('recipientId', '==', user.userId)
+          .where('read', '==', true)
+          .get();
+
+        const batch = db.batch();
+        readSnapshot.forEach((doc) => {
+          batch.delete(doc.ref);
+          deletedCount++;
+        });
+        await batch.commit();
+      } else if (notificationIds) {
+        // Delete specific notifications
+        const batch = db.batch();
+
+        for (const notificationId of notificationIds) {
+          const notificationRef = db.collection('soft_notifications').doc(notificationId);
+          const notificationDoc = await notificationRef.get();
+
+          // Only delete if notification exists and belongs to user
+          if (notificationDoc.exists && notificationDoc.data()?.recipientId === user.userId) {
+            batch.delete(notificationRef);
+            deletedCount++;
+          }
+        }
+
+        await batch.commit();
+      }
+
+      return NextResponse.json({
+        success: true,
+        deletedCount,
+      });
+    } catch (error) {
+      return ctx.handleError(error);
+    }
+  });
 }

@@ -11,6 +11,7 @@ import {
   forbiddenError,
 } from '@/lib/api/response';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
 
 export const runtime = 'nodejs';
@@ -27,7 +28,11 @@ const WARNING_THRESHOLD = 40;
 // ============================================
 
 const getPostsQuerySchema = z.object({
-  limit: z.string().optional().transform((val) => val ? parseInt(val, 10) : 20).pipe(z.number().int().min(1).max(100)),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 20))
+    .pipe(z.number().int().min(1).max(100)),
   authorId: z.string().min(1).optional(),
   communityId: z.string().min(1).optional(),
 });
@@ -40,22 +45,29 @@ const createPostSchema = z.object({
   authorAvatar: z.string().url('Invalid avatar URL').optional().nullable(),
 
   // Content
-  title: z.string()
+  title: z
+    .string()
     .min(1, 'Title is required')
     .max(255, 'Title must be 255 characters or less')
     .transform((val) => val.trim()),
-  content: z.string()
+  content: z
+    .string()
     .min(1, 'Content is required')
     .max(50000, 'Content too long')
     .transform((val) => val.trim()),
 
   // Metadata
-  tags: z.array(
-    z.string()
-      .min(1)
-      .max(50, 'Tag too long')
-      .regex(/^[a-z0-9-]+$/, 'Tags must be lowercase alphanumeric with hyphens')
-  ).max(10, 'Maximum 10 tags allowed').optional().default([]),
+  tags: z
+    .array(
+      z
+        .string()
+        .min(1)
+        .max(50, 'Tag too long')
+        .regex(/^[a-z0-9-]+$/, 'Tags must be lowercase alphanumeric with hyphens')
+    )
+    .max(10, 'Maximum 10 tags allowed')
+    .optional()
+    .default([]),
   sportCategory: z.string().max(50, 'Category too long').optional(),
   featuredImage: z.string().url('Invalid featured image URL').optional().nullable(),
 
@@ -136,13 +148,14 @@ export async function POST(request: NextRequest) {
 
       const data = parseResult.data;
 
-      // Authorization check: Verify user identity
-      // The client should pass the authenticated user's ID in a header
-      const authenticatedUserId = request.headers.get('x-user-id');
+      // Authorization check: Verify user identity from session cookie
+      const sessionUser = await getAuthenticatedUserFromSession(request);
 
-      if (!authenticatedUserId) {
-        return unauthorizedError('Authentication required. Please provide x-user-id header.', ctx.requestId);
+      if (!sessionUser) {
+        return unauthorizedError('Authentication required', ctx.requestId);
       }
+
+      const authenticatedUserId = sessionUser.userId;
 
       // Verify the authenticated user matches the author
       if (authenticatedUserId !== data.authorId) {
@@ -234,13 +247,17 @@ export async function POST(request: NextRequest) {
       }
 
       // Generate a unique permlink
-      const permlink = `${data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50)}-${Date.now()}`;
+      const permlink = `${data.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .slice(0, 50)}-${Date.now()}`;
 
       // Generate excerpt from content (first 200 chars, strip markdown)
-      const excerpt = data.content
-        .replace(/[#*_`~\[\]()>]/g, '')
-        .substring(0, 200)
-        .trim() + (data.content.length > 200 ? '...' : '');
+      const excerpt =
+        data.content
+          .replace(/[#*_`~\[\]()>]/g, '')
+          .substring(0, 200)
+          .trim() + (data.content.length > 200 ? '...' : '');
 
       const postData = {
         authorId: data.authorId,

@@ -4,6 +4,8 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
+import { withCsrfProtection } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -60,37 +62,6 @@ const updateCommentSchema = z.object({
 const deleteCommentSchema = z.object({
   commentId: z.string().min(1),
 });
-
-// ============================================
-// Helper Functions
-// ============================================
-
-async function getAuthenticatedUser(
-  request: NextRequest
-): Promise<{ userId: string; username: string; displayName?: string; avatar?: string } | null> {
-  const userId = request.headers.get('x-user-id');
-  if (!userId) {
-    return null;
-  }
-
-  try {
-    const db = getAdminDb();
-    if (!db) return null;
-
-    const profileDoc = await db.collection('profiles').doc(userId).get();
-    if (!profileDoc.exists) return null;
-
-    const data = profileDoc.data();
-    return {
-      userId: profileDoc.id,
-      username: data?.username ?? '',
-      displayName: data?.displayName,
-      avatar: data?.avatarUrl,
-    };
-  } catch {
-    return null;
-  }
-}
 
 // ============================================
 // GET /api/soft/comments - Fetch comments for a post
@@ -180,174 +151,177 @@ export async function GET(request: NextRequest) {
 // ============================================
 
 export async function POST(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return unauthorizedError('Authentication required', ctx.requestId);
-    }
-
-    const body = await request.json();
-    const parseResult = createCommentSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
-
-    const { postId, postPermlink, parentCommentId, body: commentBody } = parseResult.data;
-
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
-
-    // Rate limiting check
-    const rateLimit = checkRateLimit(user.userId, RATE_LIMITS.comments);
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Rate limit exceeded',
-          message: 'You are commenting too frequently. Please wait before posting another comment.',
-          retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
-        },
-        {
-          status: 429,
-          headers: getRateLimitHeaders(rateLimit),
-        }
-      );
-    }
-
-    // Check comment limit (200 per user)
-    const userCommentsCount = await db
-      .collection('soft_comments')
-      .where('authorId', '==', user.userId)
-      .where('isDeleted', '==', false)
-      .count()
-      .get();
-
-    if (userCommentsCount.data().count >= 200) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Comment limit reached',
-          message:
-            'You have reached the maximum of 200 comments. Upgrade to Hive for unlimited comments.',
-          upgradeRequired: true,
-        },
-        { status: 403 }
-      );
-    }
-
-    const now = new Date();
-    const commentData = {
-      postId,
-      postPermlink,
-      authorId: user.userId,
-      authorUsername: user.username,
-      authorDisplayName: user.displayName || null,
-      authorAvatar: user.avatar || null,
-      parentCommentId: parentCommentId || null,
-      body: commentBody,
-      createdAt: now,
-      updatedAt: now,
-      likeCount: 0,
-      isDeleted: false,
-    };
-
-    const docRef = await db.collection('soft_comments').add(commentData);
-
-    // Update user's lastActiveAt timestamp
-    await updateUserLastActiveAt(user.userId);
-
-    // Update comment count on the post if it's a soft post
-    if (postId.startsWith('soft-') || !postId.includes('-')) {
-      const actualPostId = postId.replace('soft-', '');
-      const postRef = db.collection('soft_posts').doc(actualPostId);
-      const postDoc = await postRef.get();
-      if (postDoc.exists) {
-        await postRef.update({
-          commentCount: (postDoc.data()?.commentCount || 0) + 1,
-        });
+    try {
+      const user = await getAuthenticatedUserFromSession(request, { includeProfile: true });
+      if (!user) {
+        return unauthorizedError('Authentication required', ctx.requestId);
       }
-    }
 
-    // Create notification for post author (if different from commenter)
-    const postDoc = await db.collection('soft_posts').doc(postId.replace('soft-', '')).get();
-    if (postDoc.exists) {
-      const postData = postDoc.data();
-      if (postData?.authorId && postData.authorId !== user.userId) {
-        await db.collection('soft_notifications').add({
-          recipientId: postData.authorId,
-          type: 'comment',
-          title: 'New Comment',
-          message: `${user.username} commented on your post`,
-          sourceUserId: user.userId,
-          sourceUsername: user.username,
-          data: {
-            postId,
-            postPermlink,
-            commentId: docRef.id,
+      const body = await request.json();
+      const parseResult = createCommentSchema.safeParse(body);
+
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
+
+      const { postId, postPermlink, parentCommentId, body: commentBody } = parseResult.data;
+
+      const db = getAdminDb();
+      if (!db) {
+        return NextResponse.json(
+          { success: false, error: 'Database not configured' },
+          { status: 500 }
+        );
+      }
+
+      // Rate limiting check
+      const rateLimit = checkRateLimit(user.userId, RATE_LIMITS.comments);
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Rate limit exceeded',
+            message:
+              'You are commenting too frequently. Please wait before posting another comment.',
+            retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
           },
-          read: false,
-          createdAt: now,
-        });
+          {
+            status: 429,
+            headers: getRateLimitHeaders(rateLimit),
+          }
+        );
       }
-    }
 
-    // If this is a reply, notify the parent comment author
-    if (parentCommentId) {
-      const parentDoc = await db.collection('soft_comments').doc(parentCommentId).get();
-      if (parentDoc.exists) {
-        const parentData = parentDoc.data();
-        if (parentData?.authorId && parentData.authorId !== user.userId) {
+      // Check comment limit (200 per user)
+      const userCommentsCount = await db
+        .collection('soft_comments')
+        .where('authorId', '==', user.userId)
+        .where('isDeleted', '==', false)
+        .count()
+        .get();
+
+      if (userCommentsCount.data().count >= 200) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Comment limit reached',
+            message:
+              'You have reached the maximum of 200 comments. Upgrade to Hive for unlimited comments.',
+            upgradeRequired: true,
+          },
+          { status: 403 }
+        );
+      }
+
+      const now = new Date();
+      const commentData = {
+        postId,
+        postPermlink,
+        authorId: user.userId,
+        authorUsername: user.username,
+        authorDisplayName: user.displayName || null,
+        authorAvatar: user.avatar || null,
+        parentCommentId: parentCommentId || null,
+        body: commentBody,
+        createdAt: now,
+        updatedAt: now,
+        likeCount: 0,
+        isDeleted: false,
+      };
+
+      const docRef = await db.collection('soft_comments').add(commentData);
+
+      // Update user's lastActiveAt timestamp
+      await updateUserLastActiveAt(user.userId);
+
+      // Update comment count on the post if it's a soft post
+      if (postId.startsWith('soft-') || !postId.includes('-')) {
+        const actualPostId = postId.replace('soft-', '');
+        const postRef = db.collection('soft_posts').doc(actualPostId);
+        const postDoc = await postRef.get();
+        if (postDoc.exists) {
+          await postRef.update({
+            commentCount: (postDoc.data()?.commentCount || 0) + 1,
+          });
+        }
+      }
+
+      // Create notification for post author (if different from commenter)
+      const postDoc = await db.collection('soft_posts').doc(postId.replace('soft-', '')).get();
+      if (postDoc.exists) {
+        const postData = postDoc.data();
+        if (postData?.authorId && postData.authorId !== user.userId) {
           await db.collection('soft_notifications').add({
-            recipientId: parentData.authorId,
-            type: 'reply',
-            title: 'New Reply',
-            message: `${user.username} replied to your comment`,
+            recipientId: postData.authorId,
+            type: 'comment',
+            title: 'New Comment',
+            message: `${user.username} commented on your post`,
             sourceUserId: user.userId,
             sourceUsername: user.username,
             data: {
               postId,
               postPermlink,
               commentId: docRef.id,
-              parentCommentId,
             },
             read: false,
             createdAt: now,
           });
         }
       }
+
+      // If this is a reply, notify the parent comment author
+      if (parentCommentId) {
+        const parentDoc = await db.collection('soft_comments').doc(parentCommentId).get();
+        if (parentDoc.exists) {
+          const parentData = parentDoc.data();
+          if (parentData?.authorId && parentData.authorId !== user.userId) {
+            await db.collection('soft_notifications').add({
+              recipientId: parentData.authorId,
+              type: 'reply',
+              title: 'New Reply',
+              message: `${user.username} replied to your comment`,
+              sourceUserId: user.userId,
+              sourceUsername: user.username,
+              data: {
+                postId,
+                postPermlink,
+                commentId: docRef.id,
+                parentCommentId,
+              },
+              read: false,
+              createdAt: now,
+            });
+          }
+        }
+      }
+
+      const comment: SoftComment = {
+        id: docRef.id,
+        postId,
+        postPermlink,
+        authorId: user.userId,
+        authorUsername: user.username,
+        authorDisplayName: user.displayName,
+        authorAvatar: user.avatar,
+        parentCommentId: parentCommentId || undefined,
+        body: commentBody,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        likeCount: 0,
+        isDeleted: false,
+      };
+
+      return NextResponse.json({
+        success: true,
+        comment,
+      });
+    } catch (error) {
+      return ctx.handleError(error);
     }
-
-    const comment: SoftComment = {
-      id: docRef.id,
-      postId,
-      postPermlink,
-      authorId: user.userId,
-      authorUsername: user.username,
-      authorDisplayName: user.displayName,
-      authorAvatar: user.avatar,
-      parentCommentId: parentCommentId || undefined,
-      body: commentBody,
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-      likeCount: 0,
-      isDeleted: false,
-    };
-
-    return NextResponse.json({
-      success: true,
-      comment,
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+  });
 }
 
 // ============================================
@@ -355,71 +329,73 @@ export async function POST(request: NextRequest) {
 // ============================================
 
 export async function PATCH(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return unauthorizedError('Authentication required', ctx.requestId);
-    }
+    try {
+      const user = await getAuthenticatedUserFromSession(request, { includeProfile: true });
+      if (!user) {
+        return unauthorizedError('Authentication required', ctx.requestId);
+      }
 
-    const body = await request.json();
-    const parseResult = updateCommentSchema.safeParse(body);
+      const body = await request.json();
+      const parseResult = updateCommentSchema.safeParse(body);
 
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
 
-    const { commentId, body: newBody } = parseResult.data;
+      const { commentId, body: newBody } = parseResult.data;
 
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
+      const db = getAdminDb();
+      if (!db) {
+        return NextResponse.json(
+          { success: false, error: 'Database not configured' },
+          { status: 500 }
+        );
+      }
 
-    const commentRef = db.collection('soft_comments').doc(commentId);
-    const commentDoc = await commentRef.get();
+      const commentRef = db.collection('soft_comments').doc(commentId);
+      const commentDoc = await commentRef.get();
 
-    if (!commentDoc.exists) {
-      return NextResponse.json({ success: false, error: 'Comment not found' }, { status: 404 });
-    }
+      if (!commentDoc.exists) {
+        return NextResponse.json({ success: false, error: 'Comment not found' }, { status: 404 });
+      }
 
-    const commentData = commentDoc.data();
-    if (commentData?.authorId !== user.userId) {
-      return NextResponse.json(
-        { success: false, error: 'You can only edit your own comments' },
-        { status: 403 }
-      );
-    }
+      const commentData = commentDoc.data();
+      if (commentData?.authorId !== user.userId) {
+        return NextResponse.json(
+          { success: false, error: 'You can only edit your own comments' },
+          { status: 403 }
+        );
+      }
 
-    if (commentData?.isDeleted) {
-      return NextResponse.json(
-        { success: false, error: 'Cannot edit a deleted comment' },
-        { status: 400 }
-      );
-    }
+      if (commentData?.isDeleted) {
+        return NextResponse.json(
+          { success: false, error: 'Cannot edit a deleted comment' },
+          { status: 400 }
+        );
+      }
 
-    const now = new Date();
-    await commentRef.update({
-      body: newBody,
-      updatedAt: now,
-    });
-
-    return NextResponse.json({
-      success: true,
-      comment: {
-        ...commentData,
-        id: commentId,
+      const now = new Date();
+      await commentRef.update({
         body: newBody,
-        updatedAt: now.toISOString(),
-      },
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+        updatedAt: now,
+      });
+
+      return NextResponse.json({
+        success: true,
+        comment: {
+          ...commentData,
+          id: commentId,
+          body: newBody,
+          updatedAt: now.toISOString(),
+        },
+      });
+    } catch (error) {
+      return ctx.handleError(error);
+    }
+  });
 }
 
 // ============================================
@@ -427,72 +403,74 @@ export async function PATCH(request: NextRequest) {
 // ============================================
 
 export async function DELETE(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return unauthorizedError('Authentication required', ctx.requestId);
-    }
-
-    const body = await request.json();
-    const parseResult = deleteCommentSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
-
-    const { commentId } = parseResult.data;
-
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
-
-    const commentRef = db.collection('soft_comments').doc(commentId);
-    const commentDoc = await commentRef.get();
-
-    if (!commentDoc.exists) {
-      return NextResponse.json({ success: false, error: 'Comment not found' }, { status: 404 });
-    }
-
-    const commentData = commentDoc.data();
-    if (commentData?.authorId !== user.userId) {
-      return NextResponse.json(
-        { success: false, error: 'You can only delete your own comments' },
-        { status: 403 }
-      );
-    }
-
-    // Soft delete - mark as deleted but keep for reference
-    await commentRef.update({
-      isDeleted: true,
-      body: '[deleted]',
-      updatedAt: new Date(),
-    });
-
-    // Decrement comment count on the post
-    const postId = commentData?.postId;
-    if (postId && (postId.startsWith('soft-') || !postId.includes('-'))) {
-      const actualPostId = postId.replace('soft-', '');
-      const postRef = db.collection('soft_posts').doc(actualPostId);
-      const postDoc = await postRef.get();
-      if (postDoc.exists) {
-        const currentCount = postDoc.data()?.commentCount || 0;
-        await postRef.update({
-          commentCount: Math.max(0, currentCount - 1),
-        });
+    try {
+      const user = await getAuthenticatedUserFromSession(request, { includeProfile: true });
+      if (!user) {
+        return unauthorizedError('Authentication required', ctx.requestId);
       }
-    }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Comment deleted',
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+      const body = await request.json();
+      const parseResult = deleteCommentSchema.safeParse(body);
+
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
+
+      const { commentId } = parseResult.data;
+
+      const db = getAdminDb();
+      if (!db) {
+        return NextResponse.json(
+          { success: false, error: 'Database not configured' },
+          { status: 500 }
+        );
+      }
+
+      const commentRef = db.collection('soft_comments').doc(commentId);
+      const commentDoc = await commentRef.get();
+
+      if (!commentDoc.exists) {
+        return NextResponse.json({ success: false, error: 'Comment not found' }, { status: 404 });
+      }
+
+      const commentData = commentDoc.data();
+      if (commentData?.authorId !== user.userId) {
+        return NextResponse.json(
+          { success: false, error: 'You can only delete your own comments' },
+          { status: 403 }
+        );
+      }
+
+      // Soft delete - mark as deleted but keep for reference
+      await commentRef.update({
+        isDeleted: true,
+        body: '[deleted]',
+        updatedAt: new Date(),
+      });
+
+      // Decrement comment count on the post
+      const postId = commentData?.postId;
+      if (postId && (postId.startsWith('soft-') || !postId.includes('-'))) {
+        const actualPostId = postId.replace('soft-', '');
+        const postRef = db.collection('soft_posts').doc(actualPostId);
+        const postDoc = await postRef.get();
+        if (postDoc.exists) {
+          const currentCount = postDoc.data()?.commentCount || 0;
+          await postRef.update({
+            commentCount: Math.max(0, currentCount - 1),
+          });
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Comment deleted',
+      });
+    } catch (error) {
+      return ctx.handleError(error);
+    }
+  });
 }
