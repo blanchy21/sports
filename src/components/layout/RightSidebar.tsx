@@ -39,6 +39,17 @@ export const RightSidebar: React.FC = () => {
   const authorUsernames = topAuthors.map((a) => a.username);
   const { data: followStatusMap } = useBatchFollowStatus(authorUsernames, hiveFollower);
 
+  // Filter out authors the user already follows (for Hive-authenticated users)
+  const suggestedAuthors =
+    hiveFollower && followStatusMap
+      ? topAuthors.filter(
+          (a) =>
+            a.username !== user?.username &&
+            a.username !== user?.hiveUsername &&
+            !followStatusMap[a.username]
+        )
+      : topAuthors;
+
   // Follow button component - receives follow state as prop from batch query
   const FollowButton: React.FC<{ username: string; isFollowing: boolean }> = ({
     username,
@@ -199,10 +210,10 @@ export const RightSidebar: React.FC = () => {
               <AlertCircle className="h-4 w-4" />
               <span className="text-sm">Unable to load authors</span>
             </div>
-          ) : topAuthors.length > 0 ? (
+          ) : suggestedAuthors.length > 0 ? (
             <>
               <div className="space-y-3">
-                {topAuthors.map((author) => (
+                {suggestedAuthors.map((author) => (
                   <div
                     key={author.id}
                     className="flex cursor-pointer items-center space-x-3 rounded-md p-2 transition-colors hover:bg-accent"
@@ -219,14 +230,9 @@ export const RightSidebar: React.FC = () => {
                         @{author.username} • {author.posts} posts
                       </div>
                     </div>
-                    {user?.isHiveAuth &&
-                      author.username !== user?.username &&
-                      author.username !== user?.hiveUsername && (
-                        <FollowButton
-                          username={author.username}
-                          isFollowing={followStatusMap?.[author.username] ?? false}
-                        />
-                      )}
+                    {user?.isHiveAuth && (
+                      <FollowButton username={author.username} isFollowing={false} />
+                    )}
                   </div>
                 ))}
               </div>
