@@ -179,14 +179,21 @@ export async function GET(request: NextRequest) {
     const hiveBites = page.filter((s) => s.source !== 'soft');
     const softBites = page.filter((s) => s.source === 'soft');
 
-    return NextResponse.json({
-      success: true,
-      sportsbites: page,
-      hasMore,
-      nextCursor,
-      count: page.length,
-      sources: { hive: hiveBites.length, soft: softBites.length },
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        sportsbites: page,
+        hasMore,
+        nextCursor,
+        count: page.length,
+        sources: { hive: hiveBites.length, soft: softBites.length },
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        },
+      }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

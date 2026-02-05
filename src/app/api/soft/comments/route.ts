@@ -137,11 +137,18 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    return NextResponse.json({
-      success: true,
-      comments,
-      count: comments.length,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        comments,
+        count: comments.length,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        },
+      }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

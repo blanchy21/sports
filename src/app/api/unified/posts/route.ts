@@ -345,6 +345,10 @@ export async function GET(request: NextRequest) {
 
     const allPosts: UnifiedPost[] = [];
 
+    const cacheHeaders = {
+      'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+    };
+
     // If authorId is provided, only fetch soft posts
     if (authorId) {
       if (includeSoft) {
@@ -352,13 +356,16 @@ export async function GET(request: NextRequest) {
         allPosts.push(...softPosts.map(softPostToUnified));
       }
 
-      return NextResponse.json({
-        success: true,
-        posts: allPosts.slice(0, limit),
-        count: allPosts.length,
-        hasMore: allPosts.length > limit,
-        sources: { hive: 0, soft: allPosts.length },
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          posts: allPosts.slice(0, limit),
+          count: allPosts.length,
+          hasMore: allPosts.length > limit,
+          sources: { hive: 0, soft: allPosts.length },
+        },
+        { headers: cacheHeaders }
+      );
     }
 
     // If username is provided, check both systems
@@ -418,14 +425,17 @@ export async function GET(request: NextRequest) {
       const hivePosts = allPosts.filter((p) => p.source === 'hive');
       const softPosts = allPosts.filter((p) => p.source === 'soft');
 
-      return NextResponse.json({
-        success: true,
-        posts: allPosts.slice(0, limit),
-        count: Math.min(allPosts.length, limit),
-        hasMore: allPosts.length > limit,
-        sources: { hive: hivePosts.length, soft: softPosts.length },
-        isSoftUser,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          posts: allPosts.slice(0, limit),
+          count: Math.min(allPosts.length, limit),
+          hasMore: allPosts.length > limit,
+          sources: { hive: hivePosts.length, soft: softPosts.length },
+          isSoftUser,
+        },
+        { headers: cacheHeaders }
+      );
     }
 
     // No username - fetch general feed
@@ -476,13 +486,16 @@ export async function GET(request: NextRequest) {
     const hivePosts = allPosts.filter((p) => p.source === 'hive');
     const softPosts = allPosts.filter((p) => p.source === 'soft');
 
-    return NextResponse.json({
-      success: true,
-      posts: allPosts.slice(0, limit),
-      count: Math.min(allPosts.length, limit),
-      hasMore: allPosts.length > limit,
-      sources: { hive: hivePosts.length, soft: softPosts.length },
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        posts: allPosts.slice(0, limit),
+        count: Math.min(allPosts.length, limit),
+        hasMore: allPosts.length > limit,
+        sources: { hive: hivePosts.length, soft: softPosts.length },
+      },
+      { headers: cacheHeaders }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

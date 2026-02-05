@@ -65,7 +65,7 @@ export function useHivePowerInfo(account: string | undefined) {
     queryFn: () => fetchPowerInfo(account!),
     enabled: !!account,
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // Refetch every minute
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes (HP changes infrequently)
   });
 }
 

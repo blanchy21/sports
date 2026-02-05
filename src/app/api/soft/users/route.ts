@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { FirebaseAuth, Profile } from '@/lib/firebase/auth';
-import {
-  createRequestContext,
-  validationError,
-  notFoundError,
-} from '@/lib/api/response';
+import { createRequestContext, validationError, notFoundError } from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,7 +16,11 @@ const getUsersQuerySchema = z.object({
   search: z.string().min(1).max(50).optional(),
   username: z.string().min(1).max(50).optional(),
   userId: z.string().min(1).optional(),
-  limit: z.string().optional().transform((val) => val ? parseInt(val, 10) : 10).pipe(z.number().int().min(1).max(50)),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 10))
+    .pipe(z.number().int().min(1).max(50)),
 });
 
 /**
@@ -81,6 +81,10 @@ export async function GET(request: NextRequest) {
 
     ctx.log.debug('Fetching soft users', { search, username, userId, limit });
 
+    const cacheHeaders = {
+      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+    };
+
     // Fetch by user ID
     if (userId) {
       const profile = await FirebaseAuth.getProfileById(userId);
@@ -89,10 +93,13 @@ export async function GET(request: NextRequest) {
         return notFoundError(`User with ID '${userId}' not found`, ctx.requestId);
       }
 
-      return NextResponse.json({
-        success: true,
-        user: profileToResponse(profile),
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          user: profileToResponse(profile),
+        },
+        { headers: cacheHeaders }
+      );
     }
 
     // Fetch by exact username
@@ -103,21 +110,27 @@ export async function GET(request: NextRequest) {
         return notFoundError(`User '${username}' not found`, ctx.requestId);
       }
 
-      return NextResponse.json({
-        success: true,
-        user: profileToResponse(profile),
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          user: profileToResponse(profile),
+        },
+        { headers: cacheHeaders }
+      );
     }
 
     // Search by username prefix
     if (search) {
       const profiles = await FirebaseAuth.searchProfiles(search, limit);
 
-      return NextResponse.json({
-        success: true,
-        users: profiles.map(profileToResponse),
-        count: profiles.length,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          users: profiles.map(profileToResponse),
+          count: profiles.length,
+        },
+        { headers: cacheHeaders }
+      );
     }
 
     // No valid query params provided

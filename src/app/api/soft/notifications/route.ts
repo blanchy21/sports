@@ -105,21 +105,17 @@ export async function GET(request: NextRequest) {
       query = query.where('read', '==', false);
     }
 
-    // Get total count for pagination
-    const countSnapshot = await db
-      .collection('soft_notifications')
-      .where('recipientId', '==', user.userId)
-      .count()
-      .get();
+    // Get total count and unread count in parallel
+    const [countSnapshot, unreadCountSnapshot] = await Promise.all([
+      db.collection('soft_notifications').where('recipientId', '==', user.userId).count().get(),
+      db
+        .collection('soft_notifications')
+        .where('recipientId', '==', user.userId)
+        .where('read', '==', false)
+        .count()
+        .get(),
+    ]);
     const totalCount = countSnapshot.data().count;
-
-    // Get unread count
-    const unreadCountSnapshot = await db
-      .collection('soft_notifications')
-      .where('recipientId', '==', user.userId)
-      .where('read', '==', false)
-      .count()
-      .get();
     const unreadCount = unreadCountSnapshot.data().count;
 
     // Apply pagination
@@ -215,16 +211,14 @@ export async function POST(request: NextRequest) {
         });
         await batch.commit();
       } else if (notificationIds) {
-        // Mark specific notifications as read
+        // Mark specific notifications as read — batch fetch all docs at once
+        const refs = notificationIds.map((id) => db.collection('soft_notifications').doc(id));
+        const docs = await db.getAll(...refs);
         const batch = db.batch();
 
-        for (const notificationId of notificationIds) {
-          const notificationRef = db.collection('soft_notifications').doc(notificationId);
-          const notificationDoc = await notificationRef.get();
-
-          // Only update if notification exists and belongs to user
-          if (notificationDoc.exists && notificationDoc.data()?.recipientId === user.userId) {
-            batch.update(notificationRef, { read: true });
+        for (const doc of docs) {
+          if (doc.exists && doc.data()?.recipientId === user.userId) {
+            batch.update(doc.ref, { read: true });
             updatedCount++;
           }
         }
@@ -306,16 +300,14 @@ export async function DELETE(request: NextRequest) {
         });
         await batch.commit();
       } else if (notificationIds) {
-        // Delete specific notifications
+        // Delete specific notifications — batch fetch all docs at once
+        const refs = notificationIds.map((id) => db.collection('soft_notifications').doc(id));
+        const docs = await db.getAll(...refs);
         const batch = db.batch();
 
-        for (const notificationId of notificationIds) {
-          const notificationRef = db.collection('soft_notifications').doc(notificationId);
-          const notificationDoc = await notificationRef.get();
-
-          // Only delete if notification exists and belongs to user
-          if (notificationDoc.exists && notificationDoc.data()?.recipientId === user.userId) {
-            batch.delete(notificationRef);
+        for (const doc of docs) {
+          if (doc.exists && doc.data()?.recipientId === user.userId) {
+            batch.delete(doc.ref);
             deletedCount++;
           }
         }

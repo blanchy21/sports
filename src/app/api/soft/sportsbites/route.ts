@@ -119,13 +119,20 @@ export async function GET(request: NextRequest) {
 
     const nextCursor = hasMore ? pageDocs[pageDocs.length - 1]?.id : undefined;
 
-    return NextResponse.json({
-      success: true,
-      sportsbites,
-      hasMore,
-      nextCursor,
-      count: sportsbites.length,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        sportsbites,
+        hasMore,
+        nextCursor,
+        count: sportsbites.length,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        },
+      }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }
