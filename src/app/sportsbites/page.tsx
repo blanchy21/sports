@@ -67,7 +67,7 @@ export default function SportsBitesPage() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-3xl">
         {/* Header */}
         <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-border/50 bg-background/95 px-4 backdrop-blur-xl">
           <div className="flex items-center justify-between py-4">
