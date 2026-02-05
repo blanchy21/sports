@@ -227,21 +227,24 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover transition-transform duration-200 hover:scale-105"
                     loading="lazy"
-                    unoptimized={shouldProxyImage(imageUrl)} // Disable optimization for proxied images
+                    unoptimized // User-generated images can reference any domain
                   />
                 </div>
               );
             }
           } else if (post.featuredImage) {
+            const needsProxy = shouldProxyImage(post.featuredImage);
+            const imgSrc = needsProxy ? getProxyImageUrl(post.featuredImage) : post.featuredImage;
             return (
               <div className="relative aspect-video w-full overflow-hidden rounded-md">
                 <Image
-                  src={post.featuredImage}
+                  src={imgSrc}
                   alt={post.title}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="object-cover transition-transform duration-200 hover:scale-105"
                   loading="lazy"
+                  unoptimized
                 />
               </div>
             );
