@@ -213,21 +213,13 @@ export async function isFollowingUser(username: string, follower: string): Promi
       return false;
     }
 
-    const result = await makeHiveApiCall<Array<Record<string, unknown>>>(
-      'condenser_api',
-      'get_following',
-      [follower, username, 'blog', 1]
+    const result = await makeHiveApiCall<Record<string, unknown>>(
+      'bridge',
+      'get_relationship_between_accounts',
+      [follower, username]
     );
 
-    const isFollowing =
-      Array.isArray(result) &&
-      result.some(
-        (rel) =>
-          typeof rel?.following === 'string' &&
-          typeof rel?.follower === 'string' &&
-          rel.following === username &&
-          rel.follower === follower
-      );
+    const isFollowing = result?.follows === true;
 
     workerBeeLog(`isFollowingUser result ${follower} -> ${username}`, undefined, { isFollowing });
     return isFollowing;

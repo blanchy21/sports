@@ -231,7 +231,10 @@ export const RightSidebar: React.FC = () => {
                       </div>
                     </div>
                     {user?.isHiveAuth && (
-                      <FollowButton username={author.username} isFollowing={false} />
+                      <FollowButton
+                        username={author.username}
+                        isFollowing={followStatusMap?.[author.username] ?? false}
+                      />
                     )}
                   </div>
                 ))}

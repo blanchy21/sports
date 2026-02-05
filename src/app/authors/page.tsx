@@ -103,7 +103,12 @@ export default function AuthorsPage() {
                     className="flex flex-1 cursor-pointer items-center space-x-4"
                     onClick={() => router.push(`/user/${author.username}`)}
                   >
-                    <Avatar fallback={author.username} alt={author.username} size="lg" />
+                    <Avatar
+                      src={`https://images.hive.blog/u/${author.username}/avatar`}
+                      fallback={author.username}
+                      alt={author.username}
+                      size="lg"
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="text-lg font-semibold">@{author.username}</div>
                       <div className="text-sm text-muted-foreground">
