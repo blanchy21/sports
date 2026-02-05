@@ -39,16 +39,10 @@ export const RightSidebar: React.FC = () => {
   const authorUsernames = topAuthors.map((a) => a.username);
   const { data: followStatusMap } = useBatchFollowStatus(authorUsernames, hiveFollower);
 
-  // Filter out authors the user already follows (for Hive-authenticated users)
-  const suggestedAuthors =
-    hiveFollower && followStatusMap
-      ? topAuthors.filter(
-          (a) =>
-            a.username !== user?.username &&
-            a.username !== user?.hiveUsername &&
-            !followStatusMap[a.username]
-        )
-      : topAuthors;
+  // Filter out the current user from top authors (don't suggest following yourself)
+  const displayedAuthors = topAuthors.filter(
+    (a) => a.username !== user?.username && a.username !== user?.hiveUsername
+  );
 
   // Follow button component - receives follow state as prop from batch query
   const FollowButton: React.FC<{ username: string; isFollowing: boolean }> = ({
@@ -210,10 +204,10 @@ export const RightSidebar: React.FC = () => {
               <AlertCircle className="h-4 w-4" />
               <span className="text-sm">Unable to load authors</span>
             </div>
-          ) : suggestedAuthors.length > 0 ? (
+          ) : displayedAuthors.length > 0 ? (
             <>
               <div className="space-y-3">
-                {suggestedAuthors.map((author) => (
+                {displayedAuthors.map((author) => (
                   <div
                     key={author.id}
                     className="flex cursor-pointer items-center space-x-3 rounded-md p-2 transition-colors hover:bg-accent"
