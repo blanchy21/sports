@@ -33,7 +33,11 @@ interface SportsbiteCardProps {
   isNew?: boolean;
 }
 
-export function SportsbiteCard({ sportsbite, className, isNew = false }: SportsbiteCardProps) {
+export const SportsbiteCard = React.memo(function SportsbiteCard({
+  sportsbite,
+  className,
+  isNew = false,
+}: SportsbiteCardProps) {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const { authType } = useAuth();
@@ -421,4 +425,4 @@ export function SportsbiteCard({ sportsbite, className, isNew = false }: Sportsb
       </div>
     </article>
   );
-}
+});

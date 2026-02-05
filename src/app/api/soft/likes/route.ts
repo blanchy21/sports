@@ -155,8 +155,19 @@ export async function POST(request: NextRequest) {
 
       const likeId = createLikeId(user.userId, targetType, targetId);
       const likeRef = db.collection('soft_likes').doc(likeId);
-      const likeDoc = await likeRef.get();
 
+      // Fetch existing like and current count in parallel
+      const [likeDoc, countSnapshot] = await Promise.all([
+        likeRef.get(),
+        db
+          .collection('soft_likes')
+          .where('targetType', '==', targetType)
+          .where('targetId', '==', targetId)
+          .count()
+          .get(),
+      ]);
+
+      const currentCount = countSnapshot.data().count;
       let liked: boolean;
       const now = new Date();
 
@@ -184,15 +195,8 @@ export async function POST(request: NextRequest) {
       // Fire-and-forget: lastActiveAt update
       updateUserLastActiveAt(user.userId);
 
-      // Get updated like count
-      const likesSnapshot = await db
-        .collection('soft_likes')
-        .where('targetType', '==', targetType)
-        .where('targetId', '==', targetId)
-        .count()
-        .get();
-
-      const newLikeCount = likesSnapshot.data().count;
+      // Compute new count from pre-toggle count instead of re-querying
+      const newLikeCount = currentCount + (liked ? 1 : -1);
 
       // Check if post just crossed the popularity threshold (fire-and-forget)
       if (liked && targetType === 'post' && newLikeCount === POPULAR_POST_THRESHOLD) {

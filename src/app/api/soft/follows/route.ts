@@ -141,50 +141,54 @@ export async function GET(request: NextRequest) {
     // Build query based on type
     const fieldToQuery = type === 'followers' ? 'followedId' : 'followerId';
 
-    const snapshot = await db
-      .collection('soft_follows')
-      .where(fieldToQuery, '==', targetUserId)
-      .orderBy('createdAt', 'desc')
-      .offset(offset)
-      .limit(limit)
-      .get();
+    // Run data query and count query in parallel
+    const [snapshot, countSnapshot] = await Promise.all([
+      db
+        .collection('soft_follows')
+        .where(fieldToQuery, '==', targetUserId)
+        .orderBy('createdAt', 'desc')
+        .offset(offset)
+        .limit(limit)
+        .get(),
+      db.collection('soft_follows').where(fieldToQuery, '==', targetUserId).count().get(),
+    ]);
 
-    const follows: Array<{
-      id: string;
-      userId: string;
-      username: string;
-      createdAt: string;
-      isFollowing?: boolean;
-    }> = [];
-
-    for (const doc of snapshot.docs) {
+    // Collect related user IDs and batch-check follow status
+    const relatedUsers = snapshot.docs.map((doc) => {
       const data = doc.data();
-      const relatedUserId = type === 'followers' ? data.followerId : data.followedId;
-      const relatedUsername = type === 'followers' ? data.followerUsername : data.followedUsername;
-
-      // Check if current user follows this person
-      let isFollowing = false;
-      if (currentUser && currentUser.userId !== relatedUserId) {
-        const followId = createFollowId(currentUser.userId, relatedUserId);
-        const followDoc = await db.collection('soft_follows').doc(followId).get();
-        isFollowing = followDoc.exists;
-      }
-
-      follows.push({
-        id: doc.id,
-        userId: relatedUserId,
-        username: relatedUsername,
+      return {
+        docId: doc.id,
+        userId: type === 'followers' ? data.followerId : data.followedId,
+        username: type === 'followers' ? data.followerUsername : data.followedUsername,
         createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-        isFollowing,
-      });
+      };
+    });
+
+    // Batch follow-check: build all follow doc refs and fetch in one call
+    const followStatusMap = new Map<string, boolean>();
+    if (currentUser) {
+      const userIdsToCheck = relatedUsers
+        .filter((u) => u.userId !== currentUser.userId)
+        .map((u) => u.userId);
+
+      if (userIdsToCheck.length > 0) {
+        const followRefs = userIdsToCheck.map((uid) =>
+          db.collection('soft_follows').doc(createFollowId(currentUser.userId, uid))
+        );
+        const followDocs = await db.getAll(...followRefs);
+        userIdsToCheck.forEach((uid, i) => {
+          followStatusMap.set(uid, followDocs[i].exists);
+        });
+      }
     }
 
-    // Get total count
-    const countSnapshot = await db
-      .collection('soft_follows')
-      .where(fieldToQuery, '==', targetUserId)
-      .count()
-      .get();
+    const follows = relatedUsers.map((u) => ({
+      id: u.docId,
+      userId: u.userId,
+      username: u.username,
+      createdAt: u.createdAt,
+      isFollowing: followStatusMap.get(u.userId) ?? false,
+    }));
 
     return NextResponse.json({
       success: true,
@@ -344,26 +348,19 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Check if current user follows target
-    let isFollowing = false;
-    if (user && user.userId !== targetUserId) {
-      const followId = createFollowId(user.userId, targetUserId);
-      const followDoc = await db.collection('soft_follows').doc(followId).get();
-      isFollowing = followDoc.exists;
-    }
+    // Run follow-check and both count queries in parallel
+    const followCheckPromise =
+      user && user.userId !== targetUserId
+        ? db.collection('soft_follows').doc(createFollowId(user.userId, targetUserId)).get()
+        : Promise.resolve(null);
 
-    // Get follower and following counts for target user
-    const followerCountSnapshot = await db
-      .collection('soft_follows')
-      .where('followedId', '==', targetUserId)
-      .count()
-      .get();
+    const [followDoc, followerCountSnapshot, followingCountSnapshot] = await Promise.all([
+      followCheckPromise,
+      db.collection('soft_follows').where('followedId', '==', targetUserId).count().get(),
+      db.collection('soft_follows').where('followerId', '==', targetUserId).count().get(),
+    ]);
 
-    const followingCountSnapshot = await db
-      .collection('soft_follows')
-      .where('followerId', '==', targetUserId)
-      .count()
-      .get();
+    const isFollowing = followDoc ? followDoc.exists : false;
 
     return NextResponse.json({
       success: true,

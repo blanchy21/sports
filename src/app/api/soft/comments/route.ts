@@ -249,36 +249,45 @@ export async function POST(request: NextRequest) {
           .catch((err) => console.error('Failed to increment comment count:', err));
       }
 
-      // Create notification for post author (if different from commenter)
-      const postDoc = await db.collection('soft_posts').doc(postId.replace('soft-', '')).get();
+      // Fetch post doc and parent comment doc in parallel for notifications
+      const [postDoc, parentDoc] = await Promise.all([
+        db.collection('soft_posts').doc(postId.replace('soft-', '')).get(),
+        parentCommentId
+          ? db.collection('soft_comments').doc(parentCommentId).get()
+          : Promise.resolve(null),
+      ]);
+
+      // Create notifications in parallel
+      const notificationPromises: Promise<unknown>[] = [];
+
       if (postDoc.exists) {
         const postData = postDoc.data();
         if (postData?.authorId && postData.authorId !== user.userId) {
-          await db.collection('soft_notifications').add({
-            recipientId: postData.authorId,
-            type: 'comment',
-            title: 'New Comment',
-            message: `${user.username} commented on your post`,
-            sourceUserId: user.userId,
-            sourceUsername: user.username,
-            data: {
-              postId,
-              postPermlink,
-              commentId: docRef.id,
-            },
-            read: false,
-            createdAt: now,
-          });
+          notificationPromises.push(
+            db.collection('soft_notifications').add({
+              recipientId: postData.authorId,
+              type: 'comment',
+              title: 'New Comment',
+              message: `${user.username} commented on your post`,
+              sourceUserId: user.userId,
+              sourceUsername: user.username,
+              data: {
+                postId,
+                postPermlink,
+                commentId: docRef.id,
+              },
+              read: false,
+              createdAt: now,
+            })
+          );
         }
       }
 
-      // If this is a reply, notify the parent comment author
-      if (parentCommentId) {
-        const parentDoc = await db.collection('soft_comments').doc(parentCommentId).get();
-        if (parentDoc.exists) {
-          const parentData = parentDoc.data();
-          if (parentData?.authorId && parentData.authorId !== user.userId) {
-            await db.collection('soft_notifications').add({
+      if (parentDoc?.exists) {
+        const parentData = parentDoc.data();
+        if (parentData?.authorId && parentData.authorId !== user.userId) {
+          notificationPromises.push(
+            db.collection('soft_notifications').add({
               recipientId: parentData.authorId,
               type: 'reply',
               title: 'New Reply',
@@ -293,9 +302,13 @@ export async function POST(request: NextRequest) {
               },
               read: false,
               createdAt: now,
-            });
-          }
+            })
+          );
         }
+      }
+
+      if (notificationPromises.length > 0) {
+        await Promise.all(notificationPromises);
       }
 
       const comment: SoftComment = {
