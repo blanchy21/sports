@@ -178,11 +178,12 @@ export const TopNavigation: React.FC = () => {
               suppressHydrationWarning
             >
               <Image
-                src="/sportsblock.jpg"
+                src="/sportsblock-logo-trans.png"
                 alt="SportsBlock Logo"
                 width={72}
                 height={72}
                 className="lg:w-18 lg:h-18 h-10 w-10 sm:h-14 sm:w-14"
+                unoptimized
               />
               <div className="hidden text-xl font-bold text-white sm:block sm:text-2xl lg:text-4xl">
                 Sportsblock
