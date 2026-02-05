@@ -178,7 +178,7 @@ export const TopNavigation: React.FC = () => {
               suppressHydrationWarning
             >
               <Image
-                src="/sportsblock-logo.png"
+                src="/sportsblock.jpg"
                 alt="SportsBlock Logo"
                 width={72}
                 height={72}
