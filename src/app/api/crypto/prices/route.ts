@@ -21,6 +21,10 @@ let priceCache: PriceCache = {
   expiresAt: 0,
 };
 
+const CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+};
+
 const ROUTE = '/api/crypto/prices';
 
 export async function GET(request: NextRequest) {
@@ -37,12 +41,15 @@ export async function GET(request: NextRequest) {
     // Check if we have valid cached data
     const now = Date.now();
     if (priceCache.data && now < priceCache.expiresAt) {
-      return NextResponse.json({
-        success: true,
-        data: priceCache.data,
-        cached: true,
-        timestamp: priceCache.timestamp,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          data: priceCache.data,
+          cached: true,
+          timestamp: priceCache.timestamp,
+        },
+        { headers: CACHE_HEADERS }
+      );
     }
 
     let priceData;
@@ -171,12 +178,15 @@ export async function GET(request: NextRequest) {
       expiresAt: now + CACHE_DURATION,
     };
 
-    return NextResponse.json({
-      success: true,
-      data: priceData,
-      cached: false,
-      timestamp: now,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: priceData,
+        cached: false,
+        timestamp: now,
+      },
+      { headers: CACHE_HEADERS }
+    );
   } catch (error) {
     const duration = Date.now() - startTime;
     ctx.log.error('Request failed', error instanceof Error ? error : undefined, {

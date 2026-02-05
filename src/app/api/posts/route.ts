@@ -308,8 +308,8 @@ export async function POST(request: NextRequest) {
         likeCount: 0,
       };
 
-      // Update user's lastActiveAt timestamp
-      await updateUserLastActiveAt(data.authorId);
+      // Update user's lastActiveAt timestamp (fire-and-forget)
+      updateUserLastActiveAt(data.authorId);
 
       ctx.log.info('Post created successfully', { postId: post.id });
 

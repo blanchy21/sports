@@ -3,10 +3,7 @@ import { z } from 'zod';
 import { FirebaseAuth } from '@/lib/firebase/auth';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
-import {
-  createRequestContext,
-  validationError,
-} from '@/lib/api/response';
+import { createRequestContext, validationError } from '@/lib/api/response';
 import { SoftPost } from '@/types/auth';
 // Use SportsblockPost from workerbee/content which matches what the content functions return
 import { SportsblockPost } from '@/lib/hive-workerbee/content';
@@ -35,7 +32,7 @@ async function getSoftPostsByUsername(username: string, postsLimit: number): Pro
       .limit(postsLimit)
       .get();
 
-    return snapshot.docs.map(doc => {
+    return snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -81,7 +78,7 @@ async function getSoftPostsByAuthorId(authorId: string): Promise<SoftPost[]> {
       .orderBy('createdAt', 'desc')
       .get();
 
-    return snapshot.docs.map(doc => {
+    return snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -127,7 +124,7 @@ async function getAllSoftPosts(postsLimit: number): Promise<SoftPost[]> {
       .limit(postsLimit)
       .get();
 
-    return snapshot.docs.map(doc => {
+    return snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -166,9 +163,21 @@ async function getAllSoftPosts(postsLimit: number): Promise<SoftPost[]> {
 const unifiedPostsQuerySchema = z.object({
   username: z.string().min(1).max(50).optional(),
   authorId: z.string().min(1).optional(),
-  limit: z.string().optional().transform((val) => val ? parseInt(val, 10) : 20).pipe(z.number().int().min(1).max(100)),
-  includeHive: z.string().optional().transform((val) => val !== 'false').pipe(z.boolean()),
-  includeSoft: z.string().optional().transform((val) => val !== 'false').pipe(z.boolean()),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 20))
+    .pipe(z.number().int().min(1).max(100)),
+  includeHive: z
+    .string()
+    .optional()
+    .transform((val) => val !== 'false')
+    .pipe(z.boolean()),
+  includeSoft: z
+    .string()
+    .optional()
+    .transform((val) => val !== 'false')
+    .pipe(z.boolean()),
   sportCategory: z.string().min(1).optional(),
 });
 
@@ -230,9 +239,10 @@ function softPostToUnified(post: SoftPost): UnifiedPost {
     title: post.title,
     body: post.content,
     excerpt: post.excerpt,
-    created: post.createdAt instanceof Date
-      ? post.createdAt.toISOString()
-      : new Date(post.createdAt).toISOString(),
+    created:
+      post.createdAt instanceof Date
+        ? post.createdAt.toISOString()
+        : new Date(post.createdAt).toISOString(),
     tags: post.tags || [],
     sportCategory: post.sportCategory,
     featuredImage: post.featuredImage,
@@ -256,9 +266,8 @@ function hivePostToUnified(post: SportsblockPost): UnifiedPost {
   let tags: string[] = [];
 
   try {
-    const metadata = typeof post.json_metadata === 'string'
-      ? JSON.parse(post.json_metadata)
-      : post.json_metadata;
+    const metadata =
+      typeof post.json_metadata === 'string' ? JSON.parse(post.json_metadata) : post.json_metadata;
     if (metadata?.image && metadata.image.length > 0) {
       featuredImage = metadata.image[0];
     }
@@ -270,10 +279,11 @@ function hivePostToUnified(post: SportsblockPost): UnifiedPost {
   }
 
   // Generate excerpt from body
-  const excerpt = post.body
-    .replace(/[#*_`~\[\]()>]/g, '')
-    .substring(0, 200)
-    .trim() + (post.body.length > 200 ? '...' : '');
+  const excerpt =
+    post.body
+      .replace(/[#*_`~\[\]()>]/g, '')
+      .substring(0, 200)
+      .trim() + (post.body.length > 200 ? '...' : '');
 
   return {
     id: `hive-${post.author}-${post.permlink}`,
@@ -292,7 +302,7 @@ function hivePostToUnified(post: SportsblockPost): UnifiedPost {
     source: 'hive',
     isHivePost: true,
     isSoftPost: false,
-    activeVotes: post.active_votes?.slice(0, 10).map(v => ({
+    activeVotes: post.active_votes?.slice(0, 10).map((v) => ({
       voter: v.voter,
       weight: v.weight,
       percent: v.percent,
@@ -330,7 +340,7 @@ export async function GET(request: NextRequest) {
       limit,
       includeHive,
       includeSoft,
-      sportCategory
+      sportCategory,
     });
 
     const allPosts: UnifiedPost[] = [];
@@ -353,37 +363,41 @@ export async function GET(request: NextRequest) {
 
     // If username is provided, check both systems
     if (username) {
-      // Check if this is a soft user first
-      const softProfile = await FirebaseAuth.getProfileByUsername(username);
-      const isSoftUser = softProfile && !softProfile.isHiveUser;
-
-      // Fetch from both sources in parallel
+      // Start profile check and soft post fetch in parallel
       const fetchPromises: Promise<void>[] = [];
 
-      // Fetch soft posts if enabled (using Admin SDK)
+      // Soft posts don't depend on profile — start immediately
       if (includeSoft) {
         fetchPromises.push(
           getSoftPostsByUsername(username, limit)
-            .then(posts => {
+            .then((posts) => {
               allPosts.push(...posts.map(softPostToUnified));
             })
-            .catch(error => {
+            .catch((error) => {
               ctx.log.warn('Failed to fetch soft posts', { error, username });
             })
         );
       }
 
-      // Fetch Hive posts if enabled AND user might have Hive content
-      // Skip Hive fetch for known soft-only users
-      if (includeHive && !isSoftUser) {
+      // Profile check runs in parallel with soft post fetch
+      const profilePromise = FirebaseAuth.getProfileByUsername(username);
+
+      // Fetch Hive posts if enabled — gate on profile result to skip for soft-only users
+      if (includeHive) {
         fetchPromises.push(
           (async () => {
             try {
+              const softProfile = await profilePromise;
+              const isSoftUser = softProfile && !softProfile.isHiveUser;
+              if (isSoftUser) return;
+
               const { getUserPosts } = await import('@/lib/hive-workerbee/content');
-              const hivePosts = await retryWithBackoff(
-                () => getUserPosts(username, limit),
-                { maxRetries: 1, initialDelay: 500, maxDelay: 2000, backoffMultiplier: 2 }
-              );
+              const hivePosts = await retryWithBackoff(() => getUserPosts(username, limit), {
+                maxRetries: 1,
+                initialDelay: 500,
+                maxDelay: 2000,
+                backoffMultiplier: 2,
+              });
               if (hivePosts && hivePosts.length > 0) {
                 allPosts.push(...hivePosts.map(hivePostToUnified));
               }
@@ -395,14 +409,14 @@ export async function GET(request: NextRequest) {
       }
 
       await Promise.all(fetchPromises);
+      const softProfile = await profilePromise;
+      const isSoftUser = softProfile && !softProfile.isHiveUser;
 
       // Sort by created date (newest first)
-      allPosts.sort((a, b) =>
-        new Date(b.created).getTime() - new Date(a.created).getTime()
-      );
+      allPosts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
 
-      const hivePosts = allPosts.filter(p => p.source === 'hive');
-      const softPosts = allPosts.filter(p => p.source === 'soft');
+      const hivePosts = allPosts.filter((p) => p.source === 'hive');
+      const softPosts = allPosts.filter((p) => p.source === 'soft');
 
       return NextResponse.json({
         success: true,
@@ -421,14 +435,14 @@ export async function GET(request: NextRequest) {
     if (includeSoft) {
       fetchPromises.push(
         getAllSoftPosts(limit)
-          .then(posts => {
+          .then((posts) => {
             let filtered = posts;
             if (sportCategory) {
-              filtered = posts.filter(p => p.sportCategory === sportCategory);
+              filtered = posts.filter((p) => p.sportCategory === sportCategory);
             }
             allPosts.push(...filtered.map(softPostToUnified));
           })
-          .catch(error => {
+          .catch((error) => {
             ctx.log.warn('Failed to fetch soft posts feed', { error });
           })
       );
@@ -457,12 +471,10 @@ export async function GET(request: NextRequest) {
     await Promise.all(fetchPromises);
 
     // Sort by created date (newest first)
-    allPosts.sort((a, b) =>
-      new Date(b.created).getTime() - new Date(a.created).getTime()
-    );
+    allPosts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
 
-    const hivePosts = allPosts.filter(p => p.source === 'hive');
-    const softPosts = allPosts.filter(p => p.source === 'soft');
+    const hivePosts = allPosts.filter((p) => p.source === 'hive');
+    const softPosts = allPosts.filter((p) => p.source === 'soft');
 
     return NextResponse.json({
       success: true,

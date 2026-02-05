@@ -6,7 +6,7 @@ import { createRequestContext, validationError, unauthorizedError } from '@/lib/
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { Firestore } from 'firebase-admin/firestore';
+import { FieldValue, Firestore } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -75,25 +75,18 @@ async function updateFollowCounts(
   delta: number
 ) {
   try {
-    // Update follower's following count
     const followerProfileRef = db.collection('profiles').doc(followerId);
-    const followerProfile = await followerProfileRef.get();
-    if (followerProfile.exists) {
-      const currentFollowing = followerProfile.data()?.followingCount || 0;
-      await followerProfileRef.update({
-        followingCount: Math.max(0, currentFollowing + delta),
-      });
-    }
-
-    // Update followed user's follower count
     const followedProfileRef = db.collection('profiles').doc(followedId);
-    const followedProfile = await followedProfileRef.get();
-    if (followedProfile.exists) {
-      const currentFollowers = followedProfile.data()?.followerCount || 0;
-      await followedProfileRef.update({
-        followerCount: Math.max(0, currentFollowers + delta),
-      });
-    }
+
+    // Update both counts in parallel using atomic increment
+    await Promise.all([
+      followerProfileRef.update({
+        followingCount: FieldValue.increment(delta),
+      }),
+      followedProfileRef.update({
+        followerCount: FieldValue.increment(delta),
+      }),
+    ]);
   } catch (error) {
     console.error('Failed to update follow counts:', error);
   }
@@ -303,8 +296,8 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Update user's lastActiveAt timestamp
-      await updateUserLastActiveAt(user.userId);
+      // Update user's lastActiveAt timestamp (fire-and-forget)
+      updateUserLastActiveAt(user.userId);
 
       // Get updated follower count for target user
       const followerCountSnapshot = await db

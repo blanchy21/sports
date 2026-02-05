@@ -4,8 +4,8 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // Optimized caching strategy
-      staleTime: 2 * 60 * 1000, // 2 minutes - shorter for real-time data
-      gcTime: 5 * 60 * 1000, // 5 minutes - reduced memory usage
+      staleTime: 5 * 60 * 1000, // 5 minutes - posts don't change frequently
+      gcTime: 10 * 60 * 1000, // 10 minutes - keep cached data longer
 
       // Smart retry logic
       retry: (failureCount, error) => {

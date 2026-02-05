@@ -54,6 +54,10 @@ function serializeAccount(account: unknown) {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+};
+
 const ROUTE = '/api/hive/account/summary';
 
 export async function GET(request: NextRequest) {
@@ -75,26 +79,26 @@ export async function GET(request: NextRequest) {
   // Check cache first
   const cached = accountCache.get(username);
   if (cached && now < cached.expiresAt) {
-    return NextResponse.json({
-      success: true,
-      account: cached.account,
-      cached: true,
-      timestamp: cached.timestamp,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        account: cached.account,
+        cached: true,
+        timestamp: cached.timestamp,
+      },
+      { headers: CACHE_HEADERS }
+    );
   }
 
   try {
     ctx.log.debug('Fetching account summary', { username });
 
-    const account = await retryWithBackoff(
-      () => fetchUserAccount(username),
-      {
-        maxRetries: 2,
-        initialDelay: 1000,
-        maxDelay: 10000,
-        backoffMultiplier: 2,
-      }
-    );
+    const account = await retryWithBackoff(() => fetchUserAccount(username), {
+      maxRetries: 2,
+      initialDelay: 1000,
+      maxDelay: 10000,
+      backoffMultiplier: 2,
+    });
 
     if (!account) {
       return notFoundError(`Account ${username} not found`, ctx.requestId);
@@ -109,12 +113,15 @@ export async function GET(request: NextRequest) {
       expiresAt: now + CACHE_DURATION,
     });
 
-    return NextResponse.json({
-      success: true,
-      account: serializedAccount,
-      cached: false,
-      timestamp: now,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        account: serializedAccount,
+        cached: false,
+        timestamp: now,
+      },
+      { headers: CACHE_HEADERS }
+    );
   } catch (error) {
     // Try to return stale cache data on error (graceful degradation)
     const staleCache = accountCache.get(username);
@@ -132,4 +139,3 @@ export async function GET(request: NextRequest) {
     return ctx.handleError(error);
   }
 }
-

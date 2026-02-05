@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
@@ -234,19 +235,18 @@ export async function POST(request: NextRequest) {
 
       const docRef = await db.collection('soft_comments').add(commentData);
 
-      // Update user's lastActiveAt timestamp
-      await updateUserLastActiveAt(user.userId);
+      // Update user's lastActiveAt timestamp (fire-and-forget)
+      updateUserLastActiveAt(user.userId);
 
       // Update comment count on the post if it's a soft post
       if (postId.startsWith('soft-') || !postId.includes('-')) {
         const actualPostId = postId.replace('soft-', '');
         const postRef = db.collection('soft_posts').doc(actualPostId);
-        const postDoc = await postRef.get();
-        if (postDoc.exists) {
-          await postRef.update({
-            commentCount: (postDoc.data()?.commentCount || 0) + 1,
-          });
-        }
+        postRef
+          .update({
+            commentCount: FieldValue.increment(1),
+          })
+          .catch((err) => console.error('Failed to increment comment count:', err));
       }
 
       // Create notification for post author (if different from commenter)
@@ -456,13 +456,11 @@ export async function DELETE(request: NextRequest) {
       if (postId && (postId.startsWith('soft-') || !postId.includes('-'))) {
         const actualPostId = postId.replace('soft-', '');
         const postRef = db.collection('soft_posts').doc(actualPostId);
-        const postDoc = await postRef.get();
-        if (postDoc.exists) {
-          const currentCount = postDoc.data()?.commentCount || 0;
-          await postRef.update({
-            commentCount: Math.max(0, currentCount - 1),
-          });
-        }
+        postRef
+          .update({
+            commentCount: FieldValue.increment(-1),
+          })
+          .catch((err) => console.error('Failed to decrement comment count:', err));
       }
 
       return NextResponse.json({

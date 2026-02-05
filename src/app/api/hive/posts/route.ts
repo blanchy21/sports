@@ -13,6 +13,10 @@ import {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+};
+
 const ROUTE = '/api/hive/posts';
 
 export async function GET(request: NextRequest) {
@@ -59,10 +63,13 @@ export async function GET(request: NextRequest) {
         backoffMultiplier: 2,
       });
 
-      return NextResponse.json({
-        success: true,
-        post: post || null,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          post: post || null,
+        },
+        { headers: CACHE_HEADERS }
+      );
     }
 
     // Fetch user's posts
@@ -76,12 +83,15 @@ export async function GET(request: NextRequest) {
         backoffMultiplier: 2,
       });
 
-      return NextResponse.json({
-        success: true,
-        posts: posts || [],
-        count: posts?.length || 0,
-        username,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          posts: posts || [],
+          count: posts?.length || 0,
+          username,
+        },
+        { headers: CACHE_HEADERS }
+      );
     }
 
     // Fetch posts with filters
@@ -104,13 +114,16 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    return NextResponse.json({
-      success: true,
-      posts: result.posts || [],
-      hasMore: result.hasMore || false,
-      nextCursor: result.nextCursor,
-      count: result.posts?.length || 0,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        posts: result.posts || [],
+        hasMore: result.hasMore || false,
+        nextCursor: result.nextCursor,
+        count: result.posts?.length || 0,
+      },
+      { headers: CACHE_HEADERS }
+    );
   } catch (error) {
     const duration = Date.now() - startTime;
     ctx.log.error('Request failed', error instanceof Error ? error : undefined, {

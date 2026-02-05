@@ -6,7 +6,7 @@ import { createRequestContext, validationError, unauthorizedError } from '@/lib/
 import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { Firestore } from 'firebase-admin/firestore';
+import { FieldValue, Firestore } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -75,19 +75,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get like count
-    const likesSnapshot = await db
-      .collection('soft_likes')
-      .where('targetType', '==', targetType)
-      .where('targetId', '==', targetId)
-      .count()
-      .get();
+    // Run count query and user auth/like-check in parallel
+    const [likesSnapshot, user] = await Promise.all([
+      db
+        .collection('soft_likes')
+        .where('targetType', '==', targetType)
+        .where('targetId', '==', targetId)
+        .count()
+        .get(),
+      getAuthenticatedUserFromSession(request),
+    ]);
 
     const likeCount = likesSnapshot.data().count;
 
     // Check if current user has liked (if authenticated)
     let hasLiked = false;
-    const user = await getAuthenticatedUserFromSession(request);
     if (user) {
       const likeId = createLikeId(user.userId, targetType, targetId);
       const likeDoc = await db.collection('soft_likes').doc(likeId).get();
@@ -159,14 +161,11 @@ export async function POST(request: NextRequest) {
       const now = new Date();
 
       if (likeDoc.exists) {
-        // Unlike - remove the like
-        await likeRef.delete();
+        // Unlike - remove the like and update count in parallel
+        await Promise.all([likeRef.delete(), updateTargetLikeCount(db, targetType, targetId, -1)]);
         liked = false;
-
-        // Decrement like count on target
-        await updateTargetLikeCount(db, targetType, targetId, -1);
       } else {
-        // Like - add the like
+        // Like - add the like, update count, and notify in parallel
         await likeRef.set({
           userId: user.userId,
           targetType,
@@ -175,15 +174,15 @@ export async function POST(request: NextRequest) {
         });
         liked = true;
 
-        // Increment like count on target
-        await updateTargetLikeCount(db, targetType, targetId, 1);
-
-        // Create notification for content owner
-        await createLikeNotification(db, user, targetType, targetId, now);
+        // Run count update and notification in parallel
+        await Promise.all([
+          updateTargetLikeCount(db, targetType, targetId, 1),
+          createLikeNotification(db, user, targetType, targetId, now),
+        ]);
       }
 
-      // Update user's lastActiveAt timestamp
-      await updateUserLastActiveAt(user.userId);
+      // Fire-and-forget: lastActiveAt update
+      updateUserLastActiveAt(user.userId);
 
       // Get updated like count
       const likesSnapshot = await db
@@ -195,10 +194,9 @@ export async function POST(request: NextRequest) {
 
       const newLikeCount = likesSnapshot.data().count;
 
-      // Check if post just crossed the popularity threshold
-      // Only for posts (not comments) when adding a like
+      // Check if post just crossed the popularity threshold (fire-and-forget)
       if (liked && targetType === 'post' && newLikeCount === POPULAR_POST_THRESHOLD) {
-        await createPopularPostNotification(db, targetType, targetId, newLikeCount, now);
+        createPopularPostNotification(db, targetType, targetId, newLikeCount, now);
       }
 
       return NextResponse.json({
@@ -302,14 +300,9 @@ async function updateTargetLikeCount(
     // Handle IDs that might have 'soft-' prefix
     const actualId = targetId.replace('soft-', '');
     const docRef = db.collection(collection).doc(actualId);
-    const doc = await docRef.get();
-
-    if (doc.exists) {
-      const currentCount = doc.data()?.likeCount || 0;
-      await docRef.update({
-        likeCount: Math.max(0, currentCount + delta),
-      });
-    }
+    await docRef.update({
+      likeCount: FieldValue.increment(delta),
+    });
   } catch (error) {
     // Log but don't fail the like operation
     console.error('Failed to update like count:', error);
