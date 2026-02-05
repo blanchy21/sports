@@ -1,4 +1,3 @@
-import { initializeWorkerBeeClient } from './client';
 import { makeHiveApiCall } from './api';
 import { isHiveAccount } from './account';
 import { FollowRelationship } from '@/types';
@@ -44,11 +43,6 @@ export async function followUser(
 
   try {
     workerBeeLog(`followUser start ${follower} -> ${username}`);
-    await initializeWorkerBeeClient();
-
-    // Skip relationship checking since get_relationships API is not available
-    // We'll proceed directly to the follow operation
-    workerBeeLog('followUser skipping relationship check (API unavailable)');
 
     // Import Aioha to broadcast the transaction
     const { aioha } = await import('@/lib/aioha/config');
@@ -139,11 +133,6 @@ export async function unfollowUser(
 
   try {
     workerBeeLog(`unfollowUser start ${follower} -> ${username}`);
-    await initializeWorkerBeeClient();
-
-    // Skip relationship checking since get_relationships API is not available
-    // We'll proceed directly to the unfollow operation
-    workerBeeLog('unfollowUser skipping relationship check (API unavailable)');
 
     // Import Aioha to broadcast the transaction
     const { aioha } = await import('@/lib/aioha/config');
