@@ -291,7 +291,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
           )}
         </div>
       }
-      size="lg"
+      size="xl"
       className="flex max-h-[80vh] flex-col"
     >
       <div className="flex-1 overflow-y-auto">

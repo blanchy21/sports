@@ -169,7 +169,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
           {comments && <span className="text-sm text-muted-foreground">({comments.length})</span>}
         </div>
       }
-      size="lg"
+      size="xl"
       className="flex max-h-[80vh] flex-col"
     >
       <div className="flex-1 overflow-y-auto">
@@ -218,9 +218,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                         </span>
                       )}
                     </div>
-                    <div className="prose prose-sm max-w-none">
-                      <CommentContent body={comment.body} />
-                    </div>
+                    <CommentContent body={comment.body} />
                     <div className="mt-2 flex items-center space-x-4">
                       <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
                         Reply
