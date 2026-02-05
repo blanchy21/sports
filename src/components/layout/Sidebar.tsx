@@ -23,7 +23,6 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { UserProfilePopup } from '@/components/user/UserProfilePopup';
 import { Avatar } from '@/components/core/Avatar';
-import { MyCommunitiesWidget } from '@/components/community/MyCommunitiesWidget';
 
 const navigationItems = [
   { href: '/', icon: Star, label: 'Featured', requireAuth: false, featured: true },
@@ -86,9 +85,6 @@ export const Sidebar: React.FC = () => {
             );
           })}
         </nav>
-
-        {/* My Communities Widget */}
-        <MyCommunitiesWidget maxItems={5} />
 
         {/* User Profile Section at Bottom */}
         {user && (
