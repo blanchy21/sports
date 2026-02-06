@@ -22,7 +22,7 @@ interface SoftCommentsModalProps {
 export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, onClose, data }) => {
   const postId = data?.postId as string;
   const postPermlink = data?.permlink as string;
-  const { user, isAuthenticated, authType } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { addToast } = useToast();
 
   const [comments, setComments] = useState<SoftComment[]>([]);
@@ -80,16 +80,6 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
 
     if (!isAuthenticated) {
       addToast(toast.error('Authentication Required', 'Please sign in to comment'));
-      return;
-    }
-
-    if (authType !== 'soft') {
-      addToast(
-        toast.error(
-          'Soft Login Required',
-          'Only email users can comment on soft posts. Hive users should use Hive posts.'
-        )
-      );
       return;
     }
 
@@ -341,10 +331,15 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
 
       {/* Comment Input */}
       <div className="border-t p-4 sm:p-6">
-        {isAuthenticated && authType === 'soft' ? (
+        {isAuthenticated ? (
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex flex-1 gap-3">
               <Avatar
+                src={
+                  user?.isHiveAuth
+                    ? `https://images.hive.blog/u/${user.hiveUsername || user.username}/avatar`
+                    : undefined
+                }
                 fallback={user?.username?.[0] || 'U'}
                 alt={user?.username || 'You'}
                 size="sm"
@@ -403,20 +398,9 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
               {isSubmitting ? 'Posting...' : replyingTo ? 'Reply' : 'Comment'}
             </Button>
           </div>
-        ) : isAuthenticated && authType === 'hive' ? (
-          <div className="rounded-lg bg-muted/50 py-4 text-center">
-            <p className="mb-2 text-sm text-muted-foreground">
-              This is a soft post. Hive users cannot comment on soft posts.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Soft posts are stored on Sportsblock servers, not on the Hive blockchain.
-            </p>
-          </div>
         ) : (
           <div className="rounded-lg bg-muted/50 py-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              Sign in with email to comment on this post.
-            </p>
+            <p className="text-sm text-muted-foreground">Sign in to comment on this post.</p>
           </div>
         )}
       </div>
