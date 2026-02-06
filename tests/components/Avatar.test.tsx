@@ -13,20 +13,31 @@ describe('Avatar', () => {
     expect(image).toHaveAttribute('src', 'https://example.com/avatar.jpg');
   });
 
-  it('renders DiceBear avatar when no src provided but fallback exists', () => {
+  it('renders Hive avatar when no src provided but fallback exists', () => {
     renderWithProviders(<Avatar fallback="John Doe" alt="User avatar" />);
 
     const image = screen.getByAltText('User avatar');
     expect(image).toBeInTheDocument();
+    expect(image.getAttribute('src')).toBe('https://images.hive.blog/u/John Doe/avatar');
+  });
+
+  it('falls back to DiceBear when Hive avatar fails (no src)', () => {
+    renderWithProviders(<Avatar fallback="John Doe" alt="User avatar" />);
+
+    const image = screen.getByAltText('User avatar');
+    expect(image.getAttribute('src')).toBe('https://images.hive.blog/u/John Doe/avatar');
+
+    // Simulate Hive avatar failing → should fall back to DiceBear
+    fireEvent.error(image);
     expect(image.getAttribute('src')).toContain('dicebear.com');
   });
 
-  it('renders DiceBear avatar for single word fallback', () => {
+  it('renders Hive avatar for single word fallback', () => {
     renderWithProviders(<Avatar fallback="John" alt="User avatar" />);
 
     const image = screen.getByAltText('User avatar');
     expect(image).toBeInTheDocument();
-    expect(image.getAttribute('src')).toContain('dicebear.com');
+    expect(image.getAttribute('src')).toBe('https://images.hive.blog/u/John/avatar');
   });
 
   it('applies size classes correctly', () => {
@@ -63,11 +74,16 @@ describe('Avatar', () => {
     expect(image).toHaveAttribute('alt', 'Profile picture');
   });
 
-  it('handles empty src string by using DiceBear fallback', () => {
+  it('handles empty src string by trying Hive avatar first', () => {
     renderWithProviders(<Avatar src="" fallback="Test User" alt="Test" />);
 
     const image = screen.getByAltText('Test');
     expect(image).toBeInTheDocument();
+    // Empty string is falsy, so the cascade starts with Hive avatar
+    expect(image.getAttribute('src')).toBe('https://images.hive.blog/u/Test User/avatar');
+
+    // Simulate Hive avatar failing → should fall back to DiceBear
+    fireEvent.error(image);
     expect(image.getAttribute('src')).toContain('dicebear.com');
   });
 
