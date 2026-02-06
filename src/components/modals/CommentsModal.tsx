@@ -8,9 +8,8 @@ import { MessageCircle, Send, Film } from 'lucide-react';
 import { formatDate } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast, toast } from '@/components/core/Toast';
-import { publishComment } from '@/lib/hive-workerbee/posting';
+import { createCommentOperation } from '@/lib/hive-workerbee/wax-helpers';
 import { useInvalidateComments } from '@/lib/react-query/queries/useComments';
-import { useAioha } from '@/contexts/AiohaProvider';
 import { CommentVoteButton } from '@/components/posts/CommentVoteButton';
 import { BaseModal } from '@/components/core/BaseModal';
 import { GifPicker } from '@/components/gif/GifPicker';
@@ -28,7 +27,6 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
   const { user, hiveUser, authType } = useAuth();
   const { addToast } = useToast();
   const { invalidatePostComments } = useInvalidateComments();
-  const { aioha, isInitialized, error: aiohaError } = useAioha();
 
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,55 +62,38 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
 
     try {
       if (authType === 'hive' && hiveUser?.username) {
-        // HIVE USER: Publish to blockchain
-        if (!isInitialized || !aioha) {
-          addToast({
-            title: 'Aioha Not Ready',
-            description: 'Aioha authentication is not ready. Please wait a moment and try again.',
-            type: 'error',
-          });
-          setIsSubmitting(false);
-          return;
-        }
-
-        if (aiohaError) {
-          addToast({
-            title: 'Aioha Error',
-            description: `Aioha authentication error: ${aiohaError}`,
-            type: 'error',
-          });
-          setIsSubmitting(false);
-          return;
-        }
-
-        const commentData = {
+        // HIVE USER: Publish to blockchain via Keychain
+        const operation = createCommentOperation({
           author: hiveUser.username,
           body: commentText.trim(),
           parentAuthor: author,
           parentPermlink: permlink,
-          jsonMetadata: JSON.stringify({
-            app: 'sportsblock/1.0.0',
-            format: 'markdown',
-          }),
-        };
+        });
 
-        const result = await publishComment(commentData, aioha);
+        const { aioha } = await import('@/lib/aioha/config');
 
-        if (result.success) {
-          addToast({
-            title: 'Success',
-            description: 'Comment posted successfully!',
-            type: 'success',
-          });
-          setCommentText('');
-          invalidatePostComments(author, permlink);
-        } else {
-          addToast({
-            title: 'Comment Failed',
-            description: `Failed to post comment: ${result.error}`,
-            type: 'error',
-          });
+        const aiohaInstance = aioha as {
+          signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
+        } | null;
+
+        if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
+          throw new Error('Hive authentication not available. Please reconnect.');
         }
+
+        const result = await aiohaInstance.signAndBroadcastTx([['comment', operation]], 'posting');
+
+        const broadcast = result as { success?: boolean; error?: string } | null;
+        if (!result || broadcast?.success === false || broadcast?.error) {
+          throw new Error(broadcast?.error || 'Failed to broadcast comment');
+        }
+
+        addToast({
+          title: 'Success',
+          description: 'Comment posted successfully!',
+          type: 'success',
+        });
+        setCommentText('');
+        invalidatePostComments(author, permlink);
       } else {
         // SOFT USER: Publish to Firebase
         const response = await fetch('/api/soft/comments', {
