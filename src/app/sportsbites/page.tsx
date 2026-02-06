@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useToast, toast } from '@/components/core/Toast';
 import type { Sportsbite } from '@/lib/hive-workerbee/sportsbites';
 import Image from 'next/image';
-import { Zap, TrendingUp, Clock, Users } from 'lucide-react';
+import { Zap, TrendingUp, Clock, Users, X } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { Button } from '@/components/core/Button';
 import { useFollowing } from '@/lib/react-query/queries/useFollowers';
@@ -23,6 +23,12 @@ export default function SportsBitesPage() {
   const [activeFilter, setActiveFilter] = useState<FeedFilter>('latest');
   const [optimisticBite, setOptimisticBite] = useState<Sportsbite | null>(null);
   const [followingList, setFollowingList] = useState<string[]>([]);
+  const [infoBannerDismissed, setInfoBannerDismissed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sportsbites-info-dismissed') === 'true';
+    }
+    return false;
+  });
 
   const { data: followingData } = useFollowing(user?.username || '', { enabled: !!user?.username });
 
@@ -139,20 +145,33 @@ export default function SportsBitesPage() {
         </div>
 
         {/* Info banner */}
-        <div className="mb-6 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10 p-4">
-          <div className="flex items-start gap-3">
-            <div className="rounded-lg bg-primary/20 p-2">
-              <Zap className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-primary">What are Sportsbites?</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Quick 280-character posts perfect for live match reactions, hot takes, and instant
-                sports commentary. All posts are stored on the Hive blockchain and can earn rewards!
-              </p>
+        {!infoBannerDismissed && (
+          <div className="mb-6 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10 p-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-primary/20 p-2">
+                <Zap className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-primary">What are Sportsbites?</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Quick 280-character posts perfect for live match reactions, hot takes, and instant
+                  sports commentary. All posts are stored on the Hive blockchain and can earn
+                  rewards!
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setInfoBannerDismissed(true);
+                  localStorage.setItem('sportsbites-info-dismissed', 'true');
+                }}
+                className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="Dismiss"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Feed */}
         <SportsbitesFeed

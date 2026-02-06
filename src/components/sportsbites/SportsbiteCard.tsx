@@ -106,6 +106,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
     openModal('comments', {
       author: sportsbite.author,
       permlink: sportsbite.permlink,
+      source: sportsbite.source,
     });
   };
 

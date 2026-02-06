@@ -15,6 +15,7 @@ import {
   Link as LinkIcon,
   Film,
   Search,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { SPORT_CATEGORIES } from '@/types';
@@ -826,8 +827,9 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
       </div>
 
       {authType !== 'hive' && user && (
-        <div className="border-t border-blue-200 bg-blue-50 px-4 py-2 dark:border-blue-800 dark:bg-blue-950/30">
-          <p className="text-xs text-blue-700 dark:text-blue-300">
+        <div className="flex items-center gap-2 border-t border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2.5 dark:border-amber-800/50 dark:from-amber-950/20 dark:to-orange-950/20">
+          <Zap className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+          <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
             Upgrade to Hive to earn crypto rewards on your sportsbites
           </p>
         </div>

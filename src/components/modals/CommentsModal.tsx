@@ -25,6 +25,8 @@ interface CommentsModalProps {
 export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, data }) => {
   const author = data?.author as string;
   const permlink = data?.permlink as string;
+  const source = data?.source as string | undefined;
+  const isSoftPost = source === 'soft' || permlink?.startsWith('soft-');
   const { user, hiveUser, authType } = useAuth();
   const { addToast } = useToast();
   const { invalidatePostComments } = useInvalidateComments();
@@ -63,7 +65,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
     setIsSubmitting(true);
 
     try {
-      if (authType === 'hive' && hiveUser?.username) {
+      if (authType === 'hive' && hiveUser?.username && !isSoftPost) {
         // HIVE USER: Publish to blockchain
         if (!isInitialized || !aioha) {
           addToast({
@@ -205,7 +207,12 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                   key={`${comment.author}-${comment.permlink}`}
                   className={`flex space-x-3 ${isNestedReply ? 'ml-8 border-l-2 border-gray-200 pl-4' : ''}`}
                 >
-                  <Avatar fallback={comment.author} alt={comment.author} size="sm" />
+                  <Avatar
+                    src={`https://images.hive.blog/u/${comment.author}/avatar`}
+                    fallback={comment.author}
+                    alt={comment.author}
+                    size="sm"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-center space-x-2">
                       <span className="text-sm font-medium">@{comment.author}</span>
@@ -263,7 +270,10 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="flex flex-1 gap-3">
             <Avatar
-              fallback={user?.username?.[0] || 'U'}
+              src={
+                user?.username ? `https://images.hive.blog/u/${user.username}/avatar` : undefined
+              }
+              fallback={user?.username || 'U'}
               alt={user?.username || 'You'}
               size="sm"
               className="hidden sm:flex"

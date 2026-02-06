@@ -18,22 +18,20 @@ export const hiveUsernameSchema = z
   .string()
   .min(3, 'Username must be at least 3 characters')
   .max(16, 'Username must be at most 16 characters')
-  .regex(
-    /^[a-z][a-z0-9.-]*[a-z0-9]$|^[a-z]$/,
-    'Invalid Hive username format'
-  )
+  .regex(/^[a-z][a-z0-9.-]*[a-z0-9]$|^[a-z]$/, 'Invalid Hive username format')
   .transform((val) => val.toLowerCase());
 
 /**
  * Permlink validation
- * - Letters, numbers, and hyphens
+ * - Letters (upper and lowercase), numbers, and hyphens
  * - Max 256 characters
+ * Note: Hive permlinks are lowercase, but soft/Firebase permlinks may contain uppercase
  */
 export const permlinkSchema = z
   .string()
   .min(1, 'Permlink is required')
   .max(256, 'Permlink too long')
-  .regex(/^[a-z0-9-]+$/, 'Invalid permlink format');
+  .regex(/^[a-zA-Z0-9-]+$/, 'Invalid permlink format');
 
 /**
  * Pagination limit with bounds
@@ -63,18 +61,12 @@ export const postSortSchema = z.enum(['created', 'trending', 'payout', 'votes'])
 /**
  * Cursor for pagination (ISO date string or permlink)
  */
-export const cursorSchema = z
-  .string()
-  .max(256, 'Cursor too long')
-  .optional();
+export const cursorSchema = z.string().max(256, 'Cursor too long').optional();
 
 /**
  * Sport category filter
  */
-export const sportCategorySchema = z
-  .string()
-  .max(50, 'Category too long')
-  .optional();
+export const sportCategorySchema = z.string().max(50, 'Category too long').optional();
 
 /**
  * Tag filter
@@ -108,15 +100,16 @@ export type PostsQueryParams = z.infer<typeof postsQuerySchema>;
 /**
  * GET /api/hive/comments query params
  */
-export const commentsQuerySchema = z.object({
-  author: hiveUsernameSchema.optional(),
-  permlink: permlinkSchema.optional(),
-  username: hiveUsernameSchema.optional(),
-  limit: limitSchema,
-}).refine(
-  (data) => (data.author && data.permlink) || data.username,
-  { message: 'Either author/permlink or username is required' }
-);
+export const commentsQuerySchema = z
+  .object({
+    author: hiveUsernameSchema.optional(),
+    permlink: permlinkSchema.optional(),
+    username: hiveUsernameSchema.optional(),
+    limit: limitSchema,
+  })
+  .refine((data) => (data.author && data.permlink) || data.username, {
+    message: 'Either author/permlink or username is required',
+  });
 
 export type CommentsQueryParams = z.infer<typeof commentsQuerySchema>;
 
@@ -179,9 +172,7 @@ export function parseSearchParams<T extends z.ZodTypeAny>(
  * Format Zod errors for API response
  */
 export function formatValidationErrors(error: z.ZodError): string {
-  return error.issues
-    .map((e) => `${e.path.join('.')}: ${e.message}`)
-    .join('; ');
+  return error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ');
 }
 
 /**

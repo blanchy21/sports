@@ -27,15 +27,23 @@ export async function GET(request: NextRequest) {
     if (author && permlink) {
       ctx.log.debug('Fetching post comments', { author, permlink });
 
-      const comments = await retryWithBackoff(
-        () => fetchComments(author, permlink),
-        {
+      // Soft/Firebase posts (permlinks starting with "soft-") don't exist on-chain
+      // so gracefully return empty comments instead of erroring
+      let comments: Awaited<ReturnType<typeof fetchComments>> = [];
+      try {
+        comments = await retryWithBackoff(() => fetchComments(author, permlink), {
           maxRetries: 2,
           initialDelay: 1000,
           maxDelay: 10000,
           backoffMultiplier: 2,
-        }
-      );
+        });
+      } catch (err) {
+        ctx.log.debug('Could not fetch comments, returning empty', {
+          author,
+          permlink,
+          error: String(err),
+        });
+      }
 
       return NextResponse.json({
         success: true,
@@ -47,15 +55,12 @@ export async function GET(request: NextRequest) {
     // Fetch user's comments (username is guaranteed by schema refinement)
     ctx.log.debug('Fetching user comments', { username, limit });
 
-    const comments = await retryWithBackoff(
-      () => getUserComments(username!, limit),
-      {
-        maxRetries: 2,
-        initialDelay: 1000,
-        maxDelay: 10000,
-        backoffMultiplier: 2,
-      }
-    );
+    const comments = await retryWithBackoff(() => getUserComments(username!, limit), {
+      maxRetries: 2,
+      initialDelay: 1000,
+      maxDelay: 10000,
+      backoffMultiplier: 2,
+    });
 
     return NextResponse.json({
       success: true,
@@ -63,9 +68,7 @@ export async function GET(request: NextRequest) {
       count: comments?.length || 0,
       username,
     });
-
   } catch (error) {
     return ctx.handleError(error);
   }
 }
-
