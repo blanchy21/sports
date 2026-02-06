@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
-import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
+import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { FieldValue, Firestore } from 'firebase-admin/firestore';
@@ -246,18 +246,22 @@ export async function POST(request: NextRequest) {
       }
 
       // Rate limiting check
-      const rateLimit = checkRateLimit(user.userId, RATE_LIMITS.follows);
-      if (!rateLimit.allowed) {
+      const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.softFollows, 'softFollows');
+      if (!rateLimit.success) {
         return NextResponse.json(
           {
             success: false,
             error: 'Rate limit exceeded',
             message: 'You are following too frequently. Please slow down.',
-            retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
+            retryAfter: Math.ceil((rateLimit.reset - Date.now()) / 1000),
           },
           {
             status: 429,
-            headers: getRateLimitHeaders(rateLimit),
+            headers: createRateLimitHeaders(
+              rateLimit.remaining,
+              rateLimit.reset,
+              RATE_LIMITS.softFollows.limit
+            ),
           }
         );
       }

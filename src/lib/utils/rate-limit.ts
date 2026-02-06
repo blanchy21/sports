@@ -30,7 +30,7 @@ interface RateLimitEntry {
 
 // LRU cache configuration
 const MAX_ENTRIES = 10000; // Maximum unique identifiers to track
-const TTL_MS = 5 * 60 * 1000; // 5 minute TTL for entries (covers most rate limit windows)
+const TTL_MS = 65 * 60 * 1000; // 65 minute TTL for entries (covers hourly rate limit windows with margin)
 
 const inMemoryStore = new LRUCache<string, RateLimitEntry>({
   max: MAX_ENTRIES,
@@ -45,10 +45,7 @@ const inMemoryStore = new LRUCache<string, RateLimitEntry>({
  * In-memory rate limit check (fallback)
  * Uses LRU cache for bounded memory usage
  */
-function checkRateLimitInMemory(
-  identifier: string,
-  config: RateLimitConfig
-): RateLimitResult {
+function checkRateLimitInMemory(identifier: string, config: RateLimitConfig): RateLimitResult {
   const now = Date.now();
   const windowMs = config.windowSeconds * 1000;
   const key = identifier;
@@ -174,10 +171,7 @@ export async function checkRateLimit(
  * Use this only when async is not possible (e.g., synchronous middleware)
  * @deprecated Prefer async checkRateLimit for distributed limiting
  */
-export function checkRateLimitSync(
-  identifier: string,
-  config: RateLimitConfig
-): RateLimitResult {
+export function checkRateLimitSync(identifier: string, config: RateLimitConfig): RateLimitResult {
   return checkRateLimitInMemory(identifier, config);
 }
 
@@ -236,6 +230,27 @@ export const RATE_LIMITS = {
   realtime: {
     limit: isDevelopment ? 100 : 60, // 100/min dev, 60/min prod
     windowSeconds: 60,
+  },
+  // Soft post/comment write operations - hourly windows
+  softPosts: {
+    limit: 10, // 10 posts per hour
+    windowSeconds: 3600,
+  },
+  softComments: {
+    limit: 30, // 30 comments per hour
+    windowSeconds: 3600,
+  },
+  softLikes: {
+    limit: 100, // 100 likes per hour
+    windowSeconds: 3600,
+  },
+  softFollows: {
+    limit: 50, // 50 follows per hour
+    windowSeconds: 3600,
+  },
+  softSportsbites: {
+    limit: 20, // 20 sportsbites per hour
+    windowSeconds: 3600,
   },
 } as const;
 

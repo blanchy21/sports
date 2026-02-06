@@ -12,7 +12,7 @@ import {
 } from '@/lib/api/response';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { checkRateLimit, RATE_LIMITS, getRateLimitHeaders } from '@/lib/api/rate-limit';
+import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -167,23 +167,31 @@ export async function POST(request: NextRequest) {
       }
 
       // Rate limiting check
-      const rateLimit = checkRateLimit(authenticatedUserId, RATE_LIMITS.posts);
-      if (!rateLimit.allowed) {
+      const rateLimit = await checkRateLimit(
+        authenticatedUserId,
+        RATE_LIMITS.softPosts,
+        'softPosts'
+      );
+      if (!rateLimit.success) {
         ctx.log.warn('Rate limit exceeded', {
           authorId: authenticatedUserId,
-          count: rateLimit.count,
-          resetAt: new Date(rateLimit.resetAt).toISOString(),
+          remaining: rateLimit.remaining,
+          reset: new Date(rateLimit.reset).toISOString(),
         });
         return NextResponse.json(
           {
             success: false,
             error: 'Rate limit exceeded',
             message: 'You are posting too frequently. Please wait before creating another post.',
-            retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
+            retryAfter: Math.ceil((rateLimit.reset - Date.now()) / 1000),
           },
           {
             status: 429,
-            headers: getRateLimitHeaders(rateLimit),
+            headers: createRateLimitHeaders(
+              rateLimit.remaining,
+              rateLimit.reset,
+              RATE_LIMITS.softPosts.limit
+            ),
           }
         );
       }
