@@ -25,7 +25,7 @@ interface CommentsModalProps {
 export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, data }) => {
   const author = data?.author as string;
   const permlink = data?.permlink as string;
-  const { user, hiveUser, authType, touchSession } = useAuth();
+  const { user, hiveUser, touchSession } = useAuth();
   const { addToast } = useToast();
   const { invalidatePostComments } = useInvalidateComments();
 

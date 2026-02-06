@@ -8,9 +8,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createRequestContext, forbiddenError, validationError } from '@/lib/api/response';
-import { parseSearchParams } from '@/lib/api/validation';
 import { isAdminAccount } from '@/lib/admin/config';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,13 +20,10 @@ const CURATORS_DOC = 'config/curators';
 
 const DEFAULT_CURATORS = ['niallon11', 'bozz', 'talesfrmthecrypt', 'ablaze'];
 
-const querySchema = z.object({
-  username: z.string().min(1, 'Username is required'),
-});
-
 const mutationSchema = z.object({
-  username: z.string().min(1, 'Admin username is required'),
-  curator: z.string().min(1, 'Curator username is required')
+  curator: z
+    .string()
+    .min(1, 'Curator username is required')
     .regex(/^[a-z0-9._-]+$/, 'Invalid Hive username'),
 });
 
@@ -36,14 +33,8 @@ const mutationSchema = z.object({
 export async function GET(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
-  const parseResult = parseSearchParams(request.nextUrl.searchParams, querySchema);
-  if (!parseResult.success) {
-    return validationError(parseResult.error, ctx.requestId);
-  }
-
-  const { username } = parseResult.data;
-
-  if (!isAdminAccount(username)) {
+  const user = await getAuthenticatedUserFromSession(request);
+  if (!user || !isAdminAccount(user.username)) {
     return forbiddenError('Admin access required', ctx.requestId);
   }
 
@@ -61,6 +52,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
+  const user = await getAuthenticatedUserFromSession(request);
+  if (!user || !isAdminAccount(user.username)) {
+    return forbiddenError('Admin access required', ctx.requestId);
+  }
+
   try {
     const body = await request.json();
     const parseResult = mutationSchema.safeParse(body);
@@ -69,11 +65,7 @@ export async function POST(request: NextRequest) {
       return validationError(parseResult.error, ctx.requestId);
     }
 
-    const { username, curator } = parseResult.data;
-
-    if (!isAdminAccount(username)) {
-      return forbiddenError('Admin access required', ctx.requestId);
-    }
+    const { curator } = parseResult.data;
 
     const adminDb = getAdminDb();
     if (!adminDb) {
@@ -94,15 +86,21 @@ export async function POST(request: NextRequest) {
 
     curators.push(curator);
     try {
-      await adminDb.doc(CURATORS_DOC).set(
-        { accounts: curators, updatedAt: new Date().toISOString(), updatedBy: username },
-        { merge: true }
-      );
+      await adminDb
+        .doc(CURATORS_DOC)
+        .set(
+          { accounts: curators, updatedAt: new Date().toISOString(), updatedBy: user.username },
+          { merge: true }
+        );
     } catch (writeError) {
       const msg = writeError instanceof Error ? writeError.message : String(writeError);
       if (msg.includes('credentials') || msg.includes('authentication')) {
         return NextResponse.json(
-          { success: false, error: 'Firebase credentials not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.' },
+          {
+            success: false,
+            error:
+              'Firebase credentials not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.',
+          },
           { status: 503 }
         );
       }
@@ -121,6 +119,11 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
+  const user = await getAuthenticatedUserFromSession(request);
+  if (!user || !isAdminAccount(user.username)) {
+    return forbiddenError('Admin access required', ctx.requestId);
+  }
+
   try {
     const body = await request.json();
     const parseResult = mutationSchema.safeParse(body);
@@ -129,11 +132,7 @@ export async function DELETE(request: NextRequest) {
       return validationError(parseResult.error, ctx.requestId);
     }
 
-    const { username, curator } = parseResult.data;
-
-    if (!isAdminAccount(username)) {
-      return forbiddenError('Admin access required', ctx.requestId);
-    }
+    const { curator } = parseResult.data;
 
     const adminDb = getAdminDb();
     if (!adminDb) {
@@ -154,15 +153,21 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-      await adminDb.doc(CURATORS_DOC).set(
-        { accounts: updated, updatedAt: new Date().toISOString(), updatedBy: username },
-        { merge: true }
-      );
+      await adminDb
+        .doc(CURATORS_DOC)
+        .set(
+          { accounts: updated, updatedAt: new Date().toISOString(), updatedBy: user.username },
+          { merge: true }
+        );
     } catch (writeError) {
       const msg = writeError instanceof Error ? writeError.message : String(writeError);
       if (msg.includes('credentials') || msg.includes('authentication')) {
         return NextResponse.json(
-          { success: false, error: 'Firebase credentials not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.' },
+          {
+            success: false,
+            error:
+              'Firebase credentials not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.',
+          },
           { status: 503 }
         );
       }

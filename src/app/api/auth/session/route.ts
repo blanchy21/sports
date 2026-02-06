@@ -79,6 +79,11 @@ function encryptSession(data: SessionData): string {
  * POST /api/auth/session - Create/update session
  */
 export async function POST(request: NextRequest) {
+  // CSRF protection for session creation
+  if (!validateCsrf(request)) {
+    return csrfError('Request blocked: invalid origin');
+  }
+
   try {
     const body = await request.json();
     const parseResult = sessionSchema.safeParse(body);

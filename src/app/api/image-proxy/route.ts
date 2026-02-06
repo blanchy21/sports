@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { imageProxyQuerySchema, parseSearchParams } from '@/lib/api/validation';
-import { createRequestContext, validationError, forbiddenError, timeoutError, internalError } from '@/lib/api/response';
+import {
+  createRequestContext,
+  validationError,
+  forbiddenError,
+  timeoutError,
+  internalError,
+} from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,8 +38,8 @@ const ALLOWED_DOMAINS = [
 function isAllowedDomain(url: string): boolean {
   try {
     const parsedUrl = new URL(url);
-    return ALLOWED_DOMAINS.some(domain =>
-      parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(`.${domain}`)
+    return ALLOWED_DOMAINS.some(
+      (domain) => parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(`.${domain}`)
     );
   } catch {
     return false;
@@ -77,9 +83,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get the image data
+    // Validate response is actually an image
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.startsWith('image/')) {
+      ctx.log.warn('Non-image content type from proxy', { imageUrl, contentType });
+      return forbiddenError('URL does not point to an image', ctx.requestId);
+    }
+
+    // Get the image data with size limit (50MB max)
+    const contentLength = response.headers.get('content-length');
+    if (contentLength && parseInt(contentLength, 10) > 50 * 1024 * 1024) {
+      ctx.log.warn('Image too large for proxy', { imageUrl, contentLength });
+      return forbiddenError('Image too large', ctx.requestId);
+    }
+
     const imageBuffer = await response.arrayBuffer();
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
 
     // Return the image with proper CORS headers
     // Restrict CORS to app domain only (prevents abuse from malicious sites)
@@ -107,4 +125,3 @@ export async function GET(request: NextRequest) {
     return internalError(`Failed to proxy image: ${message}`, ctx.requestId);
   }
 }
-

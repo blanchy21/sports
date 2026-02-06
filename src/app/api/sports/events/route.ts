@@ -58,13 +58,25 @@ interface TheSportsDBLiveResponse {
   events: TheSportsDBLiveEvent[] | null;
 }
 
+/**
+ * Filter events by sport name with special alias handling
+ */
+function filterBySport(events: SportsEvent[], sport: string): SportsEvent[] {
+  return events.filter(
+    (event) =>
+      event.sport.toLowerCase().includes(sport.toLowerCase()) ||
+      (sport.toLowerCase() === 'football' && event.sport === 'Football') ||
+      (sport.toLowerCase() === 'nfl' && event.sport === 'American Football')
+  );
+}
+
 // Cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 let eventsCache: EventsCache = {
   data: null,
   liveEventIds: new Set(),
   timestamp: 0,
-  expiresAt: 0
+  expiresAt: 0,
 };
 
 // Sport configuration with league IDs and icons
@@ -79,32 +91,26 @@ const SPORTS_CONFIG = {
       { id: '4335', name: 'La Liga' },
       { id: '4332', name: 'Serie A' },
       { id: '4331', name: 'Bundesliga' },
-    ]
+    ],
   },
   nfl: {
     icon: '🏈',
     sportName: 'American Football',
     liveSportKey: 'Football',
-    leagues: [
-      { id: '4391', name: 'NFL' }
-    ]
+    leagues: [{ id: '4391', name: 'NFL' }],
   },
   tennis: {
     icon: '🎾',
     sportName: 'Tennis',
     liveSportKey: 'Tennis',
-    leagues: [
-      { id: '4394', name: 'ATP' }
-    ]
+    leagues: [{ id: '4394', name: 'ATP' }],
   },
   golf: {
     icon: '⛳',
     sportName: 'Golf',
     liveSportKey: 'Golf',
-    leagues: [
-      { id: '4342', name: 'PGA Tour' }
-    ]
-  }
+    leagues: [{ id: '4342', name: 'PGA Tour' }],
+  },
 };
 
 const API_KEY = process.env.THESPORTSDB_API_KEY || '123'; // '123' is the free test key
@@ -119,12 +125,12 @@ async function fetchLeagueEvents(leagueId: string): Promise<TheSportsDBEvent[]> 
       `${BASE_URL}/eventsnextleague.php?id=${leagueId}`,
       { next: { revalidate: 300 } } // Cache for 5 minutes
     );
-    
+
     if (!response.ok) {
       console.error(`Failed to fetch league ${leagueId}: ${response.status}`);
       return [];
     }
-    
+
     const data: TheSportsDBResponse = await response.json();
     return data.events || [];
   } catch (error) {
@@ -138,28 +144,28 @@ async function fetchLeagueEvents(leagueId: string): Promise<TheSportsDBEvent[]> 
  */
 async function fetchLiveEvents(sportKey: string): Promise<Set<string>> {
   const liveIds = new Set<string>();
-  
+
   try {
     const response = await fetch(
       `${BASE_URL}/livescore.php?s=${sportKey}`,
       { cache: 'no-store' } // Always fetch fresh live data
     );
-    
+
     if (!response.ok) {
       return liveIds;
     }
-    
+
     const data: TheSportsDBLiveResponse = await response.json();
-    
+
     if (data.events) {
-      data.events.forEach(event => {
+      data.events.forEach((event) => {
         liveIds.add(event.idEvent);
       });
     }
   } catch (error) {
     console.error(`Error fetching live events for ${sportKey}:`, error);
   }
-  
+
   return liveIds;
 }
 
@@ -182,10 +188,10 @@ function convertToSportsEvent(
 ): SportsEvent {
   const eventDate = parseEventDateTime(event.dateEvent, event.strTime);
   const now = new Date();
-  
+
   // Determine status
   let status: 'upcoming' | 'live' | 'finished' = 'upcoming';
-  
+
   if (liveEventIds.has(event.idEvent)) {
     status = 'live';
   } else if (event.strStatus === 'Match Finished' || event.strStatus === 'FT') {
@@ -210,10 +216,10 @@ function convertToSportsEvent(
     league: event.strLeague,
     teams: {
       home: event.strHomeTeam,
-      away: event.strAwayTeam
+      away: event.strAwayTeam,
     },
     venue: event.strVenue,
-    status
+    status,
   };
 }
 
@@ -223,39 +229,42 @@ function convertToSportsEvent(
 async function fetchAllEvents(): Promise<{ events: SportsEvent[]; liveEventIds: Set<string> }> {
   const allEvents: SportsEvent[] = [];
   const allLiveIds = new Set<string>();
-  
+
   // Fetch live events for all sports first
-  const livePromises = Object.values(SPORTS_CONFIG).map(config => 
+  const livePromises = Object.values(SPORTS_CONFIG).map((config) =>
     fetchLiveEvents(config.liveSportKey)
   );
   const liveResults = await Promise.all(livePromises);
-  liveResults.forEach(ids => {
-    ids.forEach(id => allLiveIds.add(id));
+  liveResults.forEach((ids) => {
+    ids.forEach((id) => allLiveIds.add(id));
   });
-  
+
   // Fetch upcoming events for all leagues
-  const fetchPromises: Promise<{ events: TheSportsDBEvent[]; config: typeof SPORTS_CONFIG.football }>[] = [];
-  
+  const fetchPromises: Promise<{
+    events: TheSportsDBEvent[];
+    config: typeof SPORTS_CONFIG.football;
+  }>[] = [];
+
   for (const [, sportConfig] of Object.entries(SPORTS_CONFIG)) {
     for (const league of sportConfig.leagues) {
       fetchPromises.push(
-        fetchLeagueEvents(league.id).then(events => ({
+        fetchLeagueEvents(league.id).then((events) => ({
           events,
-          config: sportConfig
+          config: sportConfig,
         }))
       );
     }
   }
-  
+
   const results = await Promise.all(fetchPromises);
-  
+
   for (const { events, config } of results) {
     for (const event of events) {
       const sportsEvent = convertToSportsEvent(event, config, allLiveIds);
       allEvents.push(sportsEvent);
     }
   }
-  
+
   return { events: allEvents, liveEventIds: allLiveIds };
 }
 
@@ -266,7 +275,7 @@ function filterEvents(events: SportsEvent[]): SportsEvent[] {
   const now = new Date();
   const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  return events.filter(event => {
+  return events.filter((event) => {
     // Exclude finished events
     if (event.status === 'finished') {
       return false;
@@ -292,7 +301,7 @@ function sortEvents(events: SportsEvent[]): SportsEvent[] {
     // Live events first
     if (a.status === 'live' && b.status !== 'live') return -1;
     if (b.status === 'live' && a.status !== 'live') return 1;
-    
+
     // Then sort by date
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
@@ -308,7 +317,7 @@ export async function GET(request: NextRequest) {
   console.log(`[${ROUTE}] Request started`, {
     requestId,
     url,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 
   try {
@@ -318,81 +327,75 @@ export async function GET(request: NextRequest) {
     const limit = Math.max(1, Math.min(100, isNaN(rawLimit) ? 10 : rawLimit));
 
     const now = Date.now();
-    
+
     // Check if we have valid cached data
     if (eventsCache.data && now < eventsCache.expiresAt) {
       let filteredEvents = filterEvents(eventsCache.data);
-      
+
       // Filter by sport if specified
       if (sport && sport !== 'all') {
-        filteredEvents = filteredEvents.filter(event => 
-          event.sport.toLowerCase().includes(sport.toLowerCase()) ||
-          sport.toLowerCase() === 'football' && event.sport === 'Football' ||
-          sport.toLowerCase() === 'nfl' && event.sport === 'American Football'
-        );
+        filteredEvents = filterBySport(filteredEvents, sport);
       }
-      
+
       filteredEvents = sortEvents(filteredEvents);
       filteredEvents = filteredEvents.slice(0, limit);
-      
+
       return NextResponse.json({
         success: true,
         data: filteredEvents,
         cached: true,
-        timestamp: eventsCache.timestamp
+        timestamp: eventsCache.timestamp,
       });
     }
-    
+
     // Fetch fresh data from TheSportsDB
     const { events, liveEventIds } = await fetchAllEvents();
-    
+
     // Update cache
     eventsCache = {
       data: events,
       liveEventIds,
       timestamp: now,
-      expiresAt: now + CACHE_DURATION
+      expiresAt: now + CACHE_DURATION,
     };
-    
+
     let filteredEvents = filterEvents(events);
-    
+
     // Filter by sport if specified
     if (sport && sport !== 'all') {
-      filteredEvents = filteredEvents.filter(event => 
-        event.sport.toLowerCase().includes(sport.toLowerCase()) ||
-        sport.toLowerCase() === 'football' && event.sport === 'Football' ||
-        sport.toLowerCase() === 'nfl' && event.sport === 'American Football'
-      );
+      filteredEvents = filterBySport(filteredEvents, sport);
     }
-    
+
     filteredEvents = sortEvents(filteredEvents);
     filteredEvents = filteredEvents.slice(0, limit);
-    
+
     return NextResponse.json({
       success: true,
       data: filteredEvents,
       cached: false,
-      timestamp: now
+      timestamp: now,
     });
-    
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[${ROUTE}] Request failed after ${duration}ms`, {
       requestId,
       url,
-      error: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : String(error),
-      timestamp: new Date().toISOString()
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : String(error),
+      timestamp: new Date().toISOString(),
     });
 
     return NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch sports events',
-        data: []
+        data: [],
       },
       { status: 500 }
     );

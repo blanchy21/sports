@@ -55,3 +55,35 @@ Always pass `src={`https://images.hive.blog/u/${username}/avatar`}` alongside `f
 
 ### Rule
 **For Hive user avatars, always pass both `src` (Hive avatar URL) and `fallback` (username) to the Avatar component.**
+
+---
+
+## Security: Admin endpoints must verify session, never trust client-supplied username
+
+**Date:** 2026-02-06
+**Severity:** Critical — allowed unauthenticated admin access
+
+### Problem
+Admin API endpoints (`/api/admin/metrics`, `/api/admin/curators`, `/api/admin/trigger-cron`) accepted `username` from query params or request body and checked `isAdminAccount(username)`. Any user could pass `username=sportsblock` to gain full admin access.
+
+### Fix
+Use `getAuthenticatedUserFromSession(request)` to get the username from the encrypted session cookie, then check `isAdminAccount(user.username)`.
+
+### Rule
+**Never trust client-supplied identity for authorization.** Always verify identity from the server-side session/cookie. Authorization checks must use the authenticated session, not request parameters.
+
+---
+
+## Security: WASM-free node config for Jest compatibility
+
+**Date:** 2026-02-06
+**Severity:** Medium — caused test failures
+
+### Problem
+Importing `HIVE_NODES` from `client.ts` (which imports `@hiveio/workerbee` WASM) broke Jest tests in `api.ts` because WASM can't run in jsdom.
+
+### Fix
+Created `nodes.ts` with zero dependencies for `HIVE_NODES`. All files import from `nodes.ts`. `client.ts` re-exports for backward compatibility.
+
+### Rule
+**Keep shared config/constants in dependency-free files.** Never co-locate simple constants with WASM or heavy imports.

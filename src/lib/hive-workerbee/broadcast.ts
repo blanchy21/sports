@@ -6,13 +6,7 @@
  */
 
 import { Client, PrivateKey, Operation } from '@hiveio/dhive';
-
-const HIVE_NODES = [
-  'https://api.hive.blog',
-  'https://api.openhive.network',
-  'https://api.deathwing.me',
-  'https://api.c0ff33a.uk',
-];
+import { HIVE_NODES } from './nodes';
 
 let dhiveClient: Client | null = null;
 

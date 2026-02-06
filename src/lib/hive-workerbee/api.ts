@@ -268,16 +268,10 @@ export async function makeHiveApiCall<T = unknown>(
     const nodeHealthManager = getNodeHealthManager();
     const bestNode = nodeHealthManager.getBestNode();
 
-    // Fallback node list for reactive failover
-    // Using verified reliable nodes only - arcange.eu removed from primary rotation
-    // due to consistent timeout issues observed in production logs
+    // Fallback node list for reactive failover — uses shared HIVE_NODES from client.ts
     const apiNodes = [
       bestNode, // Start with healthiest node (from health manager)
-      'https://api.hive.blog', // @blocktrades - most reliable
-      'https://api.openhive.network', // @gtg - established node
-      'https://api.deathwing.me', // @deathwing - good backup
-      'https://api.c0ff33a.uk', // @c0ff33a - backup node
-      // Note: hive-api.arcange.eu intentionally excluded - known timeout issues
+      ...HIVE_NODES,
     ];
 
     // Remove duplicates while preserving order
@@ -386,14 +380,13 @@ export async function makeHiveApiCall<T = unknown>(
  * Get the list of available Hive API nodes
  * @returns Array of Hive node URLs (verified working nodes only)
  */
+import { HIVE_NODES } from './nodes';
+
+/**
+ * Get the list of available Hive API nodes (from shared HIVE_NODES in client.ts)
+ */
 export function getHiveApiNodes(): string[] {
-  // Optimized node list - arcange.eu excluded due to consistent timeout issues
-  return [
-    'https://api.hive.blog', // @blocktrades - most reliable
-    'https://api.openhive.network', // @gtg - established node
-    'https://api.deathwing.me', // @deathwing - backup node
-    'https://api.c0ff33a.uk', // @c0ff33a - backup node
-  ];
+  return [...HIVE_NODES];
 }
 
 /**

@@ -6,6 +6,7 @@
  */
 
 import { headers } from 'next/headers';
+import crypto from 'crypto';
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -31,9 +32,7 @@ export async function verifyCronRequest(): Promise<boolean> {
   }
 
   // Extract the token from "Bearer <token>"
-  const token = authHeader.startsWith('Bearer ')
-    ? authHeader.slice(7)
-    : authHeader;
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
 
   // In production, only accept CRON_SECRET
   if (process.env.NODE_ENV === 'production') {
@@ -41,7 +40,13 @@ export async function verifyCronRequest(): Promise<boolean> {
       console.error('[Cron Auth] CRON_SECRET not configured in production');
       return false;
     }
-    return token === CRON_SECRET;
+    try {
+      const a = Buffer.from(token);
+      const b = Buffer.from(CRON_SECRET);
+      return a.length === b.length && crypto.timingSafeEqual(a, b);
+    } catch {
+      return false;
+    }
   }
 
   // In development, accept CRON_SECRET or dev test secret

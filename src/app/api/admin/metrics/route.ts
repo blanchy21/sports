@@ -6,10 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { createRequestContext, forbiddenError, validationError } from '@/lib/api/response';
-import { parseSearchParams } from '@/lib/api/validation';
+import { createRequestContext, forbiddenError } from '@/lib/api/response';
 import { isAdminAccount } from '@/lib/admin/config';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { getWeekId } from '@/lib/rewards/staking-distribution';
 import { getDailyKey, getCuratorAccounts } from '@/lib/rewards/curator-rewards';
 import {
@@ -25,21 +24,11 @@ export const dynamic = 'force-dynamic';
 
 const ROUTE = '/api/admin/metrics';
 
-const querySchema = z.object({
-  username: z.string().min(1, 'Username is required'),
-});
-
 export async function GET(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
-  const parseResult = parseSearchParams(request.nextUrl.searchParams, querySchema);
-  if (!parseResult.success) {
-    return validationError(parseResult.error, ctx.requestId);
-  }
-
-  const { username } = parseResult.data;
-
-  if (!isAdminAccount(username)) {
+  const user = await getAuthenticatedUserFromSession(request);
+  if (!user || !isAdminAccount(user.username)) {
     return forbiddenError('Admin access required', ctx.requestId);
   }
 
@@ -83,7 +72,9 @@ export async function GET(request: NextRequest) {
       if (contentResult.status === 'fulfilled' && contentResult.value.exists) {
         contentData = contentResult.value.data() as Record<string, unknown>;
       } else if (contentResult.status === 'rejected') {
-        ctx.log.warn('Failed to fetch content rewards data', { error: String(contentResult.reason) });
+        ctx.log.warn('Failed to fetch content rewards data', {
+          error: String(contentResult.reason),
+        });
       }
     }
 
@@ -91,9 +82,9 @@ export async function GET(request: NextRequest) {
     const metrics = {
       stakingRewards: {
         lastDistribution: stakingData?.createdAt
-          ? (typeof (stakingData.createdAt as { toDate?: () => Date }).toDate === 'function'
-              ? (stakingData.createdAt as { toDate: () => Date }).toDate().toISOString()
-              : new Date(stakingData.createdAt as string).toISOString())
+          ? typeof (stakingData.createdAt as { toDate?: () => Date }).toDate === 'function'
+            ? (stakingData.createdAt as { toDate: () => Date }).toDate().toISOString()
+            : new Date(stakingData.createdAt as string).toISOString()
           : null,
         weeklyPool: getWeeklyStakingPool(),
         totalStakers: (stakingData?.stakerCount as number) || 0,
@@ -108,9 +99,7 @@ export async function GET(request: NextRequest) {
         dailyKey,
       },
       contentRewards: {
-        lastWeek: contentData?.weekId
-          ? (contentData.weekId as string)
-          : null,
+        lastWeek: contentData?.weekId ? (contentData.weekId as string) : null,
         pendingDistributions: (contentData?.pending as number) || 0,
         totalDistributed: (contentData?.totalDistributed as number) || 0,
         status: (contentData?.status as string) || null,

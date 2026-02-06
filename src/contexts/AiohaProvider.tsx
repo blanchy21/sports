@@ -1,9 +1,8 @@
-"use client";
+'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AiohaProvider as AiohaUIProvider } from '@aioha/react-ui';
 import { AIOHA_STUB_EVENT, getAiohaInstance } from '@/lib/aioha/config';
-
 
 // Aioha context type
 interface AiohaContextType {
@@ -91,7 +90,7 @@ export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
       const debugWindow = window as typeof window & {
         __AIOHA_DEBUG_STATE__?: {
           isInitialized: boolean;
@@ -121,9 +120,7 @@ export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
   return (
     <AiohaContext.Provider value={contextValue}>
       {!!aiohaInstance && (
-        <AiohaUIProvider aioha={aiohaInstance as AiohaUIInstance}>
-          {children}
-        </AiohaUIProvider>
+        <AiohaUIProvider aioha={aiohaInstance as AiohaUIInstance}>{children}</AiohaUIProvider>
       )}
       {!aiohaInstance && children}
     </AiohaContext.Provider>

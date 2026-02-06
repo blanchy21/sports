@@ -115,8 +115,9 @@ export async function getAuthenticatedUserFromSession(
     }
   }
 
-  // Development fallback: allow x-user-id header when no session cookie
-  if (!userId && process.env.NODE_ENV !== 'production') {
+  // Development fallback: allow x-user-id header when explicitly enabled
+  // Gated behind ALLOW_HEADER_AUTH to prevent use on Vercel preview deployments
+  if (!userId && process.env.ALLOW_HEADER_AUTH === 'true') {
     const headerUserId = request.headers.get('x-user-id');
     if (headerUserId) {
       userId = headerUserId;

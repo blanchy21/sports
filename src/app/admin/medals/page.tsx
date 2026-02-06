@@ -83,7 +83,7 @@ export default function MedalsAdminDashboard() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/metrics?username=${encodeURIComponent(username)}`);
+      const response = await fetch('/api/admin/metrics');
       const data = await response.json();
 
       if (!response.ok) {
@@ -133,7 +133,7 @@ export default function MedalsAdminDashboard() {
       const response = await fetch('/api/admin/trigger-cron', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, cronType }),
+        body: JSON.stringify({ cronType }),
       });
       const data = await response.json();
 
@@ -151,7 +151,7 @@ export default function MedalsAdminDashboard() {
   const fetchCurators = useCallback(async () => {
     if (!username) return;
     try {
-      const response = await fetch(`/api/admin/curators?username=${encodeURIComponent(username)}`);
+      const response = await fetch('/api/admin/curators');
       const data = await response.json();
       if (data.success) {
         setCurators(data.curators);
@@ -174,7 +174,7 @@ export default function MedalsAdminDashboard() {
       const response = await fetch('/api/admin/curators', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, curator: newCurator.trim().toLowerCase() }),
+        body: JSON.stringify({ curator: newCurator.trim().toLowerCase() }),
       });
       const data = await response.json();
       if (data.success) {
@@ -197,7 +197,7 @@ export default function MedalsAdminDashboard() {
       const response = await fetch('/api/admin/curators', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, curator }),
+        body: JSON.stringify({ curator }),
       });
       const data = await response.json();
       if (data.success) {

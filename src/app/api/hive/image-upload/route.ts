@@ -1,18 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrivateKey, cryptoUtils } from '@hiveio/dhive';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { validateCsrf, csrfError } from '@/lib/api/csrf';
 
 const IMAGE_HOST = 'https://images.hive.blog';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
 
 export async function POST(request: NextRequest) {
+  // CSRF protection
+  if (!validateCsrf(request)) {
+    return csrfError('Request blocked: invalid origin');
+  }
+
+  // Require authenticated user
+  const user = await getAuthenticatedUserFromSession(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+
   const account = process.env.HIVE_IMAGE_UPLOAD_ACCOUNT;
   const key = process.env.HIVE_IMAGE_UPLOAD_KEY;
 
   if (!account || !key) {
-    return NextResponse.json(
-      { error: 'Image upload is not configured. Set HIVE_IMAGE_UPLOAD_ACCOUNT and HIVE_IMAGE_UPLOAD_KEY.' },
-      { status: 503 }
-    );
+    return NextResponse.json({ error: 'Image upload is not configured.' }, { status: 503 });
   }
 
   try {
@@ -25,6 +36,12 @@ export async function POST(request: NextRequest) {
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 400 });
+    }
+
+    // Validate file type
+    const fileType = (file as File).type;
+    if (fileType && !ALLOWED_IMAGE_TYPES.includes(fileType)) {
+      return NextResponse.json({ error: 'Only image files are allowed' }, { status: 400 });
     }
 
     // Read file as buffer
@@ -66,10 +83,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ url: result.url });
     }
 
-    return NextResponse.json(
-      { error: 'No URL in image host response' },
-      { status: 502 }
-    );
+    return NextResponse.json({ error: 'No URL in image host response' }, { status: 502 });
   } catch (error) {
     console.error('Image upload error:', error);
     return NextResponse.json(

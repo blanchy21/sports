@@ -678,8 +678,13 @@ export function handleApiError(
     }
   }
 
-  // 5. Default to internal error
-  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  // 5. Default to internal error — don't leak internal details in production
+  const isProduction = process.env.NODE_ENV === 'production';
+  const errorMessage = isProduction
+    ? 'An internal error occurred'
+    : error instanceof Error
+      ? error.message
+      : 'Unknown error';
   return internalError(errorMessage, requestId);
 }
 

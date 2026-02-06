@@ -21,14 +21,9 @@ function hasRpcCall(
   return wax !== null && typeof (wax as WaxWithRpcCall).call === 'function';
 }
 
-// Hive node endpoints - optimized for reliability and speed
-// arcange.eu excluded due to consistent timeout issues in production
-const HIVE_NODES = [
-  'https://api.hive.blog', // @blocktrades - most reliable
-  'https://api.openhive.network', // @gtg - established node
-  'https://api.deathwing.me', // @deathwing - backup node
-  'https://api.c0ff33a.uk', // @c0ff33a - backup node
-];
+// Import from dedicated nodes.ts (avoids WASM import chains for downstream consumers)
+import { HIVE_NODES } from './nodes';
+export { HIVE_NODES };
 
 // Sportsblock configuration (same as current implementation)
 export const SPORTS_ARENA_CONFIG = {
