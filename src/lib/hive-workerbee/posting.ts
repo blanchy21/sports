@@ -15,7 +15,9 @@ interface AiohaInstance {
 }
 
 interface BroadcastResult {
+  success?: boolean;
   error?: string;
+  result?: string;
   id?: string;
   [key: string]: unknown;
 }
@@ -153,11 +155,10 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
     workerBeeLog('publishPost broadcast result', undefined, result);
 
     // Check if the result indicates success
-    if (!result || (result as BroadcastResult)?.error) {
+    const postBroadcast = result as BroadcastResult;
+    if (!result || postBroadcast.success === false || postBroadcast.error) {
       logError('publishPost: transaction failed', undefined, undefined, result);
-      throw new Error(
-        `Transaction failed: ${(result as BroadcastResult)?.error || 'Unknown error'}`
-      );
+      throw new Error(`Transaction failed: ${postBroadcast?.error || 'Unknown error'}`);
     }
 
     // Generate post URL
@@ -246,11 +247,10 @@ export async function publishComment(
     workerBeeLog('publishComment broadcast result', undefined, result);
 
     // Check if the result indicates success
-    if (!result || (result as BroadcastResult)?.error) {
+    const commentBroadcast = result as BroadcastResult;
+    if (!result || commentBroadcast.success === false || commentBroadcast.error) {
       logError('publishComment: transaction failed', undefined, undefined, result);
-      throw new Error(
-        `Transaction failed: ${(result as BroadcastResult)?.error || 'Unknown error'}`
-      );
+      throw new Error(`Transaction failed: ${commentBroadcast?.error || 'Unknown error'}`);
     }
 
     // Generate comment URL
