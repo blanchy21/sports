@@ -25,8 +25,6 @@ interface CommentsModalProps {
 export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, data }) => {
   const author = data?.author as string;
   const permlink = data?.permlink as string;
-  const source = data?.source as string | undefined;
-  const isSoftPost = source === 'soft' || permlink?.startsWith('soft-');
   const { user, hiveUser, authType } = useAuth();
   const { addToast } = useToast();
   const { invalidatePostComments } = useInvalidateComments();
@@ -65,7 +63,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
     setIsSubmitting(true);
 
     try {
-      if (authType === 'hive' && hiveUser?.username && !isSoftPost) {
+      if (authType === 'hive' && hiveUser?.username) {
         // HIVE USER: Publish to blockchain
         if (!isInitialized || !aioha) {
           addToast({
