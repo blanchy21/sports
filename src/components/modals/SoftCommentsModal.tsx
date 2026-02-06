@@ -23,7 +23,7 @@ interface SoftCommentsModalProps {
 export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, onClose, data }) => {
   const postId = data?.postId as string;
   const postPermlink = data?.permlink as string;
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, touchSession } = useAuth();
   const { addToast } = useToast();
 
   const [comments, setComments] = useState<SoftComment[]>([]);
@@ -85,6 +85,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
     }
 
     setIsSubmitting(true);
+    touchSession();
 
     try {
       if (!user?.id) {

@@ -37,7 +37,8 @@ export type AuthAction =
   | {
       type: 'REFRESH_ACCOUNT';
       payload: { user: User; hiveUser: HiveAuthUser; loginAt: number };
-    };
+    }
+  | { type: 'TOUCH_SESSION'; payload: { loginAt: number } };
 
 // ============================================================================
 // Reducer Function
@@ -131,6 +132,12 @@ export function authReducer(state: AuthStateInternal, action: AuthAction): AuthS
         ...state,
         user: action.payload.user,
         hiveUser: action.payload.hiveUser,
+        loginAt: action.payload.loginAt,
+      };
+
+    case 'TOUCH_SESSION':
+      return {
+        ...state,
         loginAt: action.payload.loginAt,
       };
 

@@ -103,7 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (isSessionExpired(sessionLoginAt)) {
             // Clear legacy localStorage if it exists
             localStorage.removeItem(AUTH_STORAGE_KEY);
-            logger.info('Session expired after 30 minutes of inactivity', 'AuthContext');
+            logger.info('Session expired due to inactivity', 'AuthContext');
             dispatch({ type: 'SESSION_EXPIRED' });
             return;
           }
@@ -168,6 +168,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       void restoreSession();
     });
   }, []);
+
+  // ============================================================================
+  // Session Touch — refresh activity timestamp to prevent inactivity expiry
+  // ============================================================================
+
+  const touchSession = useCallback(() => {
+    if (!user) return;
+    const now = Date.now();
+    dispatch({ type: 'TOUCH_SESSION', payload: { loginAt: now } });
+    persistAuthState({ user, authType, hiveUser, loginAt: now });
+  }, [user, authType, hiveUser]);
 
   // ============================================================================
   // Account Refresh
@@ -252,6 +263,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     hiveUser,
     setHiveUser,
     refreshHiveAccount,
+    touchSession,
     isClient,
     hasMounted,
     profileLoadFailed,

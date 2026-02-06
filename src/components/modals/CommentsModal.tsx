@@ -25,7 +25,7 @@ interface CommentsModalProps {
 export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, data }) => {
   const author = data?.author as string;
   const permlink = data?.permlink as string;
-  const { user, hiveUser, authType } = useAuth();
+  const { user, hiveUser, authType, touchSession } = useAuth();
   const { addToast } = useToast();
   const { invalidatePostComments } = useInvalidateComments();
 
@@ -60,6 +60,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
     }
 
     setIsSubmitting(true);
+    touchSession();
 
     try {
       if (hiveUser?.username) {

@@ -9,8 +9,11 @@ import type { AuthUser } from '@/lib/firebase/auth';
 
 export const AUTH_STORAGE_KEY = 'authState';
 
-/** Session expires after 30 minutes of inactivity */
-export const SESSION_DURATION_MS = 30 * 60 * 1000;
+/** Absolute session lifetime — cookie and client must agree */
+export const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Session considered inactive after 1 hour without user activity */
+export const ACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;
 
 /** Debounce delay for persisting auth state */
 export const PERSIST_DEBOUNCE_MS = 100;
@@ -35,6 +38,8 @@ export interface AuthContextValue extends AuthState {
   refreshHiveAccount: () => Promise<void>;
   isClient: boolean;
   hasMounted: boolean;
+  /** Refresh the session activity timestamp to prevent inactivity expiry */
+  touchSession: () => void;
   /** True if the last profile fetch failed - can be used to show a warning */
   profileLoadFailed: boolean;
 }

@@ -146,7 +146,7 @@ export function createExpiredSession(
   username: string,
   authType: AuthType = 'hive'
 ): MockSessionState {
-  return createValidSession(username, authType, { minutesAgo: 35 }); // 35 minutes ago (expired after 30)
+  return createValidSession(username, authType, { minutesAgo: 65 }); // 65 minutes ago (expired after 60 min inactivity)
 }
 
 /**

@@ -3,7 +3,7 @@ import { User } from '@/types';
 import { HiveAuthUser } from '@/lib/shared/types';
 import { logger } from '@/lib/logger';
 import { setAuthInfo, clearAuthInfo } from '@/lib/api/authenticated-fetch';
-import { AUTH_STORAGE_KEY, SESSION_DURATION_MS, PERSIST_DEBOUNCE_MS } from './auth-types';
+import { AUTH_STORAGE_KEY, ACTIVITY_TIMEOUT_MS, PERSIST_DEBOUNCE_MS } from './auth-types';
 
 // ============================================================================
 // Constants
@@ -20,11 +20,13 @@ const UI_HINT_STORAGE_KEY = 'authHint';
 // ============================================================================
 
 /**
- * Check if a session is expired based on loginAt timestamp
+ * Check if a session is inactive based on loginAt timestamp.
+ * loginAt is refreshed on every significant user action (post, comment, page load),
+ * so this effectively measures inactivity rather than absolute session age.
  */
 export function isSessionExpired(loginAt: number | undefined): boolean {
   if (!loginAt) return true;
-  return Date.now() - loginAt > SESSION_DURATION_MS;
+  return Date.now() - loginAt > ACTIVITY_TIMEOUT_MS;
 }
 
 // ============================================================================

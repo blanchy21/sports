@@ -53,7 +53,7 @@ function getHiveAvatarUrl(username: string): string {
 }
 
 export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps) {
-  const { user, authType, hiveUser } = useAuth();
+  const { user, authType, hiveUser, touchSession } = useAuth();
   const [content, setContent] = useState('');
 
   const hiveUsername =
@@ -240,6 +240,7 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
     }
 
     setIsPublishing(true);
+    touchSession();
 
     try {
       if (authType === 'hive' && hiveUser?.username) {
@@ -296,6 +297,11 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
         setGifs([]);
         setSportCategory('');
         onSuccess?.(optimisticBite);
+      } else if (user?.isHiveAuth || user?.hiveUsername) {
+        // DEFENSIVE: Hive user whose session state has degraded — don't silently post off-chain
+        throw new Error(
+          'Your Hive session has expired. Please reconnect your Hive wallet to post on-chain.'
+        );
       } else {
         // SOFT USER: Publish to Firebase
         const response = await fetch('/api/soft/sportsbites', {
@@ -350,7 +356,18 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
     } finally {
       setIsPublishing(false);
     }
-  }, [content, images, gifs, sportCategory, user, authType, hiveUser, onSuccess, onError]);
+  }, [
+    content,
+    images,
+    gifs,
+    sportCategory,
+    user,
+    authType,
+    hiveUser,
+    touchSession,
+    onSuccess,
+    onError,
+  ]);
 
   React.useEffect(() => {
     return () => {

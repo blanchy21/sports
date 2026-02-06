@@ -17,7 +17,7 @@ import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { decryptSession } from '@/lib/api/session-auth';
 
 const SESSION_COOKIE_NAME = 'sb_session';
-const SESSION_MAX_AGE = 30 * 60; // 30 minutes in seconds
+const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 
 // Encryption configuration
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';

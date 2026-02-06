@@ -15,7 +15,7 @@ import {
 } from '@/contexts/auth/auth-persistence';
 import {
   AUTH_STORAGE_KEY,
-  SESSION_DURATION_MS,
+  ACTIVITY_TIMEOUT_MS,
   PERSIST_DEBOUNCE_MS,
 } from '@/contexts/auth/auth-types';
 import type { HiveAuthUser } from '@/lib/shared/types';
@@ -71,13 +71,13 @@ describe('Auth Persistence', () => {
       expect(isSessionExpired(0)).toBe(true);
     });
 
-    it('returns true when session is older than SESSION_DURATION_MS', () => {
-      const oldLoginAt = Date.now() - SESSION_DURATION_MS - 1000;
+    it('returns true when session is older than ACTIVITY_TIMEOUT_MS', () => {
+      const oldLoginAt = Date.now() - ACTIVITY_TIMEOUT_MS - 1000;
       expect(isSessionExpired(oldLoginAt)).toBe(true);
     });
 
-    it('returns false when session is within SESSION_DURATION_MS', () => {
-      const recentLoginAt = Date.now() - SESSION_DURATION_MS + 5000;
+    it('returns false when session is within ACTIVITY_TIMEOUT_MS', () => {
+      const recentLoginAt = Date.now() - ACTIVITY_TIMEOUT_MS + 5000;
       expect(isSessionExpired(recentLoginAt)).toBe(false);
     });
 
@@ -86,8 +86,8 @@ describe('Auth Persistence', () => {
     });
 
     it('correctly handles edge case just past expiration boundary', () => {
-      // Just past SESSION_DURATION_MS should be expired
-      const boundaryLoginAt = Date.now() - SESSION_DURATION_MS - 1;
+      // Just past ACTIVITY_TIMEOUT_MS should be expired
+      const boundaryLoginAt = Date.now() - ACTIVITY_TIMEOUT_MS - 1;
       expect(isSessionExpired(boundaryLoginAt)).toBe(true);
     });
   });
