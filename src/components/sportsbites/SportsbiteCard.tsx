@@ -229,14 +229,6 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               <span className="text-sm text-muted-foreground">
                 {formatDate(new Date(sportsbite.created + 'Z'))}
               </span>
-              {sportsbite.source === 'soft' && (
-                <>
-                  <span className="text-muted-foreground">·</span>
-                  <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-                    via email
-                  </span>
-                </>
-              )}
             </div>
 
             <Button
