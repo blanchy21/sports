@@ -4,6 +4,7 @@ import { Providers, KeyTypes } from '@aioha/aioha';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAioha } from '@/contexts/AiohaProvider';
 import type { HiveAccount } from '@/lib/shared/types';
+import { logger } from '@/lib/logger';
 
 // Declare Hive Keychain global for browser extension detection
 declare global {
@@ -183,7 +184,7 @@ export const useKeychainLogin = (onSuccess?: () => void): UseKeychainLoginResult
         );
       }
     } catch (error) {
-      console.error('Keychain login failed:', error);
+      logger.error('Keychain login failed', 'useKeychainLogin', error);
       const message = error instanceof Error ? error.message : 'Unknown error';
 
       // Handle user cancellation

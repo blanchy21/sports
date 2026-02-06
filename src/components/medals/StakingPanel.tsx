@@ -21,6 +21,7 @@ import {
   ArrowRight,
   Info,
 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface StakingPanelProps {
   /** Hive account username */
@@ -259,7 +260,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
       setAmount('');
       onOperationComplete?.(action);
     } catch (error) {
-      console.error('Staking operation failed:', error);
+      logger.error('Staking operation failed', 'StakingPanel', error);
     }
   };
 
@@ -278,7 +279,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
 
       onOperationComplete?.('cancelUnstake');
     } catch (error) {
-      console.error('Cancel unstake failed:', error);
+      logger.error('Cancel unstake failed', 'StakingPanel', error);
     } finally {
       setCancellingTx(null);
     }

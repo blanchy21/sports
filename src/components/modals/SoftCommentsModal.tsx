@@ -13,6 +13,8 @@ import { SoftLikeButtonCompact } from '@/components/voting/SoftLikeButton';
 import { SoftComment } from '@/app/api/soft/comments/route';
 import { GifPicker } from '@/components/gif/GifPicker';
 import { CommentContent } from '@/components/comments/CommentContent';
+import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
+import { logger } from '@/lib/logger';
 
 interface SoftCommentsModalProps {
   isOpen: boolean;
@@ -130,7 +132,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
       // Add the new comment to the list
       setComments((prev) => [...prev, data.comment]);
     } catch (err) {
-      console.error('Error posting comment:', err);
+      logger.error('Error posting comment', 'SoftCommentsModal', err);
       addToast(
         toast.error('Comment Failed', err instanceof Error ? err.message : 'Failed to post comment')
       );
@@ -206,9 +208,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
         <div className="flex space-x-3 py-3">
           <Avatar
             src={
-              comment.isHiveUser
-                ? `https://images.hive.blog/u/${comment.authorUsername}/avatar`
-                : comment.authorAvatar
+              comment.isHiveUser ? getHiveAvatarUrl(comment.authorUsername) : comment.authorAvatar
             }
             fallback={comment.authorUsername[0]}
             alt={comment.authorUsername}
@@ -352,7 +352,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
               <Avatar
                 src={
                   user?.isHiveAuth
-                    ? `https://images.hive.blog/u/${user.hiveUsername || user.username}/avatar`
+                    ? getHiveAvatarUrl(user.hiveUsername || user.username)
                     : undefined
                 }
                 fallback={user?.username?.[0] || 'U'}

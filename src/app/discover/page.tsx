@@ -8,6 +8,7 @@ import { Compass, TrendingUp, Loader2 } from 'lucide-react';
 import { SPORT_CATEGORIES } from '@/types';
 // fetchSportsblockPosts is now accessed via API route
 import { SportsblockPost } from '@/lib/shared/types';
+import { logger } from '@/lib/logger';
 
 export default function DiscoverPage() {
   const [selectedSport, setSelectedSport] = useState<string>('all');
@@ -39,7 +40,7 @@ export default function DiscoverPage() {
 
       setPosts(result.success ? result.posts : []);
     } catch (err) {
-      console.error('Error loading posts:', err);
+      logger.error('Error loading posts', 'DiscoverPage', err);
       setError('Failed to load posts. Please try again.');
     } finally {
       setIsLoading(false);

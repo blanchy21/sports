@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AiohaProvider as AiohaUIProvider } from '@aioha/react-ui';
 import { AIOHA_STUB_EVENT, getAiohaInstance } from '@/lib/aioha/config';
+import { logger } from '@/lib/logger';
 
 // Aioha context type
 interface AiohaContextType {
@@ -55,7 +56,7 @@ export const AiohaProvider: React.FC<AiohaProviderProps> = ({ children }) => {
           setIsInitialized(false);
         }
       } catch (err) {
-        console.error('Failed to initialize Aioha:', err);
+        logger.error('Failed to initialize Aioha', 'AiohaProvider', err);
         setError(err instanceof Error ? err.message : 'Failed to initialize Aioha');
         setIsInitialized(false);
       }

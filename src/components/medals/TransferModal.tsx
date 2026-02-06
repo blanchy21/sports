@@ -15,6 +15,7 @@ import {
   CheckCircle,
   ArrowRight,
 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface TransferModalProps {
   /** Whether the modal is open */
@@ -227,7 +228,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
       setStep('success');
       onTransferComplete?.(recipient, formatAmount(amountNum));
     } catch (error) {
-      console.error('Transfer failed:', error);
+      logger.error('Transfer failed', 'TransferModal', error);
     }
   };
 

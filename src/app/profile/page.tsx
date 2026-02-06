@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import { useModal } from '@/components/modals/ModalProvider';
 // getUserPosts is now accessed via API route
 import { SportsblockPost } from '@/lib/shared/types';
+import { logger } from '@/lib/logger';
 
 /**
  * Get the like/vote count from a post.
@@ -104,7 +105,7 @@ export default function ProfilePage() {
         : [];
       setUserPosts(posts);
     } catch (error) {
-      console.error('Error loading user posts:', error);
+      logger.error('Error loading user posts', 'ProfilePage', error);
       setPostsError('Failed to load posts. Please try again.');
     } finally {
       setIsLoadingPosts(false);

@@ -7,6 +7,7 @@ import { LogOut, UserPlus, RefreshCw, ChevronDown, ChevronUp } from 'lucide-reac
 import { useAuth } from '@/contexts/AuthContext';
 import { useAioha } from '@/contexts/AiohaProvider';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
+import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 
 interface AiohaInstance {
   getOtherLogins(): { [username: string]: string };
@@ -237,7 +238,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
                 >
                   <div className="flex items-center space-x-3">
                     <Avatar
-                      src={`https://images.hive.blog/u/${Object.keys(otherAccounts)[0]}/avatar`}
+                      src={getHiveAvatarUrl(Object.keys(otherAccounts)[0])}
                       alt={Object.keys(otherAccounts)[0]}
                       fallback={Object.keys(otherAccounts)[0]}
                       size="sm"
@@ -264,7 +265,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
                         className="flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-accent/10 disabled:opacity-50"
                       >
                         <Avatar
-                          src={`https://images.hive.blog/u/${username}/avatar`}
+                          src={getHiveAvatarUrl(username)}
                           alt={username}
                           fallback={username}
                           size="sm"

@@ -5,17 +5,26 @@
  * This ensures each user gets a unique, consistent avatar without requiring uploads.
  */
 
+/**
+ * Get the Hive avatar URL for a username.
+ * This is the standard Hive image service endpoint that works for all users.
+ */
+export function getHiveAvatarUrl(username: string, size?: 'small' | 'medium' | 'large'): string {
+  const base = `https://images.hive.blog/u/${username}/avatar`;
+  return size ? `${base}/${size}` : base;
+}
+
 export type AvatarStyle =
-  | 'avataaars'      // Cartoon-style avatars
-  | 'bottts'         // Robot avatars
-  | 'identicon'      // GitHub-style geometric patterns
-  | 'initials'       // Just initials
-  | 'lorelei'        // Illustrated faces
-  | 'micah'          // Illustrated avatars
-  | 'notionists'     // Notion-style avatars
-  | 'personas'       // Simple illustrated people
-  | 'pixel-art'      // Pixel art style
-  | 'thumbs';        // Thumbs style
+  | 'avataaars' // Cartoon-style avatars
+  | 'bottts' // Robot avatars
+  | 'identicon' // GitHub-style geometric patterns
+  | 'initials' // Just initials
+  | 'lorelei' // Illustrated faces
+  | 'micah' // Illustrated avatars
+  | 'notionists' // Notion-style avatars
+  | 'personas' // Simple illustrated people
+  | 'pixel-art' // Pixel art style
+  | 'thumbs'; // Thumbs style
 
 // Default style for the platform
 const DEFAULT_STYLE: AvatarStyle = 'bottts';

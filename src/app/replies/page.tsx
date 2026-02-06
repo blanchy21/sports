@@ -10,6 +10,7 @@ import { useRealtimeReplies } from '@/features/hive/hooks/useRealtimeReplies';
 import { formatDistanceToNow } from 'date-fns';
 import { CommentVoteButton } from '@/components/posts/CommentVoteButton';
 import { sanitizePostContent } from '@/lib/utils/sanitize';
+import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 
 export default function RepliesPage() {
   const { user, isClient } = useAuth();
@@ -82,7 +83,7 @@ export default function RepliesPage() {
 
   // Helper function to get avatar URL
   const getAvatarUrl = (username: string) => {
-    return `https://images.hive.blog/u/${username}/avatar/small`;
+    return getHiveAvatarUrl(username, 'small');
   };
 
   // Helper function to format timestamp

@@ -7,6 +7,7 @@ import { Button } from '@/components/core/Button';
 import { Clock, Filter, Loader2 } from 'lucide-react';
 // fetchSportsblockPosts is now accessed via API route
 import { SportsblockPost } from '@/lib/shared/types';
+import { logger } from '@/lib/logger';
 
 export default function NewPostsPage() {
   const [posts, setPosts] = useState<SportsblockPost[]>([]);
@@ -38,7 +39,7 @@ export default function NewPostsPage() {
 
       setPosts(result.success ? result.posts : []);
     } catch (err) {
-      console.error('Error loading posts:', err);
+      logger.error('Error loading posts', 'NewPostsPage', err);
       setError('Failed to load posts. Please try again.');
     } finally {
       setIsLoading(false);

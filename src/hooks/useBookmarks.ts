@@ -4,6 +4,7 @@ import { Post } from '@/types';
 import { SportsblockPost } from '@/lib/shared/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast, toast } from '@/components/core/Toast';
+import { logger } from '@/lib/logger';
 
 // Type for posts that can be bookmarked (both regular posts and Hive posts)
 type BookmarkablePost = Post | SportsblockPost;
@@ -47,7 +48,7 @@ export const useBookmarks = () => {
         storeAddBookmark(post, user.id);
         addToast(toast.success('Bookmarked!', 'Post added to your bookmarks.'));
       } catch (err) {
-        console.error('Error adding bookmark:', err);
+        logger.error('Error adding bookmark', 'useBookmarks', err);
         setError('Failed to bookmark post. Please try again.');
         addToast(toast.error('Bookmark Failed', 'Failed to bookmark post. Please try again.'));
       } finally {
@@ -73,7 +74,7 @@ export const useBookmarks = () => {
         storeRemoveBookmark(postId, user.id);
         addToast(toast.success('Removed', 'Post removed from your bookmarks.'));
       } catch (err) {
-        console.error('Error removing bookmark:', err);
+        logger.error('Error removing bookmark', 'useBookmarks', err);
         setError('Failed to remove bookmark. Please try again.');
         addToast(toast.error('Remove Failed', 'Failed to remove bookmark. Please try again.'));
       } finally {
@@ -129,7 +130,7 @@ export const useBookmarks = () => {
       storeClearBookmarks(user.id);
       addToast(toast.success('Cleared', 'All bookmarks have been cleared.'));
     } catch (err) {
-      console.error('Error clearing bookmarks:', err);
+      logger.error('Error clearing bookmarks', 'useBookmarks', err);
       setError('Failed to clear bookmarks. Please try again.');
       addToast(toast.error('Clear Failed', 'Failed to clear bookmarks. Please try again.'));
     } finally {

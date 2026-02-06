@@ -13,6 +13,7 @@ import { LeaderboardGrid, WeeklyRewardsSummary } from '@/components/leaderboard'
 import { Button } from '@/components/core/Button';
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import type { WeeklyLeaderboards } from '@/lib/metrics/types';
+import { logger } from '@/lib/logger';
 
 export default function LeaderboardPage() {
   const searchParams = useSearchParams();
@@ -62,7 +63,7 @@ export default function LeaderboardPage() {
           setLeaderboards(null);
         }
       } catch (err) {
-        console.error('Error fetching leaderboards:', err);
+        logger.error('Error fetching leaderboards', 'LeaderboardPage', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setIsLoading(false);

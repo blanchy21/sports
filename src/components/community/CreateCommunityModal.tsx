@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCreateCommunity } from '@/lib/react-query/queries/useCommunity';
 import { SPORT_CATEGORIES, CommunityType } from '@/types';
 import { cn } from '@/lib/utils/client';
+import { logger } from '@/lib/logger';
 
 interface CreateCommunityModalProps {
   isOpen: boolean;
@@ -156,7 +157,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
       onSuccess?.({ id: community.id, slug: community.slug });
       onClose();
     } catch (error) {
-      console.error('Failed to create community:', error);
+      logger.error('Failed to create community', 'CreateCommunityModal', error);
       setErrors({
         submit: error instanceof Error ? error.message : 'Failed to create community',
       });

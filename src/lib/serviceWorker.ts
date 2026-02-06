@@ -1,7 +1,8 @@
+import { logger } from '@/lib/logger';
+
 // Service Worker registration and management
 export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | null> => {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-    console.log('Service Worker not supported');
     return null;
   }
 
@@ -9,8 +10,6 @@ export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration
     const registration = await navigator.serviceWorker.register('/sw.js', {
       scope: '/',
     });
-
-    console.log('Service Worker registered successfully:', registration);
 
     // Handle updates
     registration.addEventListener('updatefound', () => {
@@ -29,7 +28,7 @@ export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration
 
     return registration;
   } catch (error) {
-    console.error('Service Worker registration failed:', error);
+    logger.error('Service Worker registration failed', 'serviceWorker', error);
     return null;
   }
 };
@@ -42,10 +41,9 @@ export const unregisterServiceWorker = async (): Promise<void> => {
 
   try {
     const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations.map(registration => registration.unregister()));
-    console.log('Service Workers unregistered');
+    await Promise.all(registrations.map((registration) => registration.unregister()));
   } catch (error) {
-    console.error('Failed to unregister Service Workers:', error);
+    logger.error('Failed to unregister Service Workers', 'serviceWorker', error);
   }
 };
 

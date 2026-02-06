@@ -33,6 +33,7 @@ import {
 } from '@/lib/hive-workerbee/optimization';
 import { getHiveNodeHealthReport, startHiveNodeHealthMonitoring } from '@/lib/hive-workerbee/api';
 import { LazyRealtimeFeed } from '@/components/lazy/LazyComponents';
+import { logger } from '@/lib/logger';
 
 interface MonitoringData {
   errors: {
@@ -133,7 +134,7 @@ export default function MonitoringPage() {
       setNodeHealthData(nodeHealth);
       setLastUpdated(new Date());
     } catch (error) {
-      console.error('Error fetching monitoring data:', error);
+      logger.error('Error fetching monitoring data', 'MonitoringPage', error);
     } finally {
       setIsLoading(false);
     }
@@ -157,7 +158,7 @@ export default function MonitoringPage() {
       await Promise.all([clearMonitoringData(), clearOptCache()]);
       await fetchMonitoringData();
     } catch (error) {
-      console.error('Error clearing data:', error);
+      logger.error('Error clearing data', 'MonitoringPage', error);
     }
   };
 
@@ -174,7 +175,7 @@ export default function MonitoringPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error exporting data:', error);
+      logger.error('Error exporting data', 'MonitoringPage', error);
     }
   };
 

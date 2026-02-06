@@ -16,6 +16,7 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useFeedPosts } from '@/lib/react-query/queries/usePosts';
 import { prefetchUserProfiles } from '@/features/user/hooks/useUserProfile';
 import { prefetchStakedBalances } from '@/lib/premium/hooks';
+import { logger } from '@/lib/logger';
 
 export default function FeedPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -113,7 +114,7 @@ export default function FeedPage() {
         setCommunityStats(analytics.communityStats);
         setStatsError(null);
       } catch (analyticsError) {
-        console.error('Error calculating analytics:', analyticsError);
+        logger.error('Error calculating analytics', 'FeedPage', analyticsError);
         setStatsError('Failed to load statistics');
       } finally {
         setStatsLoading(false);
@@ -184,7 +185,7 @@ export default function FeedPage() {
           setSelectedSport(savedSport);
         }
       } catch (err) {
-        console.error('Error loading saved sport filter:', err);
+        logger.error('Error loading saved sport filter', 'FeedPage', err);
       }
     }
 

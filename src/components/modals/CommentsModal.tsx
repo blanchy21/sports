@@ -15,6 +15,8 @@ import { CommentVoteButton } from '@/components/posts/CommentVoteButton';
 import { BaseModal } from '@/components/core/BaseModal';
 import { GifPicker } from '@/components/gif/GifPicker';
 import { CommentContent } from '@/components/comments/CommentContent';
+import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
+import { logger } from '@/lib/logger';
 
 interface CommentsModalProps {
   isOpen: boolean;
@@ -130,7 +132,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         }
       }
     } catch (error) {
-      console.error('Error posting comment:', error);
+      logger.error('Error posting comment', 'CommentsModal', error);
       addToast({
         title: 'Comment Failed',
         description: 'Failed to post comment. Please try again.',
@@ -189,7 +191,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                   className={`flex space-x-3 ${isNestedReply ? 'ml-8 border-l-2 border-gray-200 pl-4' : ''}`}
                 >
                   <Avatar
-                    src={`https://images.hive.blog/u/${comment.author}/avatar`}
+                    src={getHiveAvatarUrl(comment.author)}
                     fallback={comment.author}
                     alt={comment.author}
                     size="sm"
@@ -260,9 +262,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="flex flex-1 gap-3">
             <Avatar
-              src={
-                user?.username ? `https://images.hive.blog/u/${user.username}/avatar` : undefined
-              }
+              src={user?.username ? getHiveAvatarUrl(user.username) : undefined}
               fallback={user?.username || 'U'}
               alt={user?.username || 'You'}
               size="sm"

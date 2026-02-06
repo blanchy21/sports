@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAioha } from '@/contexts/AiohaProvider';
 import { HiveAuthState, DiscoveredAccount } from '../types';
+import { logger } from '@/lib/logger';
 
 export const useHiveAuth = () => {
   const { loginWithHiveUser, loginWithAioha } = useAuth();
@@ -29,7 +30,7 @@ export const useHiveAuth = () => {
     try {
       await loginWithHiveUser(hiveState.hiveUsername);
     } catch (error) {
-      console.error('Hive Keychain login failed:', error);
+      logger.error('Hive Keychain login failed', 'useHiveAuth', error);
       throw error;
     }
   }, [hiveState.hiveUsername, loginWithHiveUser]);
@@ -52,7 +53,7 @@ export const useHiveAuth = () => {
           await loginWithAioha({ provider });
         }
       } catch (error) {
-        console.error('Aioha login failed:', error);
+        logger.error('Aioha login failed', 'useHiveAuth', error);
         throw error;
       }
     },
@@ -74,7 +75,7 @@ export const useHiveAuth = () => {
       updateHiveField('discoveredAccounts', mockAccounts);
       updateHiveField('showAccountDiscovery', true);
     } catch (error) {
-      console.error('Account discovery failed:', error);
+      logger.error('Account discovery failed', 'useHiveAuth', error);
       throw error;
     }
   }, [isInitialized, aioha, updateHiveField]);
@@ -84,7 +85,7 @@ export const useHiveAuth = () => {
       try {
         await loginWithAioha({ username: account.username, provider: account.provider });
       } catch (error) {
-        console.error('Account selection failed:', error);
+        logger.error('Account selection failed', 'useHiveAuth', error);
         throw error;
       }
     },

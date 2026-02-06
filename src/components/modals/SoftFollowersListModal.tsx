@@ -6,6 +6,7 @@ import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
 import { FollowButtonCompact } from '@/components/user/FollowButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
 
 interface SoftFollowersListModalProps {
   isOpen: boolean;
@@ -62,7 +63,7 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
           setOffset(20);
         }
       } catch (error) {
-        console.error('Failed to fetch followers:', error);
+        logger.error('Failed to fetch followers', 'SoftFollowersListModal', error);
       } finally {
         setIsLoading(false);
       }
@@ -93,7 +94,7 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
         setOffset((prev) => prev + 20);
       }
     } catch (error) {
-      console.error('Failed to load more followers:', error);
+      logger.error('Failed to load more followers', 'SoftFollowersListModal', error);
     }
   };
 

@@ -8,6 +8,7 @@ import { Card } from '@/components/core/Card';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Users, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 
 interface AuthorInfo {
   username: string;
@@ -104,7 +105,7 @@ export default function AuthorsPage() {
                     onClick={() => router.push(`/user/${author.username}`)}
                   >
                     <Avatar
-                      src={`https://images.hive.blog/u/${author.username}/avatar`}
+                      src={getHiveAvatarUrl(author.username)}
                       fallback={author.username}
                       alt={author.username}
                       size="lg"

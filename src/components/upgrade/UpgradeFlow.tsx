@@ -6,6 +6,7 @@ import { Card } from '@/components/core/Card';
 import { X, Zap, Shield, Star, CheckCircle, ArrowRight, Wallet, Crown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAioha } from '@/contexts/AiohaProvider';
+import { logger } from '@/lib/logger';
 // import { AiohaModal } from "@aioha/react-ui";
 import { Providers, KeyTypes } from '@aioha/aioha';
 
@@ -52,7 +53,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
 
       setAvailableProviders(providerStrings);
     } catch (error) {
-      console.error('Error getting available providers:', error);
+      logger.error('Error getting available providers', 'UpgradeFlow', error);
     }
   }, [aioha, isInitialized]);
 

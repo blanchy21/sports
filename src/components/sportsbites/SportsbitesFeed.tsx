@@ -7,6 +7,7 @@ import { Loader2, RefreshCw, AlertCircle, Zap, ArrowUp, Sparkles } from 'lucide-
 import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { logger } from '@/lib/logger';
 
 const REALTIME_POLL_INTERVAL = 15000;
 
@@ -96,7 +97,7 @@ export function SportsbitesFeed({
         nextCursorRef.current = result.nextCursor;
         setHasMore(result.hasMore);
       } catch (err) {
-        console.error('Error loading sportsbites:', err);
+        logger.error('Error loading sportsbites', 'SportsbitesFeed', err);
         setError(err instanceof Error ? err.message : 'Failed to load sportsbites');
         if (!loadMore) setBites([]);
       } finally {
@@ -132,7 +133,7 @@ export function SportsbitesFeed({
         setNewBitesCount((prev) => prev + newOnes.length);
       }
     } catch (err) {
-      console.error('Error checking for new sportsbites:', err);
+      logger.error('Error checking for new sportsbites', 'SportsbitesFeed', err);
     }
   }, [author, bites, isLoading, filterByMode]);
 
@@ -165,7 +166,7 @@ export function SportsbitesFeed({
 
   useEffect(() => {
     loadBites();
-  }, [author, filterMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadBites]);
 
   useEffect(() => {
     if (!optimisticBite) return;
@@ -183,7 +184,7 @@ export function SportsbitesFeed({
       setNewBiteIds(new Set());
       newAnimationTimeoutRef.current = null;
     }, 5000);
-  }, [optimisticBite]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [optimisticBite, dedupeBites]);
 
   useEffect(() => {
     if (isLoading || bites.length === 0) return;

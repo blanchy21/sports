@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils/client';
-import { getAvatarUrl } from '@/lib/utils/avatar';
+import { getAvatarUrl, getHiveAvatarUrl } from '@/lib/utils/avatar';
 
 interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string;
@@ -27,7 +27,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
     }, [src]);
 
     // Hive avatar URL derived from the fallback (username)
-    const hiveAvatarUrl = fallback ? `https://images.hive.blog/u/${fallback}/avatar` : null;
+    const hiveAvatarUrl = fallback ? getHiveAvatarUrl(fallback) : null;
 
     const handleImageError = () => {
       setFallbackStage((prev) => prev + 1);

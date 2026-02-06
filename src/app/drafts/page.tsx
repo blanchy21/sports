@@ -6,6 +6,7 @@ import { Button } from '@/components/core/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { FileEdit, Edit, Trash2, Calendar, AlertCircle, Loader2 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface Draft {
   id: string;
@@ -86,7 +87,7 @@ export default function DraftsPage() {
         setDrafts([]);
       }
     } catch (err) {
-      console.error('Error loading drafts:', err);
+      logger.error('Error loading drafts', 'DraftsPage', err);
       setError('Failed to load drafts. Please try again.');
     } finally {
       setIsLoading(false);
@@ -115,13 +116,13 @@ export default function DraftsPage() {
         try {
           localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
         } catch (error) {
-          console.error('Error saving drafts:', error);
+          logger.error('Error saving drafts', 'DraftsPage', error);
           throw error;
         }
         setDrafts(updatedDrafts);
       }
     } catch (err) {
-      console.error('Error deleting draft:', err);
+      logger.error('Error deleting draft', 'DraftsPage', err);
       setError('Failed to delete draft. Please try again.');
     } finally {
       setDeletingDraftId(null);

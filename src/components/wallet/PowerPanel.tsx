@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface PowerPanelProps {
   /** Hive account username */
@@ -190,7 +191,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
       setAmount('');
       onOperationComplete?.(action);
     } catch (error) {
-      console.error('Power operation failed:', error);
+      logger.error('Power operation failed', 'PowerPanel', error);
     }
   };
 
@@ -206,7 +207,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
 
       onOperationComplete?.('cancelPowerDown');
     } catch (error) {
-      console.error('Cancel power down failed:', error);
+      logger.error('Cancel power down failed', 'PowerPanel', error);
     }
   };
 

@@ -12,7 +12,7 @@ import {
   fetchSessionFromCookie,
 } from './auth-persistence';
 import { AuthAction } from './auth-reducer';
-import { useAuthProfile } from './useAuthProfile';
+import { useAuthProfile, getHiveAvatarUrl } from './useAuthProfile';
 
 export interface UseAuthActionsOptions {
   dispatch: React.Dispatch<AuthAction>;
@@ -135,7 +135,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         const now = Date.now();
 
         // Use Hive's avatar service as immediate fallback until profile loads
-        const hiveAvatarUrl = `https://images.hive.blog/u/${hiveUsername}/avatar`;
+        const hiveAvatarUrl = getHiveAvatarUrl(hiveUsername);
 
         const basicUser: User = {
           id: hiveUsername,
@@ -230,7 +230,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         const now = Date.now();
 
         // Use Hive's avatar service as immediate fallback until profile loads
-        const hiveAvatarUrl = `https://images.hive.blog/u/${username}/avatar`;
+        const hiveAvatarUrl = getHiveAvatarUrl(username);
 
         const basicUser: User = {
           id: username,

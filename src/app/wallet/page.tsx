@@ -41,6 +41,7 @@ import {
   formatTime,
 } from '@/lib/utils/client';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
 
 interface TransactionOperation {
   id: number;
@@ -100,7 +101,7 @@ export default function WalletPage() {
         setTransactionsError(data.error || 'Failed to fetch transactions');
       }
     } catch (error) {
-      console.error('Error fetching transactions:', error);
+      logger.error('Error fetching transactions', 'WalletPage', error);
       setTransactionsError('Failed to fetch transactions');
     } finally {
       setTransactionsLoading(false);
@@ -131,7 +132,7 @@ export default function WalletPage() {
       await refreshHiveAccount();
       setLastAccountRefresh(new Date());
     } catch (error) {
-      console.error('Error refreshing Hive account data:', error);
+      logger.error('Error refreshing Hive account data', 'WalletPage', error);
     } finally {
       setIsRefreshingAccount(false);
     }
@@ -156,7 +157,9 @@ export default function WalletPage() {
     // Initial refresh on mount
     if (!hasRefreshedBalances.current) {
       hasRefreshedBalances.current = true;
-      void refreshAccountData();
+      if (refreshAccountDataRef.current) {
+        void refreshAccountDataRef.current();
+      }
     }
 
     // Set up automatic refresh interval (45 seconds)
@@ -176,8 +179,7 @@ export default function WalletPage() {
         refreshIntervalRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, authType, hiveUser?.username]); // refreshAccountData intentionally excluded to prevent infinite loops
+  }, [isAuthenticated, authType, hiveUser?.username]);
 
   // Helper function to get icon for transaction type
   const getTransactionIcon = (type: string) => {

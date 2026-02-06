@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
+import { logger } from '@/lib/logger';
 
 export interface GiphyGif {
   id: string;
@@ -50,7 +51,7 @@ export function GifPicker({ isOpen, onClose, onSelect, className }: GifPickerPro
         throw new Error(data.error || 'Failed to load trending GIFs');
       }
     } catch (err) {
-      console.error('Trending GIF error:', err);
+      logger.error('Trending GIF error', 'GifPicker', err);
       setError('Failed to load GIFs. Please try again.');
     } finally {
       setIsLoading(false);
@@ -84,7 +85,7 @@ export function GifPicker({ isOpen, onClose, onSelect, className }: GifPickerPro
           throw new Error(data.error || 'Failed to search GIFs');
         }
       } catch (err) {
-        console.error('GIF search error:', err);
+        logger.error('GIF search error', 'GifPicker', err);
         setError('Failed to search GIFs. Please try again.');
         setGifs([]);
       } finally {

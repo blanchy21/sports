@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SportsEvent, EventsApiResponse } from '@/types';
+import { logger } from '@/lib/logger';
 
 interface UseUpcomingEventsOptions {
   sport?: string;
@@ -71,7 +72,7 @@ export function useUpcomingEvents(options: UseUpcomingEventsOptions = {}): UseUp
         setEvents(data.data);
         setLastUpdated(new Date());
       } catch (err) {
-        console.error('Error fetching upcoming events:', err);
+        logger.error('Error fetching upcoming events', 'useUpcomingEvents', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch events');
       } finally {
         setIsLoading(false);

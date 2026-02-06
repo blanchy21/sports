@@ -29,7 +29,7 @@ import {
 } from './auth/auth-persistence';
 import { authReducer } from './auth/auth-reducer';
 import { useAuthActions } from './auth/useAuthActions';
-import { createUserWithAccountData } from './auth/useAuthProfile';
+import { createUserWithAccountData, getHiveAvatarUrl } from './auth/useAuthProfile';
 
 // Re-export types for backwards compatibility
 export type { AuthContextValue } from './auth/auth-types';
@@ -117,10 +117,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             isHiveAuth: isHiveAuth,
             hiveUsername: hiveUsername,
             // Set Hive avatar immediately so it renders before async profile refresh
-            avatar:
-              isHiveAuth && hiveUsername
-                ? `https://images.hive.blog/u/${hiveUsername}/avatar`
-                : undefined,
+            avatar: isHiveAuth && hiveUsername ? getHiveAvatarUrl(hiveUsername) : undefined,
             createdAt: new Date(),
             updatedAt: new Date(),
           };

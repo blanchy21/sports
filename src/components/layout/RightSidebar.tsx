@@ -10,6 +10,8 @@ import { useBatchFollowStatus } from '@/lib/react-query/queries/useUserProfile';
 import { useSidebarAnalytics } from '@/lib/react-query/queries/useSidebarAnalytics';
 import { Avatar } from '@/components/core/Avatar';
 import { MyCommunitiesWidget } from '@/components/community/MyCommunitiesWidget';
+import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
+import { logger } from '@/lib/logger';
 
 export const RightSidebar: React.FC = () => {
   const { user } = useAuth();
@@ -66,7 +68,7 @@ export const RightSidebar: React.FC = () => {
           });
         }
       } catch (error) {
-        console.error('Error toggling follow status:', error);
+        logger.error('Error toggling follow status', 'RightSidebar', error);
       }
     };
 
@@ -217,7 +219,7 @@ export const RightSidebar: React.FC = () => {
                     className="flex cursor-pointer items-center space-x-3 rounded-md p-2 transition-colors hover:bg-accent"
                   >
                     <Avatar
-                      src={`https://images.hive.blog/u/${author.username}/avatar`}
+                      src={getHiveAvatarUrl(author.username)}
                       fallback={author.displayName || author.username}
                       alt={author.displayName || author.username}
                       size="md"

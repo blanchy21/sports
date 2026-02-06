@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAioha } from '@/contexts/AiohaProvider';
 import { FirebaseAuth } from '@/lib/firebase/auth';
 import type { HiveAccount } from '@/lib/shared/types';
+import { logger } from '@/lib/logger';
 
 // Declare Hive Keychain global for browser extension detection
 declare global {
@@ -263,7 +264,7 @@ export const useAuthPage = (): UseAuthPageResult => {
 
       setAvailableProviders(orderedProviders);
     } catch (error) {
-      console.error('Error getting available providers:', error);
+      logger.error('Error getting available providers', 'useAuthPage', error);
       setAvailableProviders([]);
     }
   }, [aioha, isInitialized]);
@@ -286,7 +287,7 @@ export const useAuthPage = (): UseAuthPageResult => {
         closeAiohaModal();
         router.push('/feed');
       } catch (error) {
-        console.error('Aioha login failed:', error);
+        logger.error('Aioha login failed', 'useAuthPage', error);
         setErrorMessage(
           'Login failed: ' + (error instanceof Error ? error.message : 'Unknown error')
         );
@@ -297,7 +298,7 @@ export const useAuthPage = (): UseAuthPageResult => {
     };
 
     const handleAuthError = (error: unknown) => {
-      console.error('Aioha authentication error:', error);
+      logger.error('Aioha authentication error', 'useAuthPage', error);
       const message = error instanceof Error ? error.message : 'Unknown error';
       setErrorMessage('Authentication failed: ' + message);
       setIsConnecting(false);
@@ -365,7 +366,7 @@ export const useAuthPage = (): UseAuthPageResult => {
       }
       router.push('/feed');
     } catch (error) {
-      console.error('Firebase authentication failed:', error);
+      logger.error('Firebase authentication failed', 'useAuthPage', error);
       setErrorMessage(
         'Authentication failed: ' + (error instanceof Error ? error.message : 'Unknown error')
       );
@@ -391,7 +392,7 @@ export const useAuthPage = (): UseAuthPageResult => {
       }
       router.push('/feed');
     } catch (error) {
-      console.error('Google sign-in failed:', error);
+      logger.error('Google sign-in failed', 'useAuthPage', error);
       // Handle specific Firebase errors
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       if (errorMessage.includes('popup-closed-by-user')) {
@@ -420,7 +421,7 @@ export const useAuthPage = (): UseAuthPageResult => {
       await FirebaseAuth.sendPasswordReset(emailForm.email);
       setSuccessMessage('Password reset email sent! Check your inbox.');
     } catch (error) {
-      console.error('Password reset failed:', error);
+      logger.error('Password reset failed', 'useAuthPage', error);
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       if (errorMsg.includes('user-not-found')) {
         setErrorMessage('No account found with this email address.');
@@ -575,7 +576,7 @@ export const useAuthPage = (): UseAuthPageResult => {
           );
         }
       } catch (error) {
-        console.error('Aioha login failed:', error);
+        logger.error('Aioha login failed', 'useAuthPage', error);
         setErrorMessage(
           'Login failed: ' + (error instanceof Error ? error.message : 'Unknown error')
         );
@@ -667,7 +668,7 @@ export const useAuthPage = (): UseAuthPageResult => {
         setShowAiohaModal(false);
         router.push('/feed');
       } catch (error) {
-        console.error('Aioha modal login failed:', error);
+        logger.error('Aioha modal login failed', 'useAuthPage', error);
         setErrorMessage(
           'Login failed: ' + (error instanceof Error ? error.message : 'Unknown error')
         );

@@ -21,6 +21,7 @@ import { PremiumBadge } from '@/components/medals';
 import { FollowButton } from '@/components/user/FollowButton';
 import { LastSeenIndicator } from '@/components/user/LastSeenIndicator';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -141,7 +142,7 @@ export default function UserProfilePage() {
         setUserPosts(posts);
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') return;
-        console.error('Error loading user posts:', error);
+        logger.error('Error loading user posts', 'UserProfilePage', error);
         setPostsError('Failed to load posts. Please try again.');
       } finally {
         if (!abortController.signal.aborted) {

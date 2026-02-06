@@ -1,7 +1,16 @@
-"use client";
+'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useAuth } from "./AuthContext";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
+import { useAuth } from './AuthContext';
+import { logger } from '@/lib/logger';
 
 const NOTIFICATION_STORAGE_PREFIX = 'sportsblock-notifications';
 const NOTIFICATION_POLL_INTERVAL = 30000; // 30 seconds
@@ -26,7 +35,16 @@ const getStorageKey = (username?: string | null) => {
 
 export interface Notification {
   id: string;
-  type: 'comment' | 'vote' | 'post' | 'mention' | 'short_reply' | 'like' | 'reply' | 'follow' | 'system';
+  type:
+    | 'comment'
+    | 'vote'
+    | 'post'
+    | 'mention'
+    | 'short_reply'
+    | 'like'
+    | 'reply'
+    | 'follow'
+    | 'system';
   title: string;
   message: string;
   timestamp: Date;
@@ -68,7 +86,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (context === undefined) {
-    throw new Error("useNotifications must be used within a NotificationProvider");
+    throw new Error('useNotifications must be used within a NotificationProvider');
   }
   return context;
 };
@@ -92,7 +110,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     try {
       const savedNotifications = localStorage.getItem(storageKey);
       if (savedNotifications) {
-        const parsed = JSON.parse(savedNotifications) as Array<Omit<Notification, 'timestamp'> & { timestamp: string }>;
+        const parsed = JSON.parse(savedNotifications) as Array<
+          Omit<Notification, 'timestamp'> & { timestamp: string }
+        >;
         const notificationsWithDates = parsed.map((n) => ({
           ...n,
           timestamp: new Date(n.timestamp),
@@ -102,7 +122,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         setNotifications([]);
       }
     } catch (error) {
-      console.error('Error loading notifications:', error);
+      logger.error('Error loading notifications', 'NotificationContext', error);
       setNotifications([]);
     }
   }, [isClient, storageKey]);
@@ -123,7 +143,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       try {
         localStorage.setItem(storageKey, JSON.stringify(notifications));
       } catch (error) {
-        console.error('Error saving notifications:', error);
+        logger.error('Error saving notifications', 'NotificationContext', error);
       }
     }, 500);
 
@@ -134,59 +154,60 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     };
   }, [notifications, isClient, storageKey]);
 
-  const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date(),
-      read: false,
-    };
+  const addNotification = useCallback(
+    (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+      const newNotification: Notification = {
+        ...notification,
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date(),
+        read: false,
+      };
 
-    setNotifications(prev => [newNotification, ...prev].slice(0, 100)); // Keep last 100 notifications
-  }, []);
+      setNotifications((prev) => [newNotification, ...prev].slice(0, 100)); // Keep last 100 notifications
+    },
+    []
+  );
 
   // Mark soft notifications as read on server (defined before markAsRead/markAllAsRead which use it)
-  const markSoftNotificationsAsRead = useCallback(async (userId: string, notificationIds?: string[], markAll?: boolean) => {
-    try {
-      const response = await fetch('/api/soft/notifications', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId,
-        },
-        body: JSON.stringify(
-          markAll ? { markAllRead: true } : { notificationIds }
-        ),
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
-  }, []);
-
-  const markAsRead = useCallback((id: string) => {
-    setNotifications(prev => {
-      const notification = prev.find(n => n.id === id);
-      // Sync with server for soft notifications
-      if (notification?.source === 'soft' && user?.id) {
-        markSoftNotificationsAsRead(user.id, [id]);
+  const markSoftNotificationsAsRead = useCallback(
+    async (userId: string, notificationIds?: string[], markAll?: boolean) => {
+      try {
+        const response = await fetch('/api/soft/notifications', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': userId,
+          },
+          body: JSON.stringify(markAll ? { markAllRead: true } : { notificationIds }),
+        });
+        return response.ok;
+      } catch {
+        return false;
       }
-      return prev.map(n =>
-        n.id === id
-          ? { ...n, read: true }
-          : n
-      );
-    });
-  }, [user?.id, markSoftNotificationsAsRead]);
+    },
+    []
+  );
+
+  const markAsRead = useCallback(
+    (id: string) => {
+      setNotifications((prev) => {
+        const notification = prev.find((n) => n.id === id);
+        // Sync with server for soft notifications
+        if (notification?.source === 'soft' && user?.id) {
+          markSoftNotificationsAsRead(user.id, [id]);
+        }
+        return prev.map((n) => (n.id === id ? { ...n, read: true } : n));
+      });
+    },
+    [user?.id, markSoftNotificationsAsRead]
+  );
 
   const markAllAsRead = useCallback(() => {
     // Sync with server for soft users
     if (isSoftUser && user?.id) {
       markSoftNotificationsAsRead(user.id, undefined, true);
     }
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
-    );
+    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
   }, [isSoftUser, user?.id, markSoftNotificationsAsRead]);
 
   const clearNotifications = useCallback(() => {
@@ -196,7 +217,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   }, [isClient, storageKey]);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   // Track polling state
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
@@ -240,7 +261,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       if (isNetworkError) {
         notificationDebugLog('Hive notification fetch failed (network).', error);
       } else {
-        console.error('Error fetching Hive notifications:', error);
+        logger.error('Error fetching Hive notifications', 'NotificationContext', error);
       }
       return [];
     }
@@ -285,7 +306,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       if (isNetworkError) {
         notificationDebugLog('Soft notification fetch failed (network).', error);
       } else {
-        console.error('Error fetching soft notifications:', error);
+        logger.error('Error fetching soft notifications', 'NotificationContext', error);
       }
       return [];
     }
@@ -312,19 +333,25 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     lastCheckRef.current = localStorage.getItem(lastCheckKey);
 
     const poll = async () => {
-      notificationDebugLog('Polling for Hive notifications...', { username, since: lastCheckRef.current });
+      notificationDebugLog('Polling for Hive notifications...', {
+        username,
+        since: lastCheckRef.current,
+      });
 
-      const newNotifications = await fetchHiveNotifications(username, lastCheckRef.current || undefined);
+      const newNotifications = await fetchHiveNotifications(
+        username,
+        lastCheckRef.current || undefined
+      );
 
       if (newNotifications.length > 0) {
         notificationDebugLog('Found new Hive notifications:', newNotifications.length);
 
         // Add new notifications (avoiding duplicates)
-        setNotifications(prev => {
-          const existingIds = new Set(prev.map(n => n.id));
+        setNotifications((prev) => {
+          const existingIds = new Set(prev.map((n) => n.id));
           const uniqueNew = newNotifications
-            .filter(n => !existingIds.has(n.id))
-            .map(n => ({
+            .filter((n) => !existingIds.has(n.id))
+            .map((n) => ({
               ...n,
               type: n.type as 'comment' | 'vote' | 'post' | 'mention' | 'short_reply',
               timestamp: new Date(n.timestamp),
@@ -389,7 +416,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
         // Replace all notifications with server state (soft notifications are server-managed)
         setNotifications(
-          softNotifications.map(n => ({
+          softNotifications.map((n) => ({
             id: n.id,
             type: n.type,
             title: n.title,
@@ -438,9 +465,5 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     isSoftUser,
   };
 
-  return (
-    <NotificationContext.Provider value={value}>
-      {children}
-    </NotificationContext.Provider>
-  );
+  return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;
 };

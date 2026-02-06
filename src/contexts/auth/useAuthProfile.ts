@@ -4,14 +4,10 @@ import { User } from '@/types';
 import { HiveAuthUser, UserAccountData } from '@/lib/shared/types';
 import { fetchWithRetry } from '@/lib/utils/api-retry';
 import { hasValidAccountData } from './auth-type-guards';
+import { getHiveAvatarUrl } from '@/lib/utils/avatar';
 
-/**
- * Get the Hive avatar URL for a username
- * This is the standard Hive image service endpoint that works for all users
- */
-function getHiveAvatarUrl(username: string): string {
-  return `https://images.hive.blog/u/${username}/avatar`;
-}
+// Re-export for backward compatibility with existing imports
+export { getHiveAvatarUrl } from '@/lib/utils/avatar';
 
 /**
  * Creates a User object with Hive account data merged in

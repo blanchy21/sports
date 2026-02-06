@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SportsblockPost } from '@/lib/shared/types';
+import { logger } from '@/lib/logger';
 
 interface UseUserPostsResult {
   posts: SportsblockPost[];
@@ -54,7 +55,7 @@ export function useUserPosts(
       const result = await response.json();
       setPosts(result.success ? result.posts : []);
     } catch (err) {
-      console.error('Error fetching user posts:', err);
+      logger.error('Error fetching user posts', 'useUserPosts', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch posts');
     } finally {
       setIsLoading(false);

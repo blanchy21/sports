@@ -38,21 +38,27 @@ function initializeAdmin(): { app: App; db: Firestore } | null {
           projectId: serviceAccount.project_id,
         });
         adminDb = getFirestore(adminApp);
-        console.log('[Firebase Admin] Initialized with service account');
         return { app: adminApp, db: adminDb };
       } catch (parseError) {
-        console.error('[Firebase Admin] Failed to parse service account key:', parseError);
+        console.error(
+          '[Firebase Admin] Failed to parse service account key:',
+          process.env.NODE_ENV === 'production'
+            ? parseError instanceof Error
+              ? parseError.message
+              : 'parse error'
+            : parseError
+        );
       }
     }
 
     // Method 2: Project ID with Application Default Credentials
-    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const projectId =
+      process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     if (projectId) {
       adminApp = initializeApp({
         projectId,
       });
       adminDb = getFirestore(adminApp);
-      console.log('[Firebase Admin] Initialized with project ID:', projectId);
       return { app: adminApp, db: adminDb };
     }
 

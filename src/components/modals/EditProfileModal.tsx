@@ -16,6 +16,7 @@ import {
   Camera,
 } from 'lucide-react';
 import { updateHiveProfile, ProfileUpdateData } from '@/lib/hive-workerbee/social';
+import { logger } from '@/lib/logger';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -122,7 +123,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
           try {
             await refreshHiveAccount();
           } catch (err) {
-            console.error('Error refreshing profile:', err);
+            logger.error('Error refreshing profile', 'EditProfileModal', err);
           }
         }, 3000);
 
@@ -131,7 +132,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         addToast(toast.error('Update Failed', result.error || 'Failed to update profile'));
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error updating profile', 'EditProfileModal', error);
       addToast(
         toast.error(
           'Error',

@@ -5,6 +5,7 @@ import { Button } from '@/components/core/Button';
 import { UserPlus, UserMinus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
 
 interface FollowButtonProps {
   targetUserId: string;
@@ -114,7 +115,7 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
       setFollowerCount(data.followerCount);
       onFollowChange?.(data.isFollowing, data.followerCount);
     } catch (error) {
-      console.error('Follow error:', error);
+      logger.error('Follow error', 'FollowButton', error);
     } finally {
       setIsLoading(false);
     }

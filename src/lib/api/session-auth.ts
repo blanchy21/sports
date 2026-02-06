@@ -10,6 +10,7 @@ import { cookies } from 'next/headers';
 import crypto from 'crypto';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { getHiveAvatarUrl } from '@/lib/utils/avatar';
 
 const SESSION_COOKIE_NAME = 'sb_session';
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
@@ -36,7 +37,14 @@ function getEncryptionKey(): Buffer {
     return crypto.scryptSync('development-only-insecure-key', 'salt', 32);
   }
 
-  return crypto.scryptSync(secret, 'sportsblock-session-salt', 32);
+  const salt = process.env.SESSION_ENCRYPTION_SALT || 'sportsblock-session-salt';
+  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_ENCRYPTION_SALT) {
+    console.warn(
+      '[session-auth] SESSION_ENCRYPTION_SALT not set — using default salt. Set this env var to enable rotation.'
+    );
+  }
+
+  return crypto.scryptSync(secret, salt, 32);
 }
 
 /**
@@ -140,7 +148,7 @@ export async function getAuthenticatedUserFromSession(
         authType,
         hiveUsername,
         displayName: hiveUser,
-        avatar: `https://images.hive.blog/u/${hiveUser}/avatar`,
+        avatar: getHiveAvatarUrl(hiveUser),
       };
     }
 

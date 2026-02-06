@@ -28,6 +28,7 @@ import { useCommunities, useUserCommunities } from '@/lib/react-query/queries/us
 import { useUIStore } from '@/stores/uiStore';
 import { FirebasePosts } from '@/lib/firebase/posts';
 import { uploadImage } from '@/lib/hive/imageUpload';
+import { logger } from '@/lib/logger';
 
 // Import new components
 import { EditorToolbar, FormatType } from '@/components/publish/EditorToolbar';
@@ -201,7 +202,7 @@ function PublishPageContent() {
         }
       }
     } catch (err) {
-      console.error('Error loading draft:', err);
+      logger.error('Error loading draft', 'PublishPage', err);
     }
   };
 
@@ -212,7 +213,7 @@ function PublishPageContent() {
       const status = await canUserPost(hiveUser.username);
       setRcStatus(status);
     } catch (error) {
-      console.error('Error checking RC status:', error);
+      logger.error('Error checking RC status', 'PublishPage', error);
     }
   }, [hiveUser?.username]);
 
@@ -396,7 +397,7 @@ function PublishPageContent() {
         throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
-      console.error('Image upload error:', error);
+      logger.error('Image upload error', 'PublishPage', error);
       setUploadError(
         error instanceof Error
           ? error.message
@@ -476,7 +477,7 @@ function PublishPageContent() {
         localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
         alert('Draft updated!');
       } catch (error) {
-        console.error('Error saving draft:', error);
+        logger.error('Error saving draft', 'PublishPage', error);
         alert('Failed to save draft.');
       }
     } else {
@@ -485,7 +486,7 @@ function PublishPageContent() {
         localStorage.setItem('drafts', JSON.stringify(existingDrafts));
         alert('Draft saved!');
       } catch (error) {
-        console.error('Error saving draft:', error);
+        logger.error('Error saving draft', 'PublishPage', error);
         alert('Failed to save draft.');
       }
     }
@@ -537,7 +538,7 @@ function PublishPageContent() {
       alert(`Post scheduled for ${scheduledAt.toLocaleString()}`);
       router.push('/feed');
     } catch (error) {
-      console.error('Error scheduling post:', error);
+      logger.error('Error scheduling post', 'PublishPage', error);
       setPublishError('Failed to schedule post');
     }
   };
@@ -661,7 +662,7 @@ function PublishPageContent() {
         }
       }
     } catch (error) {
-      console.error('Error publishing post:', error);
+      logger.error('Error publishing post', 'PublishPage', error);
       setPublishError('An unexpected error occurred while publishing.');
     } finally {
       setIsPublishing(false);

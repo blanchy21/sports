@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { PriceContextType } from '@/types';
 import { fetchAllPrices, getCachedPrices } from '@/lib/crypto/prices';
+import { logger } from '@/lib/logger';
 
 const PriceContext = createContext<PriceContextType | undefined>(undefined);
 
@@ -47,7 +48,7 @@ export function PriceProvider({ children }: PriceProviderProps) {
       lastFetchTimeRef.current = now;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error('[PriceContext] Error refreshing prices:', errorMessage);
+      logger.error('Error refreshing prices', 'PriceContext', err);
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -77,9 +78,12 @@ export function PriceProvider({ children }: PriceProviderProps) {
     }
 
     // Set up interval for auto-refresh (force refresh)
-    const interval = setInterval(() => {
-      refreshPrices(true);
-    }, 10 * 60 * 1000); // 10 minutes
+    const interval = setInterval(
+      () => {
+        refreshPrices(true);
+      },
+      10 * 60 * 1000
+    ); // 10 minutes
 
     return () => {
       clearInterval(interval);
@@ -97,11 +101,7 @@ export function PriceProvider({ children }: PriceProviderProps) {
     refreshPrices,
   };
 
-  return (
-    <PriceContext.Provider value={value}>
-      {children}
-    </PriceContext.Provider>
-  );
+  return <PriceContext.Provider value={value}>{children}</PriceContext.Provider>;
 }
 
 export function usePriceContext(): PriceContextType {

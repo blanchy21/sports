@@ -31,6 +31,7 @@ import { UpgradePrompt } from '@/components/user/AccountBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { cn } from '@/lib/utils/client';
+import { logger } from '@/lib/logger';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
 
 type SearchResult = {
@@ -72,7 +73,7 @@ export const TopNavigation: React.FC = () => {
       try {
         localStorage.setItem('selectedSport', sportId);
       } catch (error) {
-        console.error('Error saving sport filter:', error);
+        logger.error('Error saving sport filter', 'TopNavigation', error);
       }
     }
     // You could also emit an event or use a context to notify other components
@@ -136,7 +137,7 @@ export const TopNavigation: React.FC = () => {
 
           setSearchResults(results);
         } catch (error) {
-          console.error('Search error:', error);
+          logger.error('Search error', 'TopNavigation', error);
           setSearchResults([]);
         } finally {
           setIsSearching(false);

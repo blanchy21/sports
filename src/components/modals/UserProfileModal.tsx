@@ -14,6 +14,7 @@ import { Avatar } from '@/components/core/Avatar';
 import { UserPlus, UserMinus, Calendar, MapPin, Link as LinkIcon } from 'lucide-react';
 import { formatDate } from '@/lib/utils/client';
 import { BaseModal } from '@/components/core/BaseModal';
+import { logger } from '@/lib/logger';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -73,7 +74,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         refetchIsFollowing();
       }, 500);
     } catch (error) {
-      console.error('Error toggling follow status:', error);
+      logger.error('Error toggling follow status', 'UserProfileModal', error);
       alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsFollowLoading(false);

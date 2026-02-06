@@ -12,6 +12,7 @@ import { Button } from '@/components/core/Button';
 import { Card } from '@/components/core/Card';
 import { Badge } from '@/components/core/Badge';
 import { Activity, MessageCircle, Heart, Zap } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface RealtimeFeedProps {
   className?: string;
@@ -64,7 +65,7 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
       await startMonitoring();
       setIsMonitoring(true);
     } catch (error) {
-      console.error('Failed to start monitoring:', error);
+      logger.error('Failed to start monitoring', 'RealtimeFeed', error);
     }
   };
 
@@ -73,7 +74,7 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
       await stopMonitoring();
       setIsMonitoring(false);
     } catch (error) {
-      console.error('Failed to stop monitoring:', error);
+      logger.error('Failed to stop monitoring', 'RealtimeFeed', error);
     }
   };
 

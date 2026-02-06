@@ -29,6 +29,7 @@ import { useBookmarks } from '@/hooks/useBookmarks';
 import { formatDate, formatReadTime } from '@/lib/utils/client';
 import { proxyImagesInContent } from '@/lib/utils/image-proxy';
 import { sanitizePostContent } from '@/lib/utils/sanitize';
+import { logger } from '@/lib/logger';
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -156,7 +157,7 @@ export default function PostDetailPage() {
       } catch (err) {
         // Ignore abort errors
         if (err instanceof Error && err.name === 'AbortError') return;
-        console.error('Error loading post:', err);
+        logger.error('Error loading post', 'PostDetailPage', err);
         setError('Failed to load post. Please try again.');
       } finally {
         if (!abortController.signal.aborted) {

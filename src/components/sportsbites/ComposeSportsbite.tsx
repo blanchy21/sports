@@ -27,7 +27,9 @@ import {
 } from '@/lib/hive-workerbee/sportsbites';
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { validateImageUrl } from '@/lib/utils/sanitize';
+import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import dynamic from 'next/dynamic';
+import { logger } from '@/lib/logger';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
@@ -46,10 +48,6 @@ interface GiphyGif {
 interface ComposeSportsbiteProps {
   onSuccess?: (bite: Sportsbite) => void;
   onError?: (error: string) => void;
-}
-
-function getHiveAvatarUrl(username: string): string {
-  return `https://images.hive.blog/u/${username}/avatar`;
 }
 
 export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps) {
@@ -148,7 +146,7 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
         throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
-      console.error('Image upload error:', error);
+      logger.error('Image upload error', 'ComposeSportsbite', error);
       setUploadError(
         error instanceof Error
           ? error.message
@@ -176,7 +174,7 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
         throw new Error(data.error || 'Failed to load trending GIFs');
       }
     } catch (error) {
-      console.error('Trending GIF error:', error);
+      logger.error('Trending GIF error', 'ComposeSportsbite', error);
       setGifError('Failed to load GIFs. Please try again.');
     } finally {
       setIsLoadingGifs(false);
@@ -203,7 +201,7 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
           throw new Error(data.error || 'Failed to search GIFs');
         }
       } catch (error) {
-        console.error('GIF search error:', error);
+        logger.error('GIF search error', 'ComposeSportsbite', error);
         setGifError('Failed to load GIFs. Please try again.');
         setGifResults([]);
       } finally {
@@ -351,7 +349,7 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
         onSuccess?.(optimisticBite);
       }
     } catch (error) {
-      console.error('Error publishing sportsbite:', error);
+      logger.error('Error publishing sportsbite', 'ComposeSportsbite', error);
       onError?.(error instanceof Error ? error.message : 'Failed to publish sportsbite');
     } finally {
       setIsPublishing(false);

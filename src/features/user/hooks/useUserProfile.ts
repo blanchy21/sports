@@ -8,6 +8,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchUserProfile, parseJsonMetadata } from '@/lib/hive-workerbee/account';
 import { getAccountsBatch } from '@/lib/hive-workerbee/optimization';
+import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 
 export interface UserProfile {
   username: string;
@@ -15,14 +16,6 @@ export interface UserProfile {
   avatar?: string;
   reputation?: number;
   reputationFormatted?: string;
-}
-
-/**
- * Get the Hive avatar URL for a username
- * This is the standard Hive image service endpoint that works for all users
- */
-function getHiveAvatarUrl(username: string): string {
-  return `https://images.hive.blog/u/${username}/avatar`;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ESPNNewsArticle, ESPNNewsApiResponse } from '@/types';
+import { logger } from '@/lib/logger';
 
 interface UseESPNNewsOptions {
   sport?: string;
@@ -71,7 +72,7 @@ export function useESPNNews(options: UseESPNNewsOptions = {}): UseESPNNewsReturn
         setArticles(data.data);
         setLastUpdated(new Date());
       } catch (err) {
-        console.error('Error fetching ESPN news:', err);
+        logger.error('Error fetching ESPN news', 'useESPNNews', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch news');
       } finally {
         setIsLoading(false);
