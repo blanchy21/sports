@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/core/Button';
+import { Badge } from '@/components/core/Badge';
 import { Avatar } from '@/components/core/Avatar';
 import { MessageCircle, Send, Loader2, Reply, Film } from 'lucide-react';
 import { formatDate } from '@/lib/utils/client';
@@ -203,7 +204,11 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
       >
         <div className="flex space-x-3 py-3">
           <Avatar
-            src={comment.authorAvatar}
+            src={
+              comment.isHiveUser
+                ? `https://images.hive.blog/u/${comment.authorUsername}/avatar`
+                : comment.authorAvatar
+            }
             fallback={comment.authorUsername[0]}
             alt={comment.authorUsername}
             size="sm"
@@ -214,6 +219,15 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
                 {comment.authorDisplayName || `@${comment.authorUsername}`}
               </span>
               <span className="text-xs text-muted-foreground">@{comment.authorUsername}</span>
+              {comment.isHiveUser ? (
+                <Badge variant="default" className="px-1.5 py-0 text-[10px]">
+                  Hive
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                  Off Chain
+                </Badge>
+              )}
               <span className="text-xs text-muted-foreground">
                 {formatDate(new Date(comment.createdAt))}
               </span>

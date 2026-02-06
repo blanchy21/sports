@@ -25,6 +25,7 @@ export interface SoftComment {
   authorUsername: string;
   authorDisplayName?: string;
   authorAvatar?: string;
+  isHiveUser?: boolean;
   parentCommentId?: string; // For replies
   body: string;
   createdAt: string;
@@ -128,6 +129,7 @@ export async function GET(request: NextRequest) {
         authorUsername: data.authorUsername,
         authorDisplayName: data.authorDisplayName,
         authorAvatar: data.authorAvatar,
+        isHiveUser: data.isHiveUser || false,
         parentCommentId: data.parentCommentId || undefined,
         body: data.body,
         createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
@@ -224,6 +226,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const isHiveUser = user.authType === 'hive';
       const now = new Date();
       const commentData = {
         postId,
@@ -232,6 +235,7 @@ export async function POST(request: NextRequest) {
         authorUsername: user.username,
         authorDisplayName: user.displayName || null,
         authorAvatar: user.avatar || null,
+        isHiveUser,
         parentCommentId: parentCommentId || null,
         body: commentBody,
         createdAt: now,
@@ -326,6 +330,7 @@ export async function POST(request: NextRequest) {
         authorUsername: user.username,
         authorDisplayName: user.displayName,
         authorAvatar: user.avatar,
+        isHiveUser,
         parentCommentId: parentCommentId || undefined,
         body: commentBody,
         createdAt: now.toISOString(),

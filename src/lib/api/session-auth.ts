@@ -91,6 +91,8 @@ export async function getAuthenticatedUserFromSession(
 ): Promise<{
   userId: string;
   username: string;
+  authType?: 'hive' | 'soft' | 'firebase' | 'guest';
+  hiveUsername?: string;
   displayName?: string;
   avatar?: string;
 } | null> {
@@ -100,12 +102,16 @@ export async function getAuthenticatedUserFromSession(
 
   let userId: string | null = null;
   let username: string | null = null;
+  let authType: SessionData['authType'] | undefined;
+  let hiveUsername: string | undefined;
 
   if (sessionCookie?.value) {
     const session = decryptSession(sessionCookie.value);
     if (session) {
       userId = session.userId;
       username = session.username;
+      authType = session.authType;
+      hiveUsername = session.hiveUsername;
     }
   }
 
@@ -124,6 +130,19 @@ export async function getAuthenticatedUserFromSession(
 
   // Optionally fetch profile data from Firestore
   if (options?.includeProfile) {
+    // Hive users won't have a Firestore profile — use Hive avatar directly
+    if (authType === 'hive') {
+      const hiveUser = hiveUsername || username || '';
+      return {
+        userId,
+        username: hiveUser,
+        authType,
+        hiveUsername,
+        displayName: hiveUser,
+        avatar: `https://images.hive.blog/u/${hiveUser}/avatar`,
+      };
+    }
+
     try {
       const db = getAdminDb();
       if (db) {
@@ -133,6 +152,8 @@ export async function getAuthenticatedUserFromSession(
           return {
             userId,
             username: data?.username ?? username ?? '',
+            authType,
+            hiveUsername,
             displayName: data?.displayName,
             avatar: data?.avatarUrl,
           };
@@ -146,5 +167,7 @@ export async function getAuthenticatedUserFromSession(
   return {
     userId,
     username: username ?? '',
+    authType,
+    hiveUsername,
   };
 }
