@@ -103,11 +103,18 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   };
 
   const handleReply = () => {
-    openModal('comments', {
-      author: sportsbite.author,
-      permlink: sportsbite.permlink,
-      source: sportsbite.source,
-    });
+    if (sportsbite.permlink?.startsWith('soft-')) {
+      openModal('softComments', {
+        postId: sportsbite.softId || sportsbite.permlink,
+        permlink: sportsbite.permlink,
+        author: sportsbite.author,
+      });
+    } else {
+      openModal('comments', {
+        author: sportsbite.author,
+        permlink: sportsbite.permlink,
+      });
+    }
   };
 
   const handleUpvoteList = () => {

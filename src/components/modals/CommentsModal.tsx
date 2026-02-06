@@ -61,7 +61,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
     setIsSubmitting(true);
 
     try {
-      if (authType === 'hive' && hiveUser?.username) {
+      if (hiveUser?.username) {
         // HIVE USER: Publish to blockchain via Keychain
         const operation = createCommentOperation({
           author: hiveUser.username,
