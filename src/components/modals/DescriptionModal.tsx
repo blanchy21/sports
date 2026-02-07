@@ -72,7 +72,7 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({
       size="lg"
       className="flex max-h-[80vh] flex-col"
     >
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4 sm:p-6">
         <div className="space-y-4">
           <div>
             <label className="mb-2 block text-sm font-medium">Description</label>
@@ -109,7 +109,7 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end space-x-3 border-t p-6">
+      <div className="flex flex-col-reverse gap-2 border-t p-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:p-6">
         <Button variant="outline" onClick={isEditing ? handleCancel : onClose} disabled={isSaving}>
           {isEditing ? 'Cancel' : 'Close'}
         </Button>

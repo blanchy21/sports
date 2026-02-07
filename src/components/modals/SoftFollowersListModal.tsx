@@ -111,7 +111,7 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative max-h-[80vh] w-full max-w-md overflow-hidden rounded-lg border border-border bg-card shadow-xl">
+      <div className="relative mx-2 max-h-[80vh] w-full max-w-md overflow-hidden rounded-lg border border-border bg-card shadow-xl sm:mx-4">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border p-4">
           <div className="flex items-center space-x-2">

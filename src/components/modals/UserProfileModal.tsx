@@ -89,11 +89,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       size="md"
       className="flex max-h-[80vh] flex-col"
     >
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {isLoading ? (
           <div className="animate-pulse space-y-4">
             <div className="flex items-center space-x-4">
-              <div className="h-16 w-16 rounded-full bg-gray-300"></div>
+              <div className="h-12 w-12 rounded-full bg-gray-300 sm:h-16 sm:w-16"></div>
               <div className="flex-1">
                 <div className="mb-2 h-6 w-1/3 rounded bg-gray-300"></div>
                 <div className="h-4 w-1/2 rounded bg-gray-300"></div>
@@ -115,13 +115,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         ) : (
           <div className="space-y-6">
             {/* Profile Header */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
               <Avatar
                 src={profile.profile?.profileImage}
                 fallback={username}
                 alt={profile.profile?.name || username}
                 size="lg"
-                className="h-16 w-16"
+                className="h-12 w-12 sm:h-16 sm:w-16"
               />
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-xl font-bold">{profile.profile?.name || username}</h3>
@@ -214,7 +214,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end space-x-3 border-t p-6">
+      <div className="flex flex-col-reverse gap-2 border-t p-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:p-6">
         <Button variant="outline" onClick={onClose}>
           Close
         </Button>

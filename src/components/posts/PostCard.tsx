@@ -152,7 +152,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
       )}
     >
       {/* Header */}
-      <div className="border-b p-4">
+      <div className="border-b p-3 sm:p-4">
         <div className="flex items-center space-x-3">
           <button onClick={() => handleUserProfile(getAuthorName())}>
             <Avatar
@@ -168,7 +168,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
             />
           </button>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
               <span
                 className="cursor-pointer text-sm font-medium hover:underline"
                 onClick={(e) => {
@@ -214,7 +214,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
 
       {/* Content */}
       <div
-        className="cursor-pointer space-y-3 p-4"
+        className="cursor-pointer space-y-3 p-3 sm:p-4"
         onClick={() => {
           window.location.href = postUrl;
         }}
@@ -289,7 +289,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
       </div>
 
       {/* Footer */}
-      <div className="border-t bg-muted/30 px-4 py-3">
+      <div className="border-t bg-muted/30 px-3 py-2 sm:px-4 sm:py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Voting/Like Section */}

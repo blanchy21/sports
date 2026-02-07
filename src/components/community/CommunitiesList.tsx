@@ -79,9 +79,9 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
     return (
       <div className={`space-y-4 ${className}`}>
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="animate-pulse rounded-lg border bg-card p-6">
-            <div className="flex items-center space-x-4">
-              <div className="h-16 w-16 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+          <div key={i} className="animate-pulse rounded-lg border bg-card p-4 sm:p-6">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="h-12 w-12 rounded-full bg-gray-300 dark:bg-gray-700 sm:h-16 sm:w-16"></div>
               <div className="flex-1">
                 <div className="mb-2 h-6 w-1/3 rounded bg-gray-300 dark:bg-gray-700"></div>
                 <div className="mb-2 h-4 w-2/3 rounded bg-gray-300 dark:bg-gray-700"></div>
@@ -273,23 +273,23 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
   const sportCategory = SPORT_CATEGORIES.find((s) => s.id === community.sportCategory);
 
   return (
-    <Card className="p-6 transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between">
+    <Card className="p-4 transition-shadow hover:shadow-md sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <Link
           href={`/community/${community.slug || community.id}`}
-          className="flex flex-1 items-start space-x-4"
+          className="flex flex-1 items-start space-x-3 sm:space-x-4"
         >
           <Avatar
             src={community.avatar}
             fallback={community.name}
             alt={community.name}
             size="lg"
-            className="h-16 w-16"
+            className="h-12 w-12 sm:h-16 sm:w-16"
           />
 
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-center gap-2">
-              <h3 className="text-xl font-semibold transition-colors hover:text-primary">
+              <h3 className="text-lg font-semibold transition-colors hover:text-primary sm:text-xl">
                 {community.name}
               </h3>
               <span
@@ -334,7 +334,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
           </div>
         </Link>
 
-        <div className="ml-4">
+        <div className="sm:ml-4">
           <JoinButton community={community} size="sm" />
         </div>
       </div>

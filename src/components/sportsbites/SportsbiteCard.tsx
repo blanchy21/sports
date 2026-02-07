@@ -317,7 +317,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       )}
 
       {/* Header */}
-      <div className="flex items-start gap-3 p-4 pb-0">
+      <div className="flex items-start gap-2 p-3 pb-0 sm:gap-3 sm:p-4 sm:pb-0">
         <button onClick={handleUserProfile} className="flex-shrink-0">
           <Avatar
             src={authorProfile?.avatar}
@@ -432,7 +432,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       </div>
 
       {/* Content */}
-      <div className="px-4 py-3 pl-[60px]">
+      <div className="px-3 py-3 sm:px-4 sm:pl-[60px]">
         <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{biteText}</p>
 
         {allImages.length > 0 && (
@@ -506,7 +506,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between border-t bg-gradient-to-r from-muted/30 to-transparent px-4 py-2 pl-[60px]">
+      <div className="flex items-center justify-between border-t bg-gradient-to-r from-muted/30 to-transparent px-3 py-2 sm:px-4 sm:pl-[60px]">
         <div className="flex items-center gap-4">
           <div className="group/vote flex items-center gap-1">
             {authType === 'hive' && sportsbite.source !== 'soft' ? (

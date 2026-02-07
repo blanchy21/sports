@@ -82,7 +82,7 @@ export const LatestNewsDropdown: React.FC<LatestNewsDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full z-50 mt-2 max-h-[32rem] w-[420px] overflow-hidden rounded-lg border border-border bg-card shadow-xl"
+      className="absolute right-0 top-full z-50 mt-2 max-h-[32rem] w-[420px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-border bg-card shadow-xl"
       data-testid="news-dropdown"
     >
       {/* Header */}

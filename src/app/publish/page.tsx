@@ -774,17 +774,17 @@ function PublishPageContent() {
       </div>
 
       {/* Main Content - Split View */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         {/* Left Side - Editor (60%) */}
-        <div className="flex w-3/5 flex-col overflow-hidden border-r">
+        <div className="flex w-full flex-col overflow-hidden border-b md:w-3/5 md:border-b-0 md:border-r">
           {/* Title Input */}
-          <div className="border-b px-6 py-4">
+          <div className="border-b px-4 py-3 sm:px-6 sm:py-4">
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Post Title"
-              className="w-full border-none bg-transparent text-2xl font-bold outline-none placeholder:text-muted-foreground"
+              className="w-full border-none bg-transparent text-xl font-bold outline-none placeholder:text-muted-foreground sm:text-2xl"
             />
           </div>
 
@@ -806,12 +806,12 @@ function PublishPageContent() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Write your post using Markdown..."
-              className="h-full w-full resize-none border-none bg-background px-6 py-4 font-mono text-sm leading-relaxed outline-none"
+              className="h-full w-full resize-none border-none bg-background px-4 py-3 font-mono text-sm leading-relaxed outline-none sm:px-6 sm:py-4"
             />
           </div>
 
           {/* Bottom Fields */}
-          <div className="max-h-[45%] space-y-4 overflow-auto border-t px-6 py-4">
+          <div className="max-h-[45%] space-y-4 overflow-auto border-t px-4 py-3 sm:px-6 sm:py-4">
             {/* Short Description / Excerpt */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -952,7 +952,7 @@ function PublishPageContent() {
         </div>
 
         {/* Right Side - Preview (40%) */}
-        <div className="flex w-2/5 flex-col overflow-hidden bg-muted/30">
+        <div className="hidden overflow-hidden bg-muted/30 md:flex md:w-2/5 md:flex-col">
           {/* Preview Header */}
           <div className="border-b bg-background px-6 py-3">
             <div className="flex items-center gap-2 text-sm">
@@ -1004,13 +1004,13 @@ function PublishPageContent() {
       </div>
 
       {/* Fixed Bottom Action Bar */}
-      <div className="border-t bg-card px-6 py-4">
-        <div className="flex items-center justify-center gap-3">
+      <div className="border-t bg-card px-4 py-3 sm:px-6 sm:py-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
           <Button
             variant="outline"
             onClick={handleSaveDraft}
             disabled={!title && !content}
-            className="min-w-[120px]"
+            className="w-full sm:w-auto sm:min-w-[120px]"
           >
             <Save className="mr-2 h-4 w-4" />
             Save Draft
@@ -1020,7 +1020,7 @@ function PublishPageContent() {
             variant="outline"
             onClick={() => setShowScheduleModal(true)}
             disabled={!title || !content || !selectedSport}
-            className="min-w-[120px]"
+            className="w-full sm:w-auto sm:min-w-[120px]"
           >
             <Calendar className="mr-2 h-4 w-4" />
             Schedule
@@ -1035,7 +1035,7 @@ function PublishPageContent() {
               isPublishing ||
               (authType === 'hive' && rcStatus !== null && !rcStatus.canPost)
             }
-            className="min-w-[140px]"
+            className="w-full sm:w-auto sm:min-w-[140px]"
           >
             <Send className="mr-2 h-4 w-4" />
             {isPublishing ? 'Publishing...' : authType === 'hive' ? 'Publish to Hive' : 'Publish'}

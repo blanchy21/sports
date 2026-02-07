@@ -228,8 +228,8 @@ export default function DashboardPage() {
     <MainLayout showRightSidebar={false} className="max-w-none">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center space-x-3 sm:space-x-4">
             <Avatar
               src={user.avatar}
               fallback={user.username}
@@ -237,7 +237,7 @@ export default function DashboardPage() {
               size="lg"
             />
             <div>
-              <h1 className="text-2xl font-bold">{user.displayName || user.username}</h1>
+              <h1 className="text-xl font-bold sm:text-2xl">{user.displayName || user.username}</h1>
               <p className="text-muted-foreground">@{user.username}</p>
               {authType === 'hive' && (
                 <div className="mt-1 flex items-center space-x-1">
@@ -247,7 +247,7 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             {authType === 'hive' && (
               <Button
                 variant="outline"
@@ -304,7 +304,7 @@ export default function DashboardPage() {
 
         {/* Rewards Stats (Hive users only) */}
         {rewardsStats.length > 0 && (
-          <div className="rounded-lg bg-gradient-to-r from-primary to-accent p-6">
+          <div className="rounded-lg bg-gradient-to-r from-primary to-accent p-4 sm:p-6">
             <div className="mb-4 flex items-center space-x-2">
               <DollarSign className="h-5 w-5 text-white" />
               <h3 className="text-lg font-semibold text-white">Hive Account Balances</h3>

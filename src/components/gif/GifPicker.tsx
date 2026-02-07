@@ -165,7 +165,7 @@ export function GifPicker({ isOpen, onClose, onSelect, className }: GifPickerPro
     <div
       ref={containerRef}
       className={cn(
-        'absolute z-50 max-h-96 w-80 overflow-hidden rounded-lg border bg-card shadow-lg',
+        'absolute z-50 max-h-96 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border bg-card shadow-lg',
         className
       )}
     >

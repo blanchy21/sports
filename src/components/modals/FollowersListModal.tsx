@@ -50,7 +50,7 @@ export const FollowersListModal: React.FC<FollowersListModalProps> = ({
       size="md"
       className="flex max-h-[80vh] flex-col"
     >
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {isLoading ? (
           <div className="animate-pulse space-y-4">
             {[...Array(5)].map((_, i) => (
@@ -97,7 +97,7 @@ export const FollowersListModal: React.FC<FollowersListModalProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end space-x-3 border-t p-6">
+      <div className="flex items-center justify-end space-x-3 border-t p-4 sm:p-6">
         <Button variant="outline" onClick={onClose}>
           Close
         </Button>

@@ -69,21 +69,21 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
       className="flex max-h-[80vh] flex-col"
     >
       {/* Stats */}
-      <div className="border-b bg-muted/30 p-6">
+      <div className="border-b bg-muted/30 p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div className="text-center">
-            <div className="text-2xl font-bold text-red-500">{totalVotes}</div>
+            <div className="text-xl font-bold text-red-500 sm:text-2xl">{totalVotes}</div>
             <div className="text-sm text-muted-foreground">Total Votes</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold">{totalWeight / 100}%</div>
+            <div className="text-xl font-bold sm:text-2xl">{totalWeight / 100}%</div>
             <div className="text-sm text-muted-foreground">Total Weight</div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {votes.length > 0 ? (
           <div className="space-y-4">
             {votes.map((vote, index) => (

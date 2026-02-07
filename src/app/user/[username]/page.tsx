@@ -161,11 +161,11 @@ export default function UserProfilePage() {
   if (isProfileLoading) {
     return (
       <MainLayout>
-        <div className="mx-auto max-w-4xl p-6">
+        <div className="mx-auto max-w-4xl p-4 sm:p-6">
           <div className="animate-pulse space-y-6">
-            <div className="h-48 rounded-lg bg-gray-200"></div>
+            <div className="h-32 rounded-lg bg-gray-200 sm:h-48"></div>
             <div className="flex items-center space-x-4">
-              <div className="h-32 w-32 rounded-full bg-gray-200"></div>
+              <div className="h-24 w-24 rounded-full bg-gray-200 sm:h-32 sm:w-32"></div>
               <div className="flex-1 space-y-2">
                 <div className="h-8 w-1/3 rounded bg-gray-200"></div>
                 <div className="h-4 w-1/4 rounded bg-gray-200"></div>
@@ -209,7 +209,7 @@ export default function UserProfilePage() {
         {/* Profile Header */}
         <div className="overflow-hidden rounded-lg border bg-card">
           {/* Cover Photo */}
-          <div className="relative h-48 bg-gradient-to-r from-primary via-bright-cobalt to-accent">
+          <div className="relative h-32 bg-gradient-to-r from-primary via-bright-cobalt to-accent sm:h-48">
             {!isSoftUser &&
               (profile as { profile?: { coverImage?: string } }).profile?.coverImage && (
                 <Image
@@ -223,10 +223,10 @@ export default function UserProfilePage() {
           </div>
 
           {/* Profile Info */}
-          <div className="p-6">
-            <div className="flex items-start space-x-4">
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-col items-center sm:flex-row sm:items-start sm:space-x-4">
               {/* Avatar */}
-              <div className="relative -mt-16">
+              <div className="relative -mt-12 sm:-mt-16">
                 <Avatar
                   src={
                     isSoftUser
@@ -240,13 +240,13 @@ export default function UserProfilePage() {
                   }
                   fallback={username}
                   size="lg"
-                  className="h-32 w-32 border-4 border-background"
+                  className="h-24 w-24 border-4 border-background sm:h-32 sm:w-32"
                 />
               </div>
 
-              <div className="mt-4 flex-1">
-                <div className="mb-2 flex items-center space-x-3">
-                  <h1 className="text-3xl font-bold text-foreground">
+              <div className="mt-4 flex-1 text-center sm:text-left">
+                <div className="mb-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start sm:gap-3">
+                  <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
                     {isSoftUser
                       ? (profile as { displayName?: string }).displayName || username
                       : (profile as { profile?: { name?: string } }).profile?.name || username}
@@ -279,7 +279,7 @@ export default function UserProfilePage() {
                       />
                     )}
                 </div>
-                <p className="mb-2 text-lg text-muted-foreground">@{username}</p>
+                <p className="mb-2 text-base text-muted-foreground sm:text-lg">@{username}</p>
 
                 {/* Profile Details */}
                 <div className="mt-4 space-y-3">
@@ -343,7 +343,7 @@ export default function UserProfilePage() {
                 )}
 
                 {/* Stats Section */}
-                <div className="mt-6 flex items-center space-x-6 border-t border-border pt-4">
+                <div className="mt-6 flex items-center justify-center gap-4 border-t border-border pt-4 sm:justify-start sm:gap-6">
                   {!isSoftUser ? (
                     <>
                       <div
@@ -415,7 +415,7 @@ export default function UserProfilePage() {
 
         {/* Posts Section */}
         <div className="rounded-lg border bg-card">
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="mb-4 text-xl font-bold">Posts</h2>
 
             {isLoadingPosts ? (
