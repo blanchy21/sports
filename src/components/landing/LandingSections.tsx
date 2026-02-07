@@ -19,7 +19,9 @@ import {
   Gift,
   Target,
   Flame,
+  FileText,
 } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/core/Button';
 
 // High-quality Unsplash sports images
@@ -741,6 +743,15 @@ export default function LandingSections() {
             Sign Up Free
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
+          <div className="mt-6">
+            <Link
+              href="/whitepaper"
+              className="inline-flex items-center gap-2 text-sm text-white/50 transition-colors hover:text-white/80"
+            >
+              <FileText className="h-4 w-4" />
+              Read our Whitepaper
+            </Link>
+          </div>
         </motion.div>
       </section>
     </>

@@ -3,7 +3,8 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { ArrowRight, TrendingUp, Users, DollarSign, FileText } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/core/Button';
 import { Loading } from '@/components/core/Loading';
 import { useAuth } from '@/contexts/AuthContext';
@@ -188,6 +189,22 @@ export default function LandingPage() {
               </div>
               <span className="text-sm">No middlemen</span>
             </div>
+          </motion.div>
+
+          {/* Whitepaper Link */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 1 }}
+            className="mt-6"
+          >
+            <Link
+              href="/whitepaper"
+              className="inline-flex items-center gap-2 text-sm text-white/50 transition-colors hover:text-white/80"
+            >
+              <FileText className="h-4 w-4" />
+              Read our Whitepaper
+            </Link>
           </motion.div>
         </motion.div>
 
