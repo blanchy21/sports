@@ -15,6 +15,7 @@ interface SportsbitesFeedProps {
   author?: string;
   followingList?: string[];
   filterMode?: 'latest' | 'trending' | 'following';
+  tagFilter?: string;
   className?: string;
   optimisticBite?: Sportsbite | null;
 }
@@ -23,6 +24,7 @@ export function SportsbitesFeed({
   author,
   followingList = [],
   filterMode = 'latest',
+  tagFilter,
   className,
   optimisticBite = null,
 }: SportsbitesFeedProps) {
@@ -52,12 +54,21 @@ export function SportsbitesFeed({
 
   const filterByMode = useCallback(
     (list: Sportsbite[]) => {
+      let filtered = list;
       if (filterMode === 'following' && followingList.length > 0) {
-        return list.filter((s) => followingList.includes(s.author));
+        filtered = filtered.filter((s) => followingList.includes(s.author));
       }
-      return list;
+      if (tagFilter) {
+        const tagLower = tagFilter.toLowerCase();
+        const tagPattern = new RegExp(
+          `#${tagLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+          'i'
+        );
+        filtered = filtered.filter((s) => tagPattern.test(s.body));
+      }
+      return filtered;
     },
-    [filterMode, followingList]
+    [filterMode, followingList, tagFilter]
   );
 
   const loadBites = useCallback(

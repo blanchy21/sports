@@ -134,22 +134,26 @@ export const RightSidebar: React.FC = () => {
             <>
               <div className="space-y-3">
                 {trendingTopics.map((topic) => (
-                  <div
+                  <Link
                     key={topic.id}
-                    className="flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-accent"
+                    href={`/sportsbites?tag=${encodeURIComponent(topic.name)}`}
+                    className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-accent"
                   >
                     <div>
                       <div className="text-sm font-medium">#{topic.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {topic.posts.toLocaleString()} posts
+                        {topic.posts.toLocaleString()} {topic.posts === 1 ? 'bite' : 'bites'}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
-              <button className="mt-3 w-full text-sm text-primary hover:underline">
+              <Link
+                href="/sportsbites"
+                className="mt-3 block w-full text-center text-sm text-primary hover:underline"
+              >
                 Show more
-              </button>
+              </Link>
             </>
           ) : (
             <div className="text-sm text-muted-foreground">No trending topics found</div>

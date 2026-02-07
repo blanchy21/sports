@@ -4,11 +4,11 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ComposeSportsbite, SportsbitesFeed } from '@/components/sportsbites';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast, toast } from '@/components/core/Toast';
 import type { Sportsbite } from '@/lib/hive-workerbee/sportsbites';
 import Image from 'next/image';
-import { Zap, TrendingUp, Clock, Users, X } from 'lucide-react';
+import { Zap, TrendingUp, Clock, Users, X, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { Button } from '@/components/core/Button';
 import { useFollowing } from '@/lib/react-query/queries/useFollowers';
@@ -18,7 +18,10 @@ type FeedFilter = 'latest' | 'trending' | 'following';
 export default function SportsBitesPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addToast } = useToast();
+
+  const tagFilter = searchParams.get('tag') || undefined;
 
   const [activeFilter, setActiveFilter] = useState<FeedFilter>('latest');
   const [optimisticBite, setOptimisticBite] = useState<Sportsbite | null>(null);
@@ -139,6 +142,27 @@ export default function SportsBitesPage() {
           </div>
         </div>
 
+        {/* Tag filter banner */}
+        {tagFilter && (
+          <div className="mb-4 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Hash className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">
+                Showing bites tagged <span className="text-primary">#{tagFilter}</span>
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/sportsbites')}
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="mr-1 h-3 w-3" />
+              Clear
+            </Button>
+          </div>
+        )}
+
         {/* Compose box */}
         <div className="mb-6">
           <ComposeSportsbite onSuccess={handlePostSuccess} onError={handlePostError} />
@@ -178,6 +202,7 @@ export default function SportsBitesPage() {
           optimisticBite={optimisticBite}
           filterMode={activeFilter}
           followingList={followingList}
+          tagFilter={tagFilter}
         />
 
         {/* Feature highlights */}

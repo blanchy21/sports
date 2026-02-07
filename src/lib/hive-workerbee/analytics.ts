@@ -1,6 +1,7 @@
 import { SportsblockPost } from './content';
 import { SPORT_CATEGORIES } from '@/types';
 import { getFollowerCount } from './social';
+import { Sportsbite, extractHashtags } from './sportsbites';
 
 // Types for analytics data
 export interface TrendingSport {
@@ -46,10 +47,9 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
 
 // Utility function to check if a tag is a sport category
 function isSportCategory(tag: string): boolean {
-  return SPORT_CATEGORIES.some(sport => 
-    sport.id === tag || 
-    sport.name.toLowerCase() === tag.toLowerCase() ||
-    sport.slug === tag
+  return SPORT_CATEGORIES.some(
+    (sport) =>
+      sport.id === tag || sport.name.toLowerCase() === tag.toLowerCase() || sport.slug === tag
   );
 }
 
@@ -57,8 +57,8 @@ function isSportCategory(tag: string): boolean {
 function filterPostsLast7Days(posts: SportsblockPost[]): SportsblockPost[] {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  
-  return posts.filter(post => {
+
+  return posts.filter((post) => {
     const postDate = new Date(post.created);
     return postDate >= sevenDaysAgo;
   });
@@ -72,20 +72,20 @@ function filterPostsLast7Days(posts: SportsblockPost[]): SportsblockPost[] {
 export function calculateTrendingSports(posts: SportsblockPost[]): TrendingSport[] {
   const recentPosts = filterPostsLast7Days(posts);
   const sportCount: Record<string, number> = {};
-  
+
   // Count posts by sport category
-  recentPosts.forEach(post => {
+  recentPosts.forEach((post) => {
     if (post.sportCategory) {
       sportCount[post.sportCategory] = (sportCount[post.sportCategory] || 0) + 1;
     }
   });
-  
+
   // Convert to array and sort by count
   const sortedSports = Object.entries(sportCount)
     .map(([sportId, count]) => {
-      const sport = SPORT_CATEGORIES.find(s => s.id === sportId);
+      const sport = SPORT_CATEGORIES.find((s) => s.id === sportId);
       if (!sport) return null;
-      
+
       return {
         sport: {
           id: sport.id,
@@ -98,14 +98,14 @@ export function calculateTrendingSports(posts: SportsblockPost[]): TrendingSport
     })
     .filter((item): item is TrendingSport => item !== null)
     .sort((a, b) => b.posts - a.posts);
-  
+
   // Mark top 3 as trending
   sortedSports.forEach((item, index) => {
     if (index < 3) {
       item.trending = true;
     }
   });
-  
+
   return sortedSports;
 }
 
@@ -117,27 +117,55 @@ export function calculateTrendingSports(posts: SportsblockPost[]): TrendingSport
 export function calculateTrendingTopics(posts: SportsblockPost[]): TrendingTopic[] {
   const recentPosts = filterPostsLast7Days(posts);
   const tagCount: Record<string, number> = {};
-  
+
   // Count all tags except sport categories and system tags
-  recentPosts.forEach(post => {
+  recentPosts.forEach((post) => {
     const metadata = parseJsonMetadata(post.json_metadata);
     const tags = metadata.tags as string[] | undefined;
-    
+
     if (tags && Array.isArray(tags)) {
-      tags.forEach(tag => {
+      tags.forEach((tag) => {
         // Filter out sport categories, system tags, and empty tags
-        if (tag && 
-            !isSportCategory(tag) && 
-            tag !== 'sportsblock' && 
-            tag !== 'sportsarena' &&
-            tag.length > 1) {
+        if (
+          tag &&
+          !isSportCategory(tag) &&
+          tag !== 'sportsblock' &&
+          tag !== 'sportsarena' &&
+          tag.length > 1
+        ) {
           tagCount[tag] = (tagCount[tag] || 0) + 1;
         }
       });
     }
   });
-  
+
   // Convert to array, sort by count, and return top 5
+  return Object.entries(tagCount)
+    .map(([tag, count]) => ({
+      id: tag,
+      name: tag,
+      posts: count,
+    }))
+    .sort((a, b) => b.posts - a.posts)
+    .slice(0, 5);
+}
+
+/**
+ * Calculate trending topics from sportsbite body text hashtags.
+ * Parses #hashtag patterns from the body of each sportsbite.
+ */
+export function calculateSportsbitesTrendingTopics(sportsbites: Sportsbite[]): TrendingTopic[] {
+  const tagCount: Record<string, number> = {};
+
+  for (const bite of sportsbites) {
+    const hashtags = extractHashtags(bite.body);
+    for (const tag of hashtags) {
+      if (!isSportCategory(tag)) {
+        tagCount[tag] = (tagCount[tag] || 0) + 1;
+      }
+    }
+  }
+
   return Object.entries(tagCount)
     .map(([tag, count]) => ({
       id: tag,
@@ -165,18 +193,24 @@ function formatFollowerCount(count: number): string {
  * @param excludeUser - Username to exclude from the results (e.g., current user)
  * @returns Top authors data with real follower counts
  */
-export async function calculateTopAuthors(posts: SportsblockPost[], excludeUser?: string): Promise<TopAuthor[]> {
+export async function calculateTopAuthors(
+  posts: SportsblockPost[],
+  excludeUser?: string
+): Promise<TopAuthor[]> {
   const recentPosts = filterPostsLast7Days(posts);
-  const authorStats: Record<string, {
-    username: string;
-    posts: number;
-    totalEngagement: number;
-    totalComments: number;
-    totalVotes: number;
-  }> = {};
+  const authorStats: Record<
+    string,
+    {
+      username: string;
+      posts: number;
+      totalEngagement: number;
+      totalComments: number;
+      totalVotes: number;
+    }
+  > = {};
 
   // Calculate engagement for each author
-  recentPosts.forEach(post => {
+  recentPosts.forEach((post) => {
     const author = post.author;
 
     // Skip posts with empty or invalid author
@@ -210,13 +244,13 @@ export async function calculateTopAuthors(posts: SportsblockPost[], excludeUser?
 
   // Get top 3 authors by engagement (filter out any empty usernames as safety check)
   const topAuthors = Object.values(authorStats)
-    .filter(author => author.username && author.username.trim() !== '')
+    .filter((author) => author.username && author.username.trim() !== '')
     .sort((a, b) => b.totalEngagement - a.totalEngagement)
     .slice(0, 3);
 
   // Fetch real follower counts in parallel
   const followerCounts = await Promise.all(
-    topAuthors.map(author => getFollowerCount(author.username))
+    topAuthors.map((author) => getFollowerCount(author.username))
   );
 
   // Map to TopAuthor format with real follower counts
@@ -239,23 +273,23 @@ export function calculateCommunityStats(posts: SportsblockPost[]): CommunityStat
   const recentPosts = filterPostsLast7Days(posts);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   // Calculate unique authors
-  const uniqueAuthors = new Set(recentPosts.map(post => post.author));
-  
+  const uniqueAuthors = new Set(recentPosts.map((post) => post.author));
+
   // Calculate total rewards (pending payouts)
   const totalRewards = recentPosts.reduce((sum, post) => {
     const payout = parseFloat(post.pending_payout_value || '0');
     return sum + payout;
   }, 0);
-  
+
   // Calculate posts from today
-  const activeToday = recentPosts.filter(post => {
+  const activeToday = recentPosts.filter((post) => {
     const postDate = new Date(post.created);
     postDate.setHours(0, 0, 0, 0);
     return postDate.getTime() === today.getTime();
   }).length;
-  
+
   return {
     totalPosts: recentPosts.length,
     totalAuthors: uniqueAuthors.size,
@@ -268,16 +302,25 @@ export function calculateCommunityStats(posts: SportsblockPost[]): CommunityStat
  * Get all analytics data for the sidebar
  * @param posts - Array of posts to analyze
  * @param excludeUser - Username to exclude from top authors (e.g., current user)
+ * @param sportsbites - Optional sportsbites to derive trending topics from
  * @returns Complete analytics data
  */
-export async function getAnalyticsData(posts: SportsblockPost[], excludeUser?: string) {
-  const [topAuthors] = await Promise.all([
-    calculateTopAuthors(posts, excludeUser),
-  ]);
+export async function getAnalyticsData(
+  posts: SportsblockPost[],
+  excludeUser?: string,
+  sportsbites?: Sportsbite[]
+) {
+  const [topAuthors] = await Promise.all([calculateTopAuthors(posts, excludeUser)]);
+
+  // Use sportsbites-derived trending topics when available, fall back to long-form post tags
+  const trendingTopics =
+    sportsbites && sportsbites.length > 0
+      ? calculateSportsbitesTrendingTopics(sportsbites)
+      : calculateTrendingTopics(posts);
 
   return {
     trendingSports: calculateTrendingSports(posts),
-    trendingTopics: calculateTrendingTopics(posts),
+    trendingTopics,
     topAuthors,
     communityStats: calculateCommunityStats(posts),
   };

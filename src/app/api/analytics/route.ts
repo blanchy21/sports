@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { 
-  TrendingSport, 
-  TrendingTopic, 
-  TopAuthor, 
+import {
+  TrendingSport,
+  TrendingTopic,
+  TopAuthor,
   CommunityStats,
-  getAnalyticsData 
+  getAnalyticsData,
 } from '@/lib/hive-workerbee/analytics';
 import { SportsblockPost } from '@/lib/hive-workerbee/content';
+import { fetchSportsbites } from '@/lib/hive-workerbee/sportsbites';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { headers } from 'next/headers';
@@ -23,16 +24,19 @@ async function fetchPostsViaInternalApi(limit: number = 20): Promise<Sportsblock
     const headersList = await headers();
     const host = headersList.get('host') || 'localhost:3000';
     const protocol = host.includes('localhost') ? 'http' : 'https';
-    
-    const response = await fetch(`${protocol}://${host}/api/hive/posts?limit=${limit}&sort=created`, {
-      cache: 'no-store',
-    });
-    
+
+    const response = await fetch(
+      `${protocol}://${host}/api/hive/posts?limit=${limit}&sort=created`,
+      {
+        cache: 'no-store',
+      }
+    );
+
     if (!response.ok) {
       console.warn(`[Analytics API] Internal API returned ${response.status}`);
       return [];
     }
-    
+
     const data = await response.json();
     return data.posts || [];
   } catch (error) {
@@ -55,7 +59,7 @@ export async function GET() {
   console.log(`[${ROUTE}] Request started`, {
     requestId,
     firebaseConfigured: !!db,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 
   try {
@@ -74,9 +78,12 @@ export async function GET() {
     // If Firebase is not configured, compute analytics directly from Hive
     if (!db) {
       console.log('[Analytics API] Firebase not configured, computing analytics from Hive...');
-      const posts = await fetchPostsViaInternalApi(20);
+      const [posts, bitesResult] = await Promise.all([
+        fetchPostsViaInternalApi(20),
+        fetchSportsbites({ limit: 200 }),
+      ]);
       if (posts.length > 0) {
-        const computedAnalytics = await getAnalyticsData(posts, undefined);
+        const computedAnalytics = await getAnalyticsData(posts, undefined, bitesResult.sportsbites);
         return NextResponse.json({
           success: true,
           data: computedAnalytics,
@@ -145,27 +152,32 @@ export async function GET() {
     }
 
     // Fallback: If Firestore data is empty or stale (all zeros), compute analytics from Hive posts
-    const hasMeaningfulSportsData = analytics.trendingSports.some(s => s.posts > 0);
-    const hasMeaningfulTopicsData = analytics.trendingTopics.some(t => t.posts > 0);
+    const hasMeaningfulSportsData = analytics.trendingSports.some((s) => s.posts > 0);
+    const hasMeaningfulTopicsData = analytics.trendingTopics.some((t) => t.posts > 0);
     const hasMeaningfulAuthorsData = analytics.topAuthors.length > 0;
     const hasMeaningfulStats = analytics.communityStats.totalPosts > 0;
-    
-    const isFirestoreEmptyOrStale = 
-      !hasMeaningfulSportsData && 
-      !hasMeaningfulTopicsData && 
+
+    const isFirestoreEmptyOrStale =
+      !hasMeaningfulSportsData &&
+      !hasMeaningfulTopicsData &&
       !hasMeaningfulAuthorsData &&
       !hasMeaningfulStats;
 
     if (isFirestoreEmptyOrStale) {
       console.log('[Analytics API] Firestore empty or stale, computing analytics from Hive...');
-      const posts = await fetchPostsViaInternalApi(20);
+      const [posts, bitesResult] = await Promise.all([
+        fetchPostsViaInternalApi(20),
+        fetchSportsbites({ limit: 200 }),
+      ]);
       if (posts.length > 0) {
-        const computedAnalytics = await getAnalyticsData(posts, undefined);
+        const computedAnalytics = await getAnalyticsData(posts, undefined, bitesResult.sportsbites);
         analytics.trendingSports = computedAnalytics.trendingSports;
         analytics.trendingTopics = computedAnalytics.trendingTopics;
         analytics.topAuthors = computedAnalytics.topAuthors;
         analytics.communityStats = computedAnalytics.communityStats;
-        console.log(`[Analytics API] Computed analytics from ${posts.length} posts`);
+        console.log(
+          `[Analytics API] Computed analytics from ${posts.length} posts and ${bitesResult.sportsbites.length} sportsbites`
+        );
       }
     }
 
@@ -173,18 +185,20 @@ export async function GET() {
       success: true,
       data: analytics,
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[${ROUTE}] Request failed after ${duration}ms`, {
       requestId,
       firebaseConfigured: !!db,
-      error: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : String(error),
-      timestamp: new Date().toISOString()
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : String(error),
+      timestamp: new Date().toISOString(),
     });
 
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -204,10 +218,9 @@ export async function GET() {
             totalRewards: 0,
             activeToday: 0,
           },
-        }
+        },
       },
       { status: 500 }
     );
   }
 }
-

@@ -333,6 +333,37 @@ export function extractSportsbiteText(body: string): string {
   return body.replace(/!\[.*?\]\(.*?\)/g, '').trim();
 }
 
+/**
+ * Extract #hashtags from sportsbite body text.
+ * Returns lowercase tag names without the leading '#'.
+ * Filters out system tags, sport category IDs, and single-char tags.
+ */
+export function extractHashtags(body: string): string[] {
+  const SYSTEM_TAGS = new Set([
+    'sportsblock',
+    'sportsbites',
+    'microblog',
+    'sportsarena',
+    'hive-115814',
+  ]);
+  const matches = body.match(/#([a-zA-Z0-9_]+)/g);
+  if (!matches) return [];
+
+  const seen = new Set<string>();
+  const tags: string[] = [];
+
+  for (const match of matches) {
+    const tag = match.slice(1).toLowerCase();
+    if (tag.length <= 1) continue;
+    if (SYSTEM_TAGS.has(tag)) continue;
+    if (seen.has(tag)) continue;
+    seen.add(tag);
+    tags.push(tag);
+  }
+
+  return tags;
+}
+
 export function extractMediaFromBody(body: string): {
   images: string[];
   text: string;

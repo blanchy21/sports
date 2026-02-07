@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { fetchSportsblockPosts } from '@/lib/hive-workerbee/content';
 import { getAnalyticsData } from '@/lib/hive-workerbee/analytics';
+import { fetchSportsbites } from '@/lib/hive-workerbee/sportsbites';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
@@ -21,33 +22,38 @@ export async function GET() {
   try {
     // Check if Firebase is configured
     if (!db) {
-      return NextResponse.json({
-        success: false,
-        error: 'Firebase not configured - analytics update skipped',
-      }, { status: 503 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Firebase not configured - analytics update skipped',
+        },
+        { status: 503 }
+      );
     }
 
     console.log('[Cron] Starting analytics update...');
 
-    // Fetch posts from Hive
-    const result = await fetchSportsblockPosts({ 
-      limit: 500, 
-      sort: 'created' 
-    });
+    // Fetch posts and sportsbites in parallel
+    const [result, bitesResult] = await Promise.all([
+      fetchSportsblockPosts({ limit: 500, sort: 'created' }),
+      fetchSportsbites({ limit: 500 }),
+    ]);
 
     if (result.posts.length === 0) {
       console.log('[Cron] No posts found, skipping update');
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         message: 'No posts to analyze',
-        postsCount: 0 
+        postsCount: 0,
       });
     }
 
-    console.log(`[Cron] Fetched ${result.posts.length} posts, calculating analytics...`);
+    console.log(
+      `[Cron] Fetched ${result.posts.length} posts and ${bitesResult.sportsbites.length} sportsbites, calculating analytics...`
+    );
 
-    // Calculate analytics
-    const analytics = await getAnalyticsData(result.posts, undefined);
+    // Calculate analytics — sportsbites drive trending topics
+    const analytics = await getAnalyticsData(result.posts, undefined, bitesResult.sportsbites);
 
     // Update Firestore
     await Promise.all([
@@ -92,14 +98,13 @@ export async function GET() {
   } catch (error) {
     console.error('[Cron] Error updating analytics:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: message,
       },
       { status: 500 }
     );
   }
 }
-
