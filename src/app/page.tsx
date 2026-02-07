@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, TrendingUp, Users, DollarSign, FileText } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/core/Button';
 import { Loading } from '@/components/core/Loading';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,8 +68,10 @@ export default function LandingPage() {
           {/* Animated gradient orbs */}
           <motion.div
             animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
+              scale: [1, 1.3, 1],
+              opacity: [0.3, 0.6, 0.3],
+              x: [0, 30, 0],
+              y: [0, -20, 0],
             }}
             transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
             className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-accent/30 blur-3xl"
@@ -79,9 +80,63 @@ export default function LandingPage() {
             animate={{
               scale: [1.2, 1, 1.2],
               opacity: [0.2, 0.4, 0.2],
+              x: [0, -40, 0],
+              y: [0, 30, 0],
             }}
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
             className="absolute -bottom-48 -left-48 h-[500px] w-[500px] rounded-full bg-primary/20 blur-3xl"
+          />
+          {/* Third orb - moves across center */}
+          <motion.div
+            animate={{
+              scale: [0.8, 1.1, 0.8],
+              opacity: [0.1, 0.25, 0.1],
+              x: [-100, 100, -100],
+              y: [50, -50, 50],
+            }}
+            transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute left-1/3 top-1/4 h-72 w-72 rounded-full bg-accent/20 blur-3xl"
+          />
+
+          {/* Floating particles */}
+          {[
+            { left: '10%', delay: 0, duration: 6, size: 'h-1 w-1' },
+            { left: '25%', delay: 1.5, duration: 8, size: 'h-1.5 w-1.5' },
+            { left: '45%', delay: 0.5, duration: 7, size: 'h-1 w-1' },
+            { left: '65%', delay: 2, duration: 9, size: 'h-2 w-2' },
+            { left: '80%', delay: 1, duration: 6.5, size: 'h-1 w-1' },
+            { left: '90%', delay: 3, duration: 8, size: 'h-1.5 w-1.5' },
+            { left: '35%', delay: 2.5, duration: 7.5, size: 'h-1 w-1' },
+            { left: '55%', delay: 0.8, duration: 10, size: 'h-1.5 w-1.5' },
+          ].map((p, i) => (
+            <motion.div
+              key={i}
+              animate={{
+                y: [0, -400, -800],
+                opacity: [0, 0.8, 0],
+                x: [0, Math.sin(i) * 30, Math.cos(i) * 20],
+              }}
+              transition={{
+                duration: p.duration,
+                repeat: Infinity,
+                delay: p.delay,
+                ease: 'linear',
+              }}
+              className={`absolute bottom-0 ${p.size} rounded-full bg-white/40`}
+              style={{ left: p.left }}
+            />
+          ))}
+
+          {/* Diagonal light streaks */}
+          <motion.div
+            animate={{ x: ['-100%', '200%'] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'linear', delay: 2 }}
+            className="absolute left-0 top-1/4 h-px w-1/3 rotate-[30deg] bg-gradient-to-r from-transparent via-white/20 to-transparent"
+          />
+          <motion.div
+            animate={{ x: ['200%', '-100%'] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'linear', delay: 5 }}
+            className="absolute right-0 top-2/3 h-px w-1/4 -rotate-[25deg] bg-gradient-to-r from-transparent via-accent/20 to-transparent"
           />
         </div>
 
@@ -104,32 +159,24 @@ export default function LandingPage() {
             <span className="text-sm font-medium text-white/90">Where Sports Fans Earn</span>
           </motion.div>
 
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.15, ease: 'easeOut' }}
-            className="mb-4"
-          >
-            <Image
-              src="/sportsblock-logo-trans.png"
-              alt="Sportsblock logo"
-              width={120}
-              height={120}
-              className="mx-auto drop-shadow-2xl"
-              priority
-            />
-          </motion.div>
-
           {/* Main Brand Name */}
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+            className="relative"
           >
+            {/* Glow behind heading */}
+            <motion.div
+              animate={{ opacity: [0.3, 0.6, 0.3], scale: [0.95, 1.05, 0.95] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute inset-0 -z-10 mx-auto h-full w-3/4 rounded-full bg-accent/15 blur-[80px]"
+            />
             <h1 className="mb-4 text-6xl font-black tracking-tight sm:text-7xl md:text-8xl lg:text-9xl">
-              <span className="text-white">SPORTS</span>
-              <span className="bg-gradient-to-r from-accent via-aegean-sky to-accent bg-clip-text text-transparent">
+              <span className="text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]">
+                SPORTS
+              </span>
+              <span className="animate-shimmer bg-gradient-to-r from-accent via-aegean-sky via-50% to-accent bg-clip-text text-transparent">
                 BLOCK
               </span>
             </h1>
