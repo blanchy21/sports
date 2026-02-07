@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, TrendingUp, Users, DollarSign, FileText } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/core/Button';
 import { Loading } from '@/components/core/Loading';
 import { useAuth } from '@/contexts/AuthContext';
@@ -101,6 +102,23 @@ export default function LandingPage() {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-accent"></span>
             </span>
             <span className="text-sm font-medium text-white/90">Where Sports Fans Earn</span>
+          </motion.div>
+
+          {/* Logo */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.15, ease: 'easeOut' }}
+            className="mb-4"
+          >
+            <Image
+              src="/sportsblock-logo-trans.png"
+              alt="Sportsblock logo"
+              width={120}
+              height={120}
+              className="mx-auto drop-shadow-2xl"
+              priority
+            />
           </motion.div>
 
           {/* Main Brand Name */}
