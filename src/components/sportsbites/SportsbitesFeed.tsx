@@ -148,6 +148,10 @@ export function SportsbitesFeed({
     }
   }, [author, bites, isLoading, filterByMode]);
 
+  const handleDelete = useCallback((id: string) => {
+    setBites((prev) => prev.filter((b) => b.id !== id));
+  }, []);
+
   const showNewBites = useCallback(() => {
     if (pendingBites.length === 0) return;
 
@@ -305,7 +309,12 @@ export function SportsbitesFeed({
       )}
 
       {bites.map((bite) => (
-        <SportsbiteCard key={bite.id} sportsbite={bite} isNew={newBiteIds.has(bite.id)} />
+        <SportsbiteCard
+          key={bite.id}
+          sportsbite={bite}
+          isNew={newBiteIds.has(bite.id)}
+          onDelete={handleDelete}
+        />
       ))}
 
       {isLoadingMore && (

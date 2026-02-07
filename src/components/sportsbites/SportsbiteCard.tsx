@@ -10,6 +10,7 @@ import {
   Share2,
   Repeat2,
   ExternalLink,
+  Trash2,
 } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
@@ -32,16 +33,21 @@ interface SportsbiteCardProps {
   sportsbite: Sportsbite;
   className?: string;
   isNew?: boolean;
+  onDelete?: (id: string) => void;
 }
 
 export const SportsbiteCard = React.memo(function SportsbiteCard({
   sportsbite,
   className,
   isNew = false,
+  onDelete,
 }: SportsbiteCardProps) {
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
-  const { authType } = useAuth();
+  const { authType, hiveUser, user } = useAuth();
   const { addToast } = useToast();
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
@@ -168,6 +174,109 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
     isSportsblockPost: true as const,
   };
 
+  const isOwner =
+    (authType === 'hive' && hiveUser?.username === sportsbite.author) ||
+    (authType === 'soft' && user?.username === sportsbite.author);
+
+  const handleDelete = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+
+    try {
+      if (sportsbite.source === 'soft') {
+        const res = await fetch('/api/soft/sportsbites', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sportsbiteId: sportsbite.softId || sportsbite.permlink }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Failed to delete sportsbite');
+        }
+      } else {
+        // Hive delete via Aioha
+        const { aioha } = await import('@/lib/aioha/config');
+        const aiohaInstance = aioha as {
+          signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
+        } | null;
+
+        if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
+          throw new Error('Hive authentication not available. Please reconnect.');
+        }
+
+        // Try delete_comment first (works if no net votes/replies)
+        let deleted = false;
+        try {
+          const delResult = await aiohaInstance.signAndBroadcastTx(
+            [['delete_comment', { author: sportsbite.author, permlink: sportsbite.permlink }]],
+            'posting'
+          );
+          if (delResult && !(delResult as { error?: string }).error) {
+            deleted = true;
+          }
+        } catch {
+          // delete_comment fails if the comment has votes/replies — fall through
+        }
+
+        // Fallback: overwrite body with '[deleted]'
+        if (!deleted) {
+          const hiveNode = 'https://api.hive.blog';
+          const contentRes = await fetch(hiveNode, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'condenser_api.get_content',
+              params: [sportsbite.author, sportsbite.permlink],
+              id: 1,
+            }),
+          });
+          const contentData = await contentRes.json();
+          const content = contentData.result;
+          if (!content || !content.author) {
+            throw new Error('Could not fetch sportsbite data from Hive');
+          }
+
+          const result = await aiohaInstance.signAndBroadcastTx(
+            [
+              [
+                'comment',
+                {
+                  parent_author: content.parent_author,
+                  parent_permlink: content.parent_permlink,
+                  author: sportsbite.author,
+                  permlink: sportsbite.permlink,
+                  title: '',
+                  body: '[deleted]',
+                  json_metadata: JSON.stringify({
+                    app: 'sportsblock/1.0.0',
+                    tags: ['deleted', 'sportsblock'],
+                  }),
+                },
+              ],
+            ],
+            'posting'
+          );
+
+          if (!result || (result as { error?: string }).error) {
+            throw new Error((result as { error?: string }).error || 'Failed to broadcast delete');
+          }
+        }
+      }
+
+      addToast(toast.success('Deleted', 'Sportsbite has been deleted.'));
+      onDelete?.(sportsbite.id);
+    } catch (err) {
+      addToast(
+        toast.error('Delete Failed', err instanceof Error ? err.message : 'Something went wrong')
+      );
+    } finally {
+      setIsDeleting(false);
+      setConfirmingDelete(false);
+      setShowMoreMenu(false);
+    }
+  };
+
   const handleShare = async (platform?: 'twitter' | 'copy') => {
     const biteUrl = `https://sportsblock.app/@${sportsbite.author}/${sportsbite.permlink}`;
     const text = biteText.substring(0, 200);
@@ -193,7 +302,11 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
         isNew && 'animate-slide-in-top ring-2 ring-primary/50 ring-offset-2 ring-offset-background',
         className
       )}
-      onMouseLeave={() => setShowShareMenu(false)}
+      onMouseLeave={() => {
+        setShowShareMenu(false);
+        setShowMoreMenu(false);
+        setConfirmingDelete(false);
+      }}
     >
       {isNew && (
         <div className="absolute -right-1 -top-1 z-10">
@@ -252,13 +365,59 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               </span>
             </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
+            {isOwner && (
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setShowMoreMenu(!showMoreMenu);
+                    setConfirmingDelete(false);
+                  }}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+
+                {showMoreMenu && (
+                  <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] animate-fade-in rounded-lg border bg-card py-1 shadow-xl">
+                    {confirmingDelete ? (
+                      <div className="px-3 py-2">
+                        <p className="mb-2 text-sm font-medium">Are you sure?</p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? 'Deleting...' : 'Delete'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => setConfirmingDelete(false)}
+                            disabled={isDeleting}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmingDelete(true)}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 transition-colors hover:bg-muted"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {sportInfo && (

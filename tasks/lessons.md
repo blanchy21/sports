@@ -87,3 +87,21 @@ Created `nodes.ts` with zero dependencies for `HIVE_NODES`. All files import fro
 
 ### Rule
 **Keep shared config/constants in dependency-free files.** Never co-locate simple constants with WASM or heavy imports.
+
+---
+
+## Hive: `comment` operation rejects empty body
+
+**Date:** 2026-02-07
+**Severity:** High — caused delete broadcast to fail via Keychain
+
+### Problem
+Broadcasting a `comment` operation with `body: ''` to "delete" a sportsbite was rejected by the blockchain/Keychain. The Hive `comment` operation requires a non-empty body.
+
+### Fix
+Use a two-step approach:
+1. Try `delete_comment` operation first — simple (`{ author, permlink }`), works when no net votes or replies exist.
+2. Fall back to `comment` operation with `body: '[deleted]'` (non-empty) when `delete_comment` fails.
+
+### Rule
+**Never broadcast a Hive `comment` operation with empty body.** Use `delete_comment` for true deletion, or `'[deleted]'` body as fallback for comments with votes/replies.
