@@ -134,12 +134,104 @@ export function sanitizeHtml(dirty: string, strict = false): string {
 }
 
 /**
+ * Check if a line looks like a markdown table row (has pipes)
+ */
+function isTableRow(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 1;
+}
+
+/**
+ * Check if a line is a table separator (e.g. |---|---|)
+ */
+function isTableSeparator(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) return false;
+  // All cells should be dashes with optional colons for alignment
+  const cells = trimmed.slice(1, -1).split('|');
+  return cells.every((cell) => /^\s*:?-{1,}:?\s*$/.test(cell));
+}
+
+/**
+ * Parse cells from a table row
+ */
+function parseTableRow(line: string): string[] {
+  const trimmed = line.trim();
+  // Remove leading/trailing pipes and split
+  return trimmed
+    .slice(1, -1)
+    .split('|')
+    .map((cell) => cell.trim());
+}
+
+/**
+ * Parse column alignments from a separator row
+ */
+function parseAlignments(line: string): string[] {
+  const trimmed = line.trim();
+  return trimmed
+    .slice(1, -1)
+    .split('|')
+    .map((cell) => {
+      const c = cell.trim();
+      if (c.startsWith(':') && c.endsWith(':')) return 'center';
+      if (c.endsWith(':')) return 'right';
+      return 'left';
+    });
+}
+
+/**
+ * Convert markdown table syntax to HTML tables
+ */
+function convertMarkdownTables(content: string): string {
+  const lines = content.split('\n');
+  const result: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    if (i + 1 < lines.length && isTableRow(lines[i]) && isTableSeparator(lines[i + 1])) {
+      const headerCells = parseTableRow(lines[i]);
+      const alignments = parseAlignments(lines[i + 1]);
+
+      let html = '<table><thead><tr>';
+      headerCells.forEach((cell, j) => {
+        const align = alignments[j] || 'left';
+        html += `<th style="text-align:${align}">${cell}</th>`;
+      });
+      html += '</tr></thead><tbody>';
+
+      i += 2; // Skip header and separator
+
+      while (i < lines.length && isTableRow(lines[i])) {
+        const cells = parseTableRow(lines[i]);
+        html += '<tr>';
+        cells.forEach((cell, j) => {
+          const align = alignments[j] || 'left';
+          html += `<td style="text-align:${align}">${cell}</td>`;
+        });
+        html += '</tr>';
+        i++;
+      }
+
+      html += '</tbody></table>';
+      result.push(html);
+    } else {
+      result.push(lines[i]);
+      i++;
+    }
+  }
+
+  return result.join('\n');
+}
+
+/**
  * Sanitize and transform markdown-style content to HTML
  *
  * This handles common Hive post patterns like:
  * - <center> tags (non-standard HTML)
  * - Markdown image syntax ![alt](url)
  * - Markdown link syntax [text](url)
+ * - Markdown tables (GFM-style)
  * - Horizontal rules (---, ***, ___)
  * - Headers (#, ##, ###, etc.)
  *
@@ -149,8 +241,11 @@ export function sanitizeHtml(dirty: string, strict = false): string {
 export function sanitizePostContent(content: string): string {
   if (!content) return '';
 
+  // Convert markdown tables first (before other transforms that might affect pipe chars)
+  let processed = convertMarkdownTables(content);
+
   // Transform common patterns before sanitization
-  let processed = content
+  processed = processed
     // Convert <center> to div (non-standard but common in Hive)
     .replace(/<center>/gi, '<div class="text-center my-4">')
     .replace(/<\/center>/gi, '</div>')
