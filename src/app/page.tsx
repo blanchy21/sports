@@ -3,8 +3,8 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, TrendingUp, Users, DollarSign, FileText } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowRight, FileText } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/core/Button';
 import { Loading } from '@/components/core/Loading';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,13 +17,11 @@ export default function LandingPage() {
   const { openModal } = useModal();
   const { scrollY } = useScroll();
 
-  // Parallax transforms for hero elements
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
   const heroScale = useTransform(scrollY, [0, 400], [1, 0.9]);
   const parallaxY = useTransform(scrollY, [0, 600], [0, 200]);
   const textY = useTransform(scrollY, [0, 300], [0, 50]);
 
-  // Redirect authenticated users to feed
   useEffect(() => {
     if (!isLoading && user) {
       router.push('/feed');
@@ -45,27 +43,22 @@ export default function LandingPage() {
         style={{ opacity: heroOpacity, scale: heroScale }}
         className="relative flex min-h-screen items-center justify-center overflow-hidden"
       >
-        {/* Dynamic Background with Multiple Layers */}
+        {/* Dynamic Background */}
         <motion.div style={{ y: parallaxY }} className="absolute inset-0 z-0">
-          {/* Primary background - dramatic sports action */}
           <div
             className="absolute inset-0 scale-110 bg-cover bg-center bg-no-repeat"
             style={{
               backgroundImage:
-                "url('https://images.unsplash.com/photo-1461896836934-gy5f7b5sLLKQ?w=1920&q=80')",
+                "url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1920&q=80')",
             }}
           />
-          {/* Fallback gradient if image doesn't load */}
           <div className="absolute inset-0 bg-gradient-to-br from-fibonacci-blue via-bright-cobalt to-fibonacci-blue" />
-          {/* Overlay gradient for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-background" />
-          {/* Accent color overlay */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-accent/10" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/65 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-primary/15 via-transparent to-accent/10" />
         </motion.div>
 
         {/* Floating Decorative Elements */}
         <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
-          {/* Animated gradient orbs */}
           <motion.div
             animate={{
               scale: [1, 1.3, 1],
@@ -73,7 +66,7 @@ export default function LandingPage() {
               x: [0, 30, 0],
               y: [0, -20, 0],
             }}
-            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+            transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
             className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-accent/30 blur-3xl"
           />
           <motion.div
@@ -83,31 +76,17 @@ export default function LandingPage() {
               x: [0, -40, 0],
               y: [0, 30, 0],
             }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+            transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
             className="absolute -bottom-48 -left-48 h-[500px] w-[500px] rounded-full bg-primary/20 blur-3xl"
-          />
-          {/* Third orb - moves across center */}
-          <motion.div
-            animate={{
-              scale: [0.8, 1.1, 0.8],
-              opacity: [0.1, 0.25, 0.1],
-              x: [-100, 100, -100],
-              y: [50, -50, 50],
-            }}
-            transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute left-1/3 top-1/4 h-72 w-72 rounded-full bg-accent/20 blur-3xl"
           />
 
           {/* Floating particles */}
           {[
-            { left: '10%', delay: 0, duration: 6, size: 'h-1 w-1' },
-            { left: '25%', delay: 1.5, duration: 8, size: 'h-1.5 w-1.5' },
-            { left: '45%', delay: 0.5, duration: 7, size: 'h-1 w-1' },
-            { left: '65%', delay: 2, duration: 9, size: 'h-2 w-2' },
-            { left: '80%', delay: 1, duration: 6.5, size: 'h-1 w-1' },
-            { left: '90%', delay: 3, duration: 8, size: 'h-1.5 w-1.5' },
-            { left: '35%', delay: 2.5, duration: 7.5, size: 'h-1 w-1' },
-            { left: '55%', delay: 0.8, duration: 10, size: 'h-1.5 w-1.5' },
+            { left: '15%', delay: 0, duration: 7, size: 'h-1 w-1' },
+            { left: '35%', delay: 1.5, duration: 9, size: 'h-1.5 w-1.5' },
+            { left: '55%', delay: 0.5, duration: 8, size: 'h-1 w-1' },
+            { left: '75%', delay: 2, duration: 10, size: 'h-2 w-2' },
+            { left: '90%', delay: 1, duration: 7.5, size: 'h-1 w-1' },
           ].map((p, i) => (
             <motion.div
               key={i}
@@ -145,131 +124,149 @@ export default function LandingPage() {
           style={{ y: textY }}
           className="relative z-10 mx-auto max-w-6xl px-6 text-center"
         >
-          {/* Brand Badge */}
+          {/* Sportsblock Logo */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="relative mb-6 inline-block"
+          >
+            <motion.div
+              animate={{ opacity: [0.2, 0.4, 0.2], scale: [0.9, 1.1, 0.9] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute inset-0 -z-10 rounded-full bg-accent/20 blur-[60px]"
+            />
+            <Image
+              src="/sportsblock-logo-trans.png"
+              alt="Sportsblock"
+              width={160}
+              height={160}
+              className="mx-auto h-28 w-28 drop-shadow-2xl sm:h-36 sm:w-36 md:h-40 md:w-40"
+              priority
+            />
+          </motion.div>
+
+          {/* Live Badge */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm"
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm"
           >
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E31337] opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#E31337]"></span>
             </span>
-            <span className="text-sm font-medium text-white/90">Where Sports Fans Earn</span>
+            <span className="text-sm font-medium text-white/90">LIVE on Hive Blockchain</span>
           </motion.div>
 
-          {/* Main Brand Name */}
+          {/* Main Headline */}
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+            transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
             className="relative"
           >
-            {/* Glow behind heading */}
             <motion.div
               animate={{ opacity: [0.3, 0.6, 0.3], scale: [0.95, 1.05, 0.95] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               className="absolute inset-0 -z-10 mx-auto h-full w-3/4 rounded-full bg-accent/15 blur-[80px]"
             />
-            <h1 className="mb-4 text-6xl font-black tracking-tight sm:text-7xl md:text-8xl lg:text-9xl">
+            <h1 className="mb-4 text-4xl font-black tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
               <span className="text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]">
-                SPORTS
+                PURE SPORTS.
               </span>
+              <br />
               <span className="animate-shimmer bg-gradient-to-r from-accent via-aegean-sky via-50% to-accent bg-clip-text text-transparent">
-                BLOCK
+                REAL REWARDS.
               </span>
             </h1>
           </motion.div>
 
           {/* Tagline */}
-          <motion.p
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="mx-auto mb-4 max-w-3xl text-xl font-light leading-relaxed text-white/90 sm:text-2xl md:text-3xl"
+            transition={{ duration: 0.8, delay: 0.7 }}
           >
-            The arena where your passion pays off.
-          </motion.p>
-
-          {/* Sub-tagline */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="mx-auto mb-10 max-w-2xl text-base text-white/60 sm:text-lg"
-          >
-            Share your takes. Build your reputation. Earn crypto rewards.
-            <br className="hidden sm:block" />
-            Pure sports content on the blockchain.
-          </motion.p>
+            <p className="mx-auto mb-2 max-w-3xl text-lg font-light leading-relaxed text-white/90 sm:text-xl md:text-2xl">
+              No politics. No drama. No noise.
+            </p>
+            <p className="mx-auto mb-10 max-w-2xl text-base text-white/60 sm:text-lg md:text-xl">
+              Just fans who love the game — and get paid for it.
+            </p>
+          </motion.div>
 
           {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mb-16 flex flex-col items-center justify-center gap-4 sm:flex-row"
+            transition={{ duration: 0.8, delay: 0.9 }}
+            className="mb-12 flex flex-col items-center justify-center gap-4 sm:flex-row"
           >
             <Button
               size="lg"
               className="group bg-accent px-10 py-7 text-lg font-semibold text-white shadow-2xl shadow-accent/25 transition-all duration-300 hover:scale-105 hover:bg-accent/90 hover:shadow-accent/40"
               onClick={() => openModal('keychainLogin')}
             >
-              Sign In with Hive
+              Join the Arena
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
             <Button
               size="lg"
               variant="outline"
               className="border-white/30 bg-white/5 px-10 py-7 text-lg text-white backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/15"
-              onClick={() => router.push('/auth')}
+              onClick={() => router.push('/whitepaper')}
             >
-              Sign Up
+              <FileText className="mr-2 h-5 w-5" />
+              Read Whitepaper
             </Button>
           </motion.div>
 
-          {/* Trust indicators */}
+          {/* Trust indicators - Wallet logos + key points */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-4 text-white/70 sm:gap-8"
+            transition={{ duration: 0.8, delay: 1.1 }}
+            className="space-y-5"
           >
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-white/10 p-1.5">
-                <Users className="h-4 w-4" />
-              </div>
-              <span className="text-sm">Join thousands on Hive</span>
+            {/* Key selling points */}
+            <div className="flex flex-wrap items-center justify-center gap-4 text-white/70 sm:gap-8">
+              {['Zero fees', 'Free to join', 'You own everything'].map((text, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  <span className="text-sm font-medium">{text}</span>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-white/10 p-1.5">
-                <TrendingUp className="h-4 w-4" />
-              </div>
-              <span className="text-sm">Real crypto earnings</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-white/10 p-1.5">
-                <DollarSign className="h-4 w-4" />
-              </div>
-              <span className="text-sm">No middlemen</span>
-            </div>
-          </motion.div>
 
-          {/* Whitepaper Link */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 1 }}
-            className="mt-6"
-          >
-            <Link
-              href="/whitepaper"
-              className="inline-flex items-center gap-2 text-sm text-white/50 transition-colors hover:text-white/80"
-            >
-              <FileText className="h-4 w-4" />
-              Read our Whitepaper
-            </Link>
+            {/* Wallet logos */}
+            <div className="flex items-center justify-center gap-6 sm:gap-8">
+              <span className="text-xs text-white/40">Connect with</span>
+              {[
+                { src: '/hive-keychain-logo.svg', alt: 'Hive Keychain', w: 24, h: 24 },
+                { src: '/hivesigner-icon.png', alt: 'HiveSigner', w: 24, h: 24 },
+                { src: '/hiveauth-logo.png', alt: 'HiveAuth', w: 24, h: 24 },
+                { src: '/ledger-logo.png', alt: 'Ledger', w: 24, h: 24 },
+              ].map((wallet, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 0.6, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1.3 + i * 0.1 }}
+                  whileHover={{ opacity: 1, scale: 1.1 }}
+                  className="transition-opacity"
+                >
+                  <Image
+                    src={wallet.src}
+                    alt={wallet.alt}
+                    width={wallet.w}
+                    height={wallet.h}
+                    className="h-6 w-6 brightness-0 invert"
+                  />
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         </motion.div>
 
