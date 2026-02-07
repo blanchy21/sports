@@ -167,6 +167,7 @@ describe('Voting Module', () => {
   describe('checkUserVote', () => {
     it('returns vote when user has voted', async () => {
       const mockPost = {
+        author: 'testauthor',
         active_votes: [
           {
             voter: 'alice',
@@ -198,6 +199,7 @@ describe('Voting Module', () => {
 
     it('returns null when user has not voted', async () => {
       const mockPost = {
+        author: 'testauthor',
         active_votes: [
           {
             voter: 'bob',
@@ -218,7 +220,7 @@ describe('Voting Module', () => {
     });
 
     it('returns null when post has no votes', async () => {
-      const mockPost = { active_votes: [] };
+      const mockPost = { author: 'testauthor', active_votes: [] };
       mockMakeWorkerBeeApiCall.mockResolvedValueOnce(mockPost);
 
       const result = await checkUserVote('testauthor', 'test-post', 'alice');

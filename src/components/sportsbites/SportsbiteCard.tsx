@@ -244,7 +244,11 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               )}
               <span className="text-muted-foreground">·</span>
               <span className="text-sm text-muted-foreground">
-                {formatDate(new Date(sportsbite.created + 'Z'))}
+                {formatDate(
+                  new Date(
+                    sportsbite.created.endsWith('Z') ? sportsbite.created : sportsbite.created + 'Z'
+                  )
+                )}
               </span>
             </div>
 
