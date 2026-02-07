@@ -31,7 +31,10 @@ const nextConfig: NextConfig = {
             value: [
               // Default policy - restrict to self
               "default-src 'self'",
-              // Scripts - self, inline for Next.js hydration, and eval for dev
+              // Scripts: 'unsafe-inline' is required by Next.js App Router for inline
+              // hydration scripts. 'unsafe-eval' is dev-only (HMR). Nonces would be
+              // ideal but require middleware to inject per-request, which Next.js App
+              // Router does not yet support reliably with streaming.
               process.env.NODE_ENV === 'development'
                 ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
                 : "script-src 'self' 'unsafe-inline'",

@@ -13,6 +13,7 @@ import {
 } from './auth-persistence';
 import { AuthAction } from './auth-reducer';
 import { useAuthProfile, getHiveAvatarUrl } from './useAuthProfile';
+import { queryClient } from '@/lib/react-query/queryClient';
 
 export interface UseAuthActionsOptions {
   dispatch: React.Dispatch<AuthAction>;
@@ -324,6 +325,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
 
     dispatch({ type: 'LOGOUT' });
     await clearPersistedAuthState();
+    queryClient.clear();
   }, [aioha, dispatch, getState, abortFetch]);
 
   // ============================================================================

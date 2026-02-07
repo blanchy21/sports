@@ -161,3 +161,7 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
     { name: 'BookmarkStore', enabled: process.env.NODE_ENV === 'development' }
   )
 );
+
+// Granular selectors
+export const useBookmarks = () => useBookmarkStore((s) => s.bookmarks);
+export const useBookmarkLoading = () => useBookmarkStore((s) => s.isLoading);

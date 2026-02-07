@@ -123,9 +123,13 @@ export async function getAuthenticatedUserFromSession(
     }
   }
 
-  // Development fallback: allow x-user-id header when explicitly enabled
-  // Gated behind ALLOW_HEADER_AUTH to prevent use on Vercel preview deployments
-  if (!userId && process.env.ALLOW_HEADER_AUTH === 'true') {
+  // Development-only fallback: allow x-user-id header for local testing (curl/Postman).
+  // Blocked in production even if ALLOW_HEADER_AUTH is accidentally set.
+  if (
+    !userId &&
+    process.env.ALLOW_HEADER_AUTH === 'true' &&
+    process.env.NODE_ENV !== 'production'
+  ) {
     const headerUserId = request.headers.get('x-user-id');
     if (headerUserId) {
       userId = headerUserId;

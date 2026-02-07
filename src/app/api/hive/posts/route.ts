@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fetchSportsblockPosts, getUserPosts } from '@/lib/hive-workerbee/content';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import { postsQuerySchema, parseSearchParams } from '@/lib/api/validation';
-import { createRequestContext, validationError } from '@/lib/api/response';
+import { createRequestContext, validationError, apiError } from '@/lib/api/response';
 import {
   checkRateLimit,
   getClientIdentifier,
@@ -30,13 +30,10 @@ export async function GET(request: NextRequest) {
 
   if (!rateLimit.success) {
     ctx.log.warn('Rate limit exceeded', { clientId, reset: rateLimit.reset });
-    return NextResponse.json(
-      { success: false, error: 'Rate limit exceeded. Please try again later.' },
-      {
-        status: 429,
-        headers: createRateLimitHeaders(0, rateLimit.reset, RATE_LIMITS.read.limit),
-      }
-    );
+    return apiError('Rate limit exceeded. Please try again later.', 'RATE_LIMITED', 429, {
+      requestId: ctx.requestId,
+      headers: createRateLimitHeaders(0, rateLimit.reset, RATE_LIMITS.read.limit),
+    });
   }
 
   ctx.log.debug('Request started', { url });

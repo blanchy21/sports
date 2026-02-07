@@ -105,3 +105,29 @@ Use a two-step approach:
 
 ### Rule
 **Never broadcast a Hive `comment` operation with empty body.** Use `delete_comment` for true deletion, or `'[deleted]'` body as fallback for comments with votes/replies.
+
+---
+
+## setInterval without storing ID causes memory leaks
+
+**Date:** 2026-02-07
+**Severity:** High — intervals leak on stop/restart
+
+### Problem
+`RealtimeMonitor.scheduleAuthorCacheRefresh()` and `scheduleBlockTracking()` called `setInterval()` but discarded the return value. `stop()` only cleared subscriptions, not intervals.
+
+### Rule
+**Always store interval/timeout IDs and clear them on cleanup.** Any `setInterval` call must have a corresponding `clearInterval` in the cleanup/stop path.
+
+---
+
+## Concurrent async init requires promise dedup
+
+**Date:** 2026-02-07
+**Severity:** High — caused double `client.start()` calls
+
+### Problem
+`initializeWorkerBeeClient()` checked `client.running` then called `client.start()`. Two concurrent callers could both see `running === false` and both start the client.
+
+### Rule
+**Guard async singleton initialization with a shared promise.** Store the in-flight promise and return it to subsequent callers. Clear on error to allow retry.

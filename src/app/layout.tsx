@@ -35,29 +35,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={inter.className}>
-        <QueryClientProvider>
-          <ThemeProvider>
-            <AiohaProvider>
-              <AuthProvider>
-                <NotificationProvider>
-                  <PriceProvider>
-                    <ToastProvider>
-                      <ModalProvider>
-                        <ErrorBoundary>
+        <ErrorBoundary>
+          <QueryClientProvider>
+            <ThemeProvider>
+              <AiohaProvider>
+                <AuthProvider>
+                  <NotificationProvider>
+                    <PriceProvider>
+                      <ToastProvider>
+                        <ModalProvider>
                           <GlobalErrorHandlerInitializer />
                           <NavigationProgress />
                           <ServiceWorkerInitializer />
                           <NodeHealthInitializer />
                           {children}
-                        </ErrorBoundary>
-                      </ModalProvider>
-                    </ToastProvider>
-                  </PriceProvider>
-                </NotificationProvider>
-              </AuthProvider>
-            </AiohaProvider>
-          </ThemeProvider>
-        </QueryClientProvider>
+                        </ModalProvider>
+                      </ToastProvider>
+                    </PriceProvider>
+                  </NotificationProvider>
+                </AuthProvider>
+              </AiohaProvider>
+            </ThemeProvider>
+          </QueryClientProvider>
+        </ErrorBoundary>
         <Analytics />
       </body>
     </html>

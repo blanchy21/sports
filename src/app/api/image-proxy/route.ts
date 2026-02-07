@@ -90,14 +90,37 @@ export async function GET(request: NextRequest) {
       return forbiddenError('URL does not point to an image', ctx.requestId);
     }
 
-    // Get the image data with size limit (50MB max)
+    // Enforce 10MB size limit via Content-Length header and streaming reader
+    const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
     const contentLength = response.headers.get('content-length');
-    if (contentLength && parseInt(contentLength, 10) > 50 * 1024 * 1024) {
+    if (contentLength && parseInt(contentLength, 10) > MAX_IMAGE_SIZE) {
       ctx.log.warn('Image too large for proxy', { imageUrl, contentLength });
       return forbiddenError('Image too large', ctx.requestId);
     }
 
-    const imageBuffer = await response.arrayBuffer();
+    // Stream body with hard size limit (Content-Length can be spoofed)
+    const reader = response.body?.getReader();
+    if (!reader) {
+      return internalError('No response body', ctx.requestId);
+    }
+    const chunks: Uint8Array[] = [];
+    let totalSize = 0;
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        totalSize += value.byteLength;
+        if (totalSize > MAX_IMAGE_SIZE) {
+          reader.cancel();
+          ctx.log.warn('Image exceeded streaming size limit', { imageUrl, totalSize });
+          return forbiddenError('Image too large', ctx.requestId);
+        }
+        chunks.push(value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+    const imageBuffer = Buffer.concat(chunks);
 
     // Return the image with proper CORS headers
     // Restrict CORS to app domain only (prevents abuse from malicious sites)

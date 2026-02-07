@@ -32,7 +32,7 @@ function cleanupCache() {
 
 const querySchema = z.object({
   username: z.string().min(3).max(16),
-  since: z.string().optional(), // ISO timestamp to filter notifications after
+  since: z.string().nullish(), // ISO timestamp to filter notifications after
   limit: z.coerce.number().min(1).max(100).default(50),
 });
 
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
   console.log(`[${ROUTE}] Request started`, {
     requestId,
     url,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 
   // Parse and validate query parameters
@@ -117,11 +117,12 @@ export async function GET(request: NextRequest) {
     const batchSize = Math.min(limit * 3, 500);
 
     const history = await retryWithBackoff(
-      () => makeHiveApiCall<Array<[number, AccountHistoryEntry]>>(
-        'condenser_api',
-        'get_account_history',
-        [username, -1, batchSize]
-      ),
+      () =>
+        makeHiveApiCall<Array<[number, AccountHistoryEntry]>>(
+          'condenser_api',
+          'get_account_history',
+          [username, -1, batchSize]
+        ),
       { maxRetries: 2, initialDelay: 500 }
     );
 
@@ -177,12 +178,15 @@ export async function GET(request: NextRequest) {
       requestId,
       url,
       username,
-      error: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : String(error),
-      timestamp: new Date().toISOString()
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : String(error),
+      timestamp: new Date().toISOString(),
     });
 
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -202,13 +206,16 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
-      success: false,
-      error: message,
-      notifications: [],
-      count: 0,
-      username,
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+        notifications: [],
+        count: 0,
+        username,
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -255,12 +262,12 @@ function processOperation(
         const parentPermlink = String(opData.parent_permlink || '');
         const isShortReply = isShortPermlink(parentPermlink);
         const bodyPreview = String(opData.body || '').slice(0, 100);
-        
+
         return {
           id: `comment-${trxId}`,
           type: isShortReply ? 'short_reply' : 'comment',
           title: isShortReply ? '💬 Reply to your Short' : 'New Reply',
-          message: isShortReply 
+          message: isShortReply
             ? `@${opData.author} replied: "${bodyPreview}${bodyPreview.length >= 100 ? '...' : ''}"`
             : `@${opData.author} replied to your post`,
           timestamp,

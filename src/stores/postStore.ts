@@ -119,3 +119,10 @@ export const usePostStore = create<PostState & PostActions>()(
     { name: 'PostStore', enabled: process.env.NODE_ENV === 'development' }
   )
 );
+
+// Granular selectors — avoids full-store re-renders
+export const usePosts = () => usePostStore((s) => s.posts);
+export const useSelectedPost = () => usePostStore((s) => s.selectedPost);
+export const usePostFilters = () => usePostStore((s) => s.filters);
+export const usePostPagination = () => usePostStore((s) => s.pagination);
+export const usePostLoading = () => usePostStore((s) => s.isLoading);

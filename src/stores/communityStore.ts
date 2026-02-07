@@ -175,3 +175,9 @@ export const useCommunityStore = create<CommunityState & CommunityActions>()(
     { name: 'CommunityStore', enabled: process.env.NODE_ENV === 'development' }
   )
 );
+
+// Granular selectors
+export const useCommunities = () => useCommunityStore((s) => s.communities);
+export const useUserCommunities = () => useCommunityStore((s) => s.userCommunities);
+export const useSelectedCommunity = () => useCommunityStore((s) => s.selectedCommunity);
+export const useCommunityLoading = () => useCommunityStore((s) => s.isLoading);
