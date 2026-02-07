@@ -346,36 +346,36 @@ export default function LandingSections() {
             >
               <div className="mb-8 text-center">
                 <h3 className="mb-2 text-2xl font-bold">Earning Potential</h3>
-                <p className="text-sm text-muted-foreground">Based on real user earnings</p>
+                <p className="text-sm text-muted-foreground">Based on community engagement</p>
               </div>
 
               <div className="space-y-4">
                 {[
                   {
                     level: 'Getting Started',
-                    upvotes: '10-30 upvotes',
-                    earnings: '$0.50 - $3',
+                    upvotes: '1-5 upvotes',
+                    earnings: '$0.01 - $0.50',
                     color: 'bg-blue-500',
                     width: 'w-1/4',
                   },
                   {
                     level: 'Building Reputation',
-                    upvotes: '50-150 upvotes',
-                    earnings: '$5 - $25',
+                    upvotes: '5-20 upvotes',
+                    earnings: '$0.50 - $3',
                     color: 'bg-emerald-500',
                     width: 'w-1/2',
                   },
                   {
                     level: 'Established Creator',
-                    upvotes: '200-500 upvotes',
-                    earnings: '$30 - $100',
+                    upvotes: '20-50 upvotes',
+                    earnings: '$3 - $10',
                     color: 'bg-orange-500',
                     width: 'w-3/4',
                   },
                   {
                     level: 'Top Contributor',
-                    upvotes: '1000+ upvotes',
-                    earnings: '$150 - $300+',
+                    upvotes: '50+ upvotes + curation',
+                    earnings: '$5 - $10+',
                     color: 'bg-purple-500',
                     width: 'w-full',
                   },
@@ -454,30 +454,30 @@ export default function LandingSections() {
             {[
               {
                 tier: 'Bronze',
-                stake: '1,000',
+                stake: '2,500',
                 icon: '🥉',
-                benefits: ['Ad-free experience', 'Bronze badge'],
+                benefits: ['Bronze badge', 'Community access'],
                 color: 'from-amber-600 to-amber-800',
               },
               {
                 tier: 'Silver',
-                stake: '5,000',
+                stake: '10,000',
                 icon: '🥈',
-                benefits: ['Priority curation', 'Early access'],
+                benefits: ['Silver badge', 'Priority curation', 'Early access'],
                 color: 'from-slate-400 to-slate-600',
               },
               {
                 tier: 'Gold',
                 stake: '25,000',
                 icon: '🥇',
-                benefits: ['Exclusive contests', 'Analytics dashboard'],
+                benefits: ['Exclusive contests', 'Analytics dashboard', 'Gold badge'],
                 color: 'from-yellow-500 to-amber-600',
               },
               {
                 tier: 'Platinum',
                 stake: '100,000',
                 icon: '💎',
-                benefits: ['Boosted visibility', 'VIP support'],
+                benefits: ['Ad-free experience', 'Boosted visibility', 'VIP support'],
                 color: 'from-cyan-400 to-blue-600',
               },
             ].map((item, index) => (
