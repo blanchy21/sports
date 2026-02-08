@@ -26,8 +26,8 @@ import { cn, formatDate } from '@/lib/utils/client';
 import { formatReputation } from '@/lib/utils/hive';
 import { Sportsbite, extractMediaFromBody } from '@/lib/hive-workerbee/sportsbites';
 import { SPORT_CATEGORIES } from '@/types';
-import { getProxyImageUrl, shouldProxyImage } from '@/lib/utils/image-proxy';
-import { isTrustedImageHost } from '@/lib/utils/sanitize';
+import { getProxyImageUrl, shouldProxyImage, proxyImagesInContent } from '@/lib/utils/image-proxy';
+import { isTrustedImageHost, sanitizePostContent } from '@/lib/utils/sanitize';
 
 interface SportsbiteCardProps {
   sportsbite: Sportsbite;
@@ -57,6 +57,11 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const { text: biteText, images: bodyImages } = React.useMemo(
     () => extractMediaFromBody(sportsbite.body),
     [sportsbite.body]
+  );
+
+  const biteHtml = React.useMemo(
+    () => proxyImagesInContent(sanitizePostContent(biteText)),
+    [biteText]
   );
 
   const allImages = React.useMemo(() => {
@@ -433,7 +438,10 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
 
       {/* Content */}
       <div className="px-3 py-3 sm:px-4 sm:pl-[60px]">
-        <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{biteText}</p>
+        <div
+          className="prose prose-sm max-w-none break-words text-[15px] leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+          dangerouslySetInnerHTML={{ __html: biteHtml }}
+        />
 
         {allImages.length > 0 && (
           <div
