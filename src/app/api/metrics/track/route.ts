@@ -5,20 +5,22 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { trackPostView, trackVote, trackComment, trackShare } from '@/lib/metrics/tracker';
 import {
-  trackPostView,
-  trackVote,
-  trackComment,
-  trackShare,
-} from '@/lib/metrics/tracker';
+  checkRateLimit,
+  getClientIdentifier,
+  RATE_LIMITS,
+  createRateLimitHeaders,
+} from '@/lib/utils/rate-limit';
 
-interface TrackRequest {
-  type: 'view' | 'vote' | 'comment' | 'share';
-  author: string;
-  permlink: string;
-  viewerAccount?: string;
-  referrer?: string;
-}
+const trackSchema = z.object({
+  type: z.enum(['view', 'vote', 'comment', 'share']),
+  author: z.string().min(1).max(50),
+  permlink: z.string().min(1).max(255),
+  viewerAccount: z.string().max(50).optional(),
+  referrer: z.string().max(500).optional(),
+});
 
 /**
  * POST /api/metrics/track
@@ -26,25 +28,39 @@ interface TrackRequest {
  * Track engagement events for posts
  */
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const clientId = getClientIdentifier(request);
+  const rateLimit = await checkRateLimit(clientId, RATE_LIMITS.read, 'metricsTrack');
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      { success: false, error: 'Rate limit exceeded' },
+      { status: 429, headers: createRateLimitHeaders(0, rateLimit.reset, RATE_LIMITS.read.limit) }
+    );
+  }
+
   try {
-    const body = (await request.json()) as TrackRequest;
-    const { type, author, permlink, viewerAccount, referrer } = body;
+    // Parse JSON body with dedicated error handling
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
+    }
 
-    // Validate required fields
-    if (!type || !author || !permlink) {
+    // Validate with Zod
+    const parseResult = trackSchema.safeParse(body);
+    if (!parseResult.success) {
       return NextResponse.json(
-        { error: 'Missing required fields: type, author, permlink' },
+        {
+          success: false,
+          error: 'Validation failed',
+          details: parseResult.error.flatten().fieldErrors,
+        },
         { status: 400 }
       );
     }
 
-    // Validate type
-    if (!['view', 'vote', 'comment', 'share'].includes(type)) {
-      return NextResponse.json(
-        { error: 'Invalid type. Must be: view, vote, comment, or share' },
-        { status: 400 }
-      );
-    }
+    const { type, author, permlink, viewerAccount, referrer } = parseResult.data;
 
     // Track the event
     switch (type) {
@@ -54,7 +70,7 @@ export async function POST(request: NextRequest) {
       case 'vote':
         if (!viewerAccount) {
           return NextResponse.json(
-            { error: 'viewerAccount required for vote tracking' },
+            { success: false, error: 'viewerAccount required for vote tracking' },
             { status: 400 }
           );
         }
@@ -63,7 +79,7 @@ export async function POST(request: NextRequest) {
       case 'comment':
         if (!viewerAccount) {
           return NextResponse.json(
-            { error: 'viewerAccount required for comment tracking' },
+            { success: false, error: 'viewerAccount required for comment tracking' },
             { status: 400 }
           );
         }

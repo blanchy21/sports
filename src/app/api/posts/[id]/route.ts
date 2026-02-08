@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FirebasePosts } from '@/lib/firebase/posts';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import {
+  checkRateLimit,
+  getClientIdentifier,
+  RATE_LIMITS,
+  createRateLimitHeaders,
+} from '@/lib/utils/rate-limit';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -9,20 +16,14 @@ interface RouteContext {
 /**
  * GET /api/posts/[id] - Get a single soft post by ID
  */
-export async function GET(
-  request: NextRequest,
-  context: RouteContext
-) {
+export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
 
     const post = await FirebasePosts.getPostById(id);
 
     if (!post) {
-      return NextResponse.json(
-        { success: false, error: 'Post not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
     }
 
     // Increment view count (fire and forget, but log errors)
@@ -32,14 +33,14 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      post
+      post,
     });
   } catch (error) {
     console.error('Error fetching post:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch post'
+        error: error instanceof Error ? error.message : 'Failed to fetch post',
       },
       { status: 500 }
     );
@@ -49,36 +50,53 @@ export async function GET(
 /**
  * PATCH /api/posts/[id] - Update a soft post
  *
+ * Requires authenticated session. User must own the post.
+ *
  * Body:
  * - title: string (optional)
  * - content: string (optional)
  * - tags: string[] (optional)
- * - authorId: string (required for authorization)
  */
-export async function PATCH(
-  request: NextRequest,
-  context: RouteContext
-) {
+export async function PATCH(request: NextRequest, context: RouteContext) {
   // CSRF protection
   if (!validateCsrf(request)) {
     return csrfError('Request blocked: invalid origin');
+  }
+
+  // Rate limiting
+  const patchClientId = getClientIdentifier(request);
+  const patchRateLimit = await checkRateLimit(patchClientId, RATE_LIMITS.write, 'write');
+  if (!patchRateLimit.success) {
+    return NextResponse.json(
+      { success: false, error: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: createRateLimitHeaders(0, patchRateLimit.reset, RATE_LIMITS.write.limit),
+      }
+    );
   }
 
   try {
     const { id } = await context.params;
     const body = await request.json();
 
-    // Check if post exists
-    const existingPost = await FirebasePosts.getPostById(id);
-    if (!existingPost) {
+    // Verify user identity from session cookie
+    const sessionUser = await getAuthenticatedUserFromSession(request);
+    if (!sessionUser) {
       return NextResponse.json(
-        { success: false, error: 'Post not found' },
-        { status: 404 }
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
       );
     }
 
-    // Verify author (simple auth check - in production use proper auth)
-    if (body.authorId && existingPost.authorId !== body.authorId) {
+    // Check if post exists
+    const existingPost = await FirebasePosts.getPostById(id);
+    if (!existingPost) {
+      return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
+    }
+
+    // Verify the authenticated user owns this post
+    if (existingPost.authorId !== sessionUser.userId) {
       return NextResponse.json(
         { success: false, error: 'Not authorized to update this post' },
         { status: 403 }
@@ -124,14 +142,14 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       post: updatedPost,
-      message: 'Post updated successfully'
+      message: 'Post updated successfully',
     });
   } catch (error) {
     console.error('Error updating post:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update post'
+        error: error instanceof Error ? error.message : 'Failed to update post',
       },
       { status: 500 }
     );
@@ -141,34 +159,47 @@ export async function PATCH(
 /**
  * DELETE /api/posts/[id] - Delete a soft post
  *
- * Query params:
- * - authorId: string (required for authorization)
+ * Requires authenticated session. User must own the post.
  */
-export async function DELETE(
-  request: NextRequest,
-  context: RouteContext
-) {
+export async function DELETE(request: NextRequest, context: RouteContext) {
   // CSRF protection
   if (!validateCsrf(request)) {
     return csrfError('Request blocked: invalid origin');
   }
 
+  // Rate limiting
+  const deleteClientId = getClientIdentifier(request);
+  const deleteRateLimit = await checkRateLimit(deleteClientId, RATE_LIMITS.write, 'write');
+  if (!deleteRateLimit.success) {
+    return NextResponse.json(
+      { success: false, error: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: createRateLimitHeaders(0, deleteRateLimit.reset, RATE_LIMITS.write.limit),
+      }
+    );
+  }
+
   try {
     const { id } = await context.params;
-    const { searchParams } = new URL(request.url);
-    const authorId = searchParams.get('authorId');
+
+    // Verify user identity from session cookie
+    const sessionUser = await getAuthenticatedUserFromSession(request);
+    if (!sessionUser) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
     // Check if post exists
     const existingPost = await FirebasePosts.getPostById(id);
     if (!existingPost) {
-      return NextResponse.json(
-        { success: false, error: 'Post not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
     }
 
-    // Verify author (simple auth check - in production use proper auth)
-    if (authorId && existingPost.authorId !== authorId) {
+    // Verify the authenticated user owns this post
+    if (existingPost.authorId !== sessionUser.userId) {
       return NextResponse.json(
         { success: false, error: 'Not authorized to delete this post' },
         { status: 403 }
@@ -179,14 +210,14 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: 'Post deleted successfully'
+      message: 'Post deleted successfully',
     });
   } catch (error) {
     console.error('Error deleting post:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete post'
+        error: error instanceof Error ? error.message : 'Failed to delete post',
       },
       { status: 500 }
     );

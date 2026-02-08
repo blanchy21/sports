@@ -84,6 +84,8 @@ export const TopNavigation: React.FC = () => {
 
   // Search functionality - searches both Hive and soft users
   React.useEffect(() => {
+    const controller = new AbortController();
+
     const timer = setTimeout(async () => {
       if (searchQuery && searchQuery.length >= 3) {
         setIsSearching(true);
@@ -91,14 +93,20 @@ export const TopNavigation: React.FC = () => {
           const results: SearchResult[] = [];
 
           // Search Hive and soft users in parallel
+          // Note: fetchUserAccount is server-side and doesn't accept AbortSignal
           const [hiveResult, softResult] = await Promise.allSettled([
             // Hive user search
             fetchUserAccount(searchQuery).catch(() => null),
-            // Soft user search via API
-            fetch(`/api/soft/users?search=${encodeURIComponent(searchQuery)}`)
+            // Soft user search via API (supports abort)
+            fetch(`/api/soft/users?search=${encodeURIComponent(searchQuery)}`, {
+              signal: controller.signal,
+            })
               .then((r) => (r.ok ? r.json() : { users: [] }))
               .catch(() => ({ users: [] })),
           ]);
+
+          // If aborted while waiting, don't update state
+          if (controller.signal.aborted) return;
 
           // Add Hive user if found
           if (hiveResult.status === 'fulfilled' && hiveResult.value) {
@@ -135,19 +143,28 @@ export const TopNavigation: React.FC = () => {
             );
           }
 
-          setSearchResults(results);
+          if (!controller.signal.aborted) {
+            setSearchResults(results);
+          }
         } catch (error) {
-          logger.error('Search error', 'TopNavigation', error);
-          setSearchResults([]);
+          if (!controller.signal.aborted) {
+            logger.error('Search error', 'TopNavigation', error);
+            setSearchResults([]);
+          }
         } finally {
-          setIsSearching(false);
+          if (!controller.signal.aborted) {
+            setIsSearching(false);
+          }
         }
       } else {
         setSearchResults([]);
       }
     }, 500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [searchQuery]);
 
   const handleUserClick = (username: string) => {

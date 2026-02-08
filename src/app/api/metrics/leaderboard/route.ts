@@ -12,6 +12,12 @@ import {
   getCurrentWeekId,
 } from '@/lib/metrics/leaderboard';
 import type { RewardCategory } from '@/lib/metrics/types';
+import {
+  checkRateLimit,
+  getClientIdentifier,
+  RATE_LIMITS,
+  createRateLimitHeaders,
+} from '@/lib/utils/rate-limit';
 
 /**
  * GET /api/metrics/leaderboard
@@ -22,11 +28,22 @@ import type { RewardCategory } from '@/lib/metrics/types';
  * - limit: max entries per category (default: 10)
  */
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const clientId = getClientIdentifier(request);
+  const rateLimit = await checkRateLimit(clientId, RATE_LIMITS.read, 'read');
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      { success: false, error: 'Rate limit exceeded' },
+      { status: 429, headers: createRateLimitHeaders(0, rateLimit.reset, RATE_LIMITS.read.limit) }
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const weekId = searchParams.get('weekId') || getCurrentWeekId();
     const category = searchParams.get('category') as RewardCategory | null;
-    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const parsedLimit = parseInt(searchParams.get('limit') || '10', 10);
+    const limit = Math.min(Math.max(Number.isNaN(parsedLimit) ? 10 : parsedLimit, 1), 100);
 
     // If specific category requested
     if (category) {

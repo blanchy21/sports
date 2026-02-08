@@ -805,8 +805,14 @@ export class RealtimeMonitor {
       }
 
       // Check if it's a Sportsblock post (redundant check since we're already filtering by tags, but keep for safety)
-      const metadata = JSON.parse((post as { json_metadata?: string }).json_metadata || '{}');
-      const tags = (metadata as { tags?: string[] }).tags || [];
+      let metadata: { tags?: string[]; sport_category?: string };
+      try {
+        metadata = JSON.parse((post as { json_metadata?: string }).json_metadata || '{}');
+      } catch {
+        logWarn('Malformed json_metadata in realtime post, skipping', 'RealtimeMonitor');
+        return;
+      }
+      const tags = metadata.tags || [];
 
       if (!tags.includes('sportsblock') && !tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME)) {
         return; // Not a Sportsblock post
@@ -927,8 +933,13 @@ export class RealtimeMonitor {
 
       if (!post) return;
 
-      const metadata = JSON.parse(post.json_metadata || '{}');
-      const tags = (metadata.tags as string[] | undefined) || [];
+      let metadata: { tags?: string[] };
+      try {
+        metadata = JSON.parse(post.json_metadata || '{}');
+      } catch {
+        return; // Malformed metadata, skip
+      }
+      const tags = metadata.tags || [];
 
       if (tags.includes('sportsblock') || tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME)) {
         // It's a Sportsblock post - add author to cache and emit vote
@@ -1051,8 +1062,13 @@ export class RealtimeMonitor {
 
       if (!post) return;
 
-      const metadata = JSON.parse(post.json_metadata || '{}');
-      const tags = (metadata.tags as string[] | undefined) || [];
+      let metadata: { tags?: string[] };
+      try {
+        metadata = JSON.parse(post.json_metadata || '{}');
+      } catch {
+        return; // Malformed metadata, skip
+      }
+      const tags = metadata.tags || [];
 
       if (tags.includes('sportsblock') || tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME)) {
         // It's a Sportsblock post - add author to cache and emit comment

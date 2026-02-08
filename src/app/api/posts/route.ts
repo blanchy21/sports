@@ -196,55 +196,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Use Admin SDK to check post count (bypasses security rules)
-      const adminDbForCount = getAdminDb();
-      if (!adminDbForCount) {
-        ctx.log.error('Firebase Admin SDK not configured');
-        return NextResponse.json(
-          { success: false, error: 'Server configuration error' },
-          { status: 500 }
-        );
-      }
-
-      // Check post limit for soft users
-      const postsSnapshot = await adminDbForCount
-        .collection('soft_posts')
-        .where('authorId', '==', data.authorId)
-        .count()
-        .get();
-      const currentPostCount = postsSnapshot.data().count;
-
-      if (currentPostCount >= FREE_POST_LIMIT) {
-        ctx.log.warn('Post limit reached', {
-          authorId: data.authorId,
-          currentCount: currentPostCount,
-          limit: FREE_POST_LIMIT,
-        });
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Post limit reached',
-            message: `You've reached the limit of ${FREE_POST_LIMIT} posts. Upgrade to Hive for unlimited posts and earn rewards!`,
-            limitReached: true,
-            currentCount: currentPostCount,
-            limit: FREE_POST_LIMIT,
-          },
-          { status: 403 }
-        );
-      }
-
-      // Calculate remaining posts and warning state
-      const remainingPosts = FREE_POST_LIMIT - currentPostCount - 1; // -1 for the post being created
-      const isNearLimit = currentPostCount >= WARNING_THRESHOLD;
-
-      ctx.log.info('Creating post', {
-        authorId: data.authorId,
-        authorUsername: data.authorUsername,
-        title: data.title.substring(0, 50),
-        communityId: data.communityId,
-      });
-
-      // Use Admin SDK to bypass Firestore security rules
+      // Use Admin SDK (bypasses security rules)
       const adminDb = getAdminDb();
       if (!adminDb) {
         ctx.log.error('Firebase Admin SDK not configured');
@@ -290,10 +242,68 @@ export async function POST(request: NextRequest) {
         likeCount: 0,
       };
 
-      const docRef = await adminDb.collection('soft_posts').add(postData);
+      // Atomic check-and-write: count + create inside a transaction to prevent TOCTOU race
+      let currentPostCount: number;
+      let docId: string;
+
+      try {
+        const result = await adminDb.runTransaction(async (transaction) => {
+          // Read count inside transaction (Firestore requires all reads before writes)
+          const countSnapshot = await transaction.get(
+            adminDb.collection('soft_posts').where('authorId', '==', data.authorId).count()
+          );
+          const count = countSnapshot.data().count;
+
+          if (count >= FREE_POST_LIMIT) {
+            // Throw to abort transaction; we catch below and return the proper HTTP response
+            throw Object.assign(new Error('POST_LIMIT_REACHED'), { postCount: count });
+          }
+
+          // Write the new post inside the same transaction
+          const newDocRef = adminDb.collection('soft_posts').doc();
+          transaction.set(newDocRef, postData);
+
+          return { count, docId: newDocRef.id };
+        });
+
+        currentPostCount = result.count;
+        docId = result.docId;
+      } catch (txError: unknown) {
+        if (txError instanceof Error && txError.message === 'POST_LIMIT_REACHED') {
+          const count = (txError as Error & { postCount: number }).postCount;
+          ctx.log.warn('Post limit reached', {
+            authorId: data.authorId,
+            currentCount: count,
+            limit: FREE_POST_LIMIT,
+          });
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Post limit reached',
+              message: `You've reached the limit of ${FREE_POST_LIMIT} posts. Upgrade to Hive for unlimited posts and earn rewards!`,
+              limitReached: true,
+              currentCount: count,
+              limit: FREE_POST_LIMIT,
+            },
+            { status: 403 }
+          );
+        }
+        throw txError;
+      }
+
+      // Calculate remaining posts and warning state
+      const remainingPosts = FREE_POST_LIMIT - currentPostCount - 1;
+      const isNearLimit = currentPostCount >= WARNING_THRESHOLD;
+
+      ctx.log.info('Creating post', {
+        authorId: data.authorId,
+        authorUsername: data.authorUsername,
+        title: data.title.substring(0, 50),
+        communityId: data.communityId,
+      });
 
       const post = {
-        id: docRef.id,
+        id: docId,
         authorId: data.authorId,
         authorUsername: data.authorUsername,
         authorDisplayName: data.authorDisplayName || data.authorUsername,
@@ -326,9 +336,8 @@ export async function POST(request: NextRequest) {
           success: true,
           post,
           message: 'Post created successfully',
-          // Include post limit info for UI feedback
           postLimitInfo: {
-            currentCount: currentPostCount + 1, // Include the post just created
+            currentCount: currentPostCount + 1,
             limit: FREE_POST_LIMIT,
             remaining: remainingPosts,
             isNearLimit,

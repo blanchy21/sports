@@ -152,7 +152,10 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       // For pagination, we need to use get_discussions_by_created with start_author and start_permlink
       if (filters.before) {
         // Parse the cursor to get author and permlink for pagination
-        const [author, permlink] = filters.before.split('/');
+        // Only split on the first '/' — permlinks may contain additional slashes
+        const separatorIndex = filters.before.indexOf('/');
+        const author = filters.before.slice(0, separatorIndex);
+        const permlink = filters.before.slice(separatorIndex + 1);
 
         if (author && permlink) {
           // Use start_author and start_permlink for pagination
@@ -217,14 +220,15 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       filteredPosts = sortPosts(filteredPosts, filters.sort || 'created') as SportsblockPost[];
     }
 
-    // Determine if there are more posts
-    // Use the original posts length before filtering to determine hasMore
-    const hasMore = posts.length === limit;
+    // Determine if there are more posts available from the API
+    // Use filtered count > 0 as well — if filters removed everything, there may still be more upstream
+    const hasMore = filteredPosts.length > 0 && posts.length === limit;
 
-    // Generate next cursor for pagination
+    // Generate next cursor from the last *unfiltered* post, since the Hive API
+    // paginates on the unfiltered stream (not our client-side filtered subset)
     const nextCursor =
-      hasMore && filteredPosts.length > 0
-        ? `${filteredPosts[filteredPosts.length - 1].author}/${filteredPosts[filteredPosts.length - 1].permlink}`
+      hasMore && posts.length > 0
+        ? `${posts[posts.length - 1].author}/${posts[posts.length - 1].permlink}`
         : undefined;
 
     return {

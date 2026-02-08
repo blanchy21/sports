@@ -410,8 +410,8 @@ export async function checkHiveNodeAvailability(nodeUrl: string): Promise<boolea
           id: 1,
         }),
       },
-      10000
-    ); // 10 second timeout for health checks
+      5000
+    ); // 5 second timeout for health checks (should be faster than normal requests)
 
     if (!response.ok) {
       return false;

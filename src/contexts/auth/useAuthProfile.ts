@@ -91,8 +91,13 @@ export interface UseAuthProfileReturn {
 export function useAuthProfile(options: UseAuthProfileOptions): UseAuthProfileReturn {
   const { onProfileLoaded, onProfileFailed } = options;
   const controllerRef = useRef<AbortController | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const abortFetch = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     controllerRef.current?.abort();
     controllerRef.current = null;
   }, []);
@@ -146,7 +151,7 @@ export function useAuthProfile(options: UseAuthProfileOptions): UseAuthProfileRe
       const controller = controllerRef.current;
 
       // Use setTimeout to defer to next tick
-      setTimeout(async () => {
+      timeoutRef.current = setTimeout(async () => {
         try {
           const response = await fetchWithRetry(
             `/api/hive/account/summary?username=${encodeURIComponent(username)}`,

@@ -37,12 +37,10 @@ function getEncryptionKey(): Buffer {
     return crypto.scryptSync('development-only-insecure-key', 'salt', 32);
   }
 
-  const salt = process.env.SESSION_ENCRYPTION_SALT || 'sportsblock-session-salt';
   if (process.env.NODE_ENV === 'production' && !process.env.SESSION_ENCRYPTION_SALT) {
-    console.warn(
-      '[session-auth] SESSION_ENCRYPTION_SALT not set — using default salt. Set this env var to enable rotation.'
-    );
+    throw new Error('SESSION_ENCRYPTION_SALT is required in production');
   }
+  const salt = process.env.SESSION_ENCRYPTION_SALT || 'sportsblock-session-salt';
 
   return crypto.scryptSync(secret, salt, 32);
 }

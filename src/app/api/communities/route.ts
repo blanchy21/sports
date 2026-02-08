@@ -6,7 +6,9 @@ import {
   createRequestContext,
   validationError,
   unauthorizedError,
+  forbiddenError,
 } from '@/lib/api/response';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { CommunityFilters, CommunityType } from '@/types';
 
 export const runtime = 'nodejs';
@@ -20,14 +22,31 @@ const listQuerySchema = z.object({
   sportCategory: z.string().max(50).optional(),
   type: z.enum(['public', 'private', 'invite-only']).optional(),
   sort: z.enum(['memberCount', 'postCount', 'createdAt', 'name']).optional(),
-  limit: z.string().optional().transform((val) => val ? parseInt(val, 10) : 20),
-  offset: z.string().optional().transform((val) => val ? parseInt(val, 10) : 0),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 20)),
+  offset: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 0)),
 });
 
 const createCommunitySchema = z.object({
-  name: z.string().min(3, 'Name must be at least 3 characters').max(100, 'Name must be at most 100 characters'),
-  slug: z.string().min(3).max(50).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens').optional(),
-  about: z.string().min(10, 'About must be at least 10 characters').max(500, 'About must be at most 500 characters'),
+  name: z
+    .string()
+    .min(3, 'Name must be at least 3 characters')
+    .max(100, 'Name must be at most 100 characters'),
+  slug: z
+    .string()
+    .min(3)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens')
+    .optional(),
+  about: z
+    .string()
+    .min(10, 'About must be at least 10 characters')
+    .max(500, 'About must be at most 500 characters'),
   description: z.string().max(5000).optional(),
   sportCategory: z.string().min(1, 'Sport category is required'),
   type: z.enum(['public', 'private', 'invite-only']),
@@ -67,25 +86,34 @@ export async function GET(request: NextRequest) {
     };
 
     if (!isAdminConfigured()) {
-      return NextResponse.json({
-        success: false,
-        error: 'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY environment variable with your Firebase service account JSON.',
-        code: 'FIREBASE_NOT_CONFIGURED',
-      }, { status: 503 });
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY environment variable with your Firebase service account JSON.',
+          code: 'FIREBASE_NOT_CONFIGURED',
+        },
+        { status: 503 }
+      );
     }
 
     let result;
     try {
       result = await FirebaseCommunitiesAdmin.listCommunities(filters);
     } catch (firebaseError: unknown) {
-      const errorMessage = firebaseError instanceof Error ? firebaseError.message : String(firebaseError);
+      const errorMessage =
+        firebaseError instanceof Error ? firebaseError.message : String(firebaseError);
       // Check for credential errors
       if (errorMessage.includes('default credentials') || errorMessage.includes('authentication')) {
-        return NextResponse.json({
-          success: false,
-          error: 'Firebase Admin credentials not configured. Please add FIREBASE_SERVICE_ACCOUNT_KEY to your .env.local file with the service account JSON from Firebase Console > Project Settings > Service Accounts.',
-          code: 'FIREBASE_CREDENTIALS_MISSING',
-        }, { status: 503 });
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Firebase Admin credentials not configured. Please add FIREBASE_SERVICE_ACCOUNT_KEY to your .env.local file with the service account JSON from Firebase Console > Project Settings > Service Accounts.',
+            code: 'FIREBASE_CREDENTIALS_MISSING',
+          },
+          { status: 503 }
+        );
       }
       throw firebaseError;
     }
@@ -129,17 +157,27 @@ export async function POST(request: NextRequest) {
       hiveUsername,
     } = parseResult.data;
 
-    // Validate creator is authenticated (basic check - could be enhanced with Firebase Auth verification)
-    if (!creatorId || !creatorUsername) {
+    // Verify user identity from session cookie
+    const sessionUser = await getAuthenticatedUserFromSession(request);
+    if (!sessionUser) {
       return unauthorizedError('Authentication required to create a community', ctx.requestId);
     }
 
+    // Verify the authenticated user matches the claimed creator
+    if (sessionUser.userId !== creatorId) {
+      return forbiddenError('You can only create communities as yourself', ctx.requestId);
+    }
+
     if (!isAdminConfigured()) {
-      return NextResponse.json({
-        success: false,
-        error: 'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY or FIREBASE_PROJECT_ID.',
-        code: 'FIREBASE_NOT_CONFIGURED',
-      }, { status: 503 });
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY or FIREBASE_PROJECT_ID.',
+          code: 'FIREBASE_NOT_CONFIGURED',
+        },
+        { status: 503 }
+      );
     }
 
     ctx.log.info('Creating community', { name, slug, sportCategory, type, creatorId });
@@ -160,10 +198,13 @@ export async function POST(request: NextRequest) {
       hiveUsername
     );
 
-    return NextResponse.json({
-      success: true,
-      community,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        community,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }
