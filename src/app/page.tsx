@@ -129,7 +129,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="relative mb-6 inline-block"
+            className="relative mb-3 inline-block"
           >
             <motion.div
               animate={{ opacity: [0.2, 0.4, 0.2], scale: [0.9, 1.1, 0.9] }}
@@ -145,6 +145,16 @@ export default function LandingPage() {
               priority
             />
           </motion.div>
+
+          {/* Brand Name */}
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mb-2 text-3xl font-bold tracking-wide text-white sm:text-4xl md:text-5xl"
+          >
+            Sportsblock
+          </motion.h2>
 
           {/* Live Badge */}
           <motion.div
