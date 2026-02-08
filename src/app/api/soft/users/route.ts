@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { FirebaseAuth, Profile } from '@/lib/firebase/auth';
 import { createRequestContext, validationError, notFoundError } from '@/lib/api/response';
+import {
+  checkRateLimit,
+  getClientIdentifier,
+  RATE_LIMITS,
+  createRateLimitHeaders,
+} from '@/lib/utils/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -67,6 +73,19 @@ function profileToResponse(profile: Profile): SoftUserResponse {
  * - limit: number (default 10, max 50)
  */
 export async function GET(request: NextRequest) {
+  // Rate limiting to prevent user enumeration
+  const clientId = getClientIdentifier(request);
+  const rateLimit = await checkRateLimit(clientId, RATE_LIMITS.read, 'softUsersRead');
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      { success: false, error: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: createRateLimitHeaders(0, rateLimit.reset, RATE_LIMITS.read.limit),
+      }
+    );
+  }
+
   const ctx = createRequestContext(ROUTE);
 
   try {

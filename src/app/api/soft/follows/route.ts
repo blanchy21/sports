@@ -250,6 +250,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Validate target user exists to prevent phantom follows
+      const targetProfile = await db.collection('profiles').doc(targetUserId).get();
+      if (!targetProfile.exists) {
+        return NextResponse.json(
+          { success: false, error: 'Target user not found' },
+          { status: 404 }
+        );
+      }
+
       // Rate limiting check
       const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.softFollows, 'softFollows');
       if (!rateLimit.success) {

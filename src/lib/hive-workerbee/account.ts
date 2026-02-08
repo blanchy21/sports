@@ -268,6 +268,8 @@ function vestingSharesToHive(
   const totalVestingSharesFloat = parseFloat(totalVestingShares);
   const totalVestingFundHiveFloat = parseFloat(totalVestingFundHive);
 
+  if (!totalVestingSharesFloat || !isFinite(totalVestingSharesFloat)) return 0;
+
   return (vestingSharesFloat / totalVestingSharesFloat) * totalVestingFundHiveFloat;
 }
 

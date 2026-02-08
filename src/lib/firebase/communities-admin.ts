@@ -26,12 +26,18 @@ const COMMUNITY_INVITES_COLLECTION = 'community_invites';
 
 // Helper to generate URL-friendly slug
 function generateSlug(name: string): string {
-  return name
+  const slug = name
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .substring(0, 50);
+
+  if (!slug || /^-+$/.test(slug)) {
+    throw new Error('Community name must contain at least one alphanumeric character');
+  }
+
+  return slug;
 }
 
 // Helper to convert Admin Firestore document to Community
@@ -163,8 +169,10 @@ export class FirebaseCommunitiesAdmin {
     };
     batch.set(communityRef, communityData);
 
-    // Create creator as admin member
-    const memberRef = db.collection(COMMUNITY_MEMBERS_COLLECTION).doc();
+    // Create creator as admin member (composite ID prevents duplicates)
+    const memberRef = db
+      .collection(COMMUNITY_MEMBERS_COLLECTION)
+      .doc(`${communityRef.id}_${creatorId}`);
     const memberData = {
       communityId: communityRef.id,
       userId: creatorId,
@@ -222,9 +230,7 @@ export class FirebaseCommunitiesAdmin {
   /**
    * List communities with filters
    */
-  static async listCommunities(
-    filters: CommunityFilters = {}
-  ): Promise<CommunityListResult> {
+  static async listCommunities(filters: CommunityFilters = {}): Promise<CommunityListResult> {
     const db = getAdminDb();
     if (!db) {
       throw new Error('Firebase Admin is not configured');
@@ -285,10 +291,7 @@ export class FirebaseCommunitiesAdmin {
   /**
    * Update a community
    */
-  static async updateCommunity(
-    id: string,
-    updates: UpdateCommunityInput
-  ): Promise<Community> {
+  static async updateCommunity(id: string, updates: UpdateCommunityInput): Promise<Community> {
     const db = getAdminDb();
     if (!db) {
       throw new Error('Firebase Admin is not configured');
@@ -366,10 +369,7 @@ export class FirebaseCommunitiesAdmin {
   /**
    * Get a membership record
    */
-  static async getMembership(
-    communityId: string,
-    userId: string
-  ): Promise<CommunityMember | null> {
+  static async getMembership(communityId: string, userId: string): Promise<CommunityMember | null> {
     const db = getAdminDb();
     if (!db) {
       throw new Error('Firebase Admin is not configured');
@@ -423,11 +423,10 @@ export class FirebaseCommunitiesAdmin {
     const batch = db.batch();
 
     // Determine initial status based on community type
-    const status: CommunityMemberStatus =
-      community.type === 'public' ? 'active' : 'pending';
+    const status: CommunityMemberStatus = community.type === 'public' ? 'active' : 'pending';
 
-    // Create member record
-    const memberRef = db.collection(COMMUNITY_MEMBERS_COLLECTION).doc();
+    // Create member record (composite ID prevents duplicates from race conditions)
+    const memberRef = db.collection(COMMUNITY_MEMBERS_COLLECTION).doc(`${communityId}_${userId}`);
     const memberData = {
       communityId,
       userId,
@@ -478,9 +477,7 @@ export class FirebaseCommunitiesAdmin {
         .get();
 
       if (adminsSnapshot.size <= 1) {
-        throw new Error(
-          'You cannot leave as the only admin. Transfer ownership first.'
-        );
+        throw new Error('You cannot leave as the only admin. Transfer ownership first.');
       }
     }
 
@@ -551,10 +548,7 @@ export class FirebaseCommunitiesAdmin {
   /**
    * Approve a pending member
    */
-  static async approveMember(
-    communityId: string,
-    memberId: string
-  ): Promise<CommunityMember> {
+  static async approveMember(communityId: string, memberId: string): Promise<CommunityMember> {
     const db = getAdminDb();
     if (!db) {
       throw new Error('Firebase Admin is not configured');
@@ -699,9 +693,7 @@ export class FirebaseCommunitiesAdmin {
     }
 
     // Create invite (expires in 7 days)
-    const expiresAt = Timestamp.fromDate(
-      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    );
+    const expiresAt = Timestamp.fromDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
     const inviteRef = await db.collection(COMMUNITY_INVITES_COLLECTION).add({
       communityId,
@@ -744,7 +736,8 @@ export class FirebaseCommunitiesAdmin {
       throw new Error('Invite is no longer valid');
     }
 
-    const expiresAt = invite.expiresAt instanceof Date ? invite.expiresAt : new Date(invite.expiresAt);
+    const expiresAt =
+      invite.expiresAt instanceof Date ? invite.expiresAt : new Date(invite.expiresAt);
     if (expiresAt < new Date()) {
       throw new Error('Invite has expired');
     }
@@ -754,8 +747,10 @@ export class FirebaseCommunitiesAdmin {
     // Update invite status
     batch.update(inviteRef, { status: 'accepted' });
 
-    // Create member record
-    const memberRef = db.collection(COMMUNITY_MEMBERS_COLLECTION).doc();
+    // Create member record (composite ID prevents duplicates)
+    const memberRef = db
+      .collection(COMMUNITY_MEMBERS_COLLECTION)
+      .doc(`${invite.communityId}_${userId}`);
     batch.set(memberRef, {
       communityId: invite.communityId,
       userId,

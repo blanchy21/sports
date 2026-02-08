@@ -44,9 +44,11 @@ export const SoftLikeButton: React.FC<SoftLikeButtonProps> = ({
 
   // Check like status on mount
   useEffect(() => {
-    const checkLikeStatus = async () => {
-      if (!targetId) return;
+    if (!targetId) return;
 
+    const controller = new AbortController();
+
+    const checkLikeStatus = async () => {
       try {
         const params = new URLSearchParams({
           targetType,
@@ -58,18 +60,22 @@ export const SoftLikeButton: React.FC<SoftLikeButtonProps> = ({
           headers['x-user-id'] = user.id;
         }
 
-        const response = await fetch(`/api/soft/likes?${params}`, { headers });
+        const response = await fetch(`/api/soft/likes?${params}`, {
+          headers,
+          signal: controller.signal,
+        });
         if (response.ok) {
           const data = await response.json();
           setLikeCount(data.likeCount);
           setHasLiked(data.hasLiked);
         }
       } catch {
-        // Silently fail - use initial values
+        // Silently fail - use initial values (includes AbortError)
       }
     };
 
     checkLikeStatus();
+    return () => controller.abort();
   }, [targetId, targetType, isAuthenticated, user?.id]);
 
   const handleLike = useCallback(async () => {
