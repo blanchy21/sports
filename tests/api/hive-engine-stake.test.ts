@@ -45,6 +45,13 @@ jest.mock('@/lib/hive-engine/constants', () => ({
   },
 }));
 
+// Mock session auth to avoid cookies() call outside Next.js request scope
+const mockGetAuthenticatedUserFromSession = jest.fn();
+jest.mock('@/lib/api/session-auth', () => ({
+  getAuthenticatedUserFromSession: (...args: unknown[]) =>
+    mockGetAuthenticatedUserFromSession(...args),
+}));
+
 const {
   getStakeInfo,
   getPendingUnstakes,
@@ -54,8 +61,9 @@ const {
   getTotalStaked,
 } = jest.requireMock('@/lib/hive-engine/tokens');
 
-const { buildStakeOp, buildUnstakeOp, buildCancelUnstakeOp, validateOperation } =
-  jest.requireMock('@/lib/hive-engine/operations');
+const { buildStakeOp, buildUnstakeOp, buildCancelUnstakeOp, validateOperation } = jest.requireMock(
+  '@/lib/hive-engine/operations'
+);
 
 describe('GET /api/hive-engine/stake', () => {
   let server: ReturnType<typeof createRouteTestServer>;
@@ -85,9 +93,7 @@ describe('GET /api/hive-engine/stake', () => {
   });
 
   it('should return 400 for invalid account name', async () => {
-    const response = await request(server)
-      .get('/api/hive-engine/stake')
-      .query({ account: 'x' });
+    const response = await request(server).get('/api/hive-engine/stake').query({ account: 'x' });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Invalid account name');
@@ -146,7 +152,9 @@ describe('GET /api/hive-engine/stake', () => {
       .query({ account: 'testuser' });
 
     expect(response.status).toBe(500);
-    expect(response.body.error).toBe('Failed to fetch staking information. Please try again later.');
+    expect(response.body.error).toBe(
+      'Failed to fetch staking information. Please try again later.'
+    );
   });
 });
 
@@ -155,6 +163,12 @@ describe('POST /api/hive-engine/stake', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default: authenticated as 'testuser'
+    mockGetAuthenticatedUserFromSession.mockResolvedValue({
+      userId: 'test-user',
+      username: 'testuser',
+      hiveUsername: 'testuser',
+    });
     server = createRouteTestServer({
       routes: {
         'POST /api/hive-engine/stake': POST,
@@ -170,7 +184,34 @@ describe('POST /api/hive-engine/stake', () => {
     }
   });
 
+  it('should return 401 when not authenticated', async () => {
+    mockGetAuthenticatedUserFromSession.mockResolvedValue(null);
+
+    const response = await request(server)
+      .post('/api/hive-engine/stake')
+      .send({ action: 'stake', quantity: '100.000', account: 'testuser' });
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe('Authentication required');
+  });
+
+  it('should return 403 when account does not match authenticated user', async () => {
+    const response = await request(server)
+      .post('/api/hive-engine/stake')
+      .send({ action: 'stake', quantity: '100.000', account: 'other-user' });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain('Cannot build operations for other accounts');
+  });
+
   it('should return 400 for invalid account', async () => {
+    // Auth user matches 'x' so auth passes, but 'x' is an invalid account name
+    mockGetAuthenticatedUserFromSession.mockResolvedValue({
+      userId: 'test-user',
+      username: 'x',
+      hiveUsername: 'x',
+    });
+
     const response = await request(server)
       .post('/api/hive-engine/stake')
       .send({ action: 'stake', quantity: '100.000', account: 'x' });

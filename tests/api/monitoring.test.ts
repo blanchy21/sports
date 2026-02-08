@@ -19,12 +19,29 @@ jest.mock('@/lib/hive-workerbee/optimization', () => ({
 // Mock the cache module - inline to avoid hoisting issues
 jest.mock('@/lib/cache', () => ({
   getMemoryCache: jest.fn().mockReturnValue({
-    getStats: jest.fn().mockReturnValue({ size: 10, maxEntries: 1000, hits: 5, misses: 2, hitRate: 0.71 }),
+    getStats: jest
+      .fn()
+      .mockReturnValue({ size: 10, maxEntries: 1000, hits: 5, misses: 2, hitRate: 0.71 }),
   }),
   getTieredCache: jest.fn().mockResolvedValue({
     getStats: jest.fn().mockReturnValue({ hitRate: 0.8 }),
     isRedisAvailable: jest.fn().mockReturnValue(false),
   }),
+}));
+
+// Mock session auth to avoid cookies() call outside Next.js request scope
+jest.mock('@/lib/api/session-auth', () => ({
+  getAuthenticatedUserFromSession: jest.fn().mockResolvedValue({
+    userId: 'admin-user',
+    username: 'sportsblock',
+    hiveUsername: 'sportsblock',
+  }),
+}));
+
+// Mock admin config so the mock user passes admin check
+jest.mock('@/lib/admin/config', () => ({
+  ADMIN_ACCOUNTS: ['sportsblock'],
+  isAdminAccount: jest.fn((username: string) => username === 'sportsblock'),
 }));
 
 const { clearMonitoringData } = jest.requireMock('@/lib/hive-workerbee/monitoring');
@@ -52,9 +69,7 @@ describe('Monitoring API routes', () => {
   });
 
   it('returns stats payload for GET ?action=stats', async () => {
-    const response = await request(server)
-      .get('/api/monitoring')
-      .query({ action: 'stats' });
+    const response = await request(server).get('/api/monitoring').query({ action: 'stats' });
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
@@ -66,9 +81,7 @@ describe('Monitoring API routes', () => {
   });
 
   it('returns export payload for GET ?action=export', async () => {
-    const response = await request(server)
-      .get('/api/monitoring')
-      .query({ action: 'export' });
+    const response = await request(server).get('/api/monitoring').query({ action: 'export' });
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
@@ -81,18 +94,14 @@ describe('Monitoring API routes', () => {
   });
 
   it('returns 400 for invalid GET action', async () => {
-    const response = await request(server)
-      .get('/api/monitoring')
-      .query({ action: 'invalid' });
+    const response = await request(server).get('/api/monitoring').query({ action: 'invalid' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ error: 'Invalid action. Use ?action=stats or ?action=export' });
   });
 
   it('clears monitoring data via POST', async () => {
-    const response = await request(server)
-      .post('/api/monitoring')
-      .send({ action: 'clear' });
+    const response = await request(server).post('/api/monitoring').send({ action: 'clear' });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
@@ -104,9 +113,7 @@ describe('Monitoring API routes', () => {
   });
 
   it('clears cache via POST', async () => {
-    const response = await request(server)
-      .post('/api/monitoring')
-      .send({ action: 'clear-cache' });
+    const response = await request(server).post('/api/monitoring').send({ action: 'clear-cache' });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
@@ -130,9 +137,7 @@ describe('Monitoring API routes', () => {
   });
 
   it('returns 400 for invalid POST action', async () => {
-    const response = await request(server)
-      .post('/api/monitoring')
-      .send({ action: 'unknown' });
+    const response = await request(server).post('/api/monitoring').send({ action: 'unknown' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ error: 'Invalid action' });

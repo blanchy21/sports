@@ -37,15 +37,29 @@ jest.mock('@/lib/hive-engine/constants', () => ({
   },
 }));
 
+// Mock session auth to avoid cookies() call outside Next.js request scope
+const mockGetAuthenticatedUserFromSession = jest.fn();
+jest.mock('@/lib/api/session-auth', () => ({
+  getAuthenticatedUserFromSession: (...args: unknown[]) =>
+    mockGetAuthenticatedUserFromSession(...args),
+}));
+
 const { getMedalsBalance } = jest.requireMock('@/lib/hive-engine/tokens');
-const { buildTransferOp, buildDelegateOp, buildUndelegateOp, validateOperation } =
-  jest.requireMock('@/lib/hive-engine/operations');
+const { buildTransferOp, buildDelegateOp, buildUndelegateOp, validateOperation } = jest.requireMock(
+  '@/lib/hive-engine/operations'
+);
 
 describe('POST /api/hive-engine/transfer', () => {
   let server: ReturnType<typeof createRouteTestServer>;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default: authenticated as 'sender'
+    mockGetAuthenticatedUserFromSession.mockResolvedValue({
+      userId: 'test-user',
+      username: 'sender',
+      hiveUsername: 'sender',
+    });
     server = createRouteTestServer({
       routes: {
         'POST /api/hive-engine/transfer': POST,
@@ -61,16 +75,34 @@ describe('POST /api/hive-engine/transfer', () => {
     }
   });
 
-  it('should return 400 for missing from account', async () => {
+  it('should return 401 when not authenticated', async () => {
+    mockGetAuthenticatedUserFromSession.mockResolvedValue(null);
+
     const response = await request(server)
       .post('/api/hive-engine/transfer')
-      .send({ to: 'recipient', quantity: '100.000' });
+      .send({ from: 'sender', to: 'recipient', quantity: '100.000' });
 
-    expect(response.status).toBe(400);
-    expect(response.body.error).toContain('sender account');
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe('Authentication required');
+  });
+
+  it('should return 403 when from does not match authenticated user', async () => {
+    const response = await request(server)
+      .post('/api/hive-engine/transfer')
+      .send({ from: 'other-user', to: 'recipient', quantity: '100.000' });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain('Cannot build operations for other accounts');
   });
 
   it('should return 400 for invalid from account', async () => {
+    // Auth user matches 'x' so auth passes, but 'x' is an invalid account name
+    mockGetAuthenticatedUserFromSession.mockResolvedValue({
+      userId: 'test-user',
+      username: 'x',
+      hiveUsername: 'x',
+    });
+
     const response = await request(server)
       .post('/api/hive-engine/transfer')
       .send({ from: 'x', to: 'recipient', quantity: '100.000' });
@@ -136,15 +168,13 @@ describe('POST /api/hive-engine/transfer', () => {
     buildTransferOp.mockReturnValue(mockOp);
     validateOperation.mockReturnValue({ valid: true });
 
-    const response = await request(server)
-      .post('/api/hive-engine/transfer')
-      .send({
-        action: 'transfer',
-        from: 'sender',
-        to: 'recipient',
-        quantity: '100.000',
-        memo: 'test transfer',
-      });
+    const response = await request(server).post('/api/hive-engine/transfer').send({
+      action: 'transfer',
+      from: 'sender',
+      to: 'recipient',
+      quantity: '100.000',
+      memo: 'test transfer',
+    });
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
@@ -264,7 +294,9 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ from: 'sender', to: 'recipient', quantity: '100.000' });
 
     expect(response.status).toBe(500);
-    expect(response.body.error).toBe('Failed to build transfer operation. Please check your input and try again.');
+    expect(response.body.error).toBe(
+      'Failed to build transfer operation. Please check your input and try again.'
+    );
     expect(response.body.code).toBe('TRANSFER_BUILD_ERROR');
   });
 });
