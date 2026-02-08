@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
       const docRef = await db.collection('soft_sportsbites').add(sportsbiteData);
 
       // Update user activity (fire-and-forget)
-      updateUserLastActiveAt(user.userId);
+      updateUserLastActiveAt(user.userId).catch(() => {});
 
       const sportsbite: SoftSportsbite = {
         id: docRef.id,

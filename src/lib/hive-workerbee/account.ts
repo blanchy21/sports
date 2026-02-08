@@ -415,13 +415,16 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
           return { followers: 0, following: 0 };
         }),
 
-      // Global properties - with fallback
-      makeHiveApiCall('condenser_api', 'get_dynamic_global_properties')
-        .then((result) => result as GlobalProperties)
-        .catch(() => {
-          logWarn('Failed to get global properties for HIVE POWER calculation', 'fetchUserAccount');
-          return null;
-        }),
+      // Global properties - with 3s timeout to prevent blocking account fetch
+      Promise.race([
+        makeHiveApiCall('condenser_api', 'get_dynamic_global_properties').then(
+          (result) => result as GlobalProperties
+        ),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+      ]).catch(() => {
+        logWarn('Failed to get global properties for HIVE POWER calculation', 'fetchUserAccount');
+        return null;
+      }),
 
       // RC API - with very short 500ms timeout (non-critical data, shouldn't block account fetch)
       // This data is failing on most nodes anyway, so don't let it slow down login

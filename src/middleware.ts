@@ -50,9 +50,10 @@ const RATE_LIMITED_ROUTES = {
 type RateLimitType = 'read' | 'write' | 'auth' | 'realtime';
 
 function getRateLimitType(pathname: string): RateLimitType | null {
-  // Cron jobs are exempt - they use CRON_SECRET authentication
+  // Cron jobs use CRON_SECRET auth but still get basic rate limiting to
+  // prevent abuse if the secret leaks
   if (pathname.startsWith('/api/cron')) {
-    return null;
+    return 'write';
   }
 
   // Test endpoints exempt in development

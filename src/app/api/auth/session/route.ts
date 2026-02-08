@@ -42,7 +42,9 @@ function getEncryptionKey(): Buffer {
   }
 
   // Derive a 256-bit key from the secret using scrypt
-  return crypto.scryptSync(secret, 'sportsblock-session-salt', 32);
+  // Must use same salt as session-auth.ts for decryption compatibility
+  const salt = process.env.SESSION_ENCRYPTION_SALT || 'sportsblock-session-salt';
+  return crypto.scryptSync(secret, salt, 32);
 }
 
 // Validation schema for session data

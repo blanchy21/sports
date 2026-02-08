@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
       const docRef = await db.collection('soft_comments').add(commentData);
 
       // Update user's lastActiveAt timestamp (fire-and-forget)
-      updateUserLastActiveAt(user.userId);
+      updateUserLastActiveAt(user.userId).catch(() => {});
 
       // Update comment count on the post if it's a soft post
       if (postId.startsWith('soft-') || !postId.includes('-')) {

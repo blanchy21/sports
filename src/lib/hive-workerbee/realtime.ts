@@ -585,8 +585,19 @@ export class RealtimeMonitor {
 
       this.subscriptions.push(postsSubscription, votesSubscription, commentsSubscription);
 
+      // Set isRunning BEFORE scheduling intervals to prevent double-start race
       this.isRunning = true;
       realtimeDebugLog('[RealtimeMonitor] Real-time monitoring started');
+
+      // Clear any existing intervals before scheduling new ones (guard against double-start)
+      if (this.authorCacheIntervalId !== null) {
+        clearInterval(this.authorCacheIntervalId);
+        this.authorCacheIntervalId = null;
+      }
+      if (this.blockTrackingIntervalId !== null) {
+        clearInterval(this.blockTrackingIntervalId);
+        this.blockTrackingIntervalId = null;
+      }
 
       // Refresh author cache periodically
       this.scheduleAuthorCacheRefresh();
@@ -702,9 +713,11 @@ export class RealtimeMonitor {
 
   /**
    * Emit event to all callbacks
+   * Snapshot the array to prevent issues if callbacks are added/removed during iteration.
    */
   private emitEvent(event: RealtimeEvent): void {
-    this.callbacks.forEach((callback) => {
+    const snapshot = [...this.callbacks];
+    snapshot.forEach((callback) => {
       try {
         callback(event);
       } catch (error) {

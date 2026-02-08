@@ -30,7 +30,7 @@ export default function UserProfileClient() {
   const { user: currentUser, authType } = useAuth();
   const username = params.username as string;
 
-  // Try to fetch Hive profile first
+  // Fetch both profiles in parallel to avoid waterfall
   const {
     data: hiveProfile,
     isLoading: isHiveLoading,
@@ -41,16 +41,13 @@ export default function UserProfileClient() {
   const [softFollowerCount, setSoftFollowerCount] = useState(0);
   const [softFollowingCount, setSoftFollowingCount] = useState(0);
 
-  // If Hive profile not found, try soft user profile
-  const shouldFetchSoft = !isHiveLoading && !hiveProfile;
-  const { data: softProfile, isLoading: isSoftLoading } = useSoftUserProfile(
-    shouldFetchSoft ? username : ''
-  );
+  // Fetch soft profile in parallel (not gated on Hive completing)
+  const { data: softProfile, isLoading: isSoftLoading } = useSoftUserProfile(username);
 
-  // Determine which profile to use
+  // Determine which profile to use (prefer Hive)
+  const isProfileLoading = isHiveLoading || isSoftLoading;
   const profile = hiveProfile || softProfile;
   const isSoftUser = !hiveProfile && !!softProfile;
-  const isProfileLoading = isHiveLoading || (shouldFetchSoft && isSoftLoading);
   const profileError = !hiveProfile && !softProfile && !isProfileLoading ? hiveError : null;
 
   // Only fetch follower/following counts for Hive users

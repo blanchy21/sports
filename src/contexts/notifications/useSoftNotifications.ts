@@ -3,12 +3,25 @@ import { logger } from '@/lib/logger';
 import type { Notification } from './types';
 
 const NOTIFICATION_POLL_INTERVAL = 30000;
+const MAX_POLL_INTERVAL = 5 * 60 * 1000; // 5 min max backoff
 
 const notificationsDebugEnabled =
   process.env.NEXT_PUBLIC_NOTIFICATIONS_DEBUG === 'true' || process.env.NODE_ENV === 'development';
 
 const debugLog = (...args: unknown[]) => {
   if (notificationsDebugEnabled) console.debug('[SoftNotifications]', ...args);
+};
+
+type SoftNotification = {
+  id: string;
+  type: 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'system';
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  sourceUserId?: string;
+  sourceUsername?: string;
+  data?: Record<string, unknown>;
 };
 
 export function useSoftNotifications(
@@ -18,57 +31,70 @@ export function useSoftNotifications(
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>,
   setIsRealtimeActive: (active: boolean) => void
 ) {
-  const softPollingRef = useRef<NodeJS.Timeout | null>(null);
+  const softPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasSoftInitializedRef = useRef(false);
+  const consecutiveFailuresRef = useRef(0);
 
-  const fetchSoftNotifications = useCallback(async (uid: string) => {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) return [];
+  // Returns null on error so caller can distinguish from empty success
+  const fetchSoftNotifications = useCallback(
+    async (uid: string): Promise<SoftNotification[] | null> => {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return null;
 
-    try {
-      const params = new URLSearchParams({ limit: '50' });
-      const response = await fetch(`/api/soft/notifications?${params.toString()}`, {
-        headers: { 'x-user-id': uid },
-        cache: 'no-store',
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      try {
+        const params = new URLSearchParams({ limit: '50' });
+        const response = await fetch(`/api/soft/notifications?${params.toString()}`, {
+          headers: { 'x-user-id': uid },
+          cache: 'no-store',
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-      const data = await response.json();
-      if (data.success && Array.isArray(data.notifications)) {
-        return data.notifications as Array<{
-          id: string;
-          type: 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'system';
-          title: string;
-          message: string;
-          read: boolean;
-          createdAt: string;
-          sourceUserId?: string;
-          sourceUsername?: string;
-          data?: Record<string, unknown>;
-        }>;
+        const data = await response.json();
+        if (data.success && Array.isArray(data.notifications)) {
+          return data.notifications as SoftNotification[];
+        }
+        return [];
+      } catch (error) {
+        const isNetworkError = error instanceof TypeError && /failed to fetch/i.test(error.message);
+        if (!isNetworkError) {
+          logger.error('Error fetching soft notifications', 'useSoftNotifications', error);
+        }
+        return null;
       }
-      return [];
-    } catch (error) {
-      const isNetworkError = error instanceof TypeError && /failed to fetch/i.test(error.message);
-      if (!isNetworkError) {
-        logger.error('Error fetching soft notifications', 'useSoftNotifications', error);
-      }
-      return [];
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     if (!isClient || !userId || !isSoftUser) {
       if (softPollingRef.current) {
-        clearInterval(softPollingRef.current);
+        clearTimeout(softPollingRef.current);
         softPollingRef.current = null;
       }
       return;
     }
 
+    const schedulePoll = () => {
+      const interval = Math.min(
+        NOTIFICATION_POLL_INTERVAL * Math.pow(2, consecutiveFailuresRef.current),
+        MAX_POLL_INTERVAL
+      );
+      softPollingRef.current = setTimeout(poll, interval);
+    };
+
     const poll = async () => {
       debugLog('Polling...', { userId });
 
       const softNotifications = await fetchSoftNotifications(userId);
+
+      if (softNotifications === null) {
+        consecutiveFailuresRef.current = Math.min(consecutiveFailuresRef.current + 1, 5);
+        schedulePoll();
+        return;
+      }
+
+      // Success — reset backoff
+      consecutiveFailuresRef.current = 0;
+
       if (softNotifications.length > 0) {
         debugLog('Found:', softNotifications.length);
 
@@ -104,21 +130,21 @@ export function useSoftNotifications(
           return [...newNotifications, ...updated].slice(0, 100);
         });
       }
+
+      schedulePoll();
     };
 
     if (!hasSoftInitializedRef.current) {
       hasSoftInitializedRef.current = true;
       poll();
+    } else {
+      schedulePoll();
     }
     setIsRealtimeActive(true);
 
-    if (!softPollingRef.current) {
-      softPollingRef.current = setInterval(poll, NOTIFICATION_POLL_INTERVAL);
-    }
-
     return () => {
       if (softPollingRef.current) {
-        clearInterval(softPollingRef.current);
+        clearTimeout(softPollingRef.current);
         softPollingRef.current = null;
       }
     };

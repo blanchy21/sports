@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Fire-and-forget: lastActiveAt update
-      updateUserLastActiveAt(user.userId);
+      updateUserLastActiveAt(user.userId).catch(() => {});
 
       // Compute new count from pre-toggle count instead of re-querying
       const newLikeCount = currentCount + (liked ? 1 : -1);

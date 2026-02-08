@@ -460,9 +460,10 @@ export function generatePermlink(title: string): string {
     .replace(/-+/g, '-') // Replace multiple hyphens with single
     .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
 
-  // Add timestamp to ensure uniqueness
+  // Add timestamp + random suffix to ensure uniqueness even in same millisecond
   const timestamp = Date.now();
-  return `${basePermlink}-${timestamp}`;
+  const randomSuffix = Math.random().toString(36).slice(2, 8);
+  return `${basePermlink}-${timestamp}-${randomSuffix}`;
 }
 
 /**

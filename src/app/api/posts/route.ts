@@ -327,7 +327,7 @@ export async function POST(request: NextRequest) {
       };
 
       // Update user's lastActiveAt timestamp (fire-and-forget)
-      updateUserLastActiveAt(data.authorId);
+      updateUserLastActiveAt(data.authorId).catch(() => {});
 
       ctx.log.info('Post created successfully', { postId: post.id });
 

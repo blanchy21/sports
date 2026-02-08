@@ -319,7 +319,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Update user's lastActiveAt timestamp (fire-and-forget)
-      updateUserLastActiveAt(user.userId);
+      updateUserLastActiveAt(user.userId).catch(() => {});
 
       // Get updated follower count for target user
       const followerCountSnapshot = await db
