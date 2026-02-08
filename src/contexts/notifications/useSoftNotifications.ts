@@ -72,22 +72,37 @@ export function useSoftNotifications(
       if (softNotifications.length > 0) {
         debugLog('Found:', softNotifications.length);
 
-        setNotifications(
-          softNotifications.map((n) => ({
-            id: n.id,
-            type: n.type,
-            title: n.title,
-            message: n.message,
-            timestamp: new Date(n.createdAt),
-            read: n.read,
-            source: 'soft' as const,
-            data: {
-              ...n.data,
-              sourceUserId: n.sourceUserId,
-              sourceUsername: n.sourceUsername,
-            },
-          }))
-        );
+        setNotifications((prev) => {
+          const existingIds = new Set(prev.map((n) => n.id));
+          const newNotifications = softNotifications
+            .filter((n) => !existingIds.has(n.id))
+            .map((n) => ({
+              id: n.id,
+              type: n.type,
+              title: n.title,
+              message: n.message,
+              timestamp: new Date(n.createdAt),
+              read: n.read,
+              source: 'soft' as const,
+              data: {
+                ...n.data,
+                sourceUserId: n.sourceUserId,
+                sourceUsername: n.sourceUsername,
+              },
+            }));
+
+          // Update read status of existing notifications from server
+          const updated = prev.map((existing) => {
+            const serverVersion = softNotifications.find((n) => n.id === existing.id);
+            if (serverVersion && serverVersion.read !== existing.read) {
+              return { ...existing, read: serverVersion.read };
+            }
+            return existing;
+          });
+
+          if (newNotifications.length === 0) return updated;
+          return [...newNotifications, ...updated].slice(0, 100);
+        });
       }
     };
 

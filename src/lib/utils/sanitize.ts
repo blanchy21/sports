@@ -181,6 +181,18 @@ function parseAlignments(line: string): string[] {
 }
 
 /**
+ * Escape HTML special characters to prevent XSS when building HTML strings
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * Convert markdown table syntax to HTML tables
  */
 function convertMarkdownTables(content: string): string {
@@ -196,7 +208,7 @@ function convertMarkdownTables(content: string): string {
       let html = '<table><thead><tr>';
       headerCells.forEach((cell, j) => {
         const align = alignments[j] || 'left';
-        html += `<th style="text-align:${align}">${cell}</th>`;
+        html += `<th style="text-align:${align}">${escapeHtml(cell)}</th>`;
       });
       html += '</tr></thead><tbody>';
 
@@ -207,7 +219,7 @@ function convertMarkdownTables(content: string): string {
         html += '<tr>';
         cells.forEach((cell, j) => {
           const align = alignments[j] || 'left';
-          html += `<td style="text-align:${align}">${cell}</td>`;
+          html += `<td style="text-align:${align}">${escapeHtml(cell)}</td>`;
         });
         html += '</tr>';
         i++;

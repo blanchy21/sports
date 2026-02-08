@@ -127,7 +127,31 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (body.tags !== undefined) {
-      updates.tags = Array.isArray(body.tags) ? body.tags : [];
+      if (!Array.isArray(body.tags)) {
+        return NextResponse.json(
+          { success: false, error: 'Tags must be an array' },
+          { status: 400 }
+        );
+      }
+      if (body.tags.length > 10) {
+        return NextResponse.json(
+          { success: false, error: 'Maximum 10 tags allowed' },
+          { status: 400 }
+        );
+      }
+      const invalidTag = body.tags.find(
+        (t: unknown) => typeof t !== 'string' || t.length > 50 || !/^[a-z0-9-]+$/.test(t)
+      );
+      if (invalidTag !== undefined) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Tags must be lowercase alphanumeric with hyphens, max 50 chars',
+          },
+          { status: 400 }
+        );
+      }
+      updates.tags = body.tags;
     }
 
     if (Object.keys(updates).length === 0) {

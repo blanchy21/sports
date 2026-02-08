@@ -202,9 +202,15 @@ export class CircuitBreaker {
   getStats(): CircuitBreakerStats {
     this.cleanOldFailures();
     const recentFailures = this.failures.length;
-    const failureRate = this.totalRequests > 0
-      ? (recentFailures / Math.min(this.totalRequests, 100)) * 100
-      : 0;
+    // Estimate windowed request count: use totalRequests but cap at a reasonable
+    // window size to avoid diluting the failure rate over all-time history.
+    // The failures array is already scoped to the monitoring window, so the
+    // denominator should reflect roughly the same window.
+    const windowedRequests = Math.max(
+      recentFailures,
+      Math.min(this.totalRequests, this.config.failureThreshold * 5)
+    );
+    const failureRate = windowedRequests > 0 ? (recentFailures / windowedRequests) * 100 : 0;
 
     return {
       state: this.state,
@@ -277,9 +283,7 @@ export class CircuitBreaker {
 
     // Log state transition
     if (typeof console !== 'undefined') {
-      console.debug(
-        `[CircuitBreaker:${this.config.name || 'unnamed'}] ${oldState} -> ${newState}`
-      );
+      console.debug(`[CircuitBreaker:${this.config.name || 'unnamed'}] ${oldState} -> ${newState}`);
     }
   }
 

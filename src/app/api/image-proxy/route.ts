@@ -49,6 +49,23 @@ function isAllowedDomain(url: string): boolean {
 export async function GET(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
+  // Block external abuse: only allow requests from our own origin
+  const referer = request.headers.get('referer');
+  const origin = request.headers.get('origin');
+  const host = request.headers.get('host');
+  if (referer || origin) {
+    const source = referer || origin || '';
+    try {
+      const sourceHost = new URL(source).host;
+      if (host && sourceHost !== host) {
+        ctx.log.warn('Image proxy blocked: external origin', { source, host });
+        return forbiddenError('Image proxy is not available for external use', ctx.requestId);
+      }
+    } catch {
+      // Malformed referer/origin — allow through (could be direct browser request)
+    }
+  }
+
   // Validate query parameters
   const parseResult = parseSearchParams(request.nextUrl.searchParams, imageProxyQuerySchema);
 

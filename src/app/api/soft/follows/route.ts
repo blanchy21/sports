@@ -3,7 +3,12 @@ import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
-import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
+import {
+  checkRateLimit,
+  getClientIdentifier,
+  RATE_LIMITS,
+  createRateLimitHeaders,
+} from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { FieldValue, Firestore } from 'firebase-admin/firestore';
@@ -330,6 +335,19 @@ export async function POST(request: NextRequest) {
 // ============================================
 
 export async function PUT(request: NextRequest) {
+  // Rate limiting
+  const putClientId = getClientIdentifier(request);
+  const putRateLimit = await checkRateLimit(putClientId, RATE_LIMITS.read, 'followsRead');
+  if (!putRateLimit.success) {
+    return NextResponse.json(
+      { success: false, error: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: createRateLimitHeaders(0, putRateLimit.reset, RATE_LIMITS.read.limit),
+      }
+    );
+  }
+
   const ctx = createRequestContext(ROUTE);
 
   try {

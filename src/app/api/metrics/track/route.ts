@@ -13,6 +13,7 @@ import {
   RATE_LIMITS,
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
+import { validateCsrf, csrfError } from '@/lib/api/csrf';
 
 const trackSchema = z.object({
   type: z.enum(['view', 'vote', 'comment', 'share']),
@@ -28,6 +29,11 @@ const trackSchema = z.object({
  * Track engagement events for posts
  */
 export async function POST(request: NextRequest) {
+  // CSRF protection
+  if (!validateCsrf(request)) {
+    return csrfError('Request blocked: invalid origin');
+  }
+
   // Rate limiting
   const clientId = getClientIdentifier(request);
   const rateLimit = await checkRateLimit(clientId, RATE_LIMITS.read, 'metricsTrack');
