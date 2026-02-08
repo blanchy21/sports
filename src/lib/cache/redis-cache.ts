@@ -343,17 +343,31 @@ export class RedisCache {
 
     try {
       const fullPattern = this.config.keyPrefix + pattern;
-      const keys = await this.executeCommand('KEYS', fullPattern);
+      // Use SCAN instead of KEYS to avoid blocking Redis
+      let cursor = '0';
+      let deleted = 0;
 
-      if (!keys || !Array.isArray(keys) || keys.length === 0) {
-        return 0;
-      }
+      do {
+        const result = await this.executeCommand(
+          'SCAN',
+          cursor,
+          'MATCH',
+          fullPattern,
+          'COUNT',
+          '100'
+        );
+        if (!result || !Array.isArray(result) || result.length < 2) break;
 
-      for (const key of keys) {
-        await this.executeCommand('DEL', key);
-      }
+        cursor = String(result[0]);
+        const keys = result[1] as string[];
 
-      return keys.length;
+        for (const key of keys) {
+          await this.executeCommand('DEL', key);
+          deleted++;
+        }
+      } while (cursor !== '0');
+
+      return deleted;
     } catch (error) {
       this.stats.errors++;
       this.stats.lastError = error instanceof Error ? error.message : String(error);
@@ -373,7 +387,9 @@ export class RedisCache {
       const fullKey = this.config.keyPrefix + key;
       const result = await this.executeCommand('EXISTS', fullKey);
       return result === 1;
-    } catch {
+    } catch (error) {
+      this.stats.errors++;
+      this.stats.lastError = error instanceof Error ? error.message : String(error);
       return false;
     }
   }
@@ -390,7 +406,9 @@ export class RedisCache {
       const fullKey = this.config.keyPrefix + key;
       const result = await this.executeCommand('TTL', fullKey);
       return typeof result === 'number' ? result : -1;
-    } catch {
+    } catch (error) {
+      this.stats.errors++;
+      this.stats.lastError = error instanceof Error ? error.message : String(error);
       return -1;
     }
   }
@@ -411,10 +429,7 @@ export class RedisCache {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      this.config.commandTimeout
-    );
+    const timeoutId = setTimeout(() => controller.abort(), this.config.commandTimeout);
 
     try {
       const response = await fetch(`${this.redisUrl}`, {
@@ -472,7 +487,9 @@ export class RedisCache {
         }
         return v;
       });
-    } catch {
+    } catch (error) {
+      this.stats.errors++;
+      this.stats.lastError = error instanceof Error ? error.message : String(error);
       return null;
     }
   }
@@ -499,10 +516,7 @@ export async function getRedisCache(): Promise<RedisCache> {
  */
 export function isRedisConfigured(): boolean {
   // Check Upstash environment variables first (preferred)
-  const hasUpstash = !!(
-    process.env.UPSTASH_REDIS_REST_URL &&
-    process.env.UPSTASH_REDIS_REST_TOKEN
-  );
+  const hasUpstash = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 
   // Fallback to REDIS_URL
   const hasRedisUrl = !!process.env.REDIS_URL;

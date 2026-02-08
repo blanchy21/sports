@@ -10,8 +10,6 @@ import { SportsblockPost } from '@/lib/hive-workerbee/content';
 import { fetchSportsbites } from '@/lib/hive-workerbee/sportsbites';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { headers } from 'next/headers';
-
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -20,17 +18,12 @@ export const dynamic = 'force-dynamic';
  */
 async function fetchPostsViaInternalApi(limit: number = 20): Promise<SportsblockPost[]> {
   try {
-    // Get the host from request headers for internal API call
-    const headersList = await headers();
-    const host = headersList.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
+    // Use env var for app URL to avoid SSRF via Host header manipulation
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    const response = await fetch(
-      `${protocol}://${host}/api/hive/posts?limit=${limit}&sort=created`,
-      {
-        cache: 'no-store',
-      }
-    );
+    const response = await fetch(`${appUrl}/api/hive/posts?limit=${limit}&sort=created`, {
+      cache: 'no-store',
+    });
 
     if (!response.ok) {
       console.warn(`[Analytics API] Internal API returned ${response.status}`);

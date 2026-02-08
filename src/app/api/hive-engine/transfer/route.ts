@@ -20,6 +20,7 @@ import { getMedalsBalance } from '@/lib/hive-engine/tokens';
 import { isValidAccountName, isValidQuantity, parseQuantity } from '@/lib/hive-engine/client';
 import { MEDALS_CONFIG } from '@/lib/hive-engine/constants';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,9 +29,23 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: NextRequest) {
   return withCsrfProtection(request, async () => {
+    // Require authentication
+    const user = await getAuthenticatedUserFromSession(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     try {
       const body = await request.json();
       const { action = 'transfer', from, to, quantity, memo } = body;
+
+      // Verify the authenticated user matches the sender
+      if (user.hiveUsername !== from && user.username !== from) {
+        return NextResponse.json(
+          { error: 'Cannot build operations for other accounts' },
+          { status: 403 }
+        );
+      }
 
       // Validate from account
       if (!from || !isValidAccountName(from)) {
@@ -76,20 +91,14 @@ export async function POST(request: NextRequest) {
 
           // Cannot transfer to self
           if (from === to) {
-            return NextResponse.json(
-              { error: 'Cannot transfer to yourself' },
-              { status: 400 }
-            );
+            return NextResponse.json({ error: 'Cannot transfer to yourself' }, { status: 400 });
           }
 
           const operation = buildTransferOp(from, to, quantity, MEDALS_CONFIG.SYMBOL, memo);
           const validation = validateOperation(operation);
 
           if (!validation.valid) {
-            return NextResponse.json(
-              { error: validation.error },
-              { status: 400 }
-            );
+            return NextResponse.json({ error: validation.error }, { status: 400 });
           }
 
           return NextResponse.json({
@@ -122,20 +131,14 @@ export async function POST(request: NextRequest) {
 
           // Cannot delegate to self
           if (from === to) {
-            return NextResponse.json(
-              { error: 'Cannot delegate to yourself' },
-              { status: 400 }
-            );
+            return NextResponse.json({ error: 'Cannot delegate to yourself' }, { status: 400 });
           }
 
           const operation = buildDelegateOp(from, to, quantity);
           const validation = validateOperation(operation);
 
           if (!validation.valid) {
-            return NextResponse.json(
-              { error: validation.error },
-              { status: 400 }
-            );
+            return NextResponse.json({ error: validation.error }, { status: 400 });
           }
 
           return NextResponse.json({
@@ -159,10 +162,7 @@ export async function POST(request: NextRequest) {
           const validation = validateOperation(operation);
 
           if (!validation.valid) {
-            return NextResponse.json(
-              { error: validation.error },
-              { status: 400 }
-            );
+            return NextResponse.json({ error: validation.error }, { status: 400 });
           }
 
           return NextResponse.json({

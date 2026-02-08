@@ -74,6 +74,10 @@ export function useHiveNotifications(
       return;
     }
 
+    // Reset state for new username (effect re-runs when username changes)
+    hasInitializedRef.current = false;
+    consecutiveFailuresRef.current = 0;
+
     const lastCheckKey = `${NOTIFICATION_LAST_CHECK_KEY}:${username}`;
     lastCheckRef.current = localStorage.getItem(lastCheckKey);
 

@@ -194,16 +194,16 @@ export async function GET(request: NextRequest) {
       url,
     });
 
-    // If we have cached data, return it even if expired
+    // If we have cached data, return it as stale fallback (not success)
     if (priceCache.data) {
       ctx.log.info('Returning expired cached data due to error');
       return NextResponse.json({
-        success: true,
-        data: priceCache.data,
+        success: false,
+        error: 'Price API unavailable',
+        fallbackData: priceCache.data,
         cached: true,
-        expired: true,
+        stale: true,
         timestamp: priceCache.timestamp,
-        error: error instanceof Error ? error.message : String(error),
       });
     }
 

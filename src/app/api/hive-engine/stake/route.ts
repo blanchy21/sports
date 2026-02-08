@@ -27,6 +27,7 @@ import {
 import { formatQuantity, isValidAccountName, isValidQuantity } from '@/lib/hive-engine/client';
 import { MEDALS_CONFIG, CACHE_TTLS } from '@/lib/hive-engine/constants';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,17 +40,11 @@ export async function GET(request: NextRequest) {
     const account = searchParams.get('account');
 
     if (!account) {
-      return NextResponse.json(
-        { error: 'Account parameter is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Account parameter is required' }, { status: 400 });
     }
 
     if (!isValidAccountName(account)) {
-      return NextResponse.json(
-        { error: 'Invalid account name' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid account name' }, { status: 400 });
     }
 
     // Fetch all staking data in parallel
@@ -78,9 +73,7 @@ export async function GET(request: NextRequest) {
       delegatedIn: formatQuantity(stakeInfo?.delegatedIn || 0),
       delegatedOut: formatQuantity(stakeInfo?.delegatedOut || 0),
       effectiveStake: formatQuantity(
-        (stakeInfo?.staked || 0) +
-          (stakeInfo?.delegatedIn || 0) -
-          (stakeInfo?.delegatedOut || 0)
+        (stakeInfo?.staked || 0) + (stakeInfo?.delegatedIn || 0) - (stakeInfo?.delegatedOut || 0)
       ),
       estimatedAPY: stakeInfo?.estimatedAPY.toFixed(2) || '0.00',
       estimatedWeeklyReward: formatQuantity(estimatedWeeklyReward),
@@ -133,15 +126,26 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   return withCsrfProtection(request, async () => {
+    // Require authentication
+    const user = await getAuthenticatedUserFromSession(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     try {
       const body = await request.json();
       const { action, quantity, account, txId } = body;
 
       // Validate account
       if (!account || !isValidAccountName(account)) {
+        return NextResponse.json({ error: 'Valid account is required' }, { status: 400 });
+      }
+
+      // Verify the authenticated user matches the account
+      if (user.hiveUsername !== account && user.username !== account) {
         return NextResponse.json(
-          { error: 'Valid account is required' },
-          { status: 400 }
+          { error: 'Cannot build operations for other accounts' },
+          { status: 403 }
         );
       }
 
@@ -159,10 +163,7 @@ export async function POST(request: NextRequest) {
           const validation = validateOperation(operation);
 
           if (!validation.valid) {
-            return NextResponse.json(
-              { error: validation.error },
-              { status: 400 }
-            );
+            return NextResponse.json({ error: validation.error }, { status: 400 });
           }
 
           return NextResponse.json({
@@ -185,10 +186,7 @@ export async function POST(request: NextRequest) {
           const validation = validateOperation(operation);
 
           if (!validation.valid) {
-            return NextResponse.json(
-              { error: validation.error },
-              { status: 400 }
-            );
+            return NextResponse.json({ error: validation.error }, { status: 400 });
           }
 
           return NextResponse.json({
@@ -211,10 +209,7 @@ export async function POST(request: NextRequest) {
           const validation = validateOperation(operation);
 
           if (!validation.valid) {
-            return NextResponse.json(
-              { error: validation.error },
-              { status: 400 }
-            );
+            return NextResponse.json({ error: validation.error }, { status: 400 });
           }
 
           return NextResponse.json({

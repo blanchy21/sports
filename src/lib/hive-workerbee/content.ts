@@ -707,25 +707,29 @@ function sortPosts(
 ): (HivePost | SportsblockPost)[] {
   switch (sortBy) {
     case 'trending':
-      return posts.sort((a, b) => {
-        // Sort by trending score (combination of votes and time)
-        const scoreA = a.net_votes * Math.log(Date.now() - new Date(a.created).getTime() + 1);
-        const scoreB = b.net_votes * Math.log(Date.now() - new Date(b.created).getTime() + 1);
+      return [...posts].sort((a, b) => {
+        // Time-decay trending: recent posts with votes rank higher
+        const ageA = (Date.now() - new Date(a.created).getTime()) / 3600000; // hours
+        const ageB = (Date.now() - new Date(b.created).getTime()) / 3600000;
+        const scoreA = Math.max(a.net_votes, 0) / Math.pow(ageA + 2, 1.5);
+        const scoreB = Math.max(b.net_votes, 0) / Math.pow(ageB + 2, 1.5);
         return scoreB - scoreA;
       });
 
     case 'payout':
-      return posts.sort((a, b) => {
+      return [...posts].sort((a, b) => {
         const payoutA = calculatePendingPayout(a);
         const payoutB = calculatePendingPayout(b);
         return payoutB - payoutA;
       });
 
     case 'votes':
-      return posts.sort((a, b) => b.net_votes - a.net_votes);
+      return [...posts].sort((a, b) => b.net_votes - a.net_votes);
 
     case 'created':
     default:
-      return posts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+      return [...posts].sort(
+        (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()
+      );
   }
 }

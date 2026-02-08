@@ -11,6 +11,7 @@ import { createRequestContext, forbiddenError, validationError } from '@/lib/api
 import { isAdminAccount } from '@/lib/admin/config';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { withCsrfProtection } from '@/lib/api/csrf';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -50,134 +51,138 @@ export async function GET(request: NextRequest) {
  * POST /api/admin/curators - Add a curator
  */
 export async function POST(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  const user = await getAuthenticatedUserFromSession(request);
-  if (!user || !isAdminAccount(user.username)) {
-    return forbiddenError('Admin access required', ctx.requestId);
-  }
-
-  try {
-    const body = await request.json();
-    const parseResult = mutationSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
+    const user = await getAuthenticatedUserFromSession(request);
+    if (!user || !isAdminAccount(user.username)) {
+      return forbiddenError('Admin access required', ctx.requestId);
     }
 
-    const { curator } = parseResult.data;
-
-    const adminDb = getAdminDb();
-    if (!adminDb) {
-      return NextResponse.json(
-        { success: false, error: 'Firebase not configured' },
-        { status: 503 }
-      );
-    }
-
-    const curators = await getCuratorsFromDb();
-
-    if (curators.includes(curator)) {
-      return NextResponse.json(
-        { success: false, error: `${curator} is already a curator` },
-        { status: 409 }
-      );
-    }
-
-    curators.push(curator);
     try {
-      await adminDb
-        .doc(CURATORS_DOC)
-        .set(
-          { accounts: curators, updatedAt: new Date().toISOString(), updatedBy: user.username },
-          { merge: true }
-        );
-    } catch (writeError) {
-      const msg = writeError instanceof Error ? writeError.message : String(writeError);
-      if (msg.includes('credentials') || msg.includes('authentication')) {
+      const body = await request.json();
+      const parseResult = mutationSchema.safeParse(body);
+
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
+
+      const { curator } = parseResult.data;
+
+      const adminDb = getAdminDb();
+      if (!adminDb) {
         return NextResponse.json(
-          {
-            success: false,
-            error:
-              'Firebase credentials not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.',
-          },
+          { success: false, error: 'Firebase not configured' },
           { status: 503 }
         );
       }
-      throw writeError;
-    }
 
-    return NextResponse.json({ success: true, curators });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+      const curators = await getCuratorsFromDb();
+
+      if (curators.includes(curator)) {
+        return NextResponse.json(
+          { success: false, error: `${curator} is already a curator` },
+          { status: 409 }
+        );
+      }
+
+      curators.push(curator);
+      try {
+        await adminDb
+          .doc(CURATORS_DOC)
+          .set(
+            { accounts: curators, updatedAt: new Date().toISOString(), updatedBy: user.username },
+            { merge: true }
+          );
+      } catch (writeError) {
+        const msg = writeError instanceof Error ? writeError.message : String(writeError);
+        if (msg.includes('credentials') || msg.includes('authentication')) {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                'Firebase credentials not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.',
+            },
+            { status: 503 }
+          );
+        }
+        throw writeError;
+      }
+
+      return NextResponse.json({ success: true, curators });
+    } catch (error) {
+      return ctx.handleError(error);
+    }
+  });
 }
 
 /**
  * DELETE /api/admin/curators - Remove a curator
  */
 export async function DELETE(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  const user = await getAuthenticatedUserFromSession(request);
-  if (!user || !isAdminAccount(user.username)) {
-    return forbiddenError('Admin access required', ctx.requestId);
-  }
-
-  try {
-    const body = await request.json();
-    const parseResult = mutationSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
-
-    const { curator } = parseResult.data;
-
-    const adminDb = getAdminDb();
-    if (!adminDb) {
-      return NextResponse.json(
-        { success: false, error: 'Firebase not configured' },
-        { status: 503 }
-      );
-    }
-
-    const curators = await getCuratorsFromDb();
-    const updated = curators.filter((c) => c !== curator);
-
-    if (updated.length === curators.length) {
-      return NextResponse.json(
-        { success: false, error: `${curator} is not a curator` },
-        { status: 404 }
-      );
+    const user = await getAuthenticatedUserFromSession(request);
+    if (!user || !isAdminAccount(user.username)) {
+      return forbiddenError('Admin access required', ctx.requestId);
     }
 
     try {
-      await adminDb
-        .doc(CURATORS_DOC)
-        .set(
-          { accounts: updated, updatedAt: new Date().toISOString(), updatedBy: user.username },
-          { merge: true }
-        );
-    } catch (writeError) {
-      const msg = writeError instanceof Error ? writeError.message : String(writeError);
-      if (msg.includes('credentials') || msg.includes('authentication')) {
+      const body = await request.json();
+      const parseResult = mutationSchema.safeParse(body);
+
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
+
+      const { curator } = parseResult.data;
+
+      const adminDb = getAdminDb();
+      if (!adminDb) {
         return NextResponse.json(
-          {
-            success: false,
-            error:
-              'Firebase credentials not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.',
-          },
+          { success: false, error: 'Firebase not configured' },
           { status: 503 }
         );
       }
-      throw writeError;
-    }
 
-    return NextResponse.json({ success: true, curators: updated });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+      const curators = await getCuratorsFromDb();
+      const updated = curators.filter((c) => c !== curator);
+
+      if (updated.length === curators.length) {
+        return NextResponse.json(
+          { success: false, error: `${curator} is not a curator` },
+          { status: 404 }
+        );
+      }
+
+      try {
+        await adminDb
+          .doc(CURATORS_DOC)
+          .set(
+            { accounts: updated, updatedAt: new Date().toISOString(), updatedBy: user.username },
+            { merge: true }
+          );
+      } catch (writeError) {
+        const msg = writeError instanceof Error ? writeError.message : String(writeError);
+        if (msg.includes('credentials') || msg.includes('authentication')) {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                'Firebase credentials not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.',
+            },
+            { status: 503 }
+          );
+        }
+        throw writeError;
+      }
+
+      return NextResponse.json({ success: true, curators: updated });
+    } catch (error) {
+      return ctx.handleError(error);
+    }
+  });
 }
 
 /**

@@ -277,18 +277,18 @@ export function createVoteOperation(voteData: {
   voter: string;
   author: string;
   permlink: string;
-  weight: number; // 0-100 percentage
+  weight: number; // -100 to 100 percentage (negative = downvote)
 }): WaxVoteOperation {
-  // Validate vote weight
-  if (voteData.weight < 0 || voteData.weight > 100) {
-    throw new Error('Vote weight must be between 0 and 100');
+  // Validate vote weight: -100 to 100 (negative for downvotes)
+  if (voteData.weight < -100 || voteData.weight > 100) {
+    throw new Error('Vote weight must be between -100 and 100');
   }
 
   return {
     voter: voteData.voter,
     author: voteData.author,
     permlink: voteData.permlink,
-    weight: Math.round(voteData.weight * 100), // Convert to 0-10000 scale
+    weight: Math.round(voteData.weight * 100), // Convert to -10000 to 10000 scale
   };
 }
 

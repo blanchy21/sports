@@ -24,19 +24,29 @@ export function csrfError(message: string = 'CSRF validation failed') {
 /**
  * Get allowed origins from environment or defaults
  */
+let cachedAllowedOrigins: string[] | null = null;
+
 function getAllowedOrigins(): string[] {
+  if (cachedAllowedOrigins) return cachedAllowedOrigins;
+
+  const origins: string[] = [];
   const envOrigins = process.env.ALLOWED_ORIGINS;
   if (envOrigins) {
-    return envOrigins.split(',').map((o) => o.trim());
+    origins.push(...envOrigins.split(',').map((o) => o.trim()));
+  } else {
+    origins.push(
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001'
+    );
   }
 
-  // Default to localhost and common development ports
-  return [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-  ];
+  const productionUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (productionUrl) origins.push(productionUrl);
+
+  cachedAllowedOrigins = origins;
+  return origins;
 }
 
 /**
@@ -56,14 +66,8 @@ export function validateCsrf(request: NextRequest): boolean {
   // In production, require origin to be set for mutations
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Get allowed origins
+  // Get allowed origins (cached, includes production URL)
   const allowedOrigins = getAllowedOrigins();
-
-  // Add production URL if set
-  const productionUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (productionUrl) {
-    allowedOrigins.push(productionUrl);
-  }
 
   // Check Origin header (primary CSRF defense)
   if (origin) {

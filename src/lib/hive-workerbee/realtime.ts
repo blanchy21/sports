@@ -897,8 +897,11 @@ export class RealtimeMonitor {
               weight?: number;
               time?: string;
             }
-          ).catch(() => {
-            // Silently skip if verification fails
+          ).catch((error) => {
+            realtimeDebugLog(
+              'Vote verification failed',
+              error instanceof Error ? error.message : error
+            );
           });
         }
         return;
@@ -1024,8 +1027,11 @@ export class RealtimeMonitor {
               body?: string;
               created?: string;
             }
-          ).catch(() => {
-            // Silently skip if verification fails
+          ).catch((error) => {
+            realtimeDebugLog(
+              'Comment verification failed',
+              error instanceof Error ? error.message : error
+            );
           });
         }
         return;

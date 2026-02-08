@@ -11,11 +11,19 @@ import {
 import { getMemoryCache } from '@/lib/cache';
 import { getTieredCache } from '@/lib/cache';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { isAdminAccount } from '@/lib/admin/config';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  // Admin-only access
+  const user = await getAuthenticatedUserFromSession(request);
+  if (!user || !isAdminAccount(user.username)) {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
@@ -86,6 +94,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Admin-only access
+  const user = await getAuthenticatedUserFromSession(request);
+  if (!user || !isAdminAccount(user.username)) {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+  }
+
   return withCsrfProtection(request, async () => {
     try {
       const { action } = await request.json();

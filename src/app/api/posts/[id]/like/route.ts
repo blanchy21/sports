@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FirebasePosts } from '@/lib/firebase/posts';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import {
   checkRateLimit,
   getClientIdentifier,
   RATE_LIMITS,
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
+import { logger } from '@/lib/logger';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -15,13 +17,19 @@ interface RouteContext {
 /**
  * POST /api/posts/[id]/like - Like a soft post
  *
- * Note: This is a simple increment without tracking who liked.
- * For production, you'd want to track user likes to prevent duplicates.
+ * Requires authentication. Uses per-user deduplication via /api/soft/likes
+ * for tracked likes; this endpoint is a simpler increment for lightweight usage.
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   // CSRF protection
   if (!validateCsrf(request)) {
     return csrfError('Request blocked: invalid origin');
+  }
+
+  // Authentication required
+  const user = await getAuthenticatedUserFromSession(request);
+  if (!user) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
 
   // Rate limiting
@@ -54,14 +62,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       likeCount: (post.likeCount || 0) + 1,
     });
   } catch (error) {
-    console.error('Error liking post:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to like post',
-      },
-      { status: 500 }
-    );
+    logger.error('Error liking post', 'postLike', error instanceof Error ? error : undefined);
+    return NextResponse.json({ success: false, error: 'Failed to like post' }, { status: 500 });
   }
 }
 
@@ -72,6 +74,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   // CSRF protection
   if (!validateCsrf(request)) {
     return csrfError('Request blocked: invalid origin');
+  }
+
+  // Authentication required
+  const user = await getAuthenticatedUserFromSession(request);
+  if (!user) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
 
   // Rate limiting
@@ -104,13 +112,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       likeCount: Math.max(0, (post.likeCount || 0) - 1),
     });
   } catch (error) {
-    console.error('Error unliking post:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to unlike post',
-      },
-      { status: 500 }
-    );
+    logger.error('Error unliking post', 'postLike', error instanceof Error ? error : undefined);
+    return NextResponse.json({ success: false, error: 'Failed to unlike post' }, { status: 500 });
   }
 }

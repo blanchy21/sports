@@ -300,7 +300,11 @@ export class HiveEngineClient {
 
       const data = await response.json();
       return data.result || null;
-    } catch {
+    } catch (error) {
+      console.warn(
+        '[HiveEngine] Failed to get latest block info:',
+        error instanceof Error ? error.message : error
+      );
       return null;
     }
   }
@@ -312,7 +316,11 @@ export class HiveEngineClient {
     try {
       const blockInfo = await this.getLatestBlockInfo();
       return blockInfo !== null;
-    } catch {
+    } catch (error) {
+      console.warn(
+        '[HiveEngine] Availability check failed:',
+        error instanceof Error ? error.message : error
+      );
       return false;
     }
   }

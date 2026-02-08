@@ -11,6 +11,7 @@ import crypto from 'crypto';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { getHiveAvatarUrl } from '@/lib/utils/avatar';
+import { logger } from '@/lib/logger';
 
 const SESSION_COOKIE_NAME = 'sb_session';
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
@@ -77,7 +78,12 @@ export function decryptSession(encrypted: string): SessionData | null {
     }
 
     return result.data;
-  } catch {
+  } catch (error) {
+    // Log unexpected decryption failures (not tampered/expired cookies which are routine)
+    const msg = error instanceof Error ? error.message : '';
+    if (!msg.includes('Unsupported state') && !msg.includes('unable to authenticate')) {
+      logger.warn('Session decryption failed unexpectedly', 'session-auth', { error: msg });
+    }
     return null;
   }
 }
@@ -170,7 +176,13 @@ export async function getAuthenticatedUserFromSession(
           };
         }
       }
-    } catch {
+    } catch (error) {
+      logger.error(
+        'Failed to fetch profile from Firestore',
+        'session-auth',
+        error instanceof Error ? error : undefined,
+        { userId }
+      );
       // Fall through to basic response
     }
   }

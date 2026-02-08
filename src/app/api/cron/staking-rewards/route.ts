@@ -92,10 +92,15 @@ async function fetchAllStakers(): Promise<StakerInfo[]> {
       const result = await getHiveEngineClient().find<{
         account: string;
         stake: string;
-      }>('tokens', 'balances', {
-        symbol: 'MEDALS',
-        stake: { $gt: '0' },
-      }, { limit, offset });
+      }>(
+        'tokens',
+        'balances',
+        {
+          symbol: 'MEDALS',
+          stake: { $gt: '0' },
+        },
+        { limit, offset }
+      );
 
       if (!result || result.length === 0) {
         hasMore = false;
@@ -132,10 +137,7 @@ export async function GET() {
   try {
     // Verify request authorization
     if (!(await verifyCronRequest())) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const weekId = getWeekId();
@@ -159,7 +161,7 @@ export async function GET() {
     const distributionResult = calculateStakingRewards(stakers);
     console.log(
       `[Staking Rewards] Calculated rewards: ${distributionResult.eligibleStakerCount} eligible, ` +
-      `${distributionResult.weeklyPool} MEDALS pool`
+        `${distributionResult.weeklyPool} MEDALS pool`
     );
 
     // Check rewards account balance
@@ -173,18 +175,11 @@ export async function GET() {
       0
     );
 
-    const balanceCheck = validateRewardsBalance(
-      rewardsBalance,
-      totalToDistribute
-    );
+    const balanceCheck = validateRewardsBalance(rewardsBalance, totalToDistribute);
 
     if (!balanceCheck.valid) {
       console.warn(`[Staking Rewards] ${balanceCheck.message}`);
-      await storeDistributionRecord(
-        distributionResult,
-        'pending',
-        balanceCheck.message
-      );
+      await storeDistributionRecord(distributionResult, 'pending', balanceCheck.message);
 
       return NextResponse.json({
         success: true,
@@ -232,7 +227,12 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error:
+          process.env.NODE_ENV === 'production'
+            ? 'An internal error occurred'
+            : error instanceof Error
+              ? error.message
+              : 'Unknown error',
         duration: Date.now() - startTime,
       },
       { status: 500 }
@@ -247,10 +247,7 @@ export async function POST(request: Request) {
   try {
     // Verify request authorization
     if (!(await verifyCronRequest())) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json().catch(() => ({}));

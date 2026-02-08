@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import type { Notification, NotificationContextType } from './notifications/types';
 import { useNotificationStorage } from './notifications/useNotificationStorage';
@@ -44,8 +44,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
           body: JSON.stringify(markAll ? { markAllRead: true } : { notificationIds }),
         });
-      } catch {
-        // Best-effort server sync
+      } catch (error) {
+        // Best-effort server sync -- log non-network errors for diagnosability
+        if (!(error instanceof TypeError && /failed to fetch/i.test((error as Error).message))) {
+          console.warn('[NotificationContext] Failed to sync notification read status:', error);
+        }
       }
     },
     []
@@ -71,7 +74,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }, [isSoftUser, user?.id, markSoftNotificationsAsRead, setNotifications]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
   return (
     <NotificationContext.Provider

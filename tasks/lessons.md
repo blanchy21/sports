@@ -131,3 +131,75 @@ Use a two-step approach:
 
 ### Rule
 **Guard async singleton initialization with a shared promise.** Store the in-flight promise and return it to subsequent callers. Clear on error to allow retry.
+
+---
+
+## Every API endpoint that mutates data must have auth + CSRF
+
+**Date:** 2026-02-08
+**Severity:** Critical — found 3 endpoints missing auth entirely
+
+### Problem
+Multiple mutation endpoints (`/api/monitoring`, `/api/posts/[id]/like`, admin curators/trigger-cron) were either unauthenticated or missing CSRF protection. Easy to miss when new routes are added.
+
+### Rule
+**Every POST/PUT/DELETE route must have: (1) `getAuthenticatedUserFromSession` check, (2) `withCsrfProtection` wrapper.** No exceptions. Check both when reviewing new API routes.
+
+---
+
+## Hive vote weight accepts negative values for downvotes
+
+**Date:** 2026-02-08
+**Severity:** Critical — downvotes were completely broken
+
+### Problem
+`createVoteOperation` validated `weight < 0` as invalid, but `useVoting.downvote()` correctly passes negative weight. Every downvote silently failed.
+
+### Rule
+**Hive vote weight range is -100 to 100 (percentage), mapping to -10000 to 10000 basis points.** Always allow negative weights for downvotes.
+
+---
+
+## Trending sort must penalize age, not reward it
+
+**Date:** 2026-02-08
+**Severity:** Critical — trending feed showed stale content
+
+### Problem
+The formula `net_votes * Math.log(age)` rewards older posts because log(age) grows. Should use time-decay: `votes / pow(age + 2, 1.5)`.
+
+### Rule
+**Trending = engagement / time_decay.** Use HN-style gravity: `score / pow(hours + 2, 1.5)`.
+
+---
+
+## Never return `success: true` on error
+
+**Date:** 2026-02-08
+**Severity:** High — hides production failures
+
+### Problem
+Metrics tracking and crypto prices routes returned `success: true` on internal errors to "not disrupt UX." This made failures invisible.
+
+### Rule
+**If an operation fails, return `success: false`.** Let the client decide how to handle it. Silent "success" on error makes debugging impossible.
+
+---
+
+## Array.sort() mutates in-place — always spread first
+
+**Date:** 2026-02-08
+**Severity:** Medium — caused subtle React re-render bugs
+
+### Rule
+**Always use `[...array].sort()` instead of `array.sort()`.** In-place mutation breaks React's reference equality checks and can cause stale UI.
+
+---
+
+## Redis KEYS command blocks the server — use SCAN
+
+**Date:** 2026-02-08
+**Severity:** High — could block Redis in production
+
+### Rule
+**Never use Redis `KEYS` in application code.** Use `SCAN` with cursor-based iteration for non-blocking pattern matching.

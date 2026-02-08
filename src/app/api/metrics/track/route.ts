@@ -14,6 +14,7 @@ import {
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
+import { logger } from '@/lib/logger';
 
 const trackSchema = z.object({
   type: z.enum(['view', 'vote', 'comment', 'share']),
@@ -101,12 +102,12 @@ export async function POST(request: NextRequest) {
       tracked: { type, author, permlink },
     });
   } catch (error) {
-    console.error('Error tracking metrics:', error);
+    logger.error(
+      'Metrics tracking failed',
+      'metricsTrack',
+      error instanceof Error ? error : undefined
+    );
 
-    // Don't expose internal errors - metrics tracking shouldn't break the app
-    return NextResponse.json({
-      success: true, // Return success even on error to not disrupt UX
-      note: 'Tracking may have been delayed',
-    });
+    return NextResponse.json({ success: false, error: 'Tracking failed' }, { status: 500 });
   }
 }

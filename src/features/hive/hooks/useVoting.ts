@@ -196,7 +196,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
                 stars > 0
                   ? {
                       voter: username,
-                      weight: 0,
+                      weight: voteWeightPercentage * 100,
                       rshares: '0',
                       percent: percentBasisPoints,
                       reputation: '',

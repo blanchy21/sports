@@ -88,9 +88,6 @@ export async function postComment(commentData: CommentData): Promise<CommentResu
   try {
     workerBeeLog('[postComment] Starting comment publication with Wax', undefined, commentData);
 
-    // Initialize WorkerBee client (for future use with real-time features)
-    await initializeWorkerBeeClient();
-
     // Create comment operation using Wax helpers
     const operation = createCommentOperation({
       author: commentData.author,
@@ -311,23 +308,24 @@ export function buildCommentTree(
   rootAuthor: string,
   rootPermlink: string
 ): CommentTree[] {
-  // Create a map for quick lookup
-  const commentMap = new Map<string, HiveComment>();
-  comments.forEach((comment) => {
-    const key = `${comment.author}/${comment.permlink}`;
-    commentMap.set(key, comment);
-  });
+  // Build parent->children index for O(1) lookups instead of O(n) filter per level
+  const childrenByParent = new Map<string, HiveComment[]>();
+  for (const comment of comments) {
+    const parentKey = `${comment.parent_author}/${comment.parent_permlink}`;
+    const existing = childrenByParent.get(parentKey);
+    if (existing) {
+      existing.push(comment);
+    } else {
+      childrenByParent.set(parentKey, [comment]);
+    }
+  }
 
-  // Build tree recursively
   function buildTree(
     parentAuthor: string,
     parentPermlink: string,
     depth: number = 0
   ): CommentTree[] {
-    const children = comments.filter(
-      (comment) =>
-        comment.parent_author === parentAuthor && comment.parent_permlink === parentPermlink
-    );
+    const children = childrenByParent.get(`${parentAuthor}/${parentPermlink}`) || [];
 
     return children.map((comment) => ({
       comment,

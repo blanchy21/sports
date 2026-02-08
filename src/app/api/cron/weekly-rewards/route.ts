@@ -50,10 +50,7 @@ async function isAlreadyProcessed(weekId: string): Promise<boolean> {
 /**
  * Mark the week as processed
  */
-async function markAsProcessed(
-  weekId: string,
-  summary: Record<string, unknown>
-): Promise<void> {
+async function markAsProcessed(weekId: string, summary: Record<string, unknown>): Promise<void> {
   if (!db) return;
   try {
     const docRef = doc(collection(db, 'weekly-rewards-processed'), weekId);
@@ -123,18 +120,16 @@ export async function GET() {
         amount: d.amount,
         postId: d.winner.postId,
       })),
-      leaderboardSummary: Object.entries(leaderboards.leaderboards).map(
-        ([category, entries]) => ({
-          category,
-          entriesCount: entries.length,
-          topEntry: entries[0]
-            ? {
-                account: entries[0].account,
-                value: entries[0].value,
-              }
-            : null,
-        })
-      ),
+      leaderboardSummary: Object.entries(leaderboards.leaderboards).map(([category, entries]) => ({
+        category,
+        entriesCount: entries.length,
+        topEntry: entries[0]
+          ? {
+              account: entries[0].account,
+              value: entries[0].value,
+            }
+          : null,
+      })),
     };
 
     // Mark as processed
@@ -154,7 +149,12 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error:
+          process.env.NODE_ENV === 'production'
+            ? 'An internal error occurred'
+            : error instanceof Error
+              ? error.message
+              : 'Unknown error',
         duration: Date.now() - startTime,
       },
       { status: 500 }

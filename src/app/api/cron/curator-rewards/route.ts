@@ -99,11 +99,13 @@ async function saveProcessedRewards(
       await updateDoc(docRef, {
         processedVoteIds: arrayUnion(...processedVoteIds),
         curatorCounts: Object.fromEntries(curatorCounts),
-        rewards: arrayUnion(...rewards.map((r) => ({
-          ...r,
-          voteTimestamp: r.voteTimestamp.toISOString(),
-          processedAt: r.processedAt.toISOString(),
-        }))),
+        rewards: arrayUnion(
+          ...rewards.map((r) => ({
+            ...r,
+            voteTimestamp: r.voteTimestamp.toISOString(),
+            processedAt: r.processedAt.toISOString(),
+          }))
+        ),
         lastUpdated: new Date().toISOString(),
       });
     } else {
@@ -343,7 +345,12 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error:
+          process.env.NODE_ENV === 'production'
+            ? 'An internal error occurred'
+            : error instanceof Error
+              ? error.message
+              : 'Unknown error',
         duration: Date.now() - startTime,
       },
       { status: 500 }

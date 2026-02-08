@@ -105,9 +105,17 @@ const STRICT_CONFIG = {
  */
 export function sanitizeHtml(dirty: string, strict = false): string {
   if (typeof window === 'undefined') {
-    // Server-side: return empty or basic text
-    // DOMPurify requires DOM, so we strip all HTML on server
-    return dirty.replace(/<[^>]*>/g, '');
+    // Server-side: strip HTML tags and decode entities.
+    // Multi-pass to handle nested/malformed tags that simple regex misses.
+    let text = dirty;
+    let prev = '';
+    while (text !== prev) {
+      prev = text;
+      text = text.replace(/<[^>]*>/g, '');
+    }
+    // Also strip any remaining event handler patterns as defense-in-depth
+    text = text.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+    return text;
   }
 
   const config = strict ? STRICT_CONFIG : DEFAULT_CONFIG;
@@ -499,15 +507,23 @@ export function validateImageUrl(url: string): {
   // Additional image-specific checks
   const parsed = new URL(result.url!);
 
-  // Block localhost and private IPs in production
+  // Block localhost, private IPs, and IPv6 private ranges in production
   const hostname = parsed.hostname.toLowerCase();
-  if (
+  const isPrivate =
     hostname === 'localhost' ||
+    hostname === '0.0.0.0' ||
     hostname === '127.0.0.1' ||
+    hostname === '::1' ||
+    hostname === '[::1]' ||
     hostname.startsWith('192.168.') ||
     hostname.startsWith('10.') ||
-    hostname.startsWith('172.16.')
-  ) {
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+    hostname.startsWith('fd') ||
+    hostname.startsWith('fe80') ||
+    hostname.startsWith('fc') ||
+    /^0x/i.test(hostname) ||
+    /^0[0-7]+\./.test(hostname);
+  if (isPrivate) {
     if (process.env.NODE_ENV === 'production') {
       return { valid: false, error: 'Private URLs not allowed' };
     }

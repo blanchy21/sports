@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { createRequestContext, forbiddenError } from '@/lib/api/response';
 import { isAdminAccount } from '@/lib/admin/config';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { withCsrfProtection } from '@/lib/api/csrf';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,67 +24,71 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  const user = await getAuthenticatedUserFromSession(request);
-  if (!user || !isAdminAccount(user.username)) {
-    return forbiddenError('Admin access required', ctx.requestId);
-  }
+    const user = await getAuthenticatedUserFromSession(request);
+    if (!user || !isAdminAccount(user.username)) {
+      return forbiddenError('Admin access required', ctx.requestId);
+    }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
-  }
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
+    }
 
-  const parseResult = bodySchema.safeParse(body);
-  if (!parseResult.success) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: parseResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
-      },
-      { status: 400 }
-    );
-  }
+    const parseResult = bodySchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: parseResult.error.issues
+            .map((i) => `${i.path.join('.')}: ${i.message}`)
+            .join('; '),
+        },
+        { status: 400 }
+      );
+    }
 
-  const { cronType } = parseResult.data;
+    const { cronType } = parseResult.data;
 
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) {
-    return NextResponse.json(
-      { success: false, error: 'CRON_SECRET not configured on server' },
-      { status: 500 }
-    );
-  }
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      return NextResponse.json(
+        { success: false, error: 'CRON_SECRET not configured on server' },
+        { status: 500 }
+      );
+    }
 
-  try {
-    const origin = request.nextUrl.origin;
-    const cronUrl = `${origin}/api/cron/${cronType}`;
+    try {
+      const origin = request.nextUrl.origin;
+      const cronUrl = `${origin}/api/cron/${cronType}`;
 
-    ctx.log.info('Triggering cron job', { cronType, url: cronUrl, triggeredBy: user.username });
+      ctx.log.info('Triggering cron job', { cronType, url: cronUrl, triggeredBy: user.username });
 
-    const cronResponse = await fetch(cronUrl, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${cronSecret}`,
-        'Content-Type': 'application/json',
-      },
-    });
+      const cronResponse = await fetch(cronUrl, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${cronSecret}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-    const cronData = await cronResponse.json();
+      const cronData = await cronResponse.json();
 
-    return NextResponse.json({
-      success: cronResponse.ok,
-      cronType,
-      statusCode: cronResponse.status,
-      result: cronData,
-      triggeredBy: user.username,
-      triggeredAt: new Date().toISOString(),
-    });
-  } catch (error) {
-    ctx.log.error('Failed to trigger cron job', error, { cronType });
-    return ctx.handleError(error);
-  }
+      return NextResponse.json({
+        success: cronResponse.ok,
+        cronType,
+        statusCode: cronResponse.status,
+        result: cronData,
+        triggeredBy: user.username,
+        triggeredAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      ctx.log.error('Failed to trigger cron job', error, { cronType });
+      return ctx.handleError(error);
+    }
+  });
 }

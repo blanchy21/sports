@@ -131,10 +131,12 @@ async function sendToExternalService(report: ErrorReport): Promise<void> {
     }
   } else if (process.env.NODE_ENV === 'production') {
     // Structured JSON logging for production without Sentry
-    console.error(JSON.stringify({
-      type: 'error_report',
-      ...report,
-    }));
+    console.error(
+      JSON.stringify({
+        type: 'error_report',
+        ...report,
+      })
+    );
   }
 }
 
@@ -165,8 +167,8 @@ export function reportErrorBoundary(
   }
 
   // Send to external service in production
-  sendToExternalService(report).catch(() => {
-    // Silently fail if reporting fails
+  sendToExternalService(report).catch((reportingError) => {
+    console.error('[CRITICAL] Error reporting failed:', reportingError);
   });
 }
 
@@ -194,18 +196,15 @@ export function reportError(
     console.error(formatErrorReport(report));
   }
 
-  sendToExternalService(report).catch(() => {
-    // Silently fail if reporting fails
+  sendToExternalService(report).catch((reportingError) => {
+    console.error('[CRITICAL] Error reporting failed:', reportingError);
   });
 }
 
 /**
  * Report a warning (non-fatal issue)
  */
-export function reportWarning(
-  message: string,
-  context: Partial<ErrorContext> = {}
-): void {
+export function reportWarning(message: string, context: Partial<ErrorContext> = {}): void {
   reportError(message, context, 'warning');
 }
 
@@ -234,9 +233,7 @@ export function setupGlobalErrorHandlers(): void {
 
   // Handle unhandled promise rejections
   window.addEventListener('unhandledrejection', (event) => {
-    const error = event.reason instanceof Error
-      ? event.reason
-      : new Error(String(event.reason));
+    const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
 
     reportError(error, { action: 'Unhandled Promise Rejection' }, 'error');
   });
