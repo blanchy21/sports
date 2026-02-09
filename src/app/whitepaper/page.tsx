@@ -204,7 +204,7 @@ export default function WhitepaperPage() {
                 tiered benefits.
               </span>,
               <span key="ts">
-                <strong>Token Sale:</strong> 10 million MEDALS at 0.02 Hive to raise up to 200,000
+                <strong>Token Sale:</strong> 10 million MEDALS at 0.04 Hive to raise up to 400,000
                 Hive.
               </span>,
             ]}

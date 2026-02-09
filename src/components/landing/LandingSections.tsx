@@ -810,7 +810,7 @@ export default function LandingSections() {
               TOKEN PRESALE
             </div>
             <h3 className="mb-2 text-2xl font-bold">
-              <AnimatedCounter end={10} suffix="M" /> MEDALS at 0.02 HIVE each
+              <AnimatedCounter end={10} suffix="M" /> MEDALS at 0.04 HIVE each
             </h3>
             <p className="mb-6 text-muted-foreground">
               Get in early. Stake for rewards and unlock premium features.
