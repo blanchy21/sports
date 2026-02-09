@@ -98,7 +98,7 @@ export default function WhitepaperPage() {
         <div className="mx-auto max-w-4xl">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
             <FileText className="h-4 w-4" />
-            Version 2.0 &middot; January 2026
+            Version 3.0 &middot; February 2026
           </div>
           <h1 className="mb-4 text-5xl font-black tracking-tight sm:text-6xl">
             <span className="text-foreground">SPORTSBLOCK</span>{' '}
@@ -118,6 +118,9 @@ export default function WhitepaperPage() {
             </span>
             <span>
               <strong>X:</strong> @sportsblockinfo
+            </span>
+            <span>
+              <strong>Discord:</strong> discord.gg/rn5wpX7g8X
             </span>
           </div>
         </div>
@@ -141,6 +144,7 @@ export default function WhitepaperPage() {
               'Roadmap',
               'Team',
               'Competitive Landscape',
+              'Transparency',
               'Risks & Disclaimers',
             ].map((item) => (
               <a
@@ -167,7 +171,7 @@ export default function WhitepaperPage() {
         <section id="executive-summary">
           <SectionHeading>Executive Summary</SectionHeading>
           <Paragraph>
-            Sportsblock is a decentralized platform built as a layer-2 solution on the Hive
+            SportsBlock is a decentralized platform built as a layer-2 solution on the Hive
             blockchain, designed to foster a vibrant global sports community. By leveraging
             Hive&apos;s fast, fee-less transactions and social reward mechanisms, SportsBlock
             enables users to create, curate, and engage with sports-related content while earning
@@ -204,8 +208,8 @@ export default function WhitepaperPage() {
                 tiered benefits.
               </span>,
               <span key="ts">
-                <strong>Token Sale:</strong> 10 million MEDALS at 0.04 Hive to raise up to 400,000
-                Hive.
+                <strong>Token Sale:</strong> 10 million MEDALS at 0.04 HIVE per MEDAL to raise up to
+                400,000 HIVE (~$120,000 USD).
               </span>,
             ]}
           />
@@ -329,18 +333,14 @@ export default function WhitepaperPage() {
           <DataTable
             headers={['Level', 'Earnings', 'Engagement']}
             rows={[
-              ['Getting Started', '$0.01 - $0.50', '1-5 upvotes'],
-              ['Building Reputation', '$0.50 - $3', '5-20 upvotes'],
-              ['Established Creator', '$3 - $10', '20-50 upvotes'],
-              ['Top Contributor', '$5 - $10+', '50+ upvotes + curation'],
+              ['Getting Started', '$0.50 - $3', '10-30 upvotes'],
+              ['Building Reputation', '$5 - $25', '50-150 upvotes'],
+              ['Established Creator', '$30 - $100', '200-500 upvotes'],
+              ['Top Contributor', '$150 - $300+', '1000+ upvotes'],
             ]}
           />
           <Paragraph>
-            <em>
-              Rewards are paid in HIVE &amp; HBD cryptocurrency. Earnings vary based on community
-              size, curation support, and content quality. Early users may earn less as the
-              community grows.
-            </em>
+            <em>Rewards are paid in HIVE &amp; HBD cryptocurrency. Based on real user earnings.</em>
           </Paragraph>
         </section>
 
@@ -354,10 +354,10 @@ export default function WhitepaperPage() {
           <DataTable
             headers={['Tier', 'MEDALS Required', 'Benefits']}
             rows={[
-              ['Bronze', '2,500', 'Bronze badge, Community access'],
-              ['Silver', '10,000', 'Silver badge, Priority curation, Early access to features'],
-              ['Gold', '25,000', 'Exclusive contests, Analytics dashboard, Gold badge'],
-              ['Platinum', '100,000', 'Ad-free experience, Boosted visibility, VIP support'],
+              ['Bronze', '1,000', 'Ad-free experience, Bronze badge'],
+              ['Silver', '5,000', 'Priority curation, Early access to features'],
+              ['Gold', '25,000', 'Exclusive contests, Analytics dashboard'],
+              ['Platinum', '100,000', 'Boosted visibility, VIP support'],
             ]}
           />
         </section>
@@ -384,6 +384,20 @@ export default function WhitepaperPage() {
               </span>,
             ]}
           />
+          <SubHeading>Token Sale</SubHeading>
+          <BulletList
+            items={[
+              <span key="al">
+                <strong>Allocation:</strong> 10 million MEDALS at 0.04 HIVE per MEDAL
+              </span>,
+              <span key="ft">
+                <strong>Fundraise Target:</strong> Up to 400,000 HIVE (~$120,000 USD)
+              </span>,
+              <span key="av">
+                <strong>Available on:</strong> Tribaldex
+              </span>,
+            ]}
+          />
           <SubHeading>Presale Proceeds Allocation</SubHeading>
           <BulletList
             items={[
@@ -391,7 +405,7 @@ export default function WhitepaperPage() {
                 <strong>Batch 1:</strong> Seed Tribaldex liquidity pool.
               </span>,
               <span key="b2">
-                <strong>Batch 2:</strong> Powered up to @sportsblocks for curation.
+                <strong>Batch 2:</strong> Powered up to @sportsblock for curation.
               </span>,
               <span key="b3">
                 <strong>Batch 3:</strong> Exchanged to HBD and staked for ~15-20% APY interest.
@@ -402,30 +416,42 @@ export default function WhitepaperPage() {
           <Paragraph>
             Emissions are phased to bootstrap growth, with early years focusing on sales and
             incentives. Undistributed tokens remain unminted until needed, ensuring supply stays
-            under cap.
+            under cap. The Year 1 maximum emission cap of 20M accounts for the one-time token sale
+            allocation. Unused tokens from Years 1&ndash;3 will be permanently burned.
           </Paragraph>
           <DataTable
             headers={['Category', 'Year 1', 'Year 2', 'Year 3', 'Years 4-50']}
             rows={[
-              ['Founders (Staked)', '4M', '1M', '1M', '2M'],
-              ['Collaborators', '0.7M', '0.8M', '0.8M', '0.85M'],
-              ['Staking Rewards', '1.5M', '1.5M', '2M', '3M'],
+              ['Founders (Staked)', '4M', '1M', '2M', '1.805M'],
+              ['Collaborators', '0.652M', '0.8M', '0.8M', '0.85M'],
+              ['Staking Rewards', '1.56M', '2.08M', '2.6M', '3.12M'],
               ['Curator Rewards', '1.825M', '1.825M', '1.825M', '2.7375M'],
               ['Content Rewards', '0.78M', '0.78M', '0.78M', '0.885M'],
               ['Marketing', '0.5M', '0.5M', '0.5M', '0.5M'],
               ['Token Sale', '10M', '-', '-', '-'],
-              ['Total Emitted', '19.305M', '6.405M', '6.905M', '9.973M'],
+              ['Total Emitted', '19.317M', '6.985M', '8.505M', '9.898M'],
+            ]}
+          />
+          <SubHeading>Maximum Emissions</SubHeading>
+          <DataTable
+            headers={['Year', 'Maximum Emissions']}
+            rows={[
+              ['Year 1', 'Up to 20,000,000 (includes one-time token sale)'],
+              ['Year 2', 'Up to 9,000,000'],
+              ['Year 3', 'Up to 10,000,000'],
+              ['Year 4+', 'Up to 10,000,000 / year'],
             ]}
           />
           <SubHeading>Weekly Content Reward Categories</SubHeading>
-          <BulletList
-            items={[
-              'Most external views: 5,000-6,000 MEDALS',
-              'Most viewed post: 3,000 MEDALS',
-              'Most comments made: 3,000 MEDALS',
-              'Most engaged post: 2,000 MEDALS',
-              'Post of the week: 2,000 MEDALS',
-              'Best newcomer (Year 4+): 1,000 MEDALS',
+          <DataTable
+            headers={['Category', 'Weekly MEDALS']}
+            rows={[
+              ['Most External Views', '5,000 - 6,000'],
+              ['Most Viewed Post', '3,000'],
+              ['Most Comments Made', '3,000'],
+              ['Most Engaged Post', '2,000'],
+              ['Post of the Week', '2,000'],
+              ['Best Newcomer (Year 4+)', '1,000'],
             ]}
           />
           <SubHeading>Curator Selection Process</SubHeading>
@@ -446,25 +472,6 @@ export default function WhitepaperPage() {
             This approach ensures curators are accountable community members with aligned
             incentives, not anonymous actors. Curator performance is monitored, and the team
             reserves the right to replace underperforming or inactive curators.
-          </Paragraph>
-
-          <SubHeading>Community Participation on Hive</SubHeading>
-          <Paragraph>
-            SportsBlock is built on the principle that a thriving community is a two-way
-            relationship. We invest heavily in content rewards, curation, and platform development
-            to support our members, and in return we ask that community members contribute to the
-            sustainability of the ecosystem.
-          </Paragraph>
-          <Paragraph>
-            All posts published to the SportsBlock community on Hive are required to set
-            @sportsblock as a 5% beneficiary. This small contribution is directed back into the
-            platform&apos;s operations, curation power, and token buybacks, ensuring the community
-            continues to grow and reward its members over the long term.
-          </Paragraph>
-          <Paragraph>
-            Only posts that include the 5% beneficiary will be eligible for curation from the
-            SportsBlock team. This policy ensures that everyone who benefits from the community also
-            contributes to its success. The more you put in, the more you get back.
           </Paragraph>
 
           <SubHeading>Founder Token Vesting Schedule</SubHeading>
@@ -493,6 +500,32 @@ export default function WhitepaperPage() {
             tokens. This 2-year lock + 2-year vest structure ensures founders remain committed
             through the critical growth phase.
           </Paragraph>
+
+          <SubHeading>5% Beneficiary Rule</SubHeading>
+          <Paragraph>
+            All posts made to the SportsBlock community (hive-115814) carry a 5% beneficiary to the
+            @sportsblock account. This is automatically applied to all posts published through our
+            platform.
+          </Paragraph>
+          <Paragraph>This 5% beneficiary serves two critical purposes:</Paragraph>
+          <BulletList
+            items={[
+              <span key="rc">
+                <strong>Running Costs:</strong> Helps fund the ongoing development, hosting, and
+                maintenance of the SportsBlock platform.
+              </span>,
+              <span key="ag">
+                <strong>Account Growth:</strong> Powers up the @sportsblock account for increased
+                curation, which in turn supports the community by providing larger upvotes to
+                quality content.
+              </span>,
+            ]}
+          />
+          <Paragraph>
+            This is a standard practice across many Hive communities and ensures the long-term
+            sustainability of the project. All revenue is fed back into the community for running
+            costs and supporting the MEDALS token price.
+          </Paragraph>
         </section>
 
         {/* Deflationary Mechanism */}
@@ -513,12 +546,27 @@ export default function WhitepaperPage() {
               '50% of revenue buys MEDALS from Tribaldex and stakes them to @medals-burn',
               'Locked balance earns staking rewards, compounding removal from circulation',
               '5% contribution from post earnings automatically taken as beneficiary rewards',
-              'Split: 50% buyback/stake, 30% operations, 20% HBD reserves',
+              'Remaining revenue split between operations and HBD reserves',
+            ]}
+          />
+          <SubHeading>Staking</SubHeading>
+          <BulletList items={['Initial target APR: 10%', 'Paid weekly in MEDALS']} />
+          <Paragraph>
+            APR reviewed annually based on supply growth, staking ratio, and revenue.
+          </Paragraph>
+          <SubHeading>Curation &amp; Content Rewards</SubHeading>
+          <BulletList
+            items={[
+              'Team-appointed curators handpicked from trusted, long-term Hive community members',
+              'Hard caps on votes per day (max 5 per curator), weekly bot funding capped at 35,000 MEDALS',
+              'Each curator vote distributes up to 100 MEDALS to quality content',
+              'Metrics-based rewards with manual override',
+              'Abuse results in restrictions or removal',
             ]}
           />
           <Paragraph>
-            <strong>Governance Post-Year 1:</strong> Introduce DAO proposals on Hive for adjustments
-            (e.g., emission reductions, new categories). Staked MEDALS grant voting power.
+            Rewards activate 2&ndash;4 months post-launch, once platform readiness is confirmed. All
+            metrics-based rewards can be overridden or withheld in cases of abuse.
           </Paragraph>
         </section>
 
@@ -603,6 +651,24 @@ export default function WhitepaperPage() {
           </Paragraph>
         </section>
 
+        {/* Transparency */}
+        <section id="transparency">
+          <SectionHeading>Transparency</SectionHeading>
+          <BulletList
+            items={[
+              'All project wallets disclosed publicly',
+              'Regular financial and development reports',
+              'Annual tokenomics review with advance notice of any changes',
+              'All governance and business issues communicated to the community',
+            ]}
+          />
+          <Paragraph>
+            The project will be run as a centralized project. All work will be automated where
+            possible and development will be geared towards making the project run as smoothly and
+            efficiently as possible going forward.
+          </Paragraph>
+        </section>
+
         {/* Risks */}
         <section id="risks---disclaimers">
           <SectionHeading>Risks and Disclaimers</SectionHeading>
@@ -629,6 +695,11 @@ export default function WhitepaperPage() {
               </span>,
             ]}
           />
+          <Paragraph>
+            MEDALS is a utility token for community participation. This is a beta tokenomics model
+            and is subject to change. All details will be revised on a yearly basis and changes
+            communicated to the community.
+          </Paragraph>
         </section>
 
         {/* Footer */}
