@@ -1,4 +1,4 @@
-import { SPORTS_ARENA_CONFIG, initializeWorkerBeeClient } from './client';
+import { SPORTS_ARENA_CONFIG, MUTED_AUTHORS, initializeWorkerBeeClient } from './client';
 import { makeHiveApiCall } from './api';
 import type { ITransaction } from '@hiveio/wax';
 import {
@@ -91,6 +91,10 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
 export async function publishPost(postData: PostData): Promise<PublishResult> {
   try {
     workerBeeLog('publishPost start', undefined, postData);
+
+    if (MUTED_AUTHORS.includes(postData.author)) {
+      return { success: false, error: 'This account has been muted and cannot post.' };
+    }
 
     if (!aioha) {
       logError('publishPost: Aioha instance unavailable', undefined, undefined, aioha);
@@ -203,6 +207,10 @@ export async function publishComment(
 ): Promise<PublishResult> {
   try {
     workerBeeLog('publishComment start', undefined, commentData);
+
+    if (MUTED_AUTHORS.includes(commentData.author)) {
+      return { success: false, error: 'This account has been muted and cannot comment.' };
+    }
 
     // Use provided instance or fall back to default
     const aiohaToUse = aiohaInstance || (await import('@/lib/aioha/config')).aioha;
