@@ -144,32 +144,32 @@ export async function GET() {
       console.warn('[Analytics API] Error fetching communityStats:', error);
     }
 
-    // Fallback: If Firestore data is empty or stale (all zeros), compute analytics from Hive posts
+    // Fallback: Recompute any empty sections from Hive rather than requiring ALL to be empty
     const hasMeaningfulSportsData = analytics.trendingSports.some((s) => s.posts > 0);
     const hasMeaningfulTopicsData = analytics.trendingTopics.some((t) => t.posts > 0);
     const hasMeaningfulAuthorsData = analytics.topAuthors.length > 0;
     const hasMeaningfulStats = analytics.communityStats.totalPosts > 0;
 
-    const isFirestoreEmptyOrStale =
-      !hasMeaningfulSportsData &&
-      !hasMeaningfulTopicsData &&
-      !hasMeaningfulAuthorsData &&
+    const needsRecompute =
+      !hasMeaningfulSportsData ||
+      !hasMeaningfulTopicsData ||
+      !hasMeaningfulAuthorsData ||
       !hasMeaningfulStats;
 
-    if (isFirestoreEmptyOrStale) {
-      console.log('[Analytics API] Firestore empty or stale, computing analytics from Hive...');
+    if (needsRecompute) {
+      console.log('[Analytics API] Some Firestore sections empty, computing from Hive...');
       const [posts, bitesResult] = await Promise.all([
         fetchPostsViaInternalApi(20),
         fetchSportsbites({ limit: 200 }),
       ]);
       if (posts.length > 0) {
         const computedAnalytics = await getAnalyticsData(posts, undefined, bitesResult.sportsbites);
-        analytics.trendingSports = computedAnalytics.trendingSports;
-        analytics.trendingTopics = computedAnalytics.trendingTopics;
-        analytics.topAuthors = computedAnalytics.topAuthors;
-        analytics.communityStats = computedAnalytics.communityStats;
+        if (!hasMeaningfulSportsData) analytics.trendingSports = computedAnalytics.trendingSports;
+        if (!hasMeaningfulTopicsData) analytics.trendingTopics = computedAnalytics.trendingTopics;
+        if (!hasMeaningfulAuthorsData) analytics.topAuthors = computedAnalytics.topAuthors;
+        if (!hasMeaningfulStats) analytics.communityStats = computedAnalytics.communityStats;
         console.log(
-          `[Analytics API] Computed analytics from ${posts.length} posts and ${bitesResult.sportsbites.length} sportsbites`
+          `[Analytics API] Backfilled from ${posts.length} posts and ${bitesResult.sportsbites.length} sportsbites`
         );
       }
     }

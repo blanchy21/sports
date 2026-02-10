@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/update-analytics",
-      "schedule": "0 0 * * *"
+      "schedule": "0 */4 * * *"
     },
     {
       "path": "/api/cron/curator-rewards",

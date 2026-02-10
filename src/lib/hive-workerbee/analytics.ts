@@ -131,6 +131,7 @@ export function calculateTrendingTopics(posts: SportsblockPost[]): TrendingTopic
           !isSportCategory(tag) &&
           tag !== 'sportsblock' &&
           tag !== 'sportsarena' &&
+          tag !== 'hive-115814' &&
           tag.length > 1
         ) {
           tagCount[tag] = (tagCount[tag] || 0) + 1;
@@ -312,11 +313,21 @@ export async function getAnalyticsData(
 ) {
   const [topAuthors] = await Promise.all([calculateTopAuthors(posts, excludeUser)]);
 
-  // Use sportsbites-derived trending topics when available, fall back to long-form post tags
-  const trendingTopics =
-    sportsbites && sportsbites.length > 0
-      ? calculateSportsbitesTrendingTopics(sportsbites)
-      : calculateTrendingTopics(posts);
+  // Prefer sportsbite body hashtags; supplement with long-form post tags if < 5
+  let trendingTopics: TrendingTopic[] = [];
+  if (sportsbites && sportsbites.length > 0) {
+    trendingTopics = calculateSportsbitesTrendingTopics(sportsbites);
+  }
+  if (trendingTopics.length < 5) {
+    const postTopics = calculateTrendingTopics(posts);
+    const existingIds = new Set(trendingTopics.map((t) => t.id));
+    for (const topic of postTopics) {
+      if (!existingIds.has(topic.id)) {
+        trendingTopics.push(topic);
+        if (trendingTopics.length >= 5) break;
+      }
+    }
+  }
 
   return {
     trendingSports: calculateTrendingSports(posts),
