@@ -29,7 +29,7 @@ jest.mock('@/lib/hive-workerbee/client', () => ({
     COMMUNITY_ID: 'hive-115814',
     COMMUNITY_NAME: 'sportsblock',
     TAGS: ['sportsblock', 'hive-115814'],
-    DEFAULT_BENEFICIARIES: [{ account: 'sportsblock', weight: 2000 }],
+    DEFAULT_BENEFICIARIES: [{ account: 'sportsblock', weight: 500 }],
   },
   initializeWorkerBeeClient: jest.fn().mockResolvedValue({
     broadcast: jest.fn().mockResolvedValue({}),
@@ -62,7 +62,7 @@ jest.mock('@/lib/hive-workerbee/wax-helpers', () => ({
     percent_hbd: 10000,
     allow_votes: true,
     allow_curation_rewards: true,
-    extensions: [[0, { beneficiaries: [{ account: 'sportsblock', weight: 2000 }] }]],
+    extensions: [[0, { beneficiaries: [{ account: 'sportsblock', weight: 500 }] }]],
   })),
   checkResourceCreditsWax: jest.fn(),
 }));

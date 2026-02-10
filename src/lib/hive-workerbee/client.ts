@@ -37,7 +37,7 @@ export const SPORTS_ARENA_CONFIG = {
   DEFAULT_BENEFICIARIES: [
     {
       account: 'sportsblock',
-      weight: 2000, // 20% to platform (per MEDALS whitepaper)
+      weight: 500, // 5% to platform (per MEDALS whitepaper v4)
     },
   ],
 };

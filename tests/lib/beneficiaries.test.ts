@@ -1,6 +1,6 @@
 /**
  * Tests for the beneficiary system
- * Verifies that posts created via Sportsblock include the 20% platform beneficiary
+ * Verifies that posts created via Sportsblock include the 5% platform beneficiary
  */
 
 // Mock the WorkerBee client before importing
@@ -14,9 +14,9 @@ jest.mock('@/lib/hive-workerbee/client', () => ({
     DEFAULT_BENEFICIARIES: [
       {
         account: 'sportsblock',
-        weight: 2000 // 20% to platform (per MEDALS whitepaper)
-      }
-    ]
+        weight: 500, // 5% to platform (per MEDALS whitepaper v4)
+      },
+    ],
   },
   getWorkerBeeClient: jest.fn(),
   initializeWorkerBeeClient: jest.fn(),
@@ -38,11 +38,11 @@ import {
 
 describe('Beneficiary System', () => {
   describe('SPORTS_ARENA_CONFIG', () => {
-    it('should have 20% beneficiary weight for sportsblock', () => {
+    it('should have 5% beneficiary weight for sportsblock', () => {
       const beneficiaries = SPORTS_ARENA_CONFIG.DEFAULT_BENEFICIARIES;
       expect(beneficiaries).toHaveLength(1);
       expect(beneficiaries[0].account).toBe('sportsblock');
-      expect(beneficiaries[0].weight).toBe(2000); // 20% = 2000 basis points
+      expect(beneficiaries[0].weight).toBe(500); // 5% = 500 basis points
     });
   });
 
@@ -75,7 +75,7 @@ describe('Beneficiary System', () => {
       expect(options.extensions[0][0]).toBe(0);
       expect(options.extensions[0][1].beneficiaries).toHaveLength(1);
       expect(options.extensions[0][1].beneficiaries[0].account).toBe('sportsblock');
-      expect(options.extensions[0][1].beneficiaries[0].weight).toBe(2000);
+      expect(options.extensions[0][1].beneficiaries[0].weight).toBe(500);
     });
 
     it('should sort beneficiaries alphabetically', () => {
@@ -100,7 +100,7 @@ describe('Beneficiary System', () => {
         author: 'testuser',
         permlink: 'test-post-123',
         beneficiaries: [
-          { account: 'sportsblock', weight: 2000 },
+          { account: 'sportsblock', weight: 500 },
           { account: 'charity', weight: 500 },
         ],
       });

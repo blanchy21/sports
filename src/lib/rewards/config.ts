@@ -22,7 +22,7 @@ export const MEDALS_ACCOUNTS = {
  * Year 1 starts from platform launch date
  */
 export function getPlatformYear(): number {
-  const launchDate = new Date('2026-03-01'); // Platform launch: March 2026
+  const launchDate = new Date('2026-04-01'); // Platform launch: April 2026
   const now = new Date();
   const diffYears = Math.floor(
     (now.getTime() - launchDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
@@ -35,10 +35,10 @@ export function getPlatformYear(): number {
  * From MEDALS whitepaper: 30K (Y1) → 40K (Y2) → 50K (Y3) → 60K (Y4+)
  */
 export const WEEKLY_STAKING_REWARDS: Record<number, number> = {
-  1: 30000,  // Year 1: 30,000 MEDALS/week
-  2: 40000,  // Year 2: 40,000 MEDALS/week
-  3: 50000,  // Year 3: 50,000 MEDALS/week
-  4: 60000,  // Year 4+: 60,000 MEDALS/week
+  1: 30000, // Year 1: 30,000 MEDALS/week
+  2: 40000, // Year 2: 40,000 MEDALS/week
+  3: 50000, // Year 3: 50,000 MEDALS/week
+  4: 60000, // Year 4+: 60,000 MEDALS/week
 };
 
 /**

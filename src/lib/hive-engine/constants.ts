@@ -27,8 +27,8 @@ export const MEDALS_CONFIG = {
     REWARDS: 'sb.rewards',
   },
 
-  /** Beneficiary weight for posts (20% = 2000 in Hive terms, where 10000 = 100%) */
-  BENEFICIARY_WEIGHT: 2000,
+  /** Beneficiary weight for posts (5% = 500 in Hive terms, where 10000 = 100%) */
+  BENEFICIARY_WEIGHT: 500,
 
   /** Staking reward pools by year (MEDALS per week) */
   STAKING_POOLS: {
@@ -117,7 +117,13 @@ export const PREMIUM_FEATURES = {
   BRONZE: ['ad_free', 'bronze_badge'] as const,
   SILVER: ['ad_free', 'silver_badge', 'priority_curation'] as const,
   GOLD: ['ad_free', 'gold_badge', 'priority_curation', 'exclusive_contests'] as const,
-  PLATINUM: ['ad_free', 'platinum_badge', 'priority_curation', 'exclusive_contests', 'direct_support'] as const,
+  PLATINUM: [
+    'ad_free',
+    'platinum_badge',
+    'priority_curation',
+    'exclusive_contests',
+    'direct_support',
+  ] as const,
 } as const;
 
 /**
@@ -166,6 +172,6 @@ export const CACHE_TTLS = {
 } as const;
 
 export type PremiumTier = keyof typeof PREMIUM_TIERS;
-export type PremiumFeature = typeof PREMIUM_FEATURES[PremiumTier][number];
-export type ContractName = typeof CONTRACTS[keyof typeof CONTRACTS];
-export type ContractAction = typeof CONTRACT_ACTIONS[keyof typeof CONTRACT_ACTIONS];
+export type PremiumFeature = (typeof PREMIUM_FEATURES)[PremiumTier][number];
+export type ContractName = (typeof CONTRACTS)[keyof typeof CONTRACTS];
+export type ContractAction = (typeof CONTRACT_ACTIONS)[keyof typeof CONTRACT_ACTIONS];
