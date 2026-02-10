@@ -1,4 +1,4 @@
-import { SPORTS_ARENA_CONFIG } from './client';
+import { SPORTS_ARENA_CONFIG, MUTED_AUTHORS } from './client';
 import { SPORT_CATEGORIES } from '@/types';
 import { makeWorkerBeeApiCall } from './api';
 import { getContentOptimized } from './optimization';
@@ -111,6 +111,7 @@ function toTypedHivePosts(data: unknown): HivePost[] {
 function toTypedSportsblockPosts(posts: HivePost[]): SportsblockPost[] {
   return posts
     .filter(isSportsblockCommunityPost)
+    .filter((post) => !MUTED_AUTHORS.includes(post.author))
     .map((post) => toSportsblockPost(post, getSportCategory(post)));
 }
 
@@ -412,7 +413,9 @@ export async function fetchComments(author: string, permlink: string): Promise<H
 
     // Validate with Zod schema for runtime type safety, then transform
     const validatedComments = validateHiveComments(allComments);
-    return toHiveComments(validatedComments);
+    return toHiveComments(validatedComments).filter(
+      (comment) => !MUTED_AUTHORS.includes(comment.author)
+    );
   } catch (error) {
     logError(
       'Error fetching comments with WorkerBee',
