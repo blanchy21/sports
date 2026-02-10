@@ -23,14 +23,9 @@ export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
   onVoteSuccess,
   onVoteError,
 }) => {
-  const { voteState, starVote, checkVoteStatus } = useVoting(author, permlink);
+  const { voteState, starVote } = useVoting(author, permlink);
   const [hoveredStars, setHoveredStars] = useState<number>(0);
   const [isHovering, setIsHovering] = useState(false);
-
-  // Check vote status when component mounts
-  React.useEffect(() => {
-    checkVoteStatus(author, permlink);
-  }, [checkVoteStatus, author, permlink]);
 
   // Convert vote percent to stars (0-10000 basis points to 0-5 stars)
   // Each star = 20% = 2000 basis points

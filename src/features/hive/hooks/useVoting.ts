@@ -188,6 +188,13 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
         // Optimistically update the cache with the new vote
         if (result.success) {
           const percentBasisPoints = voteWeightPercentage * 100;
+
+          // Cancel any in-flight refetch from mutation's onSuccess invalidation
+          // so it can't overwrite our optimistic update before the blockchain propagates
+          await queryClient.cancelQueries({
+            queryKey: queryKeys.votes.status(voteAuthor, votePermlink, username),
+          });
+
           queryClient.setQueryData<VoteStatusData>(
             queryKeys.votes.status(voteAuthor, votePermlink, username),
             (old) => ({
