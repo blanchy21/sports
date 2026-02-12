@@ -31,6 +31,7 @@ jest.mock('@/lib/hive-workerbee/client', () => ({
     TAGS: ['sportsblock', 'hive-115814'],
     DEFAULT_BENEFICIARIES: [{ account: 'sportsblock', weight: 500 }],
   },
+  MUTED_AUTHORS: [],
   initializeWorkerBeeClient: jest.fn().mockResolvedValue({
     broadcast: jest.fn().mockResolvedValue({}),
   }),
