@@ -8,6 +8,7 @@ import {
 } from '@/lib/hive-workerbee/analytics';
 import { SportsblockPost } from '@/lib/hive-workerbee/content';
 import { fetchSportsbites } from '@/lib/hive-workerbee/sportsbites';
+import { fetchSoftSportsbites } from '@/lib/hive-workerbee/sportsbites-server';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 export const runtime = 'nodejs';
@@ -71,12 +72,14 @@ export async function GET() {
     // If Firebase is not configured, compute analytics directly from Hive
     if (!db) {
       console.log('[Analytics API] Firebase not configured, computing analytics from Hive...');
-      const [posts, bitesResult] = await Promise.all([
+      const [posts, bitesResult, softBites] = await Promise.all([
         fetchPostsViaInternalApi(20),
         fetchSportsbites({ limit: 200 }),
+        fetchSoftSportsbites({ limit: 200 }),
       ]);
-      if (posts.length > 0) {
-        const computedAnalytics = await getAnalyticsData(posts, undefined, bitesResult.sportsbites);
+      const allBites = [...bitesResult.sportsbites, ...softBites];
+      if (posts.length > 0 || allBites.length > 0) {
+        const computedAnalytics = await getAnalyticsData(posts, undefined, allBites);
         return NextResponse.json({
           success: true,
           data: computedAnalytics,
@@ -157,19 +160,21 @@ export async function GET() {
       !hasMeaningfulStats;
 
     if (needsRecompute) {
-      console.log('[Analytics API] Some Firestore sections empty, computing from Hive...');
-      const [posts, bitesResult] = await Promise.all([
+      console.log('[Analytics API] Some Firestore sections empty, computing from Hive + soft...');
+      const [posts, bitesResult, softBites] = await Promise.all([
         fetchPostsViaInternalApi(20),
         fetchSportsbites({ limit: 200 }),
+        fetchSoftSportsbites({ limit: 200 }),
       ]);
-      if (posts.length > 0) {
-        const computedAnalytics = await getAnalyticsData(posts, undefined, bitesResult.sportsbites);
+      const allBites = [...bitesResult.sportsbites, ...softBites];
+      if (posts.length > 0 || allBites.length > 0) {
+        const computedAnalytics = await getAnalyticsData(posts, undefined, allBites);
         if (!hasMeaningfulSportsData) analytics.trendingSports = computedAnalytics.trendingSports;
         if (!hasMeaningfulTopicsData) analytics.trendingTopics = computedAnalytics.trendingTopics;
         if (!hasMeaningfulAuthorsData) analytics.topAuthors = computedAnalytics.topAuthors;
         if (!hasMeaningfulStats) analytics.communityStats = computedAnalytics.communityStats;
         console.log(
-          `[Analytics API] Backfilled from ${posts.length} posts and ${bitesResult.sportsbites.length} sportsbites`
+          `[Analytics API] Backfilled from ${posts.length} posts, ${bitesResult.sportsbites.length} hive bites, ${softBites.length} soft bites`
         );
       }
     }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { fetchSportsblockPosts } from '@/lib/hive-workerbee/content';
 import { getAnalyticsData } from '@/lib/hive-workerbee/analytics';
 import { fetchSportsbites } from '@/lib/hive-workerbee/sportsbites';
+import { fetchSoftSportsbites } from '@/lib/hive-workerbee/sportsbites-server';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
@@ -33,14 +34,17 @@ export async function GET() {
 
     console.log('[Cron] Starting analytics update...');
 
-    // Fetch posts and sportsbites in parallel
-    const [result, bitesResult] = await Promise.all([
+    // Fetch posts, Hive sportsbites, and soft sportsbites in parallel
+    const [result, bitesResult, softBites] = await Promise.all([
       fetchSportsblockPosts({ limit: 500, sort: 'created' }),
       fetchSportsbites({ limit: 500 }),
+      fetchSoftSportsbites({ limit: 500 }),
     ]);
 
-    if (result.posts.length === 0) {
-      console.log('[Cron] No posts found, skipping update');
+    const allBites = [...bitesResult.sportsbites, ...softBites];
+
+    if (result.posts.length === 0 && allBites.length === 0) {
+      console.log('[Cron] No posts or sportsbites found, skipping update');
       return NextResponse.json({
         success: true,
         message: 'No posts to analyze',
@@ -49,11 +53,11 @@ export async function GET() {
     }
 
     console.log(
-      `[Cron] Fetched ${result.posts.length} posts and ${bitesResult.sportsbites.length} sportsbites, calculating analytics...`
+      `[Cron] Fetched ${result.posts.length} posts, ${bitesResult.sportsbites.length} hive bites, ${softBites.length} soft bites, calculating analytics...`
     );
 
-    // Calculate analytics — sportsbites drive trending topics
-    const analytics = await getAnalyticsData(result.posts, undefined, bitesResult.sportsbites);
+    // Calculate analytics — sportsbites (hive + soft) drive trending topics
+    const analytics = await getAnalyticsData(result.posts, undefined, allBites);
 
     // Update Firestore
     await Promise.all([

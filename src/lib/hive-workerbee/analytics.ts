@@ -67,9 +67,13 @@ function filterPostsLast7Days(posts: SportsblockPost[]): SportsblockPost[] {
 /**
  * Calculate trending sports based on sport category tags
  * @param posts - Array of posts to analyze
+ * @param sportsbites - Optional sportsbites to include in the count
  * @returns Trending sports data
  */
-export function calculateTrendingSports(posts: SportsblockPost[]): TrendingSport[] {
+export function calculateTrendingSports(
+  posts: SportsblockPost[],
+  sportsbites?: Sportsbite[]
+): TrendingSport[] {
   const recentPosts = filterPostsLast7Days(posts);
   const sportCount: Record<string, number> = {};
 
@@ -79,6 +83,15 @@ export function calculateTrendingSports(posts: SportsblockPost[]): TrendingSport
       sportCount[post.sportCategory] = (sportCount[post.sportCategory] || 0) + 1;
     }
   });
+
+  // Count sportsbites by sport category
+  if (sportsbites) {
+    for (const bite of sportsbites) {
+      if (bite.sportCategory) {
+        sportCount[bite.sportCategory] = (sportCount[bite.sportCategory] || 0) + 1;
+      }
+    }
+  }
 
   // Convert to array and sort by count
   const sortedSports = Object.entries(sportCount)
@@ -192,11 +205,13 @@ function formatFollowerCount(count: number): string {
  * Calculate top authors based on engagement (comments + votes)
  * @param posts - Array of posts to analyze
  * @param excludeUser - Username to exclude from the results (e.g., current user)
+ * @param sportsbites - Optional sportsbites to include in the count
  * @returns Top authors data with real follower counts
  */
 export async function calculateTopAuthors(
   posts: SportsblockPost[],
-  excludeUser?: string
+  excludeUser?: string,
+  sportsbites?: Sportsbite[]
 ): Promise<TopAuthor[]> {
   const recentPosts = filterPostsLast7Days(posts);
   const authorStats: Record<
@@ -210,7 +225,7 @@ export async function calculateTopAuthors(
     }
   > = {};
 
-  // Calculate engagement for each author
+  // Calculate engagement for each author from long-form posts
   recentPosts.forEach((post) => {
     const author = post.author;
 
@@ -243,6 +258,31 @@ export async function calculateTopAuthors(
     stats.totalEngagement += (post.children || 0) * 2 + (post.net_votes || 0);
   });
 
+  // Also count sportsbites
+  if (sportsbites) {
+    for (const bite of sportsbites) {
+      const author = bite.author;
+      if (!author || author.trim() === '') continue;
+      if (excludeUser && author === excludeUser) continue;
+
+      if (!authorStats[author]) {
+        authorStats[author] = {
+          username: author,
+          posts: 0,
+          totalEngagement: 0,
+          totalComments: 0,
+          totalVotes: 0,
+        };
+      }
+
+      const stats = authorStats[author];
+      stats.posts += 1;
+      stats.totalComments += bite.children || 0;
+      stats.totalVotes += bite.net_votes || 0;
+      stats.totalEngagement += (bite.children || 0) * 2 + (bite.net_votes || 0);
+    }
+  }
+
   // Get top 3 authors by engagement (filter out any empty usernames as safety check)
   const topAuthors = Object.values(authorStats)
     .filter((author) => author.username && author.username.trim() !== '')
@@ -268,9 +308,13 @@ export async function calculateTopAuthors(
 /**
  * Calculate community statistics
  * @param posts - Array of posts to analyze
+ * @param sportsbites - Optional sportsbites to include in the stats
  * @returns Community stats data
  */
-export function calculateCommunityStats(posts: SportsblockPost[]): CommunityStats {
+export function calculateCommunityStats(
+  posts: SportsblockPost[],
+  sportsbites?: Sportsbite[]
+): CommunityStats {
   const recentPosts = filterPostsLast7Days(posts);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -278,21 +322,36 @@ export function calculateCommunityStats(posts: SportsblockPost[]): CommunityStat
   // Calculate unique authors
   const uniqueAuthors = new Set(recentPosts.map((post) => post.author));
 
+  // Include sportsbite authors
+  if (sportsbites) {
+    for (const bite of sportsbites) {
+      if (bite.author) uniqueAuthors.add(bite.author);
+    }
+  }
+
   // Calculate total rewards (pending payouts)
   const totalRewards = recentPosts.reduce((sum, post) => {
     const payout = parseFloat(post.pending_payout_value || '0');
     return sum + payout;
   }, 0);
 
-  // Calculate posts from today
-  const activeToday = recentPosts.filter((post) => {
+  // Calculate posts from today (long-form + sportsbites)
+  let activeToday = recentPosts.filter((post) => {
     const postDate = new Date(post.created);
     postDate.setHours(0, 0, 0, 0);
     return postDate.getTime() === today.getTime();
   }).length;
 
+  if (sportsbites) {
+    activeToday += sportsbites.filter((bite) => {
+      const biteDate = new Date(bite.created);
+      biteDate.setHours(0, 0, 0, 0);
+      return biteDate.getTime() === today.getTime();
+    }).length;
+  }
+
   return {
-    totalPosts: recentPosts.length,
+    totalPosts: recentPosts.length + (sportsbites?.length || 0),
     totalAuthors: uniqueAuthors.size,
     totalRewards,
     activeToday,
@@ -311,7 +370,7 @@ export async function getAnalyticsData(
   excludeUser?: string,
   sportsbites?: Sportsbite[]
 ) {
-  const [topAuthors] = await Promise.all([calculateTopAuthors(posts, excludeUser)]);
+  const [topAuthors] = await Promise.all([calculateTopAuthors(posts, excludeUser, sportsbites)]);
 
   // Prefer sportsbite body hashtags; supplement with long-form post tags if < 5
   let trendingTopics: TrendingTopic[] = [];
@@ -330,9 +389,9 @@ export async function getAnalyticsData(
   }
 
   return {
-    trendingSports: calculateTrendingSports(posts),
+    trendingSports: calculateTrendingSports(posts, sportsbites),
     trendingTopics,
     topAuthors,
-    communityStats: calculateCommunityStats(posts),
+    communityStats: calculateCommunityStats(posts, sportsbites),
   };
 }

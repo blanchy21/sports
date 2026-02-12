@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAdminDb } from '@/lib/firebase/admin';
 import { createRequestContext, validationError } from '@/lib/api/response';
 import { fetchSportsbites, Sportsbite } from '@/lib/hive-workerbee/sportsbites';
+import { fetchSoftSportsbites } from '@/lib/hive-workerbee/sportsbites-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,81 +32,6 @@ const querySchema = z.object({
     .transform((val) => val !== 'false')
     .pipe(z.boolean()),
 });
-
-// ============================================
-// Helpers
-// ============================================
-
-interface SoftSportsbiteDoc {
-  authorId: string;
-  authorUsername: string;
-  authorDisplayName?: string;
-  authorAvatar?: string;
-  body: string;
-  sportCategory?: string;
-  images?: string[];
-  gifs?: string[];
-  createdAt: { toDate: () => Date } | Date;
-  likeCount?: number;
-  commentCount?: number;
-}
-
-function softToSportsbite(docId: string, data: SoftSportsbiteDoc): Sportsbite {
-  const createdAt =
-    typeof (data.createdAt as { toDate?: () => Date })?.toDate === 'function'
-      ? (data.createdAt as { toDate: () => Date }).toDate()
-      : new Date(data.createdAt as unknown as string);
-
-  return {
-    id: `soft-${docId}`,
-    author: data.authorUsername,
-    permlink: `soft-${docId}`,
-    body: data.body,
-    created: createdAt.toISOString().replace('T', ' ').replace('Z', ''),
-    net_votes: data.likeCount || 0,
-    children: data.commentCount || 0,
-    pending_payout_value: '0.000 HBD',
-    active_votes: [],
-    sportCategory: data.sportCategory,
-    images: data.images,
-    gifs: data.gifs,
-    source: 'soft',
-    softId: docId,
-    authorDisplayName: data.authorDisplayName,
-    authorAvatar: data.authorAvatar,
-  };
-}
-
-async function getSoftSportsbites(options: {
-  limit: number;
-  author?: string;
-}): Promise<Sportsbite[]> {
-  const db = getAdminDb();
-  if (!db) return [];
-
-  try {
-    let query = db
-      .collection('soft_sportsbites')
-      .where('isDeleted', '==', false)
-      .orderBy('createdAt', 'desc')
-      .limit(options.limit);
-
-    if (options.author) {
-      query = db
-        .collection('soft_sportsbites')
-        .where('isDeleted', '==', false)
-        .where('authorUsername', '==', options.author)
-        .orderBy('createdAt', 'desc')
-        .limit(options.limit);
-    }
-
-    const snapshot = await query.get();
-    return snapshot.docs.map((doc) => softToSportsbite(doc.id, doc.data() as SoftSportsbiteDoc));
-  } catch (error) {
-    console.error('[unified/sportsbites] Error fetching soft sportsbites:', error);
-    return [];
-  }
-}
 
 // ============================================
 // GET /api/unified/sportsbites
@@ -156,7 +81,7 @@ export async function GET(request: NextRequest) {
     // Fetch soft sportsbites
     if (includeSoft) {
       fetchPromises.push(
-        getSoftSportsbites({ limit, author })
+        fetchSoftSportsbites({ limit, author })
           .then((softBites) => {
             allBites.push(...softBites);
           })
