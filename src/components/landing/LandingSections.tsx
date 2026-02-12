@@ -699,7 +699,7 @@ export default function LandingSections() {
             {[
               {
                 tier: 'Bronze',
-                stake: 2500,
+                stake: 1000,
                 Icon: Medal,
                 benefits: ['Bronze badge', 'Community access'],
                 color: 'from-amber-600 to-amber-800',
@@ -708,7 +708,7 @@ export default function LandingSections() {
               },
               {
                 tier: 'Silver',
-                stake: 10000,
+                stake: 5000,
                 Icon: Award,
                 benefits: ['Silver badge', 'Priority curation', 'Early access'],
                 color: 'from-slate-300 to-slate-500',
