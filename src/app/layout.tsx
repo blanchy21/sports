@@ -35,6 +35,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <AdSenseScript />
+      </head>
       <body className={inter.className}>
         <ErrorBoundary>
           <QueryClientProvider>
@@ -60,7 +63,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </QueryClientProvider>
         </ErrorBoundary>
         <Analytics />
-        <AdSenseScript />
       </body>
     </html>
   );
