@@ -8,6 +8,7 @@ import { Card } from '@/components/core/Card';
 import { PostCard } from '@/components/posts/PostCard';
 import { useCommunityPosts } from '@/lib/react-query/queries/useCommunity';
 import { Community, Post } from '@/types';
+import { interleaveAds } from '@/lib/utils/interleave-ads';
 
 interface CommunityFeedProps {
   community: Community;
@@ -107,89 +108,91 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({
       )}
 
       <div className="space-y-4">
-        {posts.map(
-          (post: {
-            id: string;
-            author: string;
-            permlink: string;
-            title?: string;
-            body?: string;
-            excerpt?: string;
-            featuredImage?: string;
-            sportCategory?: string;
-            tags?: string[];
-            pendingPayout?: string;
-            netVotes?: number;
-            children?: number;
-            created?: string;
-            likeCount?: number;
-            viewCount?: number;
-            source?: 'hive' | 'soft';
-            _isSoftPost?: boolean;
-            _softPostId?: string;
-            authorDisplayName?: string;
-            authorAvatar?: string;
-          }) => {
-            const isSoftPost = post._isSoftPost || post.source === 'soft';
-            const postKey = isSoftPost
-              ? `soft-${post._softPostId || post.permlink}`
-              : `${post.author}-${post.permlink}`;
-
-            // Build the post object for PostCard, using type assertion for soft post fields
-            const postCardData = {
-              postType: 'standard' as const,
-              id: post.id || `${post.author}/${post.permlink}`,
-              title: post.title || 'Untitled',
-              content: post.body || '',
-              excerpt: post.excerpt || post.body?.substring(0, 200) || '',
-              author: {
-                id: post.author,
-                username: post.author,
-                displayName: post.authorDisplayName || post.author,
-                avatar: post.authorAvatar,
-                isHiveAuth: !isSoftPost,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              },
-              featuredImage: post.featuredImage,
-              sport: {
-                id: post.sportCategory || 'general',
-                name: post.sportCategory || 'General',
-                slug: post.sportCategory || 'general',
-                icon: '🏆',
-                color: 'bg-primary',
-              },
-              tags: post.tags || [],
-              isPublished: true,
-              isDraft: false,
-              hiveUrl: isSoftPost
-                ? undefined
-                : `https://hive.blog/@${post.author}/${post.permlink}`,
-              permlink: post.permlink,
-              pendingPayout:
-                typeof post.pendingPayout === 'string'
-                  ? parseFloat(post.pendingPayout) || 0
-                  : post.pendingPayout || 0,
-              netVotes: post.netVotes || 0,
-              upvotes: isSoftPost ? post.likeCount || 0 : post.netVotes || 0,
-              comments: post.children || 0,
-              readTime: Math.ceil((post.body?.length || 0) / 1000),
-              createdAt: new Date(post.created || Date.now()),
-              updatedAt: new Date(post.created || Date.now()),
-              // Soft post specific fields (read by PostCard via type assertion)
-              _isSoftPost: isSoftPost,
-              _softPostId: post._softPostId,
-              _likeCount: post.likeCount,
-              _viewCount: post.viewCount,
-            } as Post & {
+        {interleaveAds(
+          posts.map(
+            (post: {
+              id: string;
+              author: string;
+              permlink: string;
+              title?: string;
+              body?: string;
+              excerpt?: string;
+              featuredImage?: string;
+              sportCategory?: string;
+              tags?: string[];
+              pendingPayout?: string;
+              netVotes?: number;
+              children?: number;
+              created?: string;
+              likeCount?: number;
+              viewCount?: number;
+              source?: 'hive' | 'soft';
               _isSoftPost?: boolean;
               _softPostId?: string;
-              _likeCount?: number;
-              _viewCount?: number;
-            };
+              authorDisplayName?: string;
+              authorAvatar?: string;
+            }) => {
+              const isSoftPost = post._isSoftPost || post.source === 'soft';
+              const postKey = isSoftPost
+                ? `soft-${post._softPostId || post.permlink}`
+                : `${post.author}-${post.permlink}`;
 
-            return <PostCard key={postKey} post={postCardData} />;
-          }
+              // Build the post object for PostCard, using type assertion for soft post fields
+              const postCardData = {
+                postType: 'standard' as const,
+                id: post.id || `${post.author}/${post.permlink}`,
+                title: post.title || 'Untitled',
+                content: post.body || '',
+                excerpt: post.excerpt || post.body?.substring(0, 200) || '',
+                author: {
+                  id: post.author,
+                  username: post.author,
+                  displayName: post.authorDisplayName || post.author,
+                  avatar: post.authorAvatar,
+                  isHiveAuth: !isSoftPost,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                },
+                featuredImage: post.featuredImage,
+                sport: {
+                  id: post.sportCategory || 'general',
+                  name: post.sportCategory || 'General',
+                  slug: post.sportCategory || 'general',
+                  icon: '🏆',
+                  color: 'bg-primary',
+                },
+                tags: post.tags || [],
+                isPublished: true,
+                isDraft: false,
+                hiveUrl: isSoftPost
+                  ? undefined
+                  : `https://hive.blog/@${post.author}/${post.permlink}`,
+                permlink: post.permlink,
+                pendingPayout:
+                  typeof post.pendingPayout === 'string'
+                    ? parseFloat(post.pendingPayout) || 0
+                    : post.pendingPayout || 0,
+                netVotes: post.netVotes || 0,
+                upvotes: isSoftPost ? post.likeCount || 0 : post.netVotes || 0,
+                comments: post.children || 0,
+                readTime: Math.ceil((post.body?.length || 0) / 1000),
+                createdAt: new Date(post.created || Date.now()),
+                updatedAt: new Date(post.created || Date.now()),
+                // Soft post specific fields (read by PostCard via type assertion)
+                _isSoftPost: isSoftPost,
+                _softPostId: post._softPostId,
+                _likeCount: post.likeCount,
+                _viewCount: post.viewCount,
+              } as Post & {
+                _isSoftPost?: boolean;
+                _softPostId?: string;
+                _likeCount?: number;
+                _viewCount?: number;
+              };
+
+              return <PostCard key={postKey} post={postCardData} />;
+            }
+          )
         )}
       </div>
 

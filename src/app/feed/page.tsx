@@ -17,6 +17,7 @@ import { useFeedPosts } from '@/lib/react-query/queries/usePosts';
 import { prefetchUserProfiles } from '@/features/user/hooks/useUserProfile';
 import { prefetchStakedBalances } from '@/lib/premium/hooks';
 import { logger } from '@/lib/logger';
+import { interleaveAds } from '@/lib/utils/interleave-ads';
 
 export default function FeedPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -335,9 +336,11 @@ export default function FeedPage() {
                 <Button onClick={() => refetch()}>Try Again</Button>
               </div>
             ) : filteredPosts.length > 0 ? (
-              filteredPosts.map((post) => (
-                <PostCard key={`${post.author}/${post.permlink}`} post={post} />
-              ))
+              interleaveAds(
+                filteredPosts.map((post) => (
+                  <PostCard key={`${post.author}/${post.permlink}`} post={post} />
+                ))
+              )
             ) : (
               <div className="py-12 text-center">
                 <div className="mb-4 text-6xl">

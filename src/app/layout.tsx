@@ -15,6 +15,7 @@ import { NodeHealthInitializer } from '@/components/initializers/NodeHealthIniti
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { NavigationProgress } from '@/components/feedback/NavigationProgress';
 import { GlobalErrorHandlerInitializer } from '@/components/feedback/GlobalErrorHandlerInitializer';
+import { AdSenseScript } from '@/components/ads/AdSenseScript';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </QueryClientProvider>
         </ErrorBoundary>
         <Analytics />
+        <AdSenseScript />
       </body>
     </html>
   );

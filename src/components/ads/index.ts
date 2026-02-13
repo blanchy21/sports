@@ -6,3 +6,5 @@
  */
 
 export { AdWrapper, withAdWrapper } from './AdWrapper';
+export { AdSenseScript } from './AdSenseScript';
+export { InFeedAd } from './InFeedAd';

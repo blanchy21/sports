@@ -8,6 +8,7 @@ import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { logger } from '@/lib/logger';
+import { interleaveAds } from '@/lib/utils/interleave-ads';
 
 const REALTIME_POLL_INTERVAL = 15000;
 
@@ -308,14 +309,16 @@ export function SportsbitesFeed({
         </button>
       )}
 
-      {bites.map((bite) => (
-        <SportsbiteCard
-          key={bite.id}
-          sportsbite={bite}
-          isNew={newBiteIds.has(bite.id)}
-          onDelete={handleDelete}
-        />
-      ))}
+      {interleaveAds(
+        bites.map((bite) => (
+          <SportsbiteCard
+            key={bite.id}
+            sportsbite={bite}
+            isNew={newBiteIds.has(bite.id)}
+            onDelete={handleDelete}
+          />
+        ))
+      )}
 
       {isLoadingMore && (
         <div className="flex justify-center py-6">
