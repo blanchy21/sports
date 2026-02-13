@@ -65,17 +65,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { status, role, limit, userId } = parseResult.data;
 
-    // Check if community exists
-    const community = await FirebaseCommunitiesAdmin.getCommunityById(communityId);
+    // Check if community exists (try by ID first, then by slug)
+    let community = await FirebaseCommunitiesAdmin.getCommunityById(communityId);
+    if (!community) {
+      community = await FirebaseCommunitiesAdmin.getCommunityBySlug(communityId);
+    }
     if (!community) {
       return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
     }
 
+    // Use the resolved community ID for member queries
+    const resolvedCommunityId = community.id;
+
     // If userId is provided, lookup single membership directly
     if (userId) {
-      ctx.log.debug('Looking up single membership', { communityId, userId });
+      ctx.log.debug('Looking up single membership', { communityId: resolvedCommunityId, userId });
 
-      const membership = await FirebaseCommunitiesAdmin.getMembership(communityId, userId);
+      const membership = await FirebaseCommunitiesAdmin.getMembership(resolvedCommunityId, userId);
 
       return NextResponse.json({
         success: true,
@@ -85,9 +91,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Otherwise, list all members
-    ctx.log.debug('Listing community members', { communityId, status, role, limit });
+    ctx.log.debug('Listing community members', {
+      communityId: resolvedCommunityId,
+      status,
+      role,
+      limit,
+    });
 
-    const members = await FirebaseCommunitiesAdmin.getCommunityMembers(communityId, {
+    const members = await FirebaseCommunitiesAdmin.getCommunityMembers(resolvedCommunityId, {
       status: status as CommunityMemberStatus | undefined,
       role: role as CommunityMemberRole | undefined,
       limit,

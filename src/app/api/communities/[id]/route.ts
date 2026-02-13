@@ -33,10 +33,7 @@ const deleteRequestSchema = z.object({
 /**
  * GET /api/communities/[id] - Get community by ID or slug
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ctx = createRequestContext(ROUTE);
   const { id } = await params;
 
@@ -45,7 +42,7 @@ export async function GET(
 
     // Try to fetch by ID first, then by slug
     let community = await FirebaseCommunitiesAdmin.getCommunityById(id);
-    
+
     if (!community) {
       community = await FirebaseCommunitiesAdmin.getCommunityBySlug(id);
     }
@@ -54,20 +51,25 @@ export async function GET(
       return notFoundError(`Community not found: ${id}`, ctx.requestId);
     }
 
-    // Fetch team members (admins and moderators)
-    const members = await FirebaseCommunitiesAdmin.getCommunityMembers(community.id, {
-      status: 'active',
-      limit: 10,
-    });
+    // Fetch team members (non-fatal — community should still render if this fails)
+    let team: { username: string; role: string; joinedAt: string }[] = [];
+    try {
+      const members = await FirebaseCommunitiesAdmin.getCommunityMembers(community.id, {
+        status: 'active',
+        limit: 10,
+      });
 
-    // Build team array for backward compatibility
-    const team = members
-      .filter((m) => m.role === 'admin' || m.role === 'moderator')
-      .map((m) => ({
-        username: m.username,
-        role: m.role,
-        joinedAt: typeof m.joinedAt === 'string' ? m.joinedAt : (m.joinedAt as Date).toISOString(),
-      }));
+      team = members
+        .filter((m) => m.role === 'admin' || m.role === 'moderator')
+        .map((m) => ({
+          username: m.username,
+          role: m.role,
+          joinedAt:
+            typeof m.joinedAt === 'string' ? m.joinedAt : (m.joinedAt as Date).toISOString(),
+        }));
+    } catch (memberError) {
+      ctx.log.warn('Failed to fetch community members', { id, error: memberError });
+    }
 
     return NextResponse.json({
       success: true,
@@ -84,10 +86,7 @@ export async function GET(
 /**
  * PATCH /api/communities/[id] - Update a community
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ctx = createRequestContext(ROUTE);
   const { id } = await params;
 
