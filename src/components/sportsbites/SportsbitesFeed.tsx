@@ -265,6 +265,23 @@ export function SportsbitesFeed({
   }
 
   if (bites.length === 0) {
+    if (filterMode === 'following') {
+      return (
+        <div className={cn('rounded-xl border bg-card p-8 text-center', className)}>
+          <div className="mb-4 flex justify-center">
+            <div className="rounded-full bg-primary/10 p-3">
+              <Zap className="h-8 w-8 text-primary" />
+            </div>
+          </div>
+          <h3 className="mb-2 text-lg font-semibold">No sportsbites from people you follow</h3>
+          <p className="text-sm text-muted-foreground">
+            {followingList.length === 0
+              ? 'Follow some users to see their sportsbites here!'
+              : "The people you follow haven't posted any sportsbites yet."}
+          </p>
+        </div>
+      );
+    }
     return (
       <div className={cn('rounded-xl border bg-card p-12 text-center', className)}>
         <div className="mb-4 flex justify-center">
@@ -332,22 +349,6 @@ export function SportsbitesFeed({
       {!hasMore && bites.length > 0 && (
         <div className="flex justify-center py-6">
           <p className="text-sm text-muted-foreground">You&apos;ve reached the end of the feed</p>
-        </div>
-      )}
-
-      {filterMode === 'following' && bites.length === 0 && !isLoading && (
-        <div className="rounded-xl border bg-card p-8 text-center">
-          <div className="mb-4 flex justify-center">
-            <div className="rounded-full bg-primary/10 p-3">
-              <Zap className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-          <h3 className="mb-2 text-lg font-semibold">No sportsbites from people you follow</h3>
-          <p className="text-sm text-muted-foreground">
-            {followingList.length === 0
-              ? 'Follow some users to see their sportsbites here!'
-              : "The people you follow haven't posted any sportsbites yet."}
-          </p>
         </div>
       )}
     </div>

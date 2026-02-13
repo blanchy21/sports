@@ -33,7 +33,19 @@ export default function SportsBitesPage() {
     return false;
   });
 
-  const { data: followingData } = useFollowing(user?.username || '', { enabled: !!user?.username });
+  const {
+    data: followingData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useFollowing(user?.username || '', { enabled: !!user?.username });
+
+  // Auto-load all following pages so the filter has the complete list
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   useEffect(() => {
     if (followingData?.pages) {
