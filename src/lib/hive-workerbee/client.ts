@@ -27,9 +27,7 @@ export { HIVE_NODES };
 
 // Authors muted at the platform level — their posts and comments are hidden from all feeds.
 // Add Hive usernames (without @) to block spam or abusive accounts.
-export const MUTED_AUTHORS: readonly string[] = [
-  'kgakakillerg',
-];
+export const MUTED_AUTHORS: readonly string[] = ['kgakakillerg', 'heimindanger'];
 
 // Sportsblock configuration (same as current implementation)
 export const SPORTS_ARENA_CONFIG = {

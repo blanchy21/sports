@@ -6,7 +6,7 @@
  * day's container. The feed aggregates replies across a rolling 7-day window.
  */
 
-import { SPORTS_ARENA_CONFIG } from './client';
+import { SPORTS_ARENA_CONFIG, MUTED_AUTHORS } from './client';
 import { makeHiveApiCall } from './api';
 import { createCommentOperation, generatePermlink } from './wax-helpers';
 import { workerBee as workerBeeLog, error as logError } from './logger';
@@ -165,6 +165,10 @@ function buildSportsbiteMetadata(data: PublishSportsbiteData): string {
 // ---------------------------------------------------------------------------
 
 export function createSportsbiteOperation(data: PublishSportsbiteData) {
+  if (MUTED_AUTHORS.includes(data.author)) {
+    throw new Error('This account has been muted and cannot post sportsbites.');
+  }
+
   const validation = validateSportsbiteContent(data.body);
   if (!validation.isValid) {
     throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
@@ -256,6 +260,9 @@ export async function fetchSportsbites(options: {
         allBites.push(...bites);
       }
     }
+
+    // Filter out muted authors
+    allBites = allBites.filter((s) => !MUTED_AUTHORS.includes(s.author));
 
     // Sort newest first
     allBites.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
