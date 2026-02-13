@@ -4,6 +4,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { FirebasePosts } from '@/lib/firebase/posts';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
+import { FirebaseCommunitiesAdmin } from '@/lib/firebase/communities-admin';
 import {
   createRequestContext,
   validationError,
@@ -328,6 +329,16 @@ export async function POST(request: NextRequest) {
 
       // Update user's lastActiveAt timestamp (fire-and-forget)
       updateUserLastActiveAt(data.authorId).catch(() => {});
+
+      // Increment community post count (fire-and-forget)
+      if (data.communityId) {
+        FirebaseCommunitiesAdmin.incrementPostCount(data.communityId).catch((err) => {
+          ctx.log.warn('Failed to increment community post count', {
+            communityId: data.communityId,
+            error: err,
+          });
+        });
+      }
 
       ctx.log.info('Post created successfully', { postId: post.id });
 

@@ -115,86 +115,121 @@ function toTypedSportsblockPosts(posts: HivePost[]): SportsblockPost[] {
     .map((post) => toSportsblockPost(post, getSportCategory(post)));
 }
 
+// Hive API enforces a max limit of 20 per discussion query
+const HIVE_API_MAX_LIMIT = 20;
+
+/**
+ * Paginated fetch for get_discussions_by_created.
+ * Makes multiple API calls (each capped at 20) to collect up to `totalLimit` posts.
+ * The Hive API cursor is exclusive — results start AFTER start_author/start_permlink.
+ */
+async function fetchCreatedPaginated(
+  tag: string,
+  totalLimit: number,
+  startAuthor: string = '',
+  startPermlink: string = ''
+): Promise<HivePost[]> {
+  const allPosts: HivePost[] = [];
+  let cursorAuthor = startAuthor;
+  let cursorPermlink = startPermlink;
+
+  while (allPosts.length < totalLimit) {
+    const remaining = totalLimit - allPosts.length;
+    const batchLimit = Math.min(HIVE_API_MAX_LIMIT, remaining);
+
+    const result = await getContentOptimized('get_discussions_by_created', [
+      {
+        tag,
+        limit: batchLimit,
+        start_author: cursorAuthor,
+        start_permlink: cursorPermlink,
+      },
+    ]);
+
+    const batch = toTypedHivePosts(result);
+    if (batch.length === 0) break;
+
+    allPosts.push(...batch);
+
+    // Set cursor for next page
+    const lastPost = batch[batch.length - 1];
+    cursorAuthor = lastPost.author;
+    cursorPermlink = lastPost.permlink;
+
+    // If we got fewer than requested, no more pages
+    if (batch.length < batchLimit) break;
+  }
+
+  return allPosts.slice(0, totalLimit);
+}
+
 /**
  * Fetch posts from Sportsblock community using WorkerBee/Wax
  * @param filters - Content filters
  * @returns Filtered posts
  */
 export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promise<ContentResult> {
-  const limit = Math.min(filters.limit || 20, 100); // Max 100 posts per request
+  const limit = Math.min(filters.limit || 20, 500); // Max 500 posts per request
   let fetchedAsTrending = false; // Track if we fetched trending posts from API
 
   try {
     let posts: HivePost[] = [];
 
     if (filters.author) {
-      // Fetch posts by specific author using optimized caching
-      const accountPosts = await getContentOptimized('get_discussions_by_author_before_date', [
-        filters.author,
-        filters.before || '',
-        '',
-        limit,
-      ]);
-      posts = toTypedHivePosts(accountPosts);
+      // Fetch posts by specific author — paginate in batches of 20
+      // Params: [author, start_permlink, before_date, limit] — cursor is exclusive
+      const allAuthorPosts: HivePost[] = [];
+      let cursorPermlink = filters.before || '';
+      let remaining = limit;
+
+      while (remaining > 0) {
+        const batchLimit = Math.min(HIVE_API_MAX_LIMIT, remaining);
+        const accountPosts = await getContentOptimized('get_discussions_by_author_before_date', [
+          filters.author,
+          cursorPermlink,
+          '',
+          batchLimit,
+        ]);
+        const batch = toTypedHivePosts(accountPosts);
+        if (batch.length === 0) break;
+
+        allAuthorPosts.push(...batch);
+        remaining -= batch.length;
+
+        // Set cursor for next batch
+        cursorPermlink = batch[batch.length - 1].permlink || '';
+        if (batch.length < batchLimit) break;
+      }
+      posts = allAuthorPosts.slice(0, limit);
     } else if (filters.sort === 'trending') {
-      // Use get_discussions_by_trending for trending posts
-      // Note: get_discussions_by_trending doesn't support pagination with start_author/start_permlink
-      // So we ignore filters.before for trending and always fetch from the top
+      // Trending doesn't support pagination — capped at 20
       const trendingPosts = await getContentOptimized('get_discussions_by_trending', [
         {
           tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-          limit: limit,
+          limit: Math.min(limit, HIVE_API_MAX_LIMIT),
         },
       ]);
       posts = toTypedHivePosts(trendingPosts);
-      fetchedAsTrending = true; // Mark that we fetched trending posts
+      fetchedAsTrending = true;
     } else {
-      // Fetch posts from Sportsblock community using optimized caching
-      // For pagination, we need to use get_discussions_by_created with start_author and start_permlink
+      // Chronological fetch with automatic pagination
       if (filters.before) {
-        // Parse the cursor to get author and permlink for pagination
-        // Only split on the first '/' — permlinks may contain additional slashes
         const separatorIndex = filters.before.indexOf('/');
         const author = filters.before.slice(0, separatorIndex);
         const permlink = filters.before.slice(separatorIndex + 1);
 
         if (author && permlink) {
-          // Use start_author and start_permlink for pagination
-          // get_discussions_by_created requires tag, limit, start_author, and start_permlink
-          const communityPosts = await getContentOptimized('get_discussions_by_created', [
-            {
-              tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-              limit: limit,
-              start_author: author,
-              start_permlink: permlink,
-            },
-          ]);
-          posts = toTypedHivePosts(communityPosts);
+          posts = await fetchCreatedPaginated(
+            SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+            limit,
+            author,
+            permlink
+          );
         } else {
-          // Invalid cursor format, fallback to regular fetch
-          // get_discussions_by_created requires tag, limit, start_author, and start_permlink
-          const communityPosts = await getContentOptimized('get_discussions_by_created', [
-            {
-              tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-              limit: limit,
-              start_author: '',
-              start_permlink: '',
-            },
-          ]);
-          posts = toTypedHivePosts(communityPosts);
+          posts = await fetchCreatedPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_NAME, limit);
         }
       } else {
-        // First page - use get_discussions_by_created for chronological order
-        // get_discussions_by_created requires tag, limit, start_author, and start_permlink
-        const communityPosts = await getContentOptimized('get_discussions_by_created', [
-          {
-            tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-            limit: limit,
-            start_author: '',
-            start_permlink: '',
-          },
-        ]);
-        posts = toTypedHivePosts(communityPosts);
+        posts = await fetchCreatedPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_NAME, limit);
       }
     }
 
@@ -267,10 +302,11 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
 export async function fetchTrendingPosts(limit: number = 20): Promise<SportsblockPost[]> {
   try {
     // Use WorkerBee API call for better node management
+    // Hive API caps discussion queries at 20
     const trendingPosts = await makeWorkerBeeApiCall<unknown[]>('get_discussions_by_trending', [
       {
         tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-        limit,
+        limit: Math.min(limit, HIVE_API_MAX_LIMIT),
       },
     ]);
 
@@ -296,7 +332,7 @@ export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost
     const hotPosts = await makeWorkerBeeApiCall<unknown[]>('get_discussions_by_hot', [
       {
         tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
-        limit,
+        limit: Math.min(limit, HIVE_API_MAX_LIMIT),
       },
     ]);
 

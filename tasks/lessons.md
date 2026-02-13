@@ -26,19 +26,19 @@ This is a direct, reliable check with no pagination quirks.
 
 ---
 
-## Hive API: `get_discussions_by_created` rejects `limit > 20`
+## Hive API: ALL discussion queries enforce `limit <= 20`
 
-**Date:** 2026-02-05
-**Severity:** Medium — caused API routes to fail silently
+**Date:** 2026-02-13 (updated — originally noted 2026-02-05 but fix was not applied)
+**Severity:** Critical — broke trending topics, top authors, trending sports, and analytics entirely
 
 ### Problem
-Some Hive nodes reject `get_discussions_by_created` with `limit` values above 20, returning "Invalid parameters". The `fetchSportsblockPosts` function allows up to 100 but the nodes don't support it.
+ALL Hive `get_discussions_by_*` methods (`get_discussions_by_created`, `get_discussions_by_trending`, `get_discussions_by_author_before_date`) enforce `limit` in range `[1:20]`. The analytics API and cron job passed limits of 50 and 500, causing "Invalid parameters" errors across all Hive nodes. Since this happened inside `Promise.all`, it took down all analytics at once.
 
 ### Fix
-Paginate with `limit: 20` per request, using `nextCursor` for subsequent pages, up to the desired total.
+Added `HIVE_API_MAX_LIMIT = 20` constant and `fetchCreatedPaginated()` helper in `content.ts`. All discussion queries now automatically paginate in batches of 20 when callers request more. The cursor is **exclusive** — no duplicate skipping needed.
 
 ### Rule
-**Always use `limit <= 20` for Hive discussion queries.** Paginate if more posts are needed.
+**Never pass `limit > 20` to any Hive `get_discussions_by_*` API.** Use automatic pagination. The cursor (`start_author`/`start_permlink`) is exclusive — results start AFTER the cursor post.
 
 ---
 

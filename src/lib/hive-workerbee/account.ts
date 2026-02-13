@@ -1206,7 +1206,7 @@ async function _calculateUserStats(username: string): Promise<{
       username,
       '', // before date (empty for most recent)
       '', // before permlink (empty for most recent)
-      100, // limit to 100 posts for calculation
+      20, // Hive API caps discussion queries at 20
     ])) as HivePost[];
 
     debugLog(`[WorkerBee calculateUserStats] Found ${posts.length} posts for ${username}`);
