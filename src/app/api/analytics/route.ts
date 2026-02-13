@@ -6,38 +6,13 @@ import {
   CommunityStats,
   getAnalyticsData,
 } from '@/lib/hive-workerbee/analytics';
-import { SportsblockPost } from '@/lib/hive-workerbee/content';
+import { fetchSportsblockPosts } from '@/lib/hive-workerbee/content';
 import { fetchSportsbites } from '@/lib/hive-workerbee/sportsbites';
 import { fetchSoftSportsbites } from '@/lib/hive-workerbee/sportsbites-server';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-/**
- * Fetch posts via internal API route (more reliable than direct WorkerBee call)
- */
-async function fetchPostsViaInternalApi(limit: number = 20): Promise<SportsblockPost[]> {
-  try {
-    // Use env var for app URL to avoid SSRF via Host header manipulation
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-    const response = await fetch(`${appUrl}/api/hive/posts?limit=${limit}&sort=created`, {
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      console.warn(`[Analytics API] Internal API returned ${response.status}`);
-      return [];
-    }
-
-    const data = await response.json();
-    return data.posts || [];
-  } catch (error) {
-    console.warn('[Analytics API] Error fetching posts via internal API:', error);
-    return [];
-  }
-}
 
 const ROUTE = '/api/analytics';
 
@@ -72,11 +47,12 @@ export async function GET() {
     // If Firebase is not configured, compute analytics directly from Hive
     if (!db) {
       console.log('[Analytics API] Firebase not configured, computing analytics from Hive...');
-      const [posts, bitesResult, softBites] = await Promise.all([
-        fetchPostsViaInternalApi(20),
+      const [postsResult, bitesResult, softBites] = await Promise.all([
+        fetchSportsblockPosts({ limit: 50, sort: 'created' }),
         fetchSportsbites({ limit: 200 }),
         fetchSoftSportsbites({ limit: 200 }),
       ]);
+      const posts = postsResult.posts;
       const allBites = [...bitesResult.sportsbites, ...softBites];
       if (posts.length > 0 || allBites.length > 0) {
         const computedAnalytics = await getAnalyticsData(posts, undefined, allBites);
@@ -161,11 +137,12 @@ export async function GET() {
 
     if (needsRecompute) {
       console.log('[Analytics API] Some Firestore sections empty, computing from Hive + soft...');
-      const [posts, bitesResult, softBites] = await Promise.all([
-        fetchPostsViaInternalApi(20),
+      const [postsResult, bitesResult, softBites] = await Promise.all([
+        fetchSportsblockPosts({ limit: 50, sort: 'created' }),
         fetchSportsbites({ limit: 200 }),
         fetchSoftSportsbites({ limit: 200 }),
       ]);
+      const posts = postsResult.posts;
       const allBites = [...bitesResult.sportsbites, ...softBites];
       if (posts.length > 0 || allBites.length > 0) {
         const computedAnalytics = await getAnalyticsData(posts, undefined, allBites);

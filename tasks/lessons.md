@@ -203,3 +203,35 @@ Metrics tracking and crypto prices routes returned `success: true` on internal e
 
 ### Rule
 **Never use Redis `KEYS` in application code.** Use `SCAN` with cursor-based iteration for non-blocking pattern matching.
+
+---
+
+## Never self-reference API routes via HTTP fetch from server-side code
+
+**Date:** 2026-02-13
+**Severity:** Critical — broke trending sports entirely in production
+
+### Problem
+The analytics API route called `fetchPostsViaInternalApi()` which made an HTTP fetch to `${NEXT_PUBLIC_APP_URL}/api/hive/posts`. On Vercel, `NEXT_PUBLIC_APP_URL` wasn't set, so it fell back to `http://localhost:3000` — which doesn't exist in a serverless environment. The fetch silently failed, returning empty posts, causing trending sports to always be empty.
+
+### Fix
+Replace the HTTP self-fetch with a direct call to `fetchSportsblockPosts()`. Server-side API routes can import and call server functions directly.
+
+### Rule
+**Never make HTTP requests from an API route to another API route on the same server.** Import the function directly instead. Self-referencing fetches fail in serverless environments (Vercel, Lambda) where `localhost` doesn't work.
+
+---
+
+## Cron jobs must use Firebase Admin SDK, not client SDK
+
+**Date:** 2026-02-13
+**Severity:** Critical — cron job writes to Firestore silently failed
+
+### Problem
+The analytics cron job used the Firebase client SDK (`firebase/firestore`) to write to the `analytics` Firestore collection. But Firestore rules had `allow write: if false` for that collection (intended for Admin SDK only). All cron writes silently failed, so analytics data in Firestore was never updated.
+
+### Fix
+Switch cron to use `getAdminDb()` from `firebase-admin/firestore`, which bypasses security rules.
+
+### Rule
+**Server-side cron/background jobs must use Firebase Admin SDK (`firebase-admin`) for Firestore writes, not the client SDK (`firebase`).** The client SDK respects security rules, which typically block server-to-server writes.

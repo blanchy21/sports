@@ -3,8 +3,8 @@ import { fetchSportsblockPosts } from '@/lib/hive-workerbee/content';
 import { getAnalyticsData } from '@/lib/hive-workerbee/analytics';
 import { fetchSportsbites } from '@/lib/hive-workerbee/sportsbites';
 import { fetchSoftSportsbites } from '@/lib/hive-workerbee/sportsbites-server';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { getAdminDb } from '@/lib/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
 
 export const runtime = 'nodejs';
@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic';
 /**
  * Cron endpoint for updating analytics in Firestore
  * This endpoint is called by Vercel Cron Jobs or other scheduled services
+ * Uses Firebase Admin SDK to bypass Firestore security rules
  */
 export async function GET() {
   // Verify cron authentication
@@ -21,12 +22,12 @@ export async function GET() {
   }
 
   try {
-    // Check if Firebase is configured
-    if (!db) {
+    const adminDb = getAdminDb();
+    if (!adminDb) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Firebase not configured - analytics update skipped',
+          error: 'Firebase Admin SDK not configured - analytics update skipped',
         },
         { status: 503 }
       );
@@ -59,29 +60,29 @@ export async function GET() {
     // Calculate analytics — sportsbites (hive + soft) drive trending topics
     const analytics = await getAnalyticsData(result.posts, undefined, allBites);
 
-    // Update Firestore
+    // Update Firestore using Admin SDK (bypasses security rules)
     await Promise.all([
-      setDoc(doc(db, 'analytics', 'trendingSports'), {
+      adminDb.doc('analytics/trendingSports').set({
         sports: analytics.trendingSports,
-        lastUpdated: serverTimestamp(),
+        lastUpdated: FieldValue.serverTimestamp(),
         version: 1,
       }),
-      setDoc(doc(db, 'analytics', 'trendingTopics'), {
+      adminDb.doc('analytics/trendingTopics').set({
         topics: analytics.trendingTopics,
-        lastUpdated: serverTimestamp(),
+        lastUpdated: FieldValue.serverTimestamp(),
         version: 1,
       }),
-      setDoc(doc(db, 'analytics', 'topAuthors'), {
+      adminDb.doc('analytics/topAuthors').set({
         authors: analytics.topAuthors,
-        lastUpdated: serverTimestamp(),
+        lastUpdated: FieldValue.serverTimestamp(),
         version: 1,
       }),
-      setDoc(doc(db, 'analytics', 'communityStats'), {
+      adminDb.doc('analytics/communityStats').set({
         totalPosts: analytics.communityStats.totalPosts,
         totalAuthors: analytics.communityStats.totalAuthors,
         totalRewards: analytics.communityStats.totalRewards,
         activeToday: analytics.communityStats.activeToday,
-        lastUpdated: serverTimestamp(),
+        lastUpdated: FieldValue.serverTimestamp(),
         version: 1,
       }),
     ]);
