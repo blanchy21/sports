@@ -76,6 +76,8 @@ export async function GET() {
     });
 
     // Root post: parent_author='' posts to community
+    // Include comment_options to decline payout — the container is just a
+    // wrapper; only the individual sportsbite replies should earn rewards.
     const result = await broadcastWithKey(
       [
         [
@@ -88,6 +90,18 @@ export async function GET() {
             title,
             body,
             json_metadata: metadata,
+          },
+        ],
+        [
+          'comment_options',
+          {
+            author: SPORTSBITES_CONFIG.PARENT_AUTHOR,
+            permlink,
+            max_accepted_payout: '0.000 HBD',
+            percent_hbd: 10000,
+            allow_votes: true,
+            allow_curation_rewards: true,
+            extensions: [],
           },
         ],
       ],
