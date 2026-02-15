@@ -413,17 +413,17 @@ export const TopNavigation: React.FC = () => {
             </Link>
 
             <Link
-              href="/dashboard"
+              href="/sportsbites"
               onClick={() => setShowMobileMenu(false)}
               className={cn(
                 'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
-                pathname === '/dashboard'
+                pathname === '/sportsbites'
                   ? 'bg-card text-primary'
                   : 'text-white/90 hover:bg-white/20'
               )}
             >
-              <LayoutDashboard className="h-5 w-5" />
-              <span>Dashboard</span>
+              <Zap className="h-5 w-5" />
+              <span>Sportsbites</span>
             </Link>
 
             <Link
