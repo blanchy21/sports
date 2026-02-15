@@ -5,7 +5,7 @@ import { useComments } from '@/lib/react-query/queries/useComments';
 import { Button } from '@/components/core/Button';
 import { Badge } from '@/components/core/Badge';
 import { Avatar } from '@/components/core/Avatar';
-import { MessageCircle, Send, Film } from 'lucide-react';
+import { MessageCircle, Send, Film, Reply } from 'lucide-react';
 import { formatDate } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast, toast } from '@/components/core/Toast';
@@ -34,6 +34,11 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{
+    author: string;
+    permlink: string;
+    body: string;
+  } | null>(null);
 
   const handleGifSelect = (gifUrl: string) => {
     setCommentText((prev) => prev + `\n![gif](${gifUrl})\n`);
@@ -70,8 +75,8 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         const operation = createCommentOperation({
           author: hiveUser.username,
           body: commentText.trim(),
-          parentAuthor: author,
-          parentPermlink: permlink,
+          parentAuthor: replyingTo ? replyingTo.author : author,
+          parentPermlink: replyingTo ? replyingTo.permlink : permlink,
         });
 
         const { aioha } = await import('@/lib/aioha/config');
@@ -97,6 +102,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
           type: 'success',
         });
         setCommentText('');
+        setReplyingTo(null);
         invalidatePostComments(author, permlink);
       } else {
         // SOFT USER: Publish to Firebase
@@ -122,6 +128,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
             type: 'success',
           });
           setCommentText('');
+          setReplyingTo(null);
           invalidatePostComments(author, permlink);
         } else {
           addToast({
@@ -219,7 +226,19 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                     </div>
                     <CommentContent body={comment.body} />
                     <div className="mt-2 flex items-center space-x-4">
-                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() =>
+                          setReplyingTo({
+                            author: comment.author,
+                            permlink: comment.permlink,
+                            body: comment.body,
+                          })
+                        }
+                      >
+                        <Reply className="mr-1 h-3 w-3" />
                         Reply
                       </Button>
                       <CommentVoteButton
@@ -257,6 +276,32 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         )}
       </div>
 
+      {/* Reply indicator with original comment preview */}
+      {replyingTo && (
+        <div className="border-b border-t bg-muted/50 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <Avatar
+              src={getHiveAvatarUrl(replyingTo.author)}
+              fallback={replyingTo.author[0]}
+              alt={replyingTo.author}
+              size="sm"
+            />
+            <div className="min-w-0 flex-1">
+              <span className="text-sm font-medium">@{replyingTo.author}</span>
+              <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{replyingTo.body}</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
+              onClick={() => setReplyingTo(null)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Comment Input */}
       <div className="border-t p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -270,7 +315,9 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
             />
             <div className="flex-1">
               <textarea
-                placeholder="Write a comment..."
+                placeholder={
+                  replyingTo ? `Reply to @${replyingTo.author}...` : 'Write a comment...'
+                }
                 className="w-full resize-none rounded-lg border p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary sm:text-base"
                 rows={2}
                 value={commentText}
@@ -312,7 +359,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
             disabled={isSubmitting || !commentText.trim()}
           >
             <Send className="mr-2 h-4 w-4" />
-            {isSubmitting ? 'Posting...' : 'Comment'}
+            {isSubmitting ? 'Posting...' : replyingTo ? 'Reply' : 'Comment'}
           </Button>
         </div>
       </div>
