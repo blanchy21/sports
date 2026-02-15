@@ -25,6 +25,7 @@ import {
   validateSportsbiteContent,
   Sportsbite,
 } from '@/lib/hive-workerbee/sportsbites';
+import { createMatchThreadSportsbiteOperation } from '@/lib/hive-workerbee/match-threads';
 import { createCommentOptionsOperation } from '@/lib/hive-workerbee/wax-helpers';
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { validateImageUrl } from '@/lib/utils/sanitize';
@@ -49,9 +50,14 @@ interface GiphyGif {
 interface ComposeSportsbiteProps {
   onSuccess?: (bite: Sportsbite) => void;
   onError?: (error: string) => void;
+  matchThreadEventId?: string;
 }
 
-export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps) {
+export function ComposeSportsbite({
+  onSuccess,
+  onError,
+  matchThreadEventId,
+}: ComposeSportsbiteProps) {
   const { user, authType, hiveUser, touchSession } = useAuth();
   const [content, setContent] = useState('');
 
@@ -244,19 +250,31 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
     try {
       if (authType === 'hive' && hiveUser?.username) {
         // HIVE USER: Publish to blockchain
-        const ensureRes = await fetch('/api/hive/sportsbites/ensure-container', { method: 'POST' });
+        const ensureUrl = matchThreadEventId
+          ? `/api/match-threads/${matchThreadEventId}/ensure`
+          : '/api/hive/sportsbites/ensure-container';
+        const ensureRes = await fetch(ensureUrl, { method: 'POST' });
         const ensureData = await ensureRes.json();
         if (!ensureData.success) {
-          throw new Error(ensureData.error || 'Failed to prepare daily container');
+          throw new Error(ensureData.error || 'Failed to prepare container');
         }
 
-        const operation = createSportsbiteOperation({
-          body: content,
-          author: hiveUser.username,
-          sportCategory: sportCategory || undefined,
-          images: images.length > 0 ? images : undefined,
-          gifs: gifs.length > 0 ? gifs : undefined,
-        });
+        const operation = matchThreadEventId
+          ? createMatchThreadSportsbiteOperation({
+              body: content,
+              author: hiveUser.username,
+              sportCategory: sportCategory || undefined,
+              images: images.length > 0 ? images : undefined,
+              gifs: gifs.length > 0 ? gifs : undefined,
+              eventId: matchThreadEventId,
+            })
+          : createSportsbiteOperation({
+              body: content,
+              author: hiveUser.username,
+              sportCategory: sportCategory || undefined,
+              images: images.length > 0 ? images : undefined,
+              gifs: gifs.length > 0 ? gifs : undefined,
+            });
 
         const { aioha } = await import('@/lib/aioha/config');
 
@@ -325,6 +343,7 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
             sportCategory: sportCategory || undefined,
             images: images.length > 0 ? images : undefined,
             gifs: gifs.length > 0 ? gifs : undefined,
+            matchThreadId: matchThreadEventId || undefined,
           }),
         });
 
@@ -375,6 +394,7 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
     authType,
     hiveUser,
     touchSession,
+    matchThreadEventId,
     onSuccess,
     onError,
   ]);

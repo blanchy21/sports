@@ -200,7 +200,7 @@ export function createSportsbiteOperation(data: PublishSportsbiteData) {
 // Fetch sportsbites (rolling 7-day aggregation)
 // ---------------------------------------------------------------------------
 
-function transformToSportsbite(item: unknown): Sportsbite | null {
+export function transformToSportsbite(item: unknown): Sportsbite | null {
   const post = item as Record<string, unknown>;
   if (!post || !post.author) return null;
 

@@ -34,6 +34,7 @@ const createSportsbiteSchema = z.object({
   sportCategory: z.string().optional(),
   images: z.array(z.string().url()).max(4).optional(),
   gifs: z.array(z.string().url()).max(2).optional(),
+  matchThreadId: z.string().optional(),
 });
 
 const deleteSportsbiteSchema = z.object({
@@ -93,9 +94,10 @@ export async function GET(request: NextRequest) {
     }
 
     const snapshot = await query.get();
-    const docs = snapshot.docs;
-    const hasMore = docs.length > limit;
-    const pageDocs = hasMore ? docs.slice(0, limit) : docs;
+    // Exclude bites that belong to match threads (they have their own feed)
+    const filteredDocs = snapshot.docs.filter((doc) => !doc.data().matchThreadId);
+    const hasMore = filteredDocs.length > limit;
+    const pageDocs = hasMore ? filteredDocs.slice(0, limit) : filteredDocs;
 
     const sportsbites: SoftSportsbite[] = pageDocs.map((doc) => {
       const data = doc.data();
@@ -159,7 +161,7 @@ export async function POST(request: NextRequest) {
         return validationError(parseResult.error, ctx.requestId);
       }
 
-      const { body: biteBody, sportCategory, images, gifs } = parseResult.data;
+      const { body: biteBody, sportCategory, images, gifs, matchThreadId } = parseResult.data;
 
       const db = getAdminDb();
       if (!db) {
@@ -231,6 +233,7 @@ export async function POST(request: NextRequest) {
         sportCategory: sportCategory || null,
         images: images || [],
         gifs: gifs || [],
+        matchThreadId: matchThreadId || null,
         createdAt: now,
         updatedAt: now,
         likeCount: 0,

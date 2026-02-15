@@ -171,6 +171,7 @@ export interface SoftSportsbite {
   sportCategory?: string;
   images?: string[];
   gifs?: string[];
+  matchThreadId?: string;
   createdAt: Date;
   updatedAt: Date;
   likeCount: number;

@@ -27,6 +27,10 @@
     {
       "path": "/api/cron/sportsbites-container",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/match-thread-containers",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

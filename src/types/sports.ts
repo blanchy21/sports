@@ -268,3 +268,12 @@ export interface EventsApiResponse {
   timestamp: number;
   error?: string;
 }
+
+export interface MatchThread {
+  eventId: string;
+  permlink: string;
+  event: SportsEvent;
+  biteCount: number;
+  isOpen: boolean;
+  isLive: boolean;
+}

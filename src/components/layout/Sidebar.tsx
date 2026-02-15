@@ -19,6 +19,7 @@ import {
   Users,
   UserPlus,
   Users2,
+  Swords,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserProfilePopup } from '@/components/user/UserProfilePopup';
@@ -31,6 +32,7 @@ const navigationItems = [
   { href: '/feed', icon: BookOpen, label: 'Feed', requireAuth: false, featured: true },
   { href: '/communities', icon: Users2, label: 'Communities', requireAuth: false, featured: true },
   { href: '/sportsbites', icon: Zap, label: 'Sportsbites', requireAuth: false },
+  { href: '/match-threads', icon: Swords, label: 'Match Threads', requireAuth: false },
   { href: '/bookmarks', icon: Bookmark, label: 'Bookmarks', requireAuth: false },
   { href: '/publish', icon: Edit, label: 'Publish', requireAuth: false },
   { href: '/drafts', icon: FileEdit, label: 'Drafts', requireAuth: false },

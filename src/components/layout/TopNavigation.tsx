@@ -16,6 +16,7 @@ import {
   X,
   Menu,
   Newspaper,
+  Swords,
 } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
@@ -438,6 +439,20 @@ export const TopNavigation: React.FC = () => {
             >
               <Users className="h-5 w-5" />
               <span>Communities</span>
+            </Link>
+
+            <Link
+              href="/match-threads"
+              onClick={() => setShowMobileMenu(false)}
+              className={cn(
+                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
+                pathname === '/match-threads'
+                  ? 'bg-card text-primary'
+                  : 'text-white/90 hover:bg-white/20'
+              )}
+            >
+              <Swords className="h-5 w-5" />
+              <span>Match Threads</span>
             </Link>
 
             <button
