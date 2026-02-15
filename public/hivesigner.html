@@ -107,7 +107,7 @@
 
           // Notify opener if available (desktop popup flow).
           if (window.opener && typeof window.opener.postMessage === 'function') {
-            window.opener.postMessage({ source: 'hivesigner-callback', success: true, username }, '*');
+            window.opener.postMessage({ source: 'hivesigner-callback', success: true, username }, window.location.origin);
           }
 
           document.getElementById('status').textContent = 'Login information saved. Redirecting\u2026';
@@ -146,7 +146,7 @@
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error',
               },
-              '*'
+              window.location.origin
             );
           }
         }

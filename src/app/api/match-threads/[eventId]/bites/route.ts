@@ -21,29 +21,46 @@ export async function GET(
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
     const before = searchParams.get('before') || undefined;
 
-    const allBites: Sportsbite[] = [];
-
-    // Fetch Hive and soft bites in parallel
-    const [hiveResult, softBites] = await Promise.allSettled([
-      fetchMatchThreadBites(eventId, { limit, before }),
-      fetchSoftMatchThreadBites(eventId, { limit }),
+    // Fetch ALL from both sources (match thread bites are bounded, typically <200)
+    const [hiveResult, softResult] = await Promise.allSettled([
+      fetchMatchThreadBites(eventId),
+      fetchSoftMatchThreadBites(eventId),
     ]);
 
+    const allBites: Sportsbite[] = [];
+
     if (hiveResult.status === 'fulfilled') {
-      const tagged = hiveResult.value.sportsbites.map((s) => ({ ...s, source: 'hive' as const }));
+      const tagged = hiveResult.value.map((s) => ({ ...s, source: 'hive' as const }));
       allBites.push(...tagged);
     }
 
-    if (softBites.status === 'fulfilled') {
-      allBites.push(...softBites.value);
+    if (softResult.status === 'fulfilled') {
+      allBites.push(...softResult.value);
     }
 
+    // Deduplicate by ID
+    const seen = new Set<string>();
+    const uniqueBites = allBites.filter((b) => {
+      if (seen.has(b.id)) return false;
+      seen.add(b.id);
+      return true;
+    });
+
     // Sort newest first
-    allBites.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+    uniqueBites.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+
+    // Apply cursor: skip everything up to and including the cursor item
+    let afterCursor = uniqueBites;
+    if (before) {
+      const cursorIndex = uniqueBites.findIndex((b) => b.id === before);
+      if (cursorIndex !== -1) {
+        afterCursor = uniqueBites.slice(cursorIndex + 1);
+      }
+    }
 
     // Paginate
-    const hasMore = allBites.length > limit;
-    const page = allBites.slice(0, limit);
+    const hasMore = afterCursor.length > limit;
+    const page = afterCursor.slice(0, limit);
     const nextCursor = hasMore ? page[page.length - 1]?.id : undefined;
 
     return NextResponse.json(

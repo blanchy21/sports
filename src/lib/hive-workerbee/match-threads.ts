@@ -98,6 +98,18 @@ export function buildMatchThreadMetadata(event: SportsEvent): string {
 }
 
 // ---------------------------------------------------------------------------
+// Hive duplicate error detection
+// ---------------------------------------------------------------------------
+
+/** Returns true if a Hive broadcast error indicates the content already exists. */
+export function isHiveDuplicateError(error?: string): boolean {
+  return (
+    !!error &&
+    (error.includes('already') || error.includes('duplicate') || error.includes('permlink'))
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Create sportsbite operation for match threads (client-side, signed via Aioha)
 // ---------------------------------------------------------------------------
 
@@ -153,12 +165,7 @@ export function createMatchThreadSportsbiteOperation(
 // Fetch match thread bites from Hive
 // ---------------------------------------------------------------------------
 
-export async function fetchMatchThreadBites(
-  eventId: string,
-  options: { limit?: number; before?: string } = {}
-): Promise<{ sportsbites: Sportsbite[]; hasMore: boolean; nextCursor?: string }> {
-  const { limit = 20, before } = options;
-
+export async function fetchMatchThreadBites(eventId: string): Promise<Sportsbite[]> {
   try {
     const permlink = getMatchThreadPermlink(eventId);
 
@@ -168,32 +175,15 @@ export async function fetchMatchThreadBites(
     ]);
 
     if (!Array.isArray(replies)) {
-      return { sportsbites: [], hasMore: false };
+      return [];
     }
 
-    let bites = replies
+    return replies
       .map(transformToSportsbite)
       .filter((s): s is Sportsbite => s !== null)
       .filter((s) => !MUTED_AUTHORS.includes(s.author));
-
-    // Sort newest first
-    bites.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
-
-    // Cursor pagination
-    if (before) {
-      const beforeIndex = bites.findIndex((s) => s.id === before);
-      if (beforeIndex !== -1) {
-        bites = bites.slice(beforeIndex + 1);
-      }
-    }
-
-    const hasMore = bites.length > limit;
-    const page = bites.slice(0, limit);
-    const nextCursor = hasMore ? page[page.length - 1]?.id : undefined;
-
-    return { sportsbites: page, hasMore, nextCursor };
   } catch (error) {
     console.error(`[fetchMatchThreadBites] Error for event ${eventId}:`, error);
-    return { sportsbites: [], hasMore: false };
+    return [];
   }
 }

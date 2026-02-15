@@ -8,6 +8,7 @@ import {
   getMatchThreadPermlink,
   buildMatchThreadBody,
   buildMatchThreadMetadata,
+  isHiveDuplicateError,
 } from '@/lib/hive-workerbee/match-threads';
 import { SPORTSBITES_CONFIG } from '@/lib/hive-workerbee/sportsbites';
 
@@ -127,13 +128,7 @@ export async function GET() {
           results.push({ eventId: event.id, status: 'created' });
         } else {
           // Duplicate means it already exists
-          const isDuplicate =
-            result.error &&
-            (result.error.includes('already') ||
-              result.error.includes('duplicate') ||
-              result.error.includes('permlink'));
-
-          if (isDuplicate) {
+          if (isHiveDuplicateError(result.error)) {
             skipped++;
             results.push({ eventId: event.id, status: 'exists' });
           } else {

@@ -14,7 +14,6 @@ import {
   Upload,
   Link as LinkIcon,
   Film,
-  Search,
   Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
@@ -30,22 +29,11 @@ import { createCommentOptionsOperation } from '@/lib/hive-workerbee/wax-helpers'
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { validateImageUrl } from '@/lib/utils/sanitize';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
+import { GifPicker } from '@/components/gif/GifPicker';
 import dynamic from 'next/dynamic';
 import { logger } from '@/lib/logger';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
-
-interface GiphyGif {
-  id: string;
-  title: string;
-  images: {
-    original: { url: string; width: string; height: string };
-    fixed_height: { url: string; width: string; height: string };
-    fixed_height_small: { url: string; width: string; height: string };
-    fixed_width: { url: string; width: string; height: string };
-    preview_gif: { url: string; width: string; height: string };
-  };
-}
 
 interface ComposeSportsbiteProps {
   onSuccess?: (bite: Sportsbite) => void;
@@ -77,15 +65,10 @@ export function ComposeSportsbite({
 
   const [gifs, setGifs] = useState<string[]>([]);
   const [showGifPicker, setShowGifPicker] = useState(false);
-  const [gifSearchQuery, setGifSearchQuery] = useState('');
-  const [gifResults, setGifResults] = useState<GiphyGif[]>([]);
-  const [isLoadingGifs, setIsLoadingGifs] = useState(false);
-  const [gifError, setGifError] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const gifSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const charCount = content.length;
   const maxChars = SPORTSBITES_CONFIG.MAX_CHARS;
@@ -166,66 +149,6 @@ export function ComposeSportsbite({
 
   const handleRemoveImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
-  };
-
-  const loadTrendingGifs = useCallback(async () => {
-    setIsLoadingGifs(true);
-    setGifError(null);
-    try {
-      const response = await fetch('/api/giphy?type=trending&limit=24');
-      if (!response.ok) throw new Error('Failed to load trending GIFs');
-      const data = await response.json();
-      if (data.success) {
-        setGifResults(data.data || []);
-      } else {
-        throw new Error(data.error || 'Failed to load trending GIFs');
-      }
-    } catch (error) {
-      logger.error('Trending GIF error', 'ComposeSportsbite', error);
-      setGifError('Failed to load GIFs. Please try again.');
-    } finally {
-      setIsLoadingGifs(false);
-    }
-  }, []);
-
-  const searchGifs = useCallback(
-    async (query: string) => {
-      if (!query.trim()) {
-        loadTrendingGifs();
-        return;
-      }
-      setIsLoadingGifs(true);
-      setGifError(null);
-      try {
-        const response = await fetch(
-          `/api/giphy?type=search&q=${encodeURIComponent(query)}&limit=24`
-        );
-        if (!response.ok) throw new Error('Failed to search GIFs');
-        const data = await response.json();
-        if (data.success) {
-          setGifResults(data.data || []);
-        } else {
-          throw new Error(data.error || 'Failed to search GIFs');
-        }
-      } catch (error) {
-        logger.error('GIF search error', 'ComposeSportsbite', error);
-        setGifError('Failed to load GIFs. Please try again.');
-        setGifResults([]);
-      } finally {
-        setIsLoadingGifs(false);
-      }
-    },
-    [loadTrendingGifs]
-  );
-
-  const handleGifSelect = (gif: GiphyGif) => {
-    const gifUrl = gif.images.fixed_height?.url || gif.images.original?.url;
-    if (gifUrl) {
-      setGifs([...gifs, gifUrl]);
-      setShowGifPicker(false);
-      setGifSearchQuery('');
-      setGifResults([]);
-    }
   };
 
   const handleRemoveGif = (index: number) => {
@@ -400,12 +323,6 @@ export function ComposeSportsbite({
   ]);
 
   React.useEffect(() => {
-    return () => {
-      if (gifSearchTimeoutRef.current) clearTimeout(gifSearchTimeoutRef.current);
-    };
-  }, []);
-
-  React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (
@@ -416,14 +333,10 @@ export function ComposeSportsbite({
       ) {
         setShowEmojiPicker(false);
       }
-      if (showGifPicker && !target.closest('[data-gif-picker]')) {
-        setShowGifPicker(false);
-        if (gifSearchTimeoutRef.current) clearTimeout(gifSearchTimeoutRef.current);
-      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showEmojiPicker, showGifPicker]);
+  }, [showEmojiPicker]);
 
   React.useEffect(() => {
     const textarea = textareaRef.current;
@@ -680,97 +593,26 @@ export function ComposeSportsbite({
             )}
           </div>
 
-          <div className="relative" data-gif-picker>
+          <div className="relative">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                setShowGifPicker(!showGifPicker);
-                if (!showGifPicker) loadTrendingGifs();
-              }}
+              onClick={() => setShowGifPicker(!showGifPicker)}
               className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
               title="Add GIF"
             >
               <Film className="h-5 w-5" />
             </Button>
 
-            {showGifPicker && (
-              <div className="absolute left-0 top-full z-50 mt-2 max-h-96 w-80 overflow-hidden rounded-lg border bg-card shadow-lg">
-                <div className="border-b p-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      type="text"
-                      value={gifSearchQuery}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setGifSearchQuery(value);
-                        if (gifSearchTimeoutRef.current) clearTimeout(gifSearchTimeoutRef.current);
-                        gifSearchTimeoutRef.current = setTimeout(() => {
-                          searchGifs(value);
-                        }, 300);
-                      }}
-                      placeholder="Search GIFs..."
-                      className="w-full rounded-md bg-muted py-2 pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
-                <div className="max-h-72 overflow-y-auto p-2">
-                  {isLoadingGifs ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  ) : gifError ? (
-                    <div className="py-8 text-center text-sm text-muted-foreground">
-                      {gifError}
-                      <button
-                        type="button"
-                        onClick={loadTrendingGifs}
-                        className="mt-2 block w-full text-primary hover:underline"
-                      >
-                        Try again
-                      </button>
-                    </div>
-                  ) : gifResults.length === 0 ? (
-                    <div className="py-8 text-center text-sm text-muted-foreground">
-                      {gifSearchQuery ? 'No GIFs found' : 'Search for GIFs'}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-1">
-                      {gifResults.map((gif) => (
-                        <button
-                          key={gif.id}
-                          type="button"
-                          onClick={() => handleGifSelect(gif)}
-                          className="relative aspect-square overflow-hidden rounded transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={gif.images.fixed_height_small?.url || gif.images.preview_gif?.url}
-                            alt={gif.title}
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t bg-muted/50 px-2 py-1.5 text-center">
-                  <a
-                    href="https://giphy.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] text-muted-foreground hover:text-foreground"
-                  >
-                    Powered by GIPHY
-                  </a>
-                </div>
-              </div>
-            )}
+            <GifPicker
+              isOpen={showGifPicker}
+              onClose={() => setShowGifPicker(false)}
+              onSelect={(gifUrl) => {
+                setGifs([...gifs, gifUrl]);
+                setShowGifPicker(false);
+              }}
+              className="left-0 top-full mt-2"
+            />
           </div>
 
           <div className="relative">

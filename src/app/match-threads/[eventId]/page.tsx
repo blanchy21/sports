@@ -26,18 +26,16 @@ export default function MatchThreadDetailPage({ params }: MatchThreadDetailPageP
     setError(null);
 
     try {
-      const response = await fetch('/api/match-threads');
+      const response = await fetch(`/api/match-threads/${eventId}`);
       if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
 
       const data = await response.json();
       if (!data.success) throw new Error(data.error || 'Failed to load');
 
-      const found = (data.matchThreads as MatchThread[])?.find((t) => t.eventId === eventId);
-
-      if (!found) {
+      if (!data.matchThread) {
         setError('Match thread not found');
       } else {
-        setThread(found);
+        setThread(data.matchThread as MatchThread);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load match thread');

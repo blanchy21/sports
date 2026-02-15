@@ -6,6 +6,7 @@ import {
   getMatchThreadPermlink,
   buildMatchThreadBody,
   buildMatchThreadMetadata,
+  isHiveDuplicateError,
 } from '@/lib/hive-workerbee/match-threads';
 import { fetchAllEvents } from '@/lib/sports/thesportsdb';
 
@@ -101,13 +102,7 @@ export async function POST(
     }
 
     // Duplicate = already exists
-    const isDuplicate =
-      result.error &&
-      (result.error.includes('already') ||
-        result.error.includes('duplicate') ||
-        result.error.includes('permlink'));
-
-    if (isDuplicate) {
+    if (isHiveDuplicateError(result.error)) {
       createdContainers.add(permlink);
       return NextResponse.json({ success: true, permlink, alreadyExists: true });
     }

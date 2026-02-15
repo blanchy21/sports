@@ -301,7 +301,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
           </div>
         ) : error ? (
           <div className="py-12 text-center">
-            <div className="mb-4 text-6xl">error</div>
+            <div className="mb-4 text-6xl">⚠️</div>
             <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
               Error Loading Comments
             </h3>
@@ -316,7 +316,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
           </div>
         ) : (
           <div className="py-12 text-center">
-            <div className="mb-4 text-6xl">speech_bubble</div>
+            <div className="mb-4 text-6xl">💬</div>
             <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
               No Comments Yet
             </h3>

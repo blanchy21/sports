@@ -34,8 +34,12 @@ export function MatchThreadFeed({
 
   const nextCursorRef = useRef<string | undefined>(undefined);
   const latestBiteRef = useRef<string | undefined>(undefined);
+  const bitesRef = useRef<Sportsbite[]>(bites);
   const realtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const newAnimationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Keep bitesRef in sync
+  bitesRef.current = bites;
 
   // Faster polling for live matches
   const pollInterval = isLive ? 5000 : 15000;
@@ -105,7 +109,7 @@ export function MatchThreadFeed({
       const result: SportsbiteApiResponse = await response.json();
       if (!result.success || result.sportsbites.length === 0) return;
 
-      const currentIds = new Set(bites.map((s) => s.id));
+      const currentIds = new Set(bitesRef.current.map((s) => s.id));
       const newOnes = result.sportsbites.filter((s) => !currentIds.has(s.id));
 
       if (newOnes.length > 0) {
@@ -119,7 +123,7 @@ export function MatchThreadFeed({
     } catch (err) {
       logger.error('Error checking for new thread bites', 'MatchThreadFeed', err);
     }
-  }, [eventId, bites, isLoading]);
+  }, [eventId, isLoading]);
 
   const handleDelete = useCallback((id: string) => {
     setBites((prev) => prev.filter((b) => b.id !== id));
@@ -174,7 +178,7 @@ export function MatchThreadFeed({
   }, [optimisticBite, dedupeBites]);
 
   useEffect(() => {
-    if (isLoading || bites.length === 0) return;
+    if (isLoading || bitesRef.current.length === 0) return;
     realtimeIntervalRef.current = setInterval(checkForNew, pollInterval);
     return () => {
       if (realtimeIntervalRef.current) {
@@ -182,7 +186,7 @@ export function MatchThreadFeed({
         realtimeIntervalRef.current = null;
       }
     };
-  }, [isLoading, bites.length, checkForNew, pollInterval]);
+  }, [isLoading, checkForNew, pollInterval]);
 
   useEffect(() => {
     return () => {
