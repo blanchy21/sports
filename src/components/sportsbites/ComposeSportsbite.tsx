@@ -25,6 +25,7 @@ import {
   validateSportsbiteContent,
   Sportsbite,
 } from '@/lib/hive-workerbee/sportsbites';
+import { createCommentOptionsOperation } from '@/lib/hive-workerbee/wax-helpers';
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { validateImageUrl } from '@/lib/utils/sanitize';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
@@ -267,7 +268,18 @@ export function ComposeSportsbite({ onSuccess, onError }: ComposeSportsbiteProps
           throw new Error('Hive authentication not available. Please reconnect.');
         }
 
-        const result = await aiohaInstance.signAndBroadcastTx([['comment', operation]], 'posting');
+        const commentOptionsOp = createCommentOptionsOperation({
+          author: hiveUser.username,
+          permlink: operation.permlink,
+        });
+
+        const result = await aiohaInstance.signAndBroadcastTx(
+          [
+            ['comment', operation],
+            ['comment_options', commentOptionsOp],
+          ],
+          'posting'
+        );
 
         if (!result || (result as { error?: string }).error) {
           throw new Error((result as { error?: string }).error || 'Failed to broadcast');
