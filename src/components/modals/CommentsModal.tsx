@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useComments } from '@/lib/react-query/queries/useComments';
 import { Button } from '@/components/core/Button';
 import { Badge } from '@/components/core/Badge';
 import { Avatar } from '@/components/core/Avatar';
-import { MessageCircle, Send, Film, Reply } from 'lucide-react';
+import { MessageCircle, Send, Reply } from 'lucide-react';
 import { formatDate } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast, toast } from '@/components/core/Toast';
@@ -13,7 +13,7 @@ import { createCommentOperation } from '@/lib/hive-workerbee/wax-helpers';
 import { useInvalidateComments } from '@/lib/react-query/queries/useComments';
 import { CommentVoteButton } from '@/components/posts/CommentVoteButton';
 import { BaseModal } from '@/components/core/BaseModal';
-import { GifPicker } from '@/components/gif/GifPicker';
+import { CommentToolbar } from '@/components/comments/CommentToolbar';
 import { CommentContent } from '@/components/comments/CommentContent';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { logger } from '@/lib/logger';
@@ -33,17 +33,12 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
 
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showGifPicker, setShowGifPicker] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{
     author: string;
     permlink: string;
     body: string;
   } | null>(null);
-
-  const handleGifSelect = (gifUrl: string) => {
-    setCommentText((prev) => prev + `\n![gif](${gifUrl})\n`);
-    setShowGifPicker(false);
-  };
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: comments, isLoading, error } = useComments(author || '', permlink || '');
 
@@ -315,6 +310,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
             />
             <div className="flex-1">
               <textarea
+                ref={textareaRef}
                 placeholder={
                   replyingTo ? `Reply to @${replyingTo.author}...` : 'Write a comment...'
                 }
@@ -330,26 +326,13 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                 }}
                 disabled={isSubmitting}
               />
-              {/* GIF Button */}
-              <div className="relative mt-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowGifPicker(!showGifPicker)}
-                  className="h-8 px-2 text-muted-foreground hover:text-primary"
-                  title="Add GIF"
-                >
-                  <Film className="mr-1 h-4 w-4" />
-                  <span className="text-xs">GIF</span>
-                </Button>
-                <GifPicker
-                  isOpen={showGifPicker}
-                  onClose={() => setShowGifPicker(false)}
-                  onSelect={handleGifSelect}
-                  className="bottom-full left-0 mb-2"
-                />
-              </div>
+              <CommentToolbar
+                textareaRef={textareaRef}
+                text={commentText}
+                setText={setCommentText}
+                disabled={isSubmitting}
+                username={user?.username}
+              />
             </div>
           </div>
           <Button

@@ -1,17 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/core/Button';
 import { Badge } from '@/components/core/Badge';
 import { Avatar } from '@/components/core/Avatar';
-import { MessageCircle, Send, Loader2, Reply, Film } from 'lucide-react';
+import { MessageCircle, Send, Loader2, Reply } from 'lucide-react';
 import { formatDate } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast, toast } from '@/components/core/Toast';
 import { BaseModal } from '@/components/core/BaseModal';
 import { SoftLikeButtonCompact } from '@/components/voting/SoftLikeButton';
 import { SoftComment } from '@/app/api/soft/comments/route';
-import { GifPicker } from '@/components/gif/GifPicker';
+import { CommentToolbar } from '@/components/comments/CommentToolbar';
 import { CommentContent } from '@/components/comments/CommentContent';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { logger } from '@/lib/logger';
@@ -34,12 +34,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<SoftComment | null>(null);
-  const [showGifPicker, setShowGifPicker] = useState(false);
-
-  const handleGifSelect = (gifUrl: string) => {
-    setCommentText((prev) => prev + `\n![gif](${gifUrl})\n`);
-    setShowGifPicker(false);
-  };
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Fetch comments
   const fetchComments = useCallback(async () => {
@@ -380,6 +375,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
               />
               <div className="flex-1">
                 <textarea
+                  ref={textareaRef}
                   placeholder={
                     replyingTo ? `Reply to @${replyingTo.authorUsername}...` : 'Write a comment...'
                   }
@@ -395,26 +391,13 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
                   }}
                   disabled={isSubmitting}
                 />
-                {/* GIF Button */}
-                <div className="relative mt-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowGifPicker(!showGifPicker)}
-                    className="h-8 px-2 text-muted-foreground hover:text-primary"
-                    title="Add GIF"
-                  >
-                    <Film className="mr-1 h-4 w-4" />
-                    <span className="text-xs">GIF</span>
-                  </Button>
-                  <GifPicker
-                    isOpen={showGifPicker}
-                    onClose={() => setShowGifPicker(false)}
-                    onSelect={handleGifSelect}
-                    className="bottom-full left-0 mb-2"
-                  />
-                </div>
+                <CommentToolbar
+                  textareaRef={textareaRef}
+                  text={commentText}
+                  setText={setCommentText}
+                  disabled={isSubmitting}
+                  username={user?.username}
+                />
               </div>
             </div>
             <Button
