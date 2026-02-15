@@ -98,15 +98,42 @@
           };
           localStorage.setItem('authState', JSON.stringify(authState));
 
-          // Notify opener if available.
+          // UI hint for AuthContext hydration (shows username during loading)
+          localStorage.setItem('authHint', JSON.stringify({
+            wasLoggedIn: true,
+            displayHint: username,
+            authTypeHint: 'hive',
+          }));
+
+          // Notify opener if available (desktop popup flow).
           if (window.opener && typeof window.opener.postMessage === 'function') {
             window.opener.postMessage({ source: 'hivesigner-callback', success: true, username }, '*');
           }
 
-          document.getElementById('status').textContent = 'Login information saved. Redirecting&hellip;';
-          setTimeout(() => {
-            window.location.replace('/');
-          }, 1500);
+          document.getElementById('status').textContent = 'Login information saved. Redirecting\u2026';
+
+          // Create the httpOnly session cookie so AuthContext can restore the session.
+          // This is critical for mobile where the entire page redirects (no popup/opener).
+          fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              userId: username,
+              username: username,
+              authType: 'hive',
+              hiveUsername: username,
+              loginAt: Date.now(),
+            }),
+          })
+            .catch(function (err) {
+              console.warn('[HiveSigner callback] Failed to create session cookie:', err);
+            })
+            .finally(function () {
+              // Redirect to /feed — the session cookie is now set so AuthContext
+              // will recognise the user on page load.
+              window.location.replace('/feed');
+            });
         } catch (error) {
           console.error('[HiveSigner callback] Failed to process response', error);
           document.getElementById('status').textContent =
