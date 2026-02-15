@@ -232,7 +232,7 @@ export default function PostDetailClient() {
         <div className="mx-auto max-w-4xl p-6">
           <div className="text-center">
             <h1 className="mb-4 text-2xl font-bold text-red-600">Post Not Found</h1>
-            <p className="mb-6 text-gray-600">
+            <p className="mb-6 text-muted-foreground">
               {error || "The post you're looking for doesn't exist."}
             </p>
             <Button onClick={() => router.back()}>
@@ -276,7 +276,7 @@ export default function PostDetailClient() {
                   ? softPostMeta?.authorDisplayName || post.author
                   : hiveProfile?.displayName || post.author}
               </h1>
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
+              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                 <span>@{post.author}</span>
                 <span>•</span>
                 <span className="flex items-center">
@@ -316,7 +316,7 @@ export default function PostDetailClient() {
         </div>
 
         {/* Post Content */}
-        <div className="prose prose-lg mb-8 max-w-none">
+        <div className="prose prose-lg mb-8 max-w-none dark:prose-invert">
           <div
             dangerouslySetInnerHTML={{
               __html: proxyImagesInContent(sanitizePostContent(post.body)),
@@ -344,7 +344,7 @@ export default function PostDetailClient() {
                     onVoteSuccess={handleVoteSuccess}
                     onVoteError={handleVoteError}
                   />
-                  <span className="text-sm text-gray-600">{post.net_votes || 0} votes</span>
+                  <span className="text-sm text-muted-foreground">{post.net_votes || 0} votes</span>
                 </div>
               )}
 

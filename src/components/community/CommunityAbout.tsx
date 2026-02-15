@@ -61,7 +61,7 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
           </div>
         </div>
 
-        <div className="prose prose-sm max-w-none">
+        <div className="prose prose-sm max-w-none dark:prose-invert">
           <p className="mb-6 leading-relaxed text-muted-foreground">{community.description}</p>
         </div>
 
@@ -136,7 +136,7 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
       {/* Community Rules/Guidelines */}
       <Card className="p-6">
         <h3 className="mb-4 text-lg font-semibold">Community Guidelines</h3>
-        <div className="prose prose-sm max-w-none">
+        <div className="prose prose-sm max-w-none dark:prose-invert">
           <ul className="space-y-2 text-muted-foreground">
             <li>• Be respectful and constructive in your discussions</li>
             <li>• Stay on topic and relevant to the community theme</li>

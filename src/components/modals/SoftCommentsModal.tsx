@@ -236,7 +236,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
                 <span className="text-xs text-muted-foreground">(edited)</span>
               )}
             </div>
-            <div className="prose prose-sm max-w-none">
+            <div className="prose prose-sm max-w-none dark:prose-invert">
               {comment.isDeleted ? (
                 <p className="whitespace-pre-wrap text-sm italic text-muted-foreground">
                   {comment.body}

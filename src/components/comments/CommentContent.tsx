@@ -20,7 +20,7 @@ export function CommentContent({ body, className = '' }: CommentContentProps) {
   // Content is sanitized through DOMPurify via sanitizePostContent
   return (
     <div
-      className={`prose prose-sm max-w-none break-words ${className}`}
+      className={`prose prose-sm max-w-none break-words dark:prose-invert ${className}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

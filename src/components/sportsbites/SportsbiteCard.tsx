@@ -439,7 +439,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       {/* Content */}
       <div className="px-3 py-3 sm:px-4 sm:pl-[60px]">
         <div
-          className="prose prose-sm max-w-none break-words text-[15px] leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+          className="prose prose-sm max-w-none break-words text-[15px] leading-relaxed dark:prose-invert [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
           dangerouslySetInnerHTML={{ __html: biteHtml }}
         />
 
