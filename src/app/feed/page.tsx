@@ -178,18 +178,6 @@ export default function FeedPage() {
       setSelectedSport(event.detail);
     };
 
-    // Load saved sport filter from localStorage (client-side only)
-    if (typeof window !== 'undefined') {
-      try {
-        const savedSport = localStorage.getItem('selectedSport');
-        if (savedSport) {
-          setSelectedSport(savedSport);
-        }
-      } catch (err) {
-        logger.error('Error loading saved sport filter', 'FeedPage', err);
-      }
-    }
-
     window.addEventListener('sportFilterChanged', handleSportFilterChange as EventListener);
 
     return () => {

@@ -28,7 +28,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const handleSuccess = () => {
     setIsConnecting(false);
     onClose();
-    router.push('/feed');
+    router.push('/sportsbites');
   };
 
   const handleEmailSuccess = () => {

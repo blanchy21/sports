@@ -178,7 +178,7 @@ export const useAuthPage = (): UseAuthPageResult => {
     // Already logged in via AuthContext - redirect away from auth page
     // Skip redirect when adding a new account to preserve multi-account flow
     if (user?.username && !isAddAccountFlow) {
-      router.replace('/feed');
+      router.replace('/sportsbites');
       return;
     }
 
@@ -192,7 +192,7 @@ export const useAuthPage = (): UseAuthPageResult => {
         setIsConnecting(true);
         loginWithAioha()
           .then(() => {
-            router.replace('/feed');
+            router.replace('/sportsbites');
           })
           .catch(() => {
             // Auto-reconnect failed, let user manually authenticate
@@ -285,7 +285,7 @@ export const useAuthPage = (): UseAuthPageResult => {
         await loginWithAioha(loginResult);
         resetHivePrompt();
         closeAiohaModal();
-        router.push('/feed');
+        router.push('/sportsbites');
       } catch (error) {
         logger.error('Aioha login failed', 'useAuthPage', error);
         setErrorMessage(
@@ -364,7 +364,7 @@ export const useAuthPage = (): UseAuthPageResult => {
       } catch {
         // localStorage may be unavailable (private browsing, quota exceeded)
       }
-      router.push('/feed');
+      router.push('/sportsbites');
     } catch (error) {
       logger.error('Firebase authentication failed', 'useAuthPage', error);
       setErrorMessage(
@@ -390,7 +390,7 @@ export const useAuthPage = (): UseAuthPageResult => {
           // localStorage may be unavailable
         }
       }
-      router.push('/feed');
+      router.push('/sportsbites');
     } catch (error) {
       logger.error('Google sign-in failed', 'useAuthPage', error);
       // Handle specific Firebase errors
@@ -562,7 +562,7 @@ export const useAuthPage = (): UseAuthPageResult => {
             }
           }
           resetHivePrompt();
-          router.push('/feed');
+          router.push('/sportsbites');
         } else {
           const info = {
             username: (result as { username?: string })?.username,
@@ -666,7 +666,7 @@ export const useAuthPage = (): UseAuthPageResult => {
           }
         }
         setShowAiohaModal(false);
-        router.push('/feed');
+        router.push('/sportsbites');
       } catch (error) {
         logger.error('Aioha modal login failed', 'useAuthPage', error);
         setErrorMessage(

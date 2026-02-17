@@ -69,15 +69,7 @@ export const TopNavigation: React.FC = () => {
 
   const handleSportSelect = (sportId: string) => {
     setSelectedSport(sportId);
-    // Store the selected sport in localStorage for persistence (client-side only)
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('selectedSport', sportId);
-      } catch (error) {
-        logger.error('Error saving sport filter', 'TopNavigation', error);
-      }
-    }
-    // You could also emit an event or use a context to notify other components
+    // Dispatch event to notify other components (session-only, not persisted)
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('sportFilterChanged', { detail: sportId }));
     }

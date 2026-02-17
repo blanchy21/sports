@@ -170,7 +170,7 @@ export const useKeychainLogin = (onSuccess?: () => void): UseKeychainLoginResult
         await loginWithAioha(loginResult);
         resetState();
         onSuccess?.();
-        router.push('/feed');
+        router.push('/sportsbites');
       } else {
         const info = {
           username: (result as { username?: string })?.username,
