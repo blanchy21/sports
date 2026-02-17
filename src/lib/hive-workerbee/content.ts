@@ -49,12 +49,17 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
  * Check if a post belongs to the Sportsblock community
  */
 function isSportsblockCommunityPost(post: HivePost): boolean {
+  // Primary check: category field is the reliable community indicator from condenser_api
+  if (post.category === SPORTS_ARENA_CONFIG.COMMUNITY_ID) {
+    return true;
+  }
+  // Fallback for older posts: check tags and parent_permlink
   const metadata = parseJsonMetadata(post.json_metadata);
   const tags = Array.isArray(metadata.tags) ? metadata.tags : [];
   return (
     tags.includes('sportsblock') ||
-    tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME) ||
-    post.parent_permlink === SPORTS_ARENA_CONFIG.COMMUNITY_NAME
+    tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_ID) ||
+    post.parent_permlink === SPORTS_ARENA_CONFIG.COMMUNITY_ID
   );
 }
 
@@ -205,7 +210,7 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       // Trending doesn't support pagination — capped at 20
       const trendingPosts = await getContentOptimized('get_discussions_by_trending', [
         {
-          tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+          tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
           limit: Math.min(limit, HIVE_API_MAX_LIMIT),
         },
       ]);
@@ -220,16 +225,16 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
 
         if (author && permlink) {
           posts = await fetchCreatedPaginated(
-            SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+            SPORTS_ARENA_CONFIG.COMMUNITY_ID,
             limit,
             author,
             permlink
           );
         } else {
-          posts = await fetchCreatedPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_NAME, limit);
+          posts = await fetchCreatedPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_ID, limit);
         }
       } else {
-        posts = await fetchCreatedPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_NAME, limit);
+        posts = await fetchCreatedPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_ID, limit);
       }
     }
 
@@ -305,7 +310,7 @@ export async function fetchTrendingPosts(limit: number = 20): Promise<Sportsbloc
     // Hive API caps discussion queries at 20
     const trendingPosts = await makeWorkerBeeApiCall<unknown[]>('get_discussions_by_trending', [
       {
-        tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+        tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
         limit: Math.min(limit, HIVE_API_MAX_LIMIT),
       },
     ]);
@@ -331,7 +336,7 @@ export async function fetchHotPosts(limit: number = 20): Promise<SportsblockPost
     // Use WorkerBee API call for better node management
     const hotPosts = await makeWorkerBeeApiCall<unknown[]>('get_discussions_by_hot', [
       {
-        tag: SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+        tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
         limit: Math.min(limit, HIVE_API_MAX_LIMIT),
       },
     ]);
@@ -393,59 +398,66 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
  * @returns Comments
  */
 export async function fetchComments(author: string, permlink: string): Promise<HiveComment[]> {
+  const MAX_DEPTH = 10; // Safety cap to prevent runaway recursion
+
   try {
     workerBeeLog(`[fetchComments] Fetching comments for ${author}/${permlink}`);
 
-    // Use WorkerBee API call for better node management
-    // First, get direct replies to the post
-    const directReplies = await makeWorkerBeeApiCall<unknown[]>('get_content_replies', [
-      author,
-      permlink,
-    ]);
+    // Queue-based iterative approach: fetch replies for every comment with children > 0
+    const allComments: unknown[] = [];
+    const queue: Array<{ author: string; permlink: string; depth: number }> = [
+      { author, permlink, depth: 0 },
+    ];
 
-    workerBeeLog(
-      '[fetchComments] Direct replies',
-      undefined,
-      Array.isArray(directReplies) ? directReplies.length : 0
-    );
+    while (queue.length > 0) {
+      const current = queue.shift()!;
 
-    if (!Array.isArray(directReplies) || directReplies.length === 0) {
-      return [];
-    }
-
-    // Now get nested replies for each direct reply
-    const allComments: unknown[] = [...directReplies];
-
-    for (const reply of directReplies) {
-      try {
-        const replyData = reply as { author: string; permlink: string };
+      if (current.depth > MAX_DEPTH) {
         workerBeeLog(
-          `[fetchComments] Fetching nested replies for ${replyData.author}/${replyData.permlink}`
+          `[fetchComments] Skipping depth ${current.depth} for ${current.author}/${current.permlink} (max depth reached)`
         );
-        const nestedReplies = await makeWorkerBeeApiCall<unknown[]>('get_content_replies', [
-          replyData.author,
-          replyData.permlink,
+        continue;
+      }
+
+      try {
+        const replies = await makeWorkerBeeApiCall<unknown[]>('get_content_replies', [
+          current.author,
+          current.permlink,
         ]);
 
-        if (Array.isArray(nestedReplies) && nestedReplies.length > 0) {
-          workerBeeLog(
-            `[fetchComments] Found ${nestedReplies.length} nested replies for ${replyData.author}/${replyData.permlink}`
-          );
-          allComments.push(...nestedReplies);
+        if (!Array.isArray(replies) || replies.length === 0) {
+          continue;
+        }
+
+        // depth 0 = the root post itself, its replies are the top-level comments
+        workerBeeLog(
+          `[fetchComments] Found ${replies.length} replies at depth ${current.depth} for ${current.author}/${current.permlink}`
+        );
+
+        for (const reply of replies) {
+          allComments.push(reply);
+
+          // Queue this reply for further fetching if it has children
+          const replyData = reply as { author: string; permlink: string; children: number };
+          if (replyData.children > 0) {
+            queue.push({
+              author: replyData.author,
+              permlink: replyData.permlink,
+              depth: current.depth + 1,
+            });
+          }
         }
       } catch (error) {
-        const replyData = reply as { author: string; permlink: string };
         logWarn(
-          `[fetchComments] Error fetching nested replies for ${replyData.author}/${replyData.permlink}`,
+          `[fetchComments] Error fetching replies for ${current.author}/${current.permlink} at depth ${current.depth}`,
           'fetchComments',
           error
         );
-        // Continue with other replies even if one fails
+        // Continue with other items in queue even if one fails
       }
     }
 
     workerBeeLog('[fetchComments] Total comments found', undefined, allComments.length);
-    workerBeeLog('[fetchComments] All comments', undefined, allComments);
 
     // Validate with Zod schema for runtime type safety, then transform
     const validatedComments = validateHiveComments(allComments);
@@ -617,7 +629,8 @@ export async function getPopularTags(
         if (
           typeof tag === 'string' &&
           tag !== 'sportsblock' &&
-          tag !== SPORTS_ARENA_CONFIG.COMMUNITY_NAME
+          tag !== SPORTS_ARENA_CONFIG.COMMUNITY_NAME &&
+          tag !== SPORTS_ARENA_CONFIG.COMMUNITY_ID
         ) {
           tagCount[tag] = (tagCount[tag] || 0) + 1;
         }

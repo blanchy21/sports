@@ -372,7 +372,7 @@ export function createPostOperation(postData: {
   // Build tags array, including sub-community slug if provided
   const tags = [
     ...(postData.tags || []),
-    SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+    SPORTS_ARENA_CONFIG.COMMUNITY_ID,
     'sportsblock',
     // Add sub-community slug as a tag for discoverability
     ...(postData.subCommunity ? [postData.subCommunity.slug] : []),
@@ -398,7 +398,7 @@ export function createPostOperation(postData: {
 
   return {
     parent_author: postData.parentAuthor || '',
-    parent_permlink: postData.parentPermlink || SPORTS_ARENA_CONFIG.COMMUNITY_NAME,
+    parent_permlink: postData.parentPermlink || SPORTS_ARENA_CONFIG.COMMUNITY_ID,
     author: postData.author,
     permlink,
     title: postData.title,

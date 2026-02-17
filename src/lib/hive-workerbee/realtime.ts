@@ -827,7 +827,11 @@ export class RealtimeMonitor {
       }
       const tags = metadata.tags || [];
 
-      if (!tags.includes('sportsblock') && !tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME)) {
+      if (
+        !tags.includes('sportsblock') &&
+        !tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME) &&
+        !tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_ID)
+      ) {
         return; // Not a Sportsblock post
       }
 
@@ -957,7 +961,11 @@ export class RealtimeMonitor {
       }
       const tags = metadata.tags || [];
 
-      if (tags.includes('sportsblock') || tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME)) {
+      if (
+        tags.includes('sportsblock') ||
+        tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME) ||
+        tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_ID)
+      ) {
         // It's a Sportsblock post - add author to cache and emit vote
         this.addAuthorToCache(vote.author);
 
@@ -1089,7 +1097,11 @@ export class RealtimeMonitor {
       }
       const tags = metadata.tags || [];
 
-      if (tags.includes('sportsblock') || tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME)) {
+      if (
+        tags.includes('sportsblock') ||
+        tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_NAME) ||
+        tags.includes(SPORTS_ARENA_CONFIG.COMMUNITY_ID)
+      ) {
         // It's a Sportsblock post - add author to cache and emit comment
         this.addAuthorToCache(comment.parent_author);
 
