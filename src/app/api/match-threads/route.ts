@@ -36,36 +36,40 @@ export async function GET() {
       return false;
     });
 
-    // Batch-check which events have Hive containers (for bite counts)
-    const containerChecks = await Promise.allSettled(
+    // Batch-check which events have Hive containers (for bite counts).
+    // Container may not exist yet — get_content throws for non-existent posts,
+    // so we catch errors and default to 0 bites.
+    const containerChecks = await Promise.all(
       relevantEvents.map(async (event) => {
-        const permlink = getMatchThreadPermlink(event.id);
-        const content = await makeHiveApiCall<Record<string, unknown>>(
-          'condenser_api',
-          'get_content',
-          [MATCH_THREAD_CONFIG.PARENT_AUTHOR, permlink]
-        );
-        const hasContainer = !!(content && content.author && (content.body as string)?.length > 0);
-        const biteCount = hasContainer ? (content.children as number) || 0 : 0;
+        let biteCount = 0;
+        try {
+          const permlink = getMatchThreadPermlink(event.id);
+          const content = await makeHiveApiCall<Record<string, unknown>>(
+            'condenser_api',
+            'get_content',
+            [MATCH_THREAD_CONFIG.PARENT_AUTHOR, permlink]
+          );
+          const hasContainer = !!(
+            content &&
+            content.author &&
+            (content.body as string)?.length > 0
+          );
+          biteCount = hasContainer ? (content.children as number) || 0 : 0;
+        } catch {
+          // Container doesn't exist yet — this is expected for upcoming events
+        }
         return { event, biteCount };
       })
     );
 
-    const matchThreads: MatchThread[] = [];
-
-    for (const result of containerChecks) {
-      if (result.status !== 'fulfilled') continue;
-      const { event, biteCount } = result.value;
-
-      matchThreads.push({
-        eventId: event.id,
-        permlink: getMatchThreadPermlink(event.id),
-        event,
-        biteCount,
-        isOpen: isThreadOpen(event.date, event.status),
-        isLive: liveEventIds.has(event.id) || event.status === 'live',
-      });
-    }
+    const matchThreads: MatchThread[] = containerChecks.map(({ event, biteCount }) => ({
+      eventId: event.id,
+      permlink: getMatchThreadPermlink(event.id),
+      event,
+      biteCount,
+      isOpen: isThreadOpen(event.date, event.status),
+      isLive: liveEventIds.has(event.id) || event.status === 'live',
+    }));
 
     // Sort: live first, then upcoming by date, then recently finished
     matchThreads.sort((a, b) => {
