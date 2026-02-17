@@ -1,50 +1,12 @@
 /**
- * TheSportsDB API client — shared module.
+ * ESPN API client — shared module.
  *
- * Provides functions to fetch upcoming and live sports events from
- * TheSportsDB. Used by the events API route and match-thread cron jobs.
+ * Provides functions to fetch upcoming, live, and finished sports events from
+ * ESPN's public scoreboard API. Used by the events API route and match-thread
+ * cron jobs.
  */
 
 import { SportsEvent } from '@/types/sports';
-
-// -----------------------------------------------------------------------
-// TheSportsDB API response types
-// -----------------------------------------------------------------------
-
-export interface TheSportsDBEvent {
-  idEvent: string;
-  strEvent: string;
-  strHomeTeam: string;
-  strAwayTeam: string;
-  strLeague: string;
-  strSport: string;
-  strVenue?: string;
-  dateEvent: string;
-  strTime: string;
-  strStatus?: string;
-  strTimestamp?: string;
-}
-
-interface TheSportsDBResponse {
-  events: TheSportsDBEvent[] | null;
-}
-
-interface TheSportsDBLiveEvent {
-  idEvent: string;
-  strEvent: string;
-  strHomeTeam: string;
-  strAwayTeam: string;
-  strLeague: string;
-  strSport: string;
-  intHomeScore?: string;
-  intAwayScore?: string;
-  strProgress?: string;
-  strStatus?: string;
-}
-
-interface TheSportsDBLiveResponse {
-  events: TheSportsDBLiveEvent[] | null;
-}
 
 // -----------------------------------------------------------------------
 // Config
@@ -52,172 +14,194 @@ interface TheSportsDBLiveResponse {
 
 export const SPORTS_CONFIG = {
   football: {
-    icon: '⚽',
+    icon: '\u26BD',
     sportName: 'Football',
-    liveSportKey: 'Soccer',
+    espnSport: 'soccer',
     leagues: [
-      { id: '4328', name: 'Premier League' },
-      { id: '4480', name: 'Champions League' },
-      { id: '4335', name: 'La Liga' },
-      { id: '4332', name: 'Serie A' },
-      { id: '4331', name: 'Bundesliga' },
+      { slug: 'eng.1', name: 'Premier League' },
+      { slug: 'uefa.champions', name: 'Champions League' },
+      { slug: 'esp.1', name: 'La Liga' },
+      { slug: 'ita.1', name: 'Serie A' },
+      { slug: 'ger.1', name: 'Bundesliga' },
     ],
   },
   nfl: {
-    icon: '🏈',
+    icon: '\uD83C\uDFC8',
     sportName: 'American Football',
-    liveSportKey: 'Football',
-    leagues: [{ id: '4391', name: 'NFL' }],
+    espnSport: 'football',
+    leagues: [{ slug: 'nfl', name: 'NFL' }],
   },
   tennis: {
-    icon: '🎾',
+    icon: '\uD83C\uDFBE',
     sportName: 'Tennis',
-    liveSportKey: 'Tennis',
-    leagues: [{ id: '4394', name: 'ATP' }],
+    espnSport: 'tennis',
+    leagues: [{ slug: 'atp', name: 'ATP' }],
   },
   golf: {
-    icon: '⛳',
+    icon: '\u26F3',
     sportName: 'Golf',
-    liveSportKey: 'Golf',
-    leagues: [{ id: '4342', name: 'PGA Tour' }],
+    espnSport: 'golf',
+    leagues: [{ slug: 'pga', name: 'PGA Tour' }],
   },
 };
 
-const API_KEY = process.env.THESPORTSDB_API_KEY || '123';
-const BASE_URL = `https://www.thesportsdb.com/api/v1/json/${API_KEY}`;
+// -----------------------------------------------------------------------
+// ESPN API types
+// -----------------------------------------------------------------------
+
+interface ESPNCompetitor {
+  homeAway: 'home' | 'away';
+  team: {
+    displayName: string;
+  };
+}
+
+interface ESPNEvent {
+  id: string;
+  name: string;
+  date: string;
+  competitions: {
+    competitors: ESPNCompetitor[];
+    venue?: { fullName: string };
+    status: {
+      type: {
+        state: 'pre' | 'in' | 'post';
+      };
+    };
+  }[];
+}
+
+interface ESPNScoreboardResponse {
+  events: ESPNEvent[];
+  leagues: { name: string }[];
+}
+
+// -----------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------
+
+function formatDate(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}${m}${d}`;
+}
+
+function espnStateToStatus(state: 'pre' | 'in' | 'post'): SportsEvent['status'] {
+  switch (state) {
+    case 'in':
+      return 'live';
+    case 'post':
+      return 'finished';
+    default:
+      return 'upcoming';
+  }
+}
 
 // -----------------------------------------------------------------------
 // Fetching
 // -----------------------------------------------------------------------
 
-export async function fetchLeagueEvents(leagueId: string): Promise<TheSportsDBEvent[]> {
+const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports';
+
+async function fetchLeagueScoreboard(
+  espnSport: string,
+  leagueSlug: string,
+  dateRange: string
+): Promise<{ events: ESPNEvent[]; leagueName: string }> {
+  const url = `${ESPN_BASE}/${espnSport}/${leagueSlug}/scoreboard?dates=${dateRange}`;
+
   try {
-    const response = await fetch(`${BASE_URL}/eventsnextleague.php?id=${leagueId}`, {
-      next: { revalidate: 300 },
-    });
+    const response = await fetch(url, { next: { revalidate: 300 } });
 
     if (!response.ok) {
-      console.error(`Failed to fetch league ${leagueId}: ${response.status}`);
-      return [];
+      console.error(`ESPN: failed to fetch ${espnSport}/${leagueSlug}: ${response.status}`);
+      return { events: [], leagueName: '' };
     }
 
-    const data: TheSportsDBResponse = await response.json();
-    return data.events || [];
+    const data: ESPNScoreboardResponse = await response.json();
+    const leagueName = data.leagues?.[0]?.name ?? '';
+    return { events: data.events ?? [], leagueName };
   } catch (error) {
-    console.error(`Error fetching league ${leagueId}:`, error);
-    return [];
+    console.error(`ESPN: error fetching ${espnSport}/${leagueSlug}:`, error);
+    return { events: [], leagueName: '' };
   }
 }
 
-export async function fetchLiveEvents(sportKey: string): Promise<Set<string>> {
-  const liveIds = new Set<string>();
-
-  try {
-    const response = await fetch(`${BASE_URL}/livescore.php?s=${sportKey}`, {
-      cache: 'no-store',
-    });
-
-    if (!response.ok) return liveIds;
-
-    const data: TheSportsDBLiveResponse = await response.json();
-    if (data.events) {
-      data.events.forEach((event) => liveIds.add(event.idEvent));
-    }
-  } catch (error) {
-    console.error(`Error fetching live events for ${sportKey}:`, error);
-  }
-
-  return liveIds;
-}
-
-// -----------------------------------------------------------------------
-// Conversion / filtering / sorting
-// -----------------------------------------------------------------------
-
-export function parseEventDateTime(dateStr: string, timeStr: string): Date {
-  const dateTime = `${dateStr}T${timeStr || '00:00:00'}Z`;
-  return new Date(dateTime);
-}
-
-export function convertToSportsEvent(
-  event: TheSportsDBEvent,
-  sportConfig: { icon: string; sportName: string },
-  liveEventIds: Set<string>
+function convertESPNEvent(
+  event: ESPNEvent,
+  leagueName: string,
+  sportConfig: { icon: string; sportName: string }
 ): SportsEvent {
-  const eventDate = parseEventDateTime(event.dateEvent, event.strTime);
-  const now = new Date();
-
-  let status: 'upcoming' | 'live' | 'finished' = 'upcoming';
-
-  if (liveEventIds.has(event.idEvent)) {
-    status = 'live';
-  } else if (event.strStatus === 'Match Finished' || event.strStatus === 'FT') {
-    status = 'finished';
-  } else if (eventDate < now) {
-    const hoursElapsed = (now.getTime() - eventDate.getTime()) / (1000 * 60 * 60);
-    if (hoursElapsed > 3) {
-      status = 'finished';
-    } else {
-      status = 'upcoming';
-    }
-  }
+  const comp = event.competitions[0];
+  const home = comp?.competitors?.find((c) => c.homeAway === 'home');
+  const away = comp?.competitors?.find((c) => c.homeAway === 'away');
+  const status = espnStateToStatus(comp?.status?.type?.state ?? 'pre');
 
   return {
-    id: event.idEvent,
-    name: event.strEvent,
-    date: eventDate.toISOString(),
+    id: event.id,
+    name: event.name,
+    date: event.date,
     icon: sportConfig.icon,
     sport: sportConfig.sportName,
-    league: event.strLeague,
-    teams: {
-      home: event.strHomeTeam,
-      away: event.strAwayTeam,
-    },
-    venue: event.strVenue,
+    league: leagueName,
+    teams: home && away ? { home: home.team.displayName, away: away.team.displayName } : undefined,
+    venue: comp?.venue?.fullName,
     status,
   };
 }
+
+// -----------------------------------------------------------------------
+// Public API (same signatures as before)
+// -----------------------------------------------------------------------
 
 export async function fetchAllEvents(): Promise<{
   events: SportsEvent[];
   liveEventIds: Set<string>;
 }> {
-  const allEvents: SportsEvent[] = [];
-  const allLiveIds = new Set<string>();
+  const now = new Date();
+  const end = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const dateRange = `${formatDate(now)}-${formatDate(end)}`;
 
-  // Fetch live events for all sports first
-  const livePromises = Object.values(SPORTS_CONFIG).map((config) =>
-    fetchLiveEvents(config.liveSportKey)
-  );
-  const liveResults = await Promise.all(livePromises);
-  liveResults.forEach((ids) => ids.forEach((id) => allLiveIds.add(id)));
-
-  // Fetch upcoming events for all leagues
   const fetchPromises: Promise<{
-    events: TheSportsDBEvent[];
+    events: ESPNEvent[];
+    leagueName: string;
     config: (typeof SPORTS_CONFIG)['football'];
+    configLeagueName: string;
   }>[] = [];
 
-  for (const [, sportConfig] of Object.entries(SPORTS_CONFIG)) {
+  for (const sportConfig of Object.values(SPORTS_CONFIG)) {
     for (const league of sportConfig.leagues) {
       fetchPromises.push(
-        fetchLeagueEvents(league.id).then((events) => ({
-          events,
-          config: sportConfig,
-        }))
+        fetchLeagueScoreboard(sportConfig.espnSport, league.slug, dateRange).then(
+          ({ events, leagueName }) => ({
+            events,
+            leagueName,
+            config: sportConfig,
+            configLeagueName: league.name,
+          })
+        )
       );
     }
   }
 
   const results = await Promise.all(fetchPromises);
 
-  for (const { events, config } of results) {
+  const allEvents: SportsEvent[] = [];
+  const liveEventIds = new Set<string>();
+
+  for (const { events, leagueName, config, configLeagueName } of results) {
+    const displayLeague = leagueName || configLeagueName;
     for (const event of events) {
-      allEvents.push(convertToSportsEvent(event, config, allLiveIds));
+      const sportsEvent = convertESPNEvent(event, displayLeague, config);
+      allEvents.push(sportsEvent);
+      if (sportsEvent.status === 'live') {
+        liveEventIds.add(sportsEvent.id);
+      }
     }
   }
 
-  return { events: allEvents, liveEventIds: allLiveIds };
+  return { events: allEvents, liveEventIds };
 }
 
 export function filterEvents(events: SportsEvent[]): SportsEvent[] {
