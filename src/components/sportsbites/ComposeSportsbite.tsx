@@ -11,7 +11,6 @@ import {
   Loader2,
   MapPin,
   Send,
-  Upload,
   Link as LinkIcon,
   Film,
   Zap,
@@ -59,7 +58,6 @@ export function ComposeSportsbite({
   const [showSportPicker, setShowSportPicker] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [showImageInput, setShowImageInput] = useState(false);
-  const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -447,34 +445,10 @@ export function ComposeSportsbite({
 
             {showImageInput && (
               <div className="mt-3 rounded-lg border bg-muted/50 p-3">
-                <div className="mb-3 flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setImageInputMode('upload')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                      imageInputMode === 'upload'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted'
-                    )}
-                  >
-                    <Upload className="h-4 w-4" />
-                    Upload
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImageInputMode('url')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                      imageInputMode === 'url'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted'
-                    )}
-                  >
-                    <LinkIcon className="h-4 w-4" />
-                    URL
-                  </button>
-                  <div className="flex-1" />
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Add image from URL
+                  </span>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -487,71 +461,31 @@ export function ComposeSportsbite({
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-
-                {imageInputMode === 'upload' && (
-                  <div className="space-y-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileUpload(file);
-                        e.target.value = '';
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploadingImage}
-                      className={cn(
-                        'flex w-full flex-col items-center justify-center gap-2 p-4',
-                        'rounded-lg border-2 border-dashed border-muted-foreground/30',
-                        'transition-colors hover:border-primary/50 hover:bg-primary/5',
-                        'text-muted-foreground',
-                        isUploadingImage && 'cursor-not-allowed opacity-50'
-                      )}
-                    >
-                      {isUploadingImage ? (
-                        <>
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                          <span className="text-sm">Uploading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-6 w-6" />
-                          <span className="text-sm">Click to select an image</span>
-                          <span className="text-xs text-muted-foreground/70">Max 5MB</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
-
-                {imageInputMode === 'url' && (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      placeholder="Paste image URL..."
-                      className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddImage();
-                        }
-                      }}
-                    />
-                    <Button size="sm" onClick={handleAddImage} disabled={!imageUrl.trim()}>
-                      Add
-                    </Button>
-                  </div>
-                )}
-
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="Paste image URL..."
+                    className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddImage();
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <Button size="sm" onClick={handleAddImage} disabled={!imageUrl.trim()}>
+                    Add
+                  </Button>
+                </div>
                 {uploadError && <p className="mt-2 text-sm text-destructive">{uploadError}</p>}
               </div>
+            )}
+
+            {uploadError && !showImageInput && (
+              <p className="mt-2 text-sm text-destructive">{uploadError}</p>
             )}
           </div>
         </div>
@@ -560,14 +494,40 @@ export function ComposeSportsbite({
       {/* Toolbar */}
       <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-3">
         <div className="flex items-center gap-1">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFileUpload(file);
+              e.target.value = '';
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingImage}
+            className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
+            title="Upload image"
+          >
+            {isUploadingImage ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <ImageIcon className="h-5 w-5" />
+            )}
+          </Button>
+
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowImageInput(!showImageInput)}
             className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
-            title="Add image"
+            title="Add image from URL"
           >
-            <ImageIcon className="h-5 w-5" />
+            <LinkIcon className="h-5 w-5" />
           </Button>
 
           <div className="relative">
