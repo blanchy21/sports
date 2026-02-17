@@ -99,6 +99,13 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
 
   const loginWithFirebase = useCallback(
     (authUser: AuthUser) => {
+      // Guard: never downgrade a Hive session to soft login
+      const { authType: currentAuthType } = getState();
+      if (currentAuthType === 'hive' && !authUser.isHiveUser) {
+        logger.warn('Blocked attempt to downgrade Hive session to soft login', 'useAuthActions');
+        return;
+      }
+
       const now = Date.now();
       const newUser: User = {
         id: authUser.id,
@@ -127,7 +134,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         loginAt: now,
       });
     },
-    [dispatch]
+    [dispatch, getState]
   );
 
   const loginWithHiveUser = useCallback(

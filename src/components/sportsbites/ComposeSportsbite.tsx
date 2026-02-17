@@ -45,7 +45,7 @@ export function ComposeSportsbite({
   onError,
   matchThreadEventId,
 }: ComposeSportsbiteProps) {
-  const { user, authType, hiveUser, touchSession } = useAuth();
+  const { user, authType, hiveUser, touchSession, logout } = useAuth();
   const [content, setContent] = useState('');
 
   const hiveUsername =
@@ -247,10 +247,10 @@ export function ComposeSportsbite({
         setSportCategory('');
         onSuccess?.(optimisticBite);
       } else if (user?.isHiveAuth || user?.hiveUsername) {
-        // DEFENSIVE: Hive user whose session state has degraded — don't silently post off-chain
-        throw new Error(
-          'Your Hive session has expired. Please reconnect your Hive wallet to post on-chain.'
-        );
+        // DEFENSIVE: Hive user whose session state has degraded — force clean logout
+        await logout();
+        onError?.('Your Hive session was invalid. Please sign in again.');
+        return;
       } else {
         // SOFT USER: Publish to Firebase
         const response = await fetch('/api/soft/sportsbites', {
@@ -315,6 +315,7 @@ export function ComposeSportsbite({
     authType,
     hiveUser,
     touchSession,
+    logout,
     matchThreadEventId,
     onSuccess,
     onError,

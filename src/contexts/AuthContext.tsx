@@ -24,6 +24,7 @@ import { hasValidAccountData } from './auth/auth-type-guards';
 import {
   isSessionExpired,
   persistAuthState,
+  clearPersistedAuthState,
   fetchSessionFromCookie,
   loadUIHint,
 } from './auth/auth-persistence';
@@ -101,10 +102,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           // Check if session is expired
           if (isSessionExpired(sessionLoginAt)) {
-            // Clear legacy localStorage if it exists
-            localStorage.removeItem(AUTH_STORAGE_KEY);
             logger.info('Session expired due to inactivity', 'AuthContext');
+            await clearPersistedAuthState();
             dispatch({ type: 'SESSION_EXPIRED' });
+            return;
+          }
+
+          // Validate session integrity: Hive sessions must have a hiveUsername
+          if (sessionAuthType === 'hive' && !hiveUsername) {
+            logger.warn('Invalid Hive session: missing hiveUsername', 'AuthContext');
+            await clearPersistedAuthState();
+            dispatch({ type: 'INVALID_SESSION' });
             return;
           }
 
@@ -176,6 +184,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'TOUCH_SESSION', payload: { loginAt: now } });
     persistAuthState({ user, authType, hiveUser, loginAt: now });
   }, [user, authType, hiveUser]);
+
+  // ============================================================================
+  // Activity Tracking — throttled touch on user interaction to prevent expiry
+  // ============================================================================
+
+  useEffect(() => {
+    if (!user) return;
+
+    const THROTTLE_MS = 5 * 60 * 1000; // 5 minutes
+    let lastTouch = Date.now();
+
+    const handleActivity = () => {
+      const now = Date.now();
+      if (now - lastTouch >= THROTTLE_MS) {
+        lastTouch = now;
+        touchSession();
+      }
+    };
+
+    const events: (keyof WindowEventMap)[] = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach((event) => window.addEventListener(event, handleActivity, { passive: true }));
+    return () => {
+      events.forEach((event) => window.removeEventListener(event, handleActivity));
+    };
+  }, [user, touchSession]);
 
   // ============================================================================
   // Account Refresh
