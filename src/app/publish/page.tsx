@@ -706,6 +706,7 @@ function PublishPageContent() {
               size="sm"
               onClick={() => router.push('/feed')}
               className="h-8 w-8 p-0"
+              title="Back to feed"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -744,6 +745,7 @@ function PublishPageContent() {
               size="sm"
               onClick={() => setShowMenu(!showMenu)}
               className="h-8 w-8 p-0"
+              title="More options"
             >
               <MoreVertical className="h-4 w-4" />
             </Button>
