@@ -67,7 +67,10 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const allImages = React.useMemo(() => {
     const metadataImages = sportsbite.images || [];
     const gifs = sportsbite.gifs || [];
-    const combined = [...new Set([...metadataImages, ...gifs, ...bodyImages])];
+    // Prefer metadata images (canonical source). Only fall back to body-extracted
+    // images for legacy or third-party posts that lack metadata.
+    const imgs = metadataImages.length > 0 ? metadataImages : bodyImages;
+    const combined = [...new Set([...imgs, ...gifs])];
     return combined.filter((img) => !failedImages.has(img));
   }, [sportsbite.images, sportsbite.gifs, bodyImages, failedImages]);
 
