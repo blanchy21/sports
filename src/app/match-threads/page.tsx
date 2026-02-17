@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, AlertCircle, Swords } from 'lucide-react';
+import { RefreshCw, AlertCircle, Swords, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/core/Button';
 import { MatchThreadCard } from '@/components/match-threads/MatchThreadCard';
 import { MatchThread } from '@/types/sports';
@@ -63,6 +64,15 @@ export default function MatchThreadsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+      {/* Back to Sportsbites */}
+      <Link
+        href="/sportsbites"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Sportsbites
+      </Link>
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="rounded-lg bg-primary/10 p-2">
