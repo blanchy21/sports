@@ -58,8 +58,8 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, 
   );
 
   const handleAlternativeLogin = useCallback(() => {
-    router.push('/auth');
     onClose();
+    router.push('/auth?addAccount=true');
   }, [onClose, router]);
 
   const isLoginDisabled = !hiveUsername.trim() || isConnecting || !isAiohaReady;

@@ -83,7 +83,7 @@ function PublishPageContent() {
   const [showMenu, setShowMenu] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [imageAlt, setImageAlt] = useState('');
-  const [imageTab, setImageTab] = useState<'url' | 'upload'>('url');
+  const [imageTab, setImageTab] = useState<'url' | 'upload'>('upload');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
@@ -395,7 +395,7 @@ function PublishPageContent() {
 
       if (result.success && result.url) {
         setImageUrl(result.url);
-        setImageAlt(file.name.replace(/\.[^/.]+$/, '')); // Use filename without extension as alt
+        setImageAlt(''); // Don't auto-fill caption with filename
       } else {
         throw new Error(result.error || 'Upload failed');
       }
