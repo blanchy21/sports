@@ -107,7 +107,7 @@ export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
                   ? 'Insufficient voting power or not authenticated'
                   : voteState.isVoting
                     ? 'Vote in progress...'
-                    : `${starNumber} star${starNumber > 1 ? 's' : ''} (${starNumber * 20}% vote weight)`
+                    : `${starNumber * 20}% upvote`
               }
             >
               {starState === 'loading' ? (
