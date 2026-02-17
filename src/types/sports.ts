@@ -205,6 +205,22 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     color: 'bg-amber-600',
   },
   {
+    id: 'softball',
+    name: 'Softball',
+    slug: 'softball',
+    icon: '🥎',
+    description: 'Softball',
+    color: 'bg-yellow-500',
+  },
+  {
+    id: 'olympics',
+    name: 'Olympics',
+    slug: 'olympics',
+    icon: '🏅',
+    description: 'Olympic Games',
+    color: 'bg-amber-500',
+  },
+  {
     id: 'sailing',
     name: 'Sailing',
     slug: 'sailing',
