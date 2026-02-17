@@ -611,6 +611,12 @@ export function ComposeSportsbite({
         </div>
 
         <div className="flex items-center gap-3">
+          {charCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {content.trim().split(/\s+/).filter(Boolean).length}w
+            </span>
+          )}
+
           <div className="flex items-center gap-2">
             {charCount > 0 && (
               <>
