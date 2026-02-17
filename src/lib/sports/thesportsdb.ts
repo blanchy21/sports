@@ -60,7 +60,8 @@ interface ESPNEvent {
   id: string;
   name: string;
   date: string;
-  competitions: {
+  // Tennis/golf tournaments may omit competitions entirely
+  competitions?: {
     competitors: ESPNCompetitor[];
     venue?: { fullName: string };
     status: {
@@ -69,6 +70,12 @@ interface ESPNEvent {
       };
     };
   }[];
+  // Tournament-level status (used when competitions is absent)
+  status?: {
+    type: {
+      state: 'pre' | 'in' | 'post';
+    };
+  };
 }
 
 interface ESPNScoreboardResponse {
@@ -133,10 +140,11 @@ function convertESPNEvent(
   leagueName: string,
   sportConfig: { icon: string; sportName: string }
 ): SportsEvent {
-  const comp = event.competitions[0];
+  const comp = event.competitions?.[0];
   const home = comp?.competitors?.find((c) => c.homeAway === 'home');
   const away = comp?.competitors?.find((c) => c.homeAway === 'away');
-  const status = espnStateToStatus(comp?.status?.type?.state ?? 'pre');
+  const stateRaw = comp?.status?.type?.state ?? event.status?.type?.state ?? 'pre';
+  const status = espnStateToStatus(stateRaw);
 
   return {
     id: event.id,
