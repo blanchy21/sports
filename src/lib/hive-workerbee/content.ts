@@ -110,6 +110,20 @@ function toTypedHivePosts(data: unknown): HivePost[] {
 }
 
 /**
+ * Container content_types used by SportsBites / Match Threads.
+ * These are structural wrapper posts — not user content — so they
+ * should never appear in regular Sportsblock feeds.
+ */
+const CONTAINER_CONTENT_TYPES = new Set(['sportsbites-container', 'match-thread-container']);
+
+function isContainerPost(post: HivePost): boolean {
+  const metadata = parseJsonMetadata(post.json_metadata);
+  return (
+    typeof metadata.content_type === 'string' && CONTAINER_CONTENT_TYPES.has(metadata.content_type)
+  );
+}
+
+/**
  * Convert HivePost array to SportsblockPost array,
  * filtering only sportsblock community posts
  */
@@ -117,6 +131,7 @@ function toTypedSportsblockPosts(posts: HivePost[]): SportsblockPost[] {
   return posts
     .filter(isSportsblockCommunityPost)
     .filter((post) => !MUTED_AUTHORS.includes(post.author))
+    .filter((post) => !isContainerPost(post))
     .map((post) => toSportsblockPost(post, getSportCategory(post)));
 }
 
