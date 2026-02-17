@@ -11,6 +11,7 @@ import {
   Repeat2,
   ExternalLink,
   Trash2,
+  Users,
 } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
@@ -545,7 +546,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               <StarVoteButton
                 author={sportsbite.author}
                 permlink={sportsbite.permlink}
-                voteCount={sportsbite.net_votes || 0}
+                voteCount={sportsbite.active_votes?.length || sportsbite.net_votes || 0}
                 onVoteSuccess={handleVoteSuccess}
                 onVoteError={handleVoteError}
               />
@@ -562,9 +563,11 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             )}
             <button
               onClick={handleUpvoteList}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              title="View voters"
             >
-              {sportsbite.net_votes || 0}
+              <Users className="h-3.5 w-3.5" />
+              {sportsbite.active_votes?.length || sportsbite.net_votes || 0}
             </button>
           </div>
 

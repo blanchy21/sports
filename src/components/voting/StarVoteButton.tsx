@@ -9,7 +9,8 @@ import { VoteResult } from '@/lib/hive-workerbee/voting';
 interface StarVoteButtonProps {
   author: string;
   permlink: string;
-  voteCount: number;
+  /** @deprecated No longer displayed inside StarVoteButton — shown externally */
+  voteCount?: number;
   className?: string;
   onVoteSuccess?: (result: VoteResult) => void;
   onVoteError?: (error: string) => void;
@@ -18,7 +19,6 @@ interface StarVoteButtonProps {
 export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
   author,
   permlink,
-  voteCount,
   className,
   onVoteSuccess,
   onVoteError,
@@ -132,19 +132,6 @@ export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
           );
         })}
       </div>
-
-      {/* Vote Count */}
-      <span className="text-xs font-medium text-muted-foreground">{voteCount}</span>
-
-      {/* Voting Power Indicator */}
-      {voteState.canVote && (
-        <div className="ml-1 text-xs text-muted-foreground">
-          <div className="flex items-center space-x-1">
-            <span>⚡</span>
-            <span>{voteState.votingPower.toFixed(1)}%</span>
-          </div>
-        </div>
-      )}
 
       {/* Error Display */}
       {voteState.error && <div className="ml-2 text-xs text-red-600">{voteState.error}</div>}

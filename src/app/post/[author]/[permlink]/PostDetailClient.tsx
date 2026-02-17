@@ -363,11 +363,13 @@ export default function PostDetailClient() {
                   <StarVoteButton
                     author={post.author}
                     permlink={post.permlink}
-                    voteCount={post.net_votes || 0}
+                    voteCount={post.active_votes?.length || post.net_votes || 0}
                     onVoteSuccess={handleVoteSuccess}
                     onVoteError={handleVoteError}
                   />
-                  <span className="text-sm text-muted-foreground">{post.net_votes || 0} votes</span>
+                  <span className="text-sm text-muted-foreground">
+                    {post.active_votes?.length || post.net_votes || 0} votes
+                  </span>
                 </div>
               )}
 

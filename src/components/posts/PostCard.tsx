@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { MessageCircle, Bookmark, MapPin, Repeat2 } from 'lucide-react';
+import { MessageCircle, Bookmark, MapPin, Repeat2, Users } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
 import { Badge } from '@/components/core/Badge';
@@ -342,9 +342,11 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
                 />
                 <button
                   onClick={handleUpvoteList}
-                  className="text-xs text-muted-foreground transition-colors hover:text-primary"
+                  className="flex items-center space-x-1 text-muted-foreground transition-colors hover:text-primary"
+                  title="View voters"
                 >
-                  ({voteCount})
+                  <Users className="h-3.5 w-3.5" />
+                  <span className="text-xs font-medium">{voteCount}</span>
                 </button>
               </div>
             ) : (

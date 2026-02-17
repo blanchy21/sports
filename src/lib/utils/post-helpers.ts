@@ -132,14 +132,16 @@ export function getPostCreatedAt(post: AnyPost): Date {
 }
 
 /**
- * Get the post vote/like count
+ * Get the post vote/like count.
+ * For Hive posts, uses active_votes.length (total voters) rather than
+ * net_votes (upvotes minus downvotes) which can be 0 even with many voters.
  */
 export function getPostVoteCount(post: AnyPost): number {
   if (isSoftPost(post)) {
     return post._likeCount || 0;
   }
   if (isSportsblockPost(post)) {
-    return post.net_votes || 0;
+    return post.active_votes?.length || post.net_votes || 0;
   }
   return (post as Post).upvotes || 0;
 }

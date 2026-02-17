@@ -160,7 +160,7 @@ describe('PostCard', () => {
     it('shows vote count', () => {
       renderWithProviders(<PostCard post={mockHivePost} />);
 
-      expect(screen.getByText('(42)')).toBeInTheDocument();
+      expect(screen.getByText('42')).toBeInTheDocument();
     });
 
     it('displays comment count', () => {
