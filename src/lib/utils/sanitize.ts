@@ -287,6 +287,20 @@ export function sanitizePostContent(content: string): string {
     return `<h${level} class="font-bold my-2">${text}</h${level}>`;
   });
 
+  // Convert newlines to <br> for line break preservation
+  // Skip lines that are already block-level HTML (headers, hr, divs, tables)
+  processed = processed.replace(/\n/g, (_, offset) => {
+    // Check if this newline follows a block-level closing/self-closing tag
+    const before = processed.slice(Math.max(0, offset - 20), offset);
+    if (
+      /<\/(h[1-6]|div|p|table|tr|blockquote|li|ul|ol)>\s*$/i.test(before) ||
+      /<hr[^>]*\/?\s*>\s*$/i.test(before)
+    ) {
+      return '\n';
+    }
+    return '<br>\n';
+  });
+
   // Sanitize the processed content
   return sanitizeHtml(processed);
 }
