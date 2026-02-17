@@ -229,6 +229,14 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     color: 'bg-accent',
   },
   {
+    id: 'chess',
+    name: 'Chess',
+    slug: 'chess',
+    icon: '♟️',
+    description: 'Chess',
+    color: 'bg-gray-800',
+  },
+  {
     id: 'climbing',
     name: 'Climbing',
     slug: 'climbing',
