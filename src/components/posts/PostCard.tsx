@@ -42,11 +42,29 @@ interface PostCardProps {
   className?: string;
 }
 
-// Utility function to extract the first image URL from markdown content
-const extractFirstImageUrl = (markdown: string): string | null => {
-  const imageRegex = /!\[.*?\]\((.*?)\)/;
-  const match = markdown.match(imageRegex);
-  return match ? match[1] : null;
+// Extract the first image URL from post body (markdown or HTML img tags)
+const extractFirstImageUrl = (body: string, jsonMetadata?: string): string | null => {
+  // 1. Markdown image: ![alt](url)
+  const mdMatch = body.match(/!\[.*?\]\((.*?)\)/);
+  if (mdMatch) return mdMatch[1];
+
+  // 2. HTML img tag: <img src="url" /> or <img src='url' />
+  const htmlMatch = body.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (htmlMatch) return htmlMatch[1];
+
+  // 3. Fallback: json_metadata.image array (most Hive front-ends populate this)
+  if (jsonMetadata) {
+    try {
+      const meta = JSON.parse(jsonMetadata);
+      if (Array.isArray(meta.image) && meta.image.length > 0 && typeof meta.image[0] === 'string') {
+        return meta.image[0];
+      }
+    } catch {
+      /* ignore malformed metadata */
+    }
+  }
+
+  return null;
 };
 
 const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
@@ -242,9 +260,9 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
         }}
       >
         {(() => {
-          // For Hive posts, extract image from markdown body
+          // For Hive posts, extract image from body or metadata
           if (isHivePost) {
-            const imageUrl = extractFirstImageUrl(post.body);
+            const imageUrl = extractFirstImageUrl(post.body, post.json_metadata);
             if (imageUrl) {
               // Use proxy URL if needed to avoid CORS issues
               const finalImageUrl = shouldProxyImage(imageUrl)
