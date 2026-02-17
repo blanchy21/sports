@@ -865,7 +865,7 @@ function PublishPageContent() {
             <TagInput
               value={tags}
               onChange={setTags}
-              maxTags={10}
+              maxTags={5}
               recentTags={recentTags}
               placeholder="Add tags..."
             />
