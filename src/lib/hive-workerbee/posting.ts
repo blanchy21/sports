@@ -8,6 +8,7 @@ import {
   checkResourceCreditsWax,
 } from './wax-helpers';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
+import { waitForTransaction } from './transaction-confirmation';
 
 // Type definitions for better type safety
 interface AiohaInstance {
@@ -60,6 +61,7 @@ export interface PostData {
 export interface PublishResult {
   success: boolean;
   transactionId?: string;
+  confirmed?: boolean;
   author?: string;
   permlink?: string;
   url?: string;
@@ -168,9 +170,15 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
     // Generate post URL
     const url = `https://hive.blog/@${postData.author}/${operation.permlink}`;
 
+    const transactionId = (result as { id?: string })?.id || 'unknown';
+
+    // Confirm transaction was included in a block
+    const confirmation = await waitForTransaction(transactionId);
+
     return {
       success: true,
-      transactionId: (result as { id?: string })?.id || 'unknown',
+      transactionId,
+      confirmed: confirmation.confirmed,
       author: postData.author,
       permlink: operation.permlink,
       url,
@@ -264,9 +272,15 @@ export async function publishComment(
     // Generate comment URL
     const url = `https://hive.blog/@${commentData.author}/${operation.permlink}`;
 
+    const transactionId = (result as { id?: string })?.id || 'unknown';
+
+    // Confirm transaction was included in a block
+    const confirmation = await waitForTransaction(transactionId);
+
     return {
       success: true,
-      transactionId: (result as { id?: string })?.id || 'unknown',
+      transactionId,
+      confirmed: confirmation.confirmed,
       author: commentData.author,
       permlink: operation.permlink,
       url,

@@ -7,6 +7,7 @@
 
 import { Client, PrivateKey, Operation } from '@hiveio/dhive';
 import { HIVE_NODES } from './nodes';
+import { waitForTransaction } from './transaction-confirmation';
 
 let dhiveClient: Client | null = null;
 
@@ -20,6 +21,7 @@ function getDhiveClient(): Client {
 export interface BroadcastResult {
   success: boolean;
   transactionId?: string;
+  confirmed?: boolean;
   blockNum?: number;
   error?: string;
 }
@@ -37,10 +39,14 @@ export async function broadcastWithKey(
 
     const result = await client.broadcast.sendOperations(operations, key);
 
+    // Confirm transaction was included in a block
+    const confirmation = await waitForTransaction(result.id);
+
     return {
       success: true,
       transactionId: result.id,
-      blockNum: result.block_num,
+      confirmed: confirmation.confirmed,
+      blockNum: confirmation.blockNum ?? result.block_num,
     };
   } catch (error) {
     console.error('[Broadcast] Failed:', error);

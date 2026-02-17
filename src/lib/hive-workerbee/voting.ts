@@ -2,11 +2,13 @@ import { makeWorkerBeeApiCall } from './api';
 import { aioha } from '@/lib/aioha/config';
 import { createVoteOperation, getVotingPowerWax } from './wax-helpers';
 import { workerBee as workerBeeLog, error as logError } from './logger';
+import { waitForTransaction } from './transaction-confirmation';
 
 // Types matching the original voting.ts interface
 export interface VoteResult {
   success: boolean;
   transactionId?: string;
+  confirmed?: boolean;
   error?: string;
 }
 
@@ -64,9 +66,15 @@ export async function castVote(voteData: VoteData): Promise<VoteResult> {
       aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }
     ).signAndBroadcastTx(operations, 'posting');
 
+    const transactionId = (result as { id?: string })?.id || 'unknown';
+
+    // Confirm transaction was included in a block
+    const confirmation = await waitForTransaction(transactionId);
+
     return {
       success: true,
-      transactionId: (result as { id?: string })?.id || 'unknown',
+      transactionId,
+      confirmed: confirmation.confirmed,
     };
   } catch (error) {
     logError('Error casting vote with Wax', 'castVote', error instanceof Error ? error : undefined);
