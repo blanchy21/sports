@@ -8,11 +8,12 @@ import { Button } from '@/components/core/Button';
 import { Loading } from '@/components/core/Loading';
 import { StarVoteButton } from '@/components/voting/StarVoteButton';
 import { SoftLikeButton } from '@/components/voting/SoftLikeButton';
-import { ArrowLeft, MessageCircle, Bookmark, Share, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Bookmark, Share, Calendar, Clock, Repeat2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 // fetchPost is now accessed via API route
 import { SportsblockPost } from '@/lib/shared/types';
 import { calculatePendingPayout, formatAsset } from '@/lib/utils/hive';
+import { useToast, toast } from '@/components/core/Toast';
 
 /**
  * Soft post metadata stored separately from the main post state.
@@ -23,6 +24,7 @@ interface SoftPostMeta {
   authorDisplayName?: string;
   authorAvatar?: string;
 }
+import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/features/user/hooks/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
@@ -36,7 +38,10 @@ export default function PostDetailClient() {
   const router = useRouter();
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
+  const { authType, hiveUser } = useAuth();
+  const { addToast } = useToast();
   const [post, setPost] = useState<SportsblockPost | null>(null);
+  const [isReblogging, setIsReblogging] = useState(false);
   const [softPostMeta, setSoftPostMeta] = useState<SoftPostMeta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -201,6 +206,24 @@ export default function PostDetailClient() {
   const handleBookmark = () => {
     if (!post) return;
     toggleBookmark(post);
+  };
+
+  const handleReblog = async () => {
+    if (isReblogging || !post || !hiveUser?.username) return;
+    setIsReblogging(true);
+    try {
+      const { reblogPost } = await import('@/lib/hive-workerbee/social');
+      const result = await reblogPost(post.author, post.permlink, hiveUser.username);
+      if (result.success) {
+        addToast(toast.success('Reposted!', 'Reposted to your blog!'));
+      } else {
+        addToast(toast.error('Reblog Failed', result.error || 'Something went wrong'));
+      }
+    } catch {
+      addToast(toast.error('Reblog Failed', 'Something went wrong'));
+    } finally {
+      setIsReblogging(false);
+    }
   };
 
   const handleShare = () => {
@@ -369,6 +392,18 @@ export default function PostDetailClient() {
                 />
                 <span>{post && isBookmarked(post) ? 'Bookmarked' : 'Bookmark'}</span>
               </Button>
+
+              {!isSoftPost && authType === 'hive' && hiveUser?.username !== post.author && (
+                <Button
+                  variant="ghost"
+                  onClick={handleReblog}
+                  disabled={isReblogging}
+                  className="flex items-center space-x-2 hover:text-green-500"
+                >
+                  <Repeat2 className={`h-4 w-4 ${isReblogging ? 'animate-spin' : ''}`} />
+                  <span>{isReblogging ? 'Reposting...' : 'Repost'}</span>
+                </Button>
+              )}
 
               <Button variant="ghost" onClick={handleShare} className="flex items-center space-x-2">
                 <Share className="h-4 w-4" />

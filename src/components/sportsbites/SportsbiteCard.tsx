@@ -282,6 +282,8 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
     }
   };
 
+  const [isReblogging, setIsReblogging] = useState(false);
+
   const handleShare = async (platform?: 'twitter' | 'copy') => {
     const biteUrl = `https://sportsblock.app/@${sportsbite.author}/${sportsbite.permlink}`;
     const text = biteText.substring(0, 200);
@@ -296,6 +298,25 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       addToast(toast.success('Copied!', 'Link copied to clipboard'));
     }
     setShowShareMenu(false);
+  };
+
+  const handleReblog = async () => {
+    if (isReblogging || !hiveUser?.username) return;
+    setIsReblogging(true);
+    try {
+      const { reblogPost } = await import('@/lib/hive-workerbee/social');
+      const result = await reblogPost(sportsbite.author, sportsbite.permlink, hiveUser.username);
+      if (result.success) {
+        addToast(toast.success('Reposted!', 'Reposted to your blog!'));
+      } else {
+        addToast(toast.error('Reblog Failed', result.error || 'Something went wrong'));
+      }
+    } catch {
+      addToast(toast.error('Reblog Failed', 'Something went wrong'));
+    } finally {
+      setIsReblogging(false);
+      setShowShareMenu(false);
+    }
   };
 
   return (
@@ -580,6 +601,18 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                   <Repeat2 className="h-4 w-4" />
                   Copy link
                 </button>
+                {authType === 'hive' &&
+                  sportsbite.source !== 'soft' &&
+                  hiveUser?.username !== sportsbite.author && (
+                    <button
+                      onClick={handleReblog}
+                      disabled={isReblogging}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
+                    >
+                      <Repeat2 className={cn('h-4 w-4', isReblogging && 'animate-spin')} />
+                      {isReblogging ? 'Reposting...' : 'Repost to blog'}
+                    </button>
+                  )}
               </div>
             )}
           </div>

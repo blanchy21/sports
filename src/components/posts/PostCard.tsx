@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { MessageCircle, Bookmark, MapPin } from 'lucide-react';
+import { MessageCircle, Bookmark, MapPin, Repeat2 } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
 import { Badge } from '@/components/core/Badge';
@@ -13,6 +13,7 @@ import { calculatePendingPayout, formatAsset } from '@/lib/utils/hive';
 import { useToast, toast } from '@/components/core/Toast';
 import { useUserProfile } from '@/features/user/hooks/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { usePremiumTier } from '@/lib/premium/hooks';
 import { PremiumBadge } from '@/components/medals';
@@ -49,9 +50,11 @@ const extractFirstImageUrl = (markdown: string): string | null => {
 };
 
 const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
+  const [isReblogging, setIsReblogging] = React.useState(false);
   const { addToast } = useToast();
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
+  const { authType, hiveUser } = useAuth();
 
   // Use type-safe helpers
   const isHivePost = isSportsblockPost(post);
@@ -137,6 +140,25 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
         permlink: postPermlink,
         voteCount: voteCount,
       });
+    }
+  };
+
+  const handleReblog = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isReblogging || !hiveUser?.username) return;
+    setIsReblogging(true);
+    try {
+      const { reblogPost } = await import('@/lib/hive-workerbee/social');
+      const result = await reblogPost(authorUsername, postPermlink, hiveUser.username);
+      if (result.success) {
+        addToast(toast.success('Reposted!', 'Reposted to your blog!'));
+      } else {
+        addToast(toast.error('Reblog Failed', result.error || 'Something went wrong'));
+      }
+    } catch {
+      addToast(toast.error('Reblog Failed', 'Something went wrong'));
+    } finally {
+      setIsReblogging(false);
     }
   };
 
@@ -346,6 +368,18 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
               <MessageCircle className="h-4 w-4" />
               <span>{commentCount}</span>
             </Button>
+
+            {isActualHivePost && authType === 'hive' && hiveUser?.username !== authorUsername && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReblog}
+                disabled={isReblogging}
+                className="flex items-center space-x-1 text-muted-foreground hover:text-green-500"
+              >
+                <Repeat2 className={cn('h-4 w-4', isReblogging && 'animate-spin')} />
+              </Button>
+            )}
           </div>
 
           <Button

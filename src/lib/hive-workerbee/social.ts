@@ -488,6 +488,91 @@ export async function getFollowingCount(username: string): Promise<number> {
 /**
  * Profile data for updating a Hive account
  */
+/**
+ * Reblog (repost) a Hive post to the user's own blog
+ * @param author - Original post author
+ * @param permlink - Original post permlink
+ * @param account - Username performing the reblog
+ * @returns Reblog result
+ */
+export async function reblogPost(
+  author: string,
+  permlink: string,
+  account: string
+): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  if (typeof window === 'undefined') {
+    return {
+      success: false,
+      error: 'Reblog operation must be performed in browser environment',
+    };
+  }
+
+  if (account === author) {
+    return {
+      success: false,
+      error: 'You cannot reblog your own post',
+    };
+  }
+
+  try {
+    workerBeeLog(`reblogPost start ${account} reblogging ${author}/${permlink}`);
+
+    const { aioha } = await import('@/lib/aioha/config');
+
+    if (!aioha) {
+      throw new Error(
+        'Aioha authentication is not available. Please refresh the page and try again.'
+      );
+    }
+
+    const operations = [
+      [
+        'custom_json',
+        {
+          required_auths: [],
+          required_posting_auths: [account],
+          id: 'follow',
+          json: JSON.stringify(['reblog', { account, author, permlink }]),
+        },
+      ],
+    ];
+
+    workerBeeLog('reblogPost broadcasting transaction');
+    const result = await (
+      aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }
+    ).signAndBroadcastTx(operations, 'posting');
+
+    workerBeeLog('reblogPost broadcast result', undefined, result);
+
+    if (!result || (result as { error?: string })?.error) {
+      throw new Error(
+        `Transaction failed: ${(result as { error?: string })?.error || 'Unknown error'}`
+      );
+    }
+
+    workerBeeLog(`reblogPost success ${account} reblogged ${author}/${permlink}`);
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    logError('Error reblogging post', undefined, error instanceof Error ? error : undefined);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    workerBeeLog('reblogPost error details', undefined, {
+      message: errorMessage,
+      error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
 export interface ProfileUpdateData {
   name?: string;
   about?: string;
