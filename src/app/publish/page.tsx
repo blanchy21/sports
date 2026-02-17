@@ -346,8 +346,9 @@ function PublishPageContent() {
       return;
     }
 
-    const alt = imageAlt || 'image';
-    const markdown = `\n![${alt}](${validation.url})\n`;
+    const markdown = imageAlt
+      ? `\n![](${validation.url})\n<center><sub>${imageAlt}</sub></center>\n`
+      : `\n![](${validation.url})\n`;
 
     // Use saved cursor position since textarea lost focus to dialog
     const pos = cursorPositionRef.current;
@@ -1201,12 +1202,12 @@ function PublishPageContent() {
               )}
 
               <div>
-                <label className="mb-2 block text-sm font-medium">Alt Text</label>
+                <label className="mb-2 block text-sm font-medium">Caption</label>
                 <input
                   type="text"
                   value={imageAlt}
                   onChange={(e) => setImageAlt(e.target.value)}
-                  placeholder="Describe the image"
+                  placeholder="Optional caption below image"
                   className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
