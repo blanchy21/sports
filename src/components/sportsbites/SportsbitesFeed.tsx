@@ -53,11 +53,16 @@ export function SportsbitesFeed({
     });
   }, []);
 
+  // Use a ref for followingList so changes to it don't recreate filterByMode,
+  // which would cascade into recreating loadBites and triggering a refetch.
+  const followingListRef = useRef(followingList);
+  followingListRef.current = followingList;
+
   const filterByMode = useCallback(
     (list: Sportsbite[]) => {
       let filtered = list;
-      if (filterMode === 'following' && followingList.length > 0) {
-        filtered = filtered.filter((s) => followingList.includes(s.author));
+      if (filterMode === 'following' && followingListRef.current.length > 0) {
+        filtered = filtered.filter((s) => followingListRef.current.includes(s.author));
       }
       if (tagFilter) {
         const tagLower = tagFilter.toLowerCase();
@@ -69,7 +74,7 @@ export function SportsbitesFeed({
       }
       return filtered;
     },
-    [filterMode, followingList, tagFilter]
+    [filterMode, tagFilter]
   );
 
   const loadBites = useCallback(

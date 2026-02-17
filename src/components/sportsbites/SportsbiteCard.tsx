@@ -487,7 +487,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
 
               return (
                 <div
-                  key={index}
+                  key={img}
                   className={cn(
                     'relative overflow-hidden bg-muted',
                     allImages.length === 1
