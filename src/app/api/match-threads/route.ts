@@ -36,7 +36,7 @@ export async function GET() {
       return false;
     });
 
-    // Batch-check which events have Hive containers
+    // Batch-check which events have Hive containers (for bite counts)
     const containerChecks = await Promise.allSettled(
       relevantEvents.map(async (event) => {
         const permlink = getMatchThreadPermlink(event.id);
@@ -47,7 +47,7 @@ export async function GET() {
         );
         const hasContainer = !!(content && content.author && (content.body as string)?.length > 0);
         const biteCount = hasContainer ? (content.children as number) || 0 : 0;
-        return { event, hasContainer, biteCount };
+        return { event, biteCount };
       })
     );
 
@@ -55,15 +55,7 @@ export async function GET() {
 
     for (const result of containerChecks) {
       if (result.status !== 'fulfilled') continue;
-      const { event, hasContainer, biteCount } = result.value;
-
-      // Only include events that have containers or are imminent/live
-      const eventTime = new Date(event.date).getTime();
-      const hoursUntilEvent = (eventTime - now) / (1000 * 60 * 60);
-      const isImminent =
-        hoursUntilEvent <= MATCH_THREAD_CONFIG.PRE_CREATE_HOURS && hoursUntilEvent > 0;
-
-      if (!hasContainer && !isImminent && event.status !== 'live') continue;
+      const { event, biteCount } = result.value;
 
       matchThreads.push({
         eventId: event.id,
