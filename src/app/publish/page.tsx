@@ -38,6 +38,8 @@ import { ScheduleModal } from '@/components/publish/ScheduleModal';
 import { UpgradeIncentive, UpgradeIncentiveBanner } from '@/components/upgrade/UpgradeIncentive';
 
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 
 // Loading skeleton for markdown preview
 function MarkdownLoadingSkeleton() {
@@ -994,7 +996,42 @@ function PublishPageContent() {
 
             {content ? (
               <div className="prose prose-sm prose-slate max-w-none dark:prose-invert">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[
+                    rehypeRaw,
+                    [
+                      rehypeSanitize,
+                      {
+                        ...defaultSchema,
+                        tagNames: [
+                          ...(defaultSchema.tagNames || []),
+                          'center',
+                          'div',
+                          'span',
+                          'img',
+                          'iframe',
+                          'video',
+                          'source',
+                          'hr',
+                          'br',
+                          'sup',
+                          'sub',
+                        ],
+                        attributes: {
+                          ...defaultSchema.attributes,
+                          img: ['src', 'alt', 'title', 'width', 'height', 'loading', 'className'],
+                          iframe: ['src', 'width', 'height', 'frameBorder', 'allowFullScreen'],
+                          div: ['className', 'style'],
+                          span: ['className', 'style'],
+                          '*': ['className'],
+                        },
+                      },
+                    ],
+                  ]}
+                >
+                  {content}
+                </ReactMarkdown>
               </div>
             ) : (
               <p className="italic text-muted-foreground">Start writing to see the preview...</p>
