@@ -247,8 +247,8 @@ export async function getVoteStats(
   upvotes: number;
   downvotes: number;
   netVotes: number;
-  totalWeight: number;
-  averageWeight: number;
+  totalPercent: number;
+  averagePercent: number;
   pendingPayout: number;
 }> {
   try {
@@ -265,8 +265,8 @@ export async function getVoteStats(
         upvotes: 0,
         downvotes: 0,
         netVotes: 0,
-        totalWeight: 0,
-        averageWeight: 0,
+        totalPercent: 0,
+        averagePercent: 0,
         pendingPayout: 0,
       };
     }
@@ -274,19 +274,19 @@ export async function getVoteStats(
     const votes = (post as { active_votes?: HiveVote[] }).active_votes || [];
     const upvotes = votes.filter((vote: HiveVote) => vote.weight > 0).length;
     const downvotes = votes.filter((vote: HiveVote) => vote.weight < 0).length;
-    const totalWeight = votes.reduce(
-      (sum: number, vote: HiveVote) => sum + Math.abs(vote.weight),
+    const totalPercent = votes.reduce(
+      (sum: number, vote: HiveVote) => sum + Math.abs(vote.percent),
       0
     );
-    const averageWeight = votes.length > 0 ? totalWeight / votes.length : 0;
+    const averagePercent = votes.length > 0 ? totalPercent / votes.length : 0;
 
     return {
       totalVotes: votes.length,
       upvotes,
       downvotes,
       netVotes: (post as { net_votes?: number }).net_votes || 0,
-      totalWeight,
-      averageWeight,
+      totalPercent,
+      averagePercent,
       pendingPayout: parseFloat(
         (post as { pending_payout_value?: string }).pending_payout_value || '0'
       ),
@@ -302,8 +302,8 @@ export async function getVoteStats(
       upvotes: 0,
       downvotes: 0,
       netVotes: 0,
-      totalWeight: 0,
-      averageWeight: 0,
+      totalPercent: 0,
+      averagePercent: 0,
       pendingPayout: 0,
     };
   }

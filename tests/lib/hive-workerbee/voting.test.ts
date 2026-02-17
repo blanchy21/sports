@@ -389,9 +389,9 @@ describe('Voting Module', () => {
     it('calculates vote statistics correctly', async () => {
       const mockPost = {
         active_votes: [
-          { voter: 'alice', weight: 10000 },
-          { voter: 'bob', weight: 5000 },
-          { voter: 'charlie', weight: -2000 }, // downvote
+          { voter: 'alice', weight: 10000, percent: 10000 },
+          { voter: 'bob', weight: 5000, percent: 5000 },
+          { voter: 'charlie', weight: -2000, percent: -2000 }, // downvote
         ],
         net_votes: 2,
         pending_payout_value: '1.234 HBD',

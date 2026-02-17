@@ -28,7 +28,7 @@ export const MATCH_THREAD_CONFIG = {
   CONTENT_TYPE: 'match-thread-container',
   THREAD_OPEN_HOURS: 24,
   PRE_CREATE_HOURS: 2,
-  DEFAULT_TAGS: ['sportsblock', 'match-thread', 'sportsbites'],
+  DEFAULT_TAGS: ['sportsblock', 'match-thread', 'sportsbites', 'hive-115814'],
 };
 
 // ---------------------------------------------------------------------------

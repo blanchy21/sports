@@ -870,28 +870,28 @@ export async function getUserDelegations(username: string): Promise<{
   given: Array<{ delegatee: string; vesting_shares: string; min_delegation_time: string }>;
 } | null> {
   try {
-    // Get received delegations
-    const receivedDelegations = (await makeHiveApiCall('condenser_api', 'get_vesting_delegations', [
+    // get_vesting_delegations returns delegations the user has GIVEN (user is delegator)
+    const givenDelegations = (await makeHiveApiCall('condenser_api', 'get_vesting_delegations', [
       username,
       '',
       100,
     ])) as VestingDelegation[];
 
-    // Get given delegations (expiring delegations)
-    const givenDelegations = (await makeHiveApiCall(
+    // get_expiring_vesting_delegations returns delegations being returned (expiring)
+    const expiringDelegations = (await makeHiveApiCall(
       'condenser_api',
       'get_expiring_vesting_delegations',
       [username, new Date().toISOString(), 100]
     )) as VestingDelegation[];
 
     return {
-      received: (receivedDelegations as VestingDelegation[]).map((d) => ({
-        delegator: d.delegator,
+      given: (givenDelegations as VestingDelegation[]).map((d) => ({
+        delegatee: d.delegatee,
         vesting_shares: String(d.vesting_shares),
         min_delegation_time: d.min_delegation_time,
       })),
-      given: (givenDelegations as VestingDelegation[]).map((d) => ({
-        delegatee: d.delegatee,
+      received: (expiringDelegations as VestingDelegation[]).map((d) => ({
+        delegator: d.delegator,
         vesting_shares: String(d.vesting_shares),
         min_delegation_time: d.min_delegation_time,
       })),
