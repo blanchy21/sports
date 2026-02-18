@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Eye,
+  EyeOff,
   Save,
   Send,
   AlertCircle,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Community, SPORT_CATEGORIES } from '@/types';
 import { cn } from '@/lib/utils/client';
+import { formatReadTime } from '@/lib/utils/formatting';
 import { validateImageUrl, validateUrl } from '@/lib/utils/sanitize';
 import dynamic from 'next/dynamic';
 import { publishPost, canUserPost, validatePostData } from '@/lib/hive-workerbee/posting';
@@ -77,6 +79,7 @@ function PublishPageContent() {
   ]);
 
   // UI state
+  const [showPreview, setShowPreview] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -738,42 +741,55 @@ function PublishPageContent() {
             </span>
           </div>
 
-          {/* Menu button */}
-          <div className="relative" ref={menuRef}>
+          <div className="flex items-center gap-1">
+            {/* Mobile preview toggle */}
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowMenu(!showMenu)}
-              className="h-8 w-8 p-0"
-              title="More options"
+              onClick={() => setShowPreview(!showPreview)}
+              className="h-8 w-8 p-0 md:hidden"
+              title={showPreview ? 'Show editor' : 'Show preview'}
             >
-              <MoreVertical className="h-4 w-4" />
+              {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
 
-            {showMenu && (
-              <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border bg-card py-1 shadow-lg">
-                <button
-                  onClick={() => {
-                    handleSaveDraft();
-                    setShowMenu(false);
-                  }}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
-                >
-                  <Save className="h-4 w-4" />
-                  Save Draft
-                </button>
-                <button
-                  onClick={() => {
-                    setShowScheduleModal(true);
-                    setShowMenu(false);
-                  }}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Schedule Post
-                </button>
-              </div>
-            )}
+            {/* Menu button */}
+            <div className="relative" ref={menuRef}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowMenu(!showMenu)}
+                className="h-8 w-8 p-0"
+                title="More options"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+
+              {showMenu && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border bg-card py-1 shadow-lg">
+                  <button
+                    onClick={() => {
+                      handleSaveDraft();
+                      setShowMenu(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
+                  >
+                    <Save className="h-4 w-4" />
+                    Save Draft
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowScheduleModal(true);
+                      setShowMenu(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Schedule Post
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -781,7 +797,12 @@ function PublishPageContent() {
       {/* Main Content - Split View */}
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         {/* Left Side - Editor (60%) */}
-        <div className="flex w-full flex-col overflow-hidden border-b md:w-3/5 md:border-b-0 md:border-r">
+        <div
+          className={cn(
+            'flex w-full flex-col overflow-hidden border-b md:w-3/5 md:border-b-0 md:border-r',
+            showPreview && 'hidden md:flex'
+          )}
+        >
           {/* Title Input */}
           <div className="border-b px-4 py-3 sm:px-6 sm:py-4">
             <input
@@ -814,6 +835,19 @@ function PublishPageContent() {
               className="h-full w-full resize-none border-none bg-background px-4 py-3 font-mono text-sm leading-relaxed outline-none sm:px-6 sm:py-4"
             />
           </div>
+
+          {/* Word Count */}
+          {content.trim() &&
+            (() => {
+              const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+              return (
+                <div className="border-t px-4 py-1.5 sm:px-6">
+                  <span className="text-xs text-muted-foreground">
+                    {wordCount} {wordCount === 1 ? 'word' : 'words'} · {formatReadTime(wordCount)}
+                  </span>
+                </div>
+              );
+            })()}
 
           {/* Bottom Fields */}
           <div className="max-h-[45%] space-y-4 overflow-auto border-t px-4 py-3 sm:px-6 sm:py-4">
@@ -957,7 +991,12 @@ function PublishPageContent() {
         </div>
 
         {/* Right Side - Preview (40%) */}
-        <div className="hidden overflow-hidden bg-muted/30 md:flex md:w-2/5 md:flex-col">
+        <div
+          className={cn(
+            'overflow-hidden bg-muted/30 md:flex md:w-2/5 md:flex-col',
+            showPreview ? 'flex w-full flex-col' : 'hidden'
+          )}
+        >
           {/* Preview Header */}
           <div className="border-b bg-background px-6 py-3">
             <div className="flex items-center gap-2 text-sm">

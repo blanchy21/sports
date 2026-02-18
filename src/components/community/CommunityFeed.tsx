@@ -175,7 +175,10 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({
                 netVotes: post.netVotes || 0,
                 upvotes: isSoftPost ? post.likeCount || 0 : post.netVotes || 0,
                 comments: post.children || 0,
-                readTime: Math.ceil((post.body?.length || 0) / 1000),
+                readTime: Math.max(
+                  1,
+                  Math.ceil((post.body || '').trim().split(/\s+/).filter(Boolean).length / 200)
+                ),
                 createdAt: new Date(post.created || Date.now()),
                 updatedAt: new Date(post.created || Date.now()),
                 // Soft post specific fields (read by PostCard via type assertion)

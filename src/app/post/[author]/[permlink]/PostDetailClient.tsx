@@ -309,7 +309,7 @@ export default function PostDetailClient() {
                 <span>•</span>
                 <span className="flex items-center">
                   <Clock className="mr-1 h-4 w-4" />
-                  {formatReadTime(Math.ceil(post.body.length / 1000))}
+                  {formatReadTime(post.body.trim().split(/\s+/).filter(Boolean).length)}
                 </span>
                 {isSoftPost && (
                   <>

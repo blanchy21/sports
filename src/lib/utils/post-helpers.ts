@@ -184,13 +184,20 @@ export function getPostUrl(post: AnyPost): string {
 }
 
 /**
- * Get estimated read time in minutes
+ * Get word count from text content
+ */
+export function getWordCount(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/**
+ * Get estimated read time in minutes (based on 200 words per minute)
  */
 export function getPostReadTime(post: AnyPost): number {
-  if (isSportsblockPost(post)) {
-    return Math.ceil(post.body.length / 1000);
-  }
-  return post.readTime || 1;
+  const text = isSportsblockPost(post) ? post.body : (post as Post).content;
+  if (!text) return 1;
+  const wordCount = getWordCount(text);
+  return Math.max(1, Math.ceil(wordCount / 200));
 }
 
 /**

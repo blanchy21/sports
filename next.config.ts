@@ -192,7 +192,6 @@ const nextConfig: NextConfig = {
       '@tanstack/react-query',
       'framer-motion',
       'date-fns',
-      'react-markdown',
       'zod',
     ],
   },
