@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
 import { Badge } from '@/components/core/Badge';
@@ -13,6 +13,7 @@ import { useToast, toast } from '@/components/core/Toast';
 import { createCommentOperation } from '@/lib/hive-workerbee/wax-helpers';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { formatDate } from '@/lib/utils/client';
+import { CommentToolbar } from '@/components/comments/CommentToolbar';
 import { logger } from '@/lib/logger';
 
 interface InlineRepliesProps {
@@ -28,6 +29,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
   const { invalidatePostComments } = useInvalidateComments();
   const [replyText, setReplyText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = async () => {
     if (!replyText.trim() || !user) return;
@@ -157,40 +159,52 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
 
       {/* Compose reply */}
       {user && (
-        <div className="mt-3 flex gap-2">
-          <Avatar
-            src={user.username ? getHiveAvatarUrl(user.username) : undefined}
-            fallback={user.username || 'U'}
-            alt={user.username || 'You'}
-            size="sm"
-            className="hidden sm:flex"
-          />
-          <textarea
-            placeholder="Write a reply..."
-            className="flex-1 resize-none rounded-lg border bg-background p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            rows={1}
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                handleSubmit();
-              }
-            }}
-            disabled={isSubmitting}
-          />
-          <Button
-            size="sm"
-            className="h-auto self-end px-3"
-            onClick={handleSubmit}
-            disabled={isSubmitting || !replyText.trim()}
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
+        <div className="mt-3">
+          <div className="flex gap-2">
+            <Avatar
+              src={user.username ? getHiveAvatarUrl(user.username) : undefined}
+              fallback={user.username || 'U'}
+              alt={user.username || 'You'}
+              size="sm"
+              className="hidden sm:flex"
+            />
+            <textarea
+              ref={textareaRef}
+              placeholder="Write a reply..."
+              className="flex-1 resize-none rounded-lg border bg-background p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              rows={1}
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+              disabled={isSubmitting}
+            />
+            <Button
+              size="sm"
+              className="h-auto self-end px-3"
+              onClick={handleSubmit}
+              disabled={isSubmitting || !replyText.trim()}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <div className="sm:pl-10">
+            <CommentToolbar
+              textareaRef={textareaRef}
+              text={replyText}
+              setText={setReplyText}
+              disabled={isSubmitting}
+              username={user.username}
+            />
+          </div>
         </div>
       )}
     </div>
