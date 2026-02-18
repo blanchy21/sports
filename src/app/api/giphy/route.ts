@@ -72,8 +72,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get API key from environment
-    const apiKey = process.env.GIPHY_API_KEY;
+    // Get API key from environment (strip quotes in case env var was set with them)
+    const apiKey = process.env.GIPHY_API_KEY?.replace(/^["']|["']$/g, '');
     if (!apiKey) {
       console.error('[Giphy API] GIPHY_API_KEY not configured');
       return NextResponse.json(
@@ -116,17 +116,19 @@ export async function GET(request: NextRequest) {
       giphyUrl.searchParams.set('q', q);
     }
 
-    // Fetch from Giphy
+    // Fetch from Giphy (no next.revalidate — we have in-memory caching already)
     const response = await fetch(giphyUrl.toString(), {
       headers: {
         Accept: 'application/json',
       },
-      next: { revalidate: 300 }, // Cache for 5 minutes
+      cache: 'no-store',
     });
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
-      console.error(`[Giphy API] Error: ${response.status} - ${errorText}`);
+      console.error(
+        `[Giphy API] Error: ${response.status} - ${errorText} (key length: ${apiKey.length})`
+      );
 
       // Return cached data if available, even if expired
       if (cached) {
