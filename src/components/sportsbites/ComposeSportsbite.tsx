@@ -9,7 +9,7 @@ import {
   Smile,
   X,
   Loader2,
-  MapPin,
+  Trophy,
   Send,
   Link as LinkIcon,
   Film,
@@ -431,7 +431,7 @@ export function ComposeSportsbite({
             {sportCategory && (
               <div className="mt-3 flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-sm text-primary">
-                  <MapPin className="h-3 w-3" />
+                  <Trophy className="h-3 w-3" />
                   {SPORT_CATEGORIES.find((s) => s.id === sportCategory)?.icon}{' '}
                   {SPORT_CATEGORIES.find((s) => s.id === sportCategory)?.name}
                   <button
@@ -584,7 +584,7 @@ export function ComposeSportsbite({
               className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
               title="Tag sport"
             >
-              <MapPin className="h-5 w-5" />
+              <Trophy className="h-5 w-5" />
             </Button>
 
             {showSportPicker && (
