@@ -144,6 +144,11 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: 'Failed to fetch GIFs',
+          debug: {
+            status: response.status,
+            keyLength: apiKey.length,
+            keyPrefix: apiKey.slice(0, 3),
+          },
         },
         { status: 502 }
       );
@@ -179,6 +184,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: 'Internal server error',
+        debug: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
