@@ -82,7 +82,8 @@ When given:
 
 ## Deployment
 
-Pushing to `main` triggers an automatic deploy via Vercel. Do NOT prompt the user to deploy — it happens on push.
+- Production URL: **https://sportsblock.app** (NOT sportsblock.xyz)
+- Pushing to `main` triggers an automatic deploy via Vercel. Do NOT prompt the user to deploy — it happens on push.
 
 ## Project Overview
 
