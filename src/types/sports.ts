@@ -9,6 +9,7 @@ export interface SportCategory {
   icon: string;
   description?: string;
   color: string;
+  aliases?: string[];
 }
 
 export const SPORT_CATEGORIES: SportCategory[] = [
@@ -19,6 +20,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🏈',
     description: 'American Football',
     color: 'bg-accent',
+    aliases: ['nfl', 'nfl-football', 'superbowl', 'super-bowl'],
   },
   {
     id: 'football',
@@ -27,6 +29,21 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '⚽',
     description: 'Association Football',
     color: 'bg-primary',
+    aliases: [
+      'soccer',
+      'epl',
+      'premierleague',
+      'premier-league',
+      'champions-league',
+      'laliga',
+      'bundesliga',
+      'serie-a',
+      'ligue-1',
+      'worldcup',
+      'world-cup',
+      'fifa',
+      'ucl',
+    ],
   },
   {
     id: 'basketball',
@@ -35,6 +52,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🏀',
     description: 'Basketball',
     color: 'bg-accent',
+    aliases: ['nba', 'basketball-nba', 'wnba', 'ncaa-basketball', 'euroleague'],
   },
   {
     id: 'bowling',
@@ -51,6 +69,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '⚾',
     description: 'Baseball',
     color: 'bg-accent',
+    aliases: ['mlb', 'world-series'],
   },
   {
     id: 'hockey',
@@ -59,6 +78,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🏒',
     description: 'Ice Hockey',
     color: 'bg-red-500',
+    aliases: ['nhl', 'ice-hockey'],
   },
   {
     id: 'tennis',
@@ -67,6 +87,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🎾',
     description: 'Tennis',
     color: 'bg-yellow-500',
+    aliases: ['atp', 'wta', 'grand-slam', 'wimbledon', 'us-open-tennis'],
   },
   {
     id: 'golf',
@@ -75,6 +96,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '⛳',
     description: 'Golf',
     color: 'bg-primary',
+    aliases: ['pga', 'lpga', 'masters', 'ryder-cup'],
   },
   {
     id: 'mma',
@@ -83,6 +105,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🥊',
     description: 'Mixed Martial Arts & Boxing',
     color: 'bg-red-600',
+    aliases: ['ufc', 'boxing', 'bellator'],
   },
   {
     id: 'martial-arts',
@@ -99,6 +122,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🏁',
     description: 'Racing & Motorsports',
     color: 'bg-gray-600',
+    aliases: ['f1', 'formula1', 'formula-1', 'nascar', 'motogp', 'indycar'],
   },
   {
     id: 'cricket',
@@ -107,6 +131,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🏏',
     description: 'Cricket',
     color: 'bg-yellow-600',
+    aliases: ['ipl', 't20', 'test-cricket', 'ashes'],
   },
   {
     id: 'rugby',
@@ -115,6 +140,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🏉',
     description: 'Rugby Union & League',
     color: 'bg-primary',
+    aliases: ['rugby-union', 'rugby-league', 'six-nations'],
   },
   {
     id: 'volleyball',
@@ -163,6 +189,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🚴',
     description: 'Cycling',
     color: 'bg-yellow-400',
+    aliases: ['tour-de-france', 'giro', 'vuelta'],
   },
   {
     id: 'skiing',
@@ -259,6 +286,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🏅',
     description: 'Olympic Games',
     color: 'bg-amber-500',
+    aliases: ['olympic', 'paralympics'],
   },
   {
     id: 'padel',
@@ -307,6 +335,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🎮',
     description: 'Electronic Sports',
     color: 'bg-purple-700',
+    aliases: ['gaming', 'league-of-legends', 'dota2', 'csgo', 'valorant'],
   },
   {
     id: 'general',

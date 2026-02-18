@@ -79,9 +79,13 @@ function getSportCategory(post: HivePost): string | null {
   for (const tag of tags) {
     if (typeof tag !== 'string') continue;
     // Check against known sport categories
+    const lowerTag = tag.toLowerCase();
     const sportCategory = SPORT_CATEGORIES.find(
       (sport) =>
-        sport.id === tag || sport.name.toLowerCase() === tag.toLowerCase() || sport.slug === tag
+        sport.id === lowerTag ||
+        sport.name.toLowerCase() === lowerTag ||
+        sport.slug === lowerTag ||
+        sport.aliases?.includes(lowerTag)
     );
     if (sportCategory) {
       return sportCategory.id;
@@ -184,6 +188,51 @@ async function fetchCreatedPaginated(
 }
 
 /**
+ * Paginated fetch for get_discussions_by_trending.
+ * Like fetchCreatedPaginated, makes multiple batches to collect enough posts
+ * when client-side filtering (e.g. sport category) would otherwise starve results.
+ */
+async function fetchTrendingPaginated(
+  tag: string,
+  totalLimit: number,
+  startAuthor: string = '',
+  startPermlink: string = ''
+): Promise<HivePost[]> {
+  const allPosts: HivePost[] = [];
+  let cursorAuthor = startAuthor;
+  let cursorPermlink = startPermlink;
+
+  while (allPosts.length < totalLimit) {
+    const remaining = totalLimit - allPosts.length;
+    const batchLimit = Math.min(HIVE_API_MAX_LIMIT, remaining);
+
+    const result = await getContentOptimized('get_discussions_by_trending', [
+      {
+        tag,
+        limit: batchLimit,
+        start_author: cursorAuthor,
+        start_permlink: cursorPermlink,
+      },
+    ]);
+
+    const batch = toTypedHivePosts(result);
+    if (batch.length === 0) break;
+
+    allPosts.push(...batch);
+
+    // Set cursor for next page
+    const lastPost = batch[batch.length - 1];
+    cursorAuthor = lastPost.author;
+    cursorPermlink = lastPost.permlink;
+
+    // If we got fewer than requested, no more pages
+    if (batch.length < batchLimit) break;
+  }
+
+  return allPosts.slice(0, totalLimit);
+}
+
+/**
  * Fetch posts from Sportsblock community using WorkerBee/Wax
  * @param filters - Content filters
  * @returns Filtered posts
@@ -222,14 +271,21 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       }
       posts = allAuthorPosts.slice(0, limit);
     } else if (filters.sort === 'trending') {
-      // Trending doesn't support pagination — capped at 20
-      const trendingPosts = await getContentOptimized('get_discussions_by_trending', [
-        {
-          tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
-          limit: Math.min(limit, HIVE_API_MAX_LIMIT),
-        },
-      ]);
-      posts = toTypedHivePosts(trendingPosts);
+      if (filters.sportCategory) {
+        // Sport filter active — paginate to collect enough matching posts
+        // Fetch up to 100 raw posts so client-side filtering has enough to work with
+        const rawLimit = Math.max(limit, 100);
+        posts = await fetchTrendingPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_ID, rawLimit);
+      } else {
+        // No sport filter — single fetch is fine
+        const trendingPosts = await getContentOptimized('get_discussions_by_trending', [
+          {
+            tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
+            limit: Math.min(limit, HIVE_API_MAX_LIMIT),
+          },
+        ]);
+        posts = toTypedHivePosts(trendingPosts);
+      }
       fetchedAsTrending = true;
     } else {
       // Chronological fetch with automatic pagination
