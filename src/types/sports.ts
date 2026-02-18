@@ -140,7 +140,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🏉',
     description: 'Rugby Union & League',
     color: 'bg-primary',
-    aliases: ['rugby-union', 'rugby-league', 'six-nations'],
+    aliases: ['rugby-union', 'rugby-league', 'six-nations', 'sixnations', '6nations'],
   },
   {
     id: 'volleyball',
