@@ -24,6 +24,9 @@ import { useModal } from '@/components/modals/ModalProvider';
 // getUserPosts is now accessed via API route
 import { SportsblockPost } from '@/lib/shared/types';
 import { logger } from '@/lib/logger';
+import { DraftsContent } from '@/components/profile/DraftsContent';
+import { RepliesContent } from '@/components/profile/RepliesContent';
+import { BookmarksContent } from '@/components/profile/BookmarksContent';
 
 /**
  * Get the like/vote count from a post.
@@ -51,6 +54,7 @@ export default function ProfilePage() {
   const [userPosts, setUserPosts] = useState<SportsblockPost[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'posts' | 'drafts' | 'replies' | 'bookmarks'>('posts');
 
   // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
@@ -353,64 +357,73 @@ export default function ProfilePage() {
         {/* Tabs */}
         <div className="rounded-lg border bg-card">
           <div className="flex items-center border-b border-border px-6">
-            <button className="border-b-2 border-primary px-4 py-3 font-medium text-primary transition-colors">
-              Posts
-            </button>
-            <button className="px-4 py-3 text-muted-foreground transition-colors hover:text-foreground">
-              About
-            </button>
-            <button className="px-4 py-3 text-muted-foreground transition-colors hover:text-foreground">
-              Media
-            </button>
-            <button className="px-4 py-3 text-muted-foreground transition-colors hover:text-foreground">
-              Stats
-            </button>
+            {(['posts', 'drafts', 'replies', 'bookmarks'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={
+                  activeTab === tab
+                    ? 'border-b-2 border-primary px-4 py-3 font-medium text-primary transition-colors'
+                    : 'border-b-2 border-transparent px-4 py-3 text-muted-foreground transition-colors hover:text-foreground'
+                }
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
           </div>
 
-          {/* Posts Content */}
+          {/* Tab Content */}
           <div className="p-6">
-            {isLoadingPosts ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2 text-muted-foreground">Loading posts...</span>
-              </div>
-            ) : postsError ? (
-              <div className="py-12 text-center">
-                <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-                <h3 className="mb-2 text-lg font-semibold">Error loading posts</h3>
-                <p className="mb-4 text-muted-foreground">{postsError}</p>
-                <Button onClick={loadUserPosts}>Try Again</Button>
-              </div>
-            ) : userPosts.length > 0 ? (
-              <div className="space-y-6">
-                {userPosts.map((post) => (
-                  <PostCard key={`${post.author}-${post.permlink}`} post={post} />
-                ))}
-              </div>
-            ) : (
-              <div className="py-12 text-center">
-                <div className="mb-4 text-6xl">📝</div>
-                <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-                  No posts yet
-                </h3>
-                <p className="mb-6 text-gray-500 dark:text-gray-400">
-                  Start sharing your sports insights and connect with the community!
-                </p>
-                <Button onClick={() => router.push('/publish')}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Create Your First Post
-                </Button>
-              </div>
+            {activeTab === 'posts' && (
+              <>
+                {isLoadingPosts ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="ml-2 text-muted-foreground">Loading posts...</span>
+                  </div>
+                ) : postsError ? (
+                  <div className="py-12 text-center">
+                    <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
+                    <h3 className="mb-2 text-lg font-semibold">Error loading posts</h3>
+                    <p className="mb-4 text-muted-foreground">{postsError}</p>
+                    <Button onClick={loadUserPosts}>Try Again</Button>
+                  </div>
+                ) : userPosts.length > 0 ? (
+                  <div className="space-y-6">
+                    {userPosts.map((post) => (
+                      <PostCard key={`${post.author}-${post.permlink}`} post={post} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center">
+                    <div className="mb-4 text-6xl">📝</div>
+                    <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+                      No posts yet
+                    </h3>
+                    <p className="mb-6 text-gray-500 dark:text-gray-400">
+                      Start sharing your sports insights and connect with the community!
+                    </p>
+                    <Button onClick={() => router.push('/publish')}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Create Your First Post
+                    </Button>
+                  </div>
+                )}
+
+                {userPosts.length > 0 && (
+                  <div className="mt-6 text-center">
+                    <Button variant="outline" onClick={loadUserPosts}>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Refresh Posts
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
 
-            {userPosts.length > 0 && (
-              <div className="mt-6 text-center">
-                <Button variant="outline" onClick={loadUserPosts}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh Posts
-                </Button>
-              </div>
-            )}
+            {activeTab === 'drafts' && <DraftsContent />}
+            {activeTab === 'replies' && <RepliesContent />}
+            {activeTab === 'bookmarks' && <BookmarksContent />}
           </div>
         </div>
       </div>
