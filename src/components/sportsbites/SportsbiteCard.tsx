@@ -29,6 +29,7 @@ import { Sportsbite, extractMediaFromBody } from '@/lib/hive-workerbee/sportsbit
 import { SPORT_CATEGORIES } from '@/types';
 import { getProxyImageUrl, shouldProxyImage, proxyImagesInContent } from '@/lib/utils/image-proxy';
 import { isTrustedImageHost, sanitizePostContent } from '@/lib/utils/sanitize';
+import { InlineReplies } from '@/components/sportsbites/InlineReplies';
 
 interface SportsbiteCardProps {
   sportsbite: Sportsbite;
@@ -48,6 +49,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [showReplies, setShowReplies] = useState(false);
   const { authType, hiveUser, user } = useAuth();
   const { addToast } = useToast();
   const { openModal } = useModal();
@@ -116,21 +118,6 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       isSportsblockPost: true as const,
     };
     toggleBookmark(postLike as unknown as Parameters<typeof toggleBookmark>[0]);
-  };
-
-  const handleReply = () => {
-    if (sportsbite.permlink?.startsWith('soft-')) {
-      openModal('softComments', {
-        postId: sportsbite.softId || sportsbite.permlink,
-        permlink: sportsbite.permlink,
-        author: sportsbite.author,
-      });
-    } else {
-      openModal('comments', {
-        author: sportsbite.author,
-        permlink: sportsbite.permlink,
-      });
-    }
   };
 
   const handleUpvoteList = () => {
@@ -574,10 +561,13 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleReply}
-            className="flex h-8 items-center gap-1.5 px-2 text-muted-foreground transition-all hover:bg-accent/10 hover:text-accent"
+            onClick={() => setShowReplies(!showReplies)}
+            className={cn(
+              'flex h-8 items-center gap-1.5 px-2 transition-all hover:bg-accent/10 hover:text-accent',
+              showReplies ? 'text-accent' : 'text-muted-foreground'
+            )}
           >
-            <MessageCircle className="h-4 w-4" />
+            <MessageCircle className={cn('h-4 w-4', showReplies && 'fill-current')} />
             <span className="text-sm font-medium">{sportsbite.children || 0}</span>
           </Button>
 
@@ -643,6 +633,14 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           />
         </Button>
       </div>
+
+      {showReplies && (
+        <InlineReplies
+          author={sportsbite.author}
+          permlink={sportsbite.permlink}
+          source={sportsbite.source}
+        />
+      )}
     </article>
   );
 });
