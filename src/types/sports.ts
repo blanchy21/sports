@@ -37,6 +37,14 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     color: 'bg-accent',
   },
   {
+    id: 'bowling',
+    name: 'Bowling',
+    slug: 'bowling',
+    icon: '🎳',
+    description: 'Bowling',
+    color: 'bg-red-500',
+  },
+  {
     id: 'baseball',
     name: 'Baseball',
     slug: 'baseball',
@@ -46,7 +54,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
   },
   {
     id: 'hockey',
-    name: 'Hockey',
+    name: 'Ice Hockey',
     slug: 'hockey',
     icon: '🏒',
     description: 'Ice Hockey',
@@ -75,6 +83,14 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🥊',
     description: 'Mixed Martial Arts & Boxing',
     color: 'bg-red-600',
+  },
+  {
+    id: 'martial-arts',
+    name: 'Martial Arts',
+    slug: 'martial-arts',
+    icon: '🥋',
+    description: 'Judo, Karate, Taekwondo & more',
+    color: 'bg-gray-700',
   },
   {
     id: 'motorsports',
@@ -173,12 +189,28 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     color: 'bg-gray-700',
   },
   {
+    id: 'field-hockey',
+    name: 'Field Hockey',
+    slug: 'field-hockey',
+    icon: '🏑',
+    description: 'Field Hockey',
+    color: 'bg-green-600',
+  },
+  {
     id: 'gymnastics',
     name: 'Gymnastics',
     slug: 'gymnastics',
     icon: '🤸',
     description: 'Gymnastics',
     color: 'bg-pink-500',
+  },
+  {
+    id: 'handball',
+    name: 'Handball',
+    slug: 'handball',
+    icon: '🤾',
+    description: 'Handball',
+    color: 'bg-blue-600',
   },
   {
     id: 'weightlifting',
@@ -227,6 +259,14 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: '🏅',
     description: 'Olympic Games',
     color: 'bg-amber-500',
+  },
+  {
+    id: 'padel',
+    name: 'Padel',
+    slug: 'padel',
+    icon: '🎾',
+    description: 'Padel Tennis',
+    color: 'bg-blue-500',
   },
   {
     id: 'sailing',
