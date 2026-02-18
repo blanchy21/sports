@@ -42,6 +42,10 @@ jest.mock('@/lib/hive-workerbee/logger', () => ({
   error: jest.fn(),
 }));
 
+jest.mock('@/lib/hive-workerbee/transaction-confirmation', () => ({
+  waitForTransaction: jest.fn().mockResolvedValue({ confirmed: true, blockNum: 12345 }),
+}));
+
 import { aioha } from '@/lib/aioha/config';
 import { makeWorkerBeeApiCall } from '@/lib/hive-workerbee/api';
 import { getVotingPowerWax } from '@/lib/hive-workerbee/wax-helpers';
