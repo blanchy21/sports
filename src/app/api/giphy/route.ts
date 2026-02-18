@@ -72,8 +72,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get API key from environment (strip quotes in case env var was set with them)
-    const apiKey = process.env.GIPHY_API_KEY?.replace(/^["']|["']$/g, '');
+    // Get API key from environment (trim whitespace and strip quotes)
+    const apiKey = process.env.GIPHY_API_KEY?.trim().replace(/^["']|["']$/g, '');
     if (!apiKey) {
       console.error('[Giphy API] GIPHY_API_KEY not configured');
       return NextResponse.json(
@@ -144,11 +144,6 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: 'Failed to fetch GIFs',
-          debug: {
-            status: response.status,
-            keyLength: apiKey.length,
-            keyPrefix: apiKey.slice(0, 3),
-          },
         },
         { status: 502 }
       );
@@ -184,7 +179,6 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: 'Internal server error',
-        debug: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
