@@ -211,6 +211,9 @@ export function transformToSportsbite(item: unknown): Sportsbite | null {
     metadata = {};
   }
 
+  // Only treat replies that were actually posted as sportsbites
+  if (metadata.content_type !== 'sportsbite') return null;
+
   return {
     id: `${post.author}/${post.permlink}`,
     author: post.author as string,
