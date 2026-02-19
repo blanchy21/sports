@@ -36,7 +36,7 @@ const getReactionsSchema = z.object({
 
 const toggleReactionSchema = z.object({
   sportsbiteId: z.string().min(1),
-  emoji: z.enum(['fire', 'shocked', 'laughing', 'angry']),
+  emoji: z.enum(['fire', 'shocked', 'laughing', 'angry', 'eyes', 'thumbs_down']),
 });
 
 const batchCheckSchema = z.object({
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
     const counts = countsDoc.exists
       ? countsDoc.data()
-      : { fire: 0, shocked: 0, laughing: 0, angry: 0, total: 0 };
+      : { fire: 0, shocked: 0, laughing: 0, angry: 0, eyes: 0, thumbs_down: 0, total: 0 };
 
     // Check user's existing reaction
     let userReaction: ReactionEmoji | null = null;
@@ -96,6 +96,8 @@ export async function GET(request: NextRequest) {
         shocked: counts?.shocked || 0,
         laughing: counts?.laughing || 0,
         angry: counts?.angry || 0,
+        eyes: counts?.eyes || 0,
+        thumbs_down: counts?.thumbs_down || 0,
         total: counts?.total || 0,
       },
       userReaction,
@@ -225,6 +227,8 @@ export async function POST(request: NextRequest) {
           shocked: updatedCounts?.shocked || 0,
           laughing: updatedCounts?.laughing || 0,
           angry: updatedCounts?.angry || 0,
+          eyes: updatedCounts?.eyes || 0,
+          thumbs_down: updatedCounts?.thumbs_down || 0,
           total: updatedCounts?.total || 0,
         },
       });
@@ -262,7 +266,15 @@ export async function PUT(request: NextRequest) {
     const results: Record<
       string,
       {
-        counts: { fire: number; shocked: number; laughing: number; angry: number; total: number };
+        counts: {
+          fire: number;
+          shocked: number;
+          laughing: number;
+          angry: number;
+          eyes: number;
+          thumbs_down: number;
+          total: number;
+        };
         userReaction: ReactionEmoji | null;
       }
     > = {};
@@ -290,6 +302,8 @@ export async function PUT(request: NextRequest) {
             shocked: counts?.shocked || 0,
             laughing: counts?.laughing || 0,
             angry: counts?.angry || 0,
+            eyes: counts?.eyes || 0,
+            thumbs_down: counts?.thumbs_down || 0,
             total: counts?.total || 0,
           },
           userReaction,

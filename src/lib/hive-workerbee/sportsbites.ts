@@ -65,13 +65,15 @@ export function formatContainerDate(date: Date): string {
 // Types
 // ---------------------------------------------------------------------------
 
-export type ReactionEmoji = 'fire' | 'shocked' | 'laughing' | 'angry';
+export type ReactionEmoji = 'fire' | 'shocked' | 'laughing' | 'angry' | 'eyes' | 'thumbs_down';
 
 export const REACTION_EMOJIS: Record<ReactionEmoji, string> = {
   fire: '🔥',
   shocked: '😱',
   laughing: '😂',
   angry: '😤',
+  eyes: '👀',
+  thumbs_down: '👎',
 } as const;
 
 export interface ReactionCounts {
@@ -79,6 +81,8 @@ export interface ReactionCounts {
   shocked: number;
   laughing: number;
   angry: number;
+  eyes: number;
+  thumbs_down: number;
   total: number;
 }
 

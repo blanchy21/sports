@@ -14,13 +14,22 @@ interface EmojiReactionsProps {
   className?: string;
 }
 
-const EMOJI_ORDER: ReactionEmoji[] = ['fire', 'shocked', 'laughing', 'angry'];
+const EMOJI_ORDER: ReactionEmoji[] = [
+  'fire',
+  'shocked',
+  'laughing',
+  'angry',
+  'eyes',
+  'thumbs_down',
+];
 
 const DEFAULT_COUNTS: ReactionCounts = {
   fire: 0,
   shocked: 0,
   laughing: 0,
   angry: 0,
+  eyes: 0,
+  thumbs_down: 0,
   total: 0,
 };
 
