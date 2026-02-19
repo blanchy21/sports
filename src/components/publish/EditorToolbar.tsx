@@ -237,7 +237,6 @@ export function EditorToolbar({
             isOpen={showGifPicker}
             onClose={() => setShowGifPicker(false)}
             onSelect={handleGifSelect}
-            className="left-0 top-full mt-2"
           />
         </div>
       )}

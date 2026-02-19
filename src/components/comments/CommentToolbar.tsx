@@ -370,7 +370,6 @@ export function CommentToolbar({
           isOpen={activePanel === 'gif'}
           onClose={() => setActivePanel(null)}
           onSelect={handleGifSelect}
-          className="bottom-full left-0 mb-2"
         />
       </div>
     </div>

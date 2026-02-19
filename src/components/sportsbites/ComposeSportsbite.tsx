@@ -571,7 +571,6 @@ export function ComposeSportsbite({
                 setGifs([...gifs, gifUrl]);
                 setShowGifPicker(false);
               }}
-              className="bottom-full left-0 mb-2"
             />
           </div>
 

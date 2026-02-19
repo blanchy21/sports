@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { logger } from '@/lib/logger';
@@ -21,16 +22,21 @@ interface GifPickerProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (gifUrl: string) => void;
-  className?: string;
 }
 
-export function GifPicker({ isOpen, onClose, onSelect, className }: GifPickerProps) {
+const PICKER_WIDTH = 320; // w-80
+const PICKER_MAX_HEIGHT = 384; // max-h-96
+const VIEWPORT_PADDING = 8;
+
+export function GifPicker({ isOpen, onClose, onSelect }: GifPickerProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [gifs, setGifs] = useState<GiphyGif[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   // Load trending GIFs when picker opens
   const loadTrendingGifs = useCallback(async () => {
@@ -119,6 +125,36 @@ export function GifPicker({ isOpen, onClose, onSelect, className }: GifPickerPro
     }
   };
 
+  // Calculate fixed position from anchor element
+  useLayoutEffect(() => {
+    if (!isOpen || !anchorRef.current) return;
+    const parent = anchorRef.current.parentElement;
+    if (!parent) return;
+
+    const rect = parent.getBoundingClientRect();
+
+    // Default: position above the trigger
+    let top = rect.top - PICKER_MAX_HEIGHT - VIEWPORT_PADDING;
+    let left = rect.left;
+
+    // If not enough space above, position below the trigger
+    if (top < VIEWPORT_PADDING) {
+      top = rect.bottom + VIEWPORT_PADDING;
+    }
+
+    // Clamp to right edge of viewport
+    if (left + PICKER_WIDTH > window.innerWidth - VIEWPORT_PADDING) {
+      left = window.innerWidth - PICKER_WIDTH - VIEWPORT_PADDING;
+    }
+
+    // Clamp to left edge
+    if (left < VIEWPORT_PADDING) {
+      left = VIEWPORT_PADDING;
+    }
+
+    setPosition({ top, left });
+  }, [isOpen]);
+
   // Load trending when opened
   useEffect(() => {
     if (isOpen) {
@@ -137,8 +173,10 @@ export function GifPicker({ isOpen, onClose, onSelect, className }: GifPickerPro
 
   // Close on click outside
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (event: MouseEvent) => {
-      if (isOpen && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         onClose();
       }
     };
@@ -149,8 +187,10 @@ export function GifPicker({ isOpen, onClose, onSelect, className }: GifPickerPro
 
   // Close on Escape key
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
+      if (event.key === 'Escape') {
         onClose();
       }
     };
@@ -159,14 +199,17 @@ export function GifPicker({ isOpen, onClose, onSelect, className }: GifPickerPro
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  // Always render anchor so we can read its position
+  const anchor = <div ref={anchorRef} className="hidden" />;
 
-  return (
+  if (!isOpen) return anchor;
+
+  const pickerContent = (
     <div
       ref={containerRef}
+      style={{ top: position.top, left: position.left }}
       className={cn(
-        'absolute z-50 max-h-96 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border bg-card shadow-lg',
-        className
+        'fixed z-[100] max-h-96 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border bg-card shadow-lg'
       )}
     >
       {/* Search input */}
@@ -251,5 +294,12 @@ export function GifPicker({ isOpen, onClose, onSelect, className }: GifPickerPro
         </a>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {anchor}
+      {typeof document !== 'undefined' ? createPortal(pickerContent, document.body) : null}
+    </>
   );
 }
