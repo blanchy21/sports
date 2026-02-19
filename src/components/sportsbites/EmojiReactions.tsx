@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { cn } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModal } from '@/components/modals/ModalProvider';
@@ -44,6 +44,15 @@ export function EmojiReactions({
   const [counts, setCounts] = useState<ReactionCounts>(initialCounts || DEFAULT_COUNTS);
   const [userReaction, setUserReaction] = useState<ReactionEmoji | null>(initialUserReaction);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Sync from batch-fetched props (arrive after mount)
+  useEffect(() => {
+    if (initialCounts) setCounts(initialCounts);
+  }, [initialCounts]);
+
+  useEffect(() => {
+    if (initialUserReaction !== undefined) setUserReaction(initialUserReaction);
+  }, [initialUserReaction]);
 
   const handleReact = useCallback(
     async (emoji: ReactionEmoji) => {
