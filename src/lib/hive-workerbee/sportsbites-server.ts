@@ -5,7 +5,7 @@
  * client components or shared modules that are bundled for the browser.
  */
 import { getAdminDb } from '@/lib/firebase/admin';
-import { Sportsbite } from './sportsbites';
+import { Sportsbite, PollDefinition } from './sportsbites';
 
 interface SoftSportsbiteDoc {
   authorId: string;
@@ -19,6 +19,7 @@ interface SoftSportsbiteDoc {
   createdAt: { toDate: () => Date } | Date;
   likeCount?: number;
   commentCount?: number;
+  poll?: PollDefinition;
 }
 
 function softDocToSportsbite(docId: string, data: SoftSportsbiteDoc): Sportsbite {
@@ -44,6 +45,7 @@ function softDocToSportsbite(docId: string, data: SoftSportsbiteDoc): Sportsbite
     softId: docId,
     authorDisplayName: data.authorDisplayName,
     authorAvatar: data.authorAvatar,
+    poll: data.poll,
   };
 }
 

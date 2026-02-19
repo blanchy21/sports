@@ -52,6 +52,7 @@ export interface SoftSportsbite {
   images?: string[];
   gifs?: string[];
   matchThreadId?: string;
+  poll?: { question: string; options: [string, string] };
   createdAt: Date;
   updatedAt: Date;
   likeCount: number;

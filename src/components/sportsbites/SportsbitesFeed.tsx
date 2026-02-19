@@ -2,7 +2,13 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { SportsbiteCard } from './SportsbiteCard';
-import type { Sportsbite, SportsbiteApiResponse } from '@/lib/hive-workerbee/sportsbites';
+import type {
+  Sportsbite,
+  SportsbiteApiResponse,
+  ReactionEmoji,
+  ReactionCounts,
+  PollResults,
+} from '@/lib/hive-workerbee/sportsbites';
 import { Loader2, RefreshCw, AlertCircle, Zap, ArrowUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
@@ -38,6 +44,14 @@ export function SportsbitesFeed({
   const [newBitesCount, setNewBitesCount] = useState(0);
   const [pendingBites, setPendingBites] = useState<Sportsbite[]>([]);
   const [newBiteIds, setNewBiteIds] = useState<Set<string>>(new Set());
+
+  // Batch-fetched reaction and poll data
+  const [reactionData, setReactionData] = useState<
+    Record<string, { counts: ReactionCounts; userReaction: ReactionEmoji | null }>
+  >({});
+  const [pollData, setPollData] = useState<
+    Record<string, { results: PollResults; userVote: 0 | 1 | null }>
+  >({});
 
   const nextCursorRef = useRef<string | undefined>(undefined);
   const latestBiteRef = useRef<string | undefined>(undefined);
@@ -189,6 +203,63 @@ export function SportsbitesFeed({
     loadBites();
   }, [loadBites]);
 
+  // Batch-fetch reaction data when bites change
+  useEffect(() => {
+    if (bites.length === 0) return;
+
+    const idsToFetch = bites.map((b) => b.id).filter((id) => !reactionData[id]);
+    if (idsToFetch.length === 0) return;
+
+    const controller = new AbortController();
+    fetch('/api/soft/reactions', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sportsbiteIds: idsToFetch.slice(0, 50) }),
+      signal: controller.signal,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.results) {
+          setReactionData((prev) => ({ ...prev, ...data.results }));
+        }
+      })
+      .catch(() => {
+        // Silently fail — reactions are non-critical
+      });
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bites]);
+
+  // Batch-fetch poll data when bites with polls change
+  useEffect(() => {
+    const pollBiteIds = bites
+      .filter((b) => b.poll)
+      .map((b) => b.id)
+      .filter((id) => !pollData[id]);
+    if (pollBiteIds.length === 0) return;
+
+    const controller = new AbortController();
+    fetch('/api/soft/poll-votes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sportsbiteIds: pollBiteIds.slice(0, 50) }),
+      signal: controller.signal,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.results) {
+          setPollData((prev) => ({ ...prev, ...data.results }));
+        }
+      })
+      .catch(() => {
+        // Silently fail — polls are non-critical
+      });
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bites]);
+
   useEffect(() => {
     if (!optimisticBite) return;
 
@@ -338,6 +409,10 @@ export function SportsbitesFeed({
             sportsbite={bite}
             isNew={newBiteIds.has(bite.id)}
             onDelete={handleDelete}
+            initialReactionCounts={reactionData[bite.id]?.counts}
+            initialUserReaction={reactionData[bite.id]?.userReaction}
+            initialPollResults={pollData[bite.id]?.results}
+            initialPollUserVote={pollData[bite.id]?.userVote}
           />
         ))
       )}

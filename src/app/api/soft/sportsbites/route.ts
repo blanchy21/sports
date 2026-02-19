@@ -29,12 +29,18 @@ const getSportsbiteSchema = z.object({
   author: z.string().min(1).max(50).optional(),
 });
 
+const pollSchema = z.object({
+  question: z.string().min(1).max(100),
+  options: z.tuple([z.string().min(1).max(50), z.string().min(1).max(50)]),
+});
+
 const createSportsbiteSchema = z.object({
   body: z.string().min(1).max(SPORTSBITES_CONFIG.MAX_CHARS),
   sportCategory: z.string().optional(),
   images: z.array(z.string().url()).max(4).optional(),
   gifs: z.array(z.string().url()).max(2).optional(),
   matchThreadId: z.string().optional(),
+  poll: pollSchema.optional(),
 });
 
 const deleteSportsbiteSchema = z.object({
@@ -111,6 +117,7 @@ export async function GET(request: NextRequest) {
         sportCategory: data.sportCategory,
         images: data.images || [],
         gifs: data.gifs || [],
+        poll: data.poll || undefined,
         createdAt: data.createdAt?.toDate?.() || new Date(),
         updatedAt: data.updatedAt?.toDate?.() || new Date(),
         likeCount: data.likeCount || 0,
@@ -161,7 +168,7 @@ export async function POST(request: NextRequest) {
         return validationError(parseResult.error, ctx.requestId);
       }
 
-      const { body: biteBody, sportCategory, images, gifs, matchThreadId } = parseResult.data;
+      const { body: biteBody, sportCategory, images, gifs, matchThreadId, poll } = parseResult.data;
 
       const db = getAdminDb();
       if (!db) {
@@ -224,7 +231,7 @@ export async function POST(request: NextRequest) {
       }
 
       const now = new Date();
-      const sportsbiteData = {
+      const sportsbiteData: Record<string, unknown> = {
         authorId: user.userId,
         authorUsername: user.username,
         authorDisplayName: user.displayName || null,
@@ -240,6 +247,10 @@ export async function POST(request: NextRequest) {
         commentCount: 0,
         isDeleted: false,
       };
+
+      if (poll) {
+        sportsbiteData.poll = poll;
+      }
 
       const docRef = await db.collection('soft_sportsbites').add(sportsbiteData);
 

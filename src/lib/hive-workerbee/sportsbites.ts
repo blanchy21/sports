@@ -65,6 +65,34 @@ export function formatContainerDate(date: Date): string {
 // Types
 // ---------------------------------------------------------------------------
 
+export type ReactionEmoji = 'fire' | 'shocked' | 'laughing' | 'angry';
+
+export const REACTION_EMOJIS: Record<ReactionEmoji, string> = {
+  fire: '🔥',
+  shocked: '😱',
+  laughing: '😂',
+  angry: '😤',
+} as const;
+
+export interface ReactionCounts {
+  fire: number;
+  shocked: number;
+  laughing: number;
+  angry: number;
+  total: number;
+}
+
+export interface PollDefinition {
+  question: string;
+  options: [string, string];
+}
+
+export interface PollResults {
+  option0Count: number;
+  option1Count: number;
+  totalVotes: number;
+}
+
 export interface Sportsbite {
   id: string; // author/permlink or soft-{firestoreId}
   author: string;
@@ -92,6 +120,8 @@ export interface Sportsbite {
   authorDisplayName?: string;
   /** Avatar URL for soft users */
   authorAvatar?: string;
+  /** Embedded poll (optional) */
+  poll?: PollDefinition;
 }
 
 export interface SportsbiteApiResponse {
@@ -109,6 +139,7 @@ export interface PublishSportsbiteData {
   sportCategory?: string;
   images?: string[];
   gifs?: string[];
+  poll?: PollDefinition;
 }
 
 export interface PublishSportsbiteResult {
@@ -147,7 +178,7 @@ export function validateSportsbiteContent(body: string): {
 // ---------------------------------------------------------------------------
 
 function buildSportsbiteMetadata(data: PublishSportsbiteData): string {
-  const metadata = {
+  const metadata: Record<string, unknown> = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
     format: 'markdown',
     tags: [...SPORTSBITES_CONFIG.DEFAULT_TAGS, ...(data.sportCategory ? [data.sportCategory] : [])],
@@ -156,6 +187,10 @@ function buildSportsbiteMetadata(data: PublishSportsbiteData): string {
     images: data.images,
     gifs: data.gifs,
   };
+
+  if (data.poll) {
+    metadata.poll = data.poll;
+  }
 
   return JSON.stringify(metadata);
 }
@@ -214,6 +249,18 @@ export function transformToSportsbite(item: unknown): Sportsbite | null {
   // Only treat replies that were actually posted as sportsbites
   if (metadata.content_type !== 'sportsbite') return null;
 
+  // Extract poll if present and valid
+  const rawPoll = metadata.poll as { question?: string; options?: unknown } | undefined;
+  const poll: PollDefinition | undefined =
+    rawPoll &&
+    typeof rawPoll.question === 'string' &&
+    Array.isArray(rawPoll.options) &&
+    rawPoll.options.length === 2 &&
+    typeof rawPoll.options[0] === 'string' &&
+    typeof rawPoll.options[1] === 'string'
+      ? { question: rawPoll.question, options: [rawPoll.options[0], rawPoll.options[1]] }
+      : undefined;
+
   return {
     id: `${post.author}/${post.permlink}`,
     author: post.author as string,
@@ -228,6 +275,7 @@ export function transformToSportsbite(item: unknown): Sportsbite | null {
     sportCategory: metadata.sport_category as string | undefined,
     images: metadata.images as string[] | undefined,
     gifs: metadata.gifs as string[] | undefined,
+    poll,
   };
 }
 

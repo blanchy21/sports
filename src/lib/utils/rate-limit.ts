@@ -252,6 +252,14 @@ export const RATE_LIMITS = {
     limit: 20, // 20 sportsbites per hour
     windowSeconds: 3600,
   },
+  softReactions: {
+    limit: 120, // 120 reactions per hour
+    windowSeconds: 3600,
+  },
+  softPollVotes: {
+    limit: 60, // 60 poll votes per hour
+    windowSeconds: 3600,
+  },
 } as const;
 
 /**

@@ -14,6 +14,7 @@ import {
   Link as LinkIcon,
   Film,
   Zap,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { SPORT_CATEGORIES } from '@/types';
@@ -23,6 +24,8 @@ import {
   validateSportsbiteContent,
   Sportsbite,
 } from '@/lib/hive-workerbee/sportsbites';
+import type { PollDefinition } from '@/lib/hive-workerbee/sportsbites';
+import { PollComposer } from '@/components/sportsbites/PollComposer';
 import { createMatchThreadSportsbiteOperation } from '@/lib/hive-workerbee/match-threads';
 import { createCommentOptionsOperation } from '@/lib/hive-workerbee/wax-helpers';
 import { uploadImage } from '@/lib/hive/imageUpload';
@@ -64,6 +67,7 @@ export function ComposeSportsbite({
 
   const [gifs, setGifs] = useState<string[]>([]);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  const [poll, setPoll] = useState<PollDefinition | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
@@ -196,6 +200,7 @@ export function ComposeSportsbite({
               sportCategory: sportCategory || undefined,
               images: images.length > 0 ? images : undefined,
               gifs: gifs.length > 0 ? gifs : undefined,
+              poll: poll || undefined,
             });
 
         const { aioha } = await import('@/lib/aioha/config');
@@ -238,12 +243,14 @@ export function ComposeSportsbite({
           images: images.length > 0 ? images : undefined,
           gifs: gifs.length > 0 ? gifs : undefined,
           source: 'hive',
+          poll: poll || undefined,
         };
 
         setContent('');
         setImages([]);
         setGifs([]);
         setSportCategory('');
+        setPoll(null);
         onSuccess?.(optimisticBite);
       } else if (user?.isHiveAuth || user?.hiveUsername) {
         // DEFENSIVE: Hive user whose session state has degraded — force clean logout
@@ -264,6 +271,7 @@ export function ComposeSportsbite({
             images: images.length > 0 ? images : undefined,
             gifs: gifs.length > 0 ? gifs : undefined,
             matchThreadId: matchThreadEventId || undefined,
+            poll: poll || undefined,
           }),
         });
 
@@ -291,12 +299,14 @@ export function ComposeSportsbite({
           softId: softBite.id,
           authorDisplayName: user.displayName || user.username,
           authorAvatar: user.avatar,
+          poll: poll || undefined,
         };
 
         setContent('');
         setImages([]);
         setGifs([]);
         setSportCategory('');
+        setPoll(null);
         onSuccess?.(optimisticBite);
       }
     } catch (error) {
@@ -310,6 +320,7 @@ export function ComposeSportsbite({
     images,
     gifs,
     sportCategory,
+    poll,
     user,
     authType,
     hiveUser,
@@ -344,7 +355,13 @@ export function ComposeSportsbite({
     }
   }, [content]);
 
-  const canPublish = content.trim().length > 0 && remainingChars >= 0 && !!user && !isPublishing;
+  const isPollValid =
+    !poll ||
+    (poll.question.trim().length > 0 &&
+      poll.options[0].trim().length > 0 &&
+      poll.options[1].trim().length > 0);
+  const canPublish =
+    content.trim().length > 0 && remainingChars >= 0 && !!user && !isPublishing && isPollValid;
 
   if (!user) {
     return (
@@ -442,6 +459,8 @@ export function ComposeSportsbite({
                 </span>
               </div>
             )}
+
+            {poll && <PollComposer poll={poll} onChange={(p) => setPoll(p)} className="mt-3" />}
 
             {showImageInput && (
               <div className="mt-3 rounded-lg border bg-muted/50 p-3">
@@ -607,6 +626,19 @@ export function ComposeSportsbite({
               </div>
             )}
           </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setPoll(poll ? null : { question: '', options: ['', ''] })}
+            className={cn(
+              'h-9 w-9 p-0 hover:bg-primary/10',
+              poll ? 'text-primary' : 'text-primary'
+            )}
+            title={poll ? 'Remove poll' : 'Add poll'}
+          >
+            <BarChart3 className="h-5 w-5" />
+          </Button>
         </div>
 
         <div className="flex items-center gap-3">

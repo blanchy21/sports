@@ -26,10 +26,13 @@ import { useBookmarks } from '@/hooks/useBookmarks';
 import { cn, formatDate } from '@/lib/utils/client';
 import { formatReputation } from '@/lib/utils/hive';
 import { Sportsbite, extractMediaFromBody } from '@/lib/hive-workerbee/sportsbites';
+import type { ReactionEmoji, ReactionCounts, PollResults } from '@/lib/hive-workerbee/sportsbites';
 import { SPORT_CATEGORIES } from '@/types';
 import { getProxyImageUrl, shouldProxyImage, proxyImagesInContent } from '@/lib/utils/image-proxy';
 import { isTrustedImageHost, sanitizePostContent } from '@/lib/utils/sanitize';
 import { InlineReplies } from '@/components/sportsbites/InlineReplies';
+import { EmojiReactions } from '@/components/sportsbites/EmojiReactions';
+import { QuickPoll } from '@/components/sportsbites/QuickPoll';
 import type { AiohaInstance } from '@/lib/aioha/types';
 
 interface SportsbiteCardProps {
@@ -37,6 +40,10 @@ interface SportsbiteCardProps {
   className?: string;
   isNew?: boolean;
   onDelete?: (id: string) => void;
+  initialReactionCounts?: ReactionCounts;
+  initialUserReaction?: ReactionEmoji | null;
+  initialPollResults?: PollResults;
+  initialPollUserVote?: 0 | 1 | null;
 }
 
 export const SportsbiteCard = React.memo(function SportsbiteCard({
@@ -44,6 +51,10 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   className,
   isNew = false,
   onDelete,
+  initialReactionCounts,
+  initialUserReaction,
+  initialPollResults,
+  initialPollUserVote,
 }: SportsbiteCardProps) {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -454,6 +465,16 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           dangerouslySetInnerHTML={{ __html: biteHtml }}
         />
 
+        {sportsbite.poll && (
+          <QuickPoll
+            sportsbiteId={sportsbite.id}
+            poll={sportsbite.poll}
+            initialResults={initialPollResults}
+            initialUserVote={initialPollUserVote}
+            className="mt-3"
+          />
+        )}
+
         {allImages.length > 0 && (
           <div
             className={cn(
@@ -631,6 +652,15 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             )}
           />
         </Button>
+      </div>
+
+      {/* Emoji Reactions */}
+      <div className="border-t px-3 py-1.5 sm:px-4 sm:pl-[60px]">
+        <EmojiReactions
+          sportsbiteId={sportsbite.id}
+          initialCounts={initialReactionCounts}
+          initialUserReaction={initialUserReaction}
+        />
       </div>
 
       {showReplies && (
