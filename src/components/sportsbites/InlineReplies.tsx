@@ -170,7 +170,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
             <textarea
               ref={textareaRef}
               placeholder="Write a reply..."
-              className="flex-1 resize-none rounded-lg border bg-background p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="flex-1 resize-none rounded-lg border bg-background p-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               rows={1}
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}

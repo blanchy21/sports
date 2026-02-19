@@ -379,7 +379,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
                   placeholder={
                     replyingTo ? `Reply to @${replyingTo.authorUsername}...` : 'Write a comment...'
                   }
-                  className="w-full resize-none rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary sm:text-base"
+                  className="w-full resize-none rounded-lg border bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary sm:text-base"
                   rows={2}
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
