@@ -1,4 +1,4 @@
-import { initAioha } from '@aioha/aioha';
+import { Aioha } from '@aioha/aioha';
 
 // Type for Aioha instance - using unknown for better type safety
 type AiohaInstance = unknown;
@@ -14,8 +14,6 @@ declare global {
 export const AIOHA_STUB_EVENT = '__AIOHA_STUB_APPLIED__';
 
 // Aioha configuration for Sportsblock
-// Note: Only hivesigner, hiveauth, and metamasksnap need config
-// Keychain, Ledger, and PeakVault are registered automatically
 export const aiohaConfig = {
   hiveauth: {
     name: 'Sportsblock',
@@ -51,7 +49,17 @@ const initializeAioha = () => {
     return;
   }
   if (!stubApplied) {
-    aioha = initAioha(aiohaConfig);
+    // Manual setup instead of initAioha() to avoid registering MetaMask Snap,
+    // which probes window.ethereum and triggers popups from non-Hive wallets
+    // (Phantom, MetaMask, Coinbase Wallet, etc.).
+    const instance = new Aioha();
+    instance.registerKeychain();
+    instance.registerLedger();
+    instance.registerPeakVault();
+    instance.registerHiveAuth(aiohaConfig.hiveauth);
+    instance.registerHiveSigner(aiohaConfig.hivesigner);
+    instance.loadAuth();
+    aioha = instance;
   }
 };
 

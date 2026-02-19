@@ -252,9 +252,9 @@ export const useAuthPage = (): UseAuthPageResult => {
       // getProviders() returns string[] - the Providers enum values are themselves strings
       // (e.g., Providers.Keychain === 'keychain'), so we can use them directly
       const providers = (aioha as { getProviders: () => string[] }).getProviders();
-      const providerStrings = providers.map((provider: string) =>
-        normalizeProviderToString(provider)
-      );
+      const providerStrings = providers
+        .map((provider: string) => normalizeProviderToString(provider))
+        .filter((p) => p !== 'metamasksnap');
 
       const priorityProviders = ['keychain', 'hivesigner', 'hiveauth'];
       const orderedProviders = [
