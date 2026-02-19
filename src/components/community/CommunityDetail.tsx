@@ -3,7 +3,11 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCommunity, useCommunityMembers } from '@/lib/react-query/queries/useCommunity';
+import {
+  useCommunity,
+  useCommunityMembers,
+  useCommunityPosts,
+} from '@/lib/react-query/queries/useCommunity';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/core/Button';
 import { Card } from '@/components/core/Card';
@@ -37,6 +41,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
   const { user } = useAuth();
   const { data: community, isLoading, error } = useCommunity(communityId);
   const { data: members } = useCommunityMembers(communityId, { status: 'active', limit: 50 });
+  const { data: postsData } = useCommunityPosts(communityId);
 
   const [activeTab, setActiveTab] = useState<TabType>('posts');
 
@@ -179,7 +184,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
           <div className="flex items-center space-x-2">
             <FileText className="h-5 w-5 text-muted-foreground" />
             <span className="text-lg font-semibold">
-              {community.postCount?.toLocaleString() || 0}
+              {(postsData?.posts?.length ?? community.postCount ?? 0).toLocaleString()}
             </span>
             <span className="text-muted-foreground">posts</span>
           </div>

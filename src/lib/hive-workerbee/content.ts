@@ -445,11 +445,6 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
       return null;
     }
 
-    // Check if it's a sportsblock community post
-    if (!isSportsblockCommunityPost(validatedPost)) {
-      return null;
-    }
-
     return toSportsblockPost(validatedPost, getSportCategory(validatedPost));
   } catch (error) {
     logError(
