@@ -24,7 +24,7 @@ export type { User, FollowRelationship } from './user';
 export type { Post, Comment } from './post';
 
 // Sports types
-export type { SportCategory, SportsEvent, EventsApiResponse } from './sports';
+export type { SportCategory, SportCategoryId, SportsEvent, EventsApiResponse } from './sports';
 export { SPORT_CATEGORIES } from './sports';
 
 // Community types
@@ -47,6 +47,9 @@ export type { CryptoPriceData, PriceContextType } from './crypto';
 
 // UI types
 export type { AuthType, AuthState, ThemeState, NotificationItem, ModalState } from './ui';
+
+// API response types
+export type { ApiResponse, ApiSuccessResponse, ApiErrorResponse } from './api';
 
 // Media types
 export type { ESPNNewsArticle, ESPNNewsApiResponse } from './media';

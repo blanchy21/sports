@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchAllEvents } from '@/lib/sports/thesportsdb';
+import { fetchAllEvents } from '@/lib/sports/espn';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import {
   MATCH_THREAD_CONFIG,
   getMatchThreadPermlink,
-  isThreadOpen,
+  createMatchThread,
 } from '@/lib/hive-workerbee/match-threads';
 import { MatchThread } from '@/types/sports';
+import type { ApiResponse } from '@/types/api';
+import { error as logError } from '@/lib/hive-workerbee/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -29,7 +31,10 @@ export async function GET(
     const event = events.find((e) => e.id === eventId);
 
     if (!event) {
-      return NextResponse.json({ success: false, error: 'Event not found' }, { status: 404 });
+      return NextResponse.json<ApiResponse<{ matchThread: MatchThread }>>(
+        { success: false, error: 'Event not found' },
+        { status: 404 }
+      );
     }
 
     // Check single Hive container
@@ -50,16 +55,9 @@ export async function GET(
       // Container doesn't exist yet — that's fine
     }
 
-    const matchThread: MatchThread = {
-      eventId: event.id,
-      permlink,
-      event,
-      biteCount,
-      isOpen: isThreadOpen(event.date, event.status),
-      isLive: liveEventIds.has(event.id) || event.status === 'live',
-    };
+    const matchThread = createMatchThread(event, biteCount, liveEventIds);
 
-    return NextResponse.json(
+    return NextResponse.json<ApiResponse<{ matchThread: MatchThread }>>(
       { success: true, matchThread },
       {
         headers: {
@@ -68,8 +66,12 @@ export async function GET(
       }
     );
   } catch (error) {
-    console.error('[MatchThread] Failed to fetch:', error);
-    return NextResponse.json(
+    logError(
+      'Failed to fetch match thread',
+      'MatchThread',
+      error instanceof Error ? error : undefined
+    );
+    return NextResponse.json<ApiResponse<{ matchThread: MatchThread }>>(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch match thread',

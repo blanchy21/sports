@@ -30,6 +30,7 @@ import { SPORT_CATEGORIES } from '@/types';
 import { getProxyImageUrl, shouldProxyImage, proxyImagesInContent } from '@/lib/utils/image-proxy';
 import { isTrustedImageHost, sanitizePostContent } from '@/lib/utils/sanitize';
 import { InlineReplies } from '@/components/sportsbites/InlineReplies';
+import type { AiohaInstance } from '@/lib/aioha/types';
 
 interface SportsbiteCardProps {
   sportsbite: Sportsbite;
@@ -192,9 +193,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       } else {
         // Hive delete via Aioha
         const { aioha } = await import('@/lib/aioha/config');
-        const aiohaInstance = aioha as {
-          signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
-        } | null;
+        const aiohaInstance = aioha as AiohaInstance | null;
 
         if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
           throw new Error('Hive authentication not available. Please reconnect.');

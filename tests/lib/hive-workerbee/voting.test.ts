@@ -40,6 +40,7 @@ jest.mock('@/lib/hive-workerbee/wax-helpers', () => ({
 jest.mock('@/lib/hive-workerbee/logger', () => ({
   workerBee: jest.fn(),
   error: jest.fn(),
+  debug: jest.fn(),
 }));
 
 jest.mock('@/lib/hive-workerbee/transaction-confirmation', () => ({

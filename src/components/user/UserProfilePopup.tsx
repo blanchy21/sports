@@ -8,12 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAioha } from '@/contexts/AiohaProvider';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
-
-interface AiohaInstance {
-  getOtherLogins(): { [username: string]: string };
-  switchUser(username: string): boolean;
-  getCurrentUser(): string;
-}
+import type { AiohaInstance } from '@/lib/aioha/types';
 
 interface UserProfilePopupProps {
   isOpen: boolean;
@@ -116,7 +111,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
   useEffect(() => {
     if (isOpen && aioha) {
       try {
-        const others = (aioha as AiohaInstance).getOtherLogins();
+        const others = (aioha as AiohaInstance).getOtherLogins?.();
         setOtherAccounts(others || {});
       } catch {
         setOtherAccounts({});
@@ -128,7 +123,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
     if (!aioha || isSwitching) return;
     setIsSwitching(true);
     try {
-      const success = (aioha as AiohaInstance).switchUser(username);
+      const success = (aioha as AiohaInstance).switchUser?.(username);
       if (success) {
         await loginWithHiveUser(username);
         onClose();

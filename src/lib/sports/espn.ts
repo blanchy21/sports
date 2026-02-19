@@ -226,7 +226,7 @@ export function filterEvents(events: SportsEvent[]): SportsEvent[] {
 }
 
 export function sortEvents(events: SportsEvent[]): SportsEvent[] {
-  return events.sort((a, b) => {
+  return [...events].sort((a, b) => {
     if (a.status === 'live' && b.status !== 'live') return -1;
     if (b.status === 'live' && a.status !== 'live') return 1;
     return new Date(a.date).getTime() - new Date(b.date).getTime();

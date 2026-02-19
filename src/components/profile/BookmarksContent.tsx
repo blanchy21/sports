@@ -151,7 +151,7 @@ export function BookmarksContent() {
       {/* Clear All Confirmation Modal */}
       {showClearConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="mx-4 max-w-md rounded-lg bg-white p-6">
+          <div className="mx-4 max-w-md rounded-lg bg-card p-6">
             <h3 className="mb-2 text-lg font-semibold">Clear All Bookmarks</h3>
             <p className="mb-4 text-muted-foreground">
               Are you sure you want to remove all {bookmarks.length} bookmarks? This action cannot

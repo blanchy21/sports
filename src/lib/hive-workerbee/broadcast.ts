@@ -8,6 +8,7 @@
 import { Client, PrivateKey, Operation } from '@hiveio/dhive';
 import { HIVE_NODES } from './nodes';
 import { waitForTransaction } from './transaction-confirmation';
+import { error as logError } from './logger';
 
 let dhiveClient: Client | null = null;
 
@@ -49,7 +50,7 @@ export async function broadcastWithKey(
       blockNum: confirmation.blockNum ?? result.block_num,
     };
   } catch (error) {
-    console.error('[Broadcast] Failed:', error);
+    logError('Broadcast failed', 'Broadcast', error instanceof Error ? error : undefined);
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),

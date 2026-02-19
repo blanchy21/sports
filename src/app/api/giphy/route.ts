@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { error as logError } from '@/lib/hive-workerbee/logger';
 
 // Cache for GIF results to reduce API calls
 interface GifCache {
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
     // Get API key from environment (trim whitespace and strip quotes)
     const apiKey = process.env.GIPHY_API_KEY?.trim().replace(/^["']|["']$/g, '');
     if (!apiKey) {
-      console.error('[Giphy API] GIPHY_API_KEY not configured');
+      logError('GIPHY_API_KEY not configured', 'Giphy API');
       return NextResponse.json(
         {
           success: false,
@@ -126,9 +127,9 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
-      console.error(
-        `[Giphy API] Error: ${response.status} - ${errorText} (key length: ${apiKey.length})`
-      );
+      logError(`HTTP ${response.status}: ${errorText}`, 'Giphy API', undefined, {
+        keyLength: apiKey.length,
+      });
 
       // Return cached data if available, even if expired
       if (cached) {
@@ -173,7 +174,7 @@ export async function GET(request: NextRequest) {
       cached: false,
     });
   } catch (error) {
-    console.error('[Giphy API] Unexpected error:', error);
+    logError('Unexpected error', 'Giphy API', error instanceof Error ? error : undefined);
 
     return NextResponse.json(
       {

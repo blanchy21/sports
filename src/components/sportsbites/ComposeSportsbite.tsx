@@ -29,6 +29,7 @@ import { uploadImage } from '@/lib/hive/imageUpload';
 import { validateImageUrl } from '@/lib/utils/sanitize';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { GifPicker } from '@/components/gif/GifPicker';
+import type { AiohaInstance } from '@/lib/aioha/types';
 import dynamic from 'next/dynamic';
 import { logger } from '@/lib/logger';
 
@@ -199,9 +200,7 @@ export function ComposeSportsbite({
 
         const { aioha } = await import('@/lib/aioha/config');
 
-        const aiohaInstance = aioha as {
-          signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
-        } | null;
+        const aiohaInstance = aioha as AiohaInstance | null;
 
         if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
           throw new Error('Hive authentication not available. Please reconnect.');

@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
     let query = db
       .collection('soft_sportsbites')
       .where('isDeleted', '==', false)
+      .where('matchThreadId', '==', null)
       .orderBy('createdAt', 'desc');
 
     if (author) {
@@ -85,6 +86,7 @@ export async function GET(request: NextRequest) {
         query = db
           .collection('soft_sportsbites')
           .where('isDeleted', '==', false)
+          .where('matchThreadId', '==', null)
           .orderBy('createdAt', 'desc');
         if (author) {
           query = query.where('authorUsername', '==', author);
@@ -94,10 +96,8 @@ export async function GET(request: NextRequest) {
     }
 
     const snapshot = await query.get();
-    // Exclude bites that belong to match threads (they have their own feed)
-    const filteredDocs = snapshot.docs.filter((doc) => !doc.data().matchThreadId);
-    const hasMore = filteredDocs.length > limit;
-    const pageDocs = hasMore ? filteredDocs.slice(0, limit) : filteredDocs;
+    const hasMore = snapshot.docs.length > limit;
+    const pageDocs = hasMore ? snapshot.docs.slice(0, limit) : snapshot.docs;
 
     const sportsbites: SoftSportsbite[] = pageDocs.map((doc) => {
       const data = doc.data();

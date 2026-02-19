@@ -71,7 +71,6 @@ const DEFAULT_CONFIG = {
     'height',
     'target',
     'rel',
-    'style',
     'align',
     'colspan',
     'rowspan',
@@ -120,8 +119,38 @@ export function sanitizeHtml(dirty: string, strict = false): string {
 
   const config = strict ? STRICT_CONFIG : DEFAULT_CONFIG;
 
+  // Restrict iframe src to whitelisted video domains
+  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if (node.tagName === 'IFRAME') {
+      const src = node.getAttribute('src') || '';
+      try {
+        const url = new URL(src);
+        const hostname = url.hostname.toLowerCase();
+        const allowed =
+          hostname === 'youtube.com' ||
+          hostname === 'www.youtube.com' ||
+          hostname === 'youtube-nocookie.com' ||
+          hostname === 'www.youtube-nocookie.com' ||
+          hostname === 'vimeo.com' ||
+          hostname === 'player.vimeo.com' ||
+          hostname === '3speak.tv' ||
+          hostname === 'www.3speak.tv' ||
+          hostname.endsWith('.3speak.tv');
+        if (!allowed) {
+          node.removeAttribute('src');
+        }
+      } catch {
+        // Invalid URL — remove src
+        node.removeAttribute('src');
+      }
+    }
+  });
+
   // Sanitize the HTML
   let clean = DOMPurify.sanitize(dirty, config);
+
+  // Remove hook to avoid stacking on repeated calls
+  DOMPurify.removeHook('afterSanitizeAttributes');
 
   // Post-process: ensure all links have security attributes
   clean = clean.replace(/<a\s+([^>]*?)>/gi, (match, attrs) => {

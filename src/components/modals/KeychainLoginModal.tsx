@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { BaseModal } from '@/components/core/BaseModal';
 import { Button } from '@/components/core/Button';
-import { useKeychainLogin } from '@/features/auth/hooks/useKeychainLogin';
+import { useKeychainLogin } from '@/hooks/useKeychainLogin';
 import { CheckCircle, XCircle, ExternalLink, X, Loader2 } from 'lucide-react';
 
 interface KeychainLoginModalProps {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { fetchSportsblockPosts } from '@/lib/hive-workerbee/content';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
+import type { ApiResponse } from '@/types/api';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -51,9 +52,16 @@ export async function GET() {
     // Sort by engagement descending
     const authors = Object.values(authorMap).sort((a, b) => b.engagement - a.engagement);
 
-    return NextResponse.json({ success: true, authors }, { headers: CACHE_HEADERS });
+    type AuthorInfo = { username: string; posts: number; engagement: number };
+    return NextResponse.json<ApiResponse<{ authors: AuthorInfo[] }>>(
+      { success: true, authors },
+      { headers: CACHE_HEADERS }
+    );
   } catch (error) {
     console.error('Error fetching authors:', error);
-    return NextResponse.json({ success: false, error: 'Failed to fetch authors' }, { status: 500 });
+    return NextResponse.json<ApiResponse<never>>(
+      { success: false, error: 'Failed to fetch authors' },
+      { status: 500 }
+    );
   }
 }

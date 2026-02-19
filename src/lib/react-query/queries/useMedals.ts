@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
 import { STALE_TIMES } from '@/lib/constants/cache';
 import { aioha } from '@/lib/aioha/config';
+import type { AiohaInstance } from '@/lib/aioha/types';
 
 // Types for MEDALS data
 export interface MedalsBalance {
@@ -233,14 +234,11 @@ export function useStakeMedals() {
       ];
 
       // Sign and broadcast with active key (required for Hive-Engine token operations)
-      const result = await (
-        aioha as {
-          signAndBroadcastTx: (
-            ops: unknown[],
-            keyType: string
-          ) => Promise<{ success: boolean; result?: string; error?: string }>;
-        }
-      ).signAndBroadcastTx(operations, 'active');
+      const result = (await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'active')) as {
+        success: boolean;
+        result?: string;
+        error?: string;
+      };
 
       if (!result.success) {
         throw new Error(result.error || 'Transaction failed');
@@ -307,14 +305,11 @@ export function useTransferMedals() {
       ];
 
       // Sign and broadcast with active key (required for Hive-Engine token operations)
-      const result = await (
-        aioha as {
-          signAndBroadcastTx: (
-            ops: unknown[],
-            keyType: string
-          ) => Promise<{ success: boolean; result?: string; error?: string }>;
-        }
-      ).signAndBroadcastTx(operations, 'active');
+      const result = (await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'active')) as {
+        success: boolean;
+        result?: string;
+        error?: string;
+      };
 
       if (!result.success) {
         throw new Error(result.error || 'Transaction failed');

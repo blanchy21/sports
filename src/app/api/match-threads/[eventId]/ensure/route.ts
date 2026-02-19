@@ -8,7 +8,10 @@ import {
   buildMatchThreadMetadata,
   isHiveDuplicateError,
 } from '@/lib/hive-workerbee/match-threads';
-import { fetchAllEvents } from '@/lib/sports/thesportsdb';
+import { fetchAllEvents } from '@/lib/sports/espn';
+import { error as logError } from '@/lib/hive-workerbee/logger';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,11 +24,38 @@ const createdContainers = new Set<string>();
  *
  * Ensures a match thread container exists on Hive.
  * Fallback for when the cron hasn't run yet.
+ * Requires authentication.
  */
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ eventId: string }> }
 ) {
+  // Authentication check
+  const user = await getAuthenticatedUserFromSession(request);
+  if (!user) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+
+  // Rate limiting
+  const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.write, 'matchThreadEnsure');
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Rate limit exceeded',
+        retryAfter: Math.ceil((rateLimit.reset - Date.now()) / 1000),
+      },
+      {
+        status: 429,
+        headers: createRateLimitHeaders(
+          rateLimit.remaining,
+          rateLimit.reset,
+          RATE_LIMITS.write.limit
+        ),
+      }
+    );
+  }
+
   const postingKey = process.env.SPORTSBITES_POSTING_KEY;
   if (!postingKey) {
     return NextResponse.json(
@@ -43,7 +73,7 @@ export async function POST(
       return NextResponse.json({ success: true, permlink, alreadyExists: true });
     }
 
-    // Fetch event data from TheSportsDB to build the container
+    // Fetch event data from ESPN to build the container
     const { events } = await fetchAllEvents();
     const event = events.find((e) => e.id === eventId);
 
@@ -109,7 +139,11 @@ export async function POST(
 
     throw new Error(result.error || 'Failed to create container');
   } catch (error) {
-    console.error('[EnsureMatchThread] Failed:', error);
+    logError(
+      'Failed to ensure match thread container',
+      'EnsureMatchThread',
+      error instanceof Error ? error : undefined
+    );
     return NextResponse.json(
       {
         success: false,

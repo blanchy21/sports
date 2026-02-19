@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
-import { fetchAllEvents } from '@/lib/sports/thesportsdb';
+import { fetchAllEvents } from '@/lib/sports/espn';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import {
   MATCH_THREAD_CONFIG,
   getMatchThreadPermlink,
-  isThreadOpen,
+  createMatchThread,
 } from '@/lib/hive-workerbee/match-threads';
 import { MatchThread, SportsEvent } from '@/types/sports';
+import type { ApiResponse } from '@/types/api';
+import { error as logError } from '@/lib/hive-workerbee/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -62,14 +64,9 @@ export async function GET() {
       })
     );
 
-    const matchThreads: MatchThread[] = containerChecks.map(({ event, biteCount }) => ({
-      eventId: event.id,
-      permlink: getMatchThreadPermlink(event.id),
-      event,
-      biteCount,
-      isOpen: isThreadOpen(event.date, event.status),
-      isLive: liveEventIds.has(event.id) || event.status === 'live',
-    }));
+    const matchThreads: MatchThread[] = containerChecks.map(({ event, biteCount }) =>
+      createMatchThread(event, biteCount, liveEventIds)
+    );
 
     // Sort: live first, then upcoming by date, then recently finished
     matchThreads.sort((a, b) => {
@@ -88,7 +85,7 @@ export async function GET() {
       return new Date(a.event.date).getTime() - new Date(b.event.date).getTime();
     });
 
-    return NextResponse.json(
+    return NextResponse.json<ApiResponse<{ matchThreads: MatchThread[] }>>(
       { success: true, matchThreads },
       {
         headers: {
@@ -97,12 +94,15 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error('[MatchThreads] Failed to fetch:', error);
-    return NextResponse.json(
+    logError(
+      'Failed to fetch match threads',
+      'MatchThreads',
+      error instanceof Error ? error : undefined
+    );
+    return NextResponse.json<ApiResponse<{ matchThreads: MatchThread[] }>>(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch match threads',
-        matchThreads: [],
       },
       { status: 500 }
     );

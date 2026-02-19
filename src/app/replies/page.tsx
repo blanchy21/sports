@@ -7,9 +7,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { RepliesContent } from '@/components/profile/RepliesContent';
 
 export default function RepliesPage() {
-  const { user, isClient } = useAuth();
+  const { user, isLoading } = useAuth();
 
-  if (!isClient) {
+  if (isLoading) {
     return (
       <MainLayout>
         <div className="mx-auto max-w-4xl space-y-6">
@@ -32,9 +32,9 @@ export default function RepliesPage() {
                 <MessageSquare className="h-12 w-12 text-muted-foreground" />
               </div>
             </div>
-            <h2 className="mb-2 text-xl font-semibold">Please log in</h2>
+            <h2 className="mb-2 text-xl font-semibold">Authentication Required</h2>
             <p className="text-muted-foreground">
-              You need to be logged in to view your comments and replies
+              Please sign in to view your comments and replies.
             </p>
           </div>
         </div>

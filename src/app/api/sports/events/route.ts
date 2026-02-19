@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SportsEvent } from '@/types/sports';
-import { fetchAllEvents, filterEvents, filterBySport, sortEvents } from '@/lib/sports/thesportsdb';
+import { fetchAllEvents, filterEvents, filterBySport, sortEvents } from '@/lib/sports/espn';
+import { error as logError, info as logInfo } from '@/lib/hive-workerbee/logger';
 
 interface EventsCache {
   data: SportsEvent[] | null;
@@ -25,11 +26,7 @@ export async function GET(request: NextRequest) {
   const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
   const url = request.url;
 
-  console.log(`[${ROUTE}] Request started`, {
-    requestId,
-    url,
-    timestamp: new Date().toISOString(),
-  });
+  logInfo('Request started', ROUTE, { requestId, url });
 
   try {
     const { searchParams } = new URL(request.url);
@@ -58,7 +55,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Fetch fresh data from TheSportsDB
+    // Fetch fresh data from ESPN
     const { events, liveEventIds } = await fetchAllEvents();
 
     // Update cache
@@ -86,24 +83,20 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[${ROUTE}] Request failed after ${duration}ms`, {
-      requestId,
-      url,
-      error:
-        error instanceof Error
-          ? {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
-            }
-          : String(error),
-      timestamp: new Date().toISOString(),
-    });
+    logError(
+      `Request failed after ${duration}ms`,
+      ROUTE,
+      error instanceof Error ? error : undefined,
+      {
+        requestId,
+        url,
+      }
+    );
 
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch sports events',
+        error: 'An unexpected error occurred',
         data: [],
       },
       { status: 500 }

@@ -12,12 +12,7 @@
 /**
  * Supported authentication providers in Aioha
  */
-export type AiohaProvider =
-  | 'keychain'
-  | 'hivesigner'
-  | 'hiveauth'
-  | 'ledger'
-  | 'peakvault';
+export type AiohaProvider = 'keychain' | 'hivesigner' | 'hiveauth' | 'ledger' | 'peakvault';
 
 /**
  * Provider-specific session data
@@ -70,10 +65,7 @@ export interface AiohaLoginCancelled {
 /**
  * Discriminated union of all login result types
  */
-export type AiohaLoginResult =
-  | AiohaLoginSuccess
-  | AiohaLoginFailure
-  | AiohaLoginCancelled;
+export type AiohaLoginResult = AiohaLoginSuccess | AiohaLoginFailure | AiohaLoginCancelled;
 
 /**
  * Type guard for successful login
@@ -190,7 +182,26 @@ export interface AiohaInstance {
   // Methods
   getUser?: () => Promise<{ username?: string; id?: string; sessionId?: string }>;
   logout?: () => Promise<void>;
-  login?: (provider: AiohaProvider, username?: string) => Promise<AiohaRawLoginResult>;
+  login?: (
+    provider: AiohaProvider | unknown,
+    username?: string,
+    options?: unknown
+  ) => Promise<AiohaRawLoginResult>;
+
+  // Transaction broadcasting
+  signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
+
+  // Provider discovery
+  getProviders?: () => string[];
+  getCurrentUser?: () => string | undefined;
+
+  // Multi-account support
+  getOtherLogins?: () => Record<string, string>;
+  switchUser?: (username: string) => boolean;
+
+  // Event system
+  on?: (event: string, handler: (...args: unknown[]) => void) => void;
+  off?: (event: string, handler?: (...args: unknown[]) => void) => void;
 }
 
 // ============================================================================
@@ -219,9 +230,11 @@ function getTrimmedString(value: unknown): string | undefined {
 function extractSessionId(obj: unknown): string | undefined {
   if (typeof obj !== 'object' || obj === null) return undefined;
   const record = obj as Record<string, unknown>;
-  return getTrimmedString(record.sessionId)
-    ?? getTrimmedString(record.session_id)
-    ?? getTrimmedString(record.session);
+  return (
+    getTrimmedString(record.sessionId) ??
+    getTrimmedString(record.session_id) ??
+    getTrimmedString(record.session)
+  );
 }
 
 /**
@@ -241,7 +254,8 @@ export function extractFromRawLoginResult(result: AiohaRawLoginResult): Extracte
 
   // Try nested user object
   if (result.user) {
-    const userUsername = getTrimmedString(result.user.username) ?? getTrimmedString(result.user.name);
+    const userUsername =
+      getTrimmedString(result.user.username) ?? getTrimmedString(result.user.name);
     if (userUsername) {
       return {
         username: userUsername,
@@ -253,7 +267,8 @@ export function extractFromRawLoginResult(result: AiohaRawLoginResult): Extracte
 
   // Try account object
   if (result.account) {
-    const accountUsername = getTrimmedString(result.account.name) ?? getTrimmedString(result.account.username);
+    const accountUsername =
+      getTrimmedString(result.account.name) ?? getTrimmedString(result.account.username);
     if (accountUsername) {
       return {
         username: accountUsername,
@@ -264,7 +279,14 @@ export function extractFromRawLoginResult(result: AiohaRawLoginResult): Extracte
   }
 
   // Try other common nested structures
-  const nestedSources = [result.data, result.result, result.auth, result.profile, result.identity, result.accountData];
+  const nestedSources = [
+    result.data,
+    result.result,
+    result.auth,
+    result.profile,
+    result.identity,
+    result.accountData,
+  ];
   for (const source of nestedSources) {
     if (source) {
       const username = getTrimmedString(source.username) ?? getTrimmedString(source.name);

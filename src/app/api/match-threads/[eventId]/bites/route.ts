@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fetchMatchThreadBites } from '@/lib/hive-workerbee/match-threads';
 import { fetchSoftMatchThreadBites } from '@/lib/hive-workerbee/match-threads-server';
 import { Sportsbite } from '@/lib/hive-workerbee/sportsbites';
+import { error as logError } from '@/lib/hive-workerbee/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -78,7 +79,11 @@ export async function GET(
       }
     );
   } catch (error) {
-    console.error('[MatchThreadBites] Failed:', error);
+    logError(
+      'Failed to fetch thread bites',
+      'MatchThreadBites',
+      error instanceof Error ? error : undefined
+    );
     return NextResponse.json(
       {
         success: false,

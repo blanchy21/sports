@@ -1,6 +1,7 @@
 import { makeHiveApiCall } from './api';
 import { isHiveAccount } from './account';
 import { FollowRelationship } from '@/types';
+import type { AiohaInstance } from '@/lib/aioha/types';
 import {
   workerBee as workerBeeLog,
   warn as logWarn,
@@ -21,30 +22,24 @@ export interface SocialResult {
 }
 
 /**
- * Follow a user
- * @param username - Username to follow
- * @param follower - Username of the follower
- * @returns Follow result
+ * Shared helper for follow/unfollow operations.
+ * 'follow' sets what: ['blog'], 'unfollow' sets what: [] (empty).
  */
-export async function followUser(
+async function toggleFollow(
   username: string,
-  follower: string
-): Promise<{
-  success: boolean;
-  error?: string;
-}> {
-  // Only run in browser environment
+  follower: string,
+  action: 'follow' | 'unfollow'
+): Promise<{ success: boolean; error?: string }> {
   if (typeof window === 'undefined') {
     return {
       success: false,
-      error: 'Follow operation must be performed in browser environment',
+      error: `${action} operation must be performed in browser environment`,
     };
   }
 
   try {
-    workerBeeLog(`followUser start ${follower} -> ${username}`);
+    workerBeeLog(`${action}User start ${follower} -> ${username}`);
 
-    // Import Aioha to broadcast the transaction
     const { aioha } = await import('@/lib/aioha/config');
 
     if (!aioha) {
@@ -53,18 +48,14 @@ export async function followUser(
       );
     }
 
-    // Create follow operation
-    // Hive follow operations use specific format: [follow_type, { follower, following, what }]
-    // where 'what' is an array of strings like ['blog'] or ['blog', 'ignore']
     const followOperation = {
-      follower: follower,
+      follower,
       following: username,
-      what: ['blog'], // 'blog' means following their content, empty array means unfollow
+      what: action === 'follow' ? ['blog'] : [],
     };
 
-    workerBeeLog('followUser operation created', undefined, followOperation);
+    workerBeeLog(`${action}User operation created`, undefined, followOperation);
 
-    // Use Aioha to sign and broadcast the transaction
     const operations = [
       [
         'custom_json',
@@ -77,12 +68,10 @@ export async function followUser(
       ],
     ];
 
-    workerBeeLog('followUser broadcasting transaction');
-    const result = await (
-      aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }
-    ).signAndBroadcastTx(operations, 'posting');
+    workerBeeLog(`${action}User broadcasting transaction`);
+    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
 
-    workerBeeLog('followUser broadcast result', undefined, result);
+    workerBeeLog(`${action}User broadcast result`, undefined, result);
 
     if (!result || (result as { error?: string })?.error) {
       throw new Error(
@@ -90,112 +79,32 @@ export async function followUser(
       );
     }
 
-    workerBeeLog(`followUser success ${follower} -> ${username}`);
-
-    return {
-      success: true,
-    };
+    workerBeeLog(`${action}User success ${follower} -> ${username}`);
+    return { success: true };
   } catch (error) {
-    logError('Error following user', undefined, error instanceof Error ? error : undefined);
+    logError(`Error ${action}ing user`, undefined, error instanceof Error ? error : undefined);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    workerBeeLog('followUser error details', undefined, {
+    workerBeeLog(`${action}User error details`, undefined, {
       message: errorMessage,
       error,
       stack: error instanceof Error ? error.stack : undefined,
     });
-    return {
-      success: false,
-      error: errorMessage,
-    };
+    return { success: false, error: errorMessage };
   }
 }
 
-/**
- * Unfollow a user
- * @param username - Username to unfollow
- * @param follower - Username of the follower
- * @returns Unfollow result
- */
+export async function followUser(
+  username: string,
+  follower: string
+): Promise<{ success: boolean; error?: string }> {
+  return toggleFollow(username, follower, 'follow');
+}
+
 export async function unfollowUser(
   username: string,
   follower: string
-): Promise<{
-  success: boolean;
-  error?: string;
-}> {
-  // Only run in browser environment
-  if (typeof window === 'undefined') {
-    return {
-      success: false,
-      error: 'Unfollow operation must be performed in browser environment',
-    };
-  }
-
-  try {
-    workerBeeLog(`unfollowUser start ${follower} -> ${username}`);
-
-    // Import Aioha to broadcast the transaction
-    const { aioha } = await import('@/lib/aioha/config');
-
-    if (!aioha) {
-      throw new Error(
-        'Aioha authentication is not available. Please refresh the page and try again.'
-      );
-    }
-
-    // Create unfollow operation (empty 'what' array means unfollow)
-    const unfollowOperation = {
-      follower: follower,
-      following: username,
-      what: [], // Empty array means unfollow
-    };
-
-    workerBeeLog('unfollowUser operation created', undefined, unfollowOperation);
-
-    // Use Aioha to sign and broadcast the transaction
-    const operations = [
-      [
-        'custom_json',
-        {
-          required_auths: [],
-          required_posting_auths: [follower],
-          id: 'follow_plugin',
-          json: JSON.stringify(['follow', unfollowOperation]),
-        },
-      ],
-    ];
-
-    workerBeeLog('unfollowUser broadcasting transaction');
-    const result = await (
-      aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }
-    ).signAndBroadcastTx(operations, 'posting');
-
-    workerBeeLog('unfollowUser broadcast result', undefined, result);
-
-    if (!result || (result as { error?: string })?.error) {
-      throw new Error(
-        `Transaction failed: ${(result as { error?: string })?.error || 'Unknown error'}`
-      );
-    }
-
-    workerBeeLog(`unfollowUser success ${follower} -> ${username}`);
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    logError('Error unfollowing user', undefined, error instanceof Error ? error : undefined);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    workerBeeLog('unfollowUser error details', undefined, {
-      message: errorMessage,
-      error,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    return {
-      success: false,
-      error: errorMessage,
-    };
-  }
+): Promise<{ success: boolean; error?: string }> {
+  return toggleFollow(username, follower, 'unfollow');
 }
 
 /**
@@ -541,9 +450,7 @@ export async function reblogPost(
     ];
 
     workerBeeLog('reblogPost broadcasting transaction');
-    const result = await (
-      aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }
-    ).signAndBroadcastTx(operations, 'posting');
+    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
 
     workerBeeLog('reblogPost broadcast result', undefined, result);
 
@@ -688,9 +595,7 @@ export async function updateHiveProfile(
     ];
 
     workerBeeLog('updateHiveProfile broadcasting transaction', undefined, operations);
-    const result = await (
-      aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }
-    ).signAndBroadcastTx(operations, 'posting');
+    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
 
     workerBeeLog('updateHiveProfile broadcast result', undefined, result);
 

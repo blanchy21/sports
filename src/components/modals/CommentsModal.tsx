@@ -17,6 +17,7 @@ import { CommentToolbar } from '@/components/comments/CommentToolbar';
 import { CommentContent } from '@/components/comments/CommentContent';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { logger } from '@/lib/logger';
+import type { AiohaInstance } from '@/lib/aioha/types';
 
 interface CommentsModalProps {
   isOpen: boolean;
@@ -76,9 +77,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
 
         const { aioha } = await import('@/lib/aioha/config');
 
-        const aiohaInstance = aioha as {
-          signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
-        } | null;
+        const aiohaInstance = aioha as AiohaInstance | null;
 
         if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
           throw new Error('Hive authentication not available. Please reconnect.');

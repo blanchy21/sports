@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
 import { broadcastWithKey } from '@/lib/hive-workerbee/broadcast';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
-import { fetchAllEvents } from '@/lib/sports/thesportsdb';
+import { fetchAllEvents } from '@/lib/sports/espn';
 import {
   MATCH_THREAD_CONFIG,
   getMatchThreadPermlink,
@@ -11,6 +11,7 @@ import {
   isHiveDuplicateError,
 } from '@/lib/hive-workerbee/match-threads';
 import { SPORTSBITES_CONFIG } from '@/lib/hive-workerbee/sportsbites';
+import { error as logError, info as logInfo } from '@/lib/hive-workerbee/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -35,7 +36,7 @@ export async function GET() {
   }
 
   try {
-    console.log('[Cron] Checking for match thread containers to create...');
+    logInfo('Checking for match thread containers to create...', 'Cron');
 
     const { events, liveEventIds } = await fetchAllEvents();
     const now = Date.now();
@@ -52,7 +53,7 @@ export async function GET() {
     });
 
     if (eventsNeedingContainers.length === 0) {
-      console.log('[Cron] No events need match thread containers');
+      logInfo('No events need match thread containers', 'Cron');
       return NextResponse.json({
         success: true,
         message: 'No events need containers',
@@ -122,8 +123,9 @@ export async function GET() {
 
         if (result.success) {
           created++;
-          console.log(
-            `[Cron] Created match thread for ${event.id} (${event.name}): tx=${result.transactionId}`
+          logInfo(
+            `Created match thread for ${event.id} (${event.name}): tx=${result.transactionId}`,
+            'Cron'
           );
           results.push({ eventId: event.id, status: 'created' });
         } else {
@@ -144,7 +146,7 @@ export async function GET() {
       }
     }
 
-    console.log(`[Cron] Match thread containers: created=${created}, skipped=${skipped}`);
+    logInfo(`Match thread containers: created=${created}, skipped=${skipped}`, 'Cron');
 
     return NextResponse.json({
       success: true,
@@ -154,7 +156,11 @@ export async function GET() {
       results,
     });
   } catch (error) {
-    console.error('[Cron] Match thread container creation failed:', error);
+    logError(
+      'Match thread container creation failed',
+      'Cron',
+      error instanceof Error ? error : undefined
+    );
     return NextResponse.json(
       {
         success: false,

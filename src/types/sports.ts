@@ -12,7 +12,7 @@ export interface SportCategory {
   aliases?: string[];
 }
 
-export const SPORT_CATEGORIES: SportCategory[] = [
+export const SPORT_CATEGORIES = [
   {
     id: 'american-football',
     name: 'American Football',
@@ -345,7 +345,9 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     description: 'General Sports',
     color: 'bg-purple-500',
   },
-];
+] as const satisfies readonly SportCategory[];
+
+export type SportCategoryId = (typeof SPORT_CATEGORIES)[number]['id'];
 
 export interface SportsEvent {
   id: string;

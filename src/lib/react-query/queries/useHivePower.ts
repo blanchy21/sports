@@ -7,6 +7,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { aioha } from '@/lib/aioha/config';
+import type { AiohaInstance } from '@/lib/aioha/types';
 
 // Types for power data
 export interface PowerInfo {
@@ -107,14 +108,11 @@ export function useHivePowerMutation() {
       const operations = [[operationType, data.operation]];
 
       // Sign and broadcast with active key (required for power operations)
-      const result = await (
-        aioha as {
-          signAndBroadcastTx: (
-            ops: unknown[],
-            keyType: string
-          ) => Promise<{ success: boolean; result?: string; error?: string }>;
-        }
-      ).signAndBroadcastTx(operations, 'active');
+      const result = (await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'active')) as {
+        success: boolean;
+        result?: string;
+        error?: string;
+      };
 
       if (!result.success) {
         throw new Error(result.error || 'Transaction failed');

@@ -101,9 +101,9 @@ export function calculateTrendingSports(
 
       return {
         sport: {
-          id: sport.id,
-          name: sport.name,
-          icon: sport.icon,
+          id: sport.id as string,
+          name: sport.name as string,
+          icon: sport.icon as string,
         },
         posts: count,
         trending: false, // Will be set below

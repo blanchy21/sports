@@ -3,11 +3,11 @@
  *
  * Each match gets a container post under @sportsbites (same account as daily
  * sportsbites). Users post 280-char sportsbites as replies to the match
- * container. Threads are auto-created from TheSportsDB events and remain
+ * container. Threads are auto-created from ESPN events and remain
  * open for 24 hours after the event ends.
  */
 
-import { SportsEvent } from '@/types/sports';
+import { SportsEvent, MatchThread } from '@/types/sports';
 import { SPORTS_ARENA_CONFIG, MUTED_AUTHORS } from './client';
 import { makeHiveApiCall } from './api';
 import { createCommentOperation, generatePermlink } from './wax-helpers';
@@ -18,6 +18,7 @@ import {
   SPORTSBITES_CONFIG,
   validateSportsbiteContent,
 } from './sportsbites';
+import { error as logError } from './logger';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -95,6 +96,26 @@ export function buildMatchThreadMetadata(event: SportsEvent): string {
       kickoff: event.date,
     },
   });
+}
+
+// ---------------------------------------------------------------------------
+// Factory
+// ---------------------------------------------------------------------------
+
+/** Build a MatchThread object from an event, bite count, and live-event set. */
+export function createMatchThread(
+  event: SportsEvent,
+  biteCount: number,
+  liveEventIds: Set<string>
+): MatchThread {
+  return {
+    eventId: event.id,
+    permlink: getMatchThreadPermlink(event.id),
+    event,
+    biteCount,
+    isOpen: isThreadOpen(event.date, event.status),
+    isLive: liveEventIds.has(event.id) || event.status === 'live',
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -183,7 +204,11 @@ export async function fetchMatchThreadBites(eventId: string): Promise<Sportsbite
       .filter((s): s is Sportsbite => s !== null)
       .filter((s) => !MUTED_AUTHORS.includes(s.author));
   } catch (error) {
-    console.error(`[fetchMatchThreadBites] Error for event ${eventId}:`, error);
-    return [];
+    logError(
+      `Error fetching match thread bites for event ${eventId}`,
+      'fetchMatchThreadBites',
+      error instanceof Error ? error : undefined
+    );
+    throw error;
   }
 }

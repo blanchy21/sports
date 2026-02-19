@@ -9,11 +9,7 @@ import {
 } from './wax-helpers';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 import { waitForTransaction } from './transaction-confirmation';
-
-// Type definitions for better type safety
-interface AiohaInstance {
-  signAndBroadcastTx?: (ops: unknown[], keyType: string) => Promise<unknown>;
-}
+import type { AiohaInstance } from '@/lib/aioha/types';
 
 interface BroadcastResult {
   success?: boolean;
@@ -525,7 +521,7 @@ export async function canUserPost(username: string): Promise<{
       return {
         canPost: false,
         rcPercentage: 0,
-        message: 'Error checking Resource Credits',
+        message: 'Network error checking posting eligibility. Please try again.',
       };
     }
   }

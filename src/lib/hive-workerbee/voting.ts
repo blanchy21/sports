@@ -1,8 +1,9 @@
 import { makeWorkerBeeApiCall } from './api';
 import { aioha } from '@/lib/aioha/config';
 import { createVoteOperation, getVotingPowerWax } from './wax-helpers';
-import { workerBee as workerBeeLog, error as logError } from './logger';
+import { workerBee as workerBeeLog, error as logError, debug as logDebug } from './logger';
 import { waitForTransaction } from './transaction-confirmation';
+import type { AiohaInstance } from '@/lib/aioha/types';
 
 // Types matching the original voting.ts interface
 export interface VoteResult {
@@ -62,9 +63,7 @@ export async function castVote(voteData: VoteData): Promise<VoteResult> {
     // Format: [operation_type, operation_data]
     const operations = [['vote', operation]];
 
-    const result = await (
-      aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }
-    ).signAndBroadcastTx(operations, 'posting');
+    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
 
     const transactionId = (result as { id?: string })?.id || 'unknown';
 
@@ -118,9 +117,12 @@ export async function checkUserVote(
     if (!post || !post.author) return null;
 
     return getUserVote(post as { active_votes?: HiveVote[] }, voter);
-  } catch {
+  } catch (error) {
     // Non-critical: vote status check can fail for just-posted content or transient network issues.
     // Returning null lets the UI render without vote state, which is the correct fallback.
+    logDebug(`Vote status check failed for ${author}/${permlink} by ${voter}`, 'checkUserVote', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }
@@ -485,9 +487,7 @@ export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
     // Format: [operation_type, operation_data]
     const aiohaOperations = operations.map((op) => ['vote', op]);
 
-    const result = await (
-      aioha as { signAndBroadcastTx: (ops: unknown[], keyType: string) => Promise<unknown> }
-    ).signAndBroadcastTx(aiohaOperations, 'posting');
+    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(aiohaOperations, 'posting');
 
     workerBeeLog(
       `[batchVote] Batch vote completed with transaction ID: ${(result as { id?: string })?.id}`

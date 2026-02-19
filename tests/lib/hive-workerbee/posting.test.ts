@@ -459,7 +459,7 @@ describe('Posting Module', () => {
       const result = await canUserPost('testuser');
 
       expect(result.canPost).toBe(false);
-      expect(result.message).toContain('Error');
+      expect(result.message).toContain('error');
     });
   });
 

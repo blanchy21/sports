@@ -5,6 +5,7 @@
  */
 import { getAdminDb } from '@/lib/firebase/admin';
 import { Sportsbite } from './sportsbites';
+import { error as logError, warn as logWarn } from './logger';
 
 interface SoftSportsbiteDoc {
   authorId: string;
@@ -56,7 +57,13 @@ export async function fetchSoftMatchThreadBites(
 ): Promise<Sportsbite[]> {
   try {
     const db = getAdminDb();
-    if (!db) return [];
+    if (!db) {
+      logWarn(
+        'Firebase Admin DB not available — skipping soft bites fetch',
+        'fetchSoftMatchThreadBites'
+      );
+      return [];
+    }
 
     const { limit = 200 } = options;
 
@@ -70,7 +77,11 @@ export async function fetchSoftMatchThreadBites(
 
     return snapshot.docs.map((doc) => softDocToSportsbite(doc.id, doc.data() as SoftSportsbiteDoc));
   } catch (error) {
-    console.error('[fetchSoftMatchThreadBites] Error:', error);
-    return [];
+    logError(
+      'Error fetching soft match thread bites',
+      'fetchSoftMatchThreadBites',
+      error instanceof Error ? error : undefined
+    );
+    throw error;
   }
 }

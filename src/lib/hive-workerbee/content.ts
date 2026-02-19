@@ -1,5 +1,5 @@
 import { SPORTS_ARENA_CONFIG, MUTED_AUTHORS } from './client';
-import { SPORT_CATEGORIES } from '@/types';
+import { SPORT_CATEGORIES, type SportCategory } from '@/types';
 import { makeWorkerBeeApiCall } from './api';
 import { getContentOptimized } from './optimization';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
@@ -81,7 +81,7 @@ function getSportCategory(post: HivePost): string | null {
     // Check against known sport categories
     const lowerTag = tag.toLowerCase();
     const sportCategory = SPORT_CATEGORIES.find(
-      (sport) =>
+      (sport: SportCategory) =>
         sport.id === lowerTag ||
         sport.name.toLowerCase() === lowerTag ||
         sport.slug === lowerTag ||
@@ -457,7 +457,7 @@ export async function fetchPost(author: string, permlink: string): Promise<Sport
       'getPostByAuthorPermlink',
       error instanceof Error ? error : undefined
     );
-    return null;
+    throw error;
   }
 }
 
