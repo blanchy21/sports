@@ -30,6 +30,7 @@ import type { ReactionEmoji, ReactionCounts, PollResults } from '@/lib/hive-work
 import { SPORT_CATEGORIES } from '@/types';
 import { getProxyImageUrl, shouldProxyImage, proxyImagesInContent } from '@/lib/utils/image-proxy';
 import { isTrustedImageHost, sanitizePostContent } from '@/lib/utils/sanitize';
+import { linkifyHashtags } from '@/lib/utils/hashtags';
 import { InlineReplies } from '@/components/sportsbites/InlineReplies';
 import { EmojiReactions } from '@/components/sportsbites/EmojiReactions';
 import { QuickPoll } from '@/components/sportsbites/QuickPoll';
@@ -75,7 +76,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   );
 
   const biteHtml = React.useMemo(
-    () => proxyImagesInContent(sanitizePostContent(biteText)),
+    () => linkifyHashtags(proxyImagesInContent(sanitizePostContent(biteText))),
     [biteText]
   );
 

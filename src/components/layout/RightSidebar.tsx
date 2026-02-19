@@ -133,7 +133,7 @@ export const RightSidebar: React.FC = () => {
           ) : trendingTopics.length > 0 ? (
             <>
               <div className="space-y-3">
-                {trendingTopics.map((topic) => (
+                {trendingTopics.slice(0, 5).map((topic) => (
                   <Link
                     key={topic.id}
                     href={`/sportsbites?tag=${encodeURIComponent(topic.name)}`}
@@ -176,9 +176,10 @@ export const RightSidebar: React.FC = () => {
           ) : trendingSports.length > 0 ? (
             <div className="space-y-3">
               {trendingSports.map((item) => (
-                <div
+                <Link
                   key={item.sport.id}
-                  className="flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-accent"
+                  href={`/discover?sportCategory=${item.sport.id}`}
+                  className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-accent"
                 >
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{item.sport.icon}</span>
@@ -193,7 +194,7 @@ export const RightSidebar: React.FC = () => {
                       <span className="text-xs text-accent">Hot</span>
                     </div>
                   )}
-                </div>
+                </Link>
               ))}
             </div>
           ) : (

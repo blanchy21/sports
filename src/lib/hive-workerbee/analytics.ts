@@ -161,7 +161,7 @@ export function calculateTrendingTopics(posts: SportsblockPost[]): TrendingTopic
       posts: count,
     }))
     .sort((a, b) => b.posts - a.posts)
-    .slice(0, 5);
+    .slice(0, 10);
 }
 
 /**
@@ -187,7 +187,7 @@ export function calculateSportsbitesTrendingTopics(sportsbites: Sportsbite[]): T
       posts: count,
     }))
     .sort((a, b) => b.posts - a.posts)
-    .slice(0, 5);
+    .slice(0, 10);
 }
 
 /**
@@ -377,13 +377,13 @@ export async function getAnalyticsData(
   if (sportsbites && sportsbites.length > 0) {
     trendingTopics = calculateSportsbitesTrendingTopics(sportsbites);
   }
-  if (trendingTopics.length < 5) {
+  if (trendingTopics.length < 10) {
     const postTopics = calculateTrendingTopics(posts);
     const existingIds = new Set(trendingTopics.map((t) => t.id));
     for (const topic of postTopics) {
       if (!existingIds.has(topic.id)) {
         trendingTopics.push(topic);
-        if (trendingTopics.length >= 5) break;
+        if (trendingTopics.length >= 10) break;
       }
     }
   }
