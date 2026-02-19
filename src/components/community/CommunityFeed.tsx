@@ -140,7 +140,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({
               // Build the post object for PostCard, using type assertion for soft post fields
               const postCardData = {
                 postType: 'standard' as const,
-                id: post.id || `${post.author}/${post.permlink}`,
+                id: `${post.author}/${post.permlink}`,
                 title: post.title || 'Untitled',
                 content: post.body || '',
                 excerpt: post.excerpt || post.body?.substring(0, 200) || '',
