@@ -46,14 +46,19 @@ export function getMatchThreadPermlink(eventId: string): string {
 // ---------------------------------------------------------------------------
 
 /** Returns true if the thread is still open for posting. */
-export function isThreadOpen(eventDate: string, eventStatus: SportsEvent['status']): boolean {
+export function isThreadOpen(
+  eventDate: string,
+  eventStatus: SportsEvent['status'],
+  endDate?: string
+): boolean {
   if (eventStatus === 'live' || eventStatus === 'upcoming') return true;
 
-  // For finished events, allow posting for THREAD_OPEN_HOURS after the event time
-  const eventTime = new Date(eventDate).getTime();
+  // For finished events, allow posting for THREAD_OPEN_HOURS after the event ends.
+  // Use endDate for multi-day events (e.g. golf tournaments), otherwise fall back to start date.
+  const referenceTime = new Date(endDate || eventDate).getTime();
   const now = Date.now();
-  const hoursSinceEvent = (now - eventTime) / (1000 * 60 * 60);
-  return hoursSinceEvent <= MATCH_THREAD_CONFIG.THREAD_OPEN_HOURS;
+  const hoursSinceEnd = (now - referenceTime) / (1000 * 60 * 60);
+  return hoursSinceEnd <= MATCH_THREAD_CONFIG.THREAD_OPEN_HOURS;
 }
 
 // ---------------------------------------------------------------------------
@@ -113,7 +118,7 @@ export function createMatchThread(
     permlink: getMatchThreadPermlink(event.id),
     event,
     biteCount,
-    isOpen: isThreadOpen(event.date, event.status),
+    isOpen: isThreadOpen(event.date, event.status, event.endDate),
     isLive: liveEventIds.has(event.id) || event.status === 'live',
   };
 }

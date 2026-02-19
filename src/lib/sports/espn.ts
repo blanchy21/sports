@@ -60,6 +60,7 @@ interface ESPNEvent {
   id: string;
   name: string;
   date: string;
+  endDate?: string;
   // Tennis/golf tournaments may omit competitions entirely
   competitions?: {
     competitors: ESPNCompetitor[];
@@ -150,6 +151,7 @@ function convertESPNEvent(
     id: event.id,
     name: event.name,
     date: event.date,
+    endDate: event.endDate,
     icon: sportConfig.icon,
     sport: sportConfig.sportName,
     league: leagueName,

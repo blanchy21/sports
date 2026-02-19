@@ -353,6 +353,8 @@ export interface SportsEvent {
   id: string;
   name: string;
   date: string;
+  /** End date for multi-day events (e.g. golf tournaments). */
+  endDate?: string;
   icon: string;
   sport: string;
   league?: string;

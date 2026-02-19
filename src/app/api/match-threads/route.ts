@@ -33,7 +33,10 @@ export async function GET() {
       const eventTime = new Date(event.date).getTime();
 
       if (event.status === 'upcoming' && eventTime <= in48h) return true;
-      if (event.status === 'finished' && eventTime >= past24h) return true;
+
+      // For finished events, use endDate (multi-day events like golf) or start date
+      const endTime = event.endDate ? new Date(event.endDate).getTime() : eventTime;
+      if (event.status === 'finished' && endTime >= past24h) return true;
 
       return false;
     });
