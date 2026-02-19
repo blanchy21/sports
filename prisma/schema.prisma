@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Google OAuth users with server-side custodial Hive keys
+model CustodialUser {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  googleId        String    @unique @map("google_id")
+  displayName     String?   @map("display_name")
+  avatarUrl       String?   @map("avatar_url")
+  hiveUsername    String?   @unique @map("hive_username")
+  encryptedKeys  String?   @map("encrypted_keys") // AES-256-GCM encrypted JSON of Hive keys
+  encryptionIv   String?   @map("encryption_iv")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  accountTokens   AccountToken[]
+  analyticsEvents AnalyticsEvent[]
+
+  @@map("custodial_users")
+}
+
+// Tracks Hive account token claims (one free account per user)
+model AccountToken {
+  id            String             @id @default(uuid())
+  hiveUsername  String             @map("hive_username")
+  status        AccountTokenStatus @default(PENDING)
+  claimedAt     DateTime?          @map("claimed_at")
+  errorMessage  String?            @map("error_message")
+  createdAt     DateTime           @default(now()) @map("created_at")
+
+  userId        String             @map("user_id")
+  user          CustodialUser      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("account_tokens")
+}
+
+enum AccountTokenStatus {
+  PENDING
+  CLAIMED
+  FAILED
+}
+
+// Lightweight analytics replacing Firestore analytics
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  eventType String   @map("event_type")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId    String?  @map("user_id")
+  user      CustodialUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([eventType])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("analytics_events")
+}

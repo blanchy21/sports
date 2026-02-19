@@ -59,3 +59,11 @@ next-env.d.ts
 # Code review notes (local only)
 /code-review/
 .env*.local
+
+# Prisma generated client
+/src/generated/prisma/
+
+# Task plans (local only)
+/tasks/replace-firebase-hive-onboarding.md
+
+/src/generated/prisma
