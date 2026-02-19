@@ -1,5 +1,5 @@
 /**
- * Auth-related types for the dual (Hive + Firebase) system.
+ * Auth-related types for soft user content.
  *
  * Canonical types live elsewhere:
  *   User        -> @/types/user
@@ -9,7 +9,7 @@
  *   AiohaInstance -> @/lib/aioha/types
  */
 
-// Post types for soft (Firebase) system
+// Post types for soft (custodial) system
 export interface SoftPost {
   id: string;
   authorId: string;
@@ -40,7 +40,7 @@ export interface SoftPost {
   likeCount?: number;
 }
 
-// Soft sportsbite stored in Firestore
+// Soft sportsbite stored in database
 export interface SoftSportsbite {
   id: string;
   authorId: string;

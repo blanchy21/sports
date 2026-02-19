@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAdminDb } from '@/lib/firebase/admin';
-import { FieldValue } from 'firebase-admin/firestore';
-import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
+import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
@@ -89,55 +87,45 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
-
-    let query = db.collection('soft_comments').where('isDeleted', '==', false);
+    const where: Record<string, unknown> = { isDeleted: false };
 
     if (postId) {
-      query = query.where('postId', '==', postId);
+      where.postId = postId;
     } else if (postPermlink) {
-      query = query.where('postPermlink', '==', postPermlink);
+      where.postPermlink = postPermlink;
     }
 
     // Filter by parent for threaded comments
     if (parentCommentId === '') {
       // Top-level comments only
-      query = query.where('parentCommentId', '==', null);
+      where.parentCommentId = null;
     } else if (parentCommentId) {
       // Replies to specific comment
-      query = query.where('parentCommentId', '==', parentCommentId);
+      where.parentCommentId = parentCommentId;
     }
 
-    query = query.orderBy('createdAt', 'asc').limit(limit);
-
-    const snapshot = await query.get();
-    const comments: SoftComment[] = [];
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      comments.push({
-        id: doc.id,
-        postId: data.postId,
-        postPermlink: data.postPermlink,
-        authorId: data.authorId,
-        authorUsername: data.authorUsername,
-        authorDisplayName: data.authorDisplayName,
-        authorAvatar: data.authorAvatar,
-        isHiveUser: data.isHiveUser || false,
-        parentCommentId: data.parentCommentId || undefined,
-        body: data.body,
-        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt,
-        likeCount: data.likeCount || 0,
-        isDeleted: data.isDeleted || false,
-      });
+    const rows = await prisma.comment.findMany({
+      where,
+      orderBy: { createdAt: 'asc' },
+      take: limit,
     });
+
+    const comments: SoftComment[] = rows.map((row) => ({
+      id: row.id,
+      postId: row.postId,
+      postPermlink: row.postPermlink,
+      authorId: row.authorId,
+      authorUsername: row.authorUsername,
+      authorDisplayName: row.authorDisplayName || undefined,
+      authorAvatar: row.authorAvatar || undefined,
+      isHiveUser: row.isHiveUser || false,
+      parentCommentId: row.parentCommentId || undefined,
+      body: row.body,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      likeCount: row.likeCount || 0,
+      isDeleted: row.isDeleted || false,
+    }));
 
     return NextResponse.json(
       {
@@ -179,14 +167,6 @@ export async function POST(request: NextRequest) {
 
       const { postId, postPermlink, parentCommentId, body: commentBody } = parseResult.data;
 
-      const db = getAdminDb();
-      if (!db) {
-        return NextResponse.json(
-          { success: false, error: 'Database not configured' },
-          { status: 500 }
-        );
-      }
-
       // Rate limiting check
       const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.softComments, 'softComments');
       if (!rateLimit.success) {
@@ -210,14 +190,11 @@ export async function POST(request: NextRequest) {
       }
 
       // Check comment limit (200 per user)
-      const userCommentsCount = await db
-        .collection('soft_comments')
-        .where('authorId', '==', user.userId)
-        .where('isDeleted', '==', false)
-        .count()
-        .get();
+      const userCommentsCount = await prisma.comment.count({
+        where: { authorId: user.userId, isDeleted: false },
+      });
 
-      if (userCommentsCount.data().count >= 200) {
+      if (userCommentsCount >= 200) {
         return NextResponse.json(
           {
             success: false,
@@ -232,91 +209,98 @@ export async function POST(request: NextRequest) {
 
       const isHiveUser = user.authType === 'hive';
       const now = new Date();
-      const commentData = {
-        postId,
-        postPermlink,
-        authorId: user.userId,
-        authorUsername: user.username,
-        authorDisplayName: user.displayName || null,
-        authorAvatar: user.avatar || null,
-        isHiveUser,
-        parentCommentId: parentCommentId || null,
-        body: commentBody,
-        createdAt: now,
-        updatedAt: now,
-        likeCount: 0,
-        isDeleted: false,
-      };
 
-      const docRef = await db.collection('soft_comments').add(commentData);
+      const newComment = await prisma.comment.create({
+        data: {
+          postId,
+          postPermlink,
+          authorId: user.userId,
+          authorUsername: user.username,
+          authorDisplayName: user.displayName || null,
+          authorAvatar: user.avatar || null,
+          isHiveUser,
+          parentCommentId: parentCommentId || null,
+          body: commentBody,
+          createdAt: now,
+          likeCount: 0,
+          isDeleted: false,
+        },
+      });
 
       // Update user's lastActiveAt timestamp (fire-and-forget)
-      updateUserLastActiveAt(user.userId).catch(() => {});
+      prisma.profile
+        .update({
+          where: { id: user.userId },
+          data: { lastActiveAt: new Date() },
+        })
+        .catch(() => {});
 
       // Update comment count on the post if it's a soft post
       if (postId.startsWith('soft-') || !postId.includes('-')) {
         const actualPostId = postId.replace('soft-', '');
-        const postRef = db.collection('soft_posts').doc(actualPostId);
-        postRef
+        prisma.post
           .update({
-            commentCount: FieldValue.increment(1),
+            where: { id: actualPostId },
+            data: { commentCount: { increment: 1 } },
           })
-          .catch((err) => console.error('Failed to increment comment count:', err));
+          .catch((err: unknown) => console.error('Failed to increment comment count:', err));
       }
 
       // Fetch post doc and parent comment doc in parallel for notifications
       const [postDoc, parentDoc] = await Promise.all([
-        db.collection('soft_posts').doc(postId.replace('soft-', '')).get(),
+        prisma.post.findUnique({ where: { id: postId.replace('soft-', '') } }),
         parentCommentId
-          ? db.collection('soft_comments').doc(parentCommentId).get()
+          ? prisma.comment.findUnique({ where: { id: parentCommentId } })
           : Promise.resolve(null),
       ]);
 
       // Create notifications in parallel
       const notificationPromises: Promise<unknown>[] = [];
 
-      if (postDoc.exists) {
-        const postData = postDoc.data();
-        if (postData?.authorId && postData.authorId !== user.userId) {
+      if (postDoc) {
+        if (postDoc.authorId && postDoc.authorId !== user.userId) {
           notificationPromises.push(
-            db.collection('soft_notifications').add({
-              recipientId: postData.authorId,
-              type: 'comment',
-              title: 'New Comment',
-              message: `${user.username} commented on your post`,
-              sourceUserId: user.userId,
-              sourceUsername: user.username,
+            prisma.notification.create({
               data: {
-                postId,
-                postPermlink,
-                commentId: docRef.id,
+                recipientId: postDoc.authorId,
+                type: 'comment',
+                title: 'New Comment',
+                message: `${user.username} commented on your post`,
+                sourceUserId: user.userId,
+                sourceUsername: user.username,
+                data: {
+                  postId,
+                  postPermlink,
+                  commentId: newComment.id,
+                },
+                read: false,
+                createdAt: now,
               },
-              read: false,
-              createdAt: now,
             })
           );
         }
       }
 
-      if (parentDoc?.exists) {
-        const parentData = parentDoc.data();
-        if (parentData?.authorId && parentData.authorId !== user.userId) {
+      if (parentDoc) {
+        if (parentDoc.authorId && parentDoc.authorId !== user.userId) {
           notificationPromises.push(
-            db.collection('soft_notifications').add({
-              recipientId: parentData.authorId,
-              type: 'reply',
-              title: 'New Reply',
-              message: `${user.username} replied to your comment`,
-              sourceUserId: user.userId,
-              sourceUsername: user.username,
+            prisma.notification.create({
               data: {
-                postId,
-                postPermlink,
-                commentId: docRef.id,
-                parentCommentId,
+                recipientId: parentDoc.authorId,
+                type: 'reply',
+                title: 'New Reply',
+                message: `${user.username} replied to your comment`,
+                sourceUserId: user.userId,
+                sourceUsername: user.username,
+                data: {
+                  postId,
+                  postPermlink,
+                  commentId: newComment.id,
+                  parentCommentId,
+                },
+                read: false,
+                createdAt: now,
               },
-              read: false,
-              createdAt: now,
             })
           );
         }
@@ -327,7 +311,7 @@ export async function POST(request: NextRequest) {
       }
 
       const comment: SoftComment = {
-        id: docRef.id,
+        id: newComment.id,
         postId,
         postPermlink,
         authorId: user.userId,
@@ -376,49 +360,48 @@ export async function PATCH(request: NextRequest) {
 
       const { commentId, body: newBody } = parseResult.data;
 
-      const db = getAdminDb();
-      if (!db) {
-        return NextResponse.json(
-          { success: false, error: 'Database not configured' },
-          { status: 500 }
-        );
-      }
+      const commentDoc = await prisma.comment.findUnique({ where: { id: commentId } });
 
-      const commentRef = db.collection('soft_comments').doc(commentId);
-      const commentDoc = await commentRef.get();
-
-      if (!commentDoc.exists) {
+      if (!commentDoc) {
         return NextResponse.json({ success: false, error: 'Comment not found' }, { status: 404 });
       }
 
-      const commentData = commentDoc.data();
-      if (commentData?.authorId !== user.userId) {
+      if (commentDoc.authorId !== user.userId) {
         return NextResponse.json(
           { success: false, error: 'You can only edit your own comments' },
           { status: 403 }
         );
       }
 
-      if (commentData?.isDeleted) {
+      if (commentDoc.isDeleted) {
         return NextResponse.json(
           { success: false, error: 'Cannot edit a deleted comment' },
           { status: 400 }
         );
       }
 
-      const now = new Date();
-      await commentRef.update({
-        body: newBody,
-        updatedAt: now,
+      const updated = await prisma.comment.update({
+        where: { id: commentId },
+        data: { body: newBody },
       });
 
       return NextResponse.json({
         success: true,
         comment: {
-          ...commentData,
           id: commentId,
+          postId: commentDoc.postId,
+          postPermlink: commentDoc.postPermlink,
+          authorId: commentDoc.authorId,
+          authorUsername: commentDoc.authorUsername,
+          authorDisplayName: commentDoc.authorDisplayName,
+          authorAvatar: commentDoc.authorAvatar,
+          isHiveUser: commentDoc.isHiveUser,
+          parentCommentId: commentDoc.parentCommentId,
           body: newBody,
-          updatedAt: now.toISOString(),
+          likeCount: commentDoc.likeCount,
+          isDeleted: commentDoc.isDeleted,
+          createdAt: commentDoc.createdAt,
+          updatedAt: updated.updatedAt.toISOString(),
         },
       });
     } catch (error) {
@@ -450,23 +433,13 @@ export async function DELETE(request: NextRequest) {
 
       const { commentId } = parseResult.data;
 
-      const db = getAdminDb();
-      if (!db) {
-        return NextResponse.json(
-          { success: false, error: 'Database not configured' },
-          { status: 500 }
-        );
-      }
+      const commentDoc = await prisma.comment.findUnique({ where: { id: commentId } });
 
-      const commentRef = db.collection('soft_comments').doc(commentId);
-      const commentDoc = await commentRef.get();
-
-      if (!commentDoc.exists) {
+      if (!commentDoc) {
         return NextResponse.json({ success: false, error: 'Comment not found' }, { status: 404 });
       }
 
-      const commentData = commentDoc.data();
-      if (commentData?.authorId !== user.userId) {
+      if (commentDoc.authorId !== user.userId) {
         return NextResponse.json(
           { success: false, error: 'You can only delete your own comments' },
           { status: 403 }
@@ -474,22 +447,24 @@ export async function DELETE(request: NextRequest) {
       }
 
       // Soft delete - mark as deleted but keep for reference
-      await commentRef.update({
-        isDeleted: true,
-        body: '[deleted]',
-        updatedAt: new Date(),
+      await prisma.comment.update({
+        where: { id: commentId },
+        data: {
+          isDeleted: true,
+          body: '[deleted]',
+        },
       });
 
       // Decrement comment count on the post
-      const postId = commentData?.postId;
+      const postId = commentDoc.postId;
       if (postId && (postId.startsWith('soft-') || !postId.includes('-'))) {
         const actualPostId = postId.replace('soft-', '');
-        const postRef = db.collection('soft_posts').doc(actualPostId);
-        postRef
+        prisma.post
           .update({
-            commentCount: FieldValue.increment(-1),
+            where: { id: actualPostId },
+            data: { commentCount: { increment: -1 } },
           })
-          .catch((err) => console.error('Failed to decrement comment count:', err));
+          .catch((err: unknown) => console.error('Failed to decrement comment count:', err));
       }
 
       return NextResponse.json({

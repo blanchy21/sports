@@ -7,6 +7,10 @@ datasource db {
   provider = "postgresql"
 }
 
+// ============================================================================
+// Phase 1 — Custodial onboarding models
+// ============================================================================
+
 // Google OAuth users with server-side custodial Hive keys
 model CustodialUser {
   id              String    @id @default(uuid())
@@ -49,7 +53,7 @@ enum AccountTokenStatus {
   FAILED
 }
 
-// Lightweight analytics replacing Firestore analytics
+// Lightweight analytics events
 model AnalyticsEvent {
   id        String   @id @default(uuid())
   eventType String   @map("event_type")
@@ -63,4 +67,364 @@ model AnalyticsEvent {
   @@index([userId])
   @@index([createdAt])
   @@map("analytics_events")
+}
+
+// ============================================================================
+// Phase 2 — Application models
+// ============================================================================
+
+// User profiles (both soft/custodial and Hive users)
+model Profile {
+  id              String    @id @default(uuid())
+  username        String    @unique
+  displayName     String    @map("display_name")
+  bio             String?
+  avatarUrl       String?   @map("avatar_url")
+  isHiveUser      Boolean   @default(false) @map("is_hive_user")
+  hiveUsername     String?   @map("hive_username")
+  followerCount   Int       @default(0) @map("follower_count")
+  followingCount  Int       @default(0) @map("following_count")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  lastActiveAt    DateTime? @map("last_active_at")
+
+  @@index([isHiveUser])
+  @@index([lastActiveAt])
+  @@map("profiles")
+}
+
+// Soft posts (stored locally, may be published to Hive)
+model Post {
+  id                String    @id @default(uuid())
+  authorId          String    @map("author_id")
+  authorUsername     String    @map("author_username")
+  authorDisplayName String?   @map("author_display_name")
+  authorAvatar      String?   @map("author_avatar")
+  title             String
+  content           String
+  excerpt           String?
+  permlink          String    @unique
+  tags              String[]  @default([])
+  sportCategory     String?   @map("sport_category")
+  featuredImage     String?   @map("featured_image")
+  communityId       String?   @map("community_id")
+  communitySlug     String?   @map("community_slug")
+  communityName     String?   @map("community_name")
+  isPublishedToHive Boolean   @default(false) @map("is_published_to_hive")
+  hivePermlink      String?   @map("hive_permlink")
+  viewCount         Int       @default(0) @map("view_count")
+  likeCount         Int       @default(0) @map("like_count")
+  commentCount      Int       @default(0) @map("comment_count")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([authorId])
+  @@index([authorUsername])
+  @@index([communityId])
+  @@index([createdAt])
+  @@map("soft_posts")
+}
+
+// Sportsbites (short-form content)
+model Sportsbite {
+  id                String    @id @default(uuid())
+  authorId          String    @map("author_id")
+  authorUsername     String    @map("author_username")
+  authorDisplayName String?   @map("author_display_name")
+  authorAvatar      String?   @map("author_avatar")
+  body              String
+  sportCategory     String?   @map("sport_category")
+  images            String[]  @default([])
+  gifs              String[]  @default([])
+  matchThreadId     String?   @map("match_thread_id")
+  poll              Json?
+  likeCount         Int       @default(0) @map("like_count")
+  commentCount      Int       @default(0) @map("comment_count")
+  isDeleted         Boolean   @default(false) @map("is_deleted")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([authorId])
+  @@index([authorUsername])
+  @@index([matchThreadId])
+  @@index([isDeleted, matchThreadId, createdAt])
+  @@map("soft_sportsbites")
+}
+
+// Comments on soft posts
+model Comment {
+  id                String    @id @default(uuid())
+  postId            String    @map("post_id")
+  postPermlink      String    @map("post_permlink")
+  authorId          String    @map("author_id")
+  authorUsername     String    @map("author_username")
+  authorDisplayName String?   @map("author_display_name")
+  authorAvatar      String?   @map("author_avatar")
+  isHiveUser        Boolean   @default(false) @map("is_hive_user")
+  parentCommentId   String?   @map("parent_comment_id")
+  body              String
+  likeCount         Int       @default(0) @map("like_count")
+  isDeleted         Boolean   @default(false) @map("is_deleted")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([postId])
+  @@index([postPermlink])
+  @@index([authorId])
+  @@index([parentCommentId])
+  @@index([isDeleted, postId, createdAt])
+  @@map("soft_comments")
+}
+
+// Likes on posts and comments
+model Like {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  targetType String   @map("target_type") // 'post' | 'comment'
+  targetId   String   @map("target_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@map("soft_likes")
+}
+
+// Follow relationships
+model Follow {
+  id               String   @id @default(uuid())
+  followerId       String   @map("follower_id")
+  followerUsername  String   @map("follower_username")
+  followedId       String   @map("followed_id")
+  followedUsername  String   @map("followed_username")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@unique([followerId, followedId])
+  @@index([followedId])
+  @@index([followerId])
+  @@map("soft_follows")
+}
+
+// Sportsbite emoji reactions
+model Reaction {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  sportsbiteId  String   @map("sportsbite_id")
+  emoji         String   // 'fire' | 'shocked' | 'laughing' | 'angry' | 'eyes' | 'thumbs_down'
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, sportsbiteId])
+  @@index([sportsbiteId])
+  @@map("sportsbite_reactions")
+}
+
+// Poll votes on sportsbites
+model PollVote {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  sportsbiteId  String   @map("sportsbite_id")
+  option        Int      // 0 or 1
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, sportsbiteId])
+  @@index([sportsbiteId])
+  @@map("poll_votes")
+}
+
+// User notifications
+model Notification {
+  id              String   @id @default(uuid())
+  recipientId     String   @map("recipient_id")
+  type            String   // 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'system'
+  title           String
+  message         String
+  sourceUserId    String?  @map("source_user_id")
+  sourceUsername   String?  @map("source_username")
+  data            Json?
+  read            Boolean  @default(false)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([recipientId, createdAt])
+  @@index([recipientId, read])
+  @@map("soft_notifications")
+}
+
+// User-created communities
+model Community {
+  id             String    @id @default(uuid())
+  slug           String    @unique
+  name           String
+  about          String    @default("")
+  description    String    @default("")
+  sportCategory  String    @default("general") @map("sport_category")
+  type           String    @default("public") // 'public' | 'private' | 'restricted'
+  avatar         String?
+  coverImage     String?   @map("cover_image")
+  createdBy      String    @map("created_by")
+  createdByHive  String?   @map("created_by_hive")
+  memberCount    Int       @default(0) @map("member_count")
+  postCount      Int       @default(0) @map("post_count")
+  isVerified     Boolean   @default(false) @map("is_verified")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([sportCategory])
+  @@index([memberCount])
+  @@map("communities")
+}
+
+// Community membership
+model CommunityMember {
+  id            String    @id @default(uuid())
+  communityId   String    @map("community_id")
+  userId        String    @map("user_id")
+  username      String
+  hiveUsername   String?   @map("hive_username")
+  role          String    @default("member") // 'admin' | 'moderator' | 'member'
+  status        String    @default("active") // 'active' | 'pending' | 'banned'
+  joinedAt      DateTime  @default(now()) @map("joined_at")
+  invitedBy     String?   @map("invited_by")
+
+  @@unique([communityId, userId])
+  @@index([userId])
+  @@map("community_members")
+}
+
+// Community invites
+model CommunityInvite {
+  id              String    @id @default(uuid())
+  communityId     String    @map("community_id")
+  invitedEmail    String?   @map("invited_email")
+  invitedHiveUser String?   @map("invited_hive_user")
+  invitedBy       String    @map("invited_by")
+  status          String    @default("pending") // 'pending' | 'accepted' | 'declined' | 'expired'
+  createdAt       DateTime  @default(now()) @map("created_at")
+  expiresAt       DateTime  @map("expires_at")
+
+  @@index([communityId])
+  @@index([invitedEmail, status])
+  @@index([invitedHiveUser, status])
+  @@map("community_invites")
+}
+
+// Bookmarks
+model Bookmark {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  postIdentifier  String   @map("post_identifier") // post ID or "author/permlink"
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, postIdentifier])
+  @@map("bookmarks")
+}
+
+// Post drafts
+model Draft {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  title         String    @default("")
+  content       String    @default("")
+  tags          String[]  @default([])
+  sportCategory String?   @map("sport_category")
+  featuredImage String?   @map("featured_image")
+  communityId   String?   @map("community_id")
+  metadata      Json?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("drafts")
+}
+
+// Per-user settings (one-per-user)
+model UserSettings {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user_settings")
+}
+
+// Scheduled posts
+model ScheduledPost {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  postData        Json     @map("post_data")
+  scheduledAt     DateTime @map("scheduled_at")
+  status          String   @default("pending") // 'pending' | 'published' | 'failed' | 'cancelled'
+  publishedAt     DateTime? @map("published_at")
+  publishedPostId String?  @map("published_post_id")
+  error           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([status, scheduledAt])
+  @@map("scheduled_posts")
+}
+
+// Weekly post metrics
+model PostMetric {
+  id               String   @id @default(uuid())
+  weekId           String   @map("week_id")
+  postId           String   @map("post_id")
+  author           String
+  permlink         String
+  views            Int      @default(0)
+  uniqueViews      Int      @default(0) @map("unique_views")
+  externalClicks   Int      @default(0) @map("external_clicks")
+  votes            Int      @default(0)
+  comments         Int      @default(0)
+  shares           Int      @default(0)
+  totalEngagement  Int      @default(0) @map("total_engagement")
+  lastUpdated      DateTime @default(now()) @map("last_updated")
+
+  @@unique([weekId, postId])
+  @@index([weekId, author])
+  @@map("post_metrics")
+}
+
+// Weekly user metrics
+model UserMetric {
+  id                  String   @id @default(uuid())
+  weekId              String   @map("week_id")
+  account             String
+  period              String   @default("week")
+  periodKey           String   @map("period_key")
+  postsCreated        Int      @default(0) @map("posts_created")
+  totalViews          Int      @default(0) @map("total_views")
+  totalExternalClicks Int      @default(0) @map("total_external_clicks")
+  totalVotesReceived  Int      @default(0) @map("total_votes_received")
+  commentsReceived    Int      @default(0) @map("comments_received")
+  commentsMade        Int      @default(0) @map("comments_made")
+  totalEngagement     Int      @default(0) @map("total_engagement")
+  lastUpdated         DateTime @default(now()) @map("last_updated")
+
+  @@unique([weekId, account])
+  @@map("user_metrics")
+}
+
+// Weekly leaderboard snapshots
+model Leaderboard {
+  id          String   @id @default(uuid())
+  weekId      String   @unique @map("week_id")
+  entries     Json     // Record<RewardCategory, LeaderboardEntry[]>
+  generatedAt DateTime @default(now()) @map("generated_at")
+  metadata    Json?    // postOfTheWeekSelectedBy, etc.
+
+  @@map("leaderboards")
+}
+
+// Content reward distributions
+model ContentReward {
+  id        String   @id @default(uuid())
+  weekId    String   @map("week_id")
+  category  String   // RewardCategory
+  winner    Json     // { account, postId, value }
+  amount    Float
+  status    String   @default("pending") // 'pending' | 'distributed' | 'failed'
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([weekId, category])
+  @@map("content_rewards")
 }

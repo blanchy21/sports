@@ -18,7 +18,7 @@ export interface Community {
   type: CommunityType;
   avatar?: string; // Image URL
   coverImage?: string; // Cover image URL
-  createdBy: string; // User ID (Firebase UID or Hive username)
+  createdBy: string; // User ID (User ID or Hive username)
   createdByHive?: string; // Hive username if applicable
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -35,7 +35,7 @@ export interface Community {
 export interface CommunityMember {
   id: string; // `{communityId}_{userId}`
   communityId: string;
-  userId: string; // Firebase UID or Hive username
+  userId: string; // User ID or Hive username
   username: string; // Display username
   hiveUsername?: string;
   role: CommunityMemberRole;

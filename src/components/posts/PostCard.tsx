@@ -141,7 +141,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
         author: authorUsername,
       });
     } else if (isActualHivePost) {
-      // Both Hive and soft users can comment (soft users post via Firebase)
+      // Both Hive and soft users can comment (soft users post via API)
       openModal('comments', {
         author: authorUsername,
         permlink: postPermlink,

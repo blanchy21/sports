@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAdminDb } from '@/lib/firebase/admin';
-import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
+import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import {
   checkRateLimit,
@@ -11,7 +10,6 @@ import {
 } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { FieldValue, Firestore } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -69,27 +67,17 @@ const checkFollowSchema = z.object({
 // Helper Functions
 // ============================================
 
-function createFollowId(followerId: string, followedId: string): string {
-  return `${followerId}_${followedId}`;
-}
-
-async function updateFollowCounts(
-  db: Firestore,
-  followerId: string,
-  followedId: string,
-  delta: number
-) {
+async function updateFollowCounts(followerId: string, followedId: string, delta: number) {
   try {
-    const followerProfileRef = db.collection('profiles').doc(followerId);
-    const followedProfileRef = db.collection('profiles').doc(followedId);
-
     // Update both counts in parallel using atomic increment
     await Promise.all([
-      followerProfileRef.update({
-        followingCount: FieldValue.increment(delta),
+      prisma.profile.update({
+        where: { id: followerId },
+        data: { followingCount: { increment: delta } },
       }),
-      followedProfileRef.update({
-        followerCount: FieldValue.increment(delta),
+      prisma.profile.update({
+        where: { id: followedId },
+        data: { followerCount: { increment: delta } },
       }),
     ]);
   } catch (error) {
@@ -118,58 +106,43 @@ export async function GET(request: NextRequest) {
       return validationError('Either userId or username is required', ctx.requestId);
     }
 
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
-
     // Resolve userId from username if needed
     let targetUserId = userId;
     if (!targetUserId && username) {
-      const profileSnapshot = await db
-        .collection('profiles')
-        .where('username', '==', username)
-        .limit(1)
-        .get();
-      if (profileSnapshot.empty) {
+      const profile = await prisma.profile.findUnique({ where: { username } });
+      if (!profile) {
         return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
       }
-      targetUserId = profileSnapshot.docs[0].id;
+      targetUserId = profile.id;
     }
 
     // Get the current user to check if they follow these users
     const currentUser = await getAuthenticatedUserFromSession(request);
 
     // Build query based on type
-    const fieldToQuery = type === 'followers' ? 'followedId' : 'followerId';
+    const whereClause =
+      type === 'followers' ? { followedId: targetUserId } : { followerId: targetUserId };
 
     // Run data query and count query in parallel
-    const [snapshot, countSnapshot] = await Promise.all([
-      db
-        .collection('soft_follows')
-        .where(fieldToQuery, '==', targetUserId)
-        .orderBy('createdAt', 'desc')
-        .offset(offset)
-        .limit(limit)
-        .get(),
-      db.collection('soft_follows').where(fieldToQuery, '==', targetUserId).count().get(),
+    const [rows, totalCount] = await Promise.all([
+      prisma.follow.findMany({
+        where: whereClause,
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
+        take: limit,
+      }),
+      prisma.follow.count({ where: whereClause }),
     ]);
 
     // Collect related user IDs and batch-check follow status
-    const relatedUsers = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        docId: doc.id,
-        userId: type === 'followers' ? data.followerId : data.followedId,
-        username: type === 'followers' ? data.followerUsername : data.followedUsername,
-        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-      };
-    });
+    const relatedUsers = rows.map((row) => ({
+      docId: row.id,
+      userId: type === 'followers' ? row.followerId : row.followedId,
+      username: type === 'followers' ? row.followerUsername : row.followedUsername,
+      createdAt: row.createdAt.toISOString(),
+    }));
 
-    // Batch follow-check: build all follow doc refs and fetch in one call
+    // Batch follow-check
     const followStatusMap = new Map<string, boolean>();
     if (currentUser) {
       const userIdsToCheck = relatedUsers
@@ -177,12 +150,13 @@ export async function GET(request: NextRequest) {
         .map((u) => u.userId);
 
       if (userIdsToCheck.length > 0) {
-        const followRefs = userIdsToCheck.map((uid) =>
-          db.collection('soft_follows').doc(createFollowId(currentUser.userId, uid))
-        );
-        const followDocs = await db.getAll(...followRefs);
-        userIdsToCheck.forEach((uid, i) => {
-          followStatusMap.set(uid, followDocs[i].exists);
+        const existingFollows = await prisma.follow.findMany({
+          where: { followerId: currentUser.userId, followedId: { in: userIdsToCheck } },
+          select: { followedId: true },
+        });
+        const followedSet = new Set(existingFollows.map((f) => f.followedId));
+        userIdsToCheck.forEach((uid) => {
+          followStatusMap.set(uid, followedSet.has(uid));
         });
       }
     }
@@ -200,10 +174,10 @@ export async function GET(request: NextRequest) {
       type,
       users: follows,
       pagination: {
-        total: countSnapshot.data().count,
+        total: totalCount,
         offset,
         limit,
-        hasMore: offset + follows.length < countSnapshot.data().count,
+        hasMore: offset + follows.length < totalCount,
       },
     });
   } catch (error) {
@@ -242,17 +216,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const db = getAdminDb();
-      if (!db) {
-        return NextResponse.json(
-          { success: false, error: 'Database not configured' },
-          { status: 500 }
-        );
-      }
-
       // Validate target user exists to prevent phantom follows
-      const targetProfile = await db.collection('profiles').doc(targetUserId).get();
-      if (!targetProfile.exists) {
+      const targetProfile = await prisma.profile.findUnique({ where: { id: targetUserId } });
+      if (!targetProfile) {
         return NextResponse.json(
           { success: false, error: 'Target user not found' },
           { status: 404 }
@@ -280,58 +246,65 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const followId = createFollowId(user.userId, targetUserId);
-      const followRef = db.collection('soft_follows').doc(followId);
-      const followDoc = await followRef.get();
+      const existingFollow = await prisma.follow.findUnique({
+        where: { followerId_followedId: { followerId: user.userId, followedId: targetUserId } },
+      });
 
       let isFollowing: boolean;
       const now = new Date();
 
-      if (followDoc.exists) {
+      if (existingFollow) {
         // Unfollow
-        await followRef.delete();
+        await prisma.follow.delete({ where: { id: existingFollow.id } });
         isFollowing = false;
-        await updateFollowCounts(db, user.userId, targetUserId, -1);
+        await updateFollowCounts(user.userId, targetUserId, -1);
       } else {
         // Follow
-        await followRef.set({
-          followerId: user.userId,
-          followerUsername: user.username,
-          followedId: targetUserId,
-          followedUsername: targetUsername,
-          createdAt: now,
+        await prisma.follow.create({
+          data: {
+            followerId: user.userId,
+            followerUsername: user.username,
+            followedId: targetUserId,
+            followedUsername: targetUsername,
+            createdAt: now,
+          },
         });
         isFollowing = true;
-        await updateFollowCounts(db, user.userId, targetUserId, 1);
+        await updateFollowCounts(user.userId, targetUserId, 1);
 
         // Create notification for the followed user
-        await db.collection('soft_notifications').add({
-          recipientId: targetUserId,
-          type: 'follow',
-          title: 'New Follower',
-          message: `${user.username} started following you`,
-          sourceUserId: user.userId,
-          sourceUsername: user.username,
-          data: {},
-          read: false,
-          createdAt: now,
+        await prisma.notification.create({
+          data: {
+            recipientId: targetUserId,
+            type: 'follow',
+            title: 'New Follower',
+            message: `${user.username} started following you`,
+            sourceUserId: user.userId,
+            sourceUsername: user.username,
+            data: {},
+            read: false,
+            createdAt: now,
+          },
         });
       }
 
       // Update user's lastActiveAt timestamp (fire-and-forget)
-      updateUserLastActiveAt(user.userId).catch(() => {});
+      prisma.profile
+        .update({
+          where: { id: user.userId },
+          data: { lastActiveAt: new Date() },
+        })
+        .catch(() => {});
 
       // Get updated follower count for target user
-      const followerCountSnapshot = await db
-        .collection('soft_follows')
-        .where('followedId', '==', targetUserId)
-        .count()
-        .get();
+      const followerCount = await prisma.follow.count({
+        where: { followedId: targetUserId },
+      });
 
       return NextResponse.json({
         success: true,
         isFollowing,
-        followerCount: followerCountSnapshot.data().count,
+        followerCount,
       });
     } catch (error) {
       return ctx.handleError(error);
@@ -371,34 +344,28 @@ export async function PUT(request: NextRequest) {
 
     const { targetUserId } = parseResult.data;
 
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
-
     // Run follow-check and both count queries in parallel
     const followCheckPromise =
       user && user.userId !== targetUserId
-        ? db.collection('soft_follows').doc(createFollowId(user.userId, targetUserId)).get()
+        ? prisma.follow.findUnique({
+            where: { followerId_followedId: { followerId: user.userId, followedId: targetUserId } },
+          })
         : Promise.resolve(null);
 
-    const [followDoc, followerCountSnapshot, followingCountSnapshot] = await Promise.all([
+    const [followDoc, followerCount, followingCount] = await Promise.all([
       followCheckPromise,
-      db.collection('soft_follows').where('followedId', '==', targetUserId).count().get(),
-      db.collection('soft_follows').where('followerId', '==', targetUserId).count().get(),
+      prisma.follow.count({ where: { followedId: targetUserId } }),
+      prisma.follow.count({ where: { followerId: targetUserId } }),
     ]);
 
-    const isFollowing = followDoc ? followDoc.exists : false;
+    const isFollowing = !!followDoc;
 
     return NextResponse.json({
       success: true,
       isFollowing,
       stats: {
-        followerCount: followerCountSnapshot.data().count,
-        followingCount: followingCountSnapshot.data().count,
+        followerCount,
+        followingCount,
       },
     });
   } catch (error) {

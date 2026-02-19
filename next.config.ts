@@ -45,7 +45,7 @@ const nextConfig: NextConfig = {
               // Fonts - self and data URIs
               "font-src 'self' data:",
               // Connect - API endpoints, Hive nodes, and Sentry
-              "connect-src 'self' https://api.hive.blog https://api.deathwing.me https://api.openhive.network https://anyx.io https://rpc.ausbit.dev https://api.c0ff33a.uk https://api.coingecko.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://*.sentry.io https://*.ingest.sentry.io https://site.api.espn.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net",
+              "connect-src 'self' https://api.hive.blog https://api.deathwing.me https://api.openhive.network https://anyx.io https://rpc.ausbit.dev https://api.c0ff33a.uk https://api.coingecko.com https://*.googleapis.com https://*.sentry.io https://*.ingest.sentry.io https://site.api.espn.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net",
               // Frames - restricted to video embeds
               "frame-src 'self' https://www.youtube.com https://youtube.com https://player.vimeo.com https://3speak.tv https://emb.3speak.tv https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com",
               // Object - none

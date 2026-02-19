@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { FieldValue } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,12 +15,21 @@ const ROUTE = '/api/soft/poll-votes';
 // Helpers
 // ============================================
 
-function encodeSportsbiteId(id: string): string {
-  return id.replace(/\//g, '__');
-}
+type PollResults = { option0Count: number; option1Count: number; totalVotes: number };
 
-function createVoteDocId(userId: string, sportsbiteId: string): string {
-  return `${userId}__${encodeSportsbiteId(sportsbiteId)}`;
+async function getPollResults(sportsbiteId: string): Promise<PollResults> {
+  const voteCounts = await prisma.pollVote.groupBy({
+    by: ['option'],
+    where: { sportsbiteId },
+    _count: true,
+  });
+  const results: PollResults = { option0Count: 0, option1Count: 0, totalVotes: 0 };
+  for (const v of voteCounts) {
+    if (v.option === 0) results.option0Count = v._count;
+    else results.option1Count = v._count;
+    results.totalVotes += v._count;
+  }
+  return results;
 }
 
 // ============================================
@@ -57,43 +65,27 @@ export async function GET(request: NextRequest) {
     }
 
     const { sportsbiteId } = parseResult.data;
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
 
-    const encodedId = encodeSportsbiteId(sportsbiteId);
-
-    const [resultsDoc, user] = await Promise.all([
-      db.collection('poll_results').doc(encodedId).get(),
+    const [results, user] = await Promise.all([
+      getPollResults(sportsbiteId),
       getAuthenticatedUserFromSession(request),
     ]);
-
-    const results = resultsDoc.exists
-      ? resultsDoc.data()
-      : { option0Count: 0, option1Count: 0, totalVotes: 0 };
 
     let userVote: 0 | 1 | null = null;
     let hasVoted = false;
     if (user) {
-      const voteDocId = createVoteDocId(user.userId, sportsbiteId);
-      const voteDoc = await db.collection('poll_votes').doc(voteDocId).get();
-      if (voteDoc.exists) {
+      const existing = await prisma.pollVote.findUnique({
+        where: { userId_sportsbiteId: { userId: user.userId, sportsbiteId } },
+      });
+      if (existing) {
         hasVoted = true;
-        userVote = voteDoc.data()?.option ?? null;
+        userVote = existing.option as 0 | 1;
       }
     }
 
     return NextResponse.json({
       success: true,
-      results: {
-        option0Count: results?.option0Count || 0,
-        option1Count: results?.option1Count || 0,
-        totalVotes: results?.totalVotes || 0,
-      },
+      results,
       userVote,
       hasVoted,
     });
@@ -124,13 +116,6 @@ export async function POST(request: NextRequest) {
       }
 
       const { sportsbiteId, option } = parseResult.data;
-      const db = getAdminDb();
-      if (!db) {
-        return NextResponse.json(
-          { success: false, error: 'Database not configured' },
-          { status: 500 }
-        );
-      }
 
       // Rate limiting
       const rateLimit = await checkRateLimit(
@@ -157,76 +142,46 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const voteDocId = createVoteDocId(user.userId, sportsbiteId);
-      const voteRef = db.collection('poll_votes').doc(voteDocId);
-      const encodedId = encodeSportsbiteId(sportsbiteId);
-      const resultsRef = db.collection('poll_results').doc(encodedId);
-
-      const existingDoc = await voteRef.get();
-      const existingOption: 0 | 1 | null = existingDoc.exists
-        ? (existingDoc.data()?.option ?? null)
-        : null;
-
-      const optionKey = (opt: 0 | 1) => (opt === 0 ? 'option0Count' : 'option1Count');
+      const existing = await prisma.pollVote.findUnique({
+        where: { userId_sportsbiteId: { userId: user.userId, sportsbiteId } },
+      });
+      const existingOption: 0 | 1 | null = existing ? (existing.option as 0 | 1) : null;
 
       if (existingOption === option) {
         // Already voted for this option — no change
-        const resultsDoc = await resultsRef.get();
-        const results = resultsDoc.exists ? resultsDoc.data() : {};
+        const results = await getPollResults(sportsbiteId);
         return NextResponse.json({
           success: true,
           action: 'unchanged',
           userVote: option,
-          results: {
-            option0Count: results?.option0Count || 0,
-            option1Count: results?.option1Count || 0,
-            totalVotes: results?.totalVotes || 0,
-          },
+          results,
         });
       } else if (existingOption !== null) {
-        // Changing vote — swap counts
-        await Promise.all([
-          voteRef.update({ option, createdAt: new Date() }),
-          resultsRef.set(
-            {
-              [optionKey(existingOption)]: FieldValue.increment(-1),
-              [optionKey(option)]: FieldValue.increment(1),
-            },
-            { merge: true }
-          ),
-        ]);
+        // Changing vote — update option
+        await prisma.pollVote.update({
+          where: { id: existing!.id },
+          data: { option, createdAt: new Date() },
+        });
       } else {
         // New vote
-        await Promise.all([
-          voteRef.set({
+        await prisma.pollVote.create({
+          data: {
             userId: user.userId,
             sportsbiteId,
             option,
             createdAt: new Date(),
-          }),
-          resultsRef.set(
-            {
-              [optionKey(option)]: FieldValue.increment(1),
-              totalVotes: FieldValue.increment(1),
-            },
-            { merge: true }
-          ),
-        ]);
+          },
+        });
       }
 
-      // Fetch updated results
-      const updatedDoc = await resultsRef.get();
-      const updatedResults = updatedDoc.exists ? updatedDoc.data() : {};
+      // Fetch updated results via aggregation
+      const results = await getPollResults(sportsbiteId);
 
       return NextResponse.json({
         success: true,
         action: existingOption !== null ? 'changed' : 'voted',
         userVote: option,
-        results: {
-          option0Count: updatedResults?.option0Count || 0,
-          option1Count: updatedResults?.option1Count || 0,
-          totalVotes: updatedResults?.totalVotes || 0,
-        },
+        results,
       });
     } catch (error) {
       return ctx.handleError(error);
@@ -251,18 +206,11 @@ export async function PUT(request: NextRequest) {
 
     const { sportsbiteIds } = parseResult.data;
     const user = await getAuthenticatedUserFromSession(request);
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
 
     const results: Record<
       string,
       {
-        results: { option0Count: number; option1Count: number; totalVotes: number };
+        results: PollResults;
         userVote: 0 | 1 | null;
         hasVoted: boolean;
       }
@@ -270,27 +218,22 @@ export async function PUT(request: NextRequest) {
 
     await Promise.all(
       sportsbiteIds.map(async (sportsbiteId) => {
-        const encodedId = encodeSportsbiteId(sportsbiteId);
-        const resultsDoc = await db.collection('poll_results').doc(encodedId).get();
-        const data = resultsDoc.exists ? resultsDoc.data() : {};
+        const pollResults = await getPollResults(sportsbiteId);
 
         let userVote: 0 | 1 | null = null;
         let hasVoted = false;
         if (user) {
-          const voteDocId = createVoteDocId(user.userId, sportsbiteId);
-          const voteDoc = await db.collection('poll_votes').doc(voteDocId).get();
-          if (voteDoc.exists) {
+          const existing = await prisma.pollVote.findUnique({
+            where: { userId_sportsbiteId: { userId: user.userId, sportsbiteId } },
+          });
+          if (existing) {
             hasVoted = true;
-            userVote = voteDoc.data()?.option ?? null;
+            userVote = existing.option as 0 | 1;
           }
         }
 
         results[sportsbiteId] = {
-          results: {
-            option0Count: data?.option0Count || 0,
-            option1Count: data?.option1Count || 0,
-            totalVotes: data?.totalVotes || 0,
-          },
+          results: pollResults,
           userVote,
           hasVoted,
         };

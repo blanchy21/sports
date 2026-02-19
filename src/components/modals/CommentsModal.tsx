@@ -99,7 +99,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         setReplyingTo(null);
         invalidatePostComments(author, permlink);
       } else {
-        // SOFT USER: Publish to Firebase
+        // SOFT USER: Publish to database via API
         const response = await fetch('/api/soft/comments', {
           method: 'POST',
           headers: {

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FirebaseAuth } from '@/lib/firebase/auth';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import { createRequestContext, validationError } from '@/lib/api/response';
 import { SoftPost } from '@/types/auth';
@@ -14,50 +13,18 @@ export const dynamic = 'force-dynamic';
 const ROUTE = '/api/unified/posts';
 
 // ============================================
-// Admin SDK helpers for querying soft posts
+// Prisma helpers for querying soft posts
 // ============================================
 
 async function getSoftPostsByUsername(username: string, postsLimit: number): Promise<SoftPost[]> {
-  const db = getAdminDb();
-  if (!db) {
-    console.warn('[unified/posts] Admin SDK not configured');
-    return [];
-  }
-
   try {
-    const snapshot = await db
-      .collection('soft_posts')
-      .where('authorUsername', '==', username)
-      .orderBy('createdAt', 'desc')
-      .limit(postsLimit)
-      .get();
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        authorId: data.authorId,
-        authorUsername: data.authorUsername || 'unknown',
-        authorDisplayName: data.authorDisplayName,
-        authorAvatar: data.authorAvatar,
-        title: data.title,
-        content: data.content,
-        excerpt: data.excerpt,
-        permlink: data.permlink,
-        tags: data.tags || [],
-        sportCategory: data.sportCategory,
-        featuredImage: data.featuredImage,
-        communityId: data.communityId,
-        communitySlug: data.communitySlug,
-        communityName: data.communityName,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-        isPublishedToHive: data.isPublishedToHive || false,
-        hivePermlink: data.hivePermlink || undefined,
-        viewCount: data.viewCount || 0,
-        likeCount: data.likeCount || 0,
-      } as SoftPost;
+    const posts = await prisma.post.findMany({
+      where: { authorUsername: username },
+      orderBy: { createdAt: 'desc' },
+      take: postsLimit,
     });
+
+    return posts.map(postToSoftPost);
   } catch (error) {
     console.error('[unified/posts] Error fetching soft posts by username:', error);
     return [];
@@ -65,45 +32,13 @@ async function getSoftPostsByUsername(username: string, postsLimit: number): Pro
 }
 
 async function getSoftPostsByAuthorId(authorId: string): Promise<SoftPost[]> {
-  const db = getAdminDb();
-  if (!db) {
-    console.warn('[unified/posts] Admin SDK not configured');
-    return [];
-  }
-
   try {
-    const snapshot = await db
-      .collection('soft_posts')
-      .where('authorId', '==', authorId)
-      .orderBy('createdAt', 'desc')
-      .get();
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        authorId: data.authorId,
-        authorUsername: data.authorUsername || 'unknown',
-        authorDisplayName: data.authorDisplayName,
-        authorAvatar: data.authorAvatar,
-        title: data.title,
-        content: data.content,
-        excerpt: data.excerpt,
-        permlink: data.permlink,
-        tags: data.tags || [],
-        sportCategory: data.sportCategory,
-        featuredImage: data.featuredImage,
-        communityId: data.communityId,
-        communitySlug: data.communitySlug,
-        communityName: data.communityName,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-        isPublishedToHive: data.isPublishedToHive || false,
-        hivePermlink: data.hivePermlink || undefined,
-        viewCount: data.viewCount || 0,
-        likeCount: data.likeCount || 0,
-      } as SoftPost;
+    const posts = await prisma.post.findMany({
+      where: { authorId },
+      orderBy: { createdAt: 'desc' },
     });
+
+    return posts.map(postToSoftPost);
   } catch (error) {
     console.error('[unified/posts] Error fetching soft posts by authorId:', error);
     return [];
@@ -111,49 +46,65 @@ async function getSoftPostsByAuthorId(authorId: string): Promise<SoftPost[]> {
 }
 
 async function getAllSoftPosts(postsLimit: number): Promise<SoftPost[]> {
-  const db = getAdminDb();
-  if (!db) {
-    console.warn('[unified/posts] Admin SDK not configured');
-    return [];
-  }
-
   try {
-    const snapshot = await db
-      .collection('soft_posts')
-      .orderBy('createdAt', 'desc')
-      .limit(postsLimit)
-      .get();
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        authorId: data.authorId,
-        authorUsername: data.authorUsername || 'unknown',
-        authorDisplayName: data.authorDisplayName,
-        authorAvatar: data.authorAvatar,
-        title: data.title,
-        content: data.content,
-        excerpt: data.excerpt,
-        permlink: data.permlink,
-        tags: data.tags || [],
-        sportCategory: data.sportCategory,
-        featuredImage: data.featuredImage,
-        communityId: data.communityId,
-        communitySlug: data.communitySlug,
-        communityName: data.communityName,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-        isPublishedToHive: data.isPublishedToHive || false,
-        hivePermlink: data.hivePermlink || undefined,
-        viewCount: data.viewCount || 0,
-        likeCount: data.likeCount || 0,
-      } as SoftPost;
+    const posts = await prisma.post.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: postsLimit,
     });
+
+    return posts.map(postToSoftPost);
   } catch (error) {
     console.error('[unified/posts] Error fetching all soft posts:', error);
     return [];
   }
+}
+
+function postToSoftPost(post: {
+  id: string;
+  authorId: string;
+  authorUsername: string;
+  authorDisplayName: string | null;
+  authorAvatar: string | null;
+  title: string;
+  content: string;
+  excerpt: string | null;
+  permlink: string;
+  tags: string[];
+  sportCategory: string | null;
+  featuredImage: string | null;
+  communityId: string | null;
+  communitySlug: string | null;
+  communityName: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  isPublishedToHive: boolean;
+  hivePermlink: string | null;
+  viewCount: number;
+  likeCount: number;
+}): SoftPost {
+  return {
+    id: post.id,
+    authorId: post.authorId,
+    authorUsername: post.authorUsername || 'unknown',
+    authorDisplayName: post.authorDisplayName ?? undefined,
+    authorAvatar: post.authorAvatar ?? undefined,
+    title: post.title,
+    content: post.content,
+    excerpt: post.excerpt ?? undefined,
+    permlink: post.permlink,
+    tags: post.tags || [],
+    sportCategory: post.sportCategory ?? undefined,
+    featuredImage: post.featuredImage ?? undefined,
+    communityId: post.communityId ?? undefined,
+    communitySlug: post.communitySlug ?? undefined,
+    communityName: post.communityName ?? undefined,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    isPublishedToHive: post.isPublishedToHive || false,
+    hivePermlink: post.hivePermlink ?? undefined,
+    viewCount: post.viewCount || 0,
+    likeCount: post.likeCount || 0,
+  } as SoftPost;
 }
 
 // ============================================
@@ -311,11 +262,11 @@ function hivePostToUnified(post: SportsblockPost): UnifiedPost {
 }
 
 /**
- * GET /api/unified/posts - Fetch posts from both Hive and Firebase
+ * GET /api/unified/posts - Fetch posts from both Hive and database
  *
  * Query params:
  * - username: string (fetch by author username)
- * - authorId: string (fetch by Firebase author ID - soft posts only)
+ * - authorId: string (fetch by database author ID - soft posts only)
  * - limit: number (default 20, max 100)
  * - includeHive: boolean (default true)
  * - includeSoft: boolean (default true)
@@ -373,7 +324,7 @@ export async function GET(request: NextRequest) {
       // Start profile check and soft post fetch in parallel
       const fetchPromises: Promise<void>[] = [];
 
-      // Soft posts don't depend on profile — start immediately
+      // Soft posts don't depend on profile -- start immediately
       if (includeSoft) {
         fetchPromises.push(
           getSoftPostsByUsername(username, limit)
@@ -387,9 +338,9 @@ export async function GET(request: NextRequest) {
       }
 
       // Profile check runs in parallel with soft post fetch
-      const profilePromise = FirebaseAuth.getProfileByUsername(username);
+      const profilePromise = prisma.profile.findUnique({ where: { username } });
 
-      // Fetch Hive posts if enabled — gate on profile result to skip for soft-only users
+      // Fetch Hive posts if enabled -- gate on profile result to skip for soft-only users
       if (includeHive) {
         fetchPromises.push(
           (async () => {
@@ -441,7 +392,7 @@ export async function GET(request: NextRequest) {
     // No username - fetch general feed
     const fetchPromises: Promise<void>[] = [];
 
-    // Fetch soft posts (using Admin SDK)
+    // Fetch soft posts
     if (includeSoft) {
       fetchPromises.push(
         getAllSoftPosts(limit)

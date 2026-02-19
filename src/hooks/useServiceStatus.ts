@@ -1,14 +1,14 @@
 /**
  * Service Status Hook
  *
- * Provides real-time status of external services (Hive, Firebase)
+ * Provides real-time status of external services (Hive, network)
  * and displays appropriate warnings when services are degraded.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { getDegradationStatus } from '@/lib/hive-workerbee/graceful-degradation';
 
-export type ServiceName = 'hive' | 'firebase' | 'network';
+export type ServiceName = 'hive' | 'network';
 
 export interface ServiceStatus {
   name: ServiceName;
@@ -38,7 +38,6 @@ const DEFAULT_STATUS: ServiceStatus = {
 export function useServiceStatus(refreshInterval = 30000): ServiceStatusState {
   const [services, setServices] = useState<Record<ServiceName, ServiceStatus>>({
     hive: { ...DEFAULT_STATUS, name: 'hive' },
-    firebase: { ...DEFAULT_STATUS, name: 'firebase' },
     network: { ...DEFAULT_STATUS, name: 'network' },
   });
 
@@ -81,36 +80,12 @@ export function useServiceStatus(refreshInterval = 30000): ServiceStatusState {
     };
   }, []);
 
-  const checkFirebaseStatus = useCallback((): ServiceStatus => {
-    // Firebase status is determined by whether the SDK is loaded
-    // More sophisticated checks can be added later
-    const hasFirebaseConfig = !!(
-      process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    );
-
-    if (!hasFirebaseConfig) {
-      return {
-        name: 'firebase',
-        status: 'down',
-        message: 'Firebase not configured',
-        lastChecked: Date.now(),
-      };
-    }
-
-    return {
-      name: 'firebase',
-      status: 'healthy',
-      lastChecked: Date.now(),
-    };
-  }, []);
-
   const refresh = useCallback(() => {
     setServices({
       hive: checkHiveStatus(),
-      firebase: checkFirebaseStatus(),
       network: checkNetworkStatus(),
     });
-  }, [checkHiveStatus, checkFirebaseStatus, checkNetworkStatus]);
+  }, [checkHiveStatus, checkNetworkStatus]);
 
   // Initial check and periodic refresh
   useEffect(() => {
@@ -177,7 +152,6 @@ export function useServiceStatus(refreshInterval = 30000): ServiceStatusState {
 export function getServiceDisplayName(name: ServiceName): string {
   const names: Record<ServiceName, string> = {
     hive: 'Hive Blockchain',
-    firebase: 'Authentication',
     network: 'Network',
   };
   return names[name];

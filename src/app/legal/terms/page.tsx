@@ -105,9 +105,9 @@ export default function TermsOfServicePage() {
             <h2 className="mb-3 text-xl font-semibold">6. Third-Party Services</h2>
             <p className="leading-relaxed text-muted-foreground">
               The Platform integrates with third-party services including but not limited to: Hive
-              blockchain, Hive Keychain, HiveSigner, HiveAuth, and Firebase. We are not responsible
-              for the operation, availability, or security of these third-party services. Your use
-              of such services is subject to their respective terms and conditions.
+              blockchain, Hive Keychain, HiveSigner, and HiveAuth. We are not responsible for the
+              operation, availability, or security of these third-party services. Your use of such
+              services is subject to their respective terms and conditions.
             </p>
           </section>
 

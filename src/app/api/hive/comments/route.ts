@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     if (author && permlink) {
       ctx.log.debug('Fetching post comments', { author, permlink });
 
-      // Soft/Firebase posts (permlinks starting with "soft-") don't exist on-chain
+      // Soft posts (permlinks starting with "soft-") don't exist on-chain
       // so gracefully return empty comments instead of erroring
       let comments: Awaited<ReturnType<typeof fetchComments>> = [];
       try {

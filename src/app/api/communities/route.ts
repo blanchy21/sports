@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FirebaseCommunitiesAdmin } from '@/lib/firebase/communities-admin';
-import { isAdminConfigured } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import {
   createRequestContext,
   validationError,
@@ -9,7 +8,8 @@ import {
   forbiddenError,
 } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { CommunityFilters, CommunityType } from '@/types';
+import { CommunityType } from '@/types';
+import { Prisma } from '@/generated/prisma/client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -73,56 +73,43 @@ export async function GET(request: NextRequest) {
       return validationError(parseResult.error, ctx.requestId);
     }
 
-    const { search, sportCategory, type, sort, limit } = parseResult.data;
+    const { search, sportCategory, type, sort, limit, offset } = parseResult.data;
 
     ctx.log.debug('Listing communities', { search, sportCategory, type, sort, limit });
 
-    const filters: CommunityFilters = {
-      search,
-      sportCategory,
-      type: type as CommunityType | undefined,
-      sort: sort as CommunityFilters['sort'],
-      limit,
-    };
-
-    if (!isAdminConfigured()) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY environment variable with your Firebase service account JSON.',
-          code: 'FIREBASE_NOT_CONFIGURED',
-        },
-        { status: 503 }
-      );
+    // Build where clause
+    const where: Prisma.CommunityWhereInput = {};
+    if (sportCategory) where.sportCategory = sportCategory;
+    if (type) where.type = type;
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { about: { contains: search, mode: 'insensitive' } },
+        { slug: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
-    let result;
-    try {
-      result = await FirebaseCommunitiesAdmin.listCommunities(filters);
-    } catch (firebaseError: unknown) {
-      const errorMessage =
-        firebaseError instanceof Error ? firebaseError.message : String(firebaseError);
-      // Check for credential errors
-      if (errorMessage.includes('default credentials') || errorMessage.includes('authentication')) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              'Firebase Admin credentials not configured. Please add FIREBASE_SERVICE_ACCOUNT_KEY to your .env.local file with the service account JSON from Firebase Console > Project Settings > Service Accounts.',
-            code: 'FIREBASE_CREDENTIALS_MISSING',
-          },
-          { status: 503 }
-        );
-      }
-      throw firebaseError;
-    }
+    // Build orderBy
+    let orderBy: Prisma.CommunityOrderByWithRelationInput = { memberCount: 'desc' };
+    if (sort === 'postCount') orderBy = { postCount: 'desc' };
+    else if (sort === 'createdAt') orderBy = { createdAt: 'desc' };
+    else if (sort === 'name') orderBy = { name: 'asc' };
+
+    const [communities, total] = await Promise.all([
+      prisma.community.findMany({
+        where,
+        orderBy,
+        take: limit,
+        skip: offset,
+      }),
+      prisma.community.count({ where }),
+    ]);
 
     return NextResponse.json({
       success: true,
-      communities: result.communities,
-      total: result.total,
-      hasMore: result.hasMore,
+      communities,
+      total,
+      hasMore: offset + communities.length < total,
     });
   } catch (error) {
     return ctx.handleError(error);
@@ -168,35 +155,48 @@ export async function POST(request: NextRequest) {
       return forbiddenError('You can only create communities as yourself', ctx.requestId);
     }
 
-    if (!isAdminConfigured()) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY or FIREBASE_PROJECT_ID.',
-          code: 'FIREBASE_NOT_CONFIGURED',
-        },
-        { status: 503 }
-      );
-    }
-
     ctx.log.info('Creating community', { name, slug, sportCategory, type, creatorId });
 
-    const community = await FirebaseCommunitiesAdmin.createCommunity(
-      {
-        name,
-        slug,
-        about,
-        description,
-        sportCategory,
-        type,
-        avatar,
-        coverImage,
-      },
-      creatorId,
-      creatorUsername,
-      hiveUsername
-    );
+    // Generate slug if not provided
+    const communitySlug =
+      slug ||
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .slice(0, 50);
+
+    // Create community and add creator as admin member in a transaction
+    const community = await prisma.$transaction(async (tx) => {
+      const newCommunity = await tx.community.create({
+        data: {
+          name,
+          slug: communitySlug,
+          about,
+          description: description || '',
+          sportCategory,
+          type,
+          avatar: avatar || null,
+          coverImage: coverImage || null,
+          createdBy: creatorId,
+          createdByHive: hiveUsername || null,
+          memberCount: 1,
+        },
+      });
+
+      // Add creator as admin member
+      await tx.communityMember.create({
+        data: {
+          communityId: newCommunity.id,
+          userId: creatorId,
+          username: creatorUsername,
+          hiveUsername: hiveUsername || null,
+          role: 'admin',
+          status: 'active',
+        },
+      });
+
+      return newCommunity;
+    });
 
     return NextResponse.json(
       {

@@ -44,14 +44,6 @@ let validationRun = false;
  * process.env[key] for these variables.
  */
 export const publicEnv = {
-  firebase: {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  },
   debug: {
     notifications: process.env.NEXT_PUBLIC_NOTIFICATIONS_DEBUG === 'true',
     workerbee: process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true',
@@ -101,16 +93,6 @@ export const serverEnv = {
     dsn: getOptionalEnv('NEXT_PUBLIC_SENTRY_DSN'),
   },
 } as const;
-
-/**
- * Check if Firebase is configured
- */
-export function isFirebaseConfigured(): boolean {
-  return !!(
-    publicEnv.firebase.apiKey &&
-    publicEnv.firebase.projectId
-  );
-}
 
 /**
  * Check if Redis is configured (via REDIS_URL)
@@ -172,23 +154,10 @@ export function validateEnvironment(): ValidationResult {
 
     // Redis is strongly recommended for distributed rate limiting
     if (!isUpstashConfigured() && !isRedisConfigured()) {
-      warnings.push('No Redis configured (UPSTASH_REDIS_REST_URL or REDIS_URL). Rate limiting will use in-memory storage which does not scale across instances.');
+      warnings.push(
+        'No Redis configured (UPSTASH_REDIS_REST_URL or REDIS_URL). Rate limiting will use in-memory storage which does not scale across instances.'
+      );
     }
-  }
-
-  // ========================================
-  // REQUIRED Always (for core functionality)
-  // ========================================
-
-  // Firebase is required for authentication
-  if (!publicEnv.firebase.apiKey) {
-    errors.push('NEXT_PUBLIC_FIREBASE_API_KEY is required for authentication');
-  }
-  if (!publicEnv.firebase.projectId) {
-    errors.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID is required for authentication');
-  }
-  if (!publicEnv.firebase.authDomain) {
-    errors.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is required for authentication');
   }
 
   // ========================================

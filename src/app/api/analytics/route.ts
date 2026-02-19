@@ -9,8 +9,8 @@ import {
 import { fetchSportsblockPosts } from '@/lib/hive-workerbee/content';
 import { fetchSportsbites } from '@/lib/hive-workerbee/sportsbites';
 import { fetchSoftSportsbites } from '@/lib/hive-workerbee/sportsbites-server';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { prisma } from '@/lib/db/prisma';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ const ROUTE = '/api/analytics';
 
 /**
  * Analytics API endpoint
- * Fetches analytics data from Firebase Firestore (layer 2 database)
+ * Fetches analytics data from the database (layer 2)
  * This data is custom to Sportsblock and not available from Hive API
  */
 export async function GET() {
@@ -27,7 +27,6 @@ export async function GET() {
 
   console.log(`[${ROUTE}] Request started`, {
     requestId,
-    firebaseConfigured: !!db,
     timestamp: new Date().toISOString(),
   });
 
@@ -44,83 +43,50 @@ export async function GET() {
       } as CommunityStats,
     };
 
-    // If Firebase is not configured, compute analytics directly from Hive
-    if (!db) {
-      console.log('[Analytics API] Firebase not configured, computing analytics from Hive...');
-      const [postsResult, bitesResult, softBites] = await Promise.all([
-        fetchSportsblockPosts({ limit: 50, sort: 'created' }),
-        fetchSportsbites({ limit: 200 }),
-        fetchSoftSportsbites({ limit: 200 }),
+    // Try to fetch cached analytics from the database
+    const [trendingSportsRecord, trendingTopicsRecord, topAuthorsRecord, communityStatsRecord] =
+      await Promise.allSettled([
+        prisma.analyticsEvent.findFirst({
+          where: { eventType: 'trendingSports' },
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.analyticsEvent.findFirst({
+          where: { eventType: 'trendingTopics' },
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.analyticsEvent.findFirst({
+          where: { eventType: 'topAuthors' },
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.analyticsEvent.findFirst({
+          where: { eventType: 'communityStats' },
+          orderBy: { createdAt: 'desc' },
+        }),
       ]);
-      const posts = postsResult.posts;
-      const allBites = [...bitesResult.sportsbites, ...softBites];
-      if (posts.length > 0 || allBites.length > 0) {
-        const computedAnalytics = await getAnalyticsData(posts, undefined, allBites);
-        return NextResponse.json({
-          success: true,
-          data: computedAnalytics,
-          message: 'Computed from Hive (Firebase not configured)',
-        });
-      }
-      return NextResponse.json({
-        success: true,
-        data: analytics,
-        message: 'Firebase not configured - returning default analytics',
-      });
+
+    if (trendingSportsRecord.status === 'fulfilled' && trendingSportsRecord.value?.metadata) {
+      const data = trendingSportsRecord.value.metadata as Record<string, unknown>;
+      analytics.trendingSports = (data.sports || data.trendingSports || []) as TrendingSport[];
     }
 
-    // Fetch trending sports from Firestore
-    try {
-      const trendingSportsDoc = doc(db, 'analytics', 'trendingSports');
-      const trendingSportsSnap = await getDoc(trendingSportsDoc);
-      if (trendingSportsSnap.exists()) {
-        const data = trendingSportsSnap.data();
-        analytics.trendingSports = data.sports || data.trendingSports || [];
-      }
-    } catch (error) {
-      console.warn('[Analytics API] Error fetching trendingSports:', error);
-      // Continue with empty array if document doesn't exist or permission denied
+    if (trendingTopicsRecord.status === 'fulfilled' && trendingTopicsRecord.value?.metadata) {
+      const data = trendingTopicsRecord.value.metadata as Record<string, unknown>;
+      analytics.trendingTopics = (data.topics || data.trendingTopics || []) as TrendingTopic[];
     }
 
-    // Fetch trending topics from Firestore
-    try {
-      const trendingTopicsDoc = doc(db, 'analytics', 'trendingTopics');
-      const trendingTopicsSnap = await getDoc(trendingTopicsDoc);
-      if (trendingTopicsSnap.exists()) {
-        const data = trendingTopicsSnap.data();
-        analytics.trendingTopics = data.topics || data.trendingTopics || [];
-      }
-    } catch (error) {
-      console.warn('[Analytics API] Error fetching trendingTopics:', error);
+    if (topAuthorsRecord.status === 'fulfilled' && topAuthorsRecord.value?.metadata) {
+      const data = topAuthorsRecord.value.metadata as Record<string, unknown>;
+      analytics.topAuthors = (data.authors || data.topAuthors || []) as TopAuthor[];
     }
 
-    // Fetch top authors from Firestore
-    try {
-      const topAuthorsDoc = doc(db, 'analytics', 'topAuthors');
-      const topAuthorsSnap = await getDoc(topAuthorsDoc);
-      if (topAuthorsSnap.exists()) {
-        const data = topAuthorsSnap.data();
-        analytics.topAuthors = data.authors || data.topAuthors || [];
-      }
-    } catch (error) {
-      console.warn('[Analytics API] Error fetching topAuthors:', error);
-    }
-
-    // Fetch community stats from Firestore
-    try {
-      const communityStatsDoc = doc(db, 'analytics', 'communityStats');
-      const communityStatsSnap = await getDoc(communityStatsDoc);
-      if (communityStatsSnap.exists()) {
-        const data = communityStatsSnap.data();
-        analytics.communityStats = {
-          totalPosts: data.totalPosts || 0,
-          totalAuthors: data.totalAuthors || 0,
-          totalRewards: data.totalRewards || 0,
-          activeToday: data.activeToday || 0,
-        };
-      }
-    } catch (error) {
-      console.warn('[Analytics API] Error fetching communityStats:', error);
+    if (communityStatsRecord.status === 'fulfilled' && communityStatsRecord.value?.metadata) {
+      const data = communityStatsRecord.value.metadata as Record<string, unknown>;
+      analytics.communityStats = {
+        totalPosts: (data.totalPosts as number) || 0,
+        totalAuthors: (data.totalAuthors as number) || 0,
+        totalRewards: (data.totalRewards as number) || 0,
+        activeToday: (data.activeToday as number) || 0,
+      };
     }
 
     // Fallback: Recompute any empty sections from Hive rather than requiring ALL to be empty
@@ -136,7 +102,7 @@ export async function GET() {
       !hasMeaningfulStats;
 
     if (needsRecompute) {
-      console.log('[Analytics API] Some Firestore sections empty, computing from Hive + soft...');
+      console.log('[Analytics API] Some database sections empty, computing from Hive + soft...');
       const [postsResult, bitesResult, softBites] = await Promise.all([
         fetchSportsblockPosts({ limit: 50, sort: 'created' }),
         fetchSportsbites({ limit: 200 }),
@@ -164,7 +130,6 @@ export async function GET() {
     const duration = Date.now() - startTime;
     console.error(`[${ROUTE}] Request failed after ${duration}ms`, {
       requestId,
-      firebaseConfigured: !!db,
       error:
         error instanceof Error
           ? {

@@ -6,7 +6,6 @@
  */
 
 import { getCuratorRewardAmount, CURATOR_REWARDS, MEDALS_ACCOUNTS } from './config';
-import { getAdminDb } from '@/lib/firebase/admin';
 
 /**
  * Curator vote information
@@ -47,12 +46,15 @@ export interface CuratorDailyStats {
 
 /**
  * Get list of designated curator accounts
- * In production, this would be fetched from Firestore or env config
+ * In production, this is configured via CURATOR_ACCOUNTS env var
  */
 export function getCuratorAccounts(): string[] {
   const envCurators = process.env.CURATOR_ACCOUNTS;
   if (envCurators) {
-    return envCurators.split(',').map((c) => c.trim()).filter(Boolean);
+    return envCurators
+      .split(',')
+      .map((c) => c.trim())
+      .filter(Boolean);
   }
 
   // Default curators
@@ -60,23 +62,9 @@ export function getCuratorAccounts(): string[] {
 }
 
 /**
- * Get curator accounts from Firestore (async), with fallback to defaults
+ * Get curator accounts (async). Uses env/defaults.
  */
 export async function getCuratorAccountsAsync(): Promise<string[]> {
-  const adminDb = getAdminDb();
-  if (adminDb) {
-    try {
-      const snap = await adminDb.doc('config/curators').get();
-      if (snap.exists) {
-        const data = snap.data();
-        if (Array.isArray(data?.accounts) && data.accounts.length > 0) {
-          return data.accounts as string[];
-        }
-      }
-    } catch (e) {
-      console.warn('[Curators] Failed to read from Firestore, using defaults', e);
-    }
-  }
   return getCuratorAccounts();
 }
 

@@ -4,7 +4,6 @@ import { Providers, KeyTypes } from '@aioha/aioha';
 import type { LoginResult, LoginResultSuccess } from '@aioha/aioha/build/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAioha } from '@/contexts/AiohaProvider';
-import { FirebaseAuth } from '@/lib/firebase/auth';
 import type { HiveAccount } from '@/lib/shared/types';
 import { logger } from '@/lib/logger';
 
@@ -141,7 +140,7 @@ export const useAuthPage = (): UseAuthPageResult => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isAddAccountFlow = searchParams.get('addAccount') === 'true';
-  const { user, isClient, loginWithAioha, loginWithFirebase } = useAuth();
+  const { user, isClient, loginWithAioha } = useAuth();
   const { aioha, isInitialized } = useAioha();
 
   const [mode, setMode] = useState<AuthMode>('login');
@@ -336,104 +335,16 @@ export const useAuthPage = (): UseAuthPageResult => {
   }, [emailForm.acceptTerms, emailForm.email, emailForm.password, emailForm.username, mode]);
 
   const handleEmailSubmit = useCallback(async () => {
-    const validationError = validateEmailForm();
-    if (validationError) {
-      setErrorMessage(validationError);
-      return;
-    }
-
-    setIsConnecting(true);
-    setErrorMessage(null);
-
-    try {
-      if (mode === 'login') {
-        const authUser = await FirebaseAuth.signIn(emailForm.email, emailForm.password);
-        loginWithFirebase(authUser);
-      } else {
-        const authUser = await FirebaseAuth.signUp(
-          emailForm.email,
-          emailForm.password,
-          emailForm.username,
-          emailForm.displayName || emailForm.username
-        );
-        loginWithFirebase(authUser);
-      }
-      // Remember the email for next visit
-      try {
-        localStorage.setItem(REMEMBERED_EMAIL_KEY, emailForm.email);
-      } catch {
-        // localStorage may be unavailable (private browsing, quota exceeded)
-      }
-      router.push('/sportsbites');
-    } catch (error) {
-      logger.error('Firebase authentication failed', 'useAuthPage', error);
-      setErrorMessage(
-        'Authentication failed: ' + (error instanceof Error ? error.message : 'Unknown error')
-      );
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [emailForm, loginWithFirebase, mode, router, validateEmailForm]);
+    setErrorMessage('Email authentication is currently unavailable. Please use Hive wallet login.');
+  }, []);
 
   const handleGoogleSignIn = useCallback(async () => {
-    setIsConnecting(true);
-    setErrorMessage(null);
-
-    try {
-      const authUser = await FirebaseAuth.signInWithGoogle();
-      loginWithFirebase(authUser);
-      // Remember the Google email for next visit
-      if (authUser.email) {
-        try {
-          localStorage.setItem(REMEMBERED_EMAIL_KEY, authUser.email);
-        } catch {
-          // localStorage may be unavailable
-        }
-      }
-      router.push('/sportsbites');
-    } catch (error) {
-      logger.error('Google sign-in failed', 'useAuthPage', error);
-      // Handle specific Firebase errors
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (errorMessage.includes('popup-closed-by-user')) {
-        setErrorMessage('Sign-in cancelled. Please try again.');
-      } else if (errorMessage.includes('popup-blocked')) {
-        setErrorMessage('Pop-up blocked. Please allow pop-ups for this site and try again.');
-      } else {
-        setErrorMessage('Google sign-in failed: ' + errorMessage);
-      }
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [loginWithFirebase, router]);
+    setErrorMessage('Google sign-in is currently unavailable. Please use Hive wallet login.');
+  }, []);
 
   const handleForgotPassword = useCallback(async () => {
-    if (!emailForm.email) {
-      setErrorMessage('Please enter your email address first');
-      return;
-    }
-
-    setIsConnecting(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    try {
-      await FirebaseAuth.sendPasswordReset(emailForm.email);
-      setSuccessMessage('Password reset email sent! Check your inbox.');
-    } catch (error) {
-      logger.error('Password reset failed', 'useAuthPage', error);
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      if (errorMsg.includes('user-not-found')) {
-        setErrorMessage('No account found with this email address.');
-      } else if (errorMsg.includes('invalid-email')) {
-        setErrorMessage('Please enter a valid email address.');
-      } else {
-        setErrorMessage('Failed to send reset email: ' + errorMsg);
-      }
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [emailForm.email]);
+    setErrorMessage('Password reset is currently unavailable. Please use Hive wallet login.');
+  }, []);
 
   const resetConnectionState = useCallback(() => {
     setIsConnecting(false);

@@ -52,9 +52,9 @@ export default function CookiePolicyPage() {
                     <td className="p-3">Session</td>
                   </tr>
                   <tr className="border-t">
-                    <td className="p-3 font-mono text-xs">firebase_auth</td>
-                    <td className="p-3">Firebase authentication state</td>
-                    <td className="p-3">Persistent</td>
+                    <td className="p-3 font-mono text-xs">auth_ui_hint</td>
+                    <td className="p-3">Authentication display preferences</td>
+                    <td className="p-3">Session</td>
                   </tr>
                   <tr className="border-t">
                     <td className="p-3 font-mono text-xs">theme</td>
@@ -152,7 +152,7 @@ export default function CookiePolicyPage() {
             </p>
             <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
               <li>
-                <strong>Firebase (Google):</strong> Authentication and analytics services
+                <strong>Google:</strong> OAuth authentication services
               </li>
               <li>
                 <strong>Vercel:</strong> Hosting and performance analytics

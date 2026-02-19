@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
-import { FieldValue } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,14 +25,6 @@ export async function GET() {
   // Verify cron authentication
   if (!(await verifyCronRequest())) {
     return NextResponse.json(createUnauthorizedResponse(), { status: 401 });
-  }
-
-  const db = getAdminDb();
-  if (!db) {
-    return NextResponse.json({
-      success: false,
-      error: 'Database not configured - inactivity check skipped',
-    }, { status: 503 });
   }
 
   console.log('[Cron] Starting inactivity check...');
@@ -65,42 +56,45 @@ export async function GET() {
     // ============================================
     console.log('[Cron] Checking for 150+ day inactive users...');
 
-    const firstWarningUsers = await db.collection('profiles')
-      .where('isHiveUser', '==', false)
-      .where('lastActiveAt', '<=', firstWarningCutoff)
-      .where('lastActiveAt', '>', finalWarningCutoff)
-      .limit(BATCH_SIZE)
-      .get();
+    const firstWarningUsers = await prisma.profile.findMany({
+      where: {
+        isHiveUser: false,
+        lastActiveAt: {
+          lte: firstWarningCutoff,
+          gt: finalWarningCutoff,
+        },
+      },
+      take: BATCH_SIZE,
+    });
 
-    for (const userDoc of firstWarningUsers.docs) {
-      const userData = userDoc.data();
-      const userId = userDoc.id;
-
+    for (const user of firstWarningUsers) {
       // Check if we already sent a first warning
-      const existingWarning = await db.collection('soft_notifications')
-        .where('recipientId', '==', userId)
-        .where('type', '==', 'system')
-        .where('data.warningType', '==', 'inactivity_first')
-        .limit(1)
-        .get();
+      const existingWarning = await prisma.notification.findFirst({
+        where: {
+          recipientId: user.id,
+          type: 'system',
+          data: { path: ['warningType'], equals: 'inactivity_first' },
+        },
+      });
 
-      if (existingWarning.empty) {
+      if (!existingWarning) {
         try {
-          await db.collection('soft_notifications').add({
-            recipientId: userId,
-            type: 'system',
-            title: 'We miss you!',
-            message: `Hi ${userData.username}! It's been a while since you've visited. Log in to keep your content active. Accounts inactive for 180 days may have their content archived.`,
+          await prisma.notification.create({
             data: {
-              warningType: 'inactivity_first',
-              daysInactive: FIRST_WARNING_DAYS,
+              recipientId: user.id,
+              type: 'system',
+              title: 'We miss you!',
+              message: `Hi ${user.username}! It's been a while since you've visited. Log in to keep your content active. Accounts inactive for 180 days may have their content archived.`,
+              data: {
+                warningType: 'inactivity_first',
+                daysInactive: FIRST_WARNING_DAYS,
+              },
+              read: false,
             },
-            read: false,
-            createdAt: now,
           });
           results.firstWarningsSent++;
         } catch (error) {
-          results.errors.push(`Failed to send first warning to ${userId}: ${error}`);
+          results.errors.push(`Failed to send first warning to ${user.id}: ${error}`);
         }
       }
     }
@@ -110,43 +104,46 @@ export async function GET() {
     // ============================================
     console.log('[Cron] Checking for 170+ day inactive users...');
 
-    const finalWarningUsers = await db.collection('profiles')
-      .where('isHiveUser', '==', false)
-      .where('lastActiveAt', '<=', finalWarningCutoff)
-      .where('lastActiveAt', '>', expirationCutoff)
-      .limit(BATCH_SIZE)
-      .get();
+    const finalWarningUsers = await prisma.profile.findMany({
+      where: {
+        isHiveUser: false,
+        lastActiveAt: {
+          lte: finalWarningCutoff,
+          gt: expirationCutoff,
+        },
+      },
+      take: BATCH_SIZE,
+    });
 
-    for (const userDoc of finalWarningUsers.docs) {
-      const userData = userDoc.data();
-      const userId = userDoc.id;
-
+    for (const user of finalWarningUsers) {
       // Check if we already sent a final warning
-      const existingWarning = await db.collection('soft_notifications')
-        .where('recipientId', '==', userId)
-        .where('type', '==', 'system')
-        .where('data.warningType', '==', 'inactivity_final')
-        .limit(1)
-        .get();
+      const existingWarning = await prisma.notification.findFirst({
+        where: {
+          recipientId: user.id,
+          type: 'system',
+          data: { path: ['warningType'], equals: 'inactivity_final' },
+        },
+      });
 
-      if (existingWarning.empty) {
+      if (!existingWarning) {
         try {
-          await db.collection('soft_notifications').add({
-            recipientId: userId,
-            type: 'system',
-            title: 'Action Required: Content Deletion in 10 Days',
-            message: `Hi ${userData.username}! Your account has been inactive for ${FINAL_WARNING_DAYS} days. Please log in within the next 10 days to keep your content. After ${EXPIRATION_DAYS} days of inactivity, your posts and comments will be archived.`,
+          await prisma.notification.create({
             data: {
-              warningType: 'inactivity_final',
-              daysInactive: FINAL_WARNING_DAYS,
-              daysUntilDeletion: EXPIRATION_DAYS - FINAL_WARNING_DAYS,
+              recipientId: user.id,
+              type: 'system',
+              title: 'Action Required: Content Deletion in 10 Days',
+              message: `Hi ${user.username}! Your account has been inactive for ${FINAL_WARNING_DAYS} days. Please log in within the next 10 days to keep your content. After ${EXPIRATION_DAYS} days of inactivity, your posts and comments will be archived.`,
+              data: {
+                warningType: 'inactivity_final',
+                daysInactive: FINAL_WARNING_DAYS,
+                daysUntilDeletion: EXPIRATION_DAYS - FINAL_WARNING_DAYS,
+              },
+              read: false,
             },
-            read: false,
-            createdAt: now,
           });
           results.finalWarningsSent++;
         } catch (error) {
-          results.errors.push(`Failed to send final warning to ${userId}: ${error}`);
+          results.errors.push(`Failed to send final warning to ${user.id}: ${error}`);
         }
       }
     }
@@ -156,76 +153,36 @@ export async function GET() {
     // ============================================
     console.log('[Cron] Checking for 180+ day inactive users...');
 
-    const expiredUsers = await db.collection('profiles')
-      .where('isHiveUser', '==', false)
-      .where('lastActiveAt', '<=', expirationCutoff)
-      .limit(BATCH_SIZE)
-      .get();
+    const expiredUsers = await prisma.profile.findMany({
+      where: {
+        isHiveUser: false,
+        lastActiveAt: { lte: expirationCutoff },
+      },
+      take: BATCH_SIZE,
+    });
 
-    for (const userDoc of expiredUsers.docs) {
-      const userId = userDoc.id;
-      const userData = userDoc.data();
-
-      // Skip if already archived
-      if (userData.isArchived) {
-        continue;
-      }
-
+    for (const user of expiredUsers) {
       try {
-        // Archive user's posts (soft delete)
-        const userPosts = await db.collection('soft_posts')
-          .where('authorId', '==', userId)
-          .limit(500)
-          .get();
-
-        const postBatch = db.batch();
-        let postCount = 0;
-        for (const postDoc of userPosts.docs) {
-          postBatch.update(postDoc.ref, {
-            isArchived: true,
-            archivedAt: FieldValue.serverTimestamp(),
-            archivedReason: 'inactivity',
-          });
-          postCount++;
-        }
-        if (postCount > 0) {
-          await postBatch.commit();
-          results.postsDeleted += postCount;
-        }
-
-        // Archive user's comments (soft delete)
-        const userComments = await db.collection('soft_comments')
-          .where('authorId', '==', userId)
-          .where('isDeleted', '==', false)
-          .limit(500)
-          .get();
-
-        const commentBatch = db.batch();
-        let commentCount = 0;
-        for (const commentDoc of userComments.docs) {
-          commentBatch.update(commentDoc.ref, {
-            isArchived: true,
-            archivedAt: FieldValue.serverTimestamp(),
-            body: '[archived due to inactivity]',
-          });
-          commentCount++;
-        }
-        if (commentCount > 0) {
-          await commentBatch.commit();
-          results.commentsDeleted += commentCount;
-        }
-
-        // Mark user as archived
-        await userDoc.ref.update({
-          isArchived: true,
-          archivedAt: FieldValue.serverTimestamp(),
+        // Delete user's posts
+        const postResult = await prisma.post.deleteMany({
+          where: { authorId: user.id },
         });
+        results.postsDeleted += postResult.count;
+
+        // Soft-delete user's comments (mark as deleted)
+        const commentResult = await prisma.comment.updateMany({
+          where: { authorId: user.id, isDeleted: false },
+          data: { isDeleted: true, body: '[archived due to inactivity]' },
+        });
+        results.commentsDeleted += commentResult.count;
 
         results.usersArchived++;
 
-        console.log(`[Cron] Archived user ${userId}: ${postCount} posts, ${commentCount} comments`);
+        console.log(
+          `[Cron] Archived user ${user.id}: ${postResult.count} posts, ${commentResult.count} comments`
+        );
       } catch (error) {
-        results.errors.push(`Failed to archive user ${userId}: ${error}`);
+        results.errors.push(`Failed to archive user ${user.id}: ${error}`);
       }
     }
 

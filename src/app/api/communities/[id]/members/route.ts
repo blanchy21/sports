@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FirebaseCommunitiesAdmin } from '@/lib/firebase/communities-admin';
+import { prisma } from '@/lib/db/prisma';
 import {
   createRequestContext,
   validationError,
@@ -10,7 +10,7 @@ import {
 } from '@/lib/api/response';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { CommunityMemberRole, CommunityMemberStatus } from '@/types';
+import { Prisma } from '@/generated/prisma/client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -66,9 +66,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { status, role, limit, userId } = parseResult.data;
 
     // Check if community exists (try by ID first, then by slug)
-    let community = await FirebaseCommunitiesAdmin.getCommunityById(communityId);
+    let community = await prisma.community.findUnique({ where: { id: communityId } });
     if (!community) {
-      community = await FirebaseCommunitiesAdmin.getCommunityBySlug(communityId);
+      community = await prisma.community.findUnique({ where: { slug: communityId } });
     }
     if (!community) {
       return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
@@ -81,7 +81,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (userId) {
       ctx.log.debug('Looking up single membership', { communityId: resolvedCommunityId, userId });
 
-      const membership = await FirebaseCommunitiesAdmin.getMembership(resolvedCommunityId, userId);
+      const membership = await prisma.communityMember.findUnique({
+        where: { communityId_userId: { communityId: resolvedCommunityId, userId } },
+      });
 
       return NextResponse.json({
         success: true,
@@ -98,10 +100,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       limit,
     });
 
-    const members = await FirebaseCommunitiesAdmin.getCommunityMembers(resolvedCommunityId, {
-      status: status as CommunityMemberStatus | undefined,
-      role: role as CommunityMemberRole | undefined,
-      limit,
+    const where: Prisma.CommunityMemberWhereInput = { communityId: resolvedCommunityId };
+    if (status) where.status = status;
+    if (role) where.role = role;
+
+    const members = await prisma.communityMember.findMany({
+      where,
+      take: limit,
     });
 
     return NextResponse.json({
@@ -148,12 +153,34 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     ctx.log.info('User joining community', { communityId, userId, username });
 
-    const member = await FirebaseCommunitiesAdmin.joinCommunity(
-      communityId,
-      userId,
-      username,
-      hiveUsername
-    );
+    // Check community type to determine initial status
+    const community = await prisma.community.findUnique({ where: { id: communityId } });
+    if (!community) {
+      return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
+    }
+
+    const initialStatus = community.type === 'public' ? 'active' : 'pending';
+
+    const member = await prisma.communityMember.create({
+      data: {
+        communityId,
+        userId,
+        username,
+        hiveUsername: hiveUsername || null,
+        role: 'member',
+        status: initialStatus,
+      },
+    });
+
+    // Increment member count if immediately active
+    if (initialStatus === 'active') {
+      prisma.community
+        .update({
+          where: { id: communityId },
+          data: { memberCount: { increment: 1 } },
+        })
+        .catch(() => {});
+    }
 
     const statusMessage =
       member.status === 'pending'
@@ -206,13 +233,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // Check if community exists
-    const community = await FirebaseCommunitiesAdmin.getCommunityById(communityId);
+    const community = await prisma.community.findUnique({ where: { id: communityId } });
     if (!community) {
       return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
     }
 
     // Check if requesting user has permission
-    const requesterMembership = await FirebaseCommunitiesAdmin.getMembership(communityId, userId);
+    const requesterMembership = await prisma.communityMember.findUnique({
+      where: { communityId_userId: { communityId, userId } },
+    });
     if (!requesterMembership || requesterMembership.status !== 'active') {
       return forbiddenError('You must be an active member to perform this action', ctx.requestId);
     }
@@ -236,11 +265,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           return forbiddenError('Only moderators can approve or reject members', ctx.requestId);
         }
         if (action === 'approve') {
-          const member = await FirebaseCommunitiesAdmin.approveMember(communityId, targetUserId);
+          const member = await prisma.communityMember.update({
+            where: { communityId_userId: { communityId, userId: targetUserId } },
+            data: { status: 'active' },
+          });
+          // Increment member count
+          prisma.community
+            .update({
+              where: { id: communityId },
+              data: { memberCount: { increment: 1 } },
+            })
+            .catch(() => {});
           return NextResponse.json({ success: true, member, message: 'Member approved' });
         } else {
-          // For reject, we just remove the pending membership
-          await FirebaseCommunitiesAdmin.leaveCommunity(communityId, targetUserId);
+          // For reject, remove the pending membership
+          await prisma.communityMember.delete({
+            where: { communityId_userId: { communityId, userId: targetUserId } },
+          });
           return NextResponse.json({ success: true, message: 'Join request rejected' });
         }
 
@@ -252,11 +293,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         if (!role) {
           return validationError('Role is required for promote/demote actions', ctx.requestId);
         }
-        const updatedMember = await FirebaseCommunitiesAdmin.updateMemberRole(
-          communityId,
-          targetUserId,
-          role
-        );
+        const updatedMember = await prisma.communityMember.update({
+          where: { communityId_userId: { communityId, userId: targetUserId } },
+          data: { role },
+        });
         return NextResponse.json({
           success: true,
           member: updatedMember,
@@ -267,7 +307,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         if (!isModerator) {
           return forbiddenError('Only moderators can ban members', ctx.requestId);
         }
-        await FirebaseCommunitiesAdmin.banMember(communityId, targetUserId);
+        await prisma.communityMember.update({
+          where: { communityId_userId: { communityId, userId: targetUserId } },
+          data: { status: 'banned' },
+        });
+        // Decrement member count
+        prisma.community
+          .update({
+            where: { id: communityId },
+            data: { memberCount: { decrement: 1 } },
+          })
+          .catch(() => {});
         return NextResponse.json({ success: true, message: 'Member banned' });
 
       case 'unban':
@@ -275,12 +325,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           return forbiddenError('Only admins can unban members', ctx.requestId);
         }
         // For unban, update the status back to pending (they need to rejoin)
-        const targetMembership = await FirebaseCommunitiesAdmin.getMembership(
-          communityId,
-          targetUserId
-        );
+        const targetMembership = await prisma.communityMember.findUnique({
+          where: { communityId_userId: { communityId, userId: targetUserId } },
+        });
         if (targetMembership) {
-          await FirebaseCommunitiesAdmin.updateMemberRole(communityId, targetUserId, 'member');
+          await prisma.communityMember.update({
+            where: { communityId_userId: { communityId, userId: targetUserId } },
+            data: { role: 'member', status: 'active' },
+          });
         }
         return NextResponse.json({ success: true, message: 'Member unbanned' });
 
@@ -329,7 +381,17 @@ export async function DELETE(
 
     ctx.log.info('User leaving community', { communityId, userId });
 
-    await FirebaseCommunitiesAdmin.leaveCommunity(communityId, userId);
+    await prisma.communityMember.delete({
+      where: { communityId_userId: { communityId, userId } },
+    });
+
+    // Decrement member count
+    prisma.community
+      .update({
+        where: { id: communityId },
+        data: { memberCount: { decrement: 1 } },
+      })
+      .catch(() => {});
 
     return NextResponse.json({
       success: true,

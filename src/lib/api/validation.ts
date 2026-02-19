@@ -25,7 +25,7 @@ export const hiveUsernameSchema = z
  * Permlink validation
  * - Letters (upper and lowercase), numbers, and hyphens
  * - Max 256 characters
- * Note: Hive permlinks are lowercase, but soft/Firebase permlinks may contain uppercase
+ * Note: Hive permlinks are lowercase, but soft permlinks may contain uppercase
  */
 export const permlinkSchema = z
   .string()

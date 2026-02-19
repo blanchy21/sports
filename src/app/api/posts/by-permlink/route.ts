@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FirebasePosts } from '@/lib/firebase/posts';
+import { prisma } from '@/lib/db/prisma';
 
 /**
  * GET /api/posts/by-permlink?permlink=xxx - Get a soft post by its permlink
@@ -12,36 +12,35 @@ export async function GET(request: NextRequest) {
     const permlink = searchParams.get('permlink');
 
     if (!permlink) {
-      return NextResponse.json(
-        { success: false, error: 'Permlink is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Permlink is required' }, { status: 400 });
     }
 
-    const post = await FirebasePosts.getPostByPermlink(permlink);
+    const post = await prisma.post.findUnique({ where: { permlink } });
 
     if (!post) {
-      return NextResponse.json(
-        { success: false, error: 'Post not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
     }
 
     // Increment view count (fire and forget, but log errors)
-    FirebasePosts.incrementViewCount(post.id).catch((err) => {
-      console.error('Failed to increment view count:', err instanceof Error ? err.message : err);
-    });
+    prisma.post
+      .update({
+        where: { id: post.id },
+        data: { viewCount: { increment: 1 } },
+      })
+      .catch((err) => {
+        console.error('Failed to increment view count:', err instanceof Error ? err.message : err);
+      });
 
     return NextResponse.json({
       success: true,
-      post
+      post,
     });
   } catch (error) {
     console.error('Error fetching post by permlink:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch post'
+        error: error instanceof Error ? error.message : 'Failed to fetch post',
       },
       { status: 500 }
     );

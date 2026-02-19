@@ -69,7 +69,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Auth actions (login, logout, upgrade)
   const {
     login,
-    loginWithFirebase,
     loginWithHiveUser,
     loginWithAioha,
     logout,
@@ -286,7 +285,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     loginWithHiveUser,
     loginWithAioha,
-    loginWithFirebase,
     logout,
     updateUser,
     upgradeToHive,

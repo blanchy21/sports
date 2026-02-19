@@ -28,7 +28,6 @@ import { publishPost, canUserPost, validatePostData } from '@/lib/hive-workerbee
 import { PostData } from '@/lib/hive-workerbee/posting';
 import { useCommunities, useUserCommunities } from '@/lib/react-query/queries/useCommunity';
 import { useUIStore } from '@/stores/uiStore';
-import { FirebasePosts } from '@/lib/firebase/posts';
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { logger } from '@/lib/logger';
 
@@ -516,25 +515,33 @@ function PublishPageContent() {
         return;
       }
 
-      // Create scheduled post
-      await FirebasePosts.createScheduledPost(
-        user.id,
-        {
-          authorId: user.id,
-          authorUsername: user.username,
-          authorDisplayName: user.displayName,
-          authorAvatar: user.avatar,
-          title: title.trim(),
-          content: content.trim(),
-          tags,
-          sportCategory: selectedSport,
-          featuredImage: coverImage || undefined,
-          communityId: selectedCommunity?.id,
-          communitySlug: selectedCommunity?.slug,
-          communityName: selectedCommunity?.name,
-        },
-        scheduledAt
-      );
+      // Create scheduled post via API
+      const scheduleResponse = await fetch('/api/soft/scheduled-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          postData: {
+            authorId: user.id,
+            authorUsername: user.username,
+            authorDisplayName: user.displayName,
+            authorAvatar: user.avatar,
+            title: title.trim(),
+            content: content.trim(),
+            tags,
+            sportCategory: selectedSport,
+            featuredImage: coverImage || undefined,
+            communityId: selectedCommunity?.id,
+            communitySlug: selectedCommunity?.slug,
+            communityName: selectedCommunity?.name,
+          },
+          scheduledAt: scheduledAt.toISOString(),
+        }),
+      });
+      const scheduleData = await scheduleResponse.json();
+      if (!scheduleData.success) {
+        throw new Error(scheduleData.error || 'Failed to schedule post');
+      }
 
       // Save used tags to recent tags
       if (tags.length > 0) {
@@ -612,7 +619,7 @@ function PublishPageContent() {
           setPublishError(result.error || 'Failed to publish post');
         }
       } else {
-        // SOFT USER: Publish to Firebase via API directly to get postLimitInfo
+        // SOFT USER: Publish via API directly to get postLimitInfo
         const response = await fetch('/api/posts', {
           method: 'POST',
           headers: {

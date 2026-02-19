@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { FieldValue } from 'firebase-admin/firestore';
 import type { ReactionEmoji } from '@/lib/hive-workerbee/sportsbites';
 
 export const runtime = 'nodejs';
@@ -17,13 +16,40 @@ const ROUTE = '/api/soft/reactions';
 // Helpers
 // ============================================
 
-/** Encode sportsbite ID for use as Firestore doc ID (replace `/` with `__`) */
-function encodeSportsbiteId(id: string): string {
-  return id.replace(/\//g, '__');
-}
+type ReactionCounts = {
+  fire: number;
+  shocked: number;
+  laughing: number;
+  angry: number;
+  eyes: number;
+  thumbs_down: number;
+  total: number;
+};
 
-function createReactionDocId(userId: string, sportsbiteId: string): string {
-  return `${userId}__${encodeSportsbiteId(sportsbiteId)}`;
+const DEFAULT_COUNTS: ReactionCounts = {
+  fire: 0,
+  shocked: 0,
+  laughing: 0,
+  angry: 0,
+  eyes: 0,
+  thumbs_down: 0,
+  total: 0,
+};
+
+async function getReactionCounts(sportsbiteId: string): Promise<ReactionCounts> {
+  const reactionCounts = await prisma.reaction.groupBy({
+    by: ['emoji'],
+    where: { sportsbiteId },
+    _count: true,
+  });
+  const counts: ReactionCounts = { ...DEFAULT_COUNTS };
+  for (const r of reactionCounts) {
+    if (r.emoji in counts && r.emoji !== 'total') {
+      counts[r.emoji as keyof Omit<ReactionCounts, 'total'>] = r._count;
+    }
+    counts.total += r._count;
+  }
+  return counts;
 }
 
 // ============================================
@@ -59,47 +85,27 @@ export async function GET(request: NextRequest) {
     }
 
     const { sportsbiteId } = parseResult.data;
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
-
-    const encodedId = encodeSportsbiteId(sportsbiteId);
 
     // Fetch counts and user auth in parallel
-    const [countsDoc, user] = await Promise.all([
-      db.collection('sportsbite_reaction_counts').doc(encodedId).get(),
+    const [counts, user] = await Promise.all([
+      getReactionCounts(sportsbiteId),
       getAuthenticatedUserFromSession(request),
     ]);
-
-    const counts = countsDoc.exists
-      ? countsDoc.data()
-      : { fire: 0, shocked: 0, laughing: 0, angry: 0, eyes: 0, thumbs_down: 0, total: 0 };
 
     // Check user's existing reaction
     let userReaction: ReactionEmoji | null = null;
     if (user) {
-      const reactionDocId = createReactionDocId(user.userId, sportsbiteId);
-      const reactionDoc = await db.collection('sportsbite_reactions').doc(reactionDocId).get();
-      if (reactionDoc.exists) {
-        userReaction = reactionDoc.data()?.emoji || null;
+      const existing = await prisma.reaction.findUnique({
+        where: { userId_sportsbiteId: { userId: user.userId, sportsbiteId } },
+      });
+      if (existing) {
+        userReaction = existing.emoji as ReactionEmoji;
       }
     }
 
     return NextResponse.json({
       success: true,
-      counts: {
-        fire: counts?.fire || 0,
-        shocked: counts?.shocked || 0,
-        laughing: counts?.laughing || 0,
-        angry: counts?.angry || 0,
-        eyes: counts?.eyes || 0,
-        thumbs_down: counts?.thumbs_down || 0,
-        total: counts?.total || 0,
-      },
+      counts,
       userReaction,
     });
   } catch (error) {
@@ -129,13 +135,6 @@ export async function POST(request: NextRequest) {
       }
 
       const { sportsbiteId, emoji } = parseResult.data;
-      const db = getAdminDb();
-      if (!db) {
-        return NextResponse.json(
-          { success: false, error: 'Database not configured' },
-          { status: 500 }
-        );
-      }
 
       // Rate limiting
       const rateLimit = await checkRateLimit(
@@ -162,75 +161,47 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const reactionDocId = createReactionDocId(user.userId, sportsbiteId);
-      const reactionRef = db.collection('sportsbite_reactions').doc(reactionDocId);
-      const encodedId = encodeSportsbiteId(sportsbiteId);
-      const countsRef = db.collection('sportsbite_reaction_counts').doc(encodedId);
-
-      const existingDoc = await reactionRef.get();
-      const existingEmoji: ReactionEmoji | null = existingDoc.exists
-        ? existingDoc.data()?.emoji || null
+      const existing = await prisma.reaction.findUnique({
+        where: { userId_sportsbiteId: { userId: user.userId, sportsbiteId } },
+      });
+      const existingEmoji: ReactionEmoji | null = existing
+        ? (existing.emoji as ReactionEmoji)
         : null;
 
       let action: 'added' | 'removed' | 'swapped';
 
       if (existingEmoji === emoji) {
         // Same emoji — remove reaction
-        await Promise.all([
-          reactionRef.delete(),
-          countsRef.set(
-            { [emoji]: FieldValue.increment(-1), total: FieldValue.increment(-1) },
-            { merge: true }
-          ),
-        ]);
+        await prisma.reaction.delete({ where: { id: existing!.id } });
         action = 'removed';
       } else if (existingEmoji) {
         // Different emoji — swap reaction
-        await Promise.all([
-          reactionRef.update({ emoji, createdAt: new Date() }),
-          countsRef.set(
-            {
-              [existingEmoji]: FieldValue.increment(-1),
-              [emoji]: FieldValue.increment(1),
-            },
-            { merge: true }
-          ),
-        ]);
+        await prisma.reaction.update({
+          where: { id: existing!.id },
+          data: { emoji, createdAt: new Date() },
+        });
         action = 'swapped';
       } else {
         // No existing — add reaction
-        await Promise.all([
-          reactionRef.set({
+        await prisma.reaction.create({
+          data: {
             userId: user.userId,
             sportsbiteId,
             emoji,
             createdAt: new Date(),
-          }),
-          countsRef.set(
-            { [emoji]: FieldValue.increment(1), total: FieldValue.increment(1) },
-            { merge: true }
-          ),
-        ]);
+          },
+        });
         action = 'added';
       }
 
-      // Fetch updated counts
-      const updatedCountsDoc = await countsRef.get();
-      const updatedCounts = updatedCountsDoc.exists ? updatedCountsDoc.data() : {};
+      // Fetch updated counts via aggregation
+      const counts = await getReactionCounts(sportsbiteId);
 
       return NextResponse.json({
         success: true,
         action,
         userReaction: action === 'removed' ? null : emoji,
-        counts: {
-          fire: updatedCounts?.fire || 0,
-          shocked: updatedCounts?.shocked || 0,
-          laughing: updatedCounts?.laughing || 0,
-          angry: updatedCounts?.angry || 0,
-          eyes: updatedCounts?.eyes || 0,
-          thumbs_down: updatedCounts?.thumbs_down || 0,
-          total: updatedCounts?.total || 0,
-        },
+        counts,
       });
     } catch (error) {
       return ctx.handleError(error);
@@ -255,59 +226,30 @@ export async function PUT(request: NextRequest) {
 
     const { sportsbiteIds } = parseResult.data;
     const user = await getAuthenticatedUserFromSession(request);
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
 
     const results: Record<
       string,
       {
-        counts: {
-          fire: number;
-          shocked: number;
-          laughing: number;
-          angry: number;
-          eyes: number;
-          thumbs_down: number;
-          total: number;
-        };
+        counts: ReactionCounts;
         userReaction: ReactionEmoji | null;
       }
     > = {};
 
     await Promise.all(
       sportsbiteIds.map(async (sportsbiteId) => {
-        const encodedId = encodeSportsbiteId(sportsbiteId);
-
-        const countsDoc = await db.collection('sportsbite_reaction_counts').doc(encodedId).get();
-
-        const counts = countsDoc.exists ? countsDoc.data() : {};
+        const counts = await getReactionCounts(sportsbiteId);
 
         let userReaction: ReactionEmoji | null = null;
         if (user) {
-          const reactionDocId = createReactionDocId(user.userId, sportsbiteId);
-          const reactionDoc = await db.collection('sportsbite_reactions').doc(reactionDocId).get();
-          if (reactionDoc.exists) {
-            userReaction = reactionDoc.data()?.emoji || null;
+          const existing = await prisma.reaction.findUnique({
+            where: { userId_sportsbiteId: { userId: user.userId, sportsbiteId } },
+          });
+          if (existing) {
+            userReaction = existing.emoji as ReactionEmoji;
           }
         }
 
-        results[sportsbiteId] = {
-          counts: {
-            fire: counts?.fire || 0,
-            shocked: counts?.shocked || 0,
-            laughing: counts?.laughing || 0,
-            angry: counts?.angry || 0,
-            eyes: counts?.eyes || 0,
-            thumbs_down: counts?.thumbs_down || 0,
-            total: counts?.total || 0,
-          },
-          userReaction,
-        };
+        results[sportsbiteId] = { counts, userReaction };
       })
     );
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
 
 export const runtime = 'nodejs';
@@ -15,20 +15,12 @@ const BATCH_SIZE = 500;
  * Cron endpoint for cleaning up old notifications
  *
  * Runs daily to delete notifications older than 30 days
- * This helps minimize Firebase costs and keeps the database clean
+ * This helps minimize database costs and keeps the database clean
  */
 export async function GET() {
   // Verify cron authentication
   if (!(await verifyCronRequest())) {
     return NextResponse.json(createUnauthorizedResponse(), { status: 401 });
-  }
-
-  const db = getAdminDb();
-  if (!db) {
-    return NextResponse.json({
-      success: false,
-      error: 'Database not configured - notification cleanup skipped',
-    }, { status: 503 });
   }
 
   console.log('[Cron] Starting notification cleanup...');
@@ -50,52 +42,55 @@ export async function GET() {
     while (hasMore && iterations < maxIterations) {
       iterations++;
 
-      // Query for old notifications
-      const oldNotifications = await db.collection('soft_notifications')
-        .where('createdAt', '<', cutoffDate)
-        .limit(BATCH_SIZE)
-        .get();
+      // Count old notifications
+      const count = await prisma.notification.count({
+        where: { createdAt: { lt: cutoffDate } },
+      });
 
-      if (oldNotifications.empty) {
+      if (count === 0) {
         hasMore = false;
         continue;
       }
 
       // Delete in batches
-      const batch = db.batch();
-      for (const doc of oldNotifications.docs) {
-        batch.delete(doc.ref);
-      }
-
       try {
-        await batch.commit();
-        results.notificationsDeleted += oldNotifications.size;
-        console.log(`[Cron] Deleted ${oldNotifications.size} old notifications (iteration ${iterations})`);
+        // Find IDs of old notifications to delete
+        const toDelete = await prisma.notification.findMany({
+          where: { createdAt: { lt: cutoffDate } },
+          select: { id: true },
+          take: BATCH_SIZE,
+        });
+
+        const deleteResult = await prisma.notification.deleteMany({
+          where: { id: { in: toDelete.map((n) => n.id) } },
+        });
+
+        results.notificationsDeleted += deleteResult.count;
+        console.log(
+          `[Cron] Deleted ${deleteResult.count} old notifications (iteration ${iterations})`
+        );
+
+        // Check if we've deleted all
+        if (toDelete.length < BATCH_SIZE) {
+          hasMore = false;
+        }
       } catch (error) {
         results.errors.push(`Batch delete failed: ${error}`);
-        hasMore = false;
-      }
-
-      // Check if we've deleted all
-      if (oldNotifications.size < BATCH_SIZE) {
         hasMore = false;
       }
     }
 
     // Also clean up any orphaned notifications (no recipientId)
-    const orphanedNotifications = await db.collection('soft_notifications')
-      .where('recipientId', '==', null)
-      .limit(100)
-      .get();
-
-    if (!orphanedNotifications.empty) {
-      const orphanBatch = db.batch();
-      for (const doc of orphanedNotifications.docs) {
-        orphanBatch.delete(doc.ref);
+    try {
+      const orphanResult = await prisma.notification.deleteMany({
+        where: { recipientId: '' },
+      });
+      if (orphanResult.count > 0) {
+        results.notificationsDeleted += orphanResult.count;
+        console.log(`[Cron] Deleted ${orphanResult.count} orphaned notifications`);
       }
-      await orphanBatch.commit();
-      results.notificationsDeleted += orphanedNotifications.size;
-      console.log(`[Cron] Deleted ${orphanedNotifications.size} orphaned notifications`);
+    } catch {
+      // Ignore orphan cleanup errors
     }
 
     console.log('[Cron] Notification cleanup completed', results);

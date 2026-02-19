@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAdminDb } from '@/lib/firebase/admin';
-import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
+import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { FieldValue, Firestore } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -43,14 +41,6 @@ const toggleLikeSchema = z.object({
 });
 
 // ============================================
-// Helper Functions
-// ============================================
-
-function createLikeId(userId: string, targetType: string, targetId: string): string {
-  return `${userId}_${targetType}_${targetId}`;
-}
-
-// ============================================
 // GET /api/soft/likes - Get like status and count
 // ============================================
 
@@ -67,33 +57,19 @@ export async function GET(request: NextRequest) {
 
     const { targetType, targetId } = parseResult.data;
 
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
-
     // Run count query and user auth/like-check in parallel
-    const [likesSnapshot, user] = await Promise.all([
-      db
-        .collection('soft_likes')
-        .where('targetType', '==', targetType)
-        .where('targetId', '==', targetId)
-        .count()
-        .get(),
+    const [likeCount, user] = await Promise.all([
+      prisma.like.count({ where: { targetType, targetId } }),
       getAuthenticatedUserFromSession(request),
     ]);
-
-    const likeCount = likesSnapshot.data().count;
 
     // Check if current user has liked (if authenticated)
     let hasLiked = false;
     if (user) {
-      const likeId = createLikeId(user.userId, targetType, targetId);
-      const likeDoc = await db.collection('soft_likes').doc(likeId).get();
-      hasLiked = likeDoc.exists;
+      const existing = await prisma.like.findUnique({
+        where: { userId_targetType_targetId: { userId: user.userId, targetType, targetId } },
+      });
+      hasLiked = !!existing;
     }
 
     return NextResponse.json({
@@ -128,13 +104,6 @@ export async function POST(request: NextRequest) {
       }
 
       const { targetType, targetId } = parseResult.data;
-      const db = getAdminDb();
-      if (!db) {
-        return NextResponse.json(
-          { success: false, error: 'Database not configured' },
-          { status: 500 }
-        );
-      }
 
       // Rate limiting check
       const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.softLikes, 'softLikes');
@@ -157,54 +126,57 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const likeId = createLikeId(user.userId, targetType, targetId);
-      const likeRef = db.collection('soft_likes').doc(likeId);
-
       // Fetch existing like and current count in parallel
-      const [likeDoc, countSnapshot] = await Promise.all([
-        likeRef.get(),
-        db
-          .collection('soft_likes')
-          .where('targetType', '==', targetType)
-          .where('targetId', '==', targetId)
-          .count()
-          .get(),
+      const [existingLike, currentCount] = await Promise.all([
+        prisma.like.findUnique({
+          where: { userId_targetType_targetId: { userId: user.userId, targetType, targetId } },
+        }),
+        prisma.like.count({ where: { targetType, targetId } }),
       ]);
 
-      const currentCount = countSnapshot.data().count;
       let liked: boolean;
       const now = new Date();
 
-      if (likeDoc.exists) {
+      if (existingLike) {
         // Unlike - remove the like and update count in parallel
-        await Promise.all([likeRef.delete(), updateTargetLikeCount(db, targetType, targetId, -1)]);
+        await Promise.all([
+          prisma.like.delete({ where: { id: existingLike.id } }),
+          updateTargetLikeCount(targetType, targetId, -1),
+        ]);
         liked = false;
       } else {
-        // Like - add the like, update count, and notify in parallel
-        await likeRef.set({
-          userId: user.userId,
-          targetType,
-          targetId,
-          createdAt: now,
+        // Like - add the like
+        await prisma.like.create({
+          data: {
+            userId: user.userId,
+            targetType,
+            targetId,
+            createdAt: now,
+          },
         });
         liked = true;
 
         // Run count update and notification in parallel
         await Promise.all([
-          updateTargetLikeCount(db, targetType, targetId, 1),
-          createLikeNotification(db, user, targetType, targetId, now),
+          updateTargetLikeCount(targetType, targetId, 1),
+          createLikeNotification(user, targetType, targetId, now),
         ]);
       }
 
       // Fire-and-forget: lastActiveAt update
-      updateUserLastActiveAt(user.userId).catch(() => {});
+      prisma.profile
+        .update({
+          where: { id: user.userId },
+          data: { lastActiveAt: new Date() },
+        })
+        .catch(() => {});
 
       // Compute new count from pre-toggle count instead of re-querying
       const newLikeCount = currentCount + (liked ? 1 : -1);
 
       // Check if post just crossed the popularity threshold (fire-and-forget)
       if (liked && targetType === 'post' && newLikeCount === POPULAR_POST_THRESHOLD) {
-        createPopularPostNotification(db, targetType, targetId, newLikeCount, now);
+        createPopularPostNotification(targetType, targetId, newLikeCount, now);
       }
 
       return NextResponse.json({
@@ -247,13 +219,6 @@ export async function PUT(request: NextRequest) {
 
     const { targets } = parseResult.data;
     const user = await getAuthenticatedUserFromSession(request);
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
 
     const results: Record<string, { likeCount: number; hasLiked: boolean }> = {};
 
@@ -263,21 +228,15 @@ export async function PUT(request: NextRequest) {
         const key = `${targetType}:${targetId}`;
 
         // Get like count
-        const likesSnapshot = await db
-          .collection('soft_likes')
-          .where('targetType', '==', targetType)
-          .where('targetId', '==', targetId)
-          .count()
-          .get();
-
-        const likeCount = likesSnapshot.data().count;
+        const likeCount = await prisma.like.count({ where: { targetType, targetId } });
 
         // Check if user has liked
         let hasLiked = false;
         if (user) {
-          const likeId = createLikeId(user.userId, targetType, targetId);
-          const likeDoc = await db.collection('soft_likes').doc(likeId).get();
-          hasLiked = likeDoc.exists;
+          const existing = await prisma.like.findUnique({
+            where: { userId_targetType_targetId: { userId: user.userId, targetType, targetId } },
+          });
+          hasLiked = !!existing;
         }
 
         results[key] = { likeCount, hasLiked };
@@ -298,19 +257,23 @@ export async function PUT(request: NextRequest) {
 // ============================================
 
 async function updateTargetLikeCount(
-  db: Firestore,
   targetType: 'post' | 'comment',
   targetId: string,
   delta: number
 ) {
   try {
-    const collection = targetType === 'post' ? 'soft_posts' : 'soft_comments';
-    // Handle IDs that might have 'soft-' prefix
     const actualId = targetId.replace('soft-', '');
-    const docRef = db.collection(collection).doc(actualId);
-    await docRef.update({
-      likeCount: FieldValue.increment(delta),
-    });
+    if (targetType === 'post') {
+      await prisma.post.update({
+        where: { id: actualId },
+        data: { likeCount: { increment: delta } },
+      });
+    } else {
+      await prisma.comment.update({
+        where: { id: actualId },
+        data: { likeCount: { increment: delta } },
+      });
+    }
   } catch (error) {
     // Log but don't fail the like operation
     console.error('Failed to update like count:', error);
@@ -322,44 +285,54 @@ async function updateTargetLikeCount(
 // ============================================
 
 async function createLikeNotification(
-  db: Firestore,
   user: { userId: string; username: string },
   targetType: 'post' | 'comment',
   targetId: string,
   now: Date
 ) {
   try {
-    const collection = targetType === 'post' ? 'soft_posts' : 'soft_comments';
     const actualId = targetId.replace('soft-', '');
-    const docRef = db.collection(collection).doc(actualId);
-    const doc = await docRef.get();
+    let authorId: string | null = null;
+    let postId: string | undefined;
+    let postPermlink: string | undefined;
 
-    if (!doc.exists) return;
-
-    const data = doc.data();
-    const authorId = data?.authorId;
+    if (targetType === 'post') {
+      const post = await prisma.post.findUnique({ where: { id: actualId } });
+      if (!post) return;
+      authorId = post.authorId;
+      postId = targetId;
+      postPermlink = post.permlink;
+    } else {
+      const comment = await prisma.comment.findUnique({ where: { id: actualId } });
+      if (!comment) return;
+      authorId = comment.authorId;
+      postId = comment.postId;
+      postPermlink = comment.postPermlink;
+    }
 
     // Don't notify yourself
     if (!authorId || authorId === user.userId) return;
 
-    await db.collection('soft_notifications').add({
-      recipientId: authorId,
-      type: 'like',
-      title: 'New Like',
-      message:
-        targetType === 'post'
-          ? `${user.username} liked your post`
-          : `${user.username} liked your comment`,
-      sourceUserId: user.userId,
-      sourceUsername: user.username,
+    await prisma.notification.create({
       data: {
-        targetType,
-        targetId,
-        postId: targetType === 'post' ? targetId : data?.postId,
-        postPermlink: data?.postPermlink || data?.permlink,
+        recipientId: authorId,
+        type: 'like',
+        title: 'New Like',
+        message:
+          targetType === 'post'
+            ? `${user.username} liked your post`
+            : `${user.username} liked your comment`,
+        sourceUserId: user.userId,
+        sourceUsername: user.username,
+        data: {
+          targetType,
+          targetId,
+          postId,
+          postPermlink,
+        },
+        read: false,
+        createdAt: now,
       },
-      read: false,
-      createdAt: now,
     });
   } catch (error) {
     // Log but don't fail the like operation
@@ -372,55 +345,58 @@ async function createLikeNotification(
 // ============================================
 
 async function createPopularPostNotification(
-  db: Firestore,
   targetType: 'post' | 'comment',
   targetId: string,
   likeCount: number,
   now: Date
 ) {
   try {
-    const collection = targetType === 'post' ? 'soft_posts' : 'soft_comments';
     const actualId = targetId.replace('soft-', '');
-    const docRef = db.collection(collection).doc(actualId);
-    const doc = await docRef.get();
+    const post =
+      targetType === 'post' ? await prisma.post.findUnique({ where: { id: actualId } }) : null;
 
-    if (!doc.exists) return;
+    if (!post) return;
 
-    const data = doc.data();
-    const authorId = data?.authorId;
-
+    const authorId = post.authorId;
     if (!authorId) return;
 
     // Check if we already sent a popular post notification for this post
-    const existingNotification = await db
-      .collection('soft_notifications')
-      .where('recipientId', '==', authorId)
-      .where('type', '==', 'system')
-      .where('data.targetId', '==', targetId)
-      .where('data.milestone', '==', 'popular')
-      .limit(1)
-      .get();
+    const existingNotification = await prisma.notification.findFirst({
+      where: {
+        recipientId: authorId,
+        type: 'system',
+        data: {
+          path: ['targetId'],
+          equals: targetId,
+        },
+      },
+    });
 
-    if (!existingNotification.empty) {
-      // Already sent this notification
-      return;
+    // Check for the milestone field in the existing notification
+    if (existingNotification) {
+      const existingData = existingNotification.data as Record<string, unknown> | null;
+      if (existingData?.milestone === 'popular') {
+        return;
+      }
     }
 
-    await db.collection('soft_notifications').add({
-      recipientId: authorId,
-      type: 'system',
-      title: 'Your post is trending!',
-      message: `Your post has reached ${likeCount}+ likes! Connect to Hive to start earning rewards.`,
+    await prisma.notification.create({
       data: {
-        targetType,
-        targetId,
-        postId: targetId,
-        postPermlink: data?.permlink,
-        milestone: 'popular',
-        likeCount,
+        recipientId: authorId,
+        type: 'system',
+        title: 'Your post is trending!',
+        message: `Your post has reached ${likeCount}+ likes! Connect to Hive to start earning rewards.`,
+        data: {
+          targetType,
+          targetId,
+          postId: targetId,
+          postPermlink: post.permlink,
+          milestone: 'popular',
+          likeCount,
+        },
+        read: false,
+        createdAt: now,
       },
-      read: false,
-      createdAt: now,
     });
   } catch (error) {
     // Log but don't fail the like operation

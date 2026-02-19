@@ -50,7 +50,6 @@ interface EnvironmentInfo {
   nodeEnv: string;
   cronSecretSet: boolean;
   curatorAccounts: string[];
-  firebaseConfigured: boolean;
 }
 
 interface AdminConfig {

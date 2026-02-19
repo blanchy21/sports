@@ -258,7 +258,7 @@ export function ComposeSportsbite({
         onError?.('Your Hive session was invalid. Please sign in again.');
         return;
       } else {
-        // SOFT USER: Publish to Firebase
+        // SOFT USER: Publish to database via API
         const response = await fetch('/api/soft/sportsbites', {
           method: 'POST',
           headers: {

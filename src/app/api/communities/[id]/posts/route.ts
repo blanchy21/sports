@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FirebaseCommunities } from '@/lib/firebase/communities';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, notFoundError } from '@/lib/api/response';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import { SoftPost } from '@/types/auth';
@@ -12,53 +11,46 @@ export const dynamic = 'force-dynamic';
 const ROUTE = '/api/communities/[id]/posts';
 
 // ============================================
-// Admin SDK helper for fetching soft posts by community
+// Prisma helper for fetching soft posts by community
 // ============================================
 
 async function getSoftPostsByCommunity(
   communityId: string,
   postsLimit: number
 ): Promise<SoftPost[]> {
-  const db = getAdminDb();
-  if (!db) {
-    console.warn('[community/posts] Admin SDK not configured');
-    return [];
-  }
-
   try {
-    const snapshot = await db
-      .collection('soft_posts')
-      .where('communityId', '==', communityId)
-      .orderBy('createdAt', 'desc')
-      .limit(postsLimit)
-      .get();
-
-    return snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        authorId: data.authorId,
-        authorUsername: data.authorUsername || 'unknown',
-        authorDisplayName: data.authorDisplayName,
-        authorAvatar: data.authorAvatar,
-        title: data.title,
-        content: data.content,
-        excerpt: data.excerpt,
-        permlink: data.permlink,
-        tags: data.tags || [],
-        sportCategory: data.sportCategory,
-        featuredImage: data.featuredImage,
-        communityId: data.communityId,
-        communitySlug: data.communitySlug,
-        communityName: data.communityName,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-        isPublishedToHive: data.isPublishedToHive || false,
-        hivePermlink: data.hivePermlink || undefined,
-        viewCount: data.viewCount || 0,
-        likeCount: data.likeCount || 0,
-      } as SoftPost;
+    const posts = await prisma.post.findMany({
+      where: { communityId },
+      orderBy: { createdAt: 'desc' },
+      take: postsLimit,
     });
+
+    return posts.map(
+      (post) =>
+        ({
+          id: post.id,
+          authorId: post.authorId,
+          authorUsername: post.authorUsername || 'unknown',
+          authorDisplayName: post.authorDisplayName ?? undefined,
+          authorAvatar: post.authorAvatar ?? undefined,
+          title: post.title,
+          content: post.content,
+          excerpt: post.excerpt ?? undefined,
+          permlink: post.permlink,
+          tags: post.tags || [],
+          sportCategory: post.sportCategory ?? undefined,
+          featuredImage: post.featuredImage ?? undefined,
+          communityId: post.communityId ?? undefined,
+          communitySlug: post.communitySlug ?? undefined,
+          communityName: post.communityName ?? undefined,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+          isPublishedToHive: post.isPublishedToHive || false,
+          hivePermlink: post.hivePermlink ?? undefined,
+          viewCount: post.viewCount || 0,
+          likeCount: post.likeCount || 0,
+        }) as SoftPost
+    );
   } catch (error) {
     console.error('[community/posts] Error fetching soft posts by community:', error);
     return [];
@@ -143,7 +135,7 @@ const postsQuerySchema = z.object({
 /**
  * GET /api/communities/[id]/posts - Get posts for a community
  *
- * This route fetches posts from both Hive blockchain and soft posts (Firebase).
+ * This route fetches posts from both Hive blockchain and soft posts (Prisma).
  * Posts are merged and sorted by creation date.
  *
  * Query params:
@@ -151,7 +143,7 @@ const postsQuerySchema = z.object({
  * - sort: 'created' | 'trending' | 'payout' | 'votes' (default 'created')
  * - before: string (cursor for pagination)
  * - includeHive: boolean (default true) - include Hive blockchain posts
- * - includeSoft: boolean (default true) - include soft/Firebase posts
+ * - includeSoft: boolean (default true) - include soft/database posts
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ctx = createRequestContext(ROUTE);
@@ -168,10 +160,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { limit, sort, before, includeHive, includeSoft } = parseResult.data;
 
-    // Fetch community to get slug
-    let community = await FirebaseCommunities.getCommunityById(communityId);
+    // Fetch community to get slug - try by ID first, then by slug
+    let community = await prisma.community.findUnique({ where: { id: communityId } });
     if (!community) {
-      community = await FirebaseCommunities.getCommunityBySlug(communityId);
+      community = await prisma.community.findUnique({ where: { slug: communityId } });
     }
 
     if (!community) {
@@ -190,7 +182,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const allPosts: CommunityPost[] = [];
     const fetchPromises: Promise<void>[] = [];
 
-    // Fetch soft posts from Firebase (using Admin SDK)
+    // Fetch soft posts from Prisma
     if (includeSoft) {
       fetchPromises.push(
         getSoftPostsByCommunity(community.id, limit)

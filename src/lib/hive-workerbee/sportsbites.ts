@@ -98,7 +98,7 @@ export interface PollResults {
 }
 
 export interface Sportsbite {
-  id: string; // author/permlink or soft-{firestoreId}
+  id: string; // author/permlink or soft-{dbId}
   author: string;
   permlink: string;
   body: string;
@@ -116,9 +116,9 @@ export interface Sportsbite {
   images?: string[];
   gifs?: string[];
   author_reputation?: string;
-  /** Content source: 'hive' for blockchain, 'soft' for Firebase. Defaults to 'hive'. */
+  /** Content source: 'hive' for blockchain, 'soft' for database. Defaults to 'hive'. */
   source?: 'hive' | 'soft';
-  /** Firestore document ID for soft sportsbites */
+  /** Database ID for soft sportsbites */
   softId?: string;
   /** Display name for soft users */
   authorDisplayName?: string;

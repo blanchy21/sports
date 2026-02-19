@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FirebasePosts } from '@/lib/firebase/posts';
+import { prisma } from '@/lib/db/prisma';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import {
@@ -20,16 +20,21 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
 
-    const post = await FirebasePosts.getPostById(id);
+    const post = await prisma.post.findUnique({ where: { id } });
 
     if (!post) {
       return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
     }
 
     // Increment view count (fire and forget, but log errors)
-    FirebasePosts.incrementViewCount(id).catch((err) => {
-      console.error('Failed to increment view count:', err instanceof Error ? err.message : err);
-    });
+    prisma.post
+      .update({
+        where: { id },
+        data: { viewCount: { increment: 1 } },
+      })
+      .catch((err) => {
+        console.error('Failed to increment view count:', err instanceof Error ? err.message : err);
+      });
 
     return NextResponse.json({
       success: true,
@@ -90,7 +95,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     // Check if post exists
-    const existingPost = await FirebasePosts.getPostById(id);
+    const existingPost = await prisma.post.findUnique({ where: { id } });
     if (!existingPost) {
       return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
     }
@@ -161,7 +166,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const updatedPost = await FirebasePosts.updatePost(id, updates);
+    const updatedPost = await prisma.post.update({
+      where: { id },
+      data: updates,
+    });
 
     return NextResponse.json({
       success: true,
@@ -217,7 +225,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     // Check if post exists
-    const existingPost = await FirebasePosts.getPostById(id);
+    const existingPost = await prisma.post.findUnique({ where: { id } });
     if (!existingPost) {
       return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
     }
@@ -230,7 +238,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    await FirebasePosts.deletePost(id);
+    await prisma.post.delete({ where: { id } });
 
     return NextResponse.json({
       success: true,

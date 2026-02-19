@@ -2,10 +2,8 @@
  * Community Functions
  *
  * This module provides community-related functions.
- * Note: Community data is now stored in Firestore, not on Hive blockchain.
- * These functions call the API routes which interact with Firestore.
- *
- * For direct Firestore access, use @/lib/firebase/communities.ts
+ * Community data is stored in PostgreSQL via Prisma.
+ * These functions call the API routes which interact with the database.
  */
 
 import { Community, CommunityMember, CommunityFilters, CommunityListResult } from '@/types';

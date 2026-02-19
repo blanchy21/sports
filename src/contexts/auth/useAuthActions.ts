@@ -3,7 +3,6 @@ import { logger } from '@/lib/logger';
 import { AuthType, User } from '@/types';
 import { HiveAuthUser } from '@/lib/shared/types';
 import { useAioha } from '@/contexts/AiohaProvider';
-import { AuthUser, FirebaseAuth } from '@/lib/firebase/auth';
 import type { AiohaInstance, AiohaRawLoginResult, ExtractedAiohaUser } from '@/lib/aioha/types';
 import { extractFromRawLoginResult, extractFromAiohaInstance } from '@/lib/aioha/types';
 import {
@@ -26,7 +25,6 @@ export interface UseAuthActionsOptions {
 
 export interface UseAuthActionsReturn {
   login: (newUser: User, newAuthType: AuthType) => void;
-  loginWithFirebase: (authUser: AuthUser) => void;
   loginWithHiveUser: (hiveUsername: string) => Promise<void>;
   loginWithAioha: (loginResult?: AiohaRawLoginResult) => Promise<void>;
   logout: () => Promise<void>;
@@ -91,46 +89,6 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         user: newUser,
         authType: newAuthType,
         hiveUser,
-        loginAt: now,
-      });
-    },
-    [dispatch, getState]
-  );
-
-  const loginWithFirebase = useCallback(
-    (authUser: AuthUser) => {
-      // Guard: never downgrade a Hive session to soft login
-      const { authType: currentAuthType } = getState();
-      if (currentAuthType === 'hive' && !authUser.isHiveUser) {
-        logger.warn('Blocked attempt to downgrade Hive session to soft login', 'useAuthActions');
-        return;
-      }
-
-      const now = Date.now();
-      const newUser: User = {
-        id: authUser.id,
-        username: authUser.username,
-        displayName: authUser.displayName,
-        avatar: authUser.avatar,
-        isHiveAuth: authUser.isHiveUser,
-        hiveUsername: authUser.hiveUsername,
-        createdAt: authUser.createdAt,
-        updatedAt: authUser.updatedAt,
-      };
-
-      const newAuthType = authUser.isHiveUser ? 'hive' : 'soft';
-      const newHiveUser = authUser.isHiveUser
-        ? { username: authUser.hiveUsername!, isAuthenticated: true }
-        : null;
-
-      dispatch({
-        type: 'LOGIN',
-        payload: { user: newUser, authType: newAuthType, hiveUser: newHiveUser, loginAt: now },
-      });
-      persistAuthState({
-        user: newUser,
-        authType: newAuthType,
-        hiveUser: newHiveUser,
         loginAt: now,
       });
     },
@@ -322,14 +280,6 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
       }
     }
 
-    if (authType === 'soft') {
-      try {
-        await FirebaseAuth.signOut();
-      } catch (error) {
-        logger.error('Error logging out from Firebase', 'useAuthActions', error);
-      }
-    }
-
     dispatch({ type: 'LOGOUT' });
     await clearPersistedAuthState();
     queryClient.clear();
@@ -349,7 +299,6 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
 
       try {
         const now = Date.now();
-        await FirebaseAuth.upgradeToHive(user.id, hiveUsername);
 
         const updatedUser = { ...user, isHiveAuth: true, hiveUsername: hiveUsername };
         const newHiveUser: HiveAuthUser = { username: hiveUsername, isAuthenticated: true };
@@ -425,7 +374,6 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
 
   return {
     login,
-    loginWithFirebase,
     loginWithHiveUser,
     loginWithAioha,
     logout,

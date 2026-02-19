@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAdminDb } from '@/lib/firebase/admin';
-import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
+import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
@@ -64,69 +63,56 @@ export async function GET(request: NextRequest) {
 
     const { limit, before, author } = parseResult.data;
 
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
-
-    let query = db
-      .collection('soft_sportsbites')
-      .where('isDeleted', '==', false)
-      .where('matchThreadId', '==', null)
-      .orderBy('createdAt', 'desc');
+    const where: Record<string, unknown> = {
+      isDeleted: false,
+      matchThreadId: null,
+    };
 
     if (author) {
-      query = query.where('authorUsername', '==', author);
+      where.authorUsername = author;
     }
 
-    // Cursor-based pagination: fetch one extra to check hasMore
-    query = query.limit(limit + 1);
-
+    // Cursor-based pagination
+    let cursor: { id: string } | undefined;
     if (before) {
-      // Fetch the cursor document to get its createdAt
-      const cursorDoc = await db.collection('soft_sportsbites').doc(before).get();
-      if (cursorDoc.exists) {
-        query = db
-          .collection('soft_sportsbites')
-          .where('isDeleted', '==', false)
-          .where('matchThreadId', '==', null)
-          .orderBy('createdAt', 'desc');
-        if (author) {
-          query = query.where('authorUsername', '==', author);
-        }
-        query = query.startAfter(cursorDoc.data()?.createdAt).limit(limit + 1);
+      // Verify cursor document exists
+      const cursorDoc = await prisma.sportsbite.findUnique({ where: { id: before } });
+      if (cursorDoc) {
+        // Use createdAt-based cursor: fetch items older than the cursor
+        where.createdAt = { lt: cursorDoc.createdAt };
       }
     }
 
-    const snapshot = await query.get();
-    const hasMore = snapshot.docs.length > limit;
-    const pageDocs = hasMore ? snapshot.docs.slice(0, limit) : snapshot.docs;
-
-    const sportsbites: SoftSportsbite[] = pageDocs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        authorId: data.authorId,
-        authorUsername: data.authorUsername,
-        authorDisplayName: data.authorDisplayName,
-        authorAvatar: data.authorAvatar,
-        body: data.body,
-        sportCategory: data.sportCategory,
-        images: data.images || [],
-        gifs: data.gifs || [],
-        poll: data.poll || undefined,
-        createdAt: data.createdAt?.toDate?.() || new Date(),
-        updatedAt: data.updatedAt?.toDate?.() || new Date(),
-        likeCount: data.likeCount || 0,
-        commentCount: data.commentCount || 0,
-        isDeleted: false,
-      };
+    // Fetch one extra to check hasMore
+    const rows = await prisma.sportsbite.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(cursor ? { cursor, skip: 1 } : {}),
     });
 
-    const nextCursor = hasMore ? pageDocs[pageDocs.length - 1]?.id : undefined;
+    const hasMore = rows.length > limit;
+    const pageRows = hasMore ? rows.slice(0, limit) : rows;
+
+    const sportsbites: SoftSportsbite[] = pageRows.map((row) => ({
+      id: row.id,
+      authorId: row.authorId,
+      authorUsername: row.authorUsername,
+      authorDisplayName: row.authorDisplayName || undefined,
+      authorAvatar: row.authorAvatar || undefined,
+      body: row.body,
+      sportCategory: row.sportCategory || undefined,
+      images: row.images || [],
+      gifs: row.gifs || [],
+      poll: (row.poll as SoftSportsbite['poll']) || undefined,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      likeCount: row.likeCount || 0,
+      commentCount: row.commentCount || 0,
+      isDeleted: false,
+    }));
+
+    const nextCursor = hasMore ? pageRows[pageRows.length - 1]?.id : undefined;
 
     return NextResponse.json(
       {
@@ -170,14 +156,6 @@ export async function POST(request: NextRequest) {
 
       const { body: biteBody, sportCategory, images, gifs, matchThreadId, poll } = parseResult.data;
 
-      const db = getAdminDb();
-      if (!db) {
-        return NextResponse.json(
-          { success: false, error: 'Database not configured' },
-          { status: 500 }
-        );
-      }
-
       // Rate limiting
       const rateLimit = await checkRateLimit(
         user.userId,
@@ -205,14 +183,10 @@ export async function POST(request: NextRequest) {
       }
 
       // Check sportsbite limit
-      const userCount = await db
-        .collection('soft_sportsbites')
-        .where('authorId', '==', user.userId)
-        .where('isDeleted', '==', false)
-        .count()
-        .get();
+      const currentCount = await prisma.sportsbite.count({
+        where: { authorId: user.userId, isDeleted: false },
+      });
 
-      const currentCount = userCount.data().count;
       if (currentCount >= SOFT_SPORTSBITE_LIMIT) {
         return NextResponse.json(
           {
@@ -231,34 +205,36 @@ export async function POST(request: NextRequest) {
       }
 
       const now = new Date();
-      const sportsbiteData: Record<string, unknown> = {
-        authorId: user.userId,
-        authorUsername: user.username,
-        authorDisplayName: user.displayName || null,
-        authorAvatar: user.avatar || null,
-        body: biteBody,
-        sportCategory: sportCategory || null,
-        images: images || [],
-        gifs: gifs || [],
-        matchThreadId: matchThreadId || null,
-        createdAt: now,
-        updatedAt: now,
-        likeCount: 0,
-        commentCount: 0,
-        isDeleted: false,
-      };
 
-      if (poll) {
-        sportsbiteData.poll = poll;
-      }
-
-      const docRef = await db.collection('soft_sportsbites').add(sportsbiteData);
+      const newBite = await prisma.sportsbite.create({
+        data: {
+          authorId: user.userId,
+          authorUsername: user.username,
+          authorDisplayName: user.displayName || null,
+          authorAvatar: user.avatar || null,
+          body: biteBody,
+          sportCategory: sportCategory || null,
+          images: images || [],
+          gifs: gifs || [],
+          matchThreadId: matchThreadId || null,
+          poll: poll || undefined,
+          createdAt: now,
+          likeCount: 0,
+          commentCount: 0,
+          isDeleted: false,
+        },
+      });
 
       // Update user activity (fire-and-forget)
-      updateUserLastActiveAt(user.userId).catch(() => {});
+      prisma.profile
+        .update({
+          where: { id: user.userId },
+          data: { lastActiveAt: new Date() },
+        })
+        .catch(() => {});
 
       const sportsbite: SoftSportsbite = {
-        id: docRef.id,
+        id: newBite.id,
         authorId: user.userId,
         authorUsername: user.username,
         authorDisplayName: user.displayName,
@@ -312,36 +288,28 @@ export async function DELETE(request: NextRequest) {
 
       const { sportsbiteId } = parseResult.data;
 
-      const db = getAdminDb();
-      if (!db) {
-        return NextResponse.json(
-          { success: false, error: 'Database not configured' },
-          { status: 500 }
-        );
-      }
+      const doc = await prisma.sportsbite.findUnique({ where: { id: sportsbiteId } });
 
-      const docRef = db.collection('soft_sportsbites').doc(sportsbiteId);
-      const doc = await docRef.get();
-
-      if (!doc.exists) {
+      if (!doc) {
         return NextResponse.json(
           { success: false, error: 'Sportsbite not found' },
           { status: 404 }
         );
       }
 
-      const data = doc.data();
-      if (data?.authorId !== user.userId) {
+      if (doc.authorId !== user.userId) {
         return NextResponse.json(
           { success: false, error: 'You can only delete your own sportsbites' },
           { status: 403 }
         );
       }
 
-      await docRef.update({
-        isDeleted: true,
-        body: '[deleted]',
-        updatedAt: new Date(),
+      await prisma.sportsbite.update({
+        where: { id: sportsbiteId },
+        data: {
+          isDeleted: true,
+          body: '[deleted]',
+        },
       });
 
       return NextResponse.json({

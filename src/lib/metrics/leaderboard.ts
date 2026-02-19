@@ -4,8 +4,8 @@
  * Compiles weekly metrics into leaderboards for content rewards.
  */
 
-import { collection, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@/generated/prisma/client';
 import { getWeekId } from '@/lib/rewards/staking-distribution';
 import { CONTENT_REWARDS, getPlatformYear } from '@/lib/rewards/config';
 import type {
@@ -27,42 +27,20 @@ export function getCurrentWeekId(): string {
 /**
  * Generate leaderboards for a specific week
  */
-export async function generateWeeklyLeaderboards(
-  weekId?: string
-): Promise<WeeklyLeaderboards> {
+export async function generateWeeklyLeaderboards(weekId?: string): Promise<WeeklyLeaderboards> {
   const targetWeekId = weekId || getCurrentWeekId();
 
-  // Return empty leaderboards if Firestore not configured
-  if (!db) {
-    return {
-      weekId: targetWeekId,
-      generatedAt: new Date(),
-      leaderboards: {
-        MOST_EXTERNAL_VIEWS: [],
-        MOST_VIEWED_POST: [],
-        MOST_COMMENTS: [],
-        MOST_ENGAGED_POST: [],
-        POST_OF_THE_WEEK: [],
-        BEST_NEWCOMER: [],
-      },
-    };
-  }
-
   // Fetch all post metrics for the week
-  const postsRef = collection(db, 'metrics', 'posts', targetWeekId);
-  const postsSnapshot = await getDocs(postsRef);
-  const posts: PostMetrics[] = [];
-  postsSnapshot.forEach((doc) => {
-    posts.push(doc.data() as PostMetrics);
+  const postMetrics = await prisma.postMetric.findMany({
+    where: { weekId: targetWeekId },
   });
+  const posts: PostMetrics[] = postMetrics as unknown as PostMetrics[];
 
   // Fetch all user metrics for the week
-  const usersRef = collection(db, 'metrics', 'users', targetWeekId);
-  const usersSnapshot = await getDocs(usersRef);
-  const users: UserMetrics[] = [];
-  usersSnapshot.forEach((doc) => {
-    users.push(doc.data() as UserMetrics);
+  const userMetrics = await prisma.userMetric.findMany({
+    where: { weekId: targetWeekId },
   });
+  const users: UserMetrics[] = userMetrics as unknown as UserMetrics[];
 
   const leaderboards: Partial<Record<RewardCategory, LeaderboardEntry[]>> = {};
 
@@ -134,16 +112,21 @@ export async function generateWeeklyLeaderboards(
 }
 
 /**
- * Store leaderboards in Firestore
+ * Store leaderboards in database
  */
 async function storeLeaderboards(leaderboards: WeeklyLeaderboards): Promise<void> {
-  if (!db) return;
   try {
-    const docRef = doc(collection(db, 'leaderboards'), leaderboards.weekId);
-
-    await setDoc(docRef, {
-      ...leaderboards,
-      generatedAt: leaderboards.generatedAt.toISOString(),
+    await prisma.leaderboard.upsert({
+      where: { weekId: leaderboards.weekId },
+      create: {
+        weekId: leaderboards.weekId,
+        entries: leaderboards.leaderboards as unknown as Prisma.InputJsonValue,
+        generatedAt: leaderboards.generatedAt,
+      },
+      update: {
+        entries: leaderboards.leaderboards as unknown as Prisma.InputJsonValue,
+        generatedAt: leaderboards.generatedAt,
+      },
     });
   } catch (error) {
     console.error('Error storing leaderboards:', error);
@@ -155,21 +138,21 @@ async function storeLeaderboards(leaderboards: WeeklyLeaderboards): Promise<void
  * Get stored leaderboards for a week
  */
 export async function getLeaderboards(weekId?: string): Promise<WeeklyLeaderboards | null> {
-  if (!db) return null;
   try {
     const targetWeekId = weekId || getCurrentWeekId();
-    const docRef = doc(collection(db, 'leaderboards'), targetWeekId);
-    const docSnap = await getDoc(docRef);
+    const record = await prisma.leaderboard.findUnique({
+      where: { weekId: targetWeekId },
+    });
 
-    if (!docSnap.exists()) {
+    if (!record) {
       return null;
     }
 
-    const data = docSnap.data();
     return {
-      ...data,
-      generatedAt: new Date(data.generatedAt),
-    } as WeeklyLeaderboards;
+      weekId: record.weekId,
+      generatedAt: record.generatedAt,
+      leaderboards: record.entries as unknown as Record<RewardCategory, LeaderboardEntry[]>,
+    };
   } catch (error) {
     console.error('Error getting leaderboards:', error);
     return null;
@@ -260,17 +243,15 @@ export async function setPostOfTheWeek(
   permlink: string,
   selectedBy: string
 ): Promise<void> {
-  if (!db) throw new Error('Firestore not configured');
   try {
-    const docRef = doc(collection(db, 'leaderboards'), weekId);
-    const docSnap = await getDoc(docRef);
+    const record = await prisma.leaderboard.findUnique({ where: { weekId } });
 
-    if (!docSnap.exists()) {
+    if (!record) {
       throw new Error(`Leaderboards for ${weekId} not found`);
     }
 
-    const data = docSnap.data() as WeeklyLeaderboards;
-    data.leaderboards.POST_OF_THE_WEEK = [
+    const entries = record.entries as unknown as Record<RewardCategory, LeaderboardEntry[]>;
+    entries.POST_OF_THE_WEEK = [
       {
         rank: 1,
         account: author,
@@ -280,11 +261,15 @@ export async function setPostOfTheWeek(
       },
     ];
 
-    await setDoc(docRef, {
-      ...data,
-      generatedAt: data.generatedAt,
-      postOfTheWeekSelectedBy: selectedBy,
-      postOfTheWeekSelectedAt: new Date().toISOString(),
+    await prisma.leaderboard.update({
+      where: { weekId },
+      data: {
+        entries: entries as unknown as Prisma.InputJsonValue,
+        metadata: {
+          postOfTheWeekSelectedBy: selectedBy,
+          postOfTheWeekSelectedAt: new Date().toISOString(),
+        },
+      },
     });
   } catch (error) {
     console.error('Error setting post of the week:', error);
@@ -298,14 +283,22 @@ export async function setPostOfTheWeek(
 export async function storeRewardDistributions(
   distributions: ContentRewardDistribution[]
 ): Promise<void> {
-  if (!db) return;
   try {
     for (const dist of distributions) {
-      const docId = `${dist.weekId}-${dist.category}`;
-      const docRef = doc(collection(db, 'content-rewards'), docId);
-      await setDoc(docRef, {
-        ...dist,
-        createdAt: new Date().toISOString(),
+      await prisma.contentReward.upsert({
+        where: { weekId_category: { weekId: dist.weekId, category: dist.category } },
+        create: {
+          weekId: dist.weekId,
+          category: dist.category,
+          winner: dist.winner as unknown as Prisma.InputJsonValue,
+          amount: dist.amount,
+          status: dist.status,
+        },
+        update: {
+          winner: dist.winner as unknown as Prisma.InputJsonValue,
+          amount: dist.amount,
+          status: dist.status,
+        },
       });
     }
   } catch (error) {
@@ -317,34 +310,19 @@ export async function storeRewardDistributions(
 /**
  * Get reward distributions for a week
  */
-export async function getRewardDistributions(
-  weekId: string
-): Promise<ContentRewardDistribution[]> {
-  if (!db) return [];
+export async function getRewardDistributions(weekId: string): Promise<ContentRewardDistribution[]> {
   try {
-    const distributions: ContentRewardDistribution[] = [];
+    const rewards = await prisma.contentReward.findMany({
+      where: { weekId },
+    });
 
-    // Get all possible categories
-    const categories: RewardCategory[] = [
-      'MOST_EXTERNAL_VIEWS',
-      'MOST_VIEWED_POST',
-      'MOST_COMMENTS',
-      'MOST_ENGAGED_POST',
-      'POST_OF_THE_WEEK',
-      'BEST_NEWCOMER',
-    ];
-
-    for (const category of categories) {
-      const docId = `${weekId}-${category}`;
-      const docRef = doc(collection(db, 'content-rewards'), docId);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        distributions.push(docSnap.data() as ContentRewardDistribution);
-      }
-    }
-
-    return distributions;
+    return rewards.map((r) => ({
+      weekId: r.weekId,
+      category: r.category as RewardCategory,
+      winner: r.winner as unknown as { account: string; postId?: string; value: number },
+      amount: r.amount,
+      status: r.status as 'pending' | 'distributed' | 'failed',
+    }));
   } catch (error) {
     console.error('Error getting reward distributions:', error);
     return [];

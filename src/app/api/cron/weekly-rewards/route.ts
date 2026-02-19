@@ -18,8 +18,7 @@ import {
   getLeaderboards,
 } from '@/lib/metrics/leaderboard';
 import { getPlatformYear } from '@/lib/rewards/config';
-import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { prisma } from '@/lib/db/prisma';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
 
 /**
@@ -36,11 +35,11 @@ function getPreviousWeekId(): string {
  * Check if rewards have already been processed for this week
  */
 async function isAlreadyProcessed(weekId: string): Promise<boolean> {
-  if (!db) return false;
   try {
-    const docRef = doc(collection(db, 'weekly-rewards-processed'), weekId);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists();
+    const record = await prisma.analyticsEvent.findFirst({
+      where: { eventType: `weekly-rewards-${weekId}` },
+    });
+    return !!record;
   } catch (error) {
     console.error('Error checking processed status:', error);
     return false;
@@ -51,13 +50,16 @@ async function isAlreadyProcessed(weekId: string): Promise<boolean> {
  * Mark the week as processed
  */
 async function markAsProcessed(weekId: string, summary: Record<string, unknown>): Promise<void> {
-  if (!db) return;
   try {
-    const docRef = doc(collection(db, 'weekly-rewards-processed'), weekId);
-    await setDoc(docRef, {
-      weekId,
-      processedAt: new Date().toISOString(),
-      ...summary,
+    await prisma.analyticsEvent.create({
+      data: {
+        eventType: `weekly-rewards-${weekId}`,
+        metadata: {
+          weekId,
+          processedAt: new Date().toISOString(),
+          ...summary,
+        },
+      },
     });
   } catch (error) {
     console.error('Error marking as processed:', error);

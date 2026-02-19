@@ -21,8 +21,8 @@ import {
   type CuratorVote,
 } from '@/lib/rewards/curator-rewards';
 import { getCuratorRewardAmount } from '@/lib/rewards/config';
-import { collection, doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@/generated/prisma/client';
 import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
 
@@ -33,15 +33,17 @@ const VOTE_LOOKBACK_MINUTES = 20; // Slightly more than cron interval
  * Get processed vote IDs for today to prevent double processing
  */
 async function getProcessedVoteIds(): Promise<Set<string>> {
-  if (!db) return new Set();
   try {
     const today = getDailyKey();
-    const docRef = doc(collection(db, 'curator-rewards'), today);
-    const docSnap = await getDoc(docRef);
+    // Use analyticsEvent as a lightweight store for daily curator data
+    const record = await prisma.analyticsEvent.findFirst({
+      where: { eventType: `curator-rewards-${today}` },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      return new Set(data.processedVoteIds || []);
+    if (record?.metadata) {
+      const data = record.metadata as Record<string, unknown>;
+      return new Set((data.processedVoteIds as string[]) || []);
     }
     return new Set();
   } catch (error) {
@@ -55,14 +57,15 @@ async function getProcessedVoteIds(): Promise<Set<string>> {
  */
 async function getCuratorDailyCounts(): Promise<Map<string, number>> {
   try {
-    if (!db) return new Map();
     const today = getDailyKey();
-    const docRef = doc(collection(db, 'curator-rewards'), today);
-    const docSnap = await getDoc(docRef);
+    const record = await prisma.analyticsEvent.findFirst({
+      where: { eventType: `curator-rewards-${today}` },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      return new Map(Object.entries(data.curatorCounts || {}));
+    if (record?.metadata) {
+      const data = record.metadata as Record<string, unknown>;
+      return new Map(Object.entries((data.curatorCounts as Record<string, number>) || {}));
     }
     return new Map();
   } catch (error) {
@@ -72,7 +75,7 @@ async function getCuratorDailyCounts(): Promise<Map<string, number>> {
 }
 
 /**
- * Save processed rewards to Firestore
+ * Save processed rewards to database
  */
 async function saveProcessedRewards(
   rewards: Array<{
@@ -87,41 +90,49 @@ async function saveProcessedRewards(
   processedVoteIds: string[],
   curatorCounts: Map<string, number>
 ): Promise<void> {
-  if (!db) return;
   try {
     const today = getDailyKey();
-    const docRef = doc(collection(db, 'curator-rewards'), today);
 
-    const existingDoc = await getDoc(docRef);
+    // Fetch existing record
+    const existing = await prisma.analyticsEvent.findFirst({
+      where: { eventType: `curator-rewards-${today}` },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    if (existingDoc.exists()) {
-      // Update existing document
-      await updateDoc(docRef, {
-        processedVoteIds: arrayUnion(...processedVoteIds),
-        curatorCounts: Object.fromEntries(curatorCounts),
-        rewards: arrayUnion(
-          ...rewards.map((r) => ({
-            ...r,
-            voteTimestamp: r.voteTimestamp.toISOString(),
-            processedAt: r.processedAt.toISOString(),
-          }))
-        ),
-        lastUpdated: new Date().toISOString(),
+    const existingData = (existing?.metadata || {}) as Record<string, unknown>;
+    const existingVoteIds = (existingData.processedVoteIds as string[]) || [];
+    const existingRewards = (existingData.rewards as Array<Record<string, unknown>>) || [];
+
+    const mergedVoteIds = [...new Set([...existingVoteIds, ...processedVoteIds])];
+    const mergedRewards = [
+      ...existingRewards,
+      ...rewards.map((r) => ({
+        ...r,
+        voteTimestamp: r.voteTimestamp.toISOString(),
+        processedAt: r.processedAt.toISOString(),
+      })),
+    ];
+
+    const metadata = {
+      date: today,
+      processedVoteIds: mergedVoteIds,
+      curatorCounts: Object.fromEntries(curatorCounts),
+      rewards: mergedRewards,
+      totalDistributed: mergedRewards.reduce((sum, r) => sum + (r.amount as number), 0),
+      lastUpdated: new Date().toISOString(),
+    };
+
+    if (existing) {
+      await prisma.analyticsEvent.update({
+        where: { id: existing.id },
+        data: { metadata: metadata as unknown as Prisma.InputJsonValue },
       });
     } else {
-      // Create new document
-      await setDoc(docRef, {
-        date: today,
-        processedVoteIds,
-        curatorCounts: Object.fromEntries(curatorCounts),
-        rewards: rewards.map((r) => ({
-          ...r,
-          voteTimestamp: r.voteTimestamp.toISOString(),
-          processedAt: r.processedAt.toISOString(),
-        })),
-        totalDistributed: rewards.reduce((sum, r) => sum + r.amount, 0),
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
+      await prisma.analyticsEvent.create({
+        data: {
+          eventType: `curator-rewards-${today}`,
+          metadata: metadata as unknown as Prisma.InputJsonValue,
+        },
       });
     }
   } catch (error) {
@@ -173,9 +184,6 @@ async function fetchRecentCuratorVotes(): Promise<CuratorVote[]> {
         // Skip votes older than cutoff
         if (timestamp < cutoffTime) continue;
 
-        // Only include votes on Sportsblock community posts
-        // We'll verify this by checking if the post has our community tag
-        // For now, include all votes and filter later if needed
         votes.push({
           voter: voteOp.voter,
           author: voteOp.author,
@@ -300,7 +308,7 @@ export async function GET() {
       `[Curator Rewards] Processed: ${rewards.length} rewards, ${skipped.length} skipped`
     );
 
-    // Save to Firestore
+    // Save to database
     if (rewards.length > 0) {
       const newVoteIds = rewards.map((r) =>
         getVoteUniqueId({

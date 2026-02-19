@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FieldValue } from 'firebase-admin/firestore';
-import { FirebasePosts } from '@/lib/firebase/posts';
-import { getAdminDb } from '@/lib/firebase/admin';
-import { updateUserLastActiveAt } from '@/lib/firebase/profiles';
-import { FirebaseCommunitiesAdmin } from '@/lib/firebase/communities-admin';
+import { prisma } from '@/lib/db/prisma';
 import {
   createRequestContext,
   validationError,
@@ -81,7 +77,7 @@ const createPostSchema = z.object({
 // Type is inferred from schema validation
 
 /**
- * GET /api/posts - Fetch soft posts (non-Hive posts stored in Firebase)
+ * GET /api/posts - Fetch soft posts (non-Hive posts stored in database)
  *
  * Query params:
  * - limit: number (default 20, max 100)
@@ -103,15 +99,15 @@ export async function GET(request: NextRequest) {
 
     ctx.log.debug('Fetching posts', { limit, authorId, communityId });
 
-    let posts;
+    const where: Record<string, unknown> = {};
+    if (authorId) where.authorId = authorId;
+    if (communityId) where.communityId = communityId;
 
-    if (authorId) {
-      posts = await FirebasePosts.getPostsByAuthor(authorId);
-    } else if (communityId) {
-      posts = await FirebasePosts.getPostsByCommunity(communityId, limit);
-    } else {
-      posts = await FirebasePosts.getAllPosts(limit);
-    }
+    const posts = await prisma.post.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
 
     return NextResponse.json({
       success: true,
@@ -197,16 +193,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Use Admin SDK (bypasses security rules)
-      const adminDb = getAdminDb();
-      if (!adminDb) {
-        ctx.log.error('Firebase Admin SDK not configured');
-        return NextResponse.json(
-          { success: false, error: 'Server configuration error' },
-          { status: 500 }
-        );
-      }
-
       // Generate a unique permlink
       const permlink = `${data.title
         .toLowerCase()
@@ -220,55 +206,50 @@ export async function POST(request: NextRequest) {
           .substring(0, 200)
           .trim() + (data.content.length > 200 ? '...' : '');
 
-      const postData = {
-        authorId: data.authorId,
-        authorUsername: data.authorUsername,
-        authorDisplayName: data.authorDisplayName || data.authorUsername,
-        authorAvatar: data.authorAvatar || null,
-        title: data.title,
-        content: data.content,
-        excerpt,
-        permlink,
-        tags: data.tags || [],
-        sportCategory: data.sportCategory || null,
-        featuredImage: data.featuredImage || null,
-        communityId: data.communityId || null,
-        communitySlug: data.communitySlug || null,
-        communityName: data.communityName || null,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-        isPublishedToHive: false,
-        hivePermlink: null,
-        viewCount: 0,
-        likeCount: 0,
-      };
-
       // Atomic check-and-write: count + create inside a transaction to prevent TOCTOU race
       let currentPostCount: number;
-      let docId: string;
+      let post: { id: string };
 
       try {
-        const result = await adminDb.runTransaction(async (transaction) => {
-          // Read count inside transaction (Firestore requires all reads before writes)
-          const countSnapshot = await transaction.get(
-            adminDb.collection('soft_posts').where('authorId', '==', data.authorId).count()
-          );
-          const count = countSnapshot.data().count;
+        const result = await prisma.$transaction(async (tx) => {
+          // Count existing posts inside transaction
+          const count = await tx.post.count({
+            where: { authorId: data.authorId },
+          });
 
           if (count >= FREE_POST_LIMIT) {
-            // Throw to abort transaction; we catch below and return the proper HTTP response
             throw Object.assign(new Error('POST_LIMIT_REACHED'), { postCount: count });
           }
 
-          // Write the new post inside the same transaction
-          const newDocRef = adminDb.collection('soft_posts').doc();
-          transaction.set(newDocRef, postData);
+          // Create the new post inside the same transaction
+          const newPost = await tx.post.create({
+            data: {
+              authorId: data.authorId,
+              authorUsername: data.authorUsername,
+              authorDisplayName: data.authorDisplayName || data.authorUsername,
+              authorAvatar: data.authorAvatar || null,
+              title: data.title,
+              content: data.content,
+              excerpt,
+              permlink,
+              tags: data.tags || [],
+              sportCategory: data.sportCategory || null,
+              featuredImage: data.featuredImage || null,
+              communityId: data.communityId || null,
+              communitySlug: data.communitySlug || null,
+              communityName: data.communityName || null,
+              isPublishedToHive: false,
+              hivePermlink: null,
+              viewCount: 0,
+              likeCount: 0,
+            },
+          });
 
-          return { count, docId: newDocRef.id };
+          return { count, post: newPost };
         });
 
         currentPostCount = result.count;
-        docId = result.docId;
+        post = result.post;
       } catch (txError: unknown) {
         if (txError instanceof Error && txError.message === 'POST_LIMIT_REACHED') {
           const count = (txError as Error & { postCount: number }).postCount;
@@ -303,41 +284,27 @@ export async function POST(request: NextRequest) {
         communityId: data.communityId,
       });
 
-      const post = {
-        id: docId,
-        authorId: data.authorId,
-        authorUsername: data.authorUsername,
-        authorDisplayName: data.authorDisplayName || data.authorUsername,
-        authorAvatar: data.authorAvatar,
-        title: data.title,
-        content: data.content,
-        excerpt,
-        permlink,
-        tags: data.tags || [],
-        sportCategory: data.sportCategory,
-        featuredImage: data.featuredImage,
-        communityId: data.communityId,
-        communitySlug: data.communitySlug,
-        communityName: data.communityName,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        isPublishedToHive: false,
-        hivePermlink: undefined,
-        viewCount: 0,
-        likeCount: 0,
-      };
-
       // Update user's lastActiveAt timestamp (fire-and-forget)
-      updateUserLastActiveAt(data.authorId).catch(() => {});
+      prisma.profile
+        .update({
+          where: { id: data.authorId },
+          data: { lastActiveAt: new Date() },
+        })
+        .catch(() => {});
 
       // Increment community post count (fire-and-forget)
       if (data.communityId) {
-        FirebaseCommunitiesAdmin.incrementPostCount(data.communityId).catch((err) => {
-          ctx.log.warn('Failed to increment community post count', {
-            communityId: data.communityId,
-            error: err,
+        prisma.community
+          .update({
+            where: { id: data.communityId },
+            data: { postCount: { increment: 1 } },
+          })
+          .catch((err) => {
+            ctx.log.warn('Failed to increment community post count', {
+              communityId: data.communityId,
+              error: err,
+            });
           });
-        });
       }
 
       ctx.log.info('Post created successfully', { postId: post.id });

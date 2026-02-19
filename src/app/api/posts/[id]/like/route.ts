@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FirebasePosts } from '@/lib/firebase/posts';
+import { prisma } from '@/lib/db/prisma';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import {
@@ -49,12 +49,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const { id } = await context.params;
 
     // Check if post exists
-    const post = await FirebasePosts.getPostById(id);
+    const post = await prisma.post.findUnique({ where: { id } });
     if (!post) {
       return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
     }
 
-    await FirebasePosts.incrementLikeCount(id);
+    await prisma.post.update({
+      where: { id },
+      data: { likeCount: { increment: 1 } },
+    });
 
     return NextResponse.json({
       success: true,
@@ -99,12 +102,15 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { id } = await context.params;
 
     // Check if post exists
-    const post = await FirebasePosts.getPostById(id);
+    const post = await prisma.post.findUnique({ where: { id } });
     if (!post) {
       return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
     }
 
-    await FirebasePosts.decrementLikeCount(id);
+    await prisma.post.update({
+      where: { id },
+      data: { likeCount: { decrement: 1 } },
+    });
 
     return NextResponse.json({
       success: true,

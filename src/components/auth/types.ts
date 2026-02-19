@@ -13,13 +13,6 @@ export interface AuthModalProps {
   onClose: () => void;
 }
 
-export interface EmailAuthFormProps {
-  isLoginMode: boolean;
-  onToggleMode: () => void;
-  onSuccess: () => void;
-  onError: (message: string) => void;
-}
-
 export interface HiveAuthSectionProps {
   isConnecting: boolean;
   errorMessage: string | null;
