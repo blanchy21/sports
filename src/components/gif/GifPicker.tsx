@@ -171,6 +171,20 @@ export function GifPicker({ isOpen, onClose, onSelect }: GifPickerProps) {
     };
   }, []);
 
+  // Prevent clicks inside the portal from reaching parent document-level handlers.
+  // Parent components (e.g. CommentToolbar) add mousedown listeners that close panels
+  // when clicks land outside their DOM tree. Since the portal is on document.body,
+  // those handlers incorrectly treat picker clicks as "outside" clicks.
+  useEffect(() => {
+    if (!isOpen) return;
+    const el = containerRef.current;
+    if (!el) return;
+
+    const stopPropagation = (e: Event) => e.stopPropagation();
+    el.addEventListener('mousedown', stopPropagation);
+    return () => el.removeEventListener('mousedown', stopPropagation);
+  }, [isOpen]);
+
   // Close on click outside
   useEffect(() => {
     if (!isOpen) return;
