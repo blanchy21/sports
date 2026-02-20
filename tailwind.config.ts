@@ -65,6 +65,8 @@ const config: Config = {
         glow: 'glow 2s ease-in-out infinite alternate',
         'border-pulse': 'borderPulse 2s ease-in-out infinite',
         float: 'float 3s ease-in-out infinite',
+        'marquee-left': 'marquee-left 40s linear infinite',
+        'marquee-right': 'marquee-right 40s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -96,6 +98,14 @@ const config: Config = {
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-6px)' },
+        },
+        'marquee-left': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        'marquee-right': {
+          '0%': { transform: 'translateX(-50%)' },
+          '100%': { transform: 'translateX(0)' },
         },
       },
     },

@@ -48,12 +48,11 @@ export default function LandingPage() {
           <div
             className="absolute inset-0 scale-110 bg-cover bg-center bg-no-repeat"
             style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1920&q=80')",
+              backgroundImage: "url('/vienna-reyes-Zs_o1IjVPt4-unsplash.jpg')",
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-br from-fibonacci-blue via-bright-cobalt to-fibonacci-blue" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/65 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-background" />
           <div className="absolute inset-0 bg-gradient-to-tr from-primary/15 via-transparent to-accent/10" />
         </motion.div>
 

@@ -37,7 +37,7 @@ import CountUp from 'react-countup';
 const sports = [
   {
     name: 'Football',
-    image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
+    image: '/jason-charters-IorqsMssQH0-unsplash.jpg',
     color: 'from-emerald-600/90 to-emerald-900/90',
   },
   {
@@ -47,7 +47,7 @@ const sports = [
   },
   {
     name: 'Tennis',
-    image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&q=80',
+    image: '/james-lewis-HqdJzlF89_g-unsplash.jpg',
     color: 'from-lime-500/90 to-green-700/90',
   },
   {
@@ -57,7 +57,7 @@ const sports = [
   },
   {
     name: 'Cricket',
-    image: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=800&q=80',
+    image: '/yogendra-singh-DKcN3Lyuuro-unsplash.jpg',
     color: 'from-sky-500/90 to-blue-700/90',
   },
   {
@@ -72,7 +72,7 @@ const sports = [
   },
   {
     name: 'Golf',
-    image: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80',
+    image: '/marcus-santos-A37jWpUFdlo-unsplash.jpg',
     color: 'from-green-600/90 to-green-900/90',
   },
 ];
@@ -182,6 +182,63 @@ export default function LandingSections() {
             </motion.div>
           ))}
         </motion.div>
+      </section>
+
+      {/* ━━━ Photo Marquee ━━━ */}
+      <section className="relative overflow-hidden py-8 sm:py-12">
+        {/* Gradient fade edges */}
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-background to-transparent sm:w-32" />
+        <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 bg-gradient-to-l from-background to-transparent sm:w-32" />
+
+        {/* Row 1 — scrolls left */}
+        <div className="mb-4 flex animate-marquee-left">
+          {[
+            '/enrique-guzman-egas-Q1zq6ZLnRJA-unsplash.jpg',
+            '/david-pisnoy-At5I1OSl_2M-unsplash.jpg',
+            '/horst-heuck-fBigUP6u1QE-unsplash.jpg',
+            '/robert-ruggiero-LUqej0W6BSI-unsplash.jpg',
+            '/ubaid-e-alyafizi-SubXpGkzeUs-unsplash.jpg',
+            '/welcome-3Q-2blmd5o8-unsplash.jpg',
+            '/enrique-guzman-egas-Q1zq6ZLnRJA-unsplash.jpg',
+            '/david-pisnoy-At5I1OSl_2M-unsplash.jpg',
+            '/horst-heuck-fBigUP6u1QE-unsplash.jpg',
+            '/robert-ruggiero-LUqej0W6BSI-unsplash.jpg',
+            '/ubaid-e-alyafizi-SubXpGkzeUs-unsplash.jpg',
+            '/welcome-3Q-2blmd5o8-unsplash.jpg',
+          ].map((src, i) => (
+            <div
+              key={i}
+              className="mx-2 h-32 w-52 flex-shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
+            >
+              <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+            </div>
+          ))}
+        </div>
+
+        {/* Row 2 — scrolls right */}
+        <div className="flex animate-marquee-right">
+          {[
+            '/ben-weber-r-krWscXjvQ-unsplash.jpg',
+            '/jeff-cadestin-wRXJuof2eD4-unsplash.jpg',
+            '/jack-hunter-Ph0Aa13k5-c-unsplash.jpg',
+            '/mat-weller-Hk92KV4zU8M-unsplash.jpg',
+            '/ben-pham-qdghsJAE09A-unsplash.jpg',
+            '/chris-chow-IuWcgImMY0k-unsplash.jpg',
+            '/ben-weber-r-krWscXjvQ-unsplash.jpg',
+            '/jeff-cadestin-wRXJuof2eD4-unsplash.jpg',
+            '/jack-hunter-Ph0Aa13k5-c-unsplash.jpg',
+            '/mat-weller-Hk92KV4zU8M-unsplash.jpg',
+            '/ben-pham-qdghsJAE09A-unsplash.jpg',
+            '/chris-chow-IuWcgImMY0k-unsplash.jpg',
+          ].map((src, i) => (
+            <div
+              key={i}
+              className="mx-2 h-32 w-52 flex-shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
+            >
+              <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ━━━ Problem / Solution ━━━ */}
@@ -660,6 +717,25 @@ export default function LandingSections() {
             ))}
           </motion.div>
         </div>
+      </section>
+
+      {/* ━━━ Photo Break ━━━ */}
+      <section
+        className="relative flex min-h-[50vh] items-center justify-center bg-cover bg-fixed bg-center"
+        style={{ backgroundImage: "url('/john-o-nolan-o_gJAkcKJmM-unsplash.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-black/60" />
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="relative z-10 px-6 text-center"
+        >
+          <h2 className="text-4xl font-black uppercase tracking-wider text-white md:text-6xl">
+            Every Sport. One Community.
+          </h2>
+        </motion.div>
       </section>
 
       {/* ━━━ MEDALS Token Section ━━━ */}
