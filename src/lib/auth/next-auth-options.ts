@@ -60,11 +60,14 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
+        if (!token.custodialUserId) {
+          throw new Error('custodialUserId missing from JWT token');
+        }
         session.user.id = token.custodialUserId as string;
-        session.user.displayName = token.displayName as string | undefined;
-        session.user.avatarUrl = token.avatarUrl as string | undefined;
-        session.user.hiveUsername = token.hiveUsername as string | undefined;
-        session.user.keysDownloaded = token.keysDownloaded as boolean | undefined;
+        session.user.displayName = (token.displayName as string) ?? undefined;
+        session.user.avatarUrl = (token.avatarUrl as string) ?? undefined;
+        session.user.hiveUsername = (token.hiveUsername as string) ?? undefined;
+        session.user.keysDownloaded = (token.keysDownloaded as boolean) ?? undefined;
       }
       return session;
     },

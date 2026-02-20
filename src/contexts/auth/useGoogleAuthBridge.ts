@@ -66,6 +66,8 @@ export function useGoogleAuthBridge({
           'useGoogleAuthBridge',
           err
         );
+        // Allow retry on next mount — session fetch may have failed transiently
+        attempted.current = false;
       });
   }, [hasMounted, isAuthenticated, login]);
 }

@@ -10,15 +10,12 @@ import type { AuthType } from '@/types/ui';
 // Types
 // ---------------------------------------------------------------------------
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type HiveOperation = [string, Record<string, any>];
-export type KeyType = 'posting' | 'active';
+import type { HiveOperation, KeyType } from '@/types/hive-operations';
+export type { HiveOperation, KeyType };
 
-export interface BroadcastResult {
-  success: boolean;
-  transactionId?: string;
-  error?: string;
-}
+export type BroadcastResult =
+  | { success: true; transactionId: string }
+  | { success: false; error: string };
 
 export type BroadcastFn = (
   operations: HiveOperation[],

@@ -80,6 +80,10 @@ jest.mock('@/lib/hive-workerbee/logger', () => ({
   info: jest.fn(),
 }));
 
+jest.mock('@/lib/hive-workerbee/transaction-confirmation', () => ({
+  waitForTransaction: jest.fn().mockResolvedValue({ confirmed: true }),
+}));
+
 const mockBroadcastFn: jest.MockedFunction<BroadcastFn> = jest.fn();
 
 describe('Publish workflow - auth type branching', () => {

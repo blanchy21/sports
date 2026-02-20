@@ -23,6 +23,7 @@ import { getHiveEngineClient } from '@/lib/hive-engine/client';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
+import { logger } from '@/lib/logger';
 
 /**
  * Check if rewards have already been processed for this week
@@ -34,8 +35,9 @@ async function isAlreadyProcessed(weekId: string): Promise<boolean> {
     });
     return !!record;
   } catch (error) {
-    console.error('Error checking processed status:', error);
-    return false;
+    logger.error('Error checking processed status', 'cron:staking-rewards', error);
+    // Fail safe: assume already processed to prevent double-processing
+    return true;
   }
 }
 
@@ -70,7 +72,7 @@ async function storeDistributionRecord(
       },
     });
   } catch (dbError) {
-    console.error('Error storing distribution record:', dbError);
+    logger.error('Error storing distribution record', 'cron:staking-rewards', dbError);
     throw dbError;
   }
 }
@@ -118,7 +120,7 @@ async function fetchAllStakers(): Promise<StakerInfo[]> {
       offset += limit;
       hasMore = result.length === limit;
     } catch (error) {
-      console.error('Error fetching stakers:', error);
+      logger.error('Error fetching stakers', 'cron:staking-rewards', error, { offset });
       throw new Error(`Failed to fetch stakers at offset ${offset}`);
     }
   }
@@ -151,15 +153,15 @@ export async function GET() {
     }
 
     // Fetch all stakers
-    console.log(`[Staking Rewards] Fetching stakers for ${weekId}...`);
+    logger.info(`Fetching stakers for ${weekId}`, 'cron:staking-rewards');
     const stakers = await fetchAllStakers();
-    console.log(`[Staking Rewards] Found ${stakers.length} stakers`);
+    logger.info(`Found ${stakers.length} stakers`, 'cron:staking-rewards');
 
     // Calculate rewards
     const distributionResult = calculateStakingRewards(stakers);
-    console.log(
-      `[Staking Rewards] Calculated rewards: ${distributionResult.eligibleStakerCount} eligible, ` +
-        `${distributionResult.weeklyPool} MEDALS pool`
+    logger.info(
+      `Calculated rewards: ${distributionResult.eligibleStakerCount} eligible, ${distributionResult.weeklyPool} MEDALS pool`,
+      'cron:staking-rewards'
     );
 
     // Check rewards account balance
@@ -176,7 +178,7 @@ export async function GET() {
     const balanceCheck = validateRewardsBalance(rewardsBalance, totalToDistribute);
 
     if (!balanceCheck.valid) {
-      console.warn(`[Staking Rewards] ${balanceCheck.message}`);
+      logger.warn(balanceCheck.message, 'cron:staking-rewards');
       await storeDistributionRecord(distributionResult, 'pending', balanceCheck.message);
 
       return NextResponse.json({
@@ -218,7 +220,7 @@ export async function GET() {
       duration: Date.now() - startTime,
     });
   } catch (error) {
-    console.error('[Staking Rewards] Error:', error);
+    logger.error('Staking rewards cron failed', 'cron:staking-rewards', error);
 
     return NextResponse.json(
       {
@@ -273,7 +275,7 @@ export async function POST(request: Request) {
         : 'Tokens would be transferred (not implemented yet - requires hot wallet)',
     });
   } catch (error) {
-    console.error('[Staking Rewards POST] Error:', error);
+    logger.error('Staking rewards POST failed', 'cron:staking-rewards', error);
 
     return NextResponse.json(
       {

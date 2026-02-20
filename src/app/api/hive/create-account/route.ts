@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createApiHandler, apiSuccess, apiError } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { createHiveAccountForUser } from '@/lib/hive/account-creation';
+import { createHiveAccountForUser, AccountCreationError } from '@/lib/hive/account-creation';
 import { prisma } from '@/lib/db/prisma';
 
 export const POST = createApiHandler('/api/hive/create-account', async (request: Request, ctx) => {
@@ -50,9 +50,15 @@ export const POST = createApiHandler('/api/hive/create-account', async (request:
 
   ctx.log.info('Creating Hive account', { username, custodialUserId: custodialUser.id });
 
-  const result = await createHiveAccountForUser(username, custodialUser.id);
-
-  ctx.log.info('Hive account created successfully', { username: result.hiveUsername });
-
-  return apiSuccess({ hiveUsername: result.hiveUsername });
+  try {
+    const result = await createHiveAccountForUser(username, custodialUser.id);
+    ctx.log.info('Hive account created successfully', { username: result.hiveUsername });
+    return apiSuccess({ hiveUsername: result.hiveUsername });
+  } catch (err) {
+    // Surface critical AccountCreationError messages directly to the user
+    if (err instanceof AccountCreationError) {
+      return apiError(err.message, 'INTERNAL_ERROR', 500, { requestId: ctx.requestId });
+    }
+    throw err;
+  }
 });

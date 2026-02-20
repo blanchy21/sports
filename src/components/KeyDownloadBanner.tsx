@@ -12,6 +12,7 @@ export const KeyDownloadBanner: React.FC = () => {
   const [downloading, setDownloading] = useState(false);
   const [showLearnMore, setShowLearnMore] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
 
   // Check dismiss state after mount
   useEffect(() => {
@@ -33,6 +34,7 @@ export const KeyDownloadBanner: React.FC = () => {
 
   const handleDownload = useCallback(async () => {
     setDownloading(true);
+    setDownloadError('');
     try {
       const res = await fetch('/api/hive/download-keys');
       if (!res.ok) {
@@ -55,6 +57,9 @@ export const KeyDownloadBanner: React.FC = () => {
       setDownloaded(true);
     } catch (err) {
       console.error('Key download failed:', err);
+      setDownloadError(
+        err instanceof Error ? err.message : 'Failed to download keys. Please try again.'
+      );
     } finally {
       setDownloading(false);
     }
@@ -98,21 +103,24 @@ export const KeyDownloadBanner: React.FC = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowLearnMore((v) => !v)}
-            className="whitespace-nowrap text-xs text-amber-300/70 underline hover:text-amber-300"
-          >
-            {showLearnMore ? 'Hide' : 'Learn more'}
-          </button>
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-amber-500 px-3 py-1.5 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:opacity-50"
-          >
-            <Download className="h-4 w-4" />
-            {downloading ? 'Downloading...' : 'Download Keys'}
-          </button>
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowLearnMore((v) => !v)}
+              className="whitespace-nowrap text-xs text-amber-300/70 underline hover:text-amber-300"
+            >
+              {showLearnMore ? 'Hide' : 'Learn more'}
+            </button>
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-amber-500 px-3 py-1.5 text-sm font-medium text-black transition-colors hover:bg-amber-400 disabled:opacity-50"
+            >
+              <Download className="h-4 w-4" />
+              {downloading ? 'Downloading...' : 'Download Keys'}
+            </button>
+          </div>
+          {downloadError && <p className="text-xs text-red-400">{downloadError}</p>}
         </div>
       </div>
     </div>

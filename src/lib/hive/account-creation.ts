@@ -13,8 +13,16 @@ const OPERATIONS_ACCOUNT = process.env.OPERATIONS_ACCOUNT ?? 'sp-blockrewards';
 const RC_DELEGATION_AMOUNT = 5_000_000_000; // 5 billion RC
 
 interface AccountCreationResult {
-  success: true;
   hiveUsername: string;
+}
+
+export class AccountCreationError extends Error {
+  code: string;
+  constructor(message: string, code: string) {
+    super(message);
+    this.name = 'AccountCreationError';
+    this.code = code;
+  }
 }
 
 export async function checkAvailableTokens(): Promise<number> {
@@ -155,7 +163,27 @@ export async function createHiveAccountForUser(
     memo: memoKey.toString(),
   });
 
-  const { encrypted, iv } = encryptKeys(keysPayload);
+  let encrypted: string;
+  let iv: string;
+  let salt: string;
+  try {
+    const result = encryptKeys(keysPayload);
+    encrypted = result.encrypted;
+    iv = result.iv;
+    salt = result.salt;
+  } catch (encryptError) {
+    logger.error(
+      `CRITICAL: Hive account @${username} created on-chain but key encryption failed. ` +
+        `CustodialUser ID: ${custodialUserId}. Keys are LOST. ` +
+        `Manual account recovery required.`,
+      'account-creation',
+      encryptError instanceof Error ? encryptError : undefined
+    );
+    throw new AccountCreationError(
+      'Account was created but key storage failed. Please contact support immediately.',
+      'ENCRYPTION_FAILED'
+    );
+  }
 
   // 8. Update database
   try {
@@ -166,6 +194,7 @@ export async function createHiveAccountForUser(
           hiveUsername: username,
           encryptedKeys: encrypted,
           encryptionIv: iv,
+          encryptionSalt: salt,
         },
       }),
       prisma.accountToken.create({
@@ -186,10 +215,11 @@ export async function createHiveAccountForUser(
       'account-creation',
       dbError instanceof Error ? dbError : undefined
     );
-    throw new Error(
-      'Account was created on the blockchain but failed to save. Please contact support.'
+    throw new AccountCreationError(
+      'Account was created on the blockchain but failed to save. Please contact support.',
+      'DB_SAVE_FAILED'
     );
   }
 
-  return { success: true, hiveUsername: username };
+  return { hiveUsername: username };
 }

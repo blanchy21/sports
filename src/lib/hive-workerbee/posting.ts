@@ -1,6 +1,5 @@
-import { SPORTS_ARENA_CONFIG, MUTED_AUTHORS, initializeWorkerBeeClient } from './client';
+import { SPORTS_ARENA_CONFIG, MUTED_AUTHORS } from './client';
 import { makeHiveApiCall } from './api';
-import type { ITransaction } from '@hiveio/wax';
 import {
   createPostOperation,
   createCommentOperation,
@@ -10,16 +9,6 @@ import {
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 import { waitForTransaction } from './transaction-confirmation';
 import type { BroadcastFn, HiveOperation } from '@/lib/hive/broadcast-client';
-// import { Wax } from '@hiveio/wax'; // Not needed for basic posting operations
-
-/**
- * Type assertion for broadcasting operations.
- * The operation object from Wax helpers is compatible with ITransaction
- * but TypeScript doesn't infer this. This provides a self-documenting cast.
- */
-function asBroadcastableTransaction(operation: Record<string, unknown>): ITransaction {
-  return operation as unknown as ITransaction;
-}
 
 // Sub-community data for publishing to a specific community
 export interface SubCommunityData {
@@ -241,17 +230,21 @@ export async function publishComment(
 }
 
 /**
- * Update an existing post using WorkerBee
+ * Update an existing post
  * @param updateData - Update data
+ * @param broadcastFn - Broadcast function (from useBroadcast)
  * @returns Update result
  */
-export async function updatePost(updateData: {
-  author: string;
-  permlink: string;
-  title?: string;
-  body?: string;
-  jsonMetadata?: string;
-}): Promise<PublishResult> {
+export async function updatePost(
+  updateData: {
+    author: string;
+    permlink: string;
+    title?: string;
+    body?: string;
+    jsonMetadata?: string;
+  },
+  broadcastFn: BroadcastFn
+): Promise<PublishResult> {
   try {
     // Get existing post to preserve some data
     const existingPost = await makeHiveApiCall('condenser_api', 'get_content', [
@@ -279,7 +272,6 @@ export async function updatePost(updateData: {
       : {};
     const mergedMetadata = { ...existingMetadata, ...updateMetadata };
 
-    // Create the update operation using Wax
     const operation = {
       parent_author: (existingPost as { parent_author: string }).parent_author,
       parent_permlink: (existingPost as { parent_permlink: string }).parent_permlink,
@@ -288,33 +280,26 @@ export async function updatePost(updateData: {
       title: updateData.title || (existingPost as { title: string }).title,
       body: updateData.body || (existingPost as { body: string }).body,
       json_metadata: JSON.stringify(mergedMetadata),
-      max_accepted_payout: (existingPost as { max_accepted_payout: string }).max_accepted_payout,
-      percent_hbd: (existingPost as { percent_hbd: number }).percent_hbd,
-      allow_votes: (existingPost as { allow_votes: boolean }).allow_votes,
-      allow_curation_rewards: (existingPost as { allow_curation_rewards: boolean })
-        .allow_curation_rewards,
-      extensions: (existingPost as { extensions: unknown[] }).extensions,
     };
 
-    // Initialize WorkerBee client for broadcasting
-    const client = await initializeWorkerBeeClient();
+    const operations: HiveOperation[] = [['comment', operation]];
+    const result = await broadcastFn(operations, 'posting');
 
-    // Broadcast the transaction using WorkerBee
-    await client.broadcast(asBroadcastableTransaction(operation));
+    if (!result.success) {
+      throw new Error(`Transaction failed: ${result.error || 'Unknown error'}`);
+    }
+
+    const transactionId = result.transactionId || 'unknown';
 
     return {
       success: true,
-      transactionId: 'broadcasted',
+      transactionId,
       author: updateData.author,
       permlink: updateData.permlink,
       url: `https://hive.blog/@${updateData.author}/${updateData.permlink}`,
     };
   } catch (error) {
-    logError(
-      'Error updating post with WorkerBee',
-      undefined,
-      error instanceof Error ? error : undefined
-    );
+    logError('Error updating post', undefined, error instanceof Error ? error : undefined);
 
     return {
       success: false,
@@ -324,31 +309,33 @@ export async function updatePost(updateData: {
 }
 
 /**
- * Delete a post (only possible within 7 days, sets body to empty) using WorkerBee
+ * Delete a post (only possible within 7 days, sets body to empty)
  * @param deleteData - Delete data
+ * @param broadcastFn - Broadcast function (from useBroadcast)
  * @returns Delete result
  */
-export async function deletePost(deleteData: {
-  author: string;
-  permlink: string;
-}): Promise<PublishResult> {
+export async function deletePost(
+  deleteData: {
+    author: string;
+    permlink: string;
+  },
+  broadcastFn: BroadcastFn
+): Promise<PublishResult> {
   try {
-    // "Deleting" a post on Hive means setting the body to empty
-    return await updatePost({
-      author: deleteData.author,
-      permlink: deleteData.permlink,
-      body: '',
-      jsonMetadata: JSON.stringify({
-        app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
-        tags: ['deleted', 'sportsblock'],
-      }),
-    });
-  } catch (error) {
-    logError(
-      'Error deleting post with WorkerBee',
-      undefined,
-      error instanceof Error ? error : undefined
+    return await updatePost(
+      {
+        author: deleteData.author,
+        permlink: deleteData.permlink,
+        body: '',
+        jsonMetadata: JSON.stringify({
+          app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
+          tags: ['deleted', 'sportsblock'],
+        }),
+      },
+      broadcastFn
     );
+  } catch (error) {
+    logError('Error deleting post', undefined, error instanceof Error ? error : undefined);
 
     return {
       success: false,

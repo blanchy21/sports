@@ -167,7 +167,10 @@ export const loadUIHint = (): UIHint | null => {
     if (typeof parsed.wasLoggedIn !== 'boolean') return null;
 
     return parsed as UIHint;
-  } catch {
+  } catch (err) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Failed to load UI hint from localStorage:', err);
+    }
     return null;
   }
 };
@@ -180,8 +183,10 @@ export const clearUIHint = (): void => {
 
   try {
     localStorage.removeItem(UI_HINT_STORAGE_KEY);
-  } catch {
-    // Ignore errors clearing hint
+  } catch (err) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Failed to clear UI hint from localStorage:', err);
+    }
   }
 };
 

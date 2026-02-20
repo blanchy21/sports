@@ -32,7 +32,7 @@ export const GET = createApiHandler('/api/hive/download-keys', async (request: R
   // 2. Look up encrypted keys
   const custodialUser = await prisma.custodialUser.findFirst({
     where: { hiveUsername: user.hiveUsername },
-    select: { id: true, encryptedKeys: true, encryptionIv: true },
+    select: { id: true, encryptedKeys: true, encryptionIv: true, encryptionSalt: true },
   });
 
   if (!custodialUser?.encryptedKeys || !custodialUser.encryptionIv) {
@@ -42,8 +42,23 @@ export const GET = createApiHandler('/api/hive/download-keys', async (request: R
   }
 
   // 3. Decrypt keys
-  const keysJson = decryptKeys(custodialUser.encryptedKeys, custodialUser.encryptionIv);
-  const keys = JSON.parse(keysJson) as Record<string, string>;
+  let keys: Record<string, string>;
+  try {
+    const keysJson = decryptKeys(
+      custodialUser.encryptedKeys,
+      custodialUser.encryptionIv,
+      custodialUser.encryptionSalt ?? undefined
+    );
+    keys = JSON.parse(keysJson);
+  } catch (err) {
+    ctx.log.error('Key decryption/parsing failed', {
+      hiveUsername: user.hiveUsername,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return apiError('Unable to decrypt your keys. Please contact support.', 'INTERNAL_ERROR', 500, {
+      requestId: ctx.requestId,
+    });
+  }
 
   // 4. Build plain-text keyfile
   const keyfile = [

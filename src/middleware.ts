@@ -33,6 +33,12 @@ const RATE_LIMITED_ROUTES = {
   '/api/image-proxy': 'read',
   '/api/health': 'read',
 
+  // Custodial account operations
+  '/api/hive/create-account': 'auth',
+  '/api/hive/sign': 'write',
+  '/api/hive/download-keys': 'auth',
+  '/api/hive/check-username': 'read',
+
   // Write operations
   '/api/hive/posting': 'write',
   '/api/hive-engine/stake': 'write',

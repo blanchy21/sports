@@ -20,6 +20,7 @@ import {
 import { getPlatformYear } from '@/lib/rewards/config';
 import { prisma } from '@/lib/db/prisma';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
+import { logger } from '@/lib/logger';
 
 /**
  * Get the previous week's ID (since we run on Monday for the previous week)
@@ -41,8 +42,9 @@ async function isAlreadyProcessed(weekId: string): Promise<boolean> {
     });
     return !!record;
   } catch (error) {
-    console.error('Error checking processed status:', error);
-    return false;
+    logger.error('Error checking processed status', 'cron:weekly-rewards', error);
+    // Fail safe: assume already processed to prevent double-processing
+    return true;
   }
 }
 
@@ -50,20 +52,16 @@ async function isAlreadyProcessed(weekId: string): Promise<boolean> {
  * Mark the week as processed
  */
 async function markAsProcessed(weekId: string, summary: Record<string, unknown>): Promise<void> {
-  try {
-    await prisma.analyticsEvent.create({
-      data: {
-        eventType: `weekly-rewards-${weekId}`,
-        metadata: {
-          weekId,
-          processedAt: new Date().toISOString(),
-          ...summary,
-        },
+  await prisma.analyticsEvent.create({
+    data: {
+      eventType: `weekly-rewards-${weekId}`,
+      metadata: {
+        weekId,
+        processedAt: new Date().toISOString(),
+        ...summary,
       },
-    });
-  } catch (error) {
-    console.error('Error marking as processed:', error);
-  }
+    },
+  });
 }
 
 /**
@@ -90,19 +88,19 @@ export async function GET() {
       });
     }
 
-    console.log(`[Weekly Rewards] Processing rewards for ${weekId}...`);
+    logger.info(`Processing rewards for ${weekId}`, 'cron:weekly-rewards');
 
     // Generate leaderboards from metrics
-    console.log('[Weekly Rewards] Generating leaderboards...');
+    logger.info('Generating leaderboards', 'cron:weekly-rewards');
     const leaderboards = await generateWeeklyLeaderboards(weekId);
 
     // Calculate reward distributions
-    console.log('[Weekly Rewards] Calculating reward distributions...');
+    logger.info('Calculating reward distributions', 'cron:weekly-rewards');
     const distributions = calculateContentRewards(leaderboards);
 
     // Store distributions for admin review
     if (distributions.length > 0) {
-      console.log(`[Weekly Rewards] Storing ${distributions.length} reward distributions...`);
+      logger.info(`Storing ${distributions.length} reward distributions`, 'cron:weekly-rewards');
       await storeRewardDistributions(distributions);
     }
 
@@ -137,7 +135,7 @@ export async function GET() {
     // Mark as processed
     await markAsProcessed(weekId, summary);
 
-    console.log(`[Weekly Rewards] Completed. ${distributions.length} rewards pending.`);
+    logger.info(`Completed. ${distributions.length} rewards pending`, 'cron:weekly-rewards');
 
     return NextResponse.json({
       success: true,
@@ -146,7 +144,7 @@ export async function GET() {
       duration: Date.now() - startTime,
     });
   } catch (error) {
-    console.error('[Weekly Rewards] Error:', error);
+    logger.error('Weekly rewards cron failed', 'cron:weekly-rewards', error);
 
     return NextResponse.json(
       {
@@ -214,7 +212,7 @@ export async function POST(request: Request) {
       forceRegenerate,
     });
   } catch (error) {
-    console.error('[Weekly Rewards POST] Error:', error);
+    logger.error('Weekly rewards POST failed', 'cron:weekly-rewards', error);
 
     return NextResponse.json(
       {

@@ -2,23 +2,24 @@ import crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
-const SALT = 'sportsblock-key-encryption-salt';
+const AUTH_TAG_LENGTH = 16;
 
-function getEncryptionKey(): Buffer {
+function getEncryptionKey(salt: Buffer): Buffer {
   const secret = process.env.KEY_ENCRYPTION_SECRET;
 
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('KEY_ENCRYPTION_SECRET environment variable is required in production');
     }
-    return crypto.scryptSync('development-only-insecure-key-encryption', SALT, 32);
+    return crypto.scryptSync('development-only-insecure-key-encryption', salt, 32);
   }
 
-  return crypto.scryptSync(secret, SALT, 32);
+  return crypto.scryptSync(secret, salt, 32);
 }
 
-export function encryptKeys(keysJson: string): { encrypted: string; iv: string } {
-  const key = getEncryptionKey();
+export function encryptKeys(keysJson: string): { encrypted: string; iv: string; salt: string } {
+  const salt = crypto.randomBytes(16);
+  const key = getEncryptionKey(salt);
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
 
@@ -31,16 +32,19 @@ export function encryptKeys(keysJson: string): { encrypted: string; iv: string }
   return {
     encrypted: combined.toString('base64'),
     iv: iv.toString('base64'),
+    salt: salt.toString('base64'),
   };
 }
 
-export function decryptKeys(encrypted: string, iv: string): string {
-  const key = getEncryptionKey();
+export function decryptKeys(encrypted: string, iv: string, salt?: string): string {
+  // Support legacy keys encrypted with the old static salt
+  const saltBuffer = salt
+    ? Buffer.from(salt, 'base64')
+    : Buffer.from('sportsblock-key-encryption-salt', 'utf8');
+  const key = getEncryptionKey(saltBuffer);
   const ivBuffer = Buffer.from(iv, 'base64');
   const combined = Buffer.from(encrypted, 'base64');
 
-  // Auth tag is the last 16 bytes
-  const AUTH_TAG_LENGTH = 16;
   const encryptedData = combined.subarray(0, combined.length - AUTH_TAG_LENGTH);
   const authTag = combined.subarray(combined.length - AUTH_TAG_LENGTH);
 

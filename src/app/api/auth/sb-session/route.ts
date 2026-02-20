@@ -15,6 +15,7 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { decryptSession } from '@/lib/api/session-auth';
+import { getSessionEncryptionKey } from '@/lib/api/session-encryption';
 
 const SESSION_COOKIE_NAME = 'sb_session';
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
@@ -22,30 +23,6 @@ const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 // Encryption configuration
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16; // 128 bits
-
-/**
- * Get or generate the session encryption key.
- * In production, SESSION_SECRET must be set as a 32+ character string.
- */
-function getEncryptionKey(): Buffer {
-  const secret = process.env.SESSION_SECRET;
-
-  if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('SESSION_SECRET environment variable is required in production');
-    }
-    // Development fallback - NOT SECURE, only for local development
-    console.warn(
-      '[Session API] WARNING: Using insecure default key. Set SESSION_SECRET in production.'
-    );
-    return crypto.scryptSync('development-only-insecure-key', 'salt', 32);
-  }
-
-  // Derive a 256-bit key from the secret using scrypt
-  // Must use same salt as session-auth.ts for decryption compatibility
-  const salt = process.env.SESSION_ENCRYPTION_SALT || 'sportsblock-session-salt';
-  return crypto.scryptSync(secret, salt, 32);
-}
 
 // Validation schema for session data
 const sessionSchema = z.object({
@@ -63,7 +40,7 @@ type SessionData = z.infer<typeof sessionSchema>;
  * Uses AES-256-GCM for authenticated encryption.
  */
 function encryptSession(data: SessionData): string {
-  const key = getEncryptionKey();
+  const key = getSessionEncryptionKey();
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, key, iv);
 

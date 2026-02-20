@@ -11,7 +11,7 @@ type ValidationState = 'idle' | 'checking' | 'valid' | 'invalid' | 'taken';
 
 export default function OnboardingUsernamePage() {
   const router = useRouter();
-  const { user, isClient } = useAuth();
+  const { user, isClient, updateUser } = useAuth();
   const [username, setUsername] = useState('');
   const [validationState, setValidationState] = useState<ValidationState>('idle');
   const [reason, setReason] = useState('');
@@ -114,9 +114,15 @@ export default function OnboardingUsernamePage() {
       const json = await res.json();
 
       if (!json.success) {
-        setError(json.error?.message ?? 'Account creation failed');
+        // Surface critical errors (account created but keys/DB failed) directly
+        const msg = json.error?.message ?? 'Account creation failed';
+        setError(msg);
         return;
       }
+
+      // Update auth state with the new hiveUsername before navigating
+      const createdUsername = json.data?.hiveUsername ?? username;
+      updateUser({ hiveUsername: createdUsername });
 
       // Success — redirect to main feed
       router.replace('/sportsbites');

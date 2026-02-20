@@ -27,9 +27,6 @@ jest.mock('@/lib/hive-workerbee/client', () => ({
     DEFAULT_BENEFICIARIES: [{ account: 'sportsblock', weight: 500 }],
   },
   MUTED_AUTHORS: [],
-  initializeWorkerBeeClient: jest.fn().mockResolvedValue({
-    broadcast: jest.fn().mockResolvedValue({}),
-  }),
 }));
 
 jest.mock('@/lib/hive-workerbee/wax-helpers', () => ({
@@ -276,8 +273,9 @@ describe('Posting Module', () => {
       };
 
       mockMakeHiveApiCall.mockResolvedValueOnce(mockExistingPost);
+      mockBroadcastFn.mockResolvedValueOnce({ success: true, transactionId: 'update-tx' });
 
-      const result = await updatePost(updateData);
+      const result = await updatePost(updateData, mockBroadcastFn);
 
       expect(result.success).toBe(true);
       expect(result.author).toBe('testauthor');
@@ -287,7 +285,7 @@ describe('Posting Module', () => {
     it('returns error when post not found', async () => {
       mockMakeHiveApiCall.mockResolvedValueOnce(null);
 
-      const result = await updatePost(updateData);
+      const result = await updatePost(updateData, mockBroadcastFn);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Post not found');
@@ -301,7 +299,7 @@ describe('Posting Module', () => {
         created: eightDaysAgo.toISOString(),
       });
 
-      const result = await updatePost(updateData);
+      const result = await updatePost(updateData, mockBroadcastFn);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Post cannot be updated after 7 days');
@@ -323,11 +321,15 @@ describe('Posting Module', () => {
       };
 
       mockMakeHiveApiCall.mockResolvedValueOnce(mockExistingPost);
+      mockBroadcastFn.mockResolvedValueOnce({ success: true, transactionId: 'merge-tx' });
 
-      await updatePost({
-        ...updateData,
-        jsonMetadata: JSON.stringify({ newField: 'newValue' }),
-      });
+      await updatePost(
+        {
+          ...updateData,
+          jsonMetadata: JSON.stringify({ newField: 'newValue' }),
+        },
+        mockBroadcastFn
+      );
 
       // The update should preserve existing metadata
       expect(mockMakeHiveApiCall).toHaveBeenCalled();
@@ -355,11 +357,15 @@ describe('Posting Module', () => {
       };
 
       mockMakeHiveApiCall.mockResolvedValueOnce(mockExistingPost);
+      mockBroadcastFn.mockResolvedValueOnce({ success: true, transactionId: 'delete-tx' });
 
-      const result = await deletePost({
-        author: 'testauthor',
-        permlink: 'test-post',
-      });
+      const result = await deletePost(
+        {
+          author: 'testauthor',
+          permlink: 'test-post',
+        },
+        mockBroadcastFn
+      );
 
       expect(result.success).toBe(true);
     });
@@ -372,10 +378,13 @@ describe('Posting Module', () => {
         created: eightDaysAgo.toISOString(),
       });
 
-      const result = await deletePost({
-        author: 'testauthor',
-        permlink: 'test-post',
-      });
+      const result = await deletePost(
+        {
+          author: 'testauthor',
+          permlink: 'test-post',
+        },
+        mockBroadcastFn
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('7 days');

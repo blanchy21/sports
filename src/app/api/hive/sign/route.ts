@@ -6,8 +6,8 @@ import {
   validateOperations,
   signAndBroadcast,
   OperationValidationError,
-  type HiveOperation,
 } from '@/lib/hive/signing-relay';
+import type { HiveOperation } from '@/types/hive-operations';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -76,6 +76,12 @@ export const POST = createApiHandler('/api/hive/sign', async (request: Request, 
 
   if (!Array.isArray(operations) || operations.length === 0) {
     return apiError('operations must be a non-empty array', 'VALIDATION_ERROR', 400, {
+      requestId: ctx.requestId,
+    });
+  }
+
+  if (operations.length > 10) {
+    return apiError('Maximum 10 operations per request', 'VALIDATION_ERROR', 400, {
       requestId: ctx.requestId,
     });
   }

@@ -435,7 +435,7 @@ export const useAuthPage = (): UseAuthPageResult => {
   const handleAiohaModalLogin = useCallback(
     async (result: LoginResult) => {
       if (!result.success) {
-        setErrorMessage('Login failed: ' + result.error || 'Unknown error');
+        setErrorMessage('Login failed: ' + (result.error || 'Unknown error'));
         return;
       }
 

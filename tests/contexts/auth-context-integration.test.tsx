@@ -174,7 +174,13 @@ describe('AuthContext integration', () => {
     });
 
     it('handles cookie fetch error gracefully', async () => {
-      mockFetch.mockRejectedValue(new Error('Network error'));
+      // Use mockImplementation to reject the sb-session GET but allow other fetches
+      mockFetch.mockImplementation((url: string) => {
+        if (typeof url === 'string' && url.includes('/api/auth/sb-session')) {
+          return Promise.reject(new Error('Network error'));
+        }
+        return Promise.resolve(createEmptySessionResponse());
+      });
 
       const { getByTestId } = renderAuth();
 

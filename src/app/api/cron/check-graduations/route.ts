@@ -3,6 +3,7 @@ import { Client, PrivateKey } from '@hiveio/dhive';
 import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
 import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
 import { prisma } from '@/lib/db/prisma';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,7 +28,7 @@ export async function GET() {
     return NextResponse.json(createUnauthorizedResponse(), { status: 401 });
   }
 
-  console.log('[Cron:check-graduations] Starting graduation check...');
+  logger.info('Starting graduation check', 'cron:check-graduations');
 
   const results = {
     checked: 0,
@@ -51,7 +52,7 @@ export async function GET() {
     });
 
     if (users.length === 0) {
-      console.log('[Cron:check-graduations] No eligible users to check');
+      logger.info('No eligible users to check', 'cron:check-graduations');
       return NextResponse.json({
         success: true,
         message: 'No eligible users to check',
@@ -59,7 +60,7 @@ export async function GET() {
       });
     }
 
-    console.log(`[Cron:check-graduations] Checking ${users.length} custodial users...`);
+    logger.info(`Checking ${users.length} custodial users`, 'cron:check-graduations');
 
     // Batch-fetch Hive accounts (dhive supports up to 50 at once)
     const usernames = users.map((u) => u.hiveUsername!);
@@ -82,8 +83,9 @@ export async function GET() {
 
       const account = accountMap.get(user.hiveUsername!);
       if (!account) {
-        console.warn(
-          `[Cron:check-graduations] Account @${user.hiveUsername} not found on-chain, skipping`
+        logger.warn(
+          `Account @${user.hiveUsername} not found on-chain, skipping`,
+          'cron:check-graduations'
         );
         results.skipped++;
         continue;
@@ -99,8 +101,9 @@ export async function GET() {
       }
 
       // User qualifies for graduation — revoke RC delegation
-      console.log(
-        `[Cron:check-graduations] @${user.hiveUsername} has ${hp.toFixed(3)} HP, graduating...`
+      logger.info(
+        `@${user.hiveUsername} has ${hp.toFixed(3)} HP, graduating`,
+        'cron:check-graduations'
       );
 
       try {
@@ -131,25 +134,37 @@ export async function GET() {
           },
         ];
 
-        const key = PrivateKey.fromString(postingKey);
-        await dhive.broadcast.sendOperations([revokeOp as never], key);
-
-        // Mark graduated in DB
+        // Mark graduated in DB FIRST (safe to re-run; prevents re-processing on RC failure)
         await prisma.custodialUser.update({
           where: { id: user.id },
           data: { isGraduated: true },
         });
 
+        // Then revoke RC delegation (if this fails, user is already marked graduated)
+        try {
+          const key = PrivateKey.fromString(postingKey);
+          await dhive.broadcast.sendOperations([revokeOp as never], key);
+        } catch (rcError) {
+          const rcMsg = rcError instanceof Error ? rcError.message : String(rcError);
+          logger.warn(
+            `RC revocation failed for @${user.hiveUsername} (already marked graduated): ${rcMsg}`,
+            'cron:check-graduations'
+          );
+          results.errors.push(
+            `RC revocation failed for @${user.hiveUsername} (marked graduated): ${rcMsg}`
+          );
+        }
+
         results.graduated++;
-        console.log(`[Cron:check-graduations] @${user.hiveUsername} graduated successfully`);
+        logger.info(`@${user.hiveUsername} graduated successfully`, 'cron:check-graduations');
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         results.errors.push(`Failed to graduate @${user.hiveUsername}: ${message}`);
-        console.error(`[Cron:check-graduations] Error graduating @${user.hiveUsername}:`, error);
+        logger.error(`Error graduating @${user.hiveUsername}`, 'cron:check-graduations', error);
       }
     }
 
-    console.log('[Cron:check-graduations] Graduation check completed', results);
+    logger.info('Graduation check completed', 'cron:check-graduations', results);
 
     return NextResponse.json({
       success: true,
@@ -157,7 +172,7 @@ export async function GET() {
       results,
     });
   } catch (error) {
-    console.error('[Cron:check-graduations] Error:', error);
+    logger.error('Graduation check failed', 'cron:check-graduations', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     results.errors.push(message);
 

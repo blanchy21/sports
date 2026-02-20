@@ -21,6 +21,7 @@ model CustodialUser {
   hiveUsername    String?   @unique @map("hive_username")
   encryptedKeys    String?   @map("encrypted_keys") // AES-256-GCM encrypted JSON of Hive keys
   encryptionIv     String?   @map("encryption_iv")
+  encryptionSalt   String?   @map("encryption_salt") // Per-user random salt for key derivation
   keysDownloaded   Boolean   @default(false) @map("keys_downloaded")
   keysDownloadedAt DateTime? @map("keys_downloaded_at")
   isGraduated      Boolean   @default(false) @map("is_graduated")

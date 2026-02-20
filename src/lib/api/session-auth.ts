@@ -12,11 +12,13 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { getHiveAvatarUrl } from '@/lib/utils/avatar';
 import { logger } from '@/lib/logger';
+import { getSessionEncryptionKey } from '@/lib/api/session-encryption';
 
 const SESSION_COOKIE_NAME = 'sb_session';
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
+const MAX_SESSION_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 const sessionSchema = z.object({
   userId: z.string().min(1),
@@ -28,31 +30,13 @@ const sessionSchema = z.object({
 
 type SessionData = z.infer<typeof sessionSchema>;
 
-function getEncryptionKey(): Buffer {
-  const secret = process.env.SESSION_SECRET;
-
-  if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('SESSION_SECRET environment variable is required in production');
-    }
-    return crypto.scryptSync('development-only-insecure-key', 'salt', 32);
-  }
-
-  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_ENCRYPTION_SALT) {
-    throw new Error('SESSION_ENCRYPTION_SALT is required in production');
-  }
-  const salt = process.env.SESSION_ENCRYPTION_SALT || 'sportsblock-session-salt';
-
-  return crypto.scryptSync(secret, salt, 32);
-}
-
 /**
  * Decrypt session data from cookie value.
  * Returns null if decryption fails or data is invalid.
  */
 export function decryptSession(encrypted: string): SessionData | null {
   try {
-    const key = getEncryptionKey();
+    const key = getSessionEncryptionKey();
     const combined = Buffer.from(encrypted, 'base64');
 
     if (combined.length < IV_LENGTH + AUTH_TAG_LENGTH + 1) {
@@ -74,6 +58,11 @@ export function decryptSession(encrypted: string): SessionData | null {
     const result = sessionSchema.safeParse(parsed);
 
     if (!result.success) {
+      return null;
+    }
+
+    // Server-side session expiry check
+    if (result.data.loginAt && Date.now() - result.data.loginAt > MAX_SESSION_AGE_MS) {
       return null;
     }
 

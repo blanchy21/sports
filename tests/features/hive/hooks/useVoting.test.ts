@@ -6,6 +6,9 @@ import { useVoting } from '@/features/hive/hooks/useVoting';
 // Mock dependencies - order matters to prevent Wax WASM import chain
 jest.mock('@/contexts/AuthContext');
 jest.mock('@/lib/hive-workerbee/voting');
+jest.mock('@/hooks/useBroadcast', () => ({
+  useBroadcast: () => ({ broadcast: jest.fn() }),
+}));
 jest.mock('@/lib/logger', () => ({
   logger: { error: jest.fn(), info: jest.fn(), debug: jest.fn(), warn: jest.fn() },
 }));
@@ -119,7 +122,7 @@ describe('useVoting', () => {
       expect(mockCastVote).not.toHaveBeenCalled();
     });
 
-    it('returns auth error for soft/Firebase auth', async () => {
+    it('allows voting for soft/custodial auth (via signing relay)', async () => {
       setAuthState({
         hiveUser: { username: 'testuser', isAuthenticated: true },
         authType: 'soft',
@@ -132,10 +135,8 @@ describe('useVoting', () => {
       });
 
       const upvoteResult = await act(() => result.current.upvote('author1', 'post1'));
-      expect(upvoteResult).toEqual({
-        success: false,
-        error: 'Authentication required for voting',
-      });
+      expect(upvoteResult.success).toBe(true);
+      expect(mockCastVote).toHaveBeenCalled();
     });
 
     it('allows voting for hive auth users', async () => {
@@ -267,7 +268,8 @@ describe('useVoting', () => {
           author: 'author1',
           permlink: 'post1',
           weight: 80,
-        })
+        }),
+        expect.any(Function)
       );
     });
 
@@ -283,7 +285,8 @@ describe('useVoting', () => {
       expect(mockCastVote).toHaveBeenCalledWith(
         expect.objectContaining({
           weight: -80,
-        })
+        }),
+        expect.any(Function)
       );
     });
 
@@ -323,7 +326,10 @@ describe('useVoting', () => {
 
       await act(() => result.current.starVote('author1', 'post1', 3));
 
-      expect(mockCastVote).toHaveBeenCalledWith(expect.objectContaining({ weight: 60 }));
+      expect(mockCastVote).toHaveBeenCalledWith(
+        expect.objectContaining({ weight: 60 }),
+        expect.any(Function)
+      );
     });
 
     it('maps 5 stars to 100% weight', async () => {
@@ -333,7 +339,10 @@ describe('useVoting', () => {
 
       await act(() => result.current.starVote('author1', 'post1', 5));
 
-      expect(mockCastVote).toHaveBeenCalledWith(expect.objectContaining({ weight: 100 }));
+      expect(mockCastVote).toHaveBeenCalledWith(
+        expect.objectContaining({ weight: 100 }),
+        expect.any(Function)
+      );
     });
 
     it('rejects stars out of range', async () => {
@@ -388,7 +397,8 @@ describe('useVoting', () => {
           author: 'author1',
           permlink: 'comment1',
           weight: 75,
-        })
+        }),
+        expect.any(Function)
       );
     });
 
@@ -432,7 +442,8 @@ describe('useVoting', () => {
           voter: 'voter',
           author: 'author1',
           permlink: 'post1',
-        })
+        }),
+        expect.any(Function)
       );
     });
 

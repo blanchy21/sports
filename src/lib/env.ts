@@ -152,6 +152,21 @@ export function validateEnvironment(): ValidationResult {
       errors.push('CRON_SECRET is required in production for scheduled tasks');
     }
 
+    // Custodial key encryption secret is critical
+    if (!process.env.KEY_ENCRYPTION_SECRET) {
+      errors.push('KEY_ENCRYPTION_SECRET is required in production for custodial key encryption');
+    }
+
+    // NextAuth secret is required for JWT signing
+    if (!process.env.NEXTAUTH_SECRET) {
+      errors.push('NEXTAUTH_SECRET is required in production for NextAuth JWT signing');
+    }
+
+    // Database URL is required
+    if (!process.env.DATABASE_URL) {
+      errors.push('DATABASE_URL is required in production');
+    }
+
     // Redis is strongly recommended for distributed rate limiting
     if (!isUpstashConfigured() && !isRedisConfigured()) {
       warnings.push(

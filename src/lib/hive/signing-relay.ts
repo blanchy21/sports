@@ -3,12 +3,7 @@ import { prisma } from '@/lib/db/prisma';
 import { decryptKeys } from '@/lib/hive/key-encryption';
 import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
 import { logger } from '@/lib/logger';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export type HiveOperation = [string, Record<string, unknown>];
+import type { HiveOperation } from '@/types/hive-operations';
 
 export interface SigningResult {
   transactionId: string;
@@ -74,10 +69,26 @@ export function validateOperations(operations: HiveOperation[], hiveUsername: st
         break;
 
       case 'custom_json': {
+        // Reject active-authority custom_json operations
+        const activeAuths = opBody.required_auths;
+        if (Array.isArray(activeAuths) && activeAuths.length > 0) {
+          throw new OperationValidationError(
+            'custom_json with required_auths (active authority) is not allowed via signing relay'
+          );
+        }
+
         const postingAuths = opBody.required_posting_auths;
         if (!Array.isArray(postingAuths) || !postingAuths.includes(hiveUsername)) {
           throw new OperationValidationError(
             `custom_json required_posting_auths does not include "${hiveUsername}"`
+          );
+        }
+
+        // Restrict to known safe custom_json IDs
+        const ALLOWED_CUSTOM_JSON_IDS = new Set(['follow', 'reblog', 'community', 'notify', 'rc']);
+        if (!ALLOWED_CUSTOM_JSON_IDS.has(opBody.id as string)) {
+          throw new OperationValidationError(
+            `custom_json id "${opBody.id}" is not allowed via the signing relay`
           );
         }
         break;
@@ -97,6 +108,17 @@ export function validateOperations(operations: HiveOperation[], hiveUsername: st
             `Account update account "${opBody.account}" does not match authenticated user "${hiveUsername}"`
           );
         }
+        // Only allow posting_json_metadata updates — reject authority key changes
+        if (opBody.owner || opBody.active || opBody.posting || opBody.memo_key) {
+          throw new OperationValidationError(
+            'Authority key changes are not allowed via the signing relay'
+          );
+        }
+        if (opBody.json_metadata && opBody.json_metadata !== '') {
+          throw new OperationValidationError(
+            'json_metadata changes are not allowed via the signing relay (use posting_json_metadata)'
+          );
+        }
         break;
     }
   }
@@ -113,7 +135,7 @@ export async function signAndBroadcast(
 ): Promise<SigningResult> {
   const custodialUser = await prisma.custodialUser.findUnique({
     where: { id: custodialUserId },
-    select: { encryptedKeys: true, encryptionIv: true },
+    select: { encryptedKeys: true, encryptionIv: true, encryptionSalt: true },
   });
 
   if (!custodialUser?.encryptedKeys || !custodialUser.encryptionIv) {
@@ -123,7 +145,11 @@ export async function signAndBroadcast(
   let postingKeyString: string | null = null;
 
   try {
-    const decrypted = decryptKeys(custodialUser.encryptedKeys, custodialUser.encryptionIv);
+    const decrypted = decryptKeys(
+      custodialUser.encryptedKeys,
+      custodialUser.encryptionIv,
+      custodialUser.encryptionSalt ?? undefined
+    );
     const keys = JSON.parse(decrypted) as Record<string, string>;
 
     postingKeyString = keys.posting ?? null;
