@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
@@ -225,13 +226,15 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Update user activity (fire-and-forget)
-      prisma.profile
-        .update({
-          where: { id: user.userId },
-          data: { lastActiveAt: new Date() },
-        })
-        .catch(() => {});
+      // Keep function alive for lastActiveAt update via after()
+      after(
+        prisma.profile
+          .update({
+            where: { id: user.userId },
+            data: { lastActiveAt: new Date() },
+          })
+          .catch(() => {})
+      );
 
       const sportsbite: SoftSportsbite = {
         id: newBite.id,

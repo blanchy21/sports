@@ -99,7 +99,7 @@ export default function OnboardingUsernamePage() {
   }, [username, checkUsername]);
 
   const handleCreate = async () => {
-    if (validationState !== 'valid' || isCreating) return;
+    if (validationState !== 'valid' || isCreating || !user) return;
 
     setIsCreating(true);
     setError('');
@@ -123,6 +123,20 @@ export default function OnboardingUsernamePage() {
       // Update auth state with the new hiveUsername before navigating
       const createdUsername = json.data?.hiveUsername ?? username;
       updateUser({ hiveUsername: createdUsername });
+
+      // Ensure session cookie is synced before navigating
+      // (persistAuthState is debounced — we need the cookie set NOW)
+      await fetch('/api/auth/sb-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          username: user.username,
+          authType: 'soft',
+          hiveUsername: createdUsername,
+          loginAt: Date.now(),
+        }),
+      });
 
       // Success — redirect to main feed
       router.replace('/sportsbites');

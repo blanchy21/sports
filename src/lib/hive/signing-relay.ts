@@ -119,6 +119,32 @@ export function validateOperations(operations: HiveOperation[], hiveUsername: st
             'json_metadata changes are not allowed via the signing relay (use posting_json_metadata)'
           );
         }
+        // Validate posting_json_metadata contains only expected profile fields
+        if (opBody.posting_json_metadata) {
+          try {
+            const meta = JSON.parse(opBody.posting_json_metadata);
+            const ALLOWED_PROFILE_KEYS = new Set([
+              'profile',
+              'name',
+              'about',
+              'location',
+              'website',
+              'cover_image',
+              'profile_image',
+              'version',
+            ]);
+            for (const key of Object.keys(meta)) {
+              if (!ALLOWED_PROFILE_KEYS.has(key)) {
+                throw new OperationValidationError(
+                  `posting_json_metadata key "${key}" is not allowed via the signing relay`
+                );
+              }
+            }
+          } catch (e) {
+            if (e instanceof OperationValidationError) throw e;
+            throw new OperationValidationError('posting_json_metadata must be valid JSON');
+          }
+        }
         break;
     }
   }

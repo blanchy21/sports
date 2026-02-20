@@ -24,6 +24,10 @@ import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
+import { logger } from '@/lib/logger';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 // Time window to look back for votes (in minutes)
 // Runs daily at midnight UTC — look back 24h + 20min buffer
@@ -47,7 +51,7 @@ async function getProcessedVoteIds(): Promise<Set<string>> {
     }
     return new Set();
   } catch (error) {
-    console.error('Error getting processed vote IDs:', error);
+    logger.error('Error getting processed vote IDs', 'cron:curator-rewards', error);
     return new Set();
   }
 }
@@ -69,7 +73,7 @@ async function getCuratorDailyCounts(): Promise<Map<string, number>> {
     }
     return new Map();
   } catch (error) {
-    console.error('Error getting curator daily counts:', error);
+    logger.error('Error getting curator daily counts', 'cron:curator-rewards', error);
     return new Map();
   }
 }
@@ -136,7 +140,7 @@ async function saveProcessedRewards(
       });
     }
   } catch (error) {
-    console.error('Error saving processed rewards:', error);
+    logger.error('Error saving processed rewards', 'cron:curator-rewards', error);
     throw error;
   }
 }
@@ -168,7 +172,10 @@ async function fetchRecentCuratorVotes(): Promise<CuratorVote[]> {
       );
 
       if (!response.ok) {
-        console.warn(`Failed to fetch history for ${curator}: ${response.status}`);
+        logger.warn(
+          `Failed to fetch history for ${curator}: ${response.status}`,
+          'cron:curator-rewards'
+        );
         continue;
       }
 
@@ -195,7 +202,7 @@ async function fetchRecentCuratorVotes(): Promise<CuratorVote[]> {
         });
       }
     } catch (error) {
-      console.error(`Error fetching votes for ${curator}:`, error);
+      logger.error(`Error fetching votes for ${curator}`, 'cron:curator-rewards', error);
     }
   }
 
@@ -240,7 +247,7 @@ async function verifySportsblockPost(author: string, permlink: string): Promise<
       tags.includes('sportsblock')
     );
   } catch (error) {
-    console.error(`Error verifying post ${author}/${permlink}:`, error);
+    logger.error(`Error verifying post ${author}/${permlink}`, 'cron:curator-rewards', error);
     return false;
   }
 }
@@ -262,13 +269,13 @@ export async function GET() {
     const curatorDailyCounts = await getCuratorDailyCounts();
 
     // Fetch recent curator votes
-    console.log('[Curator Rewards] Fetching recent curator votes...');
+    logger.info('Fetching recent curator votes', 'cron:curator-rewards');
     const allVotes = await fetchRecentCuratorVotes();
-    console.log(`[Curator Rewards] Found ${allVotes.length} total votes`);
+    logger.info(`Found ${allVotes.length} total votes`, 'cron:curator-rewards');
 
     // Filter for unprocessed curator votes
     const eligibleVotes = filterCuratorVotes(allVotes, processedVoteIds);
-    console.log(`[Curator Rewards] ${eligibleVotes.length} eligible votes after filtering`);
+    logger.info(`${eligibleVotes.length} eligible votes after filtering`, 'cron:curator-rewards');
 
     if (eligibleVotes.length === 0) {
       return NextResponse.json({
@@ -287,7 +294,7 @@ export async function GET() {
         verifiedVotes.push(vote);
       }
     }
-    console.log(`[Curator Rewards] ${verifiedVotes.length} votes on Sportsblock posts`);
+    logger.info(`${verifiedVotes.length} votes on Sportsblock posts`, 'cron:curator-rewards');
 
     if (verifiedVotes.length === 0) {
       return NextResponse.json({
@@ -304,8 +311,9 @@ export async function GET() {
       curatorDailyCounts
     );
 
-    console.log(
-      `[Curator Rewards] Processed: ${rewards.length} rewards, ${skipped.length} skipped`
+    logger.info(
+      `Processed: ${rewards.length} rewards, ${skipped.length} skipped`,
+      'cron:curator-rewards'
     );
 
     // Save to database
@@ -348,7 +356,7 @@ export async function GET() {
       duration: Date.now() - startTime,
     });
   } catch (error) {
-    console.error('[Curator Rewards] Error:', error);
+    logger.error('Curator rewards cron failed', 'cron:curator-rewards', error);
 
     return NextResponse.json(
       {

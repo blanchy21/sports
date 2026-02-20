@@ -18,7 +18,7 @@ const LOW_TOKEN_THRESHOLD = 50;
  * Runs every 6 hours. When @niallon11's pending tokens drop below 50,
  * broadcasts a `claim_account` from @sp-blockrewards using RC (zero HIVE fee).
  *
- * Gracefully handles missing OPERATIONS_ACTIVE_KEY — expected during early deployment.
+ * Requires ACCOUNT_CREATOR_ACTIVE_KEY to broadcast the claim.
  */
 export async function GET() {
   if (!(await verifyCronRequest())) {
@@ -64,19 +64,6 @@ export async function GET() {
       `Tokens below threshold (${LOW_TOKEN_THRESHOLD}), attempting RC claim`,
       'cron:claim-tokens'
     );
-
-    const activeKey = process.env.OPERATIONS_ACTIVE_KEY;
-    if (!activeKey) {
-      logger.warn(
-        'OPERATIONS_ACTIVE_KEY not configured — skipping claim (expected during early deployment)',
-        'cron:claim-tokens'
-      );
-      return NextResponse.json({
-        success: true,
-        message: 'Tokens low but OPERATIONS_ACTIVE_KEY not configured — skipped',
-        results,
-      });
-    }
 
     // Broadcast claim_account for the creator account (must match account-creation.ts)
     const creatorActiveKey = process.env.ACCOUNT_CREATOR_ACTIVE_KEY;

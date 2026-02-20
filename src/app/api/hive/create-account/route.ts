@@ -3,6 +3,7 @@ import { createApiHandler, apiSuccess, apiError } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { createHiveAccountForUser, AccountCreationError } from '@/lib/hive/account-creation';
 import { prisma } from '@/lib/db/prisma';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/utils/rate-limit';
 
 export const POST = createApiHandler('/api/hive/create-account', async (request: Request, ctx) => {
   // Auth: require sb_session cookie
@@ -17,6 +18,20 @@ export const POST = createApiHandler('/api/hive/create-account', async (request:
       'Only custodial users can create Hive accounts via this endpoint',
       'FORBIDDEN',
       403
+    );
+  }
+
+  // Rate limit — prevent rapid ACT exhaustion (3 per day per user)
+  const rateLimit = await checkRateLimit(
+    user.userId,
+    RATE_LIMITS.accountCreation,
+    'accountCreation'
+  );
+  if (!rateLimit.success) {
+    return apiError(
+      'Too many account creation attempts. Please try again later.',
+      'RATE_LIMITED',
+      429
     );
   }
 

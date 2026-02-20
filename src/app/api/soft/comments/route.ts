@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
@@ -227,23 +228,27 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Update user's lastActiveAt timestamp (fire-and-forget)
-      prisma.profile
-        .update({
-          where: { id: user.userId },
-          data: { lastActiveAt: new Date() },
-        })
-        .catch(() => {});
+      // Keep function alive for background updates via after()
+      after(
+        prisma.profile
+          .update({
+            where: { id: user.userId },
+            data: { lastActiveAt: new Date() },
+          })
+          .catch(() => {})
+      );
 
       // Update comment count on the post if it's a soft post
       if (postId.startsWith('soft-') || !postId.includes('-')) {
         const actualPostId = postId.replace('soft-', '');
-        prisma.post
-          .update({
-            where: { id: actualPostId },
-            data: { commentCount: { increment: 1 } },
-          })
-          .catch((err: unknown) => console.error('Failed to increment comment count:', err));
+        after(
+          prisma.post
+            .update({
+              where: { id: actualPostId },
+              data: { commentCount: { increment: 1 } },
+            })
+            .catch((err: unknown) => console.error('Failed to increment comment count:', err))
+        );
       }
 
       // Fetch post doc and parent comment doc in parallel for notifications

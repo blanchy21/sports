@@ -7,33 +7,11 @@ import {
   signAndBroadcast,
   OperationValidationError,
 } from '@/lib/hive/signing-relay';
+import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import type { HiveOperation } from '@/types/hive-operations';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-// ---------------------------------------------------------------------------
-// In-memory rate limiter — 10 ops/minute per user, no external dependency
-// ---------------------------------------------------------------------------
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-
-  if (!entry || now >= entry.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-
-  if (entry.count >= 10) {
-    return false;
-  }
-
-  entry.count++;
-  return true;
-}
 
 // ---------------------------------------------------------------------------
 // POST /api/hive/sign
@@ -86,10 +64,16 @@ export const POST = createApiHandler('/api/hive/sign', async (request: Request, 
     });
   }
 
-  // 5. Rate limit
-  if (!checkRateLimit(user.userId)) {
+  // 5. Rate limit (distributed — works across serverless invocations)
+  const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.signingRelay, 'signingRelay');
+  if (!rateLimit.success) {
     return apiError('Too many requests — max 10 operations per minute', 'RATE_LIMITED', 429, {
       requestId: ctx.requestId,
+      headers: createRateLimitHeaders(
+        rateLimit.remaining,
+        rateLimit.reset,
+        RATE_LIMITS.signingRelay.limit
+      ),
     });
   }
 

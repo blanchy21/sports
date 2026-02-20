@@ -260,6 +260,21 @@ export const RATE_LIMITS = {
     limit: 60, // 60 poll votes per hour
     windowSeconds: 3600,
   },
+  // Signing relay — 10 ops/min per user (serverless-safe, replaces in-memory limiter)
+  signingRelay: {
+    limit: 10,
+    windowSeconds: 60,
+  },
+  // Account creation — 3 per day per user (normal users create exactly 1)
+  accountCreation: {
+    limit: 3,
+    windowSeconds: 86400,
+  },
+  // Key download — 5 per hour (defense-in-depth for sensitive endpoint)
+  keyDownload: {
+    limit: 5,
+    windowSeconds: 3600,
+  },
 } as const;
 
 /**

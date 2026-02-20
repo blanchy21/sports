@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
@@ -62,36 +63,6 @@ const toggleFollowSchema = z.object({
 const checkFollowSchema = z.object({
   targetUserId: z.string().min(1),
 });
-
-// ============================================
-// Helper Functions
-// ============================================
-
-async function updateFollowCounts(followerId: string, followedId: string, delta: number) {
-  try {
-    if (delta >= 0) {
-      // Increment: safe to use Prisma atomic increment
-      await Promise.all([
-        prisma.profile.update({
-          where: { id: followerId },
-          data: { followingCount: { increment: delta } },
-        }),
-        prisma.profile.update({
-          where: { id: followedId },
-          data: { followerCount: { increment: delta } },
-        }),
-      ]);
-    } else {
-      // Decrement: use raw SQL with GREATEST to prevent going below zero
-      await Promise.all([
-        prisma.$executeRaw`UPDATE profiles SET following_count = GREATEST(0, following_count - 1) WHERE id = ${followerId}`,
-        prisma.$executeRaw`UPDATE profiles SET follower_count = GREATEST(0, follower_count - 1) WHERE id = ${followedId}`,
-      ]);
-    }
-  } catch (error) {
-    console.error('Failed to update follow counts:', error);
-  }
-}
 
 // ============================================
 // GET /api/soft/follows - Get followers or following list
@@ -254,33 +225,45 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const existingFollow = await prisma.follow.findUnique({
-        where: { followerId_followedId: { followerId: user.userId, followedId: targetUserId } },
-      });
-
-      let isFollowing: boolean;
       const now = new Date();
 
-      if (existingFollow) {
-        // Unfollow
-        await prisma.follow.delete({ where: { id: existingFollow.id } });
-        isFollowing = false;
-        await updateFollowCounts(user.userId, targetUserId, -1);
-      } else {
-        // Follow
-        await prisma.follow.create({
-          data: {
-            followerId: user.userId,
-            followerUsername: user.username,
-            followedId: targetUserId,
-            followedUsername: targetUsername,
-            createdAt: now,
-          },
+      // Wrap follow/unfollow + count updates in a transaction to prevent counter drift
+      const { isFollowing } = await prisma.$transaction(async (tx) => {
+        const existingFollow = await tx.follow.findUnique({
+          where: { followerId_followedId: { followerId: user.userId, followedId: targetUserId } },
         });
-        isFollowing = true;
-        await updateFollowCounts(user.userId, targetUserId, 1);
 
-        // Create notification for the followed user
+        if (existingFollow) {
+          // Unfollow
+          await tx.follow.delete({ where: { id: existingFollow.id } });
+          await tx.$executeRaw`UPDATE profiles SET following_count = GREATEST(0, following_count - 1) WHERE id = ${user.userId}`;
+          await tx.$executeRaw`UPDATE profiles SET follower_count = GREATEST(0, follower_count - 1) WHERE id = ${targetUserId}`;
+          return { isFollowing: false };
+        } else {
+          // Follow
+          await tx.follow.create({
+            data: {
+              followerId: user.userId,
+              followerUsername: user.username,
+              followedId: targetUserId,
+              followedUsername: targetUsername,
+              createdAt: now,
+            },
+          });
+          await tx.profile.update({
+            where: { id: user.userId },
+            data: { followingCount: { increment: 1 } },
+          });
+          await tx.profile.update({
+            where: { id: targetUserId },
+            data: { followerCount: { increment: 1 } },
+          });
+          return { isFollowing: true };
+        }
+      });
+
+      // Notification is non-critical — outside the transaction
+      if (isFollowing) {
         await prisma.notification.create({
           data: {
             recipientId: targetUserId,
@@ -296,13 +279,15 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Update user's lastActiveAt timestamp (fire-and-forget)
-      prisma.profile
-        .update({
-          where: { id: user.userId },
-          data: { lastActiveAt: new Date() },
-        })
-        .catch(() => {});
+      // Update user's lastActiveAt timestamp (kept alive via after())
+      after(
+        prisma.profile
+          .update({
+            where: { id: user.userId },
+            data: { lastActiveAt: new Date() },
+          })
+          .catch(() => {})
+      );
 
       // Get updated follower count for target user
       const followerCount = await prisma.follow.count({

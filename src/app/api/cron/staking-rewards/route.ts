@@ -25,6 +25,9 @@ import { Prisma } from '@/generated/prisma/client';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
 import { logger } from '@/lib/logger';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 /**
  * Check if rewards have already been processed for this week
  */

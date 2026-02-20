@@ -3,6 +3,9 @@ import { createApiHandler, apiError } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { decryptKeys } from '@/lib/hive/key-encryption';
 import { prisma } from '@/lib/db/prisma';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth/next-auth-options';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/utils/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,6 +28,27 @@ export const GET = createApiHandler('/api/hive/download-keys', async (request: R
 
   if (!user.hiveUsername) {
     return apiError('No Hive account linked to this user', 'VALIDATION_ERROR', 400, {
+      requestId: ctx.requestId,
+    });
+  }
+
+  // 1b. Rate limit — prevent bulk download attempts
+  const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.keyDownload, 'keyDownload');
+  if (!rateLimit.success) {
+    return apiError(
+      'Too many key download attempts. Please try again later.',
+      'RATE_LIMITED',
+      429,
+      {
+        requestId: ctx.requestId,
+      }
+    );
+  }
+
+  // 1c. Require fresh NextAuth session (defense-in-depth beyond sb_session cookie)
+  const nextAuthSession = await getServerSession(authOptions);
+  if (!nextAuthSession?.user?.id || nextAuthSession.user.id !== user.userId) {
+    return apiError('Please re-authenticate to download your keys', 'UNAUTHORIZED', 401, {
       requestId: ctx.requestId,
     });
   }

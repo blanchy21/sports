@@ -22,6 +22,9 @@ import { prisma } from '@/lib/db/prisma';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
 import { logger } from '@/lib/logger';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 /**
  * Get the previous week's ID (since we run on Monday for the previous week)
  */

@@ -92,6 +92,16 @@ model Profile {
   updatedAt       DateTime  @updatedAt @map("updated_at")
   lastActiveAt    DateTime? @map("last_active_at")
 
+  // Relations
+  posts           Post[]
+  comments        Comment[]
+  likes           Like[]
+  followsGiven    Follow[]        @relation("FollowsGiven")
+  followsReceived Follow[]        @relation("FollowsReceived")
+  communityMemberships CommunityMember[]
+  notifications   Notification[]
+  bookmarks       Bookmark[]
+
   @@index([isHiveUser])
   @@index([lastActiveAt])
   @@map("profiles")
@@ -101,6 +111,7 @@ model Profile {
 model Post {
   id                String    @id @default(uuid())
   authorId          String    @map("author_id")
+  author            Profile   @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorUsername     String    @map("author_username")
   authorDisplayName String?   @map("author_display_name")
   authorAvatar      String?   @map("author_avatar")
@@ -121,6 +132,9 @@ model Post {
   commentCount      Int       @default(0) @map("comment_count")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  comments          Comment[]
 
   @@index([authorId])
   @@index([authorUsername])
@@ -159,8 +173,10 @@ model Sportsbite {
 model Comment {
   id                String    @id @default(uuid())
   postId            String    @map("post_id")
+  post              Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   postPermlink      String    @map("post_permlink")
   authorId          String    @map("author_id")
+  author            Profile   @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorUsername     String    @map("author_username")
   authorDisplayName String?   @map("author_display_name")
   authorAvatar      String?   @map("author_avatar")
@@ -184,6 +200,7 @@ model Comment {
 model Like {
   id         String   @id @default(uuid())
   userId     String   @map("user_id")
+  user       Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
   targetType String   @map("target_type") // 'post' | 'comment'
   targetId   String   @map("target_id")
   createdAt  DateTime @default(now()) @map("created_at")
@@ -197,8 +214,10 @@ model Like {
 model Follow {
   id               String   @id @default(uuid())
   followerId       String   @map("follower_id")
+  follower         Profile  @relation("FollowsGiven", fields: [followerId], references: [id], onDelete: Cascade)
   followerUsername  String   @map("follower_username")
   followedId       String   @map("followed_id")
+  followed         Profile  @relation("FollowsReceived", fields: [followedId], references: [id], onDelete: Cascade)
   followedUsername  String   @map("followed_username")
   createdAt        DateTime @default(now()) @map("created_at")
 
@@ -238,6 +257,7 @@ model PollVote {
 model Notification {
   id              String   @id @default(uuid())
   recipientId     String   @map("recipient_id")
+  recipient       Profile  @relation(fields: [recipientId], references: [id], onDelete: Cascade)
   type            String   // 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'system'
   title           String
   message         String
@@ -271,6 +291,9 @@ model Community {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
+  // Relations
+  members        CommunityMember[]
+
   @@index([sportCategory])
   @@index([memberCount])
   @@map("communities")
@@ -280,7 +303,9 @@ model Community {
 model CommunityMember {
   id            String    @id @default(uuid())
   communityId   String    @map("community_id")
+  community     Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   userId        String    @map("user_id")
+  user          Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
   username      String
   hiveUsername   String?   @map("hive_username")
   role          String    @default("member") // 'admin' | 'moderator' | 'member'
@@ -314,6 +339,7 @@ model CommunityInvite {
 model Bookmark {
   id              String   @id @default(uuid())
   userId          String   @map("user_id")
+  user            Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
   postIdentifier  String   @map("post_identifier") // post ID or "author/permlink"
   createdAt       DateTime @default(now()) @map("created_at")
 
