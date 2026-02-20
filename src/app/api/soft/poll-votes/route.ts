@@ -190,10 +190,10 @@ export async function POST(request: NextRequest) {
 }
 
 // ============================================
-// PUT /api/soft/poll-votes - Batch check for multiple sportsbite IDs
+// PATCH /api/soft/poll-votes - Batch check for multiple sportsbite IDs
 // ============================================
 
-export async function PUT(request: NextRequest) {
+export async function PATCH(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
   try {
@@ -207,38 +207,47 @@ export async function PUT(request: NextRequest) {
     const { sportsbiteIds } = parseResult.data;
     const user = await getAuthenticatedUserFromSession(request);
 
+    // Batch query: all vote counts grouped by sportsbiteId + option
+    const allCounts = await prisma.pollVote.groupBy({
+      by: ['sportsbiteId', 'option'],
+      where: { sportsbiteId: { in: sportsbiteIds } },
+      _count: true,
+    });
+
+    // Batch query: user's votes for all requested IDs
+    const userVotes = user
+      ? await prisma.pollVote.findMany({
+          where: { userId: user.userId, sportsbiteId: { in: sportsbiteIds } },
+          select: { sportsbiteId: true, option: true },
+        })
+      : [];
+
+    // Build lookup map
+    const userVoteMap = new Map(userVotes.map((v) => [v.sportsbiteId, v.option as 0 | 1]));
+
+    // Aggregate into response shape
     const results: Record<
       string,
-      {
-        results: PollResults;
-        userVote: 0 | 1 | null;
-        hasVoted: boolean;
-      }
+      { results: PollResults; userVote: 0 | 1 | null; hasVoted: boolean }
     > = {};
 
-    await Promise.all(
-      sportsbiteIds.map(async (sportsbiteId) => {
-        const pollResults = await getPollResults(sportsbiteId);
+    for (const id of sportsbiteIds) {
+      const vote = userVoteMap.get(id);
+      results[id] = {
+        results: { option0Count: 0, option1Count: 0, totalVotes: 0 },
+        userVote: vote ?? null,
+        hasVoted: vote !== undefined,
+      };
+    }
 
-        let userVote: 0 | 1 | null = null;
-        let hasVoted = false;
-        if (user) {
-          const existing = await prisma.pollVote.findUnique({
-            where: { userId_sportsbiteId: { userId: user.userId, sportsbiteId } },
-          });
-          if (existing) {
-            hasVoted = true;
-            userVote = existing.option as 0 | 1;
-          }
-        }
-
-        results[sportsbiteId] = {
-          results: pollResults,
-          userVote,
-          hasVoted,
-        };
-      })
-    );
+    for (const row of allCounts) {
+      const entry = results[row.sportsbiteId];
+      if (entry) {
+        if (row.option === 0) entry.results.option0Count = row._count;
+        else entry.results.option1Count = row._count;
+        entry.results.totalVotes += row._count;
+      }
+    }
 
     return NextResponse.json({
       success: true,

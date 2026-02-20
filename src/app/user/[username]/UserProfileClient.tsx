@@ -74,7 +74,7 @@ export default function UserProfileClient() {
         }
 
         const response = await fetch('/api/soft/follows', {
-          method: 'PUT',
+          method: 'PATCH',
           headers,
           body: JSON.stringify({ targetUserId: (softProfile as { id?: string }).id }),
         });

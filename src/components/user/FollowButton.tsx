@@ -53,7 +53,7 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
         }
 
         const response = await fetch('/api/soft/follows', {
-          method: 'PUT',
+          method: 'PATCH',
           headers,
           body: JSON.stringify({ targetUserId }),
         });

@@ -306,19 +306,19 @@ export async function POST(request: NextRequest) {
 }
 
 // ============================================
-// PUT /api/soft/follows - Check follow status
+// PATCH /api/soft/follows - Check follow status
 // ============================================
 
-export async function PUT(request: NextRequest) {
+export async function PATCH(request: NextRequest) {
   // Rate limiting
-  const putClientId = getClientIdentifier(request);
-  const putRateLimit = await checkRateLimit(putClientId, RATE_LIMITS.read, 'followsRead');
-  if (!putRateLimit.success) {
+  const clientId = getClientIdentifier(request);
+  const rateLimit = await checkRateLimit(clientId, RATE_LIMITS.read, 'followsRead');
+  if (!rateLimit.success) {
     return NextResponse.json(
       { success: false, error: 'Rate limit exceeded' },
       {
         status: 429,
-        headers: createRateLimitHeaders(0, putRateLimit.reset, RATE_LIMITS.read.limit),
+        headers: createRateLimitHeaders(0, rateLimit.reset, RATE_LIMITS.read.limit),
       }
     );
   }

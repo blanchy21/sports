@@ -38,15 +38,6 @@ jest.mock('@/contexts/AiohaProvider', () => ({
   AiohaProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-// Mock Firebase auth
-jest.mock('@/lib/firebase/auth', () => ({
-  FirebaseAuth: {
-    signIn: jest.fn(),
-    signOut: jest.fn().mockResolvedValue(undefined),
-    upgradeToHive: jest.fn(),
-  },
-}));
-
 // Setup localStorage mock
 const localStorageMock = createMockLocalStorage();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });

@@ -210,10 +210,10 @@ export async function POST(request: NextRequest) {
 }
 
 // ============================================
-// PUT /api/soft/reactions - Batch check for multiple sportsbite IDs
+// PATCH /api/soft/reactions - Batch check for multiple sportsbite IDs
 // ============================================
 
-export async function PUT(request: NextRequest) {
+export async function PATCH(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
   try {
@@ -227,31 +227,44 @@ export async function PUT(request: NextRequest) {
     const { sportsbiteIds } = parseResult.data;
     const user = await getAuthenticatedUserFromSession(request);
 
-    const results: Record<
-      string,
-      {
-        counts: ReactionCounts;
-        userReaction: ReactionEmoji | null;
+    // Batch query: all reaction counts grouped by sportsbiteId + emoji
+    const allCounts = await prisma.reaction.groupBy({
+      by: ['sportsbiteId', 'emoji'],
+      where: { sportsbiteId: { in: sportsbiteIds } },
+      _count: true,
+    });
+
+    // Batch query: user's reactions for all requested IDs
+    const userReactions = user
+      ? await prisma.reaction.findMany({
+          where: { userId: user.userId, sportsbiteId: { in: sportsbiteIds } },
+          select: { sportsbiteId: true, emoji: true },
+        })
+      : [];
+
+    // Build lookup maps
+    const userReactionMap = new Map(userReactions.map((r) => [r.sportsbiteId, r.emoji]));
+
+    // Aggregate into response shape
+    const results: Record<string, { counts: ReactionCounts; userReaction: ReactionEmoji | null }> =
+      {};
+
+    for (const id of sportsbiteIds) {
+      results[id] = {
+        counts: { ...DEFAULT_COUNTS },
+        userReaction: (userReactionMap.get(id) as ReactionEmoji) ?? null,
+      };
+    }
+
+    for (const row of allCounts) {
+      const entry = results[row.sportsbiteId];
+      if (entry && row.emoji in entry.counts && row.emoji !== 'total') {
+        entry.counts[row.emoji as keyof Omit<ReactionCounts, 'total'>] = row._count;
       }
-    > = {};
-
-    await Promise.all(
-      sportsbiteIds.map(async (sportsbiteId) => {
-        const counts = await getReactionCounts(sportsbiteId);
-
-        let userReaction: ReactionEmoji | null = null;
-        if (user) {
-          const existing = await prisma.reaction.findUnique({
-            where: { userId_sportsbiteId: { userId: user.userId, sportsbiteId } },
-          });
-          if (existing) {
-            userReaction = existing.emoji as ReactionEmoji;
-          }
-        }
-
-        results[sportsbiteId] = { counts, userReaction };
-      })
-    );
+      if (entry) {
+        entry.counts.total += row._count;
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -200,28 +200,3 @@ export async function unsubscribeFromCommunity(
     };
   }
 }
-
-/**
- * Check if user is subscribed to a community
- * @param communityId - Community ID
- * @param userId - User ID
- * @returns Subscription status
- */
-export async function isSubscribedToCommunity(
-  communityId: string,
-  userId: string
-): Promise<boolean> {
-  try {
-    if (!userId) return false;
-
-    const members = await fetchCommunityMembers(communityId, 1000);
-    return members.some((m) => m.userId === userId && m.status === 'active');
-  } catch (error) {
-    logError(
-      'Error checking community subscription',
-      'isSubscribedToCommunity',
-      error instanceof Error ? error : undefined
-    );
-    return false;
-  }
-}

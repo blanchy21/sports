@@ -212,7 +212,7 @@ export function SportsbitesFeed({
 
     const controller = new AbortController();
     fetch('/api/soft/reactions', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sportsbiteIds: idsToFetch.slice(0, 50) }),
       signal: controller.signal,
@@ -241,7 +241,7 @@ export function SportsbitesFeed({
 
     const controller = new AbortController();
     fetch('/api/soft/poll-votes', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sportsbiteIds: pollBiteIds.slice(0, 50) }),
       signal: controller.signal,

@@ -280,7 +280,7 @@ model Community {
   about          String    @default("")
   description    String    @default("")
   sportCategory  String    @default("general") @map("sport_category")
-  type           String    @default("public") // 'public' | 'private' | 'restricted'
+  type           String    @default("public") // 'public' | 'private' | 'invite-only'
   avatar         String?
   coverImage     String?   @map("cover_image")
   createdBy      String    @map("created_by")

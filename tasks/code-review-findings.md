@@ -150,11 +150,11 @@
 
 ### 31. Prisma Community.type mismatch
 **File:** `prisma/schema.prisma`
-**Status:** [ ] Deferred — Needs verification against actual enum values in use.
+**Status:** [x] Fixed — Changed comment from `'restricted'` to `'invite-only'` to match code.
 
 ### 32. Stale Firebase mocks in 3 test files
 **Files:** `tests/contexts/auth-storage.test.ts`, `tests/contexts/auth-aioha.integration.test.tsx`, `tests/contexts/auth-race-conditions.test.tsx`
-**Status:** [ ] Deferred — Separate cleanup PR.
+**Status:** [x] Fixed — Removed stale `jest.mock('@/lib/firebase/auth')` from all 3 files. Note: auth-aioha and auth-race-conditions tests have pre-existing logic failures unrelated to Firebase mocks (session restoration tests don't match current AuthContext behavior).
 
 ### 33. Dual session systems can drift apart
 **Files:** `src/contexts/AuthContext.tsx`, `src/contexts/auth/useGoogleAuthBridge.ts`
@@ -166,7 +166,7 @@
 
 ### 35. Pg Pool without explicit limits for serverless
 **File:** `src/lib/db/prisma.ts`
-**Status:** [x] Fixed — Added `max: 5`, `idleTimeoutMillis: 30000`, `connectionTimeoutMillis: 10000`.
+**Status:** [x] Fixed — Added `max: 5`, `idleTimeoutMillis: 30000`, `connectionTimeoutMillis: 10000`. Pool max is now configurable via `DATABASE_POOL_MAX` env var (defaults to 10).
 
 ---
 
@@ -202,25 +202,63 @@
 
 ---
 
+## Round 2 Review Items (R2)
+
+### R2-20. Tighten dev fallback encryption guard
+**Files:** `src/lib/hive/key-encryption.ts:11`, `src/lib/api/session-encryption.ts:14,20`
+**Issue:** Guard `=== 'production'` allows staging/preview to silently use insecure dev fallback keys.
+**Status:** [x] Fixed — Changed all 3 guards to `!== 'development'`.
+
+### R2-24+25. N+1 queries in batch check routes + PUT semantics
+**Files:** `src/app/api/soft/reactions/route.ts`, `src/app/api/soft/poll-votes/route.ts`, `src/app/api/soft/follows/route.ts`
+**Issue:** Batch check handlers used N+1 individual queries and PUT (wrong HTTP method for read-only checks).
+**Status:** [x] Fixed — Reactions/poll-votes batch: replaced N+1 loops with 2 batched queries (groupBy + findMany). All 3 routes: renamed PUT→PATCH. Updated 4 client callers.
+
+### R2-26. Prisma pool size not configurable
+**File:** `src/lib/db/prisma.ts:12`
+**Issue:** Hardcoded `max: 5`.
+**Status:** [x] Fixed — `max: parseInt(process.env.DATABASE_POOL_MAX || '10', 10)`. Added to `.env.example`.
+
+### R2-27. View count not deduplicated
+**File:** `src/app/api/posts/[id]/route.ts`
+**Issue:** Every GET increments view count — bots/refreshes inflate numbers.
+**Status:** [x] Fixed — Redis-based dedup using hashed IP+UA fingerprint with 1hr TTL. Falls back to increment-anyway if Redis unavailable.
+
+### R2-31. Dead `isSubscribedToCommunity` function
+**File:** `src/lib/hive-workerbee/community.ts`
+**Issue:** Exported but never imported or called.
+**Status:** [x] Fixed — Deleted.
+
+### Deferred R2 Items
+| Issue | Reason |
+|-------|--------|
+| R2-21: JS memory zeroing | Language limitation (won't fix) |
+| R2-22: Master password in blob | By design for user key graduation |
+| R2-23: Denormalized author data | Needs cache architecture |
+| R2-35: useAuthPage decomposition | Large refactor, separate PR |
+| R2-36: publish/page.tsx | Large refactor, not dead code |
+
+---
+
 ## Summary
 
 | Severity | Total | Fixed | Deferred/Won't Fix |
 |----------|-------|-------|---------------------|
 | Critical | 6 | 6 | 0 |
 | High | 10 | 8 | 2 |
-| Medium | 19 | 13 | 6 |
+| Medium | 19 | 15 | 4 |
 | Low | 7 | 4 | 3 |
-| **Total** | **42** | **31** | **11** |
+| R2 | 6 | 6 | 0 |
+| **Total** | **48** | **39** | **9** |
 
-### Deferred Items Rationale
-- **#15** (npm vulnerabilities): Requires separate `npm audit fix` with manual breaking change review
+### Deferred Items Rationale (R1)
+- **#15** (npm vulnerabilities): Requires Prisma 6.x breaking upgrade
 - **#16** (test coverage): Separate testing sprint; too large for this PR
 - **#19** (re-auth for key download): Needs UI flow + 2FA/password re-entry
-- **#21** (cross-instance rate limiting): Needs external store (Redis/Upstash)
 - **#25** (debounce state loss): Low risk since cookie is primary auth
-- **#31** (Community.type): Needs enum verification
-- **#32** (Firebase mocks): Separate cleanup PR
 - **#33** (dual session drift): Architectural; cookie is authoritative
 - **#34** (sb-session POST): Accepted risk; CSRF prevents cross-origin
 - **#36** (memory zeroing): JS limitation
 - **#38** (CSP unsafe-inline): Next.js limitation
+- **#40** (rename soft→custodial): Breaking codebase-wide rename
+- **#41** (User type redesign): Breaking type overhaul

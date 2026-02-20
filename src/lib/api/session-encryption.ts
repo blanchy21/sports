@@ -11,14 +11,16 @@ export function getSessionEncryptionKey(): Buffer {
   const secret = process.env.SESSION_SECRET;
 
   if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('SESSION_SECRET environment variable is required in production');
+    if (process.env.NODE_ENV !== 'development') {
+      throw new Error(
+        'SESSION_SECRET environment variable is required in non-development environments'
+      );
     }
     return crypto.scryptSync('development-only-insecure-key', 'salt', 32);
   }
 
-  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_ENCRYPTION_SALT) {
-    throw new Error('SESSION_ENCRYPTION_SALT is required in production');
+  if (process.env.NODE_ENV !== 'development' && !process.env.SESSION_ENCRYPTION_SALT) {
+    throw new Error('SESSION_ENCRYPTION_SALT is required in non-development environments');
   }
   const salt = process.env.SESSION_ENCRYPTION_SALT || 'sportsblock-session-salt';
 

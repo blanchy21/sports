@@ -17,14 +17,6 @@ jest.mock('@/contexts/AiohaProvider', () => ({
   useAioha: jest.fn(),
 }));
 
-jest.mock('@/lib/firebase/auth', () => ({
-  FirebaseAuth: {
-    signIn: jest.fn(),
-    signOut: jest.fn(),
-    upgradeToHive: jest.fn(),
-  },
-}));
-
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import type { HiveAccount } from '@/lib/shared/types';
 import type { UserAccountData } from '@/lib/hive-workerbee/account';
