@@ -143,7 +143,12 @@ export const useAuthPage = (): UseAuthPageResult => {
     // Already logged in via AuthContext - redirect away from auth page
     // Skip redirect when adding a new account to preserve multi-account flow
     if (user?.username && !isAddAccountFlow) {
-      router.replace('/sportsbites');
+      // Custodial users without a Hive account go to onboarding
+      if (!user.isHiveAuth && !user.hiveUsername) {
+        router.replace('/onboarding/username');
+      } else {
+        router.replace('/sportsbites');
+      }
       return;
     }
 

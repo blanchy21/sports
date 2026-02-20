@@ -40,6 +40,15 @@ export const authOptions: NextAuthOptions = {
         token.displayName = custodialUser.displayName ?? undefined;
         token.avatarUrl = custodialUser.avatarUrl ?? undefined;
         token.hiveUsername = custodialUser.hiveUsername ?? undefined;
+      } else if (token.custodialUserId && !token.hiveUsername) {
+        // On subsequent requests, re-check hiveUsername in case it was set after initial login
+        const freshUser = await prisma.custodialUser.findUnique({
+          where: { id: token.custodialUserId as string },
+          select: { hiveUsername: true },
+        });
+        if (freshUser?.hiveUsername) {
+          token.hiveUsername = freshUser.hiveUsername;
+        }
       }
 
       return token;

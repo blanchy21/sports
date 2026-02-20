@@ -38,6 +38,7 @@ export function useGoogleAuthBridge({
           displayName: displayName ?? email ?? id,
           avatar: avatarUrl,
           isHiveAuth: false,
+          hiveUsername: (session.user as { hiveUsername?: string }).hiveUsername,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
