@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MapPin, Calendar, Link as LinkIcon, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/core/Button';
@@ -209,12 +208,11 @@ export default function UserProfileClient() {
           <div className="relative h-32 bg-gradient-to-r from-primary via-bright-cobalt to-accent sm:h-48">
             {!isSoftUser &&
               (profile as { profile?: { coverImage?: string } }).profile?.coverImage && (
-                <Image
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
                   src={(profile as { profile?: { coverImage?: string } }).profile!.coverImage!}
                   alt="Cover"
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
-                  className="object-cover"
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
               )}
           </div>
