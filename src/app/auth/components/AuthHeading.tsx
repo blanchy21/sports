@@ -1,8 +1,7 @@
 import React from 'react';
-import type { AuthMode } from '../hooks/useAuthPage';
 
 interface AuthHeadingProps {
-  mode: AuthMode;
+  mode: 'login' | 'signup';
 }
 
 export const AuthHeading: React.FC<AuthHeadingProps> = ({ mode }) => (

@@ -1,5 +1,6 @@
 import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { Providers, KeyTypes } from '@aioha/aioha';
 import type { LoginResult, LoginResultSuccess } from '@aioha/aioha/build/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,7 +27,6 @@ declare global {
 const LOGIN_TIMEOUT_MS = 10000;
 
 // localStorage keys for remembering credentials across sessions
-const REMEMBERED_EMAIL_KEY = 'sportsblock:rememberedEmail';
 const REMEMBERED_HIVE_USERNAME_KEY = 'sportsblock:rememberedHiveUsername';
 
 /**
@@ -46,14 +46,10 @@ const PROVIDER_STRING_MAP: Record<string, string> = {
 
 /**
  * Convert a provider value (enum or string) to its normalized string representation.
- * The Providers enum values are themselves strings (e.g., Providers.Keychain === 'keychain'),
- * but this function handles any edge cases.
  */
 function normalizeProviderToString(provider: Providers | string): string {
-  // First check if it's in our known provider map
   const mapped = PROVIDER_STRING_MAP[provider];
   if (mapped) return mapped;
-  // Fallback: if it's already a string not in the map, return as-is
   return String(provider);
 }
 
@@ -75,8 +71,6 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: st
   ]);
 }
 
-export type AuthMode = 'login' | 'signup';
-
 interface AiohaLoginResult {
   user?: {
     username?: string;
@@ -94,19 +88,7 @@ interface AiohaLoginResult {
   [key: string]: unknown;
 }
 
-export interface EmailFormState {
-  email: string;
-  password: string;
-  username: string;
-  displayName: string;
-  acceptTerms: boolean;
-  subscribeNewsletter: boolean;
-  showPassword: boolean;
-}
-
 interface UseAuthPageResult {
-  mode: AuthMode;
-  toggleMode: () => void;
   isConnecting: boolean;
   errorMessage: string | null;
   successMessage: string | null;
@@ -120,12 +102,7 @@ interface UseAuthPageResult {
   onHiveUsernameSubmit: () => void;
   onHiveUsernameCancel: () => void;
   onProviderSelect: (provider: string) => void;
-  emailForm: EmailFormState;
-  updateEmailField: <K extends keyof EmailFormState>(field: K, value: EmailFormState[K]) => void;
-  togglePasswordVisibility: () => void;
-  handleEmailSubmit: () => Promise<void>;
-  handleGoogleSignIn: () => Promise<void>;
-  handleForgotPassword: () => Promise<void>;
+  handleGoogleSignIn: () => void;
   showAiohaModal: boolean;
   openAiohaModal: () => void;
   closeAiohaModal: () => void;
@@ -143,7 +120,6 @@ export const useAuthPage = (): UseAuthPageResult => {
   const { user, isClient, loginWithAioha } = useAuth();
   const { aioha, isInitialized } = useAioha();
 
-  const [mode, setMode] = useState<AuthMode>('login');
   const [isConnecting, setIsConnecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -155,16 +131,6 @@ export const useAuthPage = (): UseAuthPageResult => {
     typeof window !== 'undefined' ? (localStorage.getItem(REMEMBERED_HIVE_USERNAME_KEY) ?? '') : ''
   );
   const [showAiohaModal, setShowAiohaModal] = useState(false);
-
-  const [emailForm, setEmailForm] = useState<EmailFormState>(() => ({
-    email: typeof window !== 'undefined' ? (localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? '') : '',
-    password: '',
-    username: '',
-    displayName: '',
-    acceptTerms: false,
-    subscribeNewsletter: false,
-    showPassword: false,
-  }));
 
   const isAiohaReady = useMemo(() => Boolean(aioha) && isInitialized, [aioha, isInitialized]);
 
@@ -207,32 +173,6 @@ export const useAuthPage = (): UseAuthPageResult => {
     setHiveUsername('');
   }, []);
 
-  const updateEmailField = useCallback(
-    <K extends keyof EmailFormState>(field: K, value: EmailFormState[K]) => {
-      setEmailForm((prev) => ({ ...prev, [field]: value }));
-    },
-    []
-  );
-
-  const resetEmailForm = useCallback(() => {
-    setEmailForm({
-      email: '',
-      password: '',
-      username: '',
-      displayName: '',
-      acceptTerms: false,
-      subscribeNewsletter: false,
-      showPassword: false,
-    });
-  }, []);
-
-  const toggleMode = useCallback(() => {
-    setMode((prev) => (prev === 'login' ? 'signup' : 'login'));
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    resetEmailForm();
-  }, [resetEmailForm]);
-
   const dismissError = useCallback(() => {
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -248,8 +188,6 @@ export const useAuthPage = (): UseAuthPageResult => {
     }
 
     try {
-      // getProviders() returns string[] - the Providers enum values are themselves strings
-      // (e.g., Providers.Keychain === 'keychain'), so we can use them directly
       const providers = (aioha as { getProviders: () => string[] }).getProviders();
       const providerStrings = providers
         .map((provider: string) => normalizeProviderToString(provider))
@@ -317,33 +255,8 @@ export const useAuthPage = (): UseAuthPageResult => {
     };
   }, [aioha, closeAiohaModal, loginWithAioha, resetHivePrompt, router]);
 
-  const validateEmailForm = useCallback((): string | null => {
-    if (!emailForm.email || !emailForm.password) {
-      return 'Please enter both email and password';
-    }
-
-    if (mode === 'signup') {
-      if (!emailForm.username) {
-        return 'Please choose a username';
-      }
-      if (!emailForm.acceptTerms) {
-        return 'Please accept the terms of service';
-      }
-    }
-
-    return null;
-  }, [emailForm.acceptTerms, emailForm.email, emailForm.password, emailForm.username, mode]);
-
-  const handleEmailSubmit = useCallback(async () => {
-    setErrorMessage('Email authentication is currently unavailable. Please use Hive wallet login.');
-  }, []);
-
-  const handleGoogleSignIn = useCallback(async () => {
-    setErrorMessage('Google sign-in is currently unavailable. Please use Hive wallet login.');
-  }, []);
-
-  const handleForgotPassword = useCallback(async () => {
-    setErrorMessage('Password reset is currently unavailable. Please use Hive wallet login.');
+  const handleGoogleSignIn = useCallback(() => {
+    signIn('google', { callbackUrl: '/auth' });
   }, []);
 
   const resetConnectionState = useCallback(() => {
@@ -417,8 +330,6 @@ export const useAuthPage = (): UseAuthPageResult => {
           usernameRequiredProviders.has(provider) && hiveUsername.trim() ? hiveUsername.trim() : '';
 
         // Force logout any existing Aioha session to ensure fresh Keychain authorization
-        // This is critical for security - the Keychain popup must ALWAYS appear for user approval
-        // Skip when adding an account so the current user's persistent login is preserved
         if (!isAddAccountFlow) {
           try {
             const aiohaWithLogout = aioha as { logout?: () => Promise<void> };
@@ -426,12 +337,10 @@ export const useAuthPage = (): UseAuthPageResult => {
               await aiohaWithLogout.logout();
             }
           } catch (logoutError) {
-            // Ignore logout errors - we're just clearing any stale session
             console.debug('Aioha logout (pre-login cleanup):', logoutError);
           }
         }
 
-        // Wrap login with timeout to handle unresponsive wallet extensions
         const loginPromise = (
           aioha as {
             login: (
@@ -464,7 +373,6 @@ export const useAuthPage = (): UseAuthPageResult => {
           (loginResult.success ?? true)
         ) {
           await loginWithAioha(loginResult);
-          // Remember the Hive username for next visit
           if (usernameToUse) {
             try {
               localStorage.setItem(REMEMBERED_HIVE_USERNAME_KEY, usernameToUse);
@@ -516,35 +424,24 @@ export const useAuthPage = (): UseAuthPageResult => {
     resetHivePrompt();
   }, [resetConnectionState, resetHivePrompt]);
 
-  const togglePasswordVisibility = useCallback(() => {
-    updateEmailField('showPassword', !emailForm.showPassword);
-  }, [emailForm.showPassword, updateEmailField]);
-
   /**
    * Handle login result from AiohaModal
-   * This is called when the user successfully authenticates via any provider in the modal
    */
   const handleAiohaModalLogin = useCallback(
     async (result: LoginResult) => {
-      // LoginResult is a discriminated union - check success first
       if (!result.success) {
-        // result is now typed as LoginResultError which has error and errorCode
         setErrorMessage('Login failed: ' + result.error || 'Unknown error');
         return;
       }
 
-      // TypeScript now knows result is LoginResultSuccess with username, provider, etc.
-      // LoginResultSuccess.username is required (not optional) per Aioha's types
       const successResult: LoginResultSuccess = result;
 
       setIsConnecting(true);
       setErrorMessage(null);
 
       try {
-        // LoginResultSuccess guarantees username is present
         let username: string = successResult.username;
 
-        // Fallback: if username is empty string, try to get from aioha instance
         if (!username && aioha) {
           const aiohaInstance = aioha as {
             getCurrentUser?: () => string;
@@ -560,7 +457,6 @@ export const useAuthPage = (): UseAuthPageResult => {
           }
         }
 
-        // Convert LoginResult to the format expected by loginWithAioha
         const loginResult: AiohaLoginResult = {
           username,
           provider: successResult.provider,
@@ -568,7 +464,6 @@ export const useAuthPage = (): UseAuthPageResult => {
         };
 
         await loginWithAioha(loginResult);
-        // Remember the Hive username for next visit
         if (username) {
           try {
             localStorage.setItem(REMEMBERED_HIVE_USERNAME_KEY, username);
@@ -591,8 +486,6 @@ export const useAuthPage = (): UseAuthPageResult => {
   );
 
   return {
-    mode,
-    toggleMode,
     isConnecting,
     errorMessage,
     successMessage,
@@ -606,12 +499,7 @@ export const useAuthPage = (): UseAuthPageResult => {
     onHiveUsernameSubmit,
     onHiveUsernameCancel,
     onProviderSelect,
-    emailForm,
-    updateEmailField,
-    togglePasswordVisibility,
-    handleEmailSubmit,
     handleGoogleSignIn,
-    handleForgotPassword,
     showAiohaModal,
     openAiohaModal,
     closeAiohaModal,

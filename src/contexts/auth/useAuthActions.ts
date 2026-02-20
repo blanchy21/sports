@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { signOut as nextAuthSignOut } from 'next-auth/react';
 import { logger } from '@/lib/logger';
 import { AuthType, User } from '@/types';
 import { HiveAuthUser } from '@/lib/shared/types';
@@ -282,6 +283,12 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
 
     dispatch({ type: 'LOGOUT' });
     await clearPersistedAuthState();
+
+    // Clear NextAuth JWT cookie (no-op if not present)
+    await nextAuthSignOut({ redirect: false }).catch(() => {
+      // Ignore errors — cookie may not exist for Hive-only sessions
+    });
+
     queryClient.clear();
   }, [aioha, dispatch, getState, abortFetch]);
 

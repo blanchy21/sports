@@ -30,6 +30,7 @@ import {
 } from './auth/auth-persistence';
 import { authReducer } from './auth/auth-reducer';
 import { useAuthActions } from './auth/useAuthActions';
+import { useGoogleAuthBridge } from './auth/useGoogleAuthBridge';
 import { createUserWithAccountData, getHiveAvatarUrl } from './auth/useAuthProfile';
 
 // Re-export types for backwards compatibility
@@ -76,6 +77,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateUser,
     setHiveUser,
   } = useAuthActions({ dispatch, getState });
+
+  // Bridge NextAuth Google session → AuthContext (one-shot after mount)
+  useGoogleAuthBridge({ login, isAuthenticated: !!user, hasMounted });
 
   // ============================================================================
   // Session Restoration Effect

@@ -61,6 +61,11 @@ function getRateLimitType(pathname: string): RateLimitType | null {
     return null;
   }
 
+  // NextAuth OAuth callbacks exempt from rate limiting
+  if (pathname.startsWith('/api/auth/')) {
+    return null;
+  }
+
   // Check exact matches first
   for (const [route, type] of Object.entries(RATE_LIMITED_ROUTES)) {
     if (pathname === route || pathname.startsWith(route + '/')) {

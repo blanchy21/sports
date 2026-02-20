@@ -10,7 +10,7 @@ import { Button } from '@/components/core/Button';
 import { useAioha } from '@/contexts/AiohaProvider';
 import { AuthHero } from './components/AuthHero';
 import { ErrorAlert } from './components/ErrorAlert';
-import { EmailAuthSection } from './components/EmailAuthSection';
+import { GoogleAuthSection } from './components/GoogleAuthSection';
 import { useAuthPage } from './hooks/useAuthPage';
 
 export default function AuthPage() {
@@ -25,8 +25,6 @@ function AuthPageContent() {
   const router = useRouter();
   const { aioha } = useAioha();
   const {
-    mode,
-    toggleMode,
     isConnecting,
     errorMessage,
     successMessage,
@@ -34,12 +32,7 @@ function AuthPageContent() {
     showAiohaModal,
     setShowAiohaModal,
     handleAiohaModalLogin,
-    emailForm,
-    updateEmailField,
-    togglePasswordVisibility,
-    handleEmailSubmit,
     handleGoogleSignIn,
-    handleForgotPassword,
   } = useAuthPage();
 
   return (
@@ -92,7 +85,7 @@ function AuthPageContent() {
                 transition={{ duration: 0.4, delay: 0.1 }}
                 className="mb-2 text-2xl font-bold text-foreground sm:text-3xl"
               >
-                {mode === 'login' ? 'Welcome Back' : 'Join the Arena'}
+                Welcome Back
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
@@ -100,9 +93,7 @@ function AuthPageContent() {
                 transition={{ duration: 0.4, delay: 0.2 }}
                 className="text-muted-foreground"
               >
-                {mode === 'login'
-                  ? 'Sign in to continue your journey'
-                  : 'Create your account and start earning'}
+                Sign in to continue your journey
               </motion.p>
             </div>
 
@@ -193,28 +184,18 @@ function AuthPageContent() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="bg-background px-4 text-muted-foreground">
-                  Or continue with email
+                  Or continue with Google
                 </span>
               </div>
             </motion.div>
 
-            {/* Email Auth Section */}
+            {/* Google Auth Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.5 }}
             >
-              <EmailAuthSection
-                mode={mode}
-                values={emailForm}
-                isConnecting={isConnecting}
-                onFieldChange={updateEmailField}
-                onSubmit={handleEmailSubmit}
-                onToggleMode={toggleMode}
-                onTogglePasswordVisibility={togglePasswordVisibility}
-                onGoogleSignIn={handleGoogleSignIn}
-                onForgotPassword={handleForgotPassword}
-              />
+              <GoogleAuthSection isConnecting={isConnecting} onGoogleSignIn={handleGoogleSignIn} />
             </motion.div>
           </motion.div>
         </div>
