@@ -40,14 +40,18 @@ export const authOptions: NextAuthOptions = {
         token.displayName = custodialUser.displayName ?? undefined;
         token.avatarUrl = custodialUser.avatarUrl ?? undefined;
         token.hiveUsername = custodialUser.hiveUsername ?? undefined;
-      } else if (token.custodialUserId && !token.hiveUsername) {
-        // On subsequent requests, re-check hiveUsername in case it was set after initial login
+        token.keysDownloaded = custodialUser.keysDownloaded;
+      } else if (token.custodialUserId) {
+        // On subsequent requests, re-check mutable fields in case they changed after initial login
         const freshUser = await prisma.custodialUser.findUnique({
           where: { id: token.custodialUserId as string },
-          select: { hiveUsername: true },
+          select: { hiveUsername: true, keysDownloaded: true },
         });
-        if (freshUser?.hiveUsername) {
-          token.hiveUsername = freshUser.hiveUsername;
+        if (freshUser) {
+          if (freshUser.hiveUsername) {
+            token.hiveUsername = freshUser.hiveUsername;
+          }
+          token.keysDownloaded = freshUser.keysDownloaded;
         }
       }
 
@@ -60,6 +64,7 @@ export const authOptions: NextAuthOptions = {
         session.user.displayName = token.displayName as string | undefined;
         session.user.avatarUrl = token.avatarUrl as string | undefined;
         session.user.hiveUsername = token.hiveUsername as string | undefined;
+        session.user.keysDownloaded = token.keysDownloaded as boolean | undefined;
       }
       return session;
     },

@@ -31,6 +31,10 @@ export function useGoogleAuthBridge({
         if (!session?.user?.id) return;
 
         const { id, email, displayName, avatarUrl } = session.user;
+        const { hiveUsername, keysDownloaded } = session.user as {
+          hiveUsername?: string;
+          keysDownloaded?: boolean;
+        };
 
         const user: User = {
           id,
@@ -38,7 +42,8 @@ export function useGoogleAuthBridge({
           displayName: displayName ?? email ?? id,
           avatar: avatarUrl,
           isHiveAuth: false,
-          hiveUsername: (session.user as { hiveUsername?: string }).hiveUsername,
+          hiveUsername,
+          keysDownloaded,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
