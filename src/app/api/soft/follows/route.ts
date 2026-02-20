@@ -69,17 +69,25 @@ const checkFollowSchema = z.object({
 
 async function updateFollowCounts(followerId: string, followedId: string, delta: number) {
   try {
-    // Update both counts in parallel using atomic increment
-    await Promise.all([
-      prisma.profile.update({
-        where: { id: followerId },
-        data: { followingCount: { increment: delta } },
-      }),
-      prisma.profile.update({
-        where: { id: followedId },
-        data: { followerCount: { increment: delta } },
-      }),
-    ]);
+    if (delta >= 0) {
+      // Increment: safe to use Prisma atomic increment
+      await Promise.all([
+        prisma.profile.update({
+          where: { id: followerId },
+          data: { followingCount: { increment: delta } },
+        }),
+        prisma.profile.update({
+          where: { id: followedId },
+          data: { followerCount: { increment: delta } },
+        }),
+      ]);
+    } else {
+      // Decrement: use raw SQL with GREATEST to prevent going below zero
+      await Promise.all([
+        prisma.$executeRaw`UPDATE profiles SET following_count = GREATEST(0, following_count - 1) WHERE id = ${followerId}`,
+        prisma.$executeRaw`UPDATE profiles SET follower_count = GREATEST(0, follower_count - 1) WHERE id = ${followedId}`,
+      ]);
+    }
   } catch (error) {
     console.error('Failed to update follow counts:', error);
   }

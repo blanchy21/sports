@@ -116,7 +116,7 @@ export async function GET() {
           continue;
         }
 
-        // Revoke RC delegation (max_rc: 0)
+        // Revoke RC delegation FIRST (max_rc: 0)
         const revokeOp: [string, object] = [
           'custom_json',
           {
@@ -134,26 +134,14 @@ export async function GET() {
           },
         ];
 
-        // Mark graduated in DB FIRST (safe to re-run; prevents re-processing on RC failure)
+        const key = PrivateKey.fromString(postingKey);
+        await dhive.broadcast.sendOperations([revokeOp as never], key);
+
+        // Only mark graduated AFTER successful on-chain revocation
         await prisma.custodialUser.update({
           where: { id: user.id },
           data: { isGraduated: true },
         });
-
-        // Then revoke RC delegation (if this fails, user is already marked graduated)
-        try {
-          const key = PrivateKey.fromString(postingKey);
-          await dhive.broadcast.sendOperations([revokeOp as never], key);
-        } catch (rcError) {
-          const rcMsg = rcError instanceof Error ? rcError.message : String(rcError);
-          logger.warn(
-            `RC revocation failed for @${user.hiveUsername} (already marked graduated): ${rcMsg}`,
-            'cron:check-graduations'
-          );
-          results.errors.push(
-            `RC revocation failed for @${user.hiveUsername} (marked graduated): ${rcMsg}`
-          );
-        }
 
         results.graduated++;
         logger.info(`@${user.hiveUsername} graduated successfully`, 'cron:check-graduations');

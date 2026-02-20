@@ -1,8 +1,7 @@
 /**
  * Curator Rewards Cron Job
  *
- * Runs every 15 minutes to process curator votes and queue rewards.
- * Vercel Cron: every 15 minutes
+ * Runs daily at midnight UTC to process curator votes and queue rewards.
  *
  * This endpoint:
  * 1. Fetches recent votes from designated curators
@@ -27,7 +26,8 @@ import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
 
 // Time window to look back for votes (in minutes)
-const VOTE_LOOKBACK_MINUTES = 20; // Slightly more than cron interval
+// Runs daily at midnight UTC — look back 24h + 20min buffer
+const VOTE_LOOKBACK_MINUTES = 1460;
 
 /**
  * Get processed vote IDs for today to prevent double processing

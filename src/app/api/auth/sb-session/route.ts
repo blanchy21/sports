@@ -16,6 +16,8 @@ import crypto from 'crypto';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { decryptSession } from '@/lib/api/session-auth';
 import { getSessionEncryptionKey } from '@/lib/api/session-encryption';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth/next-auth-options';
 
 const SESSION_COOKIE_NAME = 'sb_session';
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
@@ -72,6 +74,18 @@ export async function POST(request: NextRequest) {
     }
 
     const sessionData = parseResult.data;
+
+    // For custodial (soft) auth, verify the caller owns this identity via NextAuth
+    if (sessionData.authType === 'soft') {
+      const nextAuthSession = await getServerSession(authOptions);
+      if (!nextAuthSession?.user?.id || nextAuthSession.user.id !== sessionData.userId) {
+        return NextResponse.json(
+          { success: false, error: 'Session identity mismatch' },
+          { status: 401 }
+        );
+      }
+    }
+
     const encryptedSession = encryptSession(sessionData);
 
     // Create response with session cookie

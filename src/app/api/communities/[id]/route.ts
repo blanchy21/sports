@@ -6,7 +6,10 @@ import {
   validationError,
   notFoundError,
   forbiddenError,
+  unauthorizedError,
 } from '@/lib/api/response';
+import { validateCsrf, csrfError } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -88,10 +91,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
  * PATCH /api/communities/[id] - Update a community
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!validateCsrf(request)) {
+    return csrfError('Request blocked: invalid origin');
+  }
+
   const ctx = createRequestContext(ROUTE);
   const { id } = await params;
 
   try {
+    // Verify session auth
+    const sessionUser = await getAuthenticatedUserFromSession(request);
+    if (!sessionUser) {
+      return unauthorizedError('Authentication required', ctx.requestId);
+    }
+
     const body = await request.json();
     const parseResult = updateCommunitySchema.safeParse(body);
 
@@ -100,6 +113,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const { userId, ...updates } = parseResult.data;
+
+    // Verify the authenticated user matches the request
+    if (sessionUser.userId !== userId) {
+      return forbiddenError('Cannot update community as another user', ctx.requestId);
+    }
 
     // Fetch existing community
     const community = await prisma.community.findUnique({ where: { id } });
@@ -138,10 +156,20 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!validateCsrf(request)) {
+    return csrfError('Request blocked: invalid origin');
+  }
+
   const ctx = createRequestContext(ROUTE);
   const { id } = await params;
 
   try {
+    // Verify session auth
+    const sessionUser = await getAuthenticatedUserFromSession(request);
+    if (!sessionUser) {
+      return unauthorizedError('Authentication required', ctx.requestId);
+    }
+
     const body = await request.json();
     const parseResult = deleteRequestSchema.safeParse(body);
 
@@ -150,6 +178,11 @@ export async function DELETE(
     }
 
     const { userId } = parseResult.data;
+
+    // Verify the authenticated user matches the request
+    if (sessionUser.userId !== userId) {
+      return forbiddenError('Cannot delete community as another user', ctx.requestId);
+    }
 
     // Fetch existing community
     const community = await prisma.community.findUnique({ where: { id } });

@@ -311,13 +311,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           where: { communityId_userId: { communityId, userId: targetUserId } },
           data: { status: 'banned' },
         });
-        // Decrement member count
-        prisma.community
-          .update({
-            where: { id: communityId },
-            data: { memberCount: { decrement: 1 } },
-          })
-          .catch(() => {});
+        // Decrement member count (clamped to 0)
+        prisma.$executeRaw`UPDATE communities SET member_count = GREATEST(0, member_count - 1) WHERE id = ${communityId}`.catch(
+          () => {}
+        );
         return NextResponse.json({ success: true, message: 'Member banned' });
 
       case 'unban':
@@ -385,13 +382,10 @@ export async function DELETE(
       where: { communityId_userId: { communityId, userId } },
     });
 
-    // Decrement member count
-    prisma.community
-      .update({
-        where: { id: communityId },
-        data: { memberCount: { decrement: 1 } },
-      })
-      .catch(() => {});
+    // Decrement member count (clamped to 0)
+    prisma.$executeRaw`UPDATE communities SET member_count = GREATEST(0, member_count - 1) WHERE id = ${communityId}`.catch(
+      () => {}
+    );
 
     return NextResponse.json({
       success: true,
