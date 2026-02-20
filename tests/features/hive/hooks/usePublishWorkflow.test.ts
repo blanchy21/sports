@@ -11,13 +11,9 @@
 
 import { publishPost, publishComment, validatePostData } from '@/lib/hive-workerbee/posting';
 import type { PostData } from '@/lib/hive-workerbee/posting';
+import type { BroadcastFn } from '@/lib/hive/broadcast-client';
 
 // Mock dependencies
-jest.mock('@/lib/aioha/config', () => ({
-  aioha: {
-    signAndBroadcastTx: jest.fn(),
-  },
-}));
 
 jest.mock('@/lib/hive-workerbee/api', () => ({
   makeHiveApiCall: jest.fn(),
@@ -84,9 +80,7 @@ jest.mock('@/lib/hive-workerbee/logger', () => ({
   info: jest.fn(),
 }));
 
-import { aioha } from '@/lib/aioha/config';
-
-const mockAioha = aioha as { signAndBroadcastTx: jest.Mock };
+const mockBroadcastFn: jest.MockedFunction<BroadcastFn> = jest.fn();
 
 describe('Publish workflow - auth type branching', () => {
   const validPostData: PostData = {
@@ -99,9 +93,9 @@ describe('Publish workflow - auth type branching', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockAioha.signAndBroadcastTx.mockResolvedValue({
+    mockBroadcastFn.mockResolvedValue({
       success: true,
-      result: { id: 'tx-abc123' },
+      transactionId: 'tx-abc123',
     });
   });
 
@@ -110,11 +104,11 @@ describe('Publish workflow - auth type branching', () => {
   // ===========================================================================
 
   describe('Hive auth publish', () => {
-    it('broadcasts via aioha with posting key for hive users', async () => {
-      const result = await publishPost(validPostData);
+    it('broadcasts via broadcastFn with posting key for hive users', async () => {
+      const result = await publishPost(validPostData, mockBroadcastFn);
 
       expect(result.success).toBe(true);
-      expect(mockAioha.signAndBroadcastTx).toHaveBeenCalledWith(
+      expect(mockBroadcastFn).toHaveBeenCalledWith(
         expect.any(Array),
         expect.stringContaining('posting')
       );
@@ -130,32 +124,18 @@ describe('Publish workflow - auth type branching', () => {
         },
       };
 
-      const result = await publishPost(postWithCommunity);
+      const result = await publishPost(postWithCommunity, mockBroadcastFn);
       expect(result.success).toBe(true);
-      // The operation should include community data in metadata
-      expect(mockAioha.signAndBroadcastTx).toHaveBeenCalled();
-    });
-
-    it('returns error when aioha is not available', async () => {
-      // Temporarily replace aioha with null
-      const originalAioha = jest.requireMock('@/lib/aioha/config').aioha;
-      jest.requireMock('@/lib/aioha/config').aioha = null;
-
-      const result = await publishPost(validPostData);
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('not available');
-
-      // Restore
-      jest.requireMock('@/lib/aioha/config').aioha = originalAioha;
+      expect(mockBroadcastFn).toHaveBeenCalled();
     });
 
     it('returns error on broadcast failure', async () => {
-      mockAioha.signAndBroadcastTx.mockResolvedValue({
+      mockBroadcastFn.mockResolvedValueOnce({
         success: false,
         error: 'Insufficient RC',
       });
 
-      const result = await publishPost(validPostData);
+      const result = await publishPost(validPostData, mockBroadcastFn);
       expect(result.success).toBe(false);
     });
   });
@@ -166,40 +146,18 @@ describe('Publish workflow - auth type branching', () => {
 
   describe('Hive auth comment flow', () => {
     it('publishes comment with correct parent references', async () => {
-      const result = await publishComment({
-        parentAuthor: 'originalauthor',
-        parentPermlink: 'original-post',
-        body: 'Great post!',
-        author: 'commenter',
-      });
+      const result = await publishComment(
+        {
+          parentAuthor: 'originalauthor',
+          parentPermlink: 'original-post',
+          body: 'Great post!',
+          author: 'commenter',
+        },
+        mockBroadcastFn
+      );
 
       expect(result.success).toBe(true);
-      expect(mockAioha.signAndBroadcastTx).toHaveBeenCalled();
-    });
-  });
-
-  // ===========================================================================
-  // Soft auth publish path (Firebase API)
-  // ===========================================================================
-
-  describe('soft auth publish path', () => {
-    it('soft users publish via /api/posts endpoint (not publishPost)', () => {
-      // This test documents the architectural decision:
-      // Soft auth users do NOT call publishPost() at all.
-      // They call fetch('/api/posts') which writes to Firestore.
-      // The publish page checks authType and branches accordingly.
-      //
-      // This means publishPost always requires aioha (Hive wallet).
-      // Soft auth is handled entirely at the API route level.
-
-      // Verify publishPost requires aioha by checking it fails without it
-      const originalAioha = jest.requireMock('@/lib/aioha/config').aioha;
-      jest.requireMock('@/lib/aioha/config').aioha = null;
-
-      return publishPost(validPostData).then((result) => {
-        expect(result.success).toBe(false);
-        jest.requireMock('@/lib/aioha/config').aioha = originalAioha;
-      });
+      expect(mockBroadcastFn).toHaveBeenCalled();
     });
   });
 

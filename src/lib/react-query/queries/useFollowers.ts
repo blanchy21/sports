@@ -8,6 +8,7 @@ import {
   SocialResult,
 } from '@/lib/hive-workerbee/social';
 import { STALE_TIMES, PAGINATION } from '@/lib/constants/cache';
+import { useBroadcast } from '@/hooks/useBroadcast';
 
 export function useFollowers(username: string, options: { enabled?: boolean } = {}) {
   return useInfiniteQuery({
@@ -59,10 +60,11 @@ export function useFollowing(username: string, options: { enabled?: boolean } = 
 
 export function useFollowUser() {
   const queryClient = useQueryClient();
+  const { broadcast } = useBroadcast();
 
   return useMutation({
     mutationFn: ({ username, follower }: { username: string; follower: string }) =>
-      followUser(username, follower),
+      followUser(username, follower, broadcast),
     onSuccess: (_, { username, follower }) => {
       // Invalidate follower/following lists for both users
       queryClient.invalidateQueries({ queryKey: queryKeys.users.followers(username) });
@@ -83,10 +85,11 @@ export function useFollowUser() {
 
 export function useUnfollowUser() {
   const queryClient = useQueryClient();
+  const { broadcast } = useBroadcast();
 
   return useMutation({
     mutationFn: ({ username, follower }: { username: string; follower: string }) =>
-      unfollowUser(username, follower),
+      unfollowUser(username, follower, broadcast),
     onSuccess: (_, { username, follower }) => {
       // Invalidate follower/following lists for both users
       queryClient.invalidateQueries({ queryKey: queryKeys.users.followers(username) });

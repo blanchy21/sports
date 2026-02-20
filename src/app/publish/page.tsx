@@ -30,6 +30,7 @@ import { useCommunities, useUserCommunities } from '@/lib/react-query/queries/us
 import { useUIStore } from '@/stores/uiStore';
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { logger } from '@/lib/logger';
+import { useBroadcast } from '@/hooks/useBroadcast';
 
 // Import new components
 import { EditorToolbar, FormatType } from '@/components/publish/EditorToolbar';
@@ -61,6 +62,7 @@ const ReactMarkdown = dynamic(() => import('react-markdown'), {
 
 function PublishPageContent() {
   const { user, authType, hiveUser, isLoading: isAuthLoading } = useAuth();
+  const { broadcast } = useBroadcast();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -606,7 +608,7 @@ function PublishPageContent() {
           return;
         }
 
-        const result = await publishPost(postData);
+        const result = await publishPost(postData, broadcast);
 
         if (result.success) {
           // Save used tags

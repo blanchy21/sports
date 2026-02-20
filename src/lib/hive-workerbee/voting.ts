@@ -1,9 +1,8 @@
 import { makeWorkerBeeApiCall } from './api';
-import { aioha } from '@/lib/aioha/config';
 import { createVoteOperation, getVotingPowerWax } from './wax-helpers';
 import { workerBee as workerBeeLog, error as logError, debug as logDebug } from './logger';
 import { waitForTransaction } from './transaction-confirmation';
-import type { AiohaInstance } from '@/lib/aioha/types';
+import type { BroadcastFn } from '@/lib/hive/broadcast-client';
 
 // Types matching the original voting.ts interface
 export interface VoteResult {
@@ -40,14 +39,8 @@ function getUserVote(post: { active_votes?: HiveVote[] }, voter: string): HiveVo
  * @param voteData - Vote data
  * @returns Vote result
  */
-export async function castVote(voteData: VoteData): Promise<VoteResult> {
+export async function castVote(voteData: VoteData, broadcastFn: BroadcastFn): Promise<VoteResult> {
   try {
-    if (!aioha) {
-      throw new Error(
-        'Aioha authentication is not available. Please refresh the page and try again.'
-      );
-    }
-
     // Create vote operation using Wax helpers
     const operation = createVoteOperation({
       voter: voteData.voter,
@@ -58,14 +51,15 @@ export async function castVote(voteData: VoteData): Promise<VoteResult> {
 
     workerBeeLog('[castVote] Wax vote operation created', undefined, operation);
 
-    // Use Aioha to sign and broadcast the transaction
-    // Aioha expects operations in a specific format - each operation should be an array
-    // Format: [operation_type, operation_data]
-    const operations = [['vote', operation]];
+    const operations: [string, typeof operation][] = [['vote', operation]];
 
-    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
+    const result = await broadcastFn(operations, 'posting');
 
-    const transactionId = (result as { id?: string })?.id || 'unknown';
+    if (!result.success) {
+      return { success: false, error: result.error || 'Vote broadcast failed' };
+    }
+
+    const transactionId = result.transactionId || 'unknown';
 
     // Confirm transaction was included in a block
     const confirmation = await waitForTransaction(transactionId);
@@ -90,8 +84,11 @@ export async function castVote(voteData: VoteData): Promise<VoteResult> {
  * @param voteData - Vote data (weight will be set to 0)
  * @returns Vote result
  */
-export async function removeVote(voteData: Omit<VoteData, 'weight'>): Promise<VoteResult> {
-  return castVote({ ...voteData, weight: 0 });
+export async function removeVote(
+  voteData: Omit<VoteData, 'weight'>,
+  broadcastFn: BroadcastFn
+): Promise<VoteResult> {
+  return castVote({ ...voteData, weight: 0 }, broadcastFn);
 }
 
 /**
@@ -466,7 +463,10 @@ export function getHiveSignerVoteUrl(voteData: VoteData): string {
  * @param votes - Array of vote data
  * @returns Vote results
  */
-export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
+export async function batchVote(
+  votes: VoteData[],
+  broadcastFn: BroadcastFn
+): Promise<VoteResult[]> {
   try {
     workerBeeLog(`[batchVote] Processing ${votes.length} votes using Wax`);
 
@@ -482,20 +482,25 @@ export async function batchVote(votes: VoteData[]): Promise<VoteResult[]> {
 
     workerBeeLog('[batchVote] Created Wax vote operations', undefined, operations);
 
-    // Use Aioha to sign and broadcast all operations in a single transaction
-    // Aioha expects operations in a specific format - each operation should be an array
-    // Format: [operation_type, operation_data]
-    const aiohaOperations = operations.map((op) => ['vote', op]);
+    const aiohaOperations: [string, (typeof operations)[0]][] = operations.map((op) => [
+      'vote',
+      op,
+    ]);
 
-    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(aiohaOperations, 'posting');
+    const result = await broadcastFn(aiohaOperations, 'posting');
 
-    workerBeeLog(
-      `[batchVote] Batch vote completed with transaction ID: ${(result as { id?: string })?.id}`
-    );
+    if (!result.success) {
+      return votes.map(() => ({
+        success: false,
+        error: result.error || 'Batch vote broadcast failed',
+      }));
+    }
+
+    workerBeeLog(`[batchVote] Batch vote completed with transaction ID: ${result.transactionId}`);
 
     return votes.map(() => ({
       success: true,
-      transactionId: (result as { id?: string })?.id || 'unknown',
+      transactionId: result.transactionId || 'unknown',
     }));
   } catch (error) {
     logError(

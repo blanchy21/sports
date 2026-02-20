@@ -10,14 +10,9 @@ import {
   validatePostData,
 } from '@/lib/hive-workerbee/posting';
 import type { PostData } from '@/lib/hive-workerbee/posting';
+import type { BroadcastFn } from '@/lib/hive/broadcast-client';
 
 // Mock dependencies
-jest.mock('@/lib/aioha/config', () => ({
-  aioha: {
-    signAndBroadcastTx: jest.fn(),
-  },
-}));
-
 jest.mock('@/lib/hive-workerbee/api', () => ({
   makeHiveApiCall: jest.fn(),
 }));
@@ -78,13 +73,10 @@ jest.mock('@/lib/hive-workerbee/transaction-confirmation', () => ({
   waitForTransaction: jest.fn().mockResolvedValue({ confirmed: true, blockNum: 12345 }),
 }));
 
-import { aioha } from '@/lib/aioha/config';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import { checkResourceCreditsWax } from '@/lib/hive-workerbee/wax-helpers';
 
-const mockAioha = aioha as jest.Mocked<{
-  signAndBroadcastTx: jest.Mock;
-}>;
+const mockBroadcastFn: jest.MockedFunction<BroadcastFn> = jest.fn();
 const mockMakeHiveApiCall = makeHiveApiCall as jest.Mock;
 const mockCheckResourceCreditsWax = checkResourceCreditsWax as jest.Mock;
 
@@ -106,11 +98,12 @@ describe('Posting Module', () => {
     };
 
     it('successfully publishes a post', async () => {
-      mockAioha.signAndBroadcastTx.mockResolvedValueOnce({
-        id: 'tx-post-12345',
+      mockBroadcastFn.mockResolvedValueOnce({
+        success: true,
+        transactionId: 'tx-post-12345',
       });
 
-      const result = await publishPost(validPostData);
+      const result = await publishPost(validPostData, mockBroadcastFn);
 
       expect(result.success).toBe(true);
       expect(result.transactionId).toBe('tx-post-12345');
@@ -120,12 +113,15 @@ describe('Posting Module', () => {
     });
 
     it('includes comment_options for beneficiaries', async () => {
-      mockAioha.signAndBroadcastTx.mockResolvedValueOnce({ id: 'tx-1' });
+      mockBroadcastFn.mockResolvedValueOnce({
+        success: true,
+        transactionId: 'tx-1',
+      });
 
-      await publishPost(validPostData);
+      await publishPost(validPostData, mockBroadcastFn);
 
       // Should have two operations: comment and comment_options
-      expect(mockAioha.signAndBroadcastTx).toHaveBeenCalledWith(
+      expect(mockBroadcastFn).toHaveBeenCalledWith(
         expect.arrayContaining([
           ['comment', expect.any(Object)],
           ['comment_options', expect.any(Object)],
@@ -134,29 +130,10 @@ describe('Posting Module', () => {
       );
     });
 
-    it('returns error when aioha is not available', async () => {
-      jest.resetModules();
-      jest.doMock('@/lib/aioha/config', () => ({
-        aioha: null,
-      }));
-
-      const { publishPost: publishPostWithNullAioha } =
-        await import('@/lib/hive-workerbee/posting');
-
-      const result = await publishPostWithNullAioha(validPostData);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Aioha authentication is not available');
-
-      jest.resetModules();
-    });
-
     it('handles broadcast failure gracefully', async () => {
-      mockAioha.signAndBroadcastTx.mockRejectedValueOnce(
-        new Error('Insufficient resource credits')
-      );
+      mockBroadcastFn.mockRejectedValueOnce(new Error('Insufficient resource credits'));
 
-      const result = await publishPost(validPostData);
+      const result = await publishPost(validPostData, mockBroadcastFn);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Insufficient resource credits');
@@ -165,7 +142,7 @@ describe('Posting Module', () => {
     it('returns validation error for missing title', async () => {
       const invalidPost = { ...validPostData, title: '' };
 
-      const result = await publishPost(invalidPost);
+      const result = await publishPost(invalidPost, mockBroadcastFn);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Title is required');
@@ -174,7 +151,7 @@ describe('Posting Module', () => {
     it('returns validation error for missing body', async () => {
       const invalidPost = { ...validPostData, body: '' };
 
-      const result = await publishPost(invalidPost);
+      const result = await publishPost(invalidPost, mockBroadcastFn);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Body is required');
@@ -183,25 +160,29 @@ describe('Posting Module', () => {
     it('returns validation error for missing author', async () => {
       const invalidPost = { ...validPostData, author: '' };
 
-      const result = await publishPost(invalidPost);
+      const result = await publishPost(invalidPost, mockBroadcastFn);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Author is required');
     });
 
     it('handles transaction error response', async () => {
-      mockAioha.signAndBroadcastTx.mockResolvedValueOnce({
+      mockBroadcastFn.mockResolvedValueOnce({
+        success: false,
         error: 'Account does not have sufficient RC',
       });
 
-      const result = await publishPost(validPostData);
+      const result = await publishPost(validPostData, mockBroadcastFn);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Account does not have sufficient RC');
     });
 
     it('includes sub-community data when provided', async () => {
-      mockAioha.signAndBroadcastTx.mockResolvedValueOnce({ id: 'tx-1' });
+      mockBroadcastFn.mockResolvedValueOnce({
+        success: true,
+        transactionId: 'tx-1',
+      });
 
       const postWithSubCommunity: PostData = {
         ...validPostData,
@@ -212,9 +193,9 @@ describe('Posting Module', () => {
         },
       };
 
-      await publishPost(postWithSubCommunity);
+      await publishPost(postWithSubCommunity, mockBroadcastFn);
 
-      expect(mockAioha.signAndBroadcastTx).toHaveBeenCalled();
+      expect(mockBroadcastFn).toHaveBeenCalled();
     });
   });
 
@@ -230,12 +211,13 @@ describe('Posting Module', () => {
       parentPermlink: 'test-post',
     };
 
-    it('successfully publishes a comment with provided aioha', async () => {
-      const customAioha = {
-        signAndBroadcastTx: jest.fn().mockResolvedValue({ id: 'tx-comment-12345' }),
-      };
+    it('successfully publishes a comment', async () => {
+      mockBroadcastFn.mockResolvedValueOnce({
+        success: true,
+        transactionId: 'tx-comment-12345',
+      });
 
-      const result = await publishComment(commentData, customAioha);
+      const result = await publishComment(commentData, mockBroadcastFn);
 
       expect(result.success).toBe(true);
       expect(result.transactionId).toBe('tx-comment-12345');
@@ -244,26 +226,25 @@ describe('Posting Module', () => {
     });
 
     it('handles broadcast failure', async () => {
-      const customAioha = {
-        signAndBroadcastTx: jest.fn().mockRejectedValue(new Error('Network error')),
-      };
+      mockBroadcastFn.mockRejectedValueOnce(new Error('Network error'));
 
-      const result = await publishComment(commentData, customAioha);
+      const result = await publishComment(commentData, mockBroadcastFn);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Network error');
     });
 
-    it('uses provided aioha instance correctly', async () => {
-      const customAioha = {
-        signAndBroadcastTx: jest.fn().mockResolvedValue({ id: 'custom-tx' }),
-      };
+    it('calls broadcastFn with correct operations', async () => {
+      mockBroadcastFn.mockResolvedValueOnce({
+        success: true,
+        transactionId: 'custom-tx',
+      });
 
-      const result = await publishComment(commentData, customAioha);
+      const result = await publishComment(commentData, mockBroadcastFn);
 
       expect(result.success).toBe(true);
       expect(result.transactionId).toBe('custom-tx');
-      expect(customAioha.signAndBroadcastTx).toHaveBeenCalled();
+      expect(mockBroadcastFn).toHaveBeenCalledWith([['comment', expect.any(Object)]], 'posting');
     });
   });
 

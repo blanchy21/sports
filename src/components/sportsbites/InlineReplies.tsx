@@ -15,7 +15,7 @@ import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { formatDate } from '@/lib/utils/client';
 import { CommentToolbar } from '@/components/comments/CommentToolbar';
 import { logger } from '@/lib/logger';
-import type { AiohaInstance } from '@/lib/aioha/types';
+import { useBroadcast } from '@/hooks/useBroadcast';
 
 interface InlineRepliesProps {
   author: string;
@@ -28,6 +28,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
   const { user, hiveUser, touchSession } = useAuth();
   const { addToast } = useToast();
   const { invalidatePostComments } = useInvalidateComments();
+  const { broadcast } = useBroadcast();
   const [replyText, setReplyText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -47,17 +48,9 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
           parentPermlink: permlink,
         });
 
-        const { aioha } = await import('@/lib/aioha/config');
-        const aiohaInstance = aioha as AiohaInstance | null;
-
-        if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
-          throw new Error('Hive authentication not available. Please reconnect.');
-        }
-
-        const result = await aiohaInstance.signAndBroadcastTx([['comment', operation]], 'posting');
-        const broadcast = result as { success?: boolean; error?: string } | null;
-        if (!result || broadcast?.success === false || broadcast?.error) {
-          throw new Error(broadcast?.error || 'Failed to broadcast reply');
+        const result = await broadcast([['comment', operation]], 'posting');
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to broadcast reply');
         }
       } else {
         const response = await fetch('/api/soft/comments', {

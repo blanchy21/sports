@@ -1,7 +1,7 @@
 import { makeHiveApiCall } from './api';
 import { isHiveAccount } from './account';
 import { FollowRelationship } from '@/types';
-import type { AiohaInstance } from '@/lib/aioha/types';
+import type { BroadcastFn } from '@/lib/hive/broadcast-client';
 import {
   workerBee as workerBeeLog,
   warn as logWarn,
@@ -28,7 +28,8 @@ export interface SocialResult {
 async function toggleFollow(
   username: string,
   follower: string,
-  action: 'follow' | 'unfollow'
+  action: 'follow' | 'unfollow',
+  broadcastFn: BroadcastFn
 ): Promise<{ success: boolean; error?: string }> {
   if (typeof window === 'undefined') {
     return {
@@ -40,14 +41,6 @@ async function toggleFollow(
   try {
     workerBeeLog(`${action}User start ${follower} -> ${username}`);
 
-    const { aioha } = await import('@/lib/aioha/config');
-
-    if (!aioha) {
-      throw new Error(
-        'Aioha authentication is not available. Please refresh the page and try again.'
-      );
-    }
-
     const followOperation = {
       follower,
       following: username,
@@ -56,7 +49,7 @@ async function toggleFollow(
 
     workerBeeLog(`${action}User operation created`, undefined, followOperation);
 
-    const operations = [
+    const operations: [string, Record<string, unknown>][] = [
       [
         'custom_json',
         {
@@ -69,14 +62,12 @@ async function toggleFollow(
     ];
 
     workerBeeLog(`${action}User broadcasting transaction`);
-    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
+    const result = await broadcastFn(operations, 'posting');
 
     workerBeeLog(`${action}User broadcast result`, undefined, result);
 
-    if (!result || (result as { error?: string })?.error) {
-      throw new Error(
-        `Transaction failed: ${(result as { error?: string })?.error || 'Unknown error'}`
-      );
+    if (!result.success) {
+      throw new Error(result.error || `${action} transaction failed`);
     }
 
     workerBeeLog(`${action}User success ${follower} -> ${username}`);
@@ -95,16 +86,18 @@ async function toggleFollow(
 
 export async function followUser(
   username: string,
-  follower: string
+  follower: string,
+  broadcastFn: BroadcastFn
 ): Promise<{ success: boolean; error?: string }> {
-  return toggleFollow(username, follower, 'follow');
+  return toggleFollow(username, follower, 'follow', broadcastFn);
 }
 
 export async function unfollowUser(
   username: string,
-  follower: string
+  follower: string,
+  broadcastFn: BroadcastFn
 ): Promise<{ success: boolean; error?: string }> {
-  return toggleFollow(username, follower, 'unfollow');
+  return toggleFollow(username, follower, 'unfollow', broadcastFn);
 }
 
 /**
@@ -407,7 +400,8 @@ export async function getFollowingCount(username: string): Promise<number> {
 export async function reblogPost(
   author: string,
   permlink: string,
-  account: string
+  account: string,
+  broadcastFn: BroadcastFn
 ): Promise<{
   success: boolean;
   error?: string;
@@ -429,15 +423,7 @@ export async function reblogPost(
   try {
     workerBeeLog(`reblogPost start ${account} reblogging ${author}/${permlink}`);
 
-    const { aioha } = await import('@/lib/aioha/config');
-
-    if (!aioha) {
-      throw new Error(
-        'Aioha authentication is not available. Please refresh the page and try again.'
-      );
-    }
-
-    const operations = [
+    const operations: [string, Record<string, unknown>][] = [
       [
         'custom_json',
         {
@@ -450,14 +436,12 @@ export async function reblogPost(
     ];
 
     workerBeeLog('reblogPost broadcasting transaction');
-    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
+    const result = await broadcastFn(operations, 'posting');
 
     workerBeeLog('reblogPost broadcast result', undefined, result);
 
-    if (!result || (result as { error?: string })?.error) {
-      throw new Error(
-        `Transaction failed: ${(result as { error?: string })?.error || 'Unknown error'}`
-      );
+    if (!result.success) {
+      throw new Error(result.error || 'Reblog transaction failed');
     }
 
     workerBeeLog(`reblogPost success ${account} reblogged ${author}/${permlink}`);
@@ -498,7 +482,8 @@ export interface ProfileUpdateData {
  */
 export async function updateHiveProfile(
   username: string,
-  profileData: ProfileUpdateData
+  profileData: ProfileUpdateData,
+  broadcastFn: BroadcastFn
 ): Promise<{ success: boolean; transactionId?: string; error?: string }> {
   // Only run in browser environment
   if (typeof window === 'undefined') {
@@ -571,18 +556,9 @@ export async function updateHiveProfile(
 
     workerBeeLog('updateHiveProfile metadata prepared', undefined, updatedMetadata);
 
-    // Import Aioha to broadcast the transaction
-    const { aioha } = await import('@/lib/aioha/config');
-
-    if (!aioha) {
-      throw new Error(
-        'Aioha authentication is not available. Please refresh the page and try again.'
-      );
-    }
-
     // Create account_update2 operation
     // This only requires posting authority when updating posting_json_metadata
-    const operations = [
+    const operations: [string, Record<string, unknown>][] = [
       [
         'account_update2',
         {
@@ -595,21 +571,19 @@ export async function updateHiveProfile(
     ];
 
     workerBeeLog('updateHiveProfile broadcasting transaction', undefined, operations);
-    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
+    const result = await broadcastFn(operations, 'posting');
 
     workerBeeLog('updateHiveProfile broadcast result', undefined, result);
 
-    if (!result || (result as { error?: string })?.error) {
-      throw new Error(
-        `Transaction failed: ${(result as { error?: string })?.error || 'Unknown error'}`
-      );
+    if (!result.success) {
+      throw new Error(result.error || 'Profile update transaction failed');
     }
 
     workerBeeLog(`updateHiveProfile success for ${username}`);
 
     return {
       success: true,
-      transactionId: (result as { id?: string })?.id,
+      transactionId: result.transactionId,
     };
   } catch (error) {
     logError('Error updating profile', undefined, error instanceof Error ? error : undefined);

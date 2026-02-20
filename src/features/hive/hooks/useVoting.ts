@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBroadcast } from '@/hooks/useBroadcast';
 import { queryKeys } from '@/lib/react-query/queryClient';
 import { logger } from '@/lib/logger';
 import {
@@ -58,6 +59,7 @@ async function fetchVoteStatus(
 
 export function useVoting(author: string, permlink: string): UseVotingReturn {
   const { hiveUser, authType } = useAuth();
+  const { broadcast } = useBroadcast();
   const queryClient = useQueryClient();
   const username = hiveUser?.username;
   const isHiveAuth = authType === 'hive';
@@ -78,7 +80,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
   // Mutation for casting votes
   const voteMutation = useMutation({
     mutationFn: async (voteData: VoteData) => {
-      return await castVote(voteData);
+      return await castVote(voteData, broadcast);
     },
     onSuccess: (_result, variables) => {
       // Invalidate the vote status cache for this post
@@ -91,7 +93,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
   // Mutation for removing votes
   const removeVoteMutation = useMutation({
     mutationFn: async (data: { voter: string; author: string; permlink: string }) => {
-      return await removeVote(data);
+      return await removeVote(data, broadcast);
     },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({

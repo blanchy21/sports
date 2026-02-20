@@ -15,13 +15,7 @@ import {
   getVoteHistory,
 } from '@/lib/hive-workerbee/voting';
 import type { VoteData } from '@/lib/hive-workerbee/voting';
-
-// Mock dependencies
-jest.mock('@/lib/aioha/config', () => ({
-  aioha: {
-    signAndBroadcastTx: jest.fn(),
-  },
-}));
+import type { BroadcastFn } from '@/lib/hive/broadcast-client';
 
 jest.mock('@/lib/hive-workerbee/api', () => ({
   makeWorkerBeeApiCall: jest.fn(),
@@ -47,13 +41,10 @@ jest.mock('@/lib/hive-workerbee/transaction-confirmation', () => ({
   waitForTransaction: jest.fn().mockResolvedValue({ confirmed: true, blockNum: 12345 }),
 }));
 
-import { aioha } from '@/lib/aioha/config';
 import { makeWorkerBeeApiCall } from '@/lib/hive-workerbee/api';
 import { getVotingPowerWax } from '@/lib/hive-workerbee/wax-helpers';
 
-const mockAioha = aioha as jest.Mocked<{
-  signAndBroadcastTx: jest.Mock;
-}>;
+const mockBroadcastFn: jest.MockedFunction<BroadcastFn> = jest.fn();
 const mockMakeWorkerBeeApiCall = makeWorkerBeeApiCall as jest.Mock;
 const mockGetVotingPowerWax = getVotingPowerWax as jest.Mock;
 
@@ -75,58 +66,44 @@ describe('Voting Module', () => {
     };
 
     it('successfully casts a vote', async () => {
-      mockAioha.signAndBroadcastTx.mockResolvedValueOnce({
-        id: 'tx-12345',
+      mockBroadcastFn.mockResolvedValueOnce({
+        success: true,
+        transactionId: 'tx-12345',
       });
 
-      const result = await castVote(voteData);
+      const result = await castVote(voteData, mockBroadcastFn);
 
       expect(result.success).toBe(true);
       expect(result.transactionId).toBe('tx-12345');
-      expect(mockAioha.signAndBroadcastTx).toHaveBeenCalledWith(
-        [['vote', expect.any(Object)]],
-        'posting'
-      );
-    });
-
-    it('returns error when aioha is not available', async () => {
-      jest.resetModules();
-      jest.doMock('@/lib/aioha/config', () => ({
-        aioha: null,
-      }));
-
-      // Re-import to get the null aioha
-      const { castVote: castVoteWithNullAioha } = await import('@/lib/hive-workerbee/voting');
-
-      const result = await castVoteWithNullAioha(voteData);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Aioha authentication is not available');
-
-      // Restore
-      jest.resetModules();
+      expect(mockBroadcastFn).toHaveBeenCalledWith([['vote', expect.any(Object)]], 'posting');
     });
 
     it('handles broadcast failure gracefully', async () => {
-      mockAioha.signAndBroadcastTx.mockRejectedValueOnce(new Error('Network timeout'));
+      mockBroadcastFn.mockRejectedValueOnce(new Error('Network timeout'));
 
-      const result = await castVote(voteData);
+      const result = await castVote(voteData, mockBroadcastFn);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Network timeout');
     });
 
     it('creates correct operation format', async () => {
-      mockAioha.signAndBroadcastTx.mockResolvedValueOnce({ id: 'tx-1' });
-
-      await castVote({
-        voter: 'alice',
-        author: 'bob',
-        permlink: 'my-post',
-        weight: 50,
+      mockBroadcastFn.mockResolvedValueOnce({
+        success: true,
+        transactionId: 'tx-1',
       });
 
-      expect(mockAioha.signAndBroadcastTx).toHaveBeenCalledWith(
+      await castVote(
+        {
+          voter: 'alice',
+          author: 'bob',
+          permlink: 'my-post',
+          weight: 50,
+        },
+        mockBroadcastFn
+      );
+
+      expect(mockBroadcastFn).toHaveBeenCalledWith(
         [
           [
             'vote',
@@ -149,16 +126,22 @@ describe('Voting Module', () => {
 
   describe('removeVote', () => {
     it('removes vote by casting with weight 0', async () => {
-      mockAioha.signAndBroadcastTx.mockResolvedValueOnce({ id: 'tx-remove' });
-
-      const result = await removeVote({
-        voter: 'testvoter',
-        author: 'testauthor',
-        permlink: 'test-post',
+      mockBroadcastFn.mockResolvedValueOnce({
+        success: true,
+        transactionId: 'tx-remove',
       });
 
+      const result = await removeVote(
+        {
+          voter: 'testvoter',
+          author: 'testauthor',
+          permlink: 'test-post',
+        },
+        mockBroadcastFn
+      );
+
       expect(result.success).toBe(true);
-      expect(mockAioha.signAndBroadcastTx).toHaveBeenCalledWith(
+      expect(mockBroadcastFn).toHaveBeenCalledWith(
         [['vote', expect.objectContaining({ weight: 0 })]],
         'posting'
       );
@@ -572,29 +555,32 @@ describe('Voting Module', () => {
 
   describe('batchVote', () => {
     it('broadcasts multiple votes in single transaction', async () => {
-      mockAioha.signAndBroadcastTx.mockResolvedValueOnce({ id: 'batch-tx' });
+      mockBroadcastFn.mockResolvedValueOnce({
+        success: true,
+        transactionId: 'batch-tx',
+      });
 
       const votes: VoteData[] = [
         { voter: 'alice', author: 'bob', permlink: 'post1', weight: 100 },
         { voter: 'alice', author: 'charlie', permlink: 'post2', weight: 50 },
       ];
 
-      const results = await batchVote(votes);
+      const results = await batchVote(votes, mockBroadcastFn);
 
       expect(results).toHaveLength(2);
       expect(results.every((r) => r.success)).toBe(true);
-      expect(mockAioha.signAndBroadcastTx).toHaveBeenCalledTimes(1);
+      expect(mockBroadcastFn).toHaveBeenCalledTimes(1);
     });
 
     it('returns error for all votes when transaction fails', async () => {
-      mockAioha.signAndBroadcastTx.mockRejectedValueOnce(new Error('Batch failed'));
+      mockBroadcastFn.mockRejectedValueOnce(new Error('Batch failed'));
 
       const votes: VoteData[] = [
         { voter: 'alice', author: 'bob', permlink: 'post1', weight: 100 },
         { voter: 'alice', author: 'charlie', permlink: 'post2', weight: 50 },
       ];
 
-      const results = await batchVote(votes);
+      const results = await batchVote(votes, mockBroadcastFn);
 
       expect(results.every((r) => !r.success)).toBe(true);
       expect(results[0].error).toBe('Batch failed');

@@ -32,9 +32,9 @@ import { uploadImage } from '@/lib/hive/imageUpload';
 import { validateImageUrl } from '@/lib/utils/sanitize';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { GifPicker } from '@/components/gif/GifPicker';
-import type { AiohaInstance } from '@/lib/aioha/types';
 import dynamic from 'next/dynamic';
 import { logger } from '@/lib/logger';
+import { useBroadcast } from '@/hooks/useBroadcast';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
@@ -50,6 +50,7 @@ export function ComposeSportsbite({
   matchThreadEventId,
 }: ComposeSportsbiteProps) {
   const { user, authType, hiveUser, touchSession, logout } = useAuth();
+  const { broadcast } = useBroadcast();
   const [content, setContent] = useState('');
 
   const hiveUsername =
@@ -203,20 +204,12 @@ export function ComposeSportsbite({
               poll: poll || undefined,
             });
 
-        const { aioha } = await import('@/lib/aioha/config');
-
-        const aiohaInstance = aioha as AiohaInstance | null;
-
-        if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
-          throw new Error('Hive authentication not available. Please reconnect.');
-        }
-
         const commentOptionsOp = createCommentOptionsOperation({
           author: hiveUser.username,
           permlink: operation.permlink,
         });
 
-        const result = await aiohaInstance.signAndBroadcastTx(
+        const result = await broadcast(
           [
             ['comment', operation],
             ['comment_options', commentOptionsOp],
@@ -224,8 +217,8 @@ export function ComposeSportsbite({
           'posting'
         );
 
-        if (!result || (result as { error?: string }).error) {
-          throw new Error((result as { error?: string }).error || 'Failed to broadcast');
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to broadcast');
         }
 
         // Build optimistic sportsbite for immediate display
@@ -324,6 +317,7 @@ export function ComposeSportsbite({
     user,
     authType,
     hiveUser,
+    broadcast,
     touchSession,
     logout,
     matchThreadEventId,

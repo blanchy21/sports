@@ -8,6 +8,7 @@ import { Avatar } from '@/components/core/Avatar';
 import { MessageCircle, Send, Reply } from 'lucide-react';
 import { formatDate } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBroadcast } from '@/hooks/useBroadcast';
 import { useToast, toast } from '@/components/core/Toast';
 import { createCommentOperation } from '@/lib/hive-workerbee/wax-helpers';
 import { useInvalidateComments } from '@/lib/react-query/queries/useComments';
@@ -17,7 +18,6 @@ import { CommentToolbar } from '@/components/comments/CommentToolbar';
 import { CommentContent } from '@/components/comments/CommentContent';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { logger } from '@/lib/logger';
-import type { AiohaInstance } from '@/lib/aioha/types';
 
 interface CommentsModalProps {
   isOpen: boolean;
@@ -31,6 +31,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
   const { user, hiveUser, touchSession } = useAuth();
   const { addToast } = useToast();
   const { invalidatePostComments } = useInvalidateComments();
+  const { broadcast } = useBroadcast();
 
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,19 +76,10 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
           parentPermlink: replyingTo ? replyingTo.permlink : permlink,
         });
 
-        const { aioha } = await import('@/lib/aioha/config');
+        const result = await broadcast([['comment', operation]], 'posting');
 
-        const aiohaInstance = aioha as AiohaInstance | null;
-
-        if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
-          throw new Error('Hive authentication not available. Please reconnect.');
-        }
-
-        const result = await aiohaInstance.signAndBroadcastTx([['comment', operation]], 'posting');
-
-        const broadcast = result as { success?: boolean; error?: string } | null;
-        if (!result || broadcast?.success === false || broadcast?.error) {
-          throw new Error(broadcast?.error || 'Failed to broadcast comment');
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to broadcast comment');
         }
 
         addToast({

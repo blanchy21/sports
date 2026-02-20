@@ -32,6 +32,7 @@ import { formatDate, formatReadTime } from '@/lib/utils/client';
 import { proxyImagesInContent } from '@/lib/utils/image-proxy';
 import { sanitizePostContent } from '@/lib/utils/sanitize';
 import { logger } from '@/lib/logger';
+import { useBroadcast } from '@/hooks/useBroadcast';
 
 export default function PostDetailClient() {
   const params = useParams();
@@ -39,6 +40,7 @@ export default function PostDetailClient() {
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const { authType, hiveUser } = useAuth();
+  const { broadcast } = useBroadcast();
   const { addToast } = useToast();
   const [post, setPost] = useState<SportsblockPost | null>(null);
   const [isReblogging, setIsReblogging] = useState(false);
@@ -213,7 +215,7 @@ export default function PostDetailClient() {
     setIsReblogging(true);
     try {
       const { reblogPost } = await import('@/lib/hive-workerbee/social');
-      const result = await reblogPost(post.author, post.permlink, hiveUser.username);
+      const result = await reblogPost(post.author, post.permlink, hiveUser.username, broadcast);
       if (result.success) {
         addToast(toast.success('Reposted!', 'Reposted to your blog!'));
       } else {
