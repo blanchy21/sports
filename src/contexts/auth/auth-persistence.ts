@@ -69,7 +69,7 @@ export interface SessionResponse {
  */
 export const fetchSessionFromCookie = async (): Promise<SessionResponse> => {
   try {
-    const response = await fetch('/api/auth/session', {
+    const response = await fetch('/api/auth/sb-session', {
       method: 'GET',
       credentials: 'include',
     });
@@ -97,7 +97,7 @@ export const syncSessionCookie = async (sessionData: {
   loginAt?: number;
 }): Promise<boolean> => {
   try {
-    const response = await fetch('/api/auth/session', {
+    const response = await fetch('/api/auth/sb-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -115,7 +115,7 @@ export const syncSessionCookie = async (sessionData: {
  */
 export const clearSessionCookie = async (): Promise<void> => {
   try {
-    await fetch('/api/auth/session', {
+    await fetch('/api/auth/sb-session', {
       method: 'DELETE',
       credentials: 'include',
     });

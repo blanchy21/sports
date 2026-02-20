@@ -65,7 +65,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     authState;
 
   // Getter for current state (used by actions hook)
-  const getState = useCallback(() => ({ user, authType, hiveUser }), [user, authType, hiveUser]);
+  // Uses a ref so getState() always returns the latest values,
+  // even when called from stale closures (e.g. async profile fetch callbacks)
+  const stateRef = useRef({ user, authType, hiveUser });
+  stateRef.current = { user, authType, hiveUser };
+  const getState = useCallback(() => stateRef.current, []);
 
   // Auth actions (login, logout, upgrade)
   const {

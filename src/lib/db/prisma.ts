@@ -1,14 +1,18 @@
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@/generated/prisma/client';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Prisma v6 with prisma.config.ts handles datasource URL externally.
-// The generated types require adapter/accelerateUrl, but neither is
-// needed when the URL is configured via prisma.config.ts.
-export const prisma =
-  globalForPrisma.prisma ?? new (PrismaClient as unknown as new () => PrismaClient)();
+function createPrismaClient(): PrismaClient {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaPg(pool);
+  return new PrismaClient({ adapter });
+}
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;

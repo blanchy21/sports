@@ -87,7 +87,7 @@ When given:
 
 ## Project Overview
 
-Sportsblock is a Next.js 15 (App Router) sports content platform integrated with the Hive blockchain. Users can authenticate via Hive wallets (Keychain, HiveSigner, HiveAuth) or Firebase email, then read and publish sports-related posts to the Hive blockchain.
+Sportsblock is a Next.js 15 (App Router) sports content platform integrated with the Hive blockchain. Users can authenticate via Hive wallets (Keychain, HiveSigner, HiveAuth) or Google OAuth, then read and publish sports-related posts to the Hive blockchain.
 
 ## Commands
 
@@ -138,10 +138,26 @@ import { getWorkerBeeClient } from '@/lib/hive-workerbee/client';
 
 Two auth paths converge in `AuthContext`:
 1. **Hive Auth** (Aioha): Keychain, HiveSigner, HiveAuth, Ledger, PeakVault → full blockchain posting
-2. **Soft Auth** (Firebase): Email/password → read-only, can upgrade to Hive
+2. **Soft Auth** (Google OAuth via NextAuth): Google sign-in → custodial Hive account created, can download keys for full self-custody
 
 `src/contexts/AiohaProvider.tsx` wraps the Aioha library for client-side wallet interactions.
 `src/contexts/AuthContext.tsx` manages auth state and persists to localStorage.
+
+### Custodial Onboarding Flow
+
+Google OAuth users go through this flow:
+1. Sign in with Google → NextAuth creates session → Prisma stores user
+2. Redirect to `/onboarding/username` → user picks a Hive username (`sb-` prefix)
+3. Server calls `create_claimed_account` using @niallon11's ACTs → real Hive account created
+4. Keys encrypted + stored server-side → signing relay handles blockchain ops
+5. User can download keys anytime (`/api/auth/keys/download`) for full self-custody
+
+Key files:
+- `src/app/api/hive/create-account/route.ts` — Account creation endpoint
+- `src/app/api/auth/signing-relay/route.ts` — Custodial transaction signing
+- `src/app/api/auth/keys/download/route.ts` — Key export for graduation
+- `src/hooks/useBroadcast.ts` — Unified broadcast abstraction (handles both auth types)
+- `src/app/onboarding/username/page.tsx` — Username picker page
 
 ### State Management
 
@@ -208,4 +224,4 @@ External images are proxied through `/api/image-proxy` to handle CORS. Allowed d
 - Inability to authenticate users
 - Blocked UI flows that require wallet connection
 
-For manual testing, use a real browser with Hive Keychain installed, or use the Firebase email auth flow for basic testing.
+For manual testing, use a real browser with Hive Keychain installed, or use the Google OAuth flow for basic testing.
