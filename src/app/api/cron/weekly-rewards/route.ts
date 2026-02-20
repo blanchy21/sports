@@ -24,6 +24,7 @@ import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 /**
  * Get the previous week's ID (since we run on Monday for the previous week)

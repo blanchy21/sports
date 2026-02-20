@@ -55,7 +55,7 @@ async function toggleFollow(
         {
           required_auths: [],
           required_posting_auths: [follower],
-          id: 'follow_plugin',
+          id: 'follow',
           json: JSON.stringify(['follow', followOperation]),
         },
       ],

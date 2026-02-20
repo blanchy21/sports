@@ -4,6 +4,7 @@ import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-au
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 // Notification retention in days
 const NOTIFICATION_RETENTION_DAYS = 30;

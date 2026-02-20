@@ -8,7 +8,6 @@ import {
   fetchSessionFromCookie,
   persistAuthState,
   clearPersistedAuthState,
-  loadPersistedAuthState,
   saveUIHint,
   loadUIHint,
   clearUIHint,
@@ -568,30 +567,6 @@ describe('Auth Persistence', () => {
     it('handles already empty localStorage gracefully', async () => {
       expect(localStorage.getItem(AUTH_STORAGE_KEY)).toBeNull();
       await expect(clearPersistedAuthState()).resolves.toBeUndefined();
-    });
-  });
-
-  // ==========================================================================
-  // Load Persisted Auth State (Deprecated)
-  // ==========================================================================
-
-  describe('loadPersistedAuthState (deprecated)', () => {
-    it('returns null - auth is now in httpOnly cookies', () => {
-      // Even if there's data in localStorage, this should return null
-      // since we no longer use localStorage for auth
-      localStorage.setItem(
-        AUTH_STORAGE_KEY,
-        JSON.stringify({
-          user: { id: 'user-123', username: 'test' },
-          authType: 'hive',
-        })
-      );
-
-      expect(loadPersistedAuthState()).toBeNull();
-    });
-
-    it('returns null when localStorage is empty', () => {
-      expect(loadPersistedAuthState()).toBeNull();
     });
   });
 

@@ -58,8 +58,8 @@ export const GoogleAuthSection: React.FC<GoogleAuthSectionProps> = ({
         <div>
           <h4 className="mb-1 text-sm font-medium text-foreground">Google Account</h4>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Start exploring immediately! You can upgrade to a Hive account later to unlock earning
-            rewards and full blockchain features.
+            Get started in seconds! Pick a username and join the community. You can upgrade to a
+            Hive account later to unlock earning rewards and full blockchain features.
           </p>
         </div>
       </div>

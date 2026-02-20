@@ -15,6 +15,7 @@ import { error as logError, info as logInfo } from '@/lib/hive-workerbee/logger'
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 /**
  * Cron endpoint: creates match thread container posts for upcoming/live events.

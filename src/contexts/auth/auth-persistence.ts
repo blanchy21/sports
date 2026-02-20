@@ -310,14 +310,3 @@ export const clearPersistedAuthState = async (): Promise<void> => {
   // Clear httpOnly cookie
   await clearSessionCookie();
 };
-
-/**
- * @deprecated Use fetchSessionFromCookie() instead.
- * This is kept for backwards compatibility during migration.
- * Returns null - auth state is now in httpOnly cookies.
- */
-export const loadPersistedAuthState = (): string | null => {
-  // Legacy localStorage is no longer the source of truth
-  // Return null to trigger cookie-based session restoration
-  return null;
-};

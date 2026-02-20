@@ -150,12 +150,12 @@ Google OAuth users go through this flow:
 2. Redirect to `/onboarding/username` → user picks a Hive username (`sb-` prefix)
 3. Server calls `create_claimed_account` using @niallon11's ACTs → real Hive account created
 4. Keys encrypted + stored server-side → signing relay handles blockchain ops
-5. User can download keys anytime (`/api/auth/keys/download`) for full self-custody
+5. User can download keys anytime (`/api/hive/download-keys`) for full self-custody
 
 Key files:
 - `src/app/api/hive/create-account/route.ts` — Account creation endpoint
 - `src/app/api/auth/signing-relay/route.ts` — Custodial transaction signing
-- `src/app/api/auth/keys/download/route.ts` — Key export for graduation
+- `src/app/api/hive/download-keys/route.ts` — Key export for graduation
 - `src/hooks/useBroadcast.ts` — Unified broadcast abstraction (handles both auth types)
 - `src/app/onboarding/username/page.tsx` — Username picker page
 

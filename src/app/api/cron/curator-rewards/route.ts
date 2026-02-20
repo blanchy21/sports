@@ -28,6 +28,7 @@ import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 // Time window to look back for votes (in minutes)
 // Runs daily at midnight UTC — look back 24h + 20min buffer

@@ -4,6 +4,7 @@ import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-au
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 // Inactivity thresholds in days
 const FIRST_WARNING_DAYS = 150;
@@ -84,7 +85,7 @@ export async function GET() {
               recipientId: user.id,
               type: 'system',
               title: 'We miss you!',
-              message: `Hi ${user.username}! It's been a while since you've visited. Log in to keep your content active. Accounts inactive for 180 days may have their content archived.`,
+              message: `Hi ${user.username}! It's been a while since you've visited. Log in to keep your content active. Accounts inactive for 180 days will have their content permanently removed.`,
               data: {
                 warningType: 'inactivity_first',
                 daysInactive: FIRST_WARNING_DAYS,
@@ -132,7 +133,7 @@ export async function GET() {
               recipientId: user.id,
               type: 'system',
               title: 'Action Required: Content Deletion in 10 Days',
-              message: `Hi ${user.username}! Your account has been inactive for ${FINAL_WARNING_DAYS} days. Please log in within the next 10 days to keep your content. After ${EXPIRATION_DAYS} days of inactivity, your posts and comments will be archived.`,
+              message: `Hi ${user.username}! Your account has been inactive for ${FINAL_WARNING_DAYS} days. Please log in within the next 10 days to keep your content. After ${EXPIRATION_DAYS} days of inactivity, your posts and comments will be permanently removed.`,
               data: {
                 warningType: 'inactivity_final',
                 daysInactive: FINAL_WARNING_DAYS,
