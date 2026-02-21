@@ -141,6 +141,7 @@ export async function POST(request: NextRequest) {
     }
 
     // For custodial (soft) auth, verify the caller owns this identity via NextAuth
+    // and override hiveUsername from the server-side session (not client-supplied)
     if (sessionData.authType === 'soft') {
       const nextAuthSession = await getServerSession(authOptions);
       if (!nextAuthSession?.user?.id || nextAuthSession.user.id !== sessionData.userId) {
@@ -149,6 +150,8 @@ export async function POST(request: NextRequest) {
           { status: 401 }
         );
       }
+      // Use hiveUsername from NextAuth session (sourced from DB) instead of request body
+      sessionData.hiveUsername = nextAuthSession.user.hiveUsername ?? sessionData.hiveUsername;
     }
 
     const encryptedSession = encryptSession(sessionData);

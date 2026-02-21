@@ -5,7 +5,7 @@ import { validateCsrf, csrfError } from '@/lib/api/csrf';
 
 const IMAGE_HOST = 'https://images.hive.blog';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 export async function POST(request: NextRequest) {
   // CSRF protection
