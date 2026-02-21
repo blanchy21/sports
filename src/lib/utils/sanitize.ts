@@ -5,7 +5,25 @@
  * to prevent XSS attacks.
  */
 
-import DOMPurify from 'isomorphic-dompurify';
+// Lazy-load isomorphic-dompurify to avoid jsdom initialization during SSG prerender.
+// jsdom tries to read a default-stylesheet.css that doesn't exist in Vercel's build env.
+// Deferring via require() ensures jsdom only loads when sanitize functions are actually called.
+type DOMPurifyInstance = {
+  sanitize(dirty: string, config?: object): string;
+  addHook(entryPoint: string, hookFunction: (node: Element) => void): void;
+  removeHook(entryPoint: string): void;
+};
+
+let _DOMPurify: DOMPurifyInstance | null = null;
+
+function getDOMPurify(): DOMPurifyInstance {
+  if (!_DOMPurify) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('isomorphic-dompurify');
+    _DOMPurify = mod.default || mod;
+  }
+  return _DOMPurify!;
+}
 
 /**
  * Default DOMPurify configuration for post content
@@ -105,8 +123,10 @@ const STRICT_CONFIG = {
 export function sanitizeHtml(dirty: string, strict = false): string {
   const config = strict ? STRICT_CONFIG : DEFAULT_CONFIG;
 
+  const purify = getDOMPurify();
+
   // Restrict iframe src to whitelisted video domains
-  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  purify.addHook('afterSanitizeAttributes', (node) => {
     if (node.tagName === 'IFRAME') {
       const src = node.getAttribute('src') || '';
       try {
@@ -133,10 +153,10 @@ export function sanitizeHtml(dirty: string, strict = false): string {
   });
 
   // Sanitize the HTML
-  let clean = DOMPurify.sanitize(dirty, config);
+  let clean = purify.sanitize(dirty, config);
 
   // Remove hook to avoid stacking on repeated calls
-  DOMPurify.removeHook('afterSanitizeAttributes');
+  purify.removeHook('afterSanitizeAttributes');
 
   // Post-process: ensure all links have security attributes
   clean = clean.replace(/<a\s+([^>]*?)>/gi, (match, attrs) => {
@@ -338,7 +358,7 @@ export function sanitizeComment(content: string): string {
  * @returns Plain text with all tags removed
  */
 export function stripHtml(html: string): string {
-  return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
+  return getDOMPurify().sanitize(html, { ALLOWED_TAGS: [] });
 }
 
 /**
