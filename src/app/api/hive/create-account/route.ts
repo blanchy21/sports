@@ -4,6 +4,7 @@ import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { createHiveAccountForUser, AccountCreationError } from '@/lib/hive/account-creation';
 import { prisma } from '@/lib/db/prisma';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/utils/rate-limit';
+import { jwtFieldsCache } from '@/lib/auth/next-auth-options';
 
 export const POST = createApiHandler('/api/hive/create-account', async (request: Request, ctx) => {
   // Auth: require sb_session cookie
@@ -67,6 +68,7 @@ export const POST = createApiHandler('/api/hive/create-account', async (request:
 
   try {
     const result = await createHiveAccountForUser(username, custodialUser.id);
+    jwtFieldsCache.invalidateByTag(`custodial-user:${custodialUser.id}`);
     ctx.log.info('Hive account created successfully', { username: result.hiveUsername });
     return apiSuccess({ hiveUsername: result.hiveUsername });
   } catch (err) {

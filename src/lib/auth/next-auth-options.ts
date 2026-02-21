@@ -1,6 +1,13 @@
 import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { prisma } from '@/lib/db/prisma';
+import { MemoryCache } from '@/lib/cache/memory-cache';
+
+export const jwtFieldsCache = new MemoryCache({
+  maxEntries: 500,
+  defaultTTL: 5 * 60 * 1000, // 5 minutes
+  name: 'jwt-fields',
+});
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -42,16 +49,28 @@ export const authOptions: NextAuthOptions = {
         token.hiveUsername = custodialUser.hiveUsername ?? undefined;
         token.keysDownloaded = custodialUser.keysDownloaded;
       } else if (token.custodialUserId) {
-        // On subsequent requests, re-check mutable fields in case they changed after initial login
-        const freshUser = await prisma.custodialUser.findUnique({
-          where: { id: token.custodialUserId as string },
-          select: { hiveUsername: true, keysDownloaded: true },
-        });
-        if (freshUser) {
-          if (freshUser.hiveUsername) {
-            token.hiveUsername = freshUser.hiveUsername;
+        // On subsequent requests, re-check mutable fields (cached with 5-min TTL)
+        const cacheKey = `jwt-fields:${token.custodialUserId}`;
+        const tag = `custodial-user:${token.custodialUserId}`;
+        type JwtFields = { hiveUsername: string | null; keysDownloaded: boolean };
+
+        let fields = jwtFieldsCache.get<JwtFields>(cacheKey);
+        if (!fields) {
+          const freshUser = await prisma.custodialUser.findUnique({
+            where: { id: token.custodialUserId as string },
+            select: { hiveUsername: true, keysDownloaded: true },
+          });
+          if (freshUser) {
+            fields = freshUser;
+            jwtFieldsCache.set(cacheKey, fields, { tags: [tag] });
           }
-          token.keysDownloaded = freshUser.keysDownloaded;
+        }
+
+        if (fields) {
+          if (fields.hiveUsername) {
+            token.hiveUsername = fields.hiveUsername;
+          }
+          token.keysDownloaded = fields.keysDownloaded;
         }
       }
 

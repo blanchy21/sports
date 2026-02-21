@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/next-auth-options';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/utils/rate-limit';
+import { jwtFieldsCache } from '@/lib/auth/next-auth-options';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -130,6 +131,7 @@ export const GET = createApiHandler('/api/hive/download-keys', async (request: R
       keysDownloadedAt: new Date(),
     },
   });
+  jwtFieldsCache.invalidateByTag(`custodial-user:${custodialUser.id}`);
 
   ctx.log.info('Keys downloaded', { hiveUsername: user.hiveUsername });
 

@@ -5,7 +5,7 @@
  * to prevent XSS attacks.
  */
 
-import DOMPurify from 'dompurify';
+import DOMPurify from 'isomorphic-dompurify';
 
 /**
  * Default DOMPurify configuration for post content
@@ -103,20 +103,6 @@ const STRICT_CONFIG = {
  * @returns Sanitized HTML string safe for dangerouslySetInnerHTML
  */
 export function sanitizeHtml(dirty: string, strict = false): string {
-  if (typeof window === 'undefined') {
-    // Server-side: strip HTML tags and decode entities.
-    // Multi-pass to handle nested/malformed tags that simple regex misses.
-    let text = dirty;
-    let prev = '';
-    while (text !== prev) {
-      prev = text;
-      text = text.replace(/<[^>]*>/g, '');
-    }
-    // Also strip any remaining event handler patterns as defense-in-depth
-    text = text.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
-    return text;
-  }
-
   const config = strict ? STRICT_CONFIG : DEFAULT_CONFIG;
 
   // Restrict iframe src to whitelisted video domains
@@ -352,9 +338,6 @@ export function sanitizeComment(content: string): string {
  * @returns Plain text with all tags removed
  */
 export function stripHtml(html: string): string {
-  if (typeof window === 'undefined') {
-    return html.replace(/<[^>]*>/g, '');
-  }
   return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
 }
 
