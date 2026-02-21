@@ -55,9 +55,9 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
       } else {
         const response = await fetch('/api/soft/comments', {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user.id,
           },
           body: JSON.stringify({
             postId: `hive-${author}-${permlink}`,

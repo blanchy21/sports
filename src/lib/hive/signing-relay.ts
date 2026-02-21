@@ -109,7 +109,12 @@ export function validateOperations(operations: HiveOperation[], hiveUsername: st
           );
         }
         // Only allow posting_json_metadata updates — reject authority key changes
-        if (opBody.owner || opBody.active || opBody.posting || opBody.memo_key) {
+        if (
+          opBody.owner !== undefined ||
+          opBody.active !== undefined ||
+          opBody.posting !== undefined ||
+          opBody.memo_key !== undefined
+        ) {
           throw new OperationValidationError(
             'Authority key changes are not allowed via the signing relay'
           );

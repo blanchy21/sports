@@ -45,16 +45,10 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
       }
 
       try {
-        const headers: HeadersInit = {
-          'Content-Type': 'application/json',
-        };
-        if (isAuthenticated && authType === 'soft' && user?.id) {
-          headers['x-user-id'] = user.id;
-        }
-
         const response = await fetch('/api/soft/follows', {
           method: 'PATCH',
-          headers,
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ targetUserId }),
         });
 
@@ -95,9 +89,9 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
     try {
       const response = await fetch('/api/soft/follows', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user.id,
         },
         body: JSON.stringify({
           targetUserId,

@@ -67,14 +67,10 @@ export default function UserProfileClient() {
 
     const fetchSoftFollowStats = async () => {
       try {
-        const headers: HeadersInit = { 'Content-Type': 'application/json' };
-        if (currentUser?.id && authType === 'soft') {
-          headers['x-user-id'] = currentUser.id;
-        }
-
         const response = await fetch('/api/soft/follows', {
           method: 'PATCH',
-          headers,
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ targetUserId: (softProfile as { id?: string }).id }),
         });
 

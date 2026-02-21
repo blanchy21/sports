@@ -22,6 +22,7 @@ import { verifyChallenge, verifyHivePostingSignature } from '@/lib/auth/hive-cha
 
 const SESSION_COOKIE_NAME = 'sb_session';
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
+const SESSION_ABSOLUTE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 // Encryption configuration
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
@@ -33,7 +34,7 @@ const sessionSchema = z.object({
   username: z.string().min(1, 'Username is required'),
   authType: z.enum(['hive', 'soft', 'guest']),
   hiveUsername: z.string().optional(),
-  loginAt: z.number().optional(),
+  loginAt: z.number().optional(), // Optional in input; always set server-side
   // Challenge-response fields for Hive wallet verification (stripped before storing in cookie)
   challenge: z.string().optional(),
   challengeMac: z.string().optional(),
@@ -107,7 +108,13 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (!isSessionRefresh) {
+      if (isSessionRefresh) {
+        // Preserve the original loginAt from the existing session
+        const existingSession = decryptSession(existingCookie!.value);
+        if (existingSession?.loginAt) {
+          sessionData.loginAt = existingSession.loginAt;
+        }
+      } else {
         // Fresh login: require challenge + signature
         if (!challenge || !challengeMac || !signature) {
           return NextResponse.json(
@@ -152,6 +159,11 @@ export async function POST(request: NextRequest) {
       }
       // Use hiveUsername from NextAuth session (sourced from DB) instead of request body
       sessionData.hiveUsername = nextAuthSession.user.hiveUsername ?? sessionData.hiveUsername;
+    }
+
+    // Ensure loginAt is always set (fresh login gets Date.now(), refresh preserves original)
+    if (!sessionData.loginAt) {
+      sessionData.loginAt = Date.now();
     }
 
     const encryptedSession = encryptSession(sessionData);
@@ -205,6 +217,18 @@ export async function GET() {
         success: true,
         authenticated: false,
         session: null,
+      });
+      response.cookies.delete(SESSION_COOKIE_NAME);
+      return response;
+    }
+
+    // Enforce absolute session expiry (7 days from login)
+    if (session.loginAt && Date.now() - session.loginAt > SESSION_ABSOLUTE_EXPIRY_MS) {
+      const response = NextResponse.json({
+        success: true,
+        authenticated: false,
+        session: null,
+        reason: 'session_expired',
       });
       response.cookies.delete(SESSION_COOKIE_NAME);
       return response;

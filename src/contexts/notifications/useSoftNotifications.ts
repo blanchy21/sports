@@ -37,13 +37,13 @@ export function useSoftNotifications(
 
   // Returns null on error so caller can distinguish from empty success
   const fetchSoftNotifications = useCallback(
-    async (uid: string): Promise<SoftNotification[] | null> => {
+    async (_uid: string): Promise<SoftNotification[] | null> => {
       if (typeof navigator !== 'undefined' && !navigator.onLine) return null;
 
       try {
         const params = new URLSearchParams({ limit: '50' });
         const response = await fetch(`/api/soft/notifications?${params.toString()}`, {
-          headers: { 'x-user-id': uid },
+          credentials: 'include',
           cache: 'no-store',
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);

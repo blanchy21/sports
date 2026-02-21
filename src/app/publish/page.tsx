@@ -624,9 +624,9 @@ function PublishPageContent() {
         // SOFT USER: Publish via API directly to get postLimitInfo
         const response = await fetch('/api/posts', {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user.id,
           },
           body: JSON.stringify({
             authorId: user.id,

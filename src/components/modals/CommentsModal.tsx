@@ -94,9 +94,9 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         // SOFT USER: Publish to database via API
         const response = await fetch('/api/soft/comments', {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user.id,
           },
           body: JSON.stringify({
             postId: `hive-${author}-${permlink}`,

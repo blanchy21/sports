@@ -96,7 +96,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch post',
+        error: 'Failed to fetch post',
       },
       { status: 500 }
     );
@@ -232,7 +232,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update post',
+        error: 'Failed to update post',
       },
       { status: 500 }
     );
@@ -300,7 +300,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete post',
+        error: 'Failed to delete post',
       },
       { status: 500 }
     );

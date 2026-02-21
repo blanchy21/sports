@@ -254,9 +254,9 @@ export function ComposeSportsbite({
         // SOFT USER: Publish to database via API
         const response = await fetch('/api/soft/sportsbites', {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user.id,
           },
           body: JSON.stringify({
             body: content,

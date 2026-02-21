@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrivateKey, cryptoUtils } from '@hiveio/dhive';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
+import { checkRateLimit } from '@/lib/utils/rate-limit';
 
 const IMAGE_HOST = 'https://images.hive.blog';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -17,6 +18,19 @@ export async function POST(request: NextRequest) {
   const user = await getAuthenticatedUserFromSession(request);
   if (!user) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+
+  // Rate limit: 10 uploads per minute per user
+  const rateLimit = await checkRateLimit(
+    `image-upload:${user.userId}`,
+    { limit: 10, windowSeconds: 60 },
+    'image-upload'
+  );
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      { error: 'Upload rate limit exceeded. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(rateLimit.reset / 1000)) } }
+    );
   }
 
   const account = process.env.HIVE_IMAGE_UPLOAD_ACCOUNT;
@@ -86,9 +100,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No URL in image host response' }, { status: 502 });
   } catch (error) {
     console.error('Image upload error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Upload failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
   }
 }

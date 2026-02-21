@@ -314,7 +314,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Staking rewards processing failed',
         duration: Date.now() - startTime,
       },
       { status: 500 }

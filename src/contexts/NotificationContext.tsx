@@ -41,7 +41,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       try {
         await fetch('/api/soft/notifications', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(markAll ? { markAllRead: true } : { notificationIds }),
         });
       } catch (error) {
