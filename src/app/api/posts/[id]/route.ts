@@ -1,5 +1,7 @@
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { FirebasePosts } from '@/lib/firebase/posts';
+import { Redis } from '@upstash/redis';
+import { prisma } from '@/lib/db/prisma';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import {
@@ -8,6 +10,22 @@ import {
   RATE_LIMITS,
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
+
+// Lazy-init Redis for view dedup (same pattern as rate-limit.ts)
+let viewRedis: Redis | null = null;
+
+function getViewRedis(): Redis | null {
+  if (viewRedis) return viewRedis;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    viewRedis = new Redis({ url, token });
+    return viewRedis;
+  } catch {
+    return null;
+  }
+}
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -20,16 +38,54 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
 
-    const post = await FirebasePosts.getPostById(id);
+    const post = await prisma.post.findUnique({ where: { id } });
 
     if (!post) {
       return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
     }
 
-    // Increment view count (fire and forget, but log errors)
-    FirebasePosts.incrementViewCount(id).catch((err) => {
-      console.error('Failed to increment view count:', err instanceof Error ? err.message : err);
-    });
+    // Deduplicated view count increment (fire and forget)
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const ua = request.headers.get('user-agent') || 'unknown';
+    const fingerprint = crypto
+      .createHash('sha256')
+      .update(`${ip}:${ua}`)
+      .digest('hex')
+      .slice(0, 16);
+    const viewKey = `view:${id}:${fingerprint}`;
+
+    const redis = getViewRedis();
+    if (redis) {
+      redis
+        .set(viewKey, '1', { ex: 3600, nx: true })
+        .then((wasSet) => {
+          if (wasSet) {
+            return prisma.post.update({
+              where: { id },
+              data: { viewCount: { increment: 1 } },
+            });
+          }
+        })
+        .catch((err) => {
+          console.error(
+            'Failed to increment view count:',
+            err instanceof Error ? err.message : err
+          );
+        });
+    } else {
+      // Redis unavailable — increment anyway (graceful fallback)
+      prisma.post
+        .update({
+          where: { id },
+          data: { viewCount: { increment: 1 } },
+        })
+        .catch((err: unknown) => {
+          console.error(
+            'Failed to increment view count:',
+            err instanceof Error ? err.message : err
+          );
+        });
+    }
 
     return NextResponse.json({
       success: true,
@@ -40,7 +96,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch post',
+        error: 'Failed to fetch post',
       },
       { status: 500 }
     );
@@ -90,7 +146,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     // Check if post exists
-    const existingPost = await FirebasePosts.getPostById(id);
+    const existingPost = await prisma.post.findUnique({ where: { id } });
     if (!existingPost) {
       return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
     }
@@ -161,7 +217,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const updatedPost = await FirebasePosts.updatePost(id, updates);
+    const updatedPost = await prisma.post.update({
+      where: { id },
+      data: updates,
+    });
 
     return NextResponse.json({
       success: true,
@@ -173,7 +232,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update post',
+        error: 'Failed to update post',
       },
       { status: 500 }
     );
@@ -217,7 +276,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     // Check if post exists
-    const existingPost = await FirebasePosts.getPostById(id);
+    const existingPost = await prisma.post.findUnique({ where: { id } });
     if (!existingPost) {
       return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
     }
@@ -230,7 +289,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    await FirebasePosts.deletePost(id);
+    await prisma.post.delete({ where: { id } });
 
     return NextResponse.json({
       success: true,
@@ -241,7 +300,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete post',
+        error: 'Failed to delete post',
       },
       { status: 500 }
     );

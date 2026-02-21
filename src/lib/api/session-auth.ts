@@ -9,42 +9,26 @@ import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
 import { z } from 'zod';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { getHiveAvatarUrl } from '@/lib/utils/avatar';
 import { logger } from '@/lib/logger';
+import { getSessionEncryptionKey } from '@/lib/api/session-encryption';
 
 const SESSION_COOKIE_NAME = 'sb_session';
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
+const MAX_SESSION_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 const sessionSchema = z.object({
   userId: z.string().min(1),
   username: z.string().min(1),
-  authType: z.enum(['hive', 'soft', 'firebase', 'guest']),
+  authType: z.enum(['hive', 'soft', 'guest']),
   hiveUsername: z.string().optional(),
   loginAt: z.number().optional(),
 });
 
 type SessionData = z.infer<typeof sessionSchema>;
-
-function getEncryptionKey(): Buffer {
-  const secret = process.env.SESSION_SECRET;
-
-  if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('SESSION_SECRET environment variable is required in production');
-    }
-    return crypto.scryptSync('development-only-insecure-key', 'salt', 32);
-  }
-
-  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_ENCRYPTION_SALT) {
-    throw new Error('SESSION_ENCRYPTION_SALT is required in production');
-  }
-  const salt = process.env.SESSION_ENCRYPTION_SALT || 'sportsblock-session-salt';
-
-  return crypto.scryptSync(secret, salt, 32);
-}
 
 /**
  * Decrypt session data from cookie value.
@@ -52,7 +36,7 @@ function getEncryptionKey(): Buffer {
  */
 export function decryptSession(encrypted: string): SessionData | null {
   try {
-    const key = getEncryptionKey();
+    const key = getSessionEncryptionKey();
     const combined = Buffer.from(encrypted, 'base64');
 
     if (combined.length < IV_LENGTH + AUTH_TAG_LENGTH + 1) {
@@ -77,6 +61,11 @@ export function decryptSession(encrypted: string): SessionData | null {
       return null;
     }
 
+    // Server-side session expiry check
+    if (result.data.loginAt && Date.now() - result.data.loginAt > MAX_SESSION_AGE_MS) {
+      return null;
+    }
+
     return result.data;
   } catch (error) {
     // Log unexpected decryption failures (not tampered/expired cookies which are routine)
@@ -91,11 +80,11 @@ export function decryptSession(encrypted: string): SessionData | null {
 /**
  * Get authenticated user from the encrypted session cookie.
  *
- * In production: requires a valid sb_session cookie — the x-user-id header is ignored.
+ * In production: requires a valid sb_session cookie -- the x-user-id header is ignored.
  * In development: falls back to x-user-id header if no session cookie exists
  *   (for easier testing with curl/Postman).
  *
- * Optionally enriches the returned user with profile data from Firestore.
+ * Optionally enriches the returned user with profile data from the database.
  */
 export async function getAuthenticatedUserFromSession(
   request: NextRequest,
@@ -103,7 +92,7 @@ export async function getAuthenticatedUserFromSession(
 ): Promise<{
   userId: string;
   username: string;
-  authType?: 'hive' | 'soft' | 'firebase' | 'guest';
+  authType?: 'hive' | 'soft' | 'guest';
   hiveUsername?: string;
   displayName?: string;
   avatar?: string;
@@ -145,9 +134,9 @@ export async function getAuthenticatedUserFromSession(
     return null;
   }
 
-  // Optionally fetch profile data from Firestore
+  // Optionally fetch profile data from database
   if (options?.includeProfile) {
-    // Hive users won't have a Firestore profile — use Hive avatar directly
+    // Hive users won't have a database profile -- use Hive avatar directly
     if (authType === 'hive') {
       const hiveUser = hiveUsername || username || '';
       return {
@@ -161,24 +150,20 @@ export async function getAuthenticatedUserFromSession(
     }
 
     try {
-      const db = getAdminDb();
-      if (db) {
-        const profileDoc = await db.collection('profiles').doc(userId).get();
-        if (profileDoc.exists) {
-          const data = profileDoc.data();
-          return {
-            userId,
-            username: data?.username ?? username ?? '',
-            authType,
-            hiveUsername,
-            displayName: data?.displayName,
-            avatar: data?.avatarUrl,
-          };
-        }
+      const profile = await prisma.profile.findUnique({ where: { id: userId } });
+      if (profile) {
+        return {
+          userId,
+          username: profile.username ?? username ?? '',
+          authType,
+          hiveUsername,
+          displayName: profile.displayName,
+          avatar: profile.avatarUrl ?? undefined,
+        };
       }
     } catch (error) {
       logger.error(
-        'Failed to fetch profile from Firestore',
+        'Failed to fetch profile from database',
         'session-auth',
         error instanceof Error ? error : undefined,
         { userId }

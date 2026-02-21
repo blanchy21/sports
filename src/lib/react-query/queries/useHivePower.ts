@@ -6,8 +6,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { aioha } from '@/lib/aioha/config';
-import type { AiohaInstance } from '@/lib/aioha/types';
+import { useBroadcast } from '@/hooks/useBroadcast';
 
 // Types for power data
 export interface PowerInfo {
@@ -76,6 +75,7 @@ export function useHivePowerInfo(account: string | undefined) {
  */
 export function useHivePowerMutation() {
   const queryClient = useQueryClient();
+  const { broadcast } = useBroadcast();
 
   return useMutation({
     mutationFn: async (operation: PowerOperation) => {
@@ -97,22 +97,12 @@ export function useHivePowerMutation() {
         throw new Error(data.error || 'Failed to build power operation');
       }
 
-      // Step 2: Sign and broadcast with Aioha
-      if (!aioha) {
-        throw new Error('Wallet not connected. Please connect your Hive wallet and try again.');
-      }
+      // Step 2: Sign and broadcast via unified broadcast
+      const operationType = data.operationType;
+      const operations: [string, Record<string, unknown>][] = [[operationType, data.operation]];
 
-      // Build the operation array for Aioha
       // Power operations use active key
-      const operationType = data.operationType; // 'transfer_to_vesting' or 'withdraw_vesting'
-      const operations = [[operationType, data.operation]];
-
-      // Sign and broadcast with active key (required for power operations)
-      const result = (await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'active')) as {
-        success: boolean;
-        result?: string;
-        error?: string;
-      };
+      const result = await broadcast(operations, 'active');
 
       if (!result.success) {
         throw new Error(result.error || 'Transaction failed');
@@ -120,7 +110,7 @@ export function useHivePowerMutation() {
 
       return {
         success: true,
-        transactionId: result.result,
+        transactionId: result.transactionId,
         action: data.action,
         message: data.message,
       };

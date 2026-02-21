@@ -11,7 +11,7 @@ interface UseUserPostsResult {
 
 interface UseUserPostsOptions {
   isHiveUser?: boolean;
-  userId?: string; // For soft users, use their Firebase user ID
+  userId?: string; // For soft users, use their user ID
 }
 
 export function useUserPosts(
@@ -42,7 +42,7 @@ export function useUserPosts(
           `/api/hive/posts?username=${encodeURIComponent(username)}&limit=${limit}`
         );
       } else {
-        // Fetch from Firebase API for soft users
+        // Fetch from API for soft users
         const identifier = userId || username;
         response = await fetch(
           `/api/posts?authorId=${encodeURIComponent(identifier)}&limit=${limit}`

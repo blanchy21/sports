@@ -20,60 +20,64 @@ import {
   type DistributionResult,
 } from '@/lib/rewards/staking-distribution';
 import { getHiveEngineClient } from '@/lib/hive-engine/client';
-import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@/generated/prisma/client';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
+import { logger } from '@/lib/logger';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 /**
  * Check if rewards have already been processed for this week
  */
 async function isAlreadyProcessed(weekId: string): Promise<boolean> {
-  if (!db) return false;
   try {
-    const docRef = doc(collection(db, 'rewards'), `staking-${weekId}`);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists();
+    const record = await prisma.analyticsEvent.findFirst({
+      where: { eventType: `staking-${weekId}` },
+    });
+    return !!record;
   } catch (error) {
-    console.error('Error checking processed status:', error);
-    // If we can't check, assume not processed but log warning
-    return false;
+    logger.error('Error checking processed status', 'cron:staking-rewards', error);
+    // Fail safe: assume already processed to prevent double-processing
+    return true;
   }
 }
 
 /**
- * Store distribution record in Firestore
+ * Store distribution record in database
  */
 async function storeDistributionRecord(
   result: DistributionResult,
   status: 'pending' | 'completed' | 'failed',
   error?: string
 ): Promise<void> {
-  if (!db) {
-    console.warn('Firestore not configured, skipping distribution record');
-    return;
-  }
   try {
-    const docRef = doc(collection(db, 'rewards'), `staking-${result.weekId}`);
-
-    await setDoc(docRef, {
-      type: 'staking',
-      weekId: result.weekId,
-      weeklyPool: result.weeklyPool,
-      totalStaked: result.totalStaked,
-      stakerCount: result.stakerCount,
-      eligibleStakerCount: result.eligibleStakerCount,
-      distributionCount: result.distributions.length,
-      totalDistributed: result.distributions.reduce((sum, d) => sum + d.amount, 0),
-      status,
-      error: error || null,
-      createdAt: result.timestamp,
-      updatedAt: new Date(),
-      // Store top 100 distributions for review (full list can be large)
-      topDistributions: result.distributions.slice(0, 100),
+    await prisma.analyticsEvent.create({
+      data: {
+        eventType: `staking-${result.weekId}`,
+        metadata: {
+          type: 'staking',
+          weekId: result.weekId,
+          weeklyPool: result.weeklyPool,
+          totalStaked: result.totalStaked,
+          stakerCount: result.stakerCount,
+          eligibleStakerCount: result.eligibleStakerCount,
+          distributionCount: result.distributions.length,
+          totalDistributed: result.distributions.reduce((sum, d) => sum + d.amount, 0),
+          status,
+          error: error || null,
+          createdAt: result.timestamp.toISOString(),
+          updatedAt: new Date().toISOString(),
+          // Store top 100 distributions for review (full list can be large)
+          topDistributions: result.distributions.slice(0, 100) as unknown as Prisma.InputJsonValue,
+        } as unknown as Prisma.InputJsonValue,
+      },
     });
-  } catch (error) {
-    console.error('Error storing distribution record:', error);
-    throw error;
+  } catch (dbError) {
+    logger.error('Error storing distribution record', 'cron:staking-rewards', dbError);
+    throw dbError;
   }
 }
 
@@ -120,12 +124,62 @@ async function fetchAllStakers(): Promise<StakerInfo[]> {
       offset += limit;
       hasMore = result.length === limit;
     } catch (error) {
-      console.error('Error fetching stakers:', error);
+      logger.error('Error fetching stakers', 'cron:staking-rewards', error, { offset });
       throw new Error(`Failed to fetch stakers at offset ${offset}`);
     }
   }
 
   return stakers;
+}
+
+/**
+ * Core staking rewards processing logic.
+ * Fetches stakers, calculates rewards, validates balance, and stores the result.
+ */
+async function processStakingRewards(options: { forceRecalculate?: boolean }): Promise<{
+  weekId: string;
+  skipped?: boolean;
+  distributionResult?: DistributionResult;
+  totalToDistribute?: number;
+  balanceCheck?: { valid: boolean; message: string };
+}> {
+  const weekId = getWeekId();
+
+  // Check idempotency - don't process twice (unless forcing)
+  if (!options.forceRecalculate && (await isAlreadyProcessed(weekId))) {
+    return { weekId, skipped: true };
+  }
+
+  // Fetch all stakers
+  logger.info(`Fetching stakers for ${weekId}`, 'cron:staking-rewards');
+  const stakers = await fetchAllStakers();
+  logger.info(`Found ${stakers.length} stakers`, 'cron:staking-rewards');
+
+  // Calculate rewards
+  const distributionResult = calculateStakingRewards(stakers);
+  logger.info(
+    `Calculated rewards: ${distributionResult.eligibleStakerCount} eligible, ${distributionResult.weeklyPool} MEDALS pool`,
+    'cron:staking-rewards'
+  );
+
+  // Check rewards account balance
+  const rewardsAccount = getRewardsAccount();
+  const rewardsBalanceResult = await getHiveEngineClient().findOne<{
+    balance: string;
+  }>('tokens', 'balances', { account: rewardsAccount, symbol: 'MEDALS' });
+  const rewardsBalance = rewardsBalanceResult ? parseFloat(rewardsBalanceResult.balance) : 0;
+  const totalToDistribute = distributionResult.distributions.reduce((sum, d) => sum + d.amount, 0);
+
+  const balanceCheck = validateRewardsBalance(rewardsBalance, totalToDistribute);
+
+  if (!balanceCheck.valid) {
+    logger.warn(balanceCheck.message, 'cron:staking-rewards');
+    await storeDistributionRecord(distributionResult, 'pending', balanceCheck.message);
+  } else {
+    await storeDistributionRecord(distributionResult, 'pending');
+  }
+
+  return { weekId, distributionResult, totalToDistribute, balanceCheck };
 }
 
 /**
@@ -140,55 +194,28 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const weekId = getWeekId();
+    const result = await processStakingRewards({ forceRecalculate: false });
 
-    // Check idempotency - don't process twice
-    if (await isAlreadyProcessed(weekId)) {
+    if (result.skipped) {
       return NextResponse.json({
         success: true,
-        message: `Staking rewards already processed for ${weekId}`,
-        weekId,
+        message: `Staking rewards already processed for ${result.weekId}`,
+        weekId: result.weekId,
         skipped: true,
       });
     }
 
-    // Fetch all stakers
-    console.log(`[Staking Rewards] Fetching stakers for ${weekId}...`);
-    const stakers = await fetchAllStakers();
-    console.log(`[Staking Rewards] Found ${stakers.length} stakers`);
+    const { distributionResult, totalToDistribute, balanceCheck, weekId } = result;
 
-    // Calculate rewards
-    const distributionResult = calculateStakingRewards(stakers);
-    console.log(
-      `[Staking Rewards] Calculated rewards: ${distributionResult.eligibleStakerCount} eligible, ` +
-        `${distributionResult.weeklyPool} MEDALS pool`
-    );
-
-    // Check rewards account balance
-    const rewardsAccount = getRewardsAccount();
-    const rewardsBalanceResult = await getHiveEngineClient().findOne<{
-      balance: string;
-    }>('tokens', 'balances', { account: rewardsAccount, symbol: 'MEDALS' });
-    const rewardsBalance = rewardsBalanceResult ? parseFloat(rewardsBalanceResult.balance) : 0;
-    const totalToDistribute = distributionResult.distributions.reduce(
-      (sum, d) => sum + d.amount,
-      0
-    );
-
-    const balanceCheck = validateRewardsBalance(rewardsBalance, totalToDistribute);
-
-    if (!balanceCheck.valid) {
-      console.warn(`[Staking Rewards] ${balanceCheck.message}`);
-      await storeDistributionRecord(distributionResult, 'pending', balanceCheck.message);
-
+    if (balanceCheck && !balanceCheck.valid) {
       return NextResponse.json({
         success: true,
         message: 'Distribution calculated but insufficient balance for auto-execution',
         weekId,
         result: {
-          weeklyPool: distributionResult.weeklyPool,
-          totalStaked: distributionResult.totalStaked,
-          eligibleStakers: distributionResult.eligibleStakerCount,
+          weeklyPool: distributionResult!.weeklyPool,
+          totalStaked: distributionResult!.totalStaked,
+          eligibleStakers: distributionResult!.eligibleStakerCount,
           totalToDistribute,
           balanceCheck,
         },
@@ -197,22 +224,17 @@ export async function GET() {
       });
     }
 
-    // Store as pending (manual execution or separate broadcast job)
-    // Note: Auto-broadcasting requires hot wallet which is a security risk
-    // Recommend manual approval for now
-    await storeDistributionRecord(distributionResult, 'pending');
-
     return NextResponse.json({
       success: true,
       message: `Staking rewards calculated for ${weekId}`,
       weekId,
       result: {
-        weeklyPool: distributionResult.weeklyPool,
-        totalStaked: distributionResult.totalStaked,
-        stakerCount: distributionResult.stakerCount,
-        eligibleStakers: distributionResult.eligibleStakerCount,
+        weeklyPool: distributionResult!.weeklyPool,
+        totalStaked: distributionResult!.totalStaked,
+        stakerCount: distributionResult!.stakerCount,
+        eligibleStakers: distributionResult!.eligibleStakerCount,
         totalToDistribute,
-        topRecipients: distributionResult.distributions.slice(0, 10).map((d) => ({
+        topRecipients: distributionResult!.distributions.slice(0, 10).map((d) => ({
           account: d.account,
           amount: d.amount,
           percentage: d.percentage,
@@ -222,7 +244,7 @@ export async function GET() {
       duration: Date.now() - startTime,
     });
   } catch (error) {
-    console.error('[Staking Rewards] Error:', error);
+    logger.error('Staking rewards cron failed', 'cron:staking-rewards', error);
 
     return NextResponse.json(
       {
@@ -244,6 +266,8 @@ export async function GET() {
  * POST handler for manual trigger with options
  */
 export async function POST(request: Request) {
+  const startTime = Date.now();
+
   try {
     // Verify request authorization
     if (!(await verifyCronRequest())) {
@@ -253,37 +277,45 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const { forceRecalculate = false, dryRun = true } = body;
 
-    const weekId = getWeekId();
+    const result = await processStakingRewards({ forceRecalculate });
 
-    // Check if already processed (unless forcing)
-    if (!forceRecalculate && (await isAlreadyProcessed(weekId))) {
+    if (result.skipped) {
       return NextResponse.json({
         success: true,
-        message: `Staking rewards already processed for ${weekId}`,
-        weekId,
+        message: `Staking rewards already processed for ${result.weekId}`,
+        weekId: result.weekId,
         skipped: true,
       });
     }
 
-    // For now, POST just triggers the same calculation as GET
-    // In the future, this could support broadcast: true to actually send rewards
-    const response = await GET();
-    const data = await response.json();
+    const { distributionResult, totalToDistribute, weekId } = result;
 
     return NextResponse.json({
-      ...data,
+      success: true,
+      message: `Staking rewards calculated for ${weekId}`,
+      weekId,
+      result: {
+        weeklyPool: distributionResult!.weeklyPool,
+        totalStaked: distributionResult!.totalStaked,
+        stakerCount: distributionResult!.stakerCount,
+        eligibleStakers: distributionResult!.eligibleStakerCount,
+        totalToDistribute,
+      },
+      status: 'pending',
       dryRun,
       note: dryRun
         ? 'Dry run - no tokens transferred. Set dryRun: false to execute.'
         : 'Tokens would be transferred (not implemented yet - requires hot wallet)',
+      duration: Date.now() - startTime,
     });
   } catch (error) {
-    console.error('[Staking Rewards POST] Error:', error);
+    logger.error('Staking rewards POST failed', 'cron:staking-rewards', error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Staking rewards processing failed',
+        duration: Date.now() - startTime,
       },
       { status: 500 }
     );

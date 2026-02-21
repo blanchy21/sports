@@ -33,6 +33,12 @@ const RATE_LIMITED_ROUTES = {
   '/api/image-proxy': 'read',
   '/api/health': 'read',
 
+  // Custodial account operations
+  '/api/hive/create-account': 'auth',
+  '/api/hive/sign': 'write',
+  '/api/hive/download-keys': 'auth',
+  '/api/hive/check-username': 'read',
+
   // Write operations
   '/api/hive/posting': 'write',
   '/api/hive-engine/stake': 'write',
@@ -58,6 +64,11 @@ function getRateLimitType(pathname: string): RateLimitType | null {
 
   // Test endpoints exempt in development
   if (pathname.startsWith('/api/test')) {
+    return null;
+  }
+
+  // NextAuth OAuth callbacks exempt from rate limiting
+  if (pathname.startsWith('/api/auth/')) {
     return null;
   }
 

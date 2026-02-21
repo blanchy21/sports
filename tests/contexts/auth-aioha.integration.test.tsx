@@ -17,14 +17,6 @@ jest.mock('@/contexts/AiohaProvider', () => ({
   useAioha: jest.fn(),
 }));
 
-jest.mock('@/lib/firebase/auth', () => ({
-  FirebaseAuth: {
-    signIn: jest.fn(),
-    signOut: jest.fn(),
-    upgradeToHive: jest.fn(),
-  },
-}));
-
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import type { HiveAccount } from '@/lib/shared/types';
 import type { UserAccountData } from '@/lib/hive-workerbee/account';
@@ -91,6 +83,7 @@ const aiohaStub = {
   },
   providers: {},
   logout: jest.fn(),
+  signMessage: jest.fn().mockResolvedValue({ success: true, result: 'mock-signature-hex' }),
 };
 
 // Setup localStorage mock
@@ -119,6 +112,9 @@ describe('AuthProvider + Aioha integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.clear();
+
+    // Re-set signMessage mock after clearAllMocks
+    aiohaStub.signMessage.mockResolvedValue({ success: true, result: 'mock-signature-hex' });
 
     useAiohaMock.mockReturnValue({
       aioha: aiohaStub,
@@ -185,7 +181,7 @@ describe('AuthProvider + Aioha integration', () => {
     await waitFor(
       () => {
         const postCalls = authMock.mockFetch.mock.calls.filter(
-          (call) => call[1]?.method === 'POST' && String(call[0]).includes('/api/auth/session')
+          (call) => call[1]?.method === 'POST' && String(call[0]).includes('/api/auth/sb-session')
         );
         expect(postCalls.length).toBeGreaterThan(0);
       },

@@ -20,16 +20,14 @@ export async function register() {
     console.log('----------------------------------------\n');
 
     // Validate environment variables first
-    const { assertValidEnvironment, isProduction, isDevelopment, publicEnv, serverEnv } = await import('@/lib/env');
+    const { assertValidEnvironment, isProduction, isDevelopment, serverEnv } =
+      await import('@/lib/env');
 
     const mode = isProduction ? 'PRODUCTION' : isDevelopment ? 'DEVELOPMENT' : 'TEST';
     console.log(`[Sportsblock] Starting server in ${mode} mode...\n`);
 
     // Log environment variable status (not values for security)
     console.log('[Sportsblock] Environment Variables Status:');
-    console.log(`  - NEXT_PUBLIC_FIREBASE_API_KEY: ${publicEnv.firebase.apiKey ? '✓ Set' : '✗ Missing'}`);
-    console.log(`  - NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${publicEnv.firebase.projectId ? '✓ Set' : '✗ Missing'}`);
-    console.log(`  - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${publicEnv.firebase.authDomain ? '✓ Set' : '✗ Missing'}`);
     console.log(`  - SESSION_SECRET: ${serverEnv.session.secret ? '✓ Set' : '✗ Missing'}`);
     console.log(`  - CRON_SECRET: ${serverEnv.cron.secret ? '✓ Set' : '✗ Missing'}`);
     console.log(`  - NEXT_PUBLIC_SENTRY_DSN: ${serverEnv.sentry.dsn ? '✓ Set' : '✗ Missing'}`);
@@ -41,7 +39,7 @@ export async function register() {
     } catch (error) {
       console.error('[Sportsblock] Environment validation FAILED:', {
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
       });
 
       if (isProduction) {

@@ -8,8 +8,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
 import { STALE_TIMES } from '@/lib/constants/cache';
-import { aioha } from '@/lib/aioha/config';
-import type { AiohaInstance } from '@/lib/aioha/types';
+import { useBroadcast } from '@/hooks/useBroadcast';
 
 // Types for MEDALS data
 export interface MedalsBalance {
@@ -191,6 +190,7 @@ interface TransferOperation {
 
 export function useStakeMedals() {
   const queryClient = useQueryClient();
+  const { broadcast } = useBroadcast();
 
   return useMutation({
     mutationFn: async (operation: StakeOperation) => {
@@ -212,16 +212,10 @@ export function useStakeMedals() {
         throw new Error(data.error || 'Failed to build stake operation');
       }
 
-      // Step 2: Sign and broadcast with Aioha
-      if (!aioha) {
-        throw new Error('Wallet not connected. Please connect your Hive wallet and try again.');
-      }
-
+      // Step 2: Sign and broadcast via unified broadcast
       const customJsonOp = data.operation;
 
-      // Build the operation array for Aioha
-      // Hive-Engine operations use custom_json with active key
-      const operations = [
+      const operations: [string, Record<string, unknown>][] = [
         [
           'custom_json',
           {
@@ -233,12 +227,7 @@ export function useStakeMedals() {
         ],
       ];
 
-      // Sign and broadcast with active key (required for Hive-Engine token operations)
-      const result = (await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'active')) as {
-        success: boolean;
-        result?: string;
-        error?: string;
-      };
+      const result = await broadcast(operations, 'active');
 
       if (!result.success) {
         throw new Error(result.error || 'Transaction failed');
@@ -246,13 +235,12 @@ export function useStakeMedals() {
 
       return {
         success: true,
-        transactionId: result.result,
+        transactionId: result.transactionId,
         action: data.action,
         message: data.message,
       };
     },
     onSuccess: (_, variables) => {
-      // Invalidate related queries after successful operation
       queryClient.invalidateQueries({ queryKey: queryKeys.medals.balance(variables.account) });
       queryClient.invalidateQueries({ queryKey: queryKeys.medals.stake(variables.account) });
       queryClient.invalidateQueries({ queryKey: queryKeys.medals.history(variables.account) });
@@ -262,6 +250,7 @@ export function useStakeMedals() {
 
 export function useTransferMedals() {
   const queryClient = useQueryClient();
+  const { broadcast } = useBroadcast();
 
   return useMutation({
     mutationFn: async (operation: TransferOperation) => {
@@ -283,16 +272,10 @@ export function useTransferMedals() {
         throw new Error(data.error || 'Failed to build transfer operation');
       }
 
-      // Step 2: Sign and broadcast with Aioha
-      if (!aioha) {
-        throw new Error('Wallet not connected. Please connect your Hive wallet and try again.');
-      }
-
+      // Step 2: Sign and broadcast via unified broadcast
       const customJsonOp = data.operation;
 
-      // Build the operation array for Aioha
-      // Hive-Engine operations use custom_json with active key
-      const operations = [
+      const operations: [string, Record<string, unknown>][] = [
         [
           'custom_json',
           {
@@ -304,12 +287,7 @@ export function useTransferMedals() {
         ],
       ];
 
-      // Sign and broadcast with active key (required for Hive-Engine token operations)
-      const result = (await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'active')) as {
-        success: boolean;
-        result?: string;
-        error?: string;
-      };
+      const result = await broadcast(operations, 'active');
 
       if (!result.success) {
         throw new Error(result.error || 'Transaction failed');
@@ -317,16 +295,14 @@ export function useTransferMedals() {
 
       return {
         success: true,
-        transactionId: result.result,
+        transactionId: result.transactionId,
         action: data.action,
         message: data.message,
       };
     },
     onSuccess: (_, variables) => {
-      // Invalidate sender's queries
       queryClient.invalidateQueries({ queryKey: queryKeys.medals.balance(variables.from) });
       queryClient.invalidateQueries({ queryKey: queryKeys.medals.history(variables.from) });
-      // Also invalidate recipient's queries if they're cached
       queryClient.invalidateQueries({ queryKey: queryKeys.medals.balance(variables.to) });
     },
   });

@@ -1,18 +1,24 @@
 import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBroadcast } from '@/hooks/useBroadcast';
 import { queryKeys } from '@/lib/react-query/queryClient';
 import { logger } from '@/lib/logger';
-import {
-  castVote,
-  removeVote,
-  checkUserVote,
-  canUserVote,
-  calculateOptimalVoteWeight,
-  VoteData,
-  VoteResult,
-} from '@/lib/hive-workerbee/voting';
 import { HiveVote } from '@/lib/shared/types';
+
+// Local type definitions — avoids importing server-only hive-workerbee/voting
+interface VoteData {
+  voter: string;
+  author: string;
+  permlink: string;
+  weight: number; // percentage: -100 to 100
+}
+
+interface VoteResult {
+  success: boolean;
+  transactionId?: string;
+  error?: string;
+}
 
 export interface VoteState {
   isVoting: boolean;
@@ -49,18 +55,28 @@ async function fetchVoteStatus(
   permlink: string,
   username: string
 ): Promise<VoteStatusData> {
-  const [userVote, eligibility] = await Promise.all([
-    checkUserVote(author, permlink, username),
-    canUserVote(username),
-  ]);
-  return { userVote, eligibility };
+  const params = new URLSearchParams({ author, permlink, voter: username });
+  const res = await fetch(`/api/hive/votes/eligibility?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch vote status');
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Failed to fetch vote status');
+  return json.data as VoteStatusData;
+}
+
+function calculateOptimalWeight(votingPower: number): number {
+  if (votingPower >= 80) return 100;
+  if (votingPower >= 60) return 80;
+  if (votingPower >= 40) return 60;
+  if (votingPower >= 20) return 40;
+  return 20;
 }
 
 export function useVoting(author: string, permlink: string): UseVotingReturn {
   const { hiveUser, authType } = useAuth();
+  const { broadcast } = useBroadcast();
   const queryClient = useQueryClient();
   const username = hiveUser?.username;
-  const isHiveAuth = authType === 'hive';
+  const canBroadcast = authType === 'hive' || authType === 'soft';
 
   // Use React Query for caching vote status
   const {
@@ -70,15 +86,17 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
   } = useQuery({
     queryKey: queryKeys.votes.status(author, permlink, username || ''),
     queryFn: () => fetchVoteStatus(author, permlink, username!),
-    enabled: !!username && isHiveAuth && !!author && !!permlink,
+    enabled: !!username && canBroadcast && !!author && !!permlink,
     staleTime: 5 * 60 * 1000, // 5 minutes - votes don't change often
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Mutation for casting votes
   const voteMutation = useMutation({
-    mutationFn: async (voteData: VoteData) => {
-      return await castVote(voteData);
+    mutationFn: async (voteData: VoteData): Promise<VoteResult> => {
+      return await broadcast([
+        ['vote', { voter: voteData.voter, author: voteData.author, permlink: voteData.permlink, weight: Math.round(voteData.weight * 100) }],
+      ]);
     },
     onSuccess: (_result, variables) => {
       // Invalidate the vote status cache for this post
@@ -90,8 +108,10 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
 
   // Mutation for removing votes
   const removeVoteMutation = useMutation({
-    mutationFn: async (data: { voter: string; author: string; permlink: string }) => {
-      return await removeVote(data);
+    mutationFn: async (data: { voter: string; author: string; permlink: string }): Promise<VoteResult> => {
+      return await broadcast([
+        ['vote', { voter: data.voter, author: data.author, permlink: data.permlink, weight: 0 }],
+      ]);
     },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({
@@ -117,12 +137,12 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
 
   // Cast an upvote
   const upvote = useCallback(async (): Promise<VoteResult> => {
-    if (!username || !isHiveAuth) {
+    if (!username || !canBroadcast) {
       return { success: false, error: 'Authentication required for voting' };
     }
 
     try {
-      const optimalWeight = await calculateOptimalVoteWeight(username);
+      const optimalWeight = calculateOptimalWeight(voteStatus?.eligibility.votingPower ?? 100);
       const voteData: VoteData = {
         voter: username,
         author,
@@ -137,16 +157,16 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
       const errorMessage = err instanceof Error ? err.message : 'Failed to cast vote';
       return { success: false, error: errorMessage };
     }
-  }, [author, permlink, username, isHiveAuth, voteMutation]);
+  }, [author, permlink, username, canBroadcast, voteMutation, voteStatus]);
 
   // Cast a downvote (negative weight)
   const downvote = useCallback(async (): Promise<VoteResult> => {
-    if (!username || !isHiveAuth) {
+    if (!username || !canBroadcast) {
       return { success: false, error: 'Authentication required for voting' };
     }
 
     try {
-      const optimalWeight = await calculateOptimalVoteWeight(username);
+      const optimalWeight = calculateOptimalWeight(voteStatus?.eligibility.votingPower ?? 100);
       const voteData: VoteData = {
         voter: username,
         author,
@@ -161,12 +181,12 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
       const errorMessage = err instanceof Error ? err.message : 'Failed to cast vote';
       return { success: false, error: errorMessage };
     }
-  }, [author, permlink, username, isHiveAuth, voteMutation]);
+  }, [author, permlink, username, canBroadcast, voteMutation, voteStatus]);
 
   // Cast a star-based vote (1-5 stars = 20%-100% weight)
   const starVote = useCallback(
     async (voteAuthor: string, votePermlink: string, stars: number): Promise<VoteResult> => {
-      if (!username || !isHiveAuth) {
+      if (!username || !canBroadcast) {
         return { success: false, error: 'Authentication required for voting' };
       }
 
@@ -221,13 +241,13 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
         return { success: false, error: errorMessage };
       }
     },
-    [username, isHiveAuth, voteMutation, queryClient]
+    [username, canBroadcast, voteMutation, queryClient]
   );
 
   // Cast a comment vote with fixed weight
   const commentVote = useCallback(
     async (voteAuthor: string, votePermlink: string, weight: number): Promise<VoteResult> => {
-      if (!username || !isHiveAuth) {
+      if (!username || !canBroadcast) {
         return { success: false, error: 'Authentication required for voting' };
       }
 
@@ -251,12 +271,12 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
         return { success: false, error: errorMessage };
       }
     },
-    [username, isHiveAuth, voteMutation]
+    [username, canBroadcast, voteMutation]
   );
 
   // Remove a vote (set weight to 0)
   const removeVoteAction = useCallback(async (): Promise<VoteResult> => {
-    if (!username || !isHiveAuth) {
+    if (!username || !canBroadcast) {
       return { success: false, error: 'Authentication required for voting' };
     }
 
@@ -272,15 +292,15 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
       const errorMessage = err instanceof Error ? err.message : 'Failed to remove vote';
       return { success: false, error: errorMessage };
     }
-  }, [author, permlink, username, isHiveAuth, removeVoteMutation]);
+  }, [author, permlink, username, canBroadcast, removeVoteMutation]);
 
   // Legacy checkVoteStatus - now triggers refetch
   const checkVoteStatus = useCallback(async () => {
-    if (!username || !isHiveAuth) return;
+    if (!username || !canBroadcast) return;
     await queryClient.invalidateQueries({
       queryKey: queryKeys.votes.status(author, permlink, username),
     });
-  }, [author, permlink, username, isHiveAuth, queryClient]);
+  }, [author, permlink, username, canBroadcast, queryClient]);
 
   // Refresh vote state
   const refreshVoteState = useCallback(async () => {

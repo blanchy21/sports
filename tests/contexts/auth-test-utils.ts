@@ -40,8 +40,8 @@ export function createAuthMockFetch(mockOptions: MockFetchOptions = {}) {
       typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
     const method = init?.method || 'GET';
 
-    // Handle session API
-    if (urlStr.includes('/api/auth/session')) {
+    // Handle session API (endpoint is /api/auth/sb-session)
+    if (urlStr.includes('/api/auth/sb-session')) {
       if (method === 'GET') {
         // Return current session state
         return Promise.resolve({
@@ -95,6 +95,19 @@ export function createAuthMockFetch(mockOptions: MockFetchOptions = {}) {
           Promise.resolve({
             success: true,
             account: accountData ?? defaultAccount,
+          }),
+      });
+    }
+
+    // Handle hive challenge API (for wallet verification)
+    if (urlStr.includes('/api/auth/hive-challenge')) {
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            success: true,
+            challenge: 'sportsblock-auth:testuser:abc123:' + Date.now(),
+            mac: 'mock-mac-for-testing',
           }),
       });
     }

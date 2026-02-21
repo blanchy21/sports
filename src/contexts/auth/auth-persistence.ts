@@ -69,7 +69,7 @@ export interface SessionResponse {
  */
 export const fetchSessionFromCookie = async (): Promise<SessionResponse> => {
   try {
-    const response = await fetch('/api/auth/session', {
+    const response = await fetch('/api/auth/sb-session', {
       method: 'GET',
       credentials: 'include',
     });
@@ -86,6 +86,16 @@ export const fetchSessionFromCookie = async (): Promise<SessionResponse> => {
 };
 
 /**
+ * Challenge data for Hive wallet verification.
+ * Passed during initial login, not needed for session refreshes.
+ */
+export interface ChallengeData {
+  challenge: string;
+  challengeMac: string;
+  signature: string;
+}
+
+/**
  * Sync session to httpOnly cookie for server-side validation.
  * This is the PRIMARY storage for auth state.
  */
@@ -95,13 +105,17 @@ export const syncSessionCookie = async (sessionData: {
   authType: AuthType;
   hiveUsername?: string;
   loginAt?: number;
+  challengeData?: ChallengeData;
 }): Promise<boolean> => {
   try {
-    const response = await fetch('/api/auth/session', {
+    const { challengeData, ...coreData } = sessionData;
+    const body = challengeData ? { ...coreData, ...challengeData } : coreData;
+
+    const response = await fetch('/api/auth/sb-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify(sessionData),
+      body: JSON.stringify(body),
     });
     return response.ok;
   } catch (error) {
@@ -115,7 +129,7 @@ export const syncSessionCookie = async (sessionData: {
  */
 export const clearSessionCookie = async (): Promise<void> => {
   try {
-    await fetch('/api/auth/session', {
+    await fetch('/api/auth/sb-session', {
       method: 'DELETE',
       credentials: 'include',
     });
@@ -167,7 +181,10 @@ export const loadUIHint = (): UIHint | null => {
     if (typeof parsed.wasLoggedIn !== 'boolean') return null;
 
     return parsed as UIHint;
-  } catch {
+  } catch (err) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Failed to load UI hint from localStorage:', err);
+    }
     return null;
   }
 };
@@ -180,8 +197,10 @@ export const clearUIHint = (): void => {
 
   try {
     localStorage.removeItem(UI_HINT_STORAGE_KEY);
-  } catch {
-    // Ignore errors clearing hint
+  } catch (err) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Failed to clear UI hint from localStorage:', err);
+    }
   }
 };
 
@@ -195,6 +214,7 @@ let pendingPersistState: {
   authType: AuthType;
   hiveUser: HiveAuthUser | null;
   loginAt?: number;
+  challengeData?: ChallengeData;
 } | null = null;
 
 let persistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -212,6 +232,7 @@ const executePersist = async (): Promise<void> => {
     authType: authTypeToPersist,
     hiveUser: hiveUserToPersist,
     loginAt: loginAtToPersist,
+    challengeData: challengeDataToPersist,
   } = pendingPersistState;
   pendingPersistState = null;
 
@@ -229,6 +250,7 @@ const executePersist = async (): Promise<void> => {
       authType: authTypeToPersist,
       hiveUsername: hiveUserToPersist?.username,
       loginAt: loginAtToPersist ?? Date.now(),
+      challengeData: challengeDataToPersist,
     });
 
     // SECONDARY: Save non-sensitive UI hint for hydration
@@ -257,23 +279,29 @@ export const persistAuthState = ({
   authType: authTypeToPersist,
   hiveUser: hiveUserToPersist,
   loginAt: loginAtToPersist,
+  challengeData: challengeDataToPersist,
 }: {
   user: User | null;
   authType: AuthType;
   hiveUser: HiveAuthUser | null;
   loginAt?: number;
+  challengeData?: ChallengeData;
 }): void => {
   // Only persist on client-side
   if (typeof window === 'undefined') {
     return;
   }
 
-  // Store the latest state to persist
+  // Store the latest state to persist.
+  // When debounce coalesces calls, preserve existing challengeData if the
+  // new call doesn't provide it (the first call after login has it;
+  // subsequent profile/activity updates don't).
   pendingPersistState = {
     user: userToPersist,
     authType: authTypeToPersist,
     hiveUser: hiveUserToPersist,
     loginAt: loginAtToPersist,
+    challengeData: challengeDataToPersist ?? pendingPersistState?.challengeData,
   };
 
   // Clear any existing timer
@@ -304,15 +332,4 @@ export const clearPersistedAuthState = async (): Promise<void> => {
   }
   // Clear httpOnly cookie
   await clearSessionCookie();
-};
-
-/**
- * @deprecated Use fetchSessionFromCookie() instead.
- * This is kept for backwards compatibility during migration.
- * Returns null - auth state is now in httpOnly cookies.
- */
-export const loadPersistedAuthState = (): string | null => {
-  // Legacy localStorage is no longer the source of truth
-  // Return null to trigger cookie-based session restoration
-  return null;
 };

@@ -1,56 +1,50 @@
 /**
  * Server-only sportsbites utilities.
  *
- * This module imports firebase-admin and must NEVER be imported from
+ * This module uses Prisma and must NEVER be imported from
  * client components or shared modules that are bundled for the browser.
  */
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { Sportsbite, PollDefinition } from './sportsbites';
 
-interface SoftSportsbiteDoc {
+function dbRowToSportsbite(row: {
+  id: string;
   authorId: string;
   authorUsername: string;
-  authorDisplayName?: string;
-  authorAvatar?: string;
+  authorDisplayName: string | null;
+  authorAvatar: string | null;
   body: string;
-  sportCategory?: string;
-  images?: string[];
-  gifs?: string[];
-  createdAt: { toDate: () => Date } | Date;
-  likeCount?: number;
-  commentCount?: number;
-  poll?: PollDefinition;
-}
-
-function softDocToSportsbite(docId: string, data: SoftSportsbiteDoc): Sportsbite {
-  const createdAt =
-    typeof (data.createdAt as { toDate?: () => Date })?.toDate === 'function'
-      ? (data.createdAt as { toDate: () => Date }).toDate()
-      : new Date(data.createdAt as unknown as string);
-
+  sportCategory: string | null;
+  images: string[];
+  gifs: string[];
+  createdAt: Date;
+  likeCount: number;
+  commentCount: number;
+  poll: unknown;
+}): Sportsbite {
   return {
-    id: `soft-${docId}`,
-    author: data.authorUsername,
-    permlink: `soft-${docId}`,
-    body: data.body,
-    created: createdAt.toISOString().replace('T', ' ').replace('Z', ''),
-    net_votes: data.likeCount || 0,
-    children: data.commentCount || 0,
+    id: `soft-${row.id}`,
+    author: row.authorUsername,
+    permlink: `soft-${row.id}`,
+    body: row.body,
+    created: row.createdAt.toISOString().replace('T', ' ').replace('Z', ''),
+    net_votes: row.likeCount || 0,
+    children: row.commentCount || 0,
     pending_payout_value: '0.000 HBD',
     active_votes: [],
-    sportCategory: data.sportCategory,
-    images: data.images,
-    gifs: data.gifs,
+    sportCategory: row.sportCategory ?? undefined,
+    images: row.images,
+    gifs: row.gifs,
     source: 'soft',
-    softId: docId,
-    authorDisplayName: data.authorDisplayName,
-    authorAvatar: data.authorAvatar,
-    poll: data.poll,
+    softId: row.id,
+    authorDisplayName: row.authorDisplayName ?? undefined,
+    authorAvatar: row.authorAvatar ?? undefined,
+    poll: row.poll as PollDefinition | undefined,
   };
 }
 
 /**
- * Fetch soft sportsbites from Firebase (server-side only, uses Admin SDK).
+ * Fetch soft sportsbites from the database (server-side only, uses Prisma).
  * Returns Sportsbite[] for easy merging with Hive sportsbites.
  */
 export async function fetchSoftSportsbites(options: {
@@ -58,28 +52,18 @@ export async function fetchSoftSportsbites(options: {
   author?: string;
 }): Promise<Sportsbite[]> {
   try {
-    const db = getAdminDb();
-    if (!db) return [];
-
     const { limit = 200, author } = options;
 
-    let query = db
-      .collection('soft_sportsbites')
-      .where('isDeleted', '==', false)
-      .orderBy('createdAt', 'desc')
-      .limit(limit);
+    const where: Record<string, unknown> = { isDeleted: false };
+    if (author) where.authorUsername = author;
 
-    if (author) {
-      query = db
-        .collection('soft_sportsbites')
-        .where('isDeleted', '==', false)
-        .where('authorUsername', '==', author)
-        .orderBy('createdAt', 'desc')
-        .limit(limit);
-    }
+    const rows = await prisma.sportsbite.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
 
-    const snapshot = await query.get();
-    return snapshot.docs.map((doc) => softDocToSportsbite(doc.id, doc.data() as SoftSportsbiteDoc));
+    return rows.map(dbRowToSportsbite);
   } catch (error) {
     console.error('[fetchSoftSportsbites] Error:', error);
     return [];

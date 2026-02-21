@@ -62,7 +62,7 @@ export default function PrivacyPolicyPage() {
             <h2 className="mb-3 text-xl font-semibold">3. Information We Collect</h2>
             <h3 className="mb-2 mt-4 text-lg font-medium">Information You Provide</h3>
             <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
-              <li>Email address (for Firebase authentication users only)</li>
+              <li>Email address (for email authentication users only)</li>
               <li>Profile information you choose to display</li>
               <li>Content you create, publish, or interact with</li>
             </ul>
@@ -106,7 +106,7 @@ export default function PrivacyPolicyPage() {
                 <strong>Hive Blockchain:</strong> Decentralized network with public data visibility
               </li>
               <li>
-                <strong>Firebase (Google):</strong> Authentication and analytics services
+                <strong>Google:</strong> OAuth authentication services
               </li>
               <li>
                 <strong>Hive Keychain / HiveSigner / HiveAuth:</strong> Wallet authentication

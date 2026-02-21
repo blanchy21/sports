@@ -6,7 +6,6 @@ import { Avatar } from '@/components/core/Avatar';
 import { LogOut, UserPlus, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAioha } from '@/contexts/AiohaProvider';
-import { fetchUserAccount } from '@/lib/hive-workerbee/account';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import type { AiohaInstance } from '@/lib/aioha/types';
 
@@ -64,12 +63,17 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
 
     setIsRefreshingRC(true);
     try {
-      const accountData = await fetchUserAccount(user.username);
-      if (accountData) {
-        updateUser({
-          rcPercentage: accountData.resourceCredits,
-          rcBalance: accountData.resourceCredits, // Assuming RC balance is the same as percentage for now
-        });
+      const res = await fetch(
+        `/api/hive/account/summary?username=${encodeURIComponent(user.username)}`
+      );
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.account) {
+          updateUser({
+            rcPercentage: json.account.resourceCredits,
+            rcBalance: json.account.resourceCredits,
+          });
+        }
       }
     } catch {
       // RC refresh failed silently - user can try again

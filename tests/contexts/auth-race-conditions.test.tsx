@@ -31,20 +31,12 @@ jest.mock('@/lib/hive-workerbee/account', () => ({
 const mockAioha = {
   user: null,
   logout: jest.fn(),
+  signMessage: jest.fn().mockResolvedValue({ success: true, result: 'mock-signature-hex' }),
 };
 
 jest.mock('@/contexts/AiohaProvider', () => ({
   useAioha: jest.fn(() => ({ aioha: mockAioha, isInitialized: true })),
   AiohaProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
-// Mock Firebase auth
-jest.mock('@/lib/firebase/auth', () => ({
-  FirebaseAuth: {
-    signIn: jest.fn(),
-    signOut: jest.fn().mockResolvedValue(undefined),
-    upgradeToHive: jest.fn(),
-  },
 }));
 
 // Setup localStorage mock
@@ -88,6 +80,7 @@ describe('Auth Race Conditions', () => {
     jest.clearAllMocks();
     localStorageMock.clear();
     mockAioha.logout.mockReset();
+    mockAioha.signMessage.mockResolvedValue({ success: true, result: 'mock-signature-hex' });
     mockAioha.user = null;
 
     // Create fresh mock for each test
@@ -178,7 +171,7 @@ describe('Auth Race Conditions', () => {
         const urlStr =
           typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
 
-        if (urlStr.includes('/api/auth/session')) {
+        if (urlStr.includes('/api/auth/sb-session')) {
           const method = options?.method || 'GET';
           if (method === 'GET') {
             return Promise.resolve({

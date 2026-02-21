@@ -92,9 +92,9 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
 
       const response = await fetch('/api/soft/comments', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user.id,
         },
         body: JSON.stringify({
           postId: postId || `soft-${postPermlink}`,
@@ -147,9 +147,9 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
 
       const response = await fetch('/api/soft/comments', {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user.id,
         },
         body: JSON.stringify({ commentId }),
       });

@@ -45,6 +45,11 @@ jest.mock('@/components/core/Toast', () => ({
   },
 }));
 
+// Mock useBroadcast (broadcast-client requires AiohaProvider)
+jest.mock('@/lib/hive/broadcast-client', () => ({
+  useBroadcast: () => ({ broadcast: jest.fn() }),
+}));
+
 // Mock StarVoteButton
 jest.mock('@/components/voting/StarVoteButton', () => ({
   StarVoteButton: () => <button data-testid="star-vote-button">Vote</button>,

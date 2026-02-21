@@ -24,13 +24,13 @@ import { cn } from '@/lib/utils/client';
 import { formatReadTime } from '@/lib/utils/formatting';
 import { validateImageUrl, validateUrl } from '@/lib/utils/sanitize';
 import dynamic from 'next/dynamic';
-import { publishPost, canUserPost, validatePostData } from '@/lib/hive-workerbee/posting';
+import { publishPost, validatePostData } from '@/lib/hive-workerbee/posting';
 import { PostData } from '@/lib/hive-workerbee/posting';
 import { useCommunities, useUserCommunities } from '@/lib/react-query/queries/useCommunity';
 import { useUIStore } from '@/stores/uiStore';
-import { FirebasePosts } from '@/lib/firebase/posts';
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { logger } from '@/lib/logger';
+import { useBroadcast } from '@/hooks/useBroadcast';
 
 // Import new components
 import { EditorToolbar, FormatType } from '@/components/publish/EditorToolbar';
@@ -62,6 +62,7 @@ const ReactMarkdown = dynamic(() => import('react-markdown'), {
 
 function PublishPageContent() {
   const { user, authType, hiveUser, isLoading: isAuthLoading } = useAuth();
+  const { broadcast } = useBroadcast();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -215,8 +216,12 @@ function PublishPageContent() {
     if (!hiveUser?.username) return;
 
     try {
-      const status = await canUserPost(hiveUser.username);
-      setRcStatus(status);
+      const res = await fetch(`/api/hive/posting?username=${encodeURIComponent(hiveUser.username)}`);
+      if (!res.ok) throw new Error(`Posting status fetch failed: ${res.status}`);
+      const data = await res.json();
+      if (data.success) {
+        setRcStatus(data.canPost);
+      }
     } catch (error) {
       logger.error('Error checking RC status', 'PublishPage', error);
     }
@@ -516,25 +521,33 @@ function PublishPageContent() {
         return;
       }
 
-      // Create scheduled post
-      await FirebasePosts.createScheduledPost(
-        user.id,
-        {
-          authorId: user.id,
-          authorUsername: user.username,
-          authorDisplayName: user.displayName,
-          authorAvatar: user.avatar,
-          title: title.trim(),
-          content: content.trim(),
-          tags,
-          sportCategory: selectedSport,
-          featuredImage: coverImage || undefined,
-          communityId: selectedCommunity?.id,
-          communitySlug: selectedCommunity?.slug,
-          communityName: selectedCommunity?.name,
-        },
-        scheduledAt
-      );
+      // Create scheduled post via API
+      const scheduleResponse = await fetch('/api/soft/scheduled-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          postData: {
+            authorId: user.id,
+            authorUsername: user.username,
+            authorDisplayName: user.displayName,
+            authorAvatar: user.avatar,
+            title: title.trim(),
+            content: content.trim(),
+            tags,
+            sportCategory: selectedSport,
+            featuredImage: coverImage || undefined,
+            communityId: selectedCommunity?.id,
+            communitySlug: selectedCommunity?.slug,
+            communityName: selectedCommunity?.name,
+          },
+          scheduledAt: scheduledAt.toISOString(),
+        }),
+      });
+      const scheduleData = await scheduleResponse.json();
+      if (!scheduleData.success) {
+        throw new Error(scheduleData.error || 'Failed to schedule post');
+      }
 
       // Save used tags to recent tags
       if (tags.length > 0) {
@@ -599,7 +612,7 @@ function PublishPageContent() {
           return;
         }
 
-        const result = await publishPost(postData);
+        const result = await publishPost(postData, broadcast);
 
         if (result.success) {
           // Save used tags
@@ -612,12 +625,12 @@ function PublishPageContent() {
           setPublishError(result.error || 'Failed to publish post');
         }
       } else {
-        // SOFT USER: Publish to Firebase via API directly to get postLimitInfo
+        // SOFT USER: Publish via API directly to get postLimitInfo
         const response = await fetch('/api/posts', {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user.id,
           },
           body: JSON.stringify({
             authorId: user.id,

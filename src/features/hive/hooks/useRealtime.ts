@@ -1,13 +1,46 @@
+'use client';
+
 import { useEffect, useCallback, useRef, useState } from 'react';
-import {
-  RealtimeEvent,
-  RealtimeEventCallback,
-  addRealtimeCallback,
-  removeRealtimeCallback,
-  startRealtimeMonitoring,
-  stopRealtimeMonitoring,
-  getRealtimeStatus,
-} from '@/lib/hive-workerbee/realtime';
+
+// Local type definitions — mirrors realtime.ts without importing server-only code
+export interface RealtimePostEvent {
+  type: 'new_post';
+  data: {
+    author: string;
+    permlink: string;
+    title: string;
+    body: string;
+    created: string;
+    sportCategory?: string;
+  };
+}
+
+export interface RealtimeVoteEvent {
+  type: 'new_vote';
+  data: {
+    voter: string;
+    author: string;
+    permlink: string;
+    weight: number;
+    timestamp: string;
+  };
+}
+
+export interface RealtimeCommentEvent {
+  type: 'new_comment';
+  data: {
+    author: string;
+    permlink: string;
+    parentAuthor: string;
+    parentPermlink: string;
+    body: string;
+    created: string;
+  };
+}
+
+export type RealtimeEvent = RealtimePostEvent | RealtimeVoteEvent | RealtimeCommentEvent;
+
+export type RealtimeEventCallback = (event: RealtimeEvent) => void;
 
 /**
  * Realtime monitoring state
@@ -38,18 +71,14 @@ export function useRealtime() {
   // Clean up callbacks on unmount
   useEffect(() => {
     return () => {
-      callbacksRef.current.forEach((callback) => {
-        removeRealtimeCallback(callback);
-      });
       callbacksRef.current = [];
     };
   }, []);
 
   /**
-   * Add event callback
+   * Add event callback (client-local — events dispatched via polling/SSE in future)
    */
   const addCallback = useCallback((callback: RealtimeEventCallback) => {
-    addRealtimeCallback(callback);
     callbacksRef.current.push(callback);
   }, []);
 
@@ -57,7 +86,6 @@ export function useRealtime() {
    * Remove event callback
    */
   const removeCallback = useCallback((callback: RealtimeEventCallback) => {
-    removeRealtimeCallback(callback);
     const index = callbacksRef.current.indexOf(callback);
     if (index > -1) {
       callbacksRef.current.splice(index, 1);
@@ -71,7 +99,9 @@ export function useRealtime() {
     setState((prev) => ({ ...prev, isConnecting: true, error: null }));
 
     try {
-      await startRealtimeMonitoring();
+      const res = await fetch('/api/hive/realtime', { method: 'POST' });
+      if (!res.ok) throw new Error(`Failed to start monitoring: ${res.status}`);
+
       setState({
         isMonitoring: true,
         isConnecting: false,
@@ -115,7 +145,9 @@ export function useRealtime() {
    */
   const stopMonitoring = useCallback(async (): Promise<boolean> => {
     try {
-      await stopRealtimeMonitoring();
+      const res = await fetch('/api/hive/realtime', { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Failed to stop monitoring: ${res.status}`);
+
       setState((prev) => ({
         ...prev,
         isMonitoring: false,
@@ -140,11 +172,11 @@ export function useRealtime() {
   }, []);
 
   /**
-   * Get monitoring status
+   * Get monitoring status from local state
    */
   const getStatus = useCallback(() => {
-    return getRealtimeStatus();
-  }, []);
+    return { isRunning: state.isMonitoring };
+  }, [state.isMonitoring]);
 
   return {
     // State
@@ -198,7 +230,7 @@ export function useRealtimeEvent<T extends RealtimeEvent>(
  * Hook for monitoring new posts
  */
 export function useNewPosts(
-  callback: (event: RealtimeEvent & { type: 'new_post' }) => void,
+  callback: (event: RealtimePostEvent) => void,
   enabled: boolean = true
 ) {
   useRealtimeEvent('new_post', callback, enabled);
@@ -208,7 +240,7 @@ export function useNewPosts(
  * Hook for monitoring new votes
  */
 export function useNewVotes(
-  callback: (event: RealtimeEvent & { type: 'new_vote' }) => void,
+  callback: (event: RealtimeVoteEvent) => void,
   enabled: boolean = true
 ) {
   useRealtimeEvent('new_vote', callback, enabled);
@@ -218,7 +250,7 @@ export function useNewVotes(
  * Hook for monitoring new comments
  */
 export function useNewComments(
-  callback: (event: RealtimeEvent & { type: 'new_comment' }) => void,
+  callback: (event: RealtimeCommentEvent) => void,
   enabled: boolean = true
 ) {
   useRealtimeEvent('new_comment', callback, enabled);

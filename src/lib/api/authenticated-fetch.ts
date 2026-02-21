@@ -40,7 +40,7 @@ export function clearAuthInfo(): void {
  * Make an authenticated fetch request
  *
  * Automatically adds:
- * - x-user-id header with the authenticated user's ID
+ * - credentials: 'include' so the httpOnly session cookie is sent
  * - Content-Type: application/json for POST/PUT/PATCH requests
  *
  * @param url - The URL to fetch
@@ -53,11 +53,6 @@ export async function authenticatedFetch(
 ): Promise<Response> {
   const headers = new Headers(options.headers);
 
-  // Add auth header if user is authenticated
-  if (currentAuthInfo?.userId) {
-    headers.set('x-user-id', currentAuthInfo.userId);
-  }
-
   // Add Content-Type for methods that typically have a body
   const method = options.method?.toUpperCase();
   if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
@@ -68,6 +63,7 @@ export async function authenticatedFetch(
 
   return fetch(url, {
     ...options,
+    credentials: 'include',
     headers,
   });
 }

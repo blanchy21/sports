@@ -1,6 +1,5 @@
-import { SPORTS_ARENA_CONFIG, MUTED_AUTHORS, initializeWorkerBeeClient } from './client';
+import { SPORTS_ARENA_CONFIG, MUTED_AUTHORS } from './client';
 import { makeHiveApiCall } from './api';
-import type { ITransaction } from '@hiveio/wax';
 import {
   createPostOperation,
   createCommentOperation,
@@ -9,29 +8,7 @@ import {
 } from './wax-helpers';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 import { waitForTransaction } from './transaction-confirmation';
-import type { AiohaInstance } from '@/lib/aioha/types';
-
-interface BroadcastResult {
-  success?: boolean;
-  error?: string;
-  result?: string;
-  id?: string;
-  [key: string]: unknown;
-}
-
-// Removed unused interface
-
-import { aioha } from '@/lib/aioha/config';
-// import { Wax } from '@hiveio/wax'; // Not needed for basic posting operations
-
-/**
- * Type assertion for broadcasting operations.
- * The operation object from Wax helpers is compatible with ITransaction
- * but TypeScript doesn't infer this. This provides a self-documenting cast.
- */
-function asBroadcastableTransaction(operation: Record<string, unknown>): ITransaction {
-  return operation as unknown as ITransaction;
-}
+import type { BroadcastFn, HiveOperation } from '@/lib/hive/broadcast-client';
 
 // Sub-community data for publishing to a specific community
 export interface SubCommunityData {
@@ -86,19 +63,15 @@ function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
  * @param postData - Post data to publish
  * @returns Publish result
  */
-export async function publishPost(postData: PostData): Promise<PublishResult> {
+export async function publishPost(
+  postData: PostData,
+  broadcastFn: BroadcastFn
+): Promise<PublishResult> {
   try {
     workerBeeLog('publishPost start', undefined, postData);
 
     if (MUTED_AUTHORS.includes(postData.author)) {
       return { success: false, error: 'This account has been muted and cannot post.' };
-    }
-
-    if (!aioha) {
-      logError('publishPost: Aioha instance unavailable', undefined, undefined, aioha);
-      throw new Error(
-        'Aioha authentication is not available. Please refresh the page and try again.'
-      );
     }
 
     // Validate post data
@@ -131,42 +104,27 @@ export async function publishPost(postData: PostData): Promise<PublishResult> {
 
     workerBeeLog('publishPost comment_options created', undefined, commentOptionsOp);
 
-    // Use Aioha to sign and broadcast the transaction
-    // Aioha expects operations in a specific format - each operation should be an array
-    // Format: [operation_type, operation_data]
-    // Both operations must be in the same transaction for beneficiaries to work
-    const operations = [
+    const operations: HiveOperation[] = [
       ['comment', operation],
       ['comment_options', commentOptionsOp],
     ];
 
     workerBeeLog('publishPost operations prepared with beneficiaries', undefined, operations);
 
-    // Check if signAndBroadcastTx method exists
-    if (typeof (aioha as AiohaInstance)?.signAndBroadcastTx !== 'function') {
-      logError('publishPost: signAndBroadcastTx missing on Aioha instance');
-      throw new Error(
-        'Aioha signAndBroadcastTx method is not available. Please check your authentication.'
-      );
-    }
-
-    // Use Aioha to sign and broadcast the transaction
     workerBeeLog('publishPost broadcasting transaction');
-    const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
+    const result = await broadcastFn(operations, 'posting');
 
     workerBeeLog('publishPost broadcast result', undefined, result);
 
-    // Check if the result indicates success
-    const postBroadcast = result as BroadcastResult;
-    if (!result || postBroadcast.success === false || postBroadcast.error) {
+    if (!result.success) {
       logError('publishPost: transaction failed', undefined, undefined, result);
-      throw new Error(`Transaction failed: ${postBroadcast?.error || 'Unknown error'}`);
+      throw new Error(`Transaction failed: ${result.error || 'Unknown error'}`);
     }
 
     // Generate post URL
     const url = `https://hive.blog/@${postData.author}/${operation.permlink}`;
 
-    const transactionId = (result as { id?: string })?.id || 'unknown';
+    const transactionId = result.transactionId || 'unknown';
 
     // Confirm transaction was included in a block
     const confirmation = await waitForTransaction(transactionId);
@@ -207,23 +165,13 @@ export async function publishComment(
     parentPermlink: string;
     jsonMetadata?: string;
   },
-  aiohaInstance?: unknown
+  broadcastFn: BroadcastFn
 ): Promise<PublishResult> {
   try {
     workerBeeLog('publishComment start', undefined, commentData);
 
     if (MUTED_AUTHORS.includes(commentData.author)) {
       return { success: false, error: 'This account has been muted and cannot comment.' };
-    }
-
-    // Use provided instance or fall back to default
-    const aiohaToUse = aiohaInstance || (await import('@/lib/aioha/config')).aioha;
-
-    if (!aiohaToUse) {
-      logError('publishComment: Aioha instance unavailable', undefined, undefined, aiohaToUse);
-      throw new Error(
-        'Aioha authentication is not available. Please refresh the page and try again.'
-      );
     }
 
     // Create comment operation using Wax helpers
@@ -237,38 +185,24 @@ export async function publishComment(
 
     workerBeeLog('publishComment operation created', undefined, operation);
 
-    // Use Aioha to sign and broadcast the transaction
-    // Aioha expects operations in a specific format - each operation should be an array
-    // Format: [operation_type, operation_data]
-    const operations = [['comment', operation]];
+    const operations: HiveOperation[] = [['comment', operation]];
 
     workerBeeLog('publishComment operations prepared', undefined, operations);
 
-    // Check if signAndBroadcastTx method exists
-    if (typeof (aiohaToUse as AiohaInstance)?.signAndBroadcastTx !== 'function') {
-      logError('publishComment: signAndBroadcastTx missing on Aioha instance');
-      throw new Error(
-        'Aioha signAndBroadcastTx method is not available. Please check your authentication.'
-      );
-    }
-
-    // Use Aioha to sign and broadcast the transaction
     workerBeeLog('publishComment broadcasting transaction');
-    const result = await (aiohaToUse as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
+    const result = await broadcastFn(operations, 'posting');
 
     workerBeeLog('publishComment broadcast result', undefined, result);
 
-    // Check if the result indicates success
-    const commentBroadcast = result as BroadcastResult;
-    if (!result || commentBroadcast.success === false || commentBroadcast.error) {
+    if (!result.success) {
       logError('publishComment: transaction failed', undefined, undefined, result);
-      throw new Error(`Transaction failed: ${commentBroadcast?.error || 'Unknown error'}`);
+      throw new Error(`Transaction failed: ${result.error || 'Unknown error'}`);
     }
 
     // Generate comment URL
     const url = `https://hive.blog/@${commentData.author}/${operation.permlink}`;
 
-    const transactionId = (result as { id?: string })?.id || 'unknown';
+    const transactionId = result.transactionId || 'unknown';
 
     // Confirm transaction was included in a block
     const confirmation = await waitForTransaction(transactionId);
@@ -296,17 +230,21 @@ export async function publishComment(
 }
 
 /**
- * Update an existing post using WorkerBee
+ * Update an existing post
  * @param updateData - Update data
+ * @param broadcastFn - Broadcast function (from useBroadcast)
  * @returns Update result
  */
-export async function updatePost(updateData: {
-  author: string;
-  permlink: string;
-  title?: string;
-  body?: string;
-  jsonMetadata?: string;
-}): Promise<PublishResult> {
+export async function updatePost(
+  updateData: {
+    author: string;
+    permlink: string;
+    title?: string;
+    body?: string;
+    jsonMetadata?: string;
+  },
+  broadcastFn: BroadcastFn
+): Promise<PublishResult> {
   try {
     // Get existing post to preserve some data
     const existingPost = await makeHiveApiCall('condenser_api', 'get_content', [
@@ -334,7 +272,6 @@ export async function updatePost(updateData: {
       : {};
     const mergedMetadata = { ...existingMetadata, ...updateMetadata };
 
-    // Create the update operation using Wax
     const operation = {
       parent_author: (existingPost as { parent_author: string }).parent_author,
       parent_permlink: (existingPost as { parent_permlink: string }).parent_permlink,
@@ -343,33 +280,26 @@ export async function updatePost(updateData: {
       title: updateData.title || (existingPost as { title: string }).title,
       body: updateData.body || (existingPost as { body: string }).body,
       json_metadata: JSON.stringify(mergedMetadata),
-      max_accepted_payout: (existingPost as { max_accepted_payout: string }).max_accepted_payout,
-      percent_hbd: (existingPost as { percent_hbd: number }).percent_hbd,
-      allow_votes: (existingPost as { allow_votes: boolean }).allow_votes,
-      allow_curation_rewards: (existingPost as { allow_curation_rewards: boolean })
-        .allow_curation_rewards,
-      extensions: (existingPost as { extensions: unknown[] }).extensions,
     };
 
-    // Initialize WorkerBee client for broadcasting
-    const client = await initializeWorkerBeeClient();
+    const operations: HiveOperation[] = [['comment', operation]];
+    const result = await broadcastFn(operations, 'posting');
 
-    // Broadcast the transaction using WorkerBee
-    await client.broadcast(asBroadcastableTransaction(operation));
+    if (!result.success) {
+      throw new Error(`Transaction failed: ${result.error || 'Unknown error'}`);
+    }
+
+    const transactionId = result.transactionId || 'unknown';
 
     return {
       success: true,
-      transactionId: 'broadcasted',
+      transactionId,
       author: updateData.author,
       permlink: updateData.permlink,
       url: `https://hive.blog/@${updateData.author}/${updateData.permlink}`,
     };
   } catch (error) {
-    logError(
-      'Error updating post with WorkerBee',
-      undefined,
-      error instanceof Error ? error : undefined
-    );
+    logError('Error updating post', undefined, error instanceof Error ? error : undefined);
 
     return {
       success: false,
@@ -379,31 +309,33 @@ export async function updatePost(updateData: {
 }
 
 /**
- * Delete a post (only possible within 7 days, sets body to empty) using WorkerBee
+ * Delete a post (only possible within 7 days, sets body to empty)
  * @param deleteData - Delete data
+ * @param broadcastFn - Broadcast function (from useBroadcast)
  * @returns Delete result
  */
-export async function deletePost(deleteData: {
-  author: string;
-  permlink: string;
-}): Promise<PublishResult> {
+export async function deletePost(
+  deleteData: {
+    author: string;
+    permlink: string;
+  },
+  broadcastFn: BroadcastFn
+): Promise<PublishResult> {
   try {
-    // "Deleting" a post on Hive means setting the body to empty
-    return await updatePost({
-      author: deleteData.author,
-      permlink: deleteData.permlink,
-      body: '',
-      jsonMetadata: JSON.stringify({
-        app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
-        tags: ['deleted', 'sportsblock'],
-      }),
-    });
-  } catch (error) {
-    logError(
-      'Error deleting post with WorkerBee',
-      undefined,
-      error instanceof Error ? error : undefined
+    return await updatePost(
+      {
+        author: deleteData.author,
+        permlink: deleteData.permlink,
+        body: '',
+        jsonMetadata: JSON.stringify({
+          app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
+          tags: ['deleted', 'sportsblock'],
+        }),
+      },
+      broadcastFn
     );
+  } catch (error) {
+    logError('Error deleting post', undefined, error instanceof Error ? error : undefined);
 
     return {
       success: false,

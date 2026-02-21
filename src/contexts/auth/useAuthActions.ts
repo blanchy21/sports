@@ -1,15 +1,17 @@
 import { useCallback } from 'react';
+import { signOut as nextAuthSignOut } from 'next-auth/react';
+import { KeyTypes } from '@aioha/aioha';
 import { logger } from '@/lib/logger';
 import { AuthType, User } from '@/types';
 import { HiveAuthUser } from '@/lib/shared/types';
 import { useAioha } from '@/contexts/AiohaProvider';
-import { AuthUser, FirebaseAuth } from '@/lib/firebase/auth';
 import type { AiohaInstance, AiohaRawLoginResult, ExtractedAiohaUser } from '@/lib/aioha/types';
 import { extractFromRawLoginResult, extractFromAiohaInstance } from '@/lib/aioha/types';
 import {
   persistAuthState,
   clearPersistedAuthState,
   fetchSessionFromCookie,
+  type ChallengeData,
 } from './auth-persistence';
 import { AuthAction } from './auth-reducer';
 import { useAuthProfile, getHiveAvatarUrl } from './useAuthProfile';
@@ -26,13 +28,51 @@ export interface UseAuthActionsOptions {
 
 export interface UseAuthActionsReturn {
   login: (newUser: User, newAuthType: AuthType) => void;
-  loginWithFirebase: (authUser: AuthUser) => void;
   loginWithHiveUser: (hiveUsername: string) => Promise<void>;
   loginWithAioha: (loginResult?: AiohaRawLoginResult) => Promise<void>;
   logout: () => Promise<void>;
   upgradeToHive: (hiveUsername: string) => Promise<void>;
   updateUser: (userUpdate: Partial<User>) => void;
   setHiveUser: (newHiveUser: HiveAuthUser | null) => void;
+}
+
+/**
+ * Fetch a challenge from the server and sign it with the user's Hive posting key.
+ * Returns ChallengeData for inclusion in the session creation request.
+ */
+async function signHiveChallenge(aioha: AiohaInstance, username: string): Promise<ChallengeData> {
+  // 1. Fetch challenge from server
+  const challengeRes = await fetch(
+    `/api/auth/hive-challenge?username=${encodeURIComponent(username)}`
+  );
+  if (!challengeRes.ok) {
+    throw new Error('Failed to fetch authentication challenge');
+  }
+  const { challenge, mac } = await challengeRes.json();
+
+  // 2. Sign with Hive posting key via Aioha
+  const aiohaAny = aioha as Record<string, unknown>;
+  const signFn = aiohaAny.signMessage;
+  if (typeof signFn !== 'function') {
+    throw new Error('Wallet does not support message signing');
+  }
+
+  const signResult = await (
+    signFn as (
+      msg: string,
+      keyType: KeyTypes
+    ) => Promise<{ success: boolean; result?: string; error?: string }>
+  ).call(aioha, challenge, KeyTypes.Posting);
+
+  if (!signResult.success || !signResult.result) {
+    throw new Error(signResult.error || 'Failed to sign authentication challenge');
+  }
+
+  return {
+    challenge,
+    challengeMac: mac,
+    signature: signResult.result,
+  };
 }
 
 /**
@@ -97,50 +137,17 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
     [dispatch, getState]
   );
 
-  const loginWithFirebase = useCallback(
-    (authUser: AuthUser) => {
-      // Guard: never downgrade a Hive session to soft login
-      const { authType: currentAuthType } = getState();
-      if (currentAuthType === 'hive' && !authUser.isHiveUser) {
-        logger.warn('Blocked attempt to downgrade Hive session to soft login', 'useAuthActions');
-        return;
-      }
-
-      const now = Date.now();
-      const newUser: User = {
-        id: authUser.id,
-        username: authUser.username,
-        displayName: authUser.displayName,
-        avatar: authUser.avatar,
-        isHiveAuth: authUser.isHiveUser,
-        hiveUsername: authUser.hiveUsername,
-        createdAt: authUser.createdAt,
-        updatedAt: authUser.updatedAt,
-      };
-
-      const newAuthType = authUser.isHiveUser ? 'hive' : 'soft';
-      const newHiveUser = authUser.isHiveUser
-        ? { username: authUser.hiveUsername!, isAuthenticated: true }
-        : null;
-
-      dispatch({
-        type: 'LOGIN',
-        payload: { user: newUser, authType: newAuthType, hiveUser: newHiveUser, loginAt: now },
-      });
-      persistAuthState({
-        user: newUser,
-        authType: newAuthType,
-        hiveUser: newHiveUser,
-        loginAt: now,
-      });
-    },
-    [dispatch, getState]
-  );
-
   const loginWithHiveUser = useCallback(
     async (hiveUsername: string) => {
       try {
         const now = Date.now();
+
+        // Sign challenge to prove wallet ownership (requires Aioha to be logged in)
+        let challengeData: ChallengeData | undefined;
+        if (aioha && isInitialized) {
+          const aiohaInstance = aioha as AiohaInstance;
+          challengeData = await signHiveChallenge(aiohaInstance, hiveUsername);
+        }
 
         // Use Hive's avatar service as immediate fallback until profile loads
         const hiveAvatarUrl = getHiveAvatarUrl(hiveUsername);
@@ -167,15 +174,17 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           authType: 'hive',
           hiveUser: newHiveUser,
           loginAt: now,
+          challengeData,
         });
 
         // Fetch profile in background
         fetchProfileInBackground(hiveUsername, basicUser, newHiveUser);
       } catch (error) {
         logger.error('Error logging in with Hive user', 'useAuthActions', error);
+        throw error;
       }
     },
-    [dispatch, fetchProfileInBackground]
+    [aioha, isInitialized, dispatch, fetchProfileInBackground]
   );
 
   const loginWithAioha = useCallback(
@@ -237,6 +246,15 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         const { username, sessionId } = extracted;
         const now = Date.now();
 
+        // Sign challenge to prove wallet ownership.
+        // Skip for auto-reconnect (no loginResult) — the server allows session refresh
+        // via existing cookie without re-signing.
+        let challengeData: ChallengeData | undefined;
+        if (loginResult) {
+          const aiohaInstance = aioha as AiohaInstance;
+          challengeData = await signHiveChallenge(aiohaInstance, username);
+        }
+
         // Use Hive's avatar service as immediate fallback until profile loads
         const hiveAvatarUrl = getHiveAvatarUrl(username);
 
@@ -267,6 +285,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           authType: 'hive',
           hiveUser: newHiveUser,
           loginAt: now,
+          challengeData,
         });
 
         // Fetch profile in background
@@ -311,7 +330,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
   const logout = useCallback(async () => {
     abortFetch();
 
-    const { hiveUser, authType } = getState();
+    const { hiveUser } = getState();
 
     if (hiveUser?.provider && aioha) {
       try {
@@ -322,16 +341,14 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
       }
     }
 
-    if (authType === 'soft') {
-      try {
-        await FirebaseAuth.signOut();
-      } catch (error) {
-        logger.error('Error logging out from Firebase', 'useAuthActions', error);
-      }
-    }
-
     dispatch({ type: 'LOGOUT' });
     await clearPersistedAuthState();
+
+    // Clear NextAuth JWT cookie (no-op if not present)
+    await nextAuthSignOut({ redirect: false }).catch(() => {
+      // Ignore errors — cookie may not exist for Hive-only sessions
+    });
+
     queryClient.clear();
   }, [aioha, dispatch, getState, abortFetch]);
 
@@ -349,7 +366,6 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
 
       try {
         const now = Date.now();
-        await FirebaseAuth.upgradeToHive(user.id, hiveUsername);
 
         const updatedUser = { ...user, isHiveAuth: true, hiveUsername: hiveUsername };
         const newHiveUser: HiveAuthUser = { username: hiveUsername, isAuthenticated: true };
@@ -425,7 +441,6 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
 
   return {
     login,
-    loginWithFirebase,
     loginWithHiveUser,
     loginWithAioha,
     logout,

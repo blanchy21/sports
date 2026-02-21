@@ -8,7 +8,6 @@ import {
   fetchSessionFromCookie,
   persistAuthState,
   clearPersistedAuthState,
-  loadPersistedAuthState,
   saveUIHint,
   loadUIHint,
   clearUIHint,
@@ -199,7 +198,7 @@ describe('Auth Persistence', () => {
 
       await syncSessionCookie(sessionData);
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/auth/session', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/auth/sb-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -248,7 +247,7 @@ describe('Auth Persistence', () => {
     it('sends DELETE request to /api/auth/session', async () => {
       await clearSessionCookie();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/auth/session', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/auth/sb-session', {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -275,7 +274,7 @@ describe('Auth Persistence', () => {
 
       await fetchSessionFromCookie();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/auth/session', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/auth/sb-session', {
         method: 'GET',
         credentials: 'include',
       });
@@ -417,7 +416,7 @@ describe('Auth Persistence', () => {
 
       // Now cookie sync should have been called
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/auth/session',
+        '/api/auth/sb-session',
         expect.objectContaining({
           method: 'POST',
           credentials: 'include',
@@ -526,7 +525,7 @@ describe('Auth Persistence', () => {
 
       await jest.advanceTimersByTimeAsync(PERSIST_DEBOUNCE_MS + 10);
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/auth/session', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/auth/sb-session', {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -559,7 +558,7 @@ describe('Auth Persistence', () => {
     it('clears session cookie', async () => {
       await clearPersistedAuthState();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/auth/session', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/auth/sb-session', {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -568,30 +567,6 @@ describe('Auth Persistence', () => {
     it('handles already empty localStorage gracefully', async () => {
       expect(localStorage.getItem(AUTH_STORAGE_KEY)).toBeNull();
       await expect(clearPersistedAuthState()).resolves.toBeUndefined();
-    });
-  });
-
-  // ==========================================================================
-  // Load Persisted Auth State (Deprecated)
-  // ==========================================================================
-
-  describe('loadPersistedAuthState (deprecated)', () => {
-    it('returns null - auth is now in httpOnly cookies', () => {
-      // Even if there's data in localStorage, this should return null
-      // since we no longer use localStorage for auth
-      localStorage.setItem(
-        AUTH_STORAGE_KEY,
-        JSON.stringify({
-          user: { id: 'user-123', username: 'test' },
-          authType: 'hive',
-        })
-      );
-
-      expect(loadPersistedAuthState()).toBeNull();
-    });
-
-    it('returns null when localStorage is empty', () => {
-      expect(loadPersistedAuthState()).toBeNull();
     });
   });
 
@@ -645,7 +620,7 @@ describe('Auth Persistence', () => {
 
       // Verify cookie sync was called with credentials
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/auth/session',
+        '/api/auth/sb-session',
         expect.objectContaining({
           method: 'POST',
           credentials: 'include',

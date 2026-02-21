@@ -31,6 +31,14 @@
     {
       "path": "/api/cron/match-thread-containers",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/claim-tokens",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/check-graduations",
+      "schedule": "0 3 * * 0"
     }
   ]
 }

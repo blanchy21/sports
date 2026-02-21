@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
@@ -87,58 +87,36 @@ export async function GET(request: NextRequest) {
 
     const { limit, offset, unreadOnly } = parseResult.data;
 
-    const db = getAdminDb();
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
-
-    // Build query
-    let query = db
-      .collection('soft_notifications')
-      .where('recipientId', '==', user.userId)
-      .orderBy('createdAt', 'desc');
-
+    // Build where clause
+    const where: Record<string, unknown> = { recipientId: user.userId };
     if (unreadOnly) {
-      query = query.where('read', '==', false);
+      where.read = false;
     }
 
-    // Get total count and unread count in parallel
-    const [countSnapshot, unreadCountSnapshot] = await Promise.all([
-      db.collection('soft_notifications').where('recipientId', '==', user.userId).count().get(),
-      db
-        .collection('soft_notifications')
-        .where('recipientId', '==', user.userId)
-        .where('read', '==', false)
-        .count()
-        .get(),
+    // Get total count, unread count, and paginated data in parallel
+    const [totalCount, unreadCount, rows] = await Promise.all([
+      prisma.notification.count({ where: { recipientId: user.userId } }),
+      prisma.notification.count({ where: { recipientId: user.userId, read: false } }),
+      prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
+        take: limit,
+      }),
     ]);
-    const totalCount = countSnapshot.data().count;
-    const unreadCount = unreadCountSnapshot.data().count;
 
-    // Apply pagination
-    query = query.offset(offset).limit(limit);
-
-    const snapshot = await query.get();
-    const notifications: SoftNotification[] = [];
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      notifications.push({
-        id: doc.id,
-        recipientId: data.recipientId,
-        type: data.type,
-        title: data.title,
-        message: data.message,
-        sourceUserId: data.sourceUserId,
-        sourceUsername: data.sourceUsername,
-        data: data.data,
-        read: data.read,
-        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-      });
-    });
+    const notifications: SoftNotification[] = rows.map((row) => ({
+      id: row.id,
+      recipientId: row.recipientId,
+      type: row.type as SoftNotification['type'],
+      title: row.title,
+      message: row.message,
+      sourceUserId: row.sourceUserId || undefined,
+      sourceUsername: row.sourceUsername || undefined,
+      data: row.data as SoftNotification['data'],
+      read: row.read,
+      createdAt: row.createdAt.toISOString(),
+    }));
 
     return NextResponse.json({
       success: true,
@@ -186,58 +164,36 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const db = getAdminDb();
-      if (!db) {
-        return NextResponse.json(
-          { success: false, error: 'Database not configured' },
-          { status: 500 }
-        );
-      }
-
       let updatedCount = 0;
 
       if (markAllRead) {
         // Mark all unread notifications as read
-        const unreadSnapshot = await db
-          .collection('soft_notifications')
-          .where('recipientId', '==', user.userId)
-          .where('read', '==', false)
-          .get();
-
-        const batch = db.batch();
-        unreadSnapshot.forEach((doc) => {
-          batch.update(doc.ref, { read: true });
-          updatedCount++;
+        const result = await prisma.notification.updateMany({
+          where: { recipientId: user.userId, read: false },
+          data: { read: true },
         });
-        await batch.commit();
+        updatedCount = result.count;
       } else if (notificationIds) {
-        // Mark specific notifications as read — batch fetch all docs at once
-        const refs = notificationIds.map((id) => db.collection('soft_notifications').doc(id));
-        const docs = await db.getAll(...refs);
-        const batch = db.batch();
-
-        for (const doc of docs) {
-          if (doc.exists && doc.data()?.recipientId === user.userId) {
-            batch.update(doc.ref, { read: true });
-            updatedCount++;
-          }
-        }
-
-        await batch.commit();
+        // Mark specific notifications as read (only if owned by user)
+        const result = await prisma.notification.updateMany({
+          where: {
+            id: { in: notificationIds },
+            recipientId: user.userId,
+          },
+          data: { read: true },
+        });
+        updatedCount = result.count;
       }
 
       // Get new unread count
-      const unreadCountSnapshot = await db
-        .collection('soft_notifications')
-        .where('recipientId', '==', user.userId)
-        .where('read', '==', false)
-        .count()
-        .get();
+      const unreadCount = await prisma.notification.count({
+        where: { recipientId: user.userId, read: false },
+      });
 
       return NextResponse.json({
         success: true,
         updatedCount,
-        unreadCount: unreadCountSnapshot.data().count,
+        unreadCount,
       });
     } catch (error) {
       return ctx.handleError(error);
@@ -275,44 +231,23 @@ export async function DELETE(request: NextRequest) {
         );
       }
 
-      const db = getAdminDb();
-      if (!db) {
-        return NextResponse.json(
-          { success: false, error: 'Database not configured' },
-          { status: 500 }
-        );
-      }
-
       let deletedCount = 0;
 
       if (deleteAllRead) {
         // Delete all read notifications
-        const readSnapshot = await db
-          .collection('soft_notifications')
-          .where('recipientId', '==', user.userId)
-          .where('read', '==', true)
-          .get();
-
-        const batch = db.batch();
-        readSnapshot.forEach((doc) => {
-          batch.delete(doc.ref);
-          deletedCount++;
+        const result = await prisma.notification.deleteMany({
+          where: { recipientId: user.userId, read: true },
         });
-        await batch.commit();
+        deletedCount = result.count;
       } else if (notificationIds) {
-        // Delete specific notifications — batch fetch all docs at once
-        const refs = notificationIds.map((id) => db.collection('soft_notifications').doc(id));
-        const docs = await db.getAll(...refs);
-        const batch = db.batch();
-
-        for (const doc of docs) {
-          if (doc.exists && doc.data()?.recipientId === user.userId) {
-            batch.delete(doc.ref);
-            deletedCount++;
-          }
-        }
-
-        await batch.commit();
+        // Delete specific notifications (only if owned by user)
+        const result = await prisma.notification.deleteMany({
+          where: {
+            id: { in: notificationIds },
+            recipientId: user.userId,
+          },
+        });
+        deletedCount = result.count;
       }
 
       return NextResponse.json({

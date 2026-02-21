@@ -32,9 +32,9 @@ import { getProxyImageUrl, shouldProxyImage, proxyImagesInContent } from '@/lib/
 import { isTrustedImageHost, sanitizePostContent } from '@/lib/utils/sanitize';
 import { linkifyHashtags } from '@/lib/utils/hashtags';
 import { InlineReplies } from '@/components/sportsbites/InlineReplies';
+import { useBroadcast } from '@/hooks/useBroadcast';
 import { EmojiReactions } from '@/components/sportsbites/EmojiReactions';
 import { QuickPoll } from '@/components/sportsbites/QuickPoll';
-import type { AiohaInstance } from '@/lib/aioha/types';
 
 interface SportsbiteCardProps {
   sportsbite: Sportsbite;
@@ -67,6 +67,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const { addToast } = useToast();
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
+  const { broadcast } = useBroadcast();
 
   const { profile: authorProfile, isLoading: isProfileLoading } = useUserProfile(sportsbite.author);
 
@@ -203,22 +204,14 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           throw new Error(data.error || 'Failed to delete sportsbite');
         }
       } else {
-        // Hive delete via Aioha
-        const { aioha } = await import('@/lib/aioha/config');
-        const aiohaInstance = aioha as AiohaInstance | null;
-
-        if (!aiohaInstance || typeof aiohaInstance.signAndBroadcastTx !== 'function') {
-          throw new Error('Hive authentication not available. Please reconnect.');
-        }
-
         // Try delete_comment first (works if no net votes/replies)
         let deleted = false;
         try {
-          const delResult = await aiohaInstance.signAndBroadcastTx(
+          const delResult = await broadcast(
             [['delete_comment', { author: sportsbite.author, permlink: sportsbite.permlink }]],
             'posting'
           );
-          if (delResult && !(delResult as { error?: string }).error) {
+          if (delResult.success) {
             deleted = true;
           }
         } catch {
@@ -244,7 +237,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             throw new Error('Could not fetch sportsbite data from Hive');
           }
 
-          const result = await aiohaInstance.signAndBroadcastTx(
+          const result = await broadcast(
             [
               [
                 'comment',
@@ -265,8 +258,8 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             'posting'
           );
 
-          if (!result || (result as { error?: string }).error) {
-            throw new Error((result as { error?: string }).error || 'Failed to broadcast delete');
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to broadcast delete');
           }
         }
       }
@@ -307,7 +300,12 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
     setIsReblogging(true);
     try {
       const { reblogPost } = await import('@/lib/hive-workerbee/social');
-      const result = await reblogPost(sportsbite.author, sportsbite.permlink, hiveUser.username);
+      const result = await reblogPost(
+        sportsbite.author,
+        sportsbite.permlink,
+        hiveUser.username,
+        broadcast
+      );
       if (result.success) {
         addToast(toast.success('Reposted!', 'Reposted to your blog!'));
       } else {

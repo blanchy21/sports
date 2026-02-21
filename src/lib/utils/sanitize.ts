@@ -5,7 +5,57 @@
  * to prevent XSS attacks.
  */
 
-import DOMPurify from 'dompurify';
+// Lazy-load isomorphic-dompurify to avoid jsdom initialization during SSG prerender.
+// jsdom tries to read a default-stylesheet.css that doesn't exist in Vercel's build env.
+// Deferring via require() ensures jsdom only loads when sanitize functions are actually called.
+type DOMPurifyInstance = {
+  sanitize(dirty: string, config?: object): string;
+  addHook(entryPoint: string, hookFunction: (node: Element) => void): void;
+  removeHook(entryPoint: string): void;
+};
+
+let _DOMPurify: DOMPurifyInstance | null = null;
+let _hookInstalled = false;
+
+function getDOMPurify(): DOMPurifyInstance {
+  if (!_DOMPurify) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('isomorphic-dompurify');
+    _DOMPurify = mod.default || mod;
+  }
+
+  // Install the iframe-src validation hook once to avoid stacking on concurrent calls
+  if (!_hookInstalled && _DOMPurify) {
+    _DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+      if (node.tagName === 'IFRAME') {
+        const src = node.getAttribute('src') || '';
+        try {
+          const url = new URL(src);
+          const hostname = url.hostname.toLowerCase();
+          const allowed =
+            hostname === 'youtube.com' ||
+            hostname === 'www.youtube.com' ||
+            hostname === 'youtube-nocookie.com' ||
+            hostname === 'www.youtube-nocookie.com' ||
+            hostname === 'vimeo.com' ||
+            hostname === 'player.vimeo.com' ||
+            hostname === '3speak.tv' ||
+            hostname === 'www.3speak.tv' ||
+            hostname.endsWith('.3speak.tv');
+          if (!allowed) {
+            node.removeAttribute('src');
+          }
+        } catch {
+          // Invalid URL — remove src
+          node.removeAttribute('src');
+        }
+      }
+    });
+    _hookInstalled = true;
+  }
+
+  return _DOMPurify!;
+}
 
 /**
  * Default DOMPurify configuration for post content
@@ -103,54 +153,12 @@ const STRICT_CONFIG = {
  * @returns Sanitized HTML string safe for dangerouslySetInnerHTML
  */
 export function sanitizeHtml(dirty: string, strict = false): string {
-  if (typeof window === 'undefined') {
-    // Server-side: strip HTML tags and decode entities.
-    // Multi-pass to handle nested/malformed tags that simple regex misses.
-    let text = dirty;
-    let prev = '';
-    while (text !== prev) {
-      prev = text;
-      text = text.replace(/<[^>]*>/g, '');
-    }
-    // Also strip any remaining event handler patterns as defense-in-depth
-    text = text.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
-    return text;
-  }
-
   const config = strict ? STRICT_CONFIG : DEFAULT_CONFIG;
 
-  // Restrict iframe src to whitelisted video domains
-  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-    if (node.tagName === 'IFRAME') {
-      const src = node.getAttribute('src') || '';
-      try {
-        const url = new URL(src);
-        const hostname = url.hostname.toLowerCase();
-        const allowed =
-          hostname === 'youtube.com' ||
-          hostname === 'www.youtube.com' ||
-          hostname === 'youtube-nocookie.com' ||
-          hostname === 'www.youtube-nocookie.com' ||
-          hostname === 'vimeo.com' ||
-          hostname === 'player.vimeo.com' ||
-          hostname === '3speak.tv' ||
-          hostname === 'www.3speak.tv' ||
-          hostname.endsWith('.3speak.tv');
-        if (!allowed) {
-          node.removeAttribute('src');
-        }
-      } catch {
-        // Invalid URL — remove src
-        node.removeAttribute('src');
-      }
-    }
-  });
+  const purify = getDOMPurify();
 
-  // Sanitize the HTML
-  let clean = DOMPurify.sanitize(dirty, config);
-
-  // Remove hook to avoid stacking on repeated calls
-  DOMPurify.removeHook('afterSanitizeAttributes');
+  // Sanitize the HTML (iframe-src hook is installed once in getDOMPurify)
+  let clean = purify.sanitize(dirty, config);
 
   // Post-process: ensure all links have security attributes
   clean = clean.replace(/<a\s+([^>]*?)>/gi, (match, attrs) => {
@@ -352,10 +360,7 @@ export function sanitizeComment(content: string): string {
  * @returns Plain text with all tags removed
  */
 export function stripHtml(html: string): string {
-  if (typeof window === 'undefined') {
-    return html.replace(/<[^>]*>/g, '');
-  }
-  return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
+  return getDOMPurify().sanitize(html, { ALLOWED_TAGS: [] });
 }
 
 /**
@@ -550,7 +555,7 @@ export function validateImageUrl(url: string): {
   // Additional image-specific checks
   const parsed = new URL(result.url!);
 
-  // Block localhost, private IPs, and IPv6 private ranges in production
+  // Block localhost, private IPs, and IPv6 private ranges
   const hostname = parsed.hostname.toLowerCase();
   const isPrivate =
     hostname === 'localhost' ||
@@ -560,6 +565,7 @@ export function validateImageUrl(url: string): {
     hostname === '[::1]' ||
     hostname.startsWith('192.168.') ||
     hostname.startsWith('10.') ||
+    hostname.startsWith('169.254.') ||
     /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
     hostname.startsWith('fd') ||
     hostname.startsWith('fe80') ||
@@ -567,9 +573,7 @@ export function validateImageUrl(url: string): {
     /^0x/i.test(hostname) ||
     /^0[0-7]+\./.test(hostname);
   if (isPrivate) {
-    if (process.env.NODE_ENV === 'production') {
-      return { valid: false, error: 'Private URLs not allowed' };
-    }
+    return { valid: false, error: 'Private URLs not allowed' };
   }
 
   // Check if URL looks like an image

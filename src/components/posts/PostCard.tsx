@@ -14,6 +14,7 @@ import { useToast, toast } from '@/components/core/Toast';
 import { useUserProfile } from '@/features/user/hooks/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBroadcast } from '@/hooks/useBroadcast';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { usePremiumTier } from '@/lib/premium/hooks';
 import { PremiumBadge } from '@/components/medals';
@@ -73,6 +74,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const { authType, hiveUser } = useAuth();
+  const { broadcast } = useBroadcast();
 
   // Use type-safe helpers
   const isHivePost = isSportsblockPost(post);
@@ -141,7 +143,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
         author: authorUsername,
       });
     } else if (isActualHivePost) {
-      // Both Hive and soft users can comment (soft users post via Firebase)
+      // Both Hive and soft users can comment (soft users post via API)
       openModal('comments', {
         author: authorUsername,
         permlink: postPermlink,
@@ -167,7 +169,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
     setIsReblogging(true);
     try {
       const { reblogPost } = await import('@/lib/hive-workerbee/social');
-      const result = await reblogPost(authorUsername, postPermlink, hiveUser.username);
+      const result = await reblogPost(authorUsername, postPermlink, hiveUser.username, broadcast);
       if (result.success) {
         addToast(toast.success('Reposted!', 'Reposted to your blog!'));
       } else {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FirebaseAuth, Profile } from '@/lib/firebase/auth';
+import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, notFoundError } from '@/lib/api/response';
 import {
   checkRateLimit,
@@ -46,17 +46,28 @@ interface SoftUserResponse {
 }
 
 /**
- * Convert Profile to response format
+ * Convert Prisma Profile to response format
  */
-function profileToResponse(profile: Profile): SoftUserResponse {
+function profileToResponse(profile: {
+  id: string;
+  username: string;
+  displayName: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  isHiveUser: boolean;
+  hiveUsername: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  lastActiveAt: Date | null;
+}): SoftUserResponse {
   return {
     id: profile.id,
     username: profile.username,
     displayName: profile.displayName,
-    bio: profile.bio,
-    avatarUrl: profile.avatarUrl,
+    bio: profile.bio || undefined,
+    avatarUrl: profile.avatarUrl || undefined,
     isHiveUser: profile.isHiveUser,
-    hiveUsername: profile.hiveUsername,
+    hiveUsername: profile.hiveUsername || undefined,
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
     lastActiveAt: profile.lastActiveAt?.toISOString(),
@@ -106,7 +117,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch by user ID
     if (userId) {
-      const profile = await FirebaseAuth.getProfileById(userId);
+      const profile = await prisma.profile.findUnique({ where: { id: userId } });
 
       if (!profile) {
         return notFoundError(`User with ID '${userId}' not found`, ctx.requestId);
@@ -123,7 +134,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch by exact username
     if (username) {
-      const profile = await FirebaseAuth.getProfileByUsername(username);
+      const profile = await prisma.profile.findUnique({ where: { username } });
 
       if (!profile) {
         return notFoundError(`User '${username}' not found`, ctx.requestId);
@@ -140,7 +151,10 @@ export async function GET(request: NextRequest) {
 
     // Search by username prefix
     if (search) {
-      const profiles = await FirebaseAuth.searchProfiles(search, limit);
+      const profiles = await prisma.profile.findMany({
+        where: { username: { startsWith: search.toLowerCase() } },
+        take: limit,
+      });
 
       return NextResponse.json(
         {

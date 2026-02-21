@@ -3,23 +3,24 @@
  *
  * Manage designated curator accounts.
  * Requires admin account access.
+ *
+ * NOTE: Currently,curator management is now handled via env vars only.
+ * This route provides read access to the current curator list and placeholder
+ * add/remove that returns the env-based defaults.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createRequestContext, forbiddenError, validationError } from '@/lib/api/response';
 import { isAdminAccount } from '@/lib/admin/config';
-import { getAdminDb } from '@/lib/firebase/admin';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { getCuratorAccounts } from '@/lib/rewards/curator-rewards';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const ROUTE = '/api/admin/curators';
-const CURATORS_DOC = 'config/curators';
-
-const DEFAULT_CURATORS = ['niallon11', 'bozz', 'talesfrmthecrypt', 'ablaze'];
 
 const mutationSchema = z.object({
   curator: z
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const curators = await getCuratorsFromDb();
+    const curators = getCuratorAccounts();
     return NextResponse.json({ success: true, curators });
   } catch (error) {
     return ctx.handleError(error);
@@ -49,6 +50,9 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/admin/curators - Add a curator
+ *
+ * NOTE: Currently,curator list is managed via CURATOR_ACCOUNTS env var.
+ * This endpoint validates the request but returns the current env-based list.
  */
 export async function POST(request: NextRequest) {
   return withCsrfProtection(request, async () => {
@@ -68,16 +72,7 @@ export async function POST(request: NextRequest) {
       }
 
       const { curator } = parseResult.data;
-
-      const adminDb = getAdminDb();
-      if (!adminDb) {
-        return NextResponse.json(
-          { success: false, error: 'Firebase not configured' },
-          { status: 503 }
-        );
-      }
-
-      const curators = await getCuratorsFromDb();
+      const curators = getCuratorAccounts();
 
       if (curators.includes(curator)) {
         return NextResponse.json(
@@ -86,30 +81,16 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      curators.push(curator);
-      try {
-        await adminDb
-          .doc(CURATORS_DOC)
-          .set(
-            { accounts: curators, updatedAt: new Date().toISOString(), updatedBy: user.username },
-            { merge: true }
-          );
-      } catch (writeError) {
-        const msg = writeError instanceof Error ? writeError.message : String(writeError);
-        if (msg.includes('credentials') || msg.includes('authentication')) {
-          return NextResponse.json(
-            {
-              success: false,
-              error:
-                'Firebase credentials not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.',
-            },
-            { status: 503 }
-          );
-        }
-        throw writeError;
-      }
-
-      return NextResponse.json({ success: true, curators });
+      // Currently,curator changes require updating the CURATOR_ACCOUNTS env var
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Curator management requires updating the CURATOR_ACCOUNTS environment variable. Please update it in your deployment settings.',
+          curators,
+        },
+        { status: 501 }
+      );
     } catch (error) {
       return ctx.handleError(error);
     }
@@ -137,72 +118,27 @@ export async function DELETE(request: NextRequest) {
       }
 
       const { curator } = parseResult.data;
+      const curators = getCuratorAccounts();
 
-      const adminDb = getAdminDb();
-      if (!adminDb) {
-        return NextResponse.json(
-          { success: false, error: 'Firebase not configured' },
-          { status: 503 }
-        );
-      }
-
-      const curators = await getCuratorsFromDb();
-      const updated = curators.filter((c) => c !== curator);
-
-      if (updated.length === curators.length) {
+      if (!curators.includes(curator)) {
         return NextResponse.json(
           { success: false, error: `${curator} is not a curator` },
           { status: 404 }
         );
       }
 
-      try {
-        await adminDb
-          .doc(CURATORS_DOC)
-          .set(
-            { accounts: updated, updatedAt: new Date().toISOString(), updatedBy: user.username },
-            { merge: true }
-          );
-      } catch (writeError) {
-        const msg = writeError instanceof Error ? writeError.message : String(writeError);
-        if (msg.includes('credentials') || msg.includes('authentication')) {
-          return NextResponse.json(
-            {
-              success: false,
-              error:
-                'Firebase credentials not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY in .env.local.',
-            },
-            { status: 503 }
-          );
-        }
-        throw writeError;
-      }
-
-      return NextResponse.json({ success: true, curators: updated });
+      // Currently,curator changes require updating the CURATOR_ACCOUNTS env var
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Curator management requires updating the CURATOR_ACCOUNTS environment variable. Please update it in your deployment settings.',
+          curators,
+        },
+        { status: 501 }
+      );
     } catch (error) {
       return ctx.handleError(error);
     }
   });
-}
-
-/**
- * Get curators from Firestore, falling back to defaults
- */
-async function getCuratorsFromDb(): Promise<string[]> {
-  const adminDb = getAdminDb();
-  if (!adminDb) return [...DEFAULT_CURATORS];
-
-  try {
-    const snap = await adminDb.doc(CURATORS_DOC).get();
-    if (snap.exists) {
-      const data = snap.data();
-      if (Array.isArray(data?.accounts) && data.accounts.length > 0) {
-        return data.accounts as string[];
-      }
-    }
-  } catch (e) {
-    console.warn('[Curators] Failed to read from Firestore, using defaults', e);
-  }
-
-  return [...DEFAULT_CURATORS];
 }

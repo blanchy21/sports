@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { broadcastWithKey } from '@/lib/hive-workerbee/broadcast';
 import {
   getContainerPermlink,
@@ -6,6 +6,8 @@ import {
   SPORTSBITES_CONFIG,
 } from '@/lib/hive-workerbee/sportsbites';
 import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
+import { withCsrfProtection } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,7 +23,18 @@ const createdContainers = new Set<string>();
  * exists, Hive returns a "duplicate" error which we treat as success.
  * This avoids a fragile pre-check via get_content.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
+  return withCsrfProtection(request, async () => {
+    // Require an authenticated session to prevent unauthenticated RC drain attacks
+    const user = await getAuthenticatedUserFromSession(request);
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+    }
+    return postEnsureContainer();
+  });
+}
+
+async function postEnsureContainer() {
   const postingKey = process.env.SPORTSBITES_POSTING_KEY;
   if (!postingKey) {
     return NextResponse.json(

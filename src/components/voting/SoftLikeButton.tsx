@@ -55,13 +55,8 @@ export const SoftLikeButton: React.FC<SoftLikeButtonProps> = ({
           targetId,
         });
 
-        const headers: HeadersInit = {};
-        if (isAuthenticated && user?.id) {
-          headers['x-user-id'] = user.id;
-        }
-
         const response = await fetch(`/api/soft/likes?${params}`, {
-          headers,
+          credentials: 'include',
           signal: controller.signal,
         });
         if (response.ok) {
@@ -91,9 +86,9 @@ export const SoftLikeButton: React.FC<SoftLikeButtonProps> = ({
     try {
       const response = await fetch('/api/soft/likes', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user.id,
         },
         body: JSON.stringify({
           targetType,

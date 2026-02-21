@@ -2,18 +2,12 @@
  * Content Metrics Tracker
  *
  * Tracks views, engagement, and other metrics for posts.
- * Uses Redis for real-time counters and Firestore for persistence.
+ * Uses Prisma for persistence.
  */
 
-import { collection, doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { prisma } from '@/lib/db/prisma';
 import { getWeekId } from '@/lib/rewards/staking-distribution';
-import type {
-  EngagementEvent,
-  EngagementType,
-  PostMetrics,
-  UserMetrics,
-} from './types';
+import type { EngagementEvent, EngagementType, PostMetrics, UserMetrics } from './types';
 
 /**
  * Generate a post ID from author and permlink
@@ -49,89 +43,76 @@ export function getDayKey(date: Date = new Date()): string {
  */
 export async function trackEngagement(event: EngagementEvent): Promise<void> {
   try {
-    if (!db) {
-      console.warn('Firestore not configured');
-      return;
-    }
-
     const weekId = getWeekId(event.timestamp);
-    // dayKey available via getDayKey(event.timestamp) for future daily tracking
-
-    // Update post metrics
-    const postDocRef = doc(collection(db, 'metrics', 'posts', weekId), event.postId.replace('/', '_'));
-    const postDoc = await getDoc(postDocRef);
 
     const incrementField = getIncrementField(event.type);
 
-    if (postDoc.exists()) {
-      await updateDoc(postDocRef, {
-        [incrementField]: increment(1),
-        totalEngagement: increment(event.type === 'view' ? 0 : 1),
-        lastUpdated: new Date(),
-      });
-    } else {
-      const initialMetrics: Partial<PostMetrics> = {
-        postId: event.postId,
-        author: event.author,
-        permlink: event.permlink,
-        views: 0,
-        uniqueViews: 0,
-        externalClicks: 0,
-        votes: 0,
-        comments: 0,
-        shares: 0,
-        totalEngagement: 0,
-        lastUpdated: new Date(),
-      };
-      (initialMetrics as Record<string, unknown>)[incrementField] = 1;
-      if (event.type !== 'view') {
-        initialMetrics.totalEngagement = 1;
-      }
-      await setDoc(postDocRef, initialMetrics);
-    }
+    // Update post metrics using upsert
+    const postUpdateData: Record<string, unknown> = {
+      [incrementField]: { increment: 1 },
+      totalEngagement: { increment: event.type === 'view' ? 0 : 1 },
+      lastUpdated: new Date(),
+    };
+
+    const postCreateData: Record<string, unknown> = {
+      weekId,
+      postId: event.postId,
+      author: event.author,
+      permlink: event.permlink,
+      views: 0,
+      uniqueViews: 0,
+      externalClicks: 0,
+      votes: 0,
+      comments: 0,
+      shares: 0,
+      totalEngagement: event.type !== 'view' ? 1 : 0,
+      lastUpdated: new Date(),
+      [incrementField]: 1,
+    };
+
+    await prisma.postMetric.upsert({
+      where: { weekId_postId: { weekId, postId: event.postId } },
+      create: postCreateData as Parameters<typeof prisma.postMetric.create>[0]['data'],
+      update: postUpdateData as Parameters<typeof prisma.postMetric.update>[0]['data'],
+    });
 
     // Update user metrics (for post author)
-    const userDocRef = doc(collection(db, 'metrics', 'users', weekId), event.author);
-    const userDoc = await getDoc(userDocRef);
-
     const userIncrementField = getUserIncrementField(event.type);
 
-    if (userDoc.exists()) {
-      await updateDoc(userDocRef, {
-        [userIncrementField]: increment(1),
-        totalEngagement: increment(event.type === 'view' ? 0 : 1),
-        lastUpdated: new Date(),
-      });
-    } else {
-      const initialUserMetrics: Partial<UserMetrics> = {
-        account: event.author,
-        period: 'week',
-        periodKey: weekId,
-        postsCreated: 0,
-        totalViews: 0,
-        totalExternalClicks: 0,
-        totalVotesReceived: 0,
-        commentsReceived: 0,
-        commentsMade: 0,
-        totalEngagement: 0,
-        lastUpdated: new Date(),
-      };
-      (initialUserMetrics as Record<string, unknown>)[userIncrementField] = 1;
-      await setDoc(userDocRef, initialUserMetrics);
-    }
+    const userUpdateData: Record<string, unknown> = {
+      [userIncrementField]: { increment: 1 },
+      totalEngagement: { increment: event.type === 'view' ? 0 : 1 },
+      lastUpdated: new Date(),
+    };
+
+    const userCreateData: Record<string, unknown> = {
+      weekId,
+      account: event.author,
+      period: 'week',
+      periodKey: weekId,
+      postsCreated: 0,
+      totalViews: 0,
+      totalExternalClicks: 0,
+      totalVotesReceived: 0,
+      commentsReceived: 0,
+      commentsMade: 0,
+      totalEngagement: 0,
+      lastUpdated: new Date(),
+      [userIncrementField]: 1,
+    };
+
+    await prisma.userMetric.upsert({
+      where: { weekId_account: { weekId, account: event.author } },
+      create: userCreateData as Parameters<typeof prisma.userMetric.create>[0]['data'],
+      update: userUpdateData as Parameters<typeof prisma.userMetric.update>[0]['data'],
+    });
 
     // If there's a viewer account and they made a comment, update their comment count
     if (event.type === 'comment' && event.viewerAccount && event.viewerAccount !== event.author) {
-      const commenterDocRef = doc(collection(db, 'metrics', 'users', weekId), event.viewerAccount);
-      const commenterDoc = await getDoc(commenterDocRef);
-
-      if (commenterDoc.exists()) {
-        await updateDoc(commenterDocRef, {
-          commentsMade: increment(1),
-          lastUpdated: new Date(),
-        });
-      } else {
-        await setDoc(commenterDocRef, {
+      await prisma.userMetric.upsert({
+        where: { weekId_account: { weekId, account: event.viewerAccount } },
+        create: {
+          weekId,
           account: event.viewerAccount,
           period: 'week',
           periodKey: weekId,
@@ -143,8 +124,12 @@ export async function trackEngagement(event: EngagementEvent): Promise<void> {
           commentsMade: 1,
           totalEngagement: 0,
           lastUpdated: new Date(),
-        });
-      }
+        },
+        update: {
+          commentsMade: { increment: 1 },
+          lastUpdated: new Date(),
+        },
+      });
     }
   } catch (error) {
     console.error('Error tracking engagement:', error);
@@ -190,11 +175,7 @@ export async function trackPostView(
 /**
  * Track a vote on a post
  */
-export async function trackVote(
-  author: string,
-  permlink: string,
-  voter: string
-): Promise<void> {
+export async function trackVote(author: string, permlink: string, voter: string): Promise<void> {
   await trackEngagement({
     postId: getPostId(author, permlink),
     author,
@@ -226,11 +207,7 @@ export async function trackComment(
 /**
  * Track a share of a post
  */
-export async function trackShare(
-  author: string,
-  permlink: string,
-  sharer?: string
-): Promise<void> {
+export async function trackShare(author: string, permlink: string, sharer?: string): Promise<void> {
   await trackEngagement({
     postId: getPostId(author, permlink),
     author,
@@ -246,22 +223,12 @@ export async function trackShare(
  */
 export async function trackPostCreation(author: string): Promise<void> {
   try {
-    if (!db) {
-      console.warn('Firestore not configured');
-      return;
-    }
     const weekId = getCurrentWeekId();
 
-    const userDocRef = doc(collection(db, 'metrics', 'users', weekId), author);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists()) {
-      await updateDoc(userDocRef, {
-        postsCreated: increment(1),
-        lastUpdated: new Date(),
-      });
-    } else {
-      await setDoc(userDocRef, {
+    await prisma.userMetric.upsert({
+      where: { weekId_account: { weekId, account: author } },
+      create: {
+        weekId,
         account: author,
         period: 'week',
         periodKey: weekId,
@@ -273,8 +240,12 @@ export async function trackPostCreation(author: string): Promise<void> {
         commentsMade: 0,
         totalEngagement: 0,
         lastUpdated: new Date(),
-      });
-    }
+      },
+      update: {
+        postsCreated: { increment: 1 },
+        lastUpdated: new Date(),
+      },
+    });
   } catch (error) {
     console.error('Error tracking post creation:', error);
   }
@@ -289,21 +260,16 @@ export async function getPostMetrics(
   weekId?: string
 ): Promise<PostMetrics | null> {
   try {
-    if (!db) {
-      console.warn('Firestore not configured');
-      return null;
-    }
     const targetWeekId = weekId || getCurrentWeekId();
     const postId = getPostId(author, permlink);
 
-    const postDocRef = doc(collection(db, 'metrics', 'posts', targetWeekId), postId.replace('/', '_'));
-    const postDoc = await getDoc(postDocRef);
+    const metric = await prisma.postMetric.findUnique({
+      where: { weekId_postId: { weekId: targetWeekId, postId } },
+    });
 
-    if (!postDoc.exists()) {
-      return null;
-    }
+    if (!metric) return null;
 
-    return postDoc.data() as PostMetrics;
+    return metric as unknown as PostMetrics;
   } catch (error) {
     console.error('Error getting post metrics:', error);
     return null;
@@ -318,20 +284,15 @@ export async function getUserMetrics(
   weekId?: string
 ): Promise<UserMetrics | null> {
   try {
-    if (!db) {
-      console.warn('Firestore not configured');
-      return null;
-    }
     const targetWeekId = weekId || getCurrentWeekId();
 
-    const userDocRef = doc(collection(db, 'metrics', 'users', targetWeekId), account);
-    const userDoc = await getDoc(userDocRef);
+    const metric = await prisma.userMetric.findUnique({
+      where: { weekId_account: { weekId: targetWeekId, account } },
+    });
 
-    if (!userDoc.exists()) {
-      return null;
-    }
+    if (!metric) return null;
 
-    return userDoc.data() as UserMetrics;
+    return metric as unknown as UserMetrics;
   } catch (error) {
     console.error('Error getting user metrics:', error);
     return null;

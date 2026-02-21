@@ -43,11 +43,6 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
     const fetchUsers = async () => {
       setIsLoading(true);
       try {
-        const headers: HeadersInit = {};
-        if (currentUser?.id && authType === 'soft') {
-          headers['x-user-id'] = currentUser.id;
-        }
-
         const params = new URLSearchParams({
           userId,
           type,
@@ -55,7 +50,7 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
           offset: '0',
         });
 
-        const response = await fetch(`/api/soft/follows?${params}`, { headers });
+        const response = await fetch(`/api/soft/follows?${params}`, { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           setUsers(data.users || []);
@@ -74,11 +69,6 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
 
   const loadMore = async () => {
     try {
-      const headers: HeadersInit = {};
-      if (currentUser?.id && authType === 'soft') {
-        headers['x-user-id'] = currentUser.id;
-      }
-
       const params = new URLSearchParams({
         userId,
         type,
@@ -86,7 +76,7 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
         offset: offset.toString(),
       });
 
-      const response = await fetch(`/api/soft/follows?${params}`, { headers });
+      const response = await fetch(`/api/soft/follows?${params}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setUsers((prev) => [...prev, ...(data.users || [])]);

@@ -220,18 +220,3 @@ Replace the HTTP self-fetch with a direct call to `fetchSportsblockPosts()`. Ser
 ### Rule
 **Never make HTTP requests from an API route to another API route on the same server.** Import the function directly instead. Self-referencing fetches fail in serverless environments (Vercel, Lambda) where `localhost` doesn't work.
 
----
-
-## Cron jobs must use Firebase Admin SDK, not client SDK
-
-**Date:** 2026-02-13
-**Severity:** Critical — cron job writes to Firestore silently failed
-
-### Problem
-The analytics cron job used the Firebase client SDK (`firebase/firestore`) to write to the `analytics` Firestore collection. But Firestore rules had `allow write: if false` for that collection (intended for Admin SDK only). All cron writes silently failed, so analytics data in Firestore was never updated.
-
-### Fix
-Switch cron to use `getAdminDb()` from `firebase-admin/firestore`, which bypasses security rules.
-
-### Rule
-**Server-side cron/background jobs must use Firebase Admin SDK (`firebase-admin`) for Firestore writes, not the client SDK (`firebase`).** The client SDK respects security rules, which typically block server-to-server writes.

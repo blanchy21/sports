@@ -1,9 +1,11 @@
 /**
- * Discriminated union types for API responses.
+ * Flat API response types (legacy format).
  *
- * Usage:
- *   return NextResponse.json<ApiResponse<{ posts: Post[] }>>({ success: true, posts });
- *   return NextResponse.json<ApiResponse<{ posts: Post[] }>>({ success: false, error: '...' });
+ * @deprecated For new routes, use the structured envelope types from `@/lib/api/response`:
+ *   - `apiSuccess<T>(data)` → `{ success: true; data: T }`
+ *   - `apiError(message, code, status)` → `{ success: false; error: { message, code } }`
+ *
+ * These flat types are kept for existing routes that return `{ success: true, ...data }`.
  */
 
 export type ApiSuccessResponse<T> = { success: true } & T;

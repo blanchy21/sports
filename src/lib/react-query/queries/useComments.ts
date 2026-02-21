@@ -19,7 +19,7 @@ function isSoftPermlink(permlink: string): boolean {
 }
 
 /**
- * Fetch soft comments from Firebase and normalize to HiveComment shape.
+ * Fetch soft comments from database and normalize to HiveComment shape.
  */
 async function fetchSoftComments(author: string, permlink: string): Promise<HiveComment[]> {
   const postId = `hive-${author}-${permlink}`;
@@ -42,8 +42,8 @@ async function fetchSoftComments(author: string, permlink: string): Promise<Hive
 
 /**
  * Fetch comments for a post.
- * For soft posts: fetches from Firebase only.
- * For Hive posts: fetches from both Hive blockchain and Firebase, merged.
+ * For soft posts: fetches from database only.
+ * For Hive posts: fetches from both Hive blockchain and database, merged.
  */
 export function useComments(
   author: string,
@@ -58,7 +58,7 @@ export function useComments(
     queryKey: queryKeys.comments.list(`${author}/${permlink}`),
     queryFn: async () => {
       if (isSoftPermlink(permlink)) {
-        // Soft posts: only fetch from Firebase
+        // Soft posts: only fetch from database
         return fetchSoftComments(author, permlink);
       }
 

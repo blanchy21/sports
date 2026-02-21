@@ -11,6 +11,7 @@ import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 /**
  * Cron endpoint: creates a daily Sportsbites container post on the

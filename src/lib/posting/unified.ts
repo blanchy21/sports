@@ -1,7 +1,7 @@
 /**
  * Unified Posting Service
  *
- * Routes posts to either Hive blockchain or Firebase based on user auth type.
+ * Routes posts to either Hive blockchain or database based on user auth type.
  * Uses authenticated API calls with proper authorization headers.
  */
 
@@ -36,10 +36,10 @@ export interface PostResult {
 
 export class UnifiedPostingService {
   /**
-   * Create a post - routes to Hive blockchain or Firebase based on user auth type
+   * Create a post - routes to Hive blockchain or database based on user auth type
    *
    * Hive users: Posts go to blockchain, earn HIVE rewards and MEDALS
-   * Soft users: Posts go to Firebase via authenticated API, visible on platform but no rewards
+   * Soft users: Posts go to database via authenticated API, visible on platform but no rewards
    */
   static async createPost(user: User, postData: PostData): Promise<PostResult> {
     try {

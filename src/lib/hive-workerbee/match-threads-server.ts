@@ -1,81 +1,65 @@
 /**
  * Server-only match thread utilities.
  *
- * Imports firebase-admin — must NEVER be imported from client components.
+ * Uses Prisma -- must NEVER be imported from client components.
  */
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { Sportsbite } from './sportsbites';
-import { error as logError, warn as logWarn } from './logger';
+import { error as logError } from './logger';
 
-interface SoftSportsbiteDoc {
-  authorId: string;
+function dbRowToSportsbite(row: {
+  id: string;
   authorUsername: string;
-  authorDisplayName?: string;
-  authorAvatar?: string;
+  authorDisplayName: string | null;
+  authorAvatar: string | null;
   body: string;
-  sportCategory?: string;
-  images?: string[];
-  gifs?: string[];
-  createdAt: { toDate: () => Date } | Date;
-  likeCount?: number;
-  commentCount?: number;
-  matchThreadId?: string;
-}
-
-function softDocToSportsbite(docId: string, data: SoftSportsbiteDoc): Sportsbite {
-  const createdAt =
-    typeof (data.createdAt as { toDate?: () => Date })?.toDate === 'function'
-      ? (data.createdAt as { toDate: () => Date }).toDate()
-      : new Date(data.createdAt as unknown as string);
-
+  sportCategory: string | null;
+  images: string[];
+  gifs: string[];
+  createdAt: Date;
+  likeCount: number;
+  commentCount: number;
+}): Sportsbite {
   return {
-    id: `soft-${docId}`,
-    author: data.authorUsername,
-    permlink: `soft-${docId}`,
-    body: data.body,
-    created: createdAt.toISOString().replace('T', ' ').replace('Z', ''),
-    net_votes: data.likeCount || 0,
-    children: data.commentCount || 0,
+    id: `soft-${row.id}`,
+    author: row.authorUsername,
+    permlink: `soft-${row.id}`,
+    body: row.body,
+    created: row.createdAt.toISOString().replace('T', ' ').replace('Z', ''),
+    net_votes: row.likeCount || 0,
+    children: row.commentCount || 0,
     pending_payout_value: '0.000 HBD',
     active_votes: [],
-    sportCategory: data.sportCategory,
-    images: data.images,
-    gifs: data.gifs,
+    sportCategory: row.sportCategory ?? undefined,
+    images: row.images,
+    gifs: row.gifs,
     source: 'soft',
-    softId: docId,
-    authorDisplayName: data.authorDisplayName,
-    authorAvatar: data.authorAvatar,
+    softId: row.id,
+    authorDisplayName: row.authorDisplayName ?? undefined,
+    authorAvatar: row.authorAvatar ?? undefined,
   };
 }
 
 /**
- * Fetch soft sportsbites for a specific match thread from Firebase.
+ * Fetch soft sportsbites for a specific match thread from the database.
  */
 export async function fetchSoftMatchThreadBites(
   eventId: string,
   options: { limit?: number } = {}
 ): Promise<Sportsbite[]> {
   try {
-    const db = getAdminDb();
-    if (!db) {
-      logWarn(
-        'Firebase Admin DB not available — skipping soft bites fetch',
-        'fetchSoftMatchThreadBites'
-      );
-      return [];
-    }
-
     const { limit = 200 } = options;
 
-    const snapshot = await db
-      .collection('soft_sportsbites')
-      .where('isDeleted', '==', false)
-      .where('matchThreadId', '==', eventId)
-      .orderBy('createdAt', 'desc')
-      .limit(limit)
-      .get();
+    const rows = await prisma.sportsbite.findMany({
+      where: {
+        isDeleted: false,
+        matchThreadId: eventId,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
 
-    return snapshot.docs.map((doc) => softDocToSportsbite(doc.id, doc.data() as SoftSportsbiteDoc));
+    return rows.map(dbRowToSportsbite);
   } catch (error) {
     logError(
       'Error fetching soft match thread bites',

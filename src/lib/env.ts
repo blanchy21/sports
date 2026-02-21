@@ -44,14 +44,6 @@ let validationRun = false;
  * process.env[key] for these variables.
  */
 export const publicEnv = {
-  firebase: {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  },
   debug: {
     notifications: process.env.NEXT_PUBLIC_NOTIFICATIONS_DEBUG === 'true',
     workerbee: process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true',
@@ -94,23 +86,10 @@ export const serverEnv = {
     debug: getOptionalEnv('WAX_DEBUG') === 'true',
     timeout: parseInt(getOptionalEnv('WAX_TIMEOUT', '30000') || '30000'),
   },
-  tenor: {
-    apiKey: getOptionalEnv('TENOR_API_KEY'),
-  },
   sentry: {
     dsn: getOptionalEnv('NEXT_PUBLIC_SENTRY_DSN'),
   },
 } as const;
-
-/**
- * Check if Firebase is configured
- */
-export function isFirebaseConfigured(): boolean {
-  return !!(
-    publicEnv.firebase.apiKey &&
-    publicEnv.firebase.projectId
-  );
-}
 
 /**
  * Check if Redis is configured (via REDIS_URL)
@@ -170,34 +149,32 @@ export function validateEnvironment(): ValidationResult {
       errors.push('CRON_SECRET is required in production for scheduled tasks');
     }
 
+    // Custodial key encryption secret is critical
+    if (!process.env.KEY_ENCRYPTION_SECRET) {
+      errors.push('KEY_ENCRYPTION_SECRET is required in production for custodial key encryption');
+    }
+
+    // NextAuth secret is required for JWT signing
+    if (!process.env.NEXTAUTH_SECRET) {
+      errors.push('NEXTAUTH_SECRET is required in production for NextAuth JWT signing');
+    }
+
+    // Database URL is required
+    if (!process.env.DATABASE_URL) {
+      errors.push('DATABASE_URL is required in production');
+    }
+
     // Redis is strongly recommended for distributed rate limiting
     if (!isUpstashConfigured() && !isRedisConfigured()) {
-      warnings.push('No Redis configured (UPSTASH_REDIS_REST_URL or REDIS_URL). Rate limiting will use in-memory storage which does not scale across instances.');
+      warnings.push(
+        'No Redis configured (UPSTASH_REDIS_REST_URL or REDIS_URL). Rate limiting will use in-memory storage which does not scale across instances.'
+      );
     }
-  }
-
-  // ========================================
-  // REQUIRED Always (for core functionality)
-  // ========================================
-
-  // Firebase is required for authentication
-  if (!publicEnv.firebase.apiKey) {
-    errors.push('NEXT_PUBLIC_FIREBASE_API_KEY is required for authentication');
-  }
-  if (!publicEnv.firebase.projectId) {
-    errors.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID is required for authentication');
-  }
-  if (!publicEnv.firebase.authDomain) {
-    errors.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is required for authentication');
   }
 
   // ========================================
   // OPTIONAL but Recommended
   // ========================================
-
-  if (!serverEnv.tenor.apiKey) {
-    warnings.push('TENOR_API_KEY not configured. GIF picker will not work.');
-  }
 
   if (!serverEnv.sentry.dsn) {
     warnings.push('NEXT_PUBLIC_SENTRY_DSN not configured. Error tracking is disabled.');

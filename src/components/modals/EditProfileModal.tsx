@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { updateHiveProfile, ProfileUpdateData } from '@/lib/hive-workerbee/social';
 import { logger } from '@/lib/logger';
+import { useBroadcast } from '@/hooks/useBroadcast';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ interface EditProfileModalProps {
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) => {
   const { user, authType, refreshHiveAccount } = useAuth();
   const { addToast } = useToast();
+  const { broadcast } = useBroadcast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
@@ -111,7 +113,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         return;
       }
 
-      const result = await updateHiveProfile(user.username, profileData);
+      const result = await updateHiveProfile(user.username, profileData, broadcast);
 
       if (result.success) {
         addToast(

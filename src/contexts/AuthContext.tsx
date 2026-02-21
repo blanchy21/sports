@@ -30,6 +30,7 @@ import {
 } from './auth/auth-persistence';
 import { authReducer } from './auth/auth-reducer';
 import { useAuthActions } from './auth/useAuthActions';
+import { useGoogleAuthBridge } from './auth/useGoogleAuthBridge';
 import { createUserWithAccountData, getHiveAvatarUrl } from './auth/useAuthProfile';
 
 // Re-export types for backwards compatibility
@@ -64,12 +65,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     authState;
 
   // Getter for current state (used by actions hook)
-  const getState = useCallback(() => ({ user, authType, hiveUser }), [user, authType, hiveUser]);
+  // Uses a ref so getState() always returns the latest values,
+  // even when called from stale closures (e.g. async profile fetch callbacks)
+  const stateRef = useRef({ user, authType, hiveUser });
+  stateRef.current = { user, authType, hiveUser };
+  const getState = useCallback(() => stateRef.current, []);
 
   // Auth actions (login, logout, upgrade)
   const {
     login,
-    loginWithFirebase,
     loginWithHiveUser,
     loginWithAioha,
     logout,
@@ -77,6 +81,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateUser,
     setHiveUser,
   } = useAuthActions({ dispatch, getState });
+
+  // Bridge NextAuth Google session → AuthContext (one-shot after mount)
+  useGoogleAuthBridge({ login, isAuthenticated: !!user, hasMounted });
 
   // ============================================================================
   // Session Restoration Effect
@@ -286,7 +293,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     loginWithHiveUser,
     loginWithAioha,
-    loginWithFirebase,
     logout,
     updateUser,
     upgradeToHive,

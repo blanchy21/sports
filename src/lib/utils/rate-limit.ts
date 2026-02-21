@@ -85,6 +85,8 @@ function checkRateLimitInMemory(identifier: string, config: RateLimitConfig): Ra
 // Redis client singleton (lazy initialization)
 let redisClient: Redis | null = null;
 let redisAvailable: boolean | null = null;
+let redisDownSince: number | null = null;
+const REDIS_RETRY_AFTER_MS = 5 * 60 * 1000; // 5 minutes
 
 function getRedisClient(): Redis | null {
   if (redisClient) return redisClient;
@@ -143,12 +145,24 @@ export async function checkRateLimit(
   type: string = 'default'
 ): Promise<RateLimitResult> {
   // Try distributed rate limiting first
+  // If Redis was marked down, retry after REDIS_RETRY_AFTER_MS
+  if (
+    redisAvailable === false &&
+    redisDownSince &&
+    Date.now() - redisDownSince > REDIS_RETRY_AFTER_MS
+  ) {
+    console.info('[RateLimit] Retrying Redis after cooldown period');
+    redisAvailable = null;
+    redisDownSince = null;
+  }
+
   if (redisAvailable !== false) {
     const limiter = getRatelimiter(type, config);
     if (limiter) {
       try {
         const result = await limiter.limit(identifier);
         redisAvailable = true;
+        redisDownSince = null;
         return {
           success: result.success,
           remaining: result.remaining,
@@ -158,6 +172,7 @@ export async function checkRateLimit(
         // Redis failed, mark as unavailable and fall back
         console.error('[RateLimit] Redis error, falling back to in-memory:', error);
         redisAvailable = false;
+        redisDownSince = Date.now();
       }
     }
   }
@@ -260,6 +275,21 @@ export const RATE_LIMITS = {
     limit: 60, // 60 poll votes per hour
     windowSeconds: 3600,
   },
+  // Signing relay — 10 ops/min per user (serverless-safe, replaces in-memory limiter)
+  signingRelay: {
+    limit: 10,
+    windowSeconds: 60,
+  },
+  // Account creation — 3 per day per user (normal users create exactly 1)
+  accountCreation: {
+    limit: 3,
+    windowSeconds: 86400,
+  },
+  // Key download — 5 per hour (defense-in-depth for sensitive endpoint)
+  keyDownload: {
+    limit: 5,
+    windowSeconds: 3600,
+  },
 } as const;
 
 /**
@@ -289,6 +319,7 @@ export function isDistributedRateLimitingAvailable(): boolean {
  */
 export function resetRedisAvailability(): void {
   redisAvailable = null;
+  redisDownSince = null;
   redisClient = null;
   ratelimiters.clear();
 }

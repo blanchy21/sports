@@ -2,10 +2,8 @@
  * Community Functions
  *
  * This module provides community-related functions.
- * Note: Community data is now stored in Firestore, not on Hive blockchain.
- * These functions call the API routes which interact with Firestore.
- *
- * For direct Firestore access, use @/lib/firebase/communities.ts
+ * Community data is stored in PostgreSQL via Prisma.
+ * These functions call the API routes which interact with the database.
  */
 
 import { Community, CommunityMember, CommunityFilters, CommunityListResult } from '@/types';
@@ -200,30 +198,5 @@ export async function unsubscribeFromCommunity(
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
-  }
-}
-
-/**
- * Check if user is subscribed to a community
- * @param communityId - Community ID
- * @param userId - User ID
- * @returns Subscription status
- */
-export async function isSubscribedToCommunity(
-  communityId: string,
-  userId: string
-): Promise<boolean> {
-  try {
-    if (!userId) return false;
-
-    const members = await fetchCommunityMembers(communityId, 1000);
-    return members.some((m) => m.userId === userId && m.status === 'active');
-  } catch (error) {
-    logError(
-      'Error checking community subscription',
-      'isSubscribedToCommunity',
-      error instanceof Error ? error : undefined
-    );
-    return false;
   }
 }

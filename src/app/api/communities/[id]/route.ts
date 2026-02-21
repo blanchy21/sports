@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FirebaseCommunitiesAdmin } from '@/lib/firebase/communities-admin';
+import { prisma } from '@/lib/db/prisma';
 import {
   createRequestContext,
   validationError,
   notFoundError,
   forbiddenError,
+  unauthorizedError,
 } from '@/lib/api/response';
+import { validateCsrf, csrfError } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,32 +44,33 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     ctx.log.debug('Fetching community', { id });
 
     // Try to fetch by ID first, then by slug
-    let community = await FirebaseCommunitiesAdmin.getCommunityById(id);
+    let community = await prisma.community.findUnique({ where: { id } });
 
     if (!community) {
-      community = await FirebaseCommunitiesAdmin.getCommunityBySlug(id);
+      community = await prisma.community.findUnique({ where: { slug: id } });
     }
 
     if (!community) {
       return notFoundError(`Community not found: ${id}`, ctx.requestId);
     }
 
-    // Fetch team members (non-fatal — community should still render if this fails)
+    // Fetch team members (non-fatal -- community should still render if this fails)
     let team: { username: string; role: string; joinedAt: string }[] = [];
     try {
-      const members = await FirebaseCommunitiesAdmin.getCommunityMembers(community.id, {
-        status: 'active',
-        limit: 10,
+      const members = await prisma.communityMember.findMany({
+        where: {
+          communityId: community.id,
+          status: 'active',
+          role: { in: ['admin', 'moderator'] },
+        },
+        take: 10,
       });
 
-      team = members
-        .filter((m) => m.role === 'admin' || m.role === 'moderator')
-        .map((m) => ({
-          username: m.username,
-          role: m.role,
-          joinedAt:
-            typeof m.joinedAt === 'string' ? m.joinedAt : (m.joinedAt as Date).toISOString(),
-        }));
+      team = members.map((m) => ({
+        username: m.username,
+        role: m.role,
+        joinedAt: m.joinedAt.toISOString(),
+      }));
     } catch (memberError) {
       ctx.log.warn('Failed to fetch community members', { id, error: memberError });
     }
@@ -87,10 +91,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
  * PATCH /api/communities/[id] - Update a community
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!validateCsrf(request)) {
+    return csrfError('Request blocked: invalid origin');
+  }
+
   const ctx = createRequestContext(ROUTE);
   const { id } = await params;
 
   try {
+    // Verify session auth
+    const sessionUser = await getAuthenticatedUserFromSession(request);
+    if (!sessionUser) {
+      return unauthorizedError('Authentication required', ctx.requestId);
+    }
+
     const body = await request.json();
     const parseResult = updateCommunitySchema.safeParse(body);
 
@@ -100,28 +114,31 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const { userId, ...updates } = parseResult.data;
 
+    // Verify the authenticated user matches the request
+    if (sessionUser.userId !== userId) {
+      return forbiddenError('Cannot update community as another user', ctx.requestId);
+    }
+
     // Fetch existing community
-    const community = await FirebaseCommunitiesAdmin.getCommunityById(id);
+    const community = await prisma.community.findUnique({ where: { id } });
     if (!community) {
       return notFoundError(`Community not found: ${id}`, ctx.requestId);
     }
 
     // Check if user is admin
-    const membership = await FirebaseCommunitiesAdmin.getMembership(id, userId);
+    const membership = await prisma.communityMember.findUnique({
+      where: { communityId_userId: { communityId: id, userId } },
+    });
     if (!membership || membership.role !== 'admin' || membership.status !== 'active') {
       return forbiddenError('Only admins can update this community', ctx.requestId);
     }
 
     ctx.log.info('Updating community', { id, updates, userId });
 
-    // Convert null values to undefined for the update function
-    const sanitizedUpdates = {
-      ...updates,
-      avatar: updates.avatar === null ? undefined : updates.avatar,
-      coverImage: updates.coverImage === null ? undefined : updates.coverImage,
-    };
-
-    const updatedCommunity = await FirebaseCommunitiesAdmin.updateCommunity(id, sanitizedUpdates);
+    const updatedCommunity = await prisma.community.update({
+      where: { id },
+      data: updates,
+    });
 
     return NextResponse.json({
       success: true,
@@ -139,10 +156,20 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!validateCsrf(request)) {
+    return csrfError('Request blocked: invalid origin');
+  }
+
   const ctx = createRequestContext(ROUTE);
   const { id } = await params;
 
   try {
+    // Verify session auth
+    const sessionUser = await getAuthenticatedUserFromSession(request);
+    if (!sessionUser) {
+      return unauthorizedError('Authentication required', ctx.requestId);
+    }
+
     const body = await request.json();
     const parseResult = deleteRequestSchema.safeParse(body);
 
@@ -152,8 +179,13 @@ export async function DELETE(
 
     const { userId } = parseResult.data;
 
+    // Verify the authenticated user matches the request
+    if (sessionUser.userId !== userId) {
+      return forbiddenError('Cannot delete community as another user', ctx.requestId);
+    }
+
     // Fetch existing community
-    const community = await FirebaseCommunitiesAdmin.getCommunityById(id);
+    const community = await prisma.community.findUnique({ where: { id } });
     if (!community) {
       return notFoundError(`Community not found: ${id}`, ctx.requestId);
     }
@@ -165,7 +197,12 @@ export async function DELETE(
 
     ctx.log.info('Deleting community', { id, userId });
 
-    await FirebaseCommunitiesAdmin.deleteCommunity(id);
+    // Delete members and community in a transaction
+    await prisma.$transaction([
+      prisma.communityMember.deleteMany({ where: { communityId: id } }),
+      prisma.communityInvite.deleteMany({ where: { communityId: id } }),
+      prisma.community.delete({ where: { id } }),
+    ]);
 
     return NextResponse.json({
       success: true,

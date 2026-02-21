@@ -10,6 +10,7 @@ export interface User {
   bio?: string;
   isHiveAuth: boolean;
   hiveUsername?: string;
+  keysDownloaded?: boolean;
   reputation?: number;
   reputationFormatted?: string;
   // Liquid balances

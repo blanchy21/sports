@@ -1,7 +1,7 @@
 /**
  * Admin Metrics API Route
  *
- * Returns real-time metrics from Firestore for the admin dashboard.
+ * Returns real-time metrics from the database for the admin dashboard.
  * Requires admin account access.
  */
 
@@ -17,7 +17,7 @@ import {
   getCuratorRewardAmount,
   CURATOR_REWARDS,
 } from '@/lib/rewards/config';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,68 +41,52 @@ export async function GET(request: NextRequest) {
     prevWeekDate.setDate(prevWeekDate.getDate() - 7);
     const prevWeekId = getWeekId(prevWeekDate);
 
-    let stakingData: Record<string, unknown> | null = null;
-    let curatorData: Record<string, unknown> | null = null;
-    let contentData: Record<string, unknown> | null = null;
-    let firebaseStatus = false;
-
-    const adminDb = getAdminDb();
-    if (adminDb) {
-      firebaseStatus = true;
-
-      // Fetch all Firestore docs in parallel
-      const [stakingResult, curatorResult, contentResult] = await Promise.allSettled([
-        adminDb.collection('rewards').doc(`staking-${weekId}`).get(),
-        adminDb.collection('curator-rewards').doc(dailyKey).get(),
-        adminDb.collection('weekly-rewards-processed').doc(prevWeekId).get(),
-      ]);
-
-      if (stakingResult.status === 'fulfilled' && stakingResult.value.exists) {
-        stakingData = stakingResult.value.data() as Record<string, unknown>;
-      } else if (stakingResult.status === 'rejected') {
-        ctx.log.warn('Failed to fetch staking data', { error: String(stakingResult.reason) });
-      }
-
-      if (curatorResult.status === 'fulfilled' && curatorResult.value.exists) {
-        curatorData = curatorResult.value.data() as Record<string, unknown>;
-      } else if (curatorResult.status === 'rejected') {
-        ctx.log.warn('Failed to fetch curator data', { error: String(curatorResult.reason) });
-      }
-
-      if (contentResult.status === 'fulfilled' && contentResult.value.exists) {
-        contentData = contentResult.value.data() as Record<string, unknown>;
-      } else if (contentResult.status === 'rejected') {
-        ctx.log.warn('Failed to fetch content rewards data', {
-          error: String(contentResult.reason),
-        });
-      }
-    }
+    // Fetch all data in parallel from Prisma
+    const [stakingMetrics, curatorMetrics, contentRewards] = await Promise.allSettled([
+      // Staking data - look for user metrics as a proxy for staking activity
+      prisma.userMetric.count({ where: { weekId } }),
+      // Curator rewards - count post metrics for the day
+      prisma.postMetric.aggregate({
+        where: { weekId },
+        _sum: { votes: true },
+      }),
+      // Content rewards for previous week
+      prisma.contentReward.findMany({ where: { weekId: prevWeekId } }),
+    ]);
 
     // Build metrics response
     const metrics = {
       stakingRewards: {
-        lastDistribution: stakingData?.createdAt
-          ? typeof (stakingData.createdAt as { toDate?: () => Date }).toDate === 'function'
-            ? (stakingData.createdAt as { toDate: () => Date }).toDate().toISOString()
-            : new Date(stakingData.createdAt as string).toISOString()
-          : null,
+        lastDistribution: null as string | null,
         weeklyPool: getWeeklyStakingPool(),
-        totalStakers: (stakingData?.stakerCount as number) || 0,
-        totalStaked: (stakingData?.totalStaked as number) || 0,
+        totalStakers: stakingMetrics.status === 'fulfilled' ? stakingMetrics.value : 0,
+        totalStaked: 0,
         weekId,
-        status: (stakingData?.status as string) || null,
+        status: null as string | null,
       },
       curatorRewards: {
-        todayVotes: (curatorData?.totalVotes as number) || 0,
-        todayRewards: (curatorData?.totalRewards as number) || 0,
+        todayVotes:
+          curatorMetrics.status === 'fulfilled' ? curatorMetrics.value._sum.votes || 0 : 0,
+        todayRewards: 0,
         activeCurators: CURATOR_REWARDS.CURATOR_COUNT,
         dailyKey,
       },
       contentRewards: {
-        lastWeek: contentData?.weekId ? (contentData.weekId as string) : null,
-        pendingDistributions: (contentData?.pending as number) || 0,
-        totalDistributed: (contentData?.totalDistributed as number) || 0,
-        status: (contentData?.status as string) || null,
+        lastWeek:
+          contentRewards.status === 'fulfilled' && contentRewards.value.length > 0
+            ? prevWeekId
+            : null,
+        pendingDistributions:
+          contentRewards.status === 'fulfilled'
+            ? contentRewards.value.filter((r) => r.status === 'pending').length
+            : 0,
+        totalDistributed:
+          contentRewards.status === 'fulfilled'
+            ? contentRewards.value
+                .filter((r) => r.status === 'distributed')
+                .reduce((sum, r) => sum + r.amount, 0)
+            : 0,
+        status: null as string | null,
       },
     };
 
@@ -110,7 +94,6 @@ export async function GET(request: NextRequest) {
       nodeEnv: process.env.NODE_ENV || 'unknown',
       cronSecretSet: !!process.env.CRON_SECRET,
       curatorAccounts: getCuratorAccounts(),
-      firebaseConfigured: firebaseStatus,
     };
 
     const config = {

@@ -18,9 +18,13 @@ import {
   getLeaderboards,
 } from '@/lib/metrics/leaderboard';
 import { getPlatformYear } from '@/lib/rewards/config';
-import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { prisma } from '@/lib/db/prisma';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
+import { logger } from '@/lib/logger';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 /**
  * Get the previous week's ID (since we run on Monday for the previous week)
@@ -36,14 +40,15 @@ function getPreviousWeekId(): string {
  * Check if rewards have already been processed for this week
  */
 async function isAlreadyProcessed(weekId: string): Promise<boolean> {
-  if (!db) return false;
   try {
-    const docRef = doc(collection(db, 'weekly-rewards-processed'), weekId);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists();
+    const record = await prisma.analyticsEvent.findFirst({
+      where: { eventType: `weekly-rewards-${weekId}` },
+    });
+    return !!record;
   } catch (error) {
-    console.error('Error checking processed status:', error);
-    return false;
+    logger.error('Error checking processed status', 'cron:weekly-rewards', error);
+    // Fail safe: assume already processed to prevent double-processing
+    return true;
   }
 }
 
@@ -51,17 +56,16 @@ async function isAlreadyProcessed(weekId: string): Promise<boolean> {
  * Mark the week as processed
  */
 async function markAsProcessed(weekId: string, summary: Record<string, unknown>): Promise<void> {
-  if (!db) return;
-  try {
-    const docRef = doc(collection(db, 'weekly-rewards-processed'), weekId);
-    await setDoc(docRef, {
-      weekId,
-      processedAt: new Date().toISOString(),
-      ...summary,
-    });
-  } catch (error) {
-    console.error('Error marking as processed:', error);
-  }
+  await prisma.analyticsEvent.create({
+    data: {
+      eventType: `weekly-rewards-${weekId}`,
+      metadata: {
+        weekId,
+        processedAt: new Date().toISOString(),
+        ...summary,
+      },
+    },
+  });
 }
 
 /**
@@ -88,19 +92,19 @@ export async function GET() {
       });
     }
 
-    console.log(`[Weekly Rewards] Processing rewards for ${weekId}...`);
+    logger.info(`Processing rewards for ${weekId}`, 'cron:weekly-rewards');
 
     // Generate leaderboards from metrics
-    console.log('[Weekly Rewards] Generating leaderboards...');
+    logger.info('Generating leaderboards', 'cron:weekly-rewards');
     const leaderboards = await generateWeeklyLeaderboards(weekId);
 
     // Calculate reward distributions
-    console.log('[Weekly Rewards] Calculating reward distributions...');
+    logger.info('Calculating reward distributions', 'cron:weekly-rewards');
     const distributions = calculateContentRewards(leaderboards);
 
     // Store distributions for admin review
     if (distributions.length > 0) {
-      console.log(`[Weekly Rewards] Storing ${distributions.length} reward distributions...`);
+      logger.info(`Storing ${distributions.length} reward distributions`, 'cron:weekly-rewards');
       await storeRewardDistributions(distributions);
     }
 
@@ -135,7 +139,7 @@ export async function GET() {
     // Mark as processed
     await markAsProcessed(weekId, summary);
 
-    console.log(`[Weekly Rewards] Completed. ${distributions.length} rewards pending.`);
+    logger.info(`Completed. ${distributions.length} rewards pending`, 'cron:weekly-rewards');
 
     return NextResponse.json({
       success: true,
@@ -144,7 +148,7 @@ export async function GET() {
       duration: Date.now() - startTime,
     });
   } catch (error) {
-    console.error('[Weekly Rewards] Error:', error);
+    logger.error('Weekly rewards cron failed', 'cron:weekly-rewards', error);
 
     return NextResponse.json(
       {
@@ -212,12 +216,12 @@ export async function POST(request: Request) {
       forceRegenerate,
     });
   } catch (error) {
-    console.error('[Weekly Rewards POST] Error:', error);
+    logger.error('Weekly rewards POST failed', 'cron:weekly-rewards', error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Weekly rewards processing failed',
       },
       { status: 500 }
     );
