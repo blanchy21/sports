@@ -153,16 +153,16 @@ export function validateCsrf(request: NextRequest): boolean {
  * }
  * ```
  */
-export async function withCsrfProtection(
+export async function withCsrfProtection<R extends NextResponse = NextResponse>(
   request: NextRequest,
-  handler: () => Promise<NextResponse>
-): Promise<NextResponse> {
+  handler: () => Promise<R>
+): Promise<R> {
   const isValid = validateCsrf(request);
 
   if (!isValid) {
     const origin = request.headers.get('origin') || 'none';
     console.warn(`[CSRF] Blocked request from origin: ${origin}`);
-    return csrfError('Request blocked: invalid origin');
+    return csrfError('Request blocked: invalid origin') as R;
   }
 
   return handler();
