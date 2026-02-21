@@ -18,6 +18,7 @@ import { decryptSession } from '@/lib/api/session-auth';
 import { getSessionEncryptionKey } from '@/lib/api/session-encryption';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/next-auth-options';
+import { verifyChallenge, verifyHivePostingSignature } from '@/lib/auth/hive-challenge';
 
 const SESSION_COOKIE_NAME = 'sb_session';
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
@@ -26,16 +27,27 @@ const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16; // 128 bits
 
-// Validation schema for session data
+// Validation schema for session data (includes optional challenge fields for Hive auth)
 const sessionSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
   username: z.string().min(1, 'Username is required'),
   authType: z.enum(['hive', 'soft', 'guest']),
   hiveUsername: z.string().optional(),
   loginAt: z.number().optional(),
+  // Challenge-response fields for Hive wallet verification (stripped before storing in cookie)
+  challenge: z.string().optional(),
+  challengeMac: z.string().optional(),
+  signature: z.string().optional(),
 });
 
-type SessionData = z.infer<typeof sessionSchema>;
+// Session data stored in cookie (without challenge artifacts)
+type SessionData = {
+  userId: string;
+  username: string;
+  authType: 'hive' | 'soft' | 'guest';
+  hiveUsername?: string;
+  loginAt?: number;
+};
 
 /**
  * Encrypt session data for secure cookie storage.
@@ -73,7 +85,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid session data' }, { status: 400 });
     }
 
-    const sessionData = parseResult.data;
+    const { challenge, challengeMac, signature, ...sessionFields } = parseResult.data;
+    const sessionData: SessionData = sessionFields;
+
+    // For Hive auth: verify wallet ownership via challenge-response
+    if (sessionData.authType === 'hive') {
+      // Session refresh: if the caller has a valid cookie for the same user+authType, allow
+      // without re-signing (e.g., page reload, profile update, activity touch)
+      const cookieStore = await cookies();
+      const existingCookie = cookieStore.get(SESSION_COOKIE_NAME);
+      let isSessionRefresh = false;
+
+      if (existingCookie?.value) {
+        const existing = decryptSession(existingCookie.value);
+        if (
+          existing &&
+          existing.authType === 'hive' &&
+          existing.username === sessionData.username
+        ) {
+          isSessionRefresh = true;
+        }
+      }
+
+      if (!isSessionRefresh) {
+        // Fresh login: require challenge + signature
+        if (!challenge || !challengeMac || !signature) {
+          return NextResponse.json(
+            { success: false, error: 'Hive auth requires challenge-response verification' },
+            { status: 401 }
+          );
+        }
+
+        // Verify challenge integrity and expiry
+        const challengeResult = verifyChallenge(challenge, challengeMac, sessionData.username);
+        if (!challengeResult.valid) {
+          return NextResponse.json(
+            { success: false, error: `Challenge verification failed: ${challengeResult.reason}` },
+            { status: 401 }
+          );
+        }
+
+        // Verify the Hive signature against on-chain posting keys
+        const sigResult = await verifyHivePostingSignature(
+          challenge,
+          signature,
+          sessionData.username
+        );
+        if (!sigResult.valid) {
+          return NextResponse.json(
+            { success: false, error: `Signature verification failed: ${sigResult.reason}` },
+            { status: 401 }
+          );
+        }
+      }
+    }
 
     // For custodial (soft) auth, verify the caller owns this identity via NextAuth
     if (sessionData.authType === 'soft') {

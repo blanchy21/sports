@@ -99,6 +99,19 @@ export function createAuthMockFetch(mockOptions: MockFetchOptions = {}) {
       });
     }
 
+    // Handle hive challenge API (for wallet verification)
+    if (urlStr.includes('/api/auth/hive-challenge')) {
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            success: true,
+            challenge: 'sportsblock-auth:testuser:abc123:' + Date.now(),
+            mac: 'mock-mac-for-testing',
+          }),
+      });
+    }
+
     // Default response for other API calls
     return Promise.resolve({
       ok: true,

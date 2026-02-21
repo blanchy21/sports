@@ -83,6 +83,7 @@ const aiohaStub = {
   },
   providers: {},
   logout: jest.fn(),
+  signMessage: jest.fn().mockResolvedValue({ success: true, result: 'mock-signature-hex' }),
 };
 
 // Setup localStorage mock
@@ -111,6 +112,9 @@ describe('AuthProvider + Aioha integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.clear();
+
+    // Re-set signMessage mock after clearAllMocks
+    aiohaStub.signMessage.mockResolvedValue({ success: true, result: 'mock-signature-hex' });
 
     useAiohaMock.mockReturnValue({
       aioha: aiohaStub,

@@ -199,7 +199,9 @@ export async function signAndBroadcast(
 
     return { transactionId: result.id };
   } finally {
-    // Ensure decrypted key is discarded from memory
+    // Clear reference to decrypted key. Note: setting to null does NOT securely
+    // wipe the string from heap memory — JavaScript provides no mechanism for that.
+    // The original string remains until garbage-collected.
     postingKeyString = null;
   }
 }

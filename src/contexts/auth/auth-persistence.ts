@@ -86,6 +86,16 @@ export const fetchSessionFromCookie = async (): Promise<SessionResponse> => {
 };
 
 /**
+ * Challenge data for Hive wallet verification.
+ * Passed during initial login, not needed for session refreshes.
+ */
+export interface ChallengeData {
+  challenge: string;
+  challengeMac: string;
+  signature: string;
+}
+
+/**
  * Sync session to httpOnly cookie for server-side validation.
  * This is the PRIMARY storage for auth state.
  */
@@ -95,13 +105,17 @@ export const syncSessionCookie = async (sessionData: {
   authType: AuthType;
   hiveUsername?: string;
   loginAt?: number;
+  challengeData?: ChallengeData;
 }): Promise<boolean> => {
   try {
+    const { challengeData, ...coreData } = sessionData;
+    const body = challengeData ? { ...coreData, ...challengeData } : coreData;
+
     const response = await fetch('/api/auth/sb-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify(sessionData),
+      body: JSON.stringify(body),
     });
     return response.ok;
   } catch (error) {
@@ -200,6 +214,7 @@ let pendingPersistState: {
   authType: AuthType;
   hiveUser: HiveAuthUser | null;
   loginAt?: number;
+  challengeData?: ChallengeData;
 } | null = null;
 
 let persistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -217,6 +232,7 @@ const executePersist = async (): Promise<void> => {
     authType: authTypeToPersist,
     hiveUser: hiveUserToPersist,
     loginAt: loginAtToPersist,
+    challengeData: challengeDataToPersist,
   } = pendingPersistState;
   pendingPersistState = null;
 
@@ -234,6 +250,7 @@ const executePersist = async (): Promise<void> => {
       authType: authTypeToPersist,
       hiveUsername: hiveUserToPersist?.username,
       loginAt: loginAtToPersist ?? Date.now(),
+      challengeData: challengeDataToPersist,
     });
 
     // SECONDARY: Save non-sensitive UI hint for hydration
@@ -262,23 +279,29 @@ export const persistAuthState = ({
   authType: authTypeToPersist,
   hiveUser: hiveUserToPersist,
   loginAt: loginAtToPersist,
+  challengeData: challengeDataToPersist,
 }: {
   user: User | null;
   authType: AuthType;
   hiveUser: HiveAuthUser | null;
   loginAt?: number;
+  challengeData?: ChallengeData;
 }): void => {
   // Only persist on client-side
   if (typeof window === 'undefined') {
     return;
   }
 
-  // Store the latest state to persist
+  // Store the latest state to persist.
+  // When debounce coalesces calls, preserve existing challengeData if the
+  // new call doesn't provide it (the first call after login has it;
+  // subsequent profile/activity updates don't).
   pendingPersistState = {
     user: userToPersist,
     authType: authTypeToPersist,
     hiveUser: hiveUserToPersist,
     loginAt: loginAtToPersist,
+    challengeData: challengeDataToPersist ?? pendingPersistState?.challengeData,
   };
 
   // Clear any existing timer
