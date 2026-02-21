@@ -82,9 +82,9 @@ export async function createHiveAccountForUser(
   }
 
   // 3. Get creator key
-  const creatorActiveKey = process.env.ACCOUNT_CREATOR_ACTIVE_KEY;
+  const creatorActiveKey = process.env.OPERATIONS_ACTIVE_KEY;
   if (!creatorActiveKey) {
-    throw new Error('ACCOUNT_CREATOR_ACTIVE_KEY is not configured');
+    throw new Error('OPERATIONS_ACTIVE_KEY is not configured');
   }
 
   // 4. Generate master password and derive keys
