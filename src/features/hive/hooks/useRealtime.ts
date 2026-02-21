@@ -3,10 +3,42 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 
 // Local type definitions — mirrors realtime.ts without importing server-only code
-export interface RealtimeEvent {
-  type: 'new_post' | 'new_vote' | 'new_comment';
-  [key: string]: unknown;
+export interface RealtimePostEvent {
+  type: 'new_post';
+  data: {
+    author: string;
+    permlink: string;
+    title: string;
+    body: string;
+    created: string;
+    sportCategory?: string;
+  };
 }
+
+export interface RealtimeVoteEvent {
+  type: 'new_vote';
+  data: {
+    voter: string;
+    author: string;
+    permlink: string;
+    weight: number;
+    timestamp: string;
+  };
+}
+
+export interface RealtimeCommentEvent {
+  type: 'new_comment';
+  data: {
+    author: string;
+    permlink: string;
+    parentAuthor: string;
+    parentPermlink: string;
+    body: string;
+    created: string;
+  };
+}
+
+export type RealtimeEvent = RealtimePostEvent | RealtimeVoteEvent | RealtimeCommentEvent;
 
 export type RealtimeEventCallback = (event: RealtimeEvent) => void;
 
@@ -198,7 +230,7 @@ export function useRealtimeEvent<T extends RealtimeEvent>(
  * Hook for monitoring new posts
  */
 export function useNewPosts(
-  callback: (event: RealtimeEvent & { type: 'new_post' }) => void,
+  callback: (event: RealtimePostEvent) => void,
   enabled: boolean = true
 ) {
   useRealtimeEvent('new_post', callback, enabled);
@@ -208,7 +240,7 @@ export function useNewPosts(
  * Hook for monitoring new votes
  */
 export function useNewVotes(
-  callback: (event: RealtimeEvent & { type: 'new_vote' }) => void,
+  callback: (event: RealtimeVoteEvent) => void,
   enabled: boolean = true
 ) {
   useRealtimeEvent('new_vote', callback, enabled);
@@ -218,7 +250,7 @@ export function useNewVotes(
  * Hook for monitoring new comments
  */
 export function useNewComments(
-  callback: (event: RealtimeEvent & { type: 'new_comment' }) => void,
+  callback: (event: RealtimeCommentEvent) => void,
   enabled: boolean = true
 ) {
   useRealtimeEvent('new_comment', callback, enabled);

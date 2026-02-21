@@ -6,8 +6,8 @@ import {
   useNewPosts,
   useNewVotes,
   useNewComments,
+  type RealtimeEvent,
 } from '@/features/hive/hooks/useRealtime';
-import { RealtimeEvent } from '@/lib/hive-workerbee/realtime';
 import { Button } from '@/components/core/Button';
 import { Card } from '@/components/core/Card';
 import { Badge } from '@/components/core/Badge';
