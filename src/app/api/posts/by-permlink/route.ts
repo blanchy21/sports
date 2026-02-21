@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         where: { id: post.id },
         data: { viewCount: { increment: 1 } },
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error('Failed to increment view count:', err instanceof Error ? err.message : err);
       });
 

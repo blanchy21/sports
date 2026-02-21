@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { Client, PrivateKey } from '@hiveio/dhive';
 import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
 import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@/generated/prisma/client';
 import { logger } from '@/lib/logger';
 import { isValidHiveUsername, checkUsernameAvailability } from './username';
 import { encryptKeys } from './key-encryption';
@@ -188,7 +189,7 @@ export async function createHiveAccountForUser(
   // 8. Update database — use updateMany with hiveUsername: null guard to prevent
   // double-writes from concurrent requests that both passed the null check above.
   try {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.custodialUser.updateMany({
         where: { id: custodialUserId, hiveUsername: null },
         data: {

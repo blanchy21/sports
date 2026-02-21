@@ -63,7 +63,7 @@ export async function GET() {
         });
 
         const deleteResult = await prisma.notification.deleteMany({
-          where: { id: { in: toDelete.map((n) => n.id) } },
+          where: { id: { in: toDelete.map((n: { id: string }) => n.id) } },
         });
 
         results.notificationsDeleted += deleteResult.count;

@@ -79,7 +79,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
           where: { id },
           data: { viewCount: { increment: 1 } },
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           console.error(
             'Failed to increment view count:',
             err instanceof Error ? err.message : err

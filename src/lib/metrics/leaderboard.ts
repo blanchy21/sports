@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/db/prisma';
-import { Prisma } from '@/generated/prisma/client';
+import { Prisma, type ContentReward } from '@/generated/prisma/client';
 import { getWeekId } from '@/lib/rewards/staking-distribution';
 import { CONTENT_REWARDS, getPlatformYear } from '@/lib/rewards/config';
 import type {
@@ -316,7 +316,7 @@ export async function getRewardDistributions(weekId: string): Promise<ContentRew
       where: { weekId },
     });
 
-    return rewards.map((r) => ({
+    return rewards.map((r: ContentReward) => ({
       weekId: r.weekId,
       category: r.category as RewardCategory,
       winner: r.winner as unknown as { account: string; postId?: string; value: number },
