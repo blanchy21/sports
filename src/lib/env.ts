@@ -86,9 +86,6 @@ export const serverEnv = {
     debug: getOptionalEnv('WAX_DEBUG') === 'true',
     timeout: parseInt(getOptionalEnv('WAX_TIMEOUT', '30000') || '30000'),
   },
-  tenor: {
-    apiKey: getOptionalEnv('TENOR_API_KEY'),
-  },
   sentry: {
     dsn: getOptionalEnv('NEXT_PUBLIC_SENTRY_DSN'),
   },
@@ -178,10 +175,6 @@ export function validateEnvironment(): ValidationResult {
   // ========================================
   // OPTIONAL but Recommended
   // ========================================
-
-  if (!serverEnv.tenor.apiKey) {
-    warnings.push('TENOR_API_KEY not configured. GIF picker will not work.');
-  }
 
   if (!serverEnv.sentry.dsn) {
     warnings.push('NEXT_PUBLIC_SENTRY_DSN not configured. Error tracking is disabled.');
