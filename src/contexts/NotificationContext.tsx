@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
-import type { Notification, NotificationContextType } from './notifications/types';
+import type { NotificationContextType } from './notifications/types';
 import { useNotificationStorage } from './notifications/useNotificationStorage';
 import { useHiveNotifications } from './notifications/useHiveNotifications';
 import { useSoftNotifications } from './notifications/useSoftNotifications';

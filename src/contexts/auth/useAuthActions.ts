@@ -330,7 +330,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
   const logout = useCallback(async () => {
     abortFetch();
 
-    const { hiveUser, authType } = getState();
+    const { hiveUser } = getState();
 
     if (hiveUser?.provider && aioha) {
       try {

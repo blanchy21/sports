@@ -8,7 +8,6 @@ import {
   forbiddenError,
 } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { CommunityType } from '@/types';
 import { Prisma } from '@/generated/prisma/client';
 
 export const runtime = 'nodejs';

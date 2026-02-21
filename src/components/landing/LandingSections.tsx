@@ -211,6 +211,7 @@ export default function LandingSections() {
               key={i}
               className="mx-2 h-32 w-52 flex-shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
             </div>
           ))}
@@ -236,6 +237,7 @@ export default function LandingSections() {
               key={i}
               className="mx-2 h-32 w-52 flex-shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
             </div>
           ))}
