@@ -8,12 +8,10 @@ function getEncryptionKey(salt: Buffer): Buffer {
   const secret = process.env.KEY_ENCRYPTION_SECRET;
 
   if (!secret) {
-    if (process.env.NODE_ENV !== 'development') {
-      throw new Error(
-        'KEY_ENCRYPTION_SECRET environment variable is required in non-development environments'
-      );
-    }
-    return crypto.scryptSync('development-only-insecure-key-encryption', salt, 32);
+    throw new Error(
+      'KEY_ENCRYPTION_SECRET environment variable is required. ' +
+        'Set it in .env.local for development.'
+    );
   }
 
   return crypto.scryptSync(secret, salt, 32);

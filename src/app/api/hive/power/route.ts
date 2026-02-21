@@ -17,6 +17,7 @@ import {
   createCancelPowerDownOperation,
 } from '@/lib/hive-workerbee/wax-helpers';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -225,6 +226,12 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   return withCsrfProtection(request, async () => {
+    // Require authentication for financial operations
+    const user = await getAuthenticatedUserFromSession(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     try {
       const body = await request.json();
       const { action, account, amount, to } = body;
@@ -232,6 +239,14 @@ export async function POST(request: NextRequest) {
       // Validate account
       if (!account || !isValidAccountName(account)) {
         return NextResponse.json({ error: 'Valid account is required' }, { status: 400 });
+      }
+
+      // Verify the authenticated user matches the account
+      if (user.hiveUsername !== account && user.username !== account) {
+        return NextResponse.json(
+          { error: 'Cannot build operations for other accounts' },
+          { status: 403 }
+        );
       }
 
       // Handle different actions

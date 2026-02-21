@@ -46,6 +46,69 @@ function isAllowedDomain(url: string): boolean {
   }
 }
 
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+
+/**
+ * Read an image response, validate content type/size, and return proxied response.
+ */
+async function processImageResponse(
+  response: Response,
+  imageUrl: string,
+  ctx: ReturnType<typeof createRequestContext>
+): Promise<NextResponse> {
+  // Validate response is actually an image
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.startsWith('image/')) {
+    ctx.log.warn('Non-image content type from proxy', { imageUrl, contentType });
+    return forbiddenError('URL does not point to an image', ctx.requestId) as NextResponse;
+  }
+
+  // Enforce size limit via Content-Length header
+  const contentLength = response.headers.get('content-length');
+  if (contentLength && parseInt(contentLength, 10) > MAX_IMAGE_SIZE) {
+    ctx.log.warn('Image too large for proxy', { imageUrl, contentLength });
+    return forbiddenError('Image too large', ctx.requestId) as NextResponse;
+  }
+
+  // Stream body with hard size limit (Content-Length can be spoofed)
+  const reader = response.body?.getReader();
+  if (!reader) {
+    return internalError('No response body', ctx.requestId) as NextResponse;
+  }
+  const chunks: Uint8Array[] = [];
+  let totalSize = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalSize += value.byteLength;
+      if (totalSize > MAX_IMAGE_SIZE) {
+        reader.cancel();
+        ctx.log.warn('Image exceeded streaming size limit', { imageUrl, totalSize });
+        return forbiddenError('Image too large', ctx.requestId) as NextResponse;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const imageBuffer = Buffer.concat(chunks);
+
+  // Return the image with proper CORS headers
+  const allowedOrigin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+  return new NextResponse(imageBuffer, {
+    status: 200,
+    headers: {
+      'Content-Type': contentType,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Access-Control-Allow-Origin': allowedOrigin,
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
+
 export async function GET(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
@@ -84,13 +147,36 @@ export async function GET(request: NextRequest) {
   try {
     ctx.log.debug('Proxying image', { imageUrl });
 
-    // Fetch the image
+    // Fetch the image (manual redirect to prevent SSRF via redirect to private IPs)
     const response = await fetch(imageUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; Sportsblock/1.0)',
       },
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      redirect: 'manual',
+      signal: AbortSignal.timeout(10000),
     });
+
+    // If redirect, validate the target domain is still allowed
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
+      if (!location || !isAllowedDomain(location)) {
+        ctx.log.warn('Image proxy blocked redirect to disallowed domain', {
+          imageUrl,
+          redirectTo: location,
+        });
+        return forbiddenError('Image redirect to disallowed domain', ctx.requestId);
+      }
+      // Re-fetch from the validated redirect target
+      const redirectResponse = await fetch(location, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Sportsblock/1.0)' },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(10000),
+      });
+      if (redirectResponse.status >= 300) {
+        return forbiddenError('Too many redirects', ctx.requestId);
+      }
+      return processImageResponse(redirectResponse, imageUrl, ctx);
+    }
 
     if (!response.ok) {
       ctx.log.warn('Image fetch failed', { imageUrl, status: response.status });
@@ -100,59 +186,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Validate response is actually an image
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.startsWith('image/')) {
-      ctx.log.warn('Non-image content type from proxy', { imageUrl, contentType });
-      return forbiddenError('URL does not point to an image', ctx.requestId);
-    }
-
-    // Enforce 10MB size limit via Content-Length header and streaming reader
-    const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
-    const contentLength = response.headers.get('content-length');
-    if (contentLength && parseInt(contentLength, 10) > MAX_IMAGE_SIZE) {
-      ctx.log.warn('Image too large for proxy', { imageUrl, contentLength });
-      return forbiddenError('Image too large', ctx.requestId);
-    }
-
-    // Stream body with hard size limit (Content-Length can be spoofed)
-    const reader = response.body?.getReader();
-    if (!reader) {
-      return internalError('No response body', ctx.requestId);
-    }
-    const chunks: Uint8Array[] = [];
-    let totalSize = 0;
-    try {
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        totalSize += value.byteLength;
-        if (totalSize > MAX_IMAGE_SIZE) {
-          reader.cancel();
-          ctx.log.warn('Image exceeded streaming size limit', { imageUrl, totalSize });
-          return forbiddenError('Image too large', ctx.requestId);
-        }
-        chunks.push(value);
-      }
-    } finally {
-      reader.releaseLock();
-    }
-    const imageBuffer = Buffer.concat(chunks);
-
-    // Return the image with proper CORS headers
-    // Restrict CORS to app domain only (prevents abuse from malicious sites)
-    const allowedOrigin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-    return new NextResponse(imageBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable', // Cache for 1 year
-        'Access-Control-Allow-Origin': allowedOrigin,
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    });
+    return processImageResponse(response, imageUrl, ctx);
   } catch (error) {
     // Handle timeout specifically
     if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {

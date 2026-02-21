@@ -15,6 +15,7 @@ type DOMPurifyInstance = {
 };
 
 let _DOMPurify: DOMPurifyInstance | null = null;
+let _hookInstalled = false;
 
 function getDOMPurify(): DOMPurifyInstance {
   if (!_DOMPurify) {
@@ -22,6 +23,37 @@ function getDOMPurify(): DOMPurifyInstance {
     const mod = require('isomorphic-dompurify');
     _DOMPurify = mod.default || mod;
   }
+
+  // Install the iframe-src validation hook once to avoid stacking on concurrent calls
+  if (!_hookInstalled && _DOMPurify) {
+    _DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+      if (node.tagName === 'IFRAME') {
+        const src = node.getAttribute('src') || '';
+        try {
+          const url = new URL(src);
+          const hostname = url.hostname.toLowerCase();
+          const allowed =
+            hostname === 'youtube.com' ||
+            hostname === 'www.youtube.com' ||
+            hostname === 'youtube-nocookie.com' ||
+            hostname === 'www.youtube-nocookie.com' ||
+            hostname === 'vimeo.com' ||
+            hostname === 'player.vimeo.com' ||
+            hostname === '3speak.tv' ||
+            hostname === 'www.3speak.tv' ||
+            hostname.endsWith('.3speak.tv');
+          if (!allowed) {
+            node.removeAttribute('src');
+          }
+        } catch {
+          // Invalid URL — remove src
+          node.removeAttribute('src');
+        }
+      }
+    });
+    _hookInstalled = true;
+  }
+
   return _DOMPurify!;
 }
 
@@ -125,38 +157,8 @@ export function sanitizeHtml(dirty: string, strict = false): string {
 
   const purify = getDOMPurify();
 
-  // Restrict iframe src to whitelisted video domains
-  purify.addHook('afterSanitizeAttributes', (node) => {
-    if (node.tagName === 'IFRAME') {
-      const src = node.getAttribute('src') || '';
-      try {
-        const url = new URL(src);
-        const hostname = url.hostname.toLowerCase();
-        const allowed =
-          hostname === 'youtube.com' ||
-          hostname === 'www.youtube.com' ||
-          hostname === 'youtube-nocookie.com' ||
-          hostname === 'www.youtube-nocookie.com' ||
-          hostname === 'vimeo.com' ||
-          hostname === 'player.vimeo.com' ||
-          hostname === '3speak.tv' ||
-          hostname === 'www.3speak.tv' ||
-          hostname.endsWith('.3speak.tv');
-        if (!allowed) {
-          node.removeAttribute('src');
-        }
-      } catch {
-        // Invalid URL — remove src
-        node.removeAttribute('src');
-      }
-    }
-  });
-
-  // Sanitize the HTML
+  // Sanitize the HTML (iframe-src hook is installed once in getDOMPurify)
   let clean = purify.sanitize(dirty, config);
-
-  // Remove hook to avoid stacking on repeated calls
-  purify.removeHook('afterSanitizeAttributes');
 
   // Post-process: ensure all links have security attributes
   clean = clean.replace(/<a\s+([^>]*?)>/gi, (match, attrs) => {
@@ -553,7 +555,7 @@ export function validateImageUrl(url: string): {
   // Additional image-specific checks
   const parsed = new URL(result.url!);
 
-  // Block localhost, private IPs, and IPv6 private ranges in production
+  // Block localhost, private IPs, and IPv6 private ranges
   const hostname = parsed.hostname.toLowerCase();
   const isPrivate =
     hostname === 'localhost' ||
@@ -563,6 +565,7 @@ export function validateImageUrl(url: string): {
     hostname === '[::1]' ||
     hostname.startsWith('192.168.') ||
     hostname.startsWith('10.') ||
+    hostname.startsWith('169.254.') ||
     /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
     hostname.startsWith('fd') ||
     hostname.startsWith('fe80') ||
@@ -570,9 +573,7 @@ export function validateImageUrl(url: string): {
     /^0x/i.test(hostname) ||
     /^0[0-7]+\./.test(hostname);
   if (isPrivate) {
-    if (process.env.NODE_ENV === 'production') {
-      return { valid: false, error: 'Private URLs not allowed' };
-    }
+    return { valid: false, error: 'Private URLs not allowed' };
   }
 
   // Check if URL looks like an image
