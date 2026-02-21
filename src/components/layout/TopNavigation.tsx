@@ -33,7 +33,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { cn } from '@/lib/utils/client';
 import { logger } from '@/lib/logger';
-import { fetchUserAccount } from '@/lib/hive-workerbee/account';
 
 type SearchResult = {
   username: string;
@@ -86,10 +85,17 @@ export const TopNavigation: React.FC = () => {
           const results: SearchResult[] = [];
 
           // Search Hive and soft users in parallel
-          // Note: fetchUserAccount is server-side and doesn't accept AbortSignal
           const [hiveResult, softResult] = await Promise.allSettled([
-            // Hive user search
-            fetchUserAccount(searchQuery).catch(() => null),
+            // Hive user search via API route (WorkerBee is server-only)
+            fetch(`/api/hive/account/summary?username=${encodeURIComponent(searchQuery)}`, {
+              signal: controller.signal,
+            })
+              .then(async (r) => {
+                if (!r.ok) return null;
+                const json = await r.json();
+                return json.success ? json.account : null;
+              })
+              .catch(() => null),
             // Soft user search via API (supports abort)
             fetch(`/api/soft/users?search=${encodeURIComponent(searchQuery)}`, {
               signal: controller.signal,

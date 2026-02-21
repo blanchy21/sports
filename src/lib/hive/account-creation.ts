@@ -100,7 +100,38 @@ export async function createHiveAccountForUser(
   const postingPublic = postingKey.createPublic().toString();
   const memoPublic = memoKey.createPublic().toString();
 
-  // 5. Broadcast create_claimed_account
+  // 5. Encrypt keys BEFORE broadcast — if encryption fails here, no on-chain action
+  // has occurred yet so the error is recoverable.
+  const keysPayload = JSON.stringify({
+    master: masterPassword,
+    owner: ownerKey.toString(),
+    active: activeKey.toString(),
+    posting: postingKey.toString(),
+    memo: memoKey.toString(),
+  });
+
+  let encrypted: string;
+  let iv: string;
+  let salt: string;
+  try {
+    const encResult = encryptKeys(keysPayload);
+    encrypted = encResult.encrypted;
+    iv = encResult.iv;
+    salt = encResult.salt;
+  } catch (encryptError) {
+    logger.error(
+      `Key encryption failed before account creation for username @${username}. ` +
+        `CustodialUser ID: ${custodialUserId}. No on-chain action taken.`,
+      'account-creation',
+      encryptError instanceof Error ? encryptError : undefined
+    );
+    throw new AccountCreationError(
+      'Account setup failed during key preparation. Please try again.',
+      'ENCRYPTION_FAILED'
+    );
+  }
+
+  // 6. Broadcast create_claimed_account (keys are already encrypted above)
   const createOp: [string, object] = [
     'create_claimed_account',
     {
@@ -138,7 +169,7 @@ export async function createHiveAccountForUser(
 
   logger.info(`Hive account @${username} created successfully`, 'account-creation');
 
-  // 6. Delegate RC (non-fatal if this fails)
+  // 7. Delegate RC (non-fatal if this fails)
   let rcDelegated = true;
   try {
     await delegateRcToUser(username);
@@ -154,58 +185,38 @@ export async function createHiveAccountForUser(
     );
   }
 
-  // 7. Encrypt keys
-  const keysPayload = JSON.stringify({
-    master: masterPassword,
-    owner: ownerKey.toString(),
-    active: activeKey.toString(),
-    posting: postingKey.toString(),
-    memo: memoKey.toString(),
-  });
-
-  let encrypted: string;
-  let iv: string;
-  let salt: string;
+  // 8. Update database — use updateMany with hiveUsername: null guard to prevent
+  // double-writes from concurrent requests that both passed the null check above.
   try {
-    const result = encryptKeys(keysPayload);
-    encrypted = result.encrypted;
-    iv = result.iv;
-    salt = result.salt;
-  } catch (encryptError) {
-    logger.error(
-      `CRITICAL: Hive account @${username} created on-chain but key encryption failed. ` +
-        `CustodialUser ID: ${custodialUserId}. Keys are LOST. ` +
-        `Manual account recovery required.`,
-      'account-creation',
-      encryptError instanceof Error ? encryptError : undefined
-    );
-    throw new AccountCreationError(
-      'Account was created but key storage failed. Please contact support immediately.',
-      'ENCRYPTION_FAILED'
-    );
-  }
-
-  // 8. Update database
-  try {
-    await prisma.$transaction([
-      prisma.custodialUser.update({
-        where: { id: custodialUserId },
+    await prisma.$transaction(async (tx) => {
+      const updated = await tx.custodialUser.updateMany({
+        where: { id: custodialUserId, hiveUsername: null },
         data: {
           hiveUsername: username,
           encryptedKeys: encrypted,
           encryptionIv: iv,
           encryptionSalt: salt,
         },
-      }),
-      prisma.accountToken.create({
+      });
+
+      if (updated.count === 0) {
+        // A concurrent request already wrote the hiveUsername — idempotent, not an error.
+        logger.warn(
+          `Account @${username} DB row already set for custodialUserId ${custodialUserId} — concurrent request resolved first.`,
+          'account-creation'
+        );
+        return;
+      }
+
+      await tx.accountToken.create({
         data: {
           hiveUsername: username,
           status: 'CLAIMED',
           claimedAt: new Date(),
           userId: custodialUserId,
         },
-      }),
-    ]);
+      });
+    });
   } catch (dbError) {
     // Critical: account exists on-chain but DB not updated
     logger.error(

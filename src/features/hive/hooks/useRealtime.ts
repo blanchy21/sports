@@ -1,13 +1,14 @@
+'use client';
+
 import { useEffect, useCallback, useRef, useState } from 'react';
-import {
-  RealtimeEvent,
-  RealtimeEventCallback,
-  addRealtimeCallback,
-  removeRealtimeCallback,
-  startRealtimeMonitoring,
-  stopRealtimeMonitoring,
-  getRealtimeStatus,
-} from '@/lib/hive-workerbee/realtime';
+
+// Local type definitions — mirrors realtime.ts without importing server-only code
+export interface RealtimeEvent {
+  type: 'new_post' | 'new_vote' | 'new_comment';
+  [key: string]: unknown;
+}
+
+export type RealtimeEventCallback = (event: RealtimeEvent) => void;
 
 /**
  * Realtime monitoring state
@@ -38,18 +39,14 @@ export function useRealtime() {
   // Clean up callbacks on unmount
   useEffect(() => {
     return () => {
-      callbacksRef.current.forEach((callback) => {
-        removeRealtimeCallback(callback);
-      });
       callbacksRef.current = [];
     };
   }, []);
 
   /**
-   * Add event callback
+   * Add event callback (client-local — events dispatched via polling/SSE in future)
    */
   const addCallback = useCallback((callback: RealtimeEventCallback) => {
-    addRealtimeCallback(callback);
     callbacksRef.current.push(callback);
   }, []);
 
@@ -57,7 +54,6 @@ export function useRealtime() {
    * Remove event callback
    */
   const removeCallback = useCallback((callback: RealtimeEventCallback) => {
-    removeRealtimeCallback(callback);
     const index = callbacksRef.current.indexOf(callback);
     if (index > -1) {
       callbacksRef.current.splice(index, 1);
@@ -71,7 +67,9 @@ export function useRealtime() {
     setState((prev) => ({ ...prev, isConnecting: true, error: null }));
 
     try {
-      await startRealtimeMonitoring();
+      const res = await fetch('/api/hive/realtime', { method: 'POST' });
+      if (!res.ok) throw new Error(`Failed to start monitoring: ${res.status}`);
+
       setState({
         isMonitoring: true,
         isConnecting: false,
@@ -115,7 +113,9 @@ export function useRealtime() {
    */
   const stopMonitoring = useCallback(async (): Promise<boolean> => {
     try {
-      await stopRealtimeMonitoring();
+      const res = await fetch('/api/hive/realtime', { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Failed to stop monitoring: ${res.status}`);
+
       setState((prev) => ({
         ...prev,
         isMonitoring: false,
@@ -140,11 +140,11 @@ export function useRealtime() {
   }, []);
 
   /**
-   * Get monitoring status
+   * Get monitoring status from local state
    */
   const getStatus = useCallback(() => {
-    return getRealtimeStatus();
-  }, []);
+    return { isRunning: state.isMonitoring };
+  }, [state.isMonitoring]);
 
   return {
     // State

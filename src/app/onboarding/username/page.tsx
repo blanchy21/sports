@@ -140,7 +140,7 @@ export default function OnboardingUsernamePage() {
 
       // Ensure session cookie is synced before navigating
       // (persistAuthState is debounced — we need the cookie set NOW)
-      await fetch('/api/auth/sb-session', {
+      const sessionRes = await fetch('/api/auth/sb-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -151,6 +151,11 @@ export default function OnboardingUsernamePage() {
           loginAt: Date.now(),
         }),
       });
+
+      if (!sessionRes.ok) {
+        setError('Account created but session setup failed. Please sign in again.');
+        return;
+      }
 
       // Success — redirect to main feed
       router.replace('/sportsbites');

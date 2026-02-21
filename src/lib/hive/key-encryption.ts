@@ -38,6 +38,10 @@ export function encryptKeys(keysJson: string): { encrypted: string; iv: string; 
 
 export function decryptKeys(encrypted: string, iv: string, salt?: string): string {
   // Support legacy keys encrypted with the old static salt
+  if (!salt) {
+    // TODO: Remove once all keys are re-encrypted with random salts (see account-creation.ts)
+    console.error('[key-encryption] decryptKeys: falling back to legacy static salt — this key was encrypted before random-salt support was added');
+  }
   const saltBuffer = salt
     ? Buffer.from(salt, 'base64')
     : Buffer.from('sportsblock-key-encryption-salt', 'utf8');

@@ -4,16 +4,21 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { queryKeys } from '@/lib/react-query/queryClient';
 import { logger } from '@/lib/logger';
-import {
-  castVote,
-  removeVote,
-  checkUserVote,
-  canUserVote,
-  calculateOptimalVoteWeight,
-  VoteData,
-  VoteResult,
-} from '@/lib/hive-workerbee/voting';
 import { HiveVote } from '@/lib/shared/types';
+
+// Local type definitions — avoids importing server-only hive-workerbee/voting
+interface VoteData {
+  voter: string;
+  author: string;
+  permlink: string;
+  weight: number; // percentage: -100 to 100
+}
+
+interface VoteResult {
+  success: boolean;
+  transactionId?: string;
+  error?: string;
+}
 
 export interface VoteState {
   isVoting: boolean;
@@ -50,11 +55,20 @@ async function fetchVoteStatus(
   permlink: string,
   username: string
 ): Promise<VoteStatusData> {
-  const [userVote, eligibility] = await Promise.all([
-    checkUserVote(author, permlink, username),
-    canUserVote(username),
-  ]);
-  return { userVote, eligibility };
+  const params = new URLSearchParams({ author, permlink, voter: username });
+  const res = await fetch(`/api/hive/votes/eligibility?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch vote status');
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Failed to fetch vote status');
+  return json.data as VoteStatusData;
+}
+
+function calculateOptimalWeight(votingPower: number): number {
+  if (votingPower >= 80) return 100;
+  if (votingPower >= 60) return 80;
+  if (votingPower >= 40) return 60;
+  if (votingPower >= 20) return 40;
+  return 20;
 }
 
 export function useVoting(author: string, permlink: string): UseVotingReturn {
@@ -79,8 +93,10 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
 
   // Mutation for casting votes
   const voteMutation = useMutation({
-    mutationFn: async (voteData: VoteData) => {
-      return await castVote(voteData, broadcast);
+    mutationFn: async (voteData: VoteData): Promise<VoteResult> => {
+      return await broadcast([
+        ['vote', { voter: voteData.voter, author: voteData.author, permlink: voteData.permlink, weight: Math.round(voteData.weight * 100) }],
+      ]);
     },
     onSuccess: (_result, variables) => {
       // Invalidate the vote status cache for this post
@@ -92,8 +108,10 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
 
   // Mutation for removing votes
   const removeVoteMutation = useMutation({
-    mutationFn: async (data: { voter: string; author: string; permlink: string }) => {
-      return await removeVote(data, broadcast);
+    mutationFn: async (data: { voter: string; author: string; permlink: string }): Promise<VoteResult> => {
+      return await broadcast([
+        ['vote', { voter: data.voter, author: data.author, permlink: data.permlink, weight: 0 }],
+      ]);
     },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({
@@ -124,7 +142,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
     }
 
     try {
-      const optimalWeight = await calculateOptimalVoteWeight(username);
+      const optimalWeight = calculateOptimalWeight(voteStatus?.eligibility.votingPower ?? 100);
       const voteData: VoteData = {
         voter: username,
         author,
@@ -139,7 +157,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
       const errorMessage = err instanceof Error ? err.message : 'Failed to cast vote';
       return { success: false, error: errorMessage };
     }
-  }, [author, permlink, username, canBroadcast, voteMutation]);
+  }, [author, permlink, username, canBroadcast, voteMutation, voteStatus]);
 
   // Cast a downvote (negative weight)
   const downvote = useCallback(async (): Promise<VoteResult> => {
@@ -148,7 +166,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
     }
 
     try {
-      const optimalWeight = await calculateOptimalVoteWeight(username);
+      const optimalWeight = calculateOptimalWeight(voteStatus?.eligibility.votingPower ?? 100);
       const voteData: VoteData = {
         voter: username,
         author,
@@ -163,7 +181,7 @@ export function useVoting(author: string, permlink: string): UseVotingReturn {
       const errorMessage = err instanceof Error ? err.message : 'Failed to cast vote';
       return { success: false, error: errorMessage };
     }
-  }, [author, permlink, username, canBroadcast, voteMutation]);
+  }, [author, permlink, username, canBroadcast, voteMutation, voteStatus]);
 
   // Cast a star-based vote (1-5 stars = 20%-100% weight)
   const starVote = useCallback(
