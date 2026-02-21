@@ -171,7 +171,7 @@ describe('Auth Race Conditions', () => {
         const urlStr =
           typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
 
-        if (urlStr.includes('/api/auth/session')) {
+        if (urlStr.includes('/api/auth/sb-session')) {
           const method = options?.method || 'GET';
           if (method === 'GET') {
             return Promise.resolve({

@@ -181,7 +181,7 @@ describe('AuthProvider + Aioha integration', () => {
     await waitFor(
       () => {
         const postCalls = authMock.mockFetch.mock.calls.filter(
-          (call) => call[1]?.method === 'POST' && String(call[0]).includes('/api/auth/session')
+          (call) => call[1]?.method === 'POST' && String(call[0]).includes('/api/auth/sb-session')
         );
         expect(postCalls.length).toBeGreaterThan(0);
       },

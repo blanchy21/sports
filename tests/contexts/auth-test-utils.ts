@@ -40,8 +40,8 @@ export function createAuthMockFetch(mockOptions: MockFetchOptions = {}) {
       typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
     const method = init?.method || 'GET';
 
-    // Handle session API
-    if (urlStr.includes('/api/auth/session')) {
+    // Handle session API (endpoint is /api/auth/sb-session)
+    if (urlStr.includes('/api/auth/sb-session')) {
       if (method === 'GET') {
         // Return current session state
         return Promise.resolve({
