@@ -39,42 +39,42 @@ const sports = [
   {
     name: 'Football',
     image: '/jason-charters-IorqsMssQH0-unsplash.jpg',
-    color: 'from-emerald-600/90 to-emerald-900/90',
+    color: 'from-[#3D9B70]/85 to-[#1C5940]/90',
   },
   {
     name: 'Basketball',
     image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80',
-    color: 'from-orange-500/90 to-red-700/90',
+    color: 'from-[#D47838]/85 to-[#7F4822]/90',
   },
   {
     name: 'Tennis',
     image: '/james-lewis-HqdJzlF89_g-unsplash.jpg',
-    color: 'from-lime-500/90 to-green-700/90',
+    color: 'from-[#6B9E3C]/85 to-[#3F5D24]/90',
   },
   {
     name: 'American Football',
     image: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=800&q=80',
-    color: 'from-amber-600/90 to-amber-800/90',
+    color: 'from-[#A67A30]/85 to-[#62491D]/90',
   },
   {
     name: 'Cricket',
     image: '/yogendra-singh-DKcN3Lyuuro-unsplash.jpg',
-    color: 'from-sky-500/90 to-blue-700/90',
+    color: 'from-[#3880B8]/85 to-[#214B6C]/90',
   },
   {
     name: 'Boxing',
     image: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&q=80',
-    color: 'from-red-600/90 to-red-900/90',
+    color: 'from-[#AD3939]/85 to-[#602020]/90',
   },
   {
     name: 'Rugby',
     image: '/stefan-lehner-fqrzserMsX4-unsplash.jpg',
-    color: 'from-teal-500/90 to-teal-800/90',
+    color: 'from-[#3A8F8F]/85 to-[#225454]/90',
   },
   {
     name: 'Golf',
     image: '/marcus-santos-A37jWpUFdlo-unsplash.jpg',
-    color: 'from-green-600/90 to-green-900/90',
+    color: 'from-[#358F54]/85 to-[#1F5431]/90',
   },
 ];
 
@@ -497,8 +497,8 @@ export default function LandingSections() {
                 title: 'Earn Daily',
                 description:
                   'Fresh reward pools every day. Quick takes earn HIVE and HBD just like full posts.',
-                color: 'text-emerald-500',
-                bg: 'bg-emerald-500/10',
+                color: 'text-[#2BAB78]',
+                bg: 'bg-[#2BAB78]/10',
               },
             ].map((item, index) => (
               <motion.div
@@ -637,28 +637,28 @@ export default function LandingSections() {
                     level: 'Getting Started',
                     upvotes: '1-5 upvotes',
                     earnings: '$0.01 - $0.50',
-                    color: 'bg-blue-500',
+                    color: 'bg-primary',
                     width: 'w-1/4',
                   },
                   {
                     level: 'Building Reputation',
                     upvotes: '5-20 upvotes',
                     earnings: '$0.50 - $3',
-                    color: 'bg-emerald-500',
+                    color: 'bg-[#2BAB78]',
                     width: 'w-1/2',
                   },
                   {
                     level: 'Established Creator',
                     upvotes: '20-50 upvotes',
                     earnings: '$3 - $10',
-                    color: 'bg-orange-500',
+                    color: 'bg-accent',
                     width: 'w-3/4',
                   },
                   {
                     level: 'Top Contributor',
                     upvotes: '50+ upvotes + curation',
                     earnings: '$5 - $10+',
-                    color: 'bg-purple-500',
+                    color: 'bg-[#7BA0CC]',
                     width: 'w-full',
                   },
                 ].map((tier, index) => (
@@ -749,13 +749,13 @@ export default function LandingSections() {
             transition={{ duration: 0.8 }}
             className="mb-16 text-center"
           >
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-yellow-500/10 px-4 py-2 font-semibold text-yellow-600 dark:text-yellow-400">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#D4A84B]/10 px-4 py-2 font-semibold text-[#D4A84B]">
               <Trophy className="h-4 w-4" />
               MEDALS Token
             </div>
             <h2 className="mb-6 text-4xl font-bold md:text-5xl">
               Stake & Unlock{' '}
-              <span className="bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#D4A84B] to-[#C08860] bg-clip-text text-transparent">
                 Premium Perks
               </span>
             </h2>
@@ -779,36 +779,36 @@ export default function LandingSections() {
                 stake: 1000,
                 Icon: Medal,
                 benefits: ['Ad-free experience', 'Bronze badge'],
-                color: 'from-amber-600 to-amber-800',
-                iconColor: 'text-amber-600',
-                iconBg: 'bg-amber-600/10',
+                color: 'from-[#A0724A] to-[#6B4A30]',
+                iconColor: 'text-[#C08860]',
+                iconBg: 'bg-[#C08860]/10',
               },
               {
                 tier: 'Silver',
                 stake: 5000,
                 Icon: Award,
                 benefits: ['Silver badge', 'Priority curation', 'Early access'],
-                color: 'from-slate-300 to-slate-500',
-                iconColor: 'text-slate-500',
-                iconBg: 'bg-slate-500/10',
+                color: 'from-[#9AA8B8] to-[#607080]',
+                iconColor: 'text-[#A8B8C8]',
+                iconBg: 'bg-[#A8B8C8]/10',
               },
               {
                 tier: 'Gold',
                 stake: 25000,
                 Icon: Crown,
                 benefits: ['Exclusive contests', 'Analytics dashboard', 'Gold badge'],
-                color: 'from-yellow-400 to-amber-600',
-                iconColor: 'text-yellow-500',
-                iconBg: 'bg-yellow-500/10',
+                color: 'from-[#D4A84B] to-[#8B7030]',
+                iconColor: 'text-[#D4A84B]',
+                iconBg: 'bg-[#D4A84B]/10',
               },
               {
                 tier: 'Platinum',
                 stake: 100000,
                 Icon: Gem,
                 benefits: ['Boosted visibility', 'VIP support', 'Platinum badge'],
-                color: 'from-cyan-300 to-blue-500',
-                iconColor: 'text-cyan-500',
-                iconBg: 'bg-cyan-500/10',
+                color: 'from-[#7BA0CC] to-[#3C6098]',
+                iconColor: 'text-[#7BA0CC]',
+                iconBg: 'bg-[#7BA0CC]/10',
               },
             ].map((item, index) => (
               <motion.div
@@ -863,9 +863,9 @@ export default function LandingSections() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="rounded-xl border border-yellow-500/20 bg-gradient-to-br from-yellow-500/5 to-orange-500/5 p-5 text-center"
+                className="rounded-xl border border-[#D4A84B]/20 bg-gradient-to-br from-[#D4A84B]/5 to-[#C08860]/5 p-5 text-center"
               >
-                <stat.icon className="mx-auto mb-2 h-6 w-6 text-yellow-500" />
+                <stat.icon className="mx-auto mb-2 h-6 w-6 text-[#D4A84B]" />
                 <div className="text-xl font-bold text-primary">
                   <AnimatedCounter end={stat.value} suffix={stat.suffix} />
                 </div>
@@ -1008,16 +1008,16 @@ export default function LandingSections() {
                 title: 'Zero Fees',
                 description:
                   'No gas fees. No hidden charges. Every transaction on Hive is completely free.',
-                color: 'text-emerald-500',
-                bg: 'bg-emerald-500/10',
+                color: 'text-[#2BAB78]',
+                bg: 'bg-[#2BAB78]/10',
               },
               {
                 icon: Shield,
                 title: 'True Ownership',
                 description:
                   'Your posts live on the blockchain forever. No platform can delete or censor your content.',
-                color: 'text-blue-500',
-                bg: 'bg-blue-500/10',
+                color: 'text-primary',
+                bg: 'bg-primary/10',
               },
               {
                 icon: Zap,

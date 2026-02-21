@@ -47,6 +47,30 @@
     --input: 220 15% 20%;
     --ring: 220 60% 55%;
   }
+
+  .landing-dark {
+    --background: 220 30% 6%;
+    --foreground: 30 20% 95%;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+    --card: 220 20% 13%;
+    --card-foreground: 30 20% 95%;
+    --popover: 220 20% 13%;
+    --popover-foreground: 30 20% 95%;
+    --primary: 216 60% 56%;
+    --primary-foreground: 30 20% 98%;
+    --secondary: 220 22% 11%;
+    --secondary-foreground: 30 20% 95%;
+    --muted: 220 22% 11%;
+    --muted-foreground: 220 15% 55%;
+    --accent: 22 72% 57%;
+    --accent-foreground: 30 20% 98%;
+    --destructive: 0 60% 52%;
+    --destructive-foreground: 30 20% 98%;
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 216 60% 56%;
+  }
 }
 
 @layer base {
