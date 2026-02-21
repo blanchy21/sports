@@ -3,7 +3,8 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, FileText } from 'lucide-react';
+import { signIn } from 'next-auth/react';
+import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/core/Button';
 import { Loading } from '@/components/core/Loading';
@@ -216,19 +217,18 @@ export default function LandingPage() {
             <Button
               size="lg"
               className="group bg-accent px-10 py-7 text-lg font-semibold text-white shadow-2xl shadow-accent/25 transition-all duration-300 hover:scale-105 hover:bg-accent/90 hover:shadow-accent/40"
-              onClick={() => openModal('keychainLogin')}
+              onClick={() => signIn('google', { callbackUrl: '/auth/google-callback' })}
             >
-              Join the Arena
+              Sign Up Free
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
             <Button
               size="lg"
               variant="outline"
               className="border-white/30 bg-white/5 px-10 py-7 text-lg text-white backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/15"
-              onClick={() => router.push('/whitepaper')}
+              onClick={() => openModal('keychainLogin')}
             >
-              <FileText className="mr-2 h-5 w-5" />
-              Read Whitepaper
+              Sign In
             </Button>
           </motion.div>
 

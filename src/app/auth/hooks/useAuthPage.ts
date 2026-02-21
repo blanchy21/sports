@@ -117,6 +117,7 @@ export const useAuthPage = (): UseAuthPageResult => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isAddAccountFlow = searchParams.get('addAccount') === 'true';
+  const isFromGoogle = searchParams.get('from') === 'google';
   const { user, isClient, loginWithAioha } = useAuth();
   const { aioha, isInitialized } = useAioha();
 
@@ -153,8 +154,14 @@ export const useAuthPage = (): UseAuthPageResult => {
     }
 
     // Session expired but wallet still connected - auto-reconnect (once)
-    // Skip auto-reconnect when adding a new account
-    if (isAiohaReady && aioha && !autoReconnectAttempted.current && !isAddAccountFlow) {
+    // Skip auto-reconnect when adding a new account or arriving from Google OAuth
+    if (
+      isAiohaReady &&
+      aioha &&
+      !autoReconnectAttempted.current &&
+      !isAddAccountFlow &&
+      !isFromGoogle
+    ) {
       const aiohaInstance = aioha as { getCurrentUser?: () => string | undefined };
       const walletUser = aiohaInstance.getCurrentUser?.();
       if (walletUser) {
@@ -170,7 +177,7 @@ export const useAuthPage = (): UseAuthPageResult => {
           });
       }
     }
-  }, [isClient, user, isAiohaReady, aioha, isAddAccountFlow, loginWithAioha, router]);
+  }, [isClient, user, isAiohaReady, aioha, isAddAccountFlow, isFromGoogle, loginWithAioha, router]);
 
   const resetHivePrompt = useCallback(() => {
     setShowHiveUsernameInput(false);
@@ -261,7 +268,7 @@ export const useAuthPage = (): UseAuthPageResult => {
   }, [aioha, closeAiohaModal, loginWithAioha, resetHivePrompt, router]);
 
   const handleGoogleSignIn = useCallback(() => {
-    signIn('google', { callbackUrl: '/auth' });
+    signIn('google', { callbackUrl: '/auth/google-callback' });
   }, []);
 
   const resetConnectionState = useCallback(() => {

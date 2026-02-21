@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,17 +20,30 @@ export default function OnboardingUsernamePage() {
   const [error, setError] = useState('');
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const suggestionLoaded = useRef(false);
+  const sessionChecked = useRef(false);
 
   // Redirect if not logged in or already has hiveUsername
+  // Wait for Google auth bridge if a NextAuth session exists
   useEffect(() => {
     if (!isClient) return;
-    if (!user?.username) {
-      router.replace('/auth');
+    if (user?.username) {
+      if (user.hiveUsername) {
+        router.replace('/sportsbites');
+      }
+      // User is set and has no hiveUsername — stay on this page
       return;
     }
-    if (user.hiveUsername) {
-      router.replace('/sportsbites');
-      return;
+    // No AuthContext user yet — check if a NextAuth session exists
+    // (Google auth bridge may still be processing)
+    if (!sessionChecked.current) {
+      sessionChecked.current = true;
+      getSession().then((session) => {
+        if (!session?.user) {
+          // No NextAuth session either — genuinely not logged in
+          router.replace('/auth');
+        }
+        // NextAuth session exists — Google bridge will set the user shortly
+      });
     }
   }, [isClient, user, router]);
 

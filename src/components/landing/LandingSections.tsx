@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/core/Button';
 import { useModal } from '@/components/modals/ModalProvider';
 import CountUp from 'react-countup';
@@ -67,7 +68,7 @@ const sports = [
   },
   {
     name: 'Rugby',
-    image: 'https://images.unsplash.com/photo-1544298621-77b7dafc5914?w=800&q=80',
+    image: '/stefan-lehner-fqrzserMsX4-unsplash.jpg',
     color: 'from-teal-500/90 to-teal-800/90',
   },
   {
@@ -1099,7 +1100,7 @@ export default function LandingSections() {
             <h2 className="mb-6 text-4xl font-bold md:text-5xl">
               Ready to{' '}
               <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                Join the Arena?
+                Get Started?
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
@@ -1261,9 +1262,9 @@ export default function LandingSections() {
           <Button
             size="lg"
             className="bg-accent px-12 py-7 text-lg font-semibold text-white shadow-2xl shadow-accent/30 transition-all duration-300 hover:scale-105 hover:bg-accent/90 hover:shadow-accent/50"
-            onClick={() => openModal('keychainLogin')}
+            onClick={() => signIn('google', { callbackUrl: '/auth/google-callback' })}
           >
-            Join Sportsblock
+            Sign Up Free
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
           <div className="mt-6">
