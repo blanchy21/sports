@@ -118,6 +118,7 @@ export const useAuthPage = (): UseAuthPageResult => {
   const searchParams = useSearchParams();
   const isAddAccountFlow = searchParams.get('addAccount') === 'true';
   const isFromGoogle = searchParams.get('from') === 'google';
+  const oauthError = searchParams.get('error');
   const { user, isClient, loginWithAioha } = useAuth();
   const { aioha, isInitialized } = useAioha();
 
@@ -136,6 +137,19 @@ export const useAuthPage = (): UseAuthPageResult => {
   const isAiohaReady = useMemo(() => Boolean(aioha) && isInitialized, [aioha, isInitialized]);
 
   const autoReconnectAttempted = useRef(false);
+
+  // Surface NextAuth OAuth errors (e.g. ?error=OAuthSignin) to the user
+  useEffect(() => {
+    if (!oauthError) return;
+    const messages: Record<string, string> = {
+      OAuthSignin: 'Could not start Google sign-in. Please try again.',
+      OAuthCallback: 'Google sign-in failed. Please try again.',
+      OAuthCreateAccount: 'Could not create account. Please try again.',
+      Callback: 'Authentication callback failed. Please try again.',
+      Default: 'Sign-in failed. Please try again.',
+    };
+    setErrorMessage(messages[oauthError] ?? messages.Default);
+  }, [oauthError]);
 
   // Redirect if already authenticated, or auto-reconnect if wallet is still active
   useEffect(() => {

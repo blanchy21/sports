@@ -210,7 +210,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: 'Price data temporarily unavailable',
         message: 'Failed to fetch cryptocurrency prices',
       },
       { status: 500 }

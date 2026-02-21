@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Wallet, CheckCircle, Sparkles } from 'lucide-react';
 import { KeyTypes } from '@aioha/aioha';
@@ -34,6 +34,12 @@ function AuthPageContent() {
     handleAiohaModalLogin,
     handleGoogleSignIn,
   } = useAuthPage();
+
+  // Determine if this is a sign-up flow (from "Sign Up Free" or "Quick Start" CTAs)
+  const searchParams = useSearchParams();
+  const isSignUp = searchParams.get('mode') === 'signup';
+  const heading = isSignUp ? 'Get Started' : 'Welcome Back';
+  const subheading = isSignUp ? 'Create your free account' : 'Sign in to continue your journey';
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,7 +91,7 @@ function AuthPageContent() {
                 transition={{ duration: 0.4, delay: 0.1 }}
                 className="mb-2 text-2xl font-bold text-foreground sm:text-3xl"
               >
-                Welcome Back
+                {heading}
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
@@ -93,7 +99,7 @@ function AuthPageContent() {
                 transition={{ duration: 0.4, delay: 0.2 }}
                 className="text-muted-foreground"
               >
-                Sign in to continue your journey
+                {subheading}
               </motion.p>
             </div>
 

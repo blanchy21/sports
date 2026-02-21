@@ -235,6 +235,38 @@ export default function LandingPage() {
 
       {/* Lazy load all sections below the fold */}
       <LazyLandingSections />
+
+      {/* Footer */}
+      <footer className="border-t border-white/10 bg-[#080C14] px-6 py-10">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div className="flex items-center gap-2">
+            <Image
+              src="/sportsblock-logo-trans.png"
+              alt="Sportsblock"
+              width={24}
+              height={24}
+              className="h-6 w-6"
+            />
+            <span className="text-sm font-semibold text-white/70">Sportsblock</span>
+          </div>
+
+          <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/50">
+            <a href="/discover" className="transition-colors hover:text-white/80">
+              Discover
+            </a>
+            <a href="/leaderboard" className="transition-colors hover:text-white/80">
+              Leaderboard
+            </a>
+            <a href="/whitepaper" className="transition-colors hover:text-white/80">
+              Whitepaper
+            </a>
+          </nav>
+
+          <p className="text-xs text-white/30">
+            &copy; {new Date().getFullYear()} Sportsblock. Built on Hive.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

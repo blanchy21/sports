@@ -529,7 +529,7 @@ export default function LandingSections() {
             <Button
               size="lg"
               className="group px-8 py-6 text-lg"
-              onClick={() => router.push('/sportsbites')}
+              onClick={() => openModal('keychainLogin')}
             >
               <Zap className="mr-2 h-5 w-5" />
               Try Sportsbites
@@ -1199,7 +1199,7 @@ export default function LandingSections() {
               <Button
                 variant="outline"
                 className="group w-full py-6 text-lg"
-                onClick={() => router.push('/auth')}
+                onClick={() => router.push('/auth?mode=signup')}
               >
                 <User className="mr-2 h-5 w-5" />
                 Quick Start with Email
