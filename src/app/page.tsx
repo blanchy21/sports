@@ -38,84 +38,42 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-background">
+    <div className="landing-dark min-h-screen overflow-x-hidden bg-background">
       {/* Hero Section */}
       <motion.section
         style={{ opacity: heroOpacity, scale: heroScale }}
         className="relative flex min-h-screen items-center justify-center overflow-hidden"
       >
-        {/* Dynamic Background */}
+        {/* Background */}
         <motion.div style={{ y: parallaxY }} className="absolute inset-0 z-0">
-          <div
-            className="absolute inset-0 scale-110 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: "url('/vienna-reyes-Zs_o1IjVPt4-unsplash.jpg')",
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-br from-fibonacci-blue via-bright-cobalt to-fibonacci-blue" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-background" />
-          <div className="absolute inset-0 bg-gradient-to-tr from-primary/15 via-transparent to-accent/10" />
+          <div className="absolute inset-0 bg-[#080C14]" />
+          {/* Subtle centered radial glow */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_40%,rgba(60,96,152,0.15),transparent)]" />
+          {/* Bottom fade to --background */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
         </motion.div>
 
-        {/* Floating Decorative Elements */}
+        {/* Ambient blur blobs */}
         <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
           <motion.div
             animate={{
               scale: [1, 1.3, 1],
-              opacity: [0.3, 0.6, 0.3],
+              opacity: [0.15, 0.25, 0.15],
               x: [0, 30, 0],
               y: [0, -20, 0],
             }}
             transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-accent/30 blur-3xl"
+            className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#3C6098]/15 blur-3xl"
           />
           <motion.div
             animate={{
               scale: [1.2, 1, 1.2],
-              opacity: [0.2, 0.4, 0.2],
+              opacity: [0.1, 0.2, 0.1],
               x: [0, -40, 0],
               y: [0, 30, 0],
             }}
             transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -bottom-48 -left-48 h-[500px] w-[500px] rounded-full bg-primary/20 blur-3xl"
-          />
-
-          {/* Floating particles */}
-          {[
-            { left: '15%', delay: 0, duration: 7, size: 'h-1 w-1' },
-            { left: '35%', delay: 1.5, duration: 9, size: 'h-1.5 w-1.5' },
-            { left: '55%', delay: 0.5, duration: 8, size: 'h-1 w-1' },
-            { left: '75%', delay: 2, duration: 10, size: 'h-2 w-2' },
-            { left: '90%', delay: 1, duration: 7.5, size: 'h-1 w-1' },
-          ].map((p, i) => (
-            <motion.div
-              key={i}
-              animate={{
-                y: [0, -400, -800],
-                opacity: [0, 0.8, 0],
-                x: [0, Math.sin(i) * 30, Math.cos(i) * 20],
-              }}
-              transition={{
-                duration: p.duration,
-                repeat: Infinity,
-                delay: p.delay,
-                ease: 'linear',
-              }}
-              className={`absolute bottom-0 ${p.size} rounded-full bg-white/40`}
-              style={{ left: p.left }}
-            />
-          ))}
-
-          {/* Diagonal light streaks */}
-          <motion.div
-            animate={{ x: ['-100%', '200%'] }}
-            transition={{ duration: 8, repeat: Infinity, ease: 'linear', delay: 2 }}
-            className="absolute left-0 top-1/4 h-px w-1/3 rotate-[30deg] bg-gradient-to-r from-transparent via-white/20 to-transparent"
-          />
-          <motion.div
-            animate={{ x: ['200%', '-100%'] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'linear', delay: 5 }}
-            className="absolute right-0 top-2/3 h-px w-1/4 -rotate-[25deg] bg-gradient-to-r from-transparent via-accent/20 to-transparent"
+            className="absolute -bottom-48 -left-48 h-[500px] w-[500px] rounded-full bg-primary/10 blur-3xl"
           />
         </div>
 
@@ -124,50 +82,24 @@ export default function LandingPage() {
           style={{ y: textY }}
           className="relative z-10 mx-auto max-w-6xl px-6 text-center"
         >
-          {/* Sportsblock Logo */}
+          {/* Brand */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="relative mb-3 inline-block"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-8 flex items-center justify-center gap-3"
           >
-            <motion.div
-              animate={{ opacity: [0.2, 0.4, 0.2], scale: [0.9, 1.1, 0.9] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute inset-0 -z-10 rounded-full bg-accent/20 blur-[60px]"
-            />
             <Image
               src="/sportsblock-logo-trans.png"
               alt="Sportsblock"
-              width={160}
-              height={160}
-              className="mx-auto h-28 w-28 drop-shadow-2xl sm:h-36 sm:w-36 md:h-40 md:w-40"
+              width={80}
+              height={80}
+              className="h-14 w-14 drop-shadow-lg sm:h-16 sm:w-16 md:h-[72px] md:w-[72px]"
               priority
             />
-          </motion.div>
-
-          {/* Brand Name */}
-          <motion.h2
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mb-2 text-3xl font-bold tracking-wide text-white sm:text-4xl md:text-5xl"
-          >
-            Sportsblock
-          </motion.h2>
-
-          {/* Live Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E31337] opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#E31337]"></span>
+            <span className="text-4xl font-bold tracking-wide text-white/90 sm:text-5xl">
+              Sportsblock
             </span>
-            <span className="text-sm font-medium text-white/90">LIVE on Hive Blockchain</span>
           </motion.div>
 
           {/* Main Headline */}
@@ -177,11 +109,6 @@ export default function LandingPage() {
             transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
             className="relative"
           >
-            <motion.div
-              animate={{ opacity: [0.3, 0.6, 0.3], scale: [0.95, 1.05, 0.95] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute inset-0 -z-10 mx-auto h-full w-3/4 rounded-full bg-accent/15 blur-[80px]"
-            />
             <h1 className="mb-4 text-4xl font-black tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
               <span className="text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]">
                 PURE SPORTS.
