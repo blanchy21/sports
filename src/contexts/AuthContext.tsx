@@ -127,7 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const isHiveAuth = sessionAuthType === 'hive';
           const restoredUser: User = {
             id: userId,
-            username: username,
+            username: sessionAuthType === 'soft' && hiveUsername ? hiveUsername : username,
             displayName: uiHint?.displayHint || username,
             isHiveAuth: isHiveAuth,
             hiveUsername: hiveUsername,

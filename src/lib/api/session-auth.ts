@@ -174,7 +174,7 @@ export async function getAuthenticatedUserFromSession(
 
   return {
     userId,
-    username: username ?? '',
+    username: authType === 'soft' && hiveUsername ? hiveUsername : (username ?? ''),
     authType,
     hiveUsername,
   };

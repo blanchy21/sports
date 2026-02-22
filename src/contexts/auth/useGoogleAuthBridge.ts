@@ -47,7 +47,7 @@ export function useGoogleAuthBridge({
 
         const user: User = {
           id,
-          username: email ?? id,
+          username: hiveUsername ?? email ?? id,
           displayName: displayName ?? email ?? id,
           avatar: avatarUrl,
           isHiveAuth: false,

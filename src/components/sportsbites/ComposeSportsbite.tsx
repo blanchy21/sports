@@ -15,6 +15,7 @@ import {
   Film,
   Zap,
   BarChart3,
+  Download,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { SPORT_CATEGORIES } from '@/types';
@@ -706,14 +707,28 @@ export function ComposeSportsbite({
         </div>
       </div>
 
-      {authType !== 'hive' && user && (
-        <div className="flex items-center gap-2 border-t border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2.5 dark:border-amber-800/50 dark:from-amber-950/20 dark:to-orange-950/20">
-          <Zap className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-          <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
-            Upgrade to Hive to earn crypto rewards on your sportsbites
-          </p>
-        </div>
-      )}
+      {authType !== 'hive' &&
+        user &&
+        (user.hiveUsername ? (
+          !user.keysDownloaded && (
+            <a
+              href="/api/hive/download-keys"
+              className="flex items-center gap-2 border-t border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2.5 transition-colors hover:from-amber-100 hover:to-orange-100 dark:border-amber-800/50 dark:from-amber-950/20 dark:to-orange-950/20 dark:hover:from-amber-950/30 dark:hover:to-orange-950/30"
+            >
+              <Download className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                Download your Hive keys for full self-custody of your account
+              </p>
+            </a>
+          )
+        ) : (
+          <div className="flex items-center gap-2 border-t border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2.5 dark:border-amber-800/50 dark:from-amber-950/20 dark:to-orange-950/20">
+            <Zap className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+              Upgrade to Hive to earn crypto rewards on your sportsbites
+            </p>
+          </div>
+        ))}
     </div>
   );
 }
