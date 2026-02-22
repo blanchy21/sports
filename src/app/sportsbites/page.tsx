@@ -16,7 +16,7 @@ import { useFollowing } from '@/lib/react-query/queries/useFollowers';
 type FeedFilter = 'latest' | 'trending' | 'following';
 
 export default function SportsBitesPage() {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isLoading: isAuthLoading, authType } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToast } = useToast();
@@ -75,7 +75,11 @@ export default function SportsBitesPage() {
     if (!isAuthLoading && !user) {
       router.push('/');
     }
-  }, [user, isAuthLoading, router]);
+    // Redirect custodial users who haven't completed onboarding
+    if (!isAuthLoading && user && authType === 'soft' && !user.onboardingCompleted) {
+      router.replace('/onboarding/guide');
+    }
+  }, [user, isAuthLoading, authType, router]);
 
   if (isAuthLoading) return null;
   if (!user) return null;

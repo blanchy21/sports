@@ -8,7 +8,8 @@ import { authOptions } from '@/lib/auth/next-auth-options';
  * After Google sign-in, NextAuth redirects here. We read the session
  * server-side (instant redirect, no client-side flash) and route:
  * - New user (no hiveUsername) → /onboarding/username
- * - Existing user → /sportsbites
+ * - Existing user, onboarding incomplete → /onboarding/guide
+ * - Existing user, onboarding complete → /sportsbites
  * - No session → /auth (sign-in failed)
  *
  * Using a route handler (not a page) avoids webpack trying to resolve
@@ -25,9 +26,13 @@ export async function GET() {
 
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
-  if (session.user.hiveUsername) {
-    return NextResponse.redirect(new URL('/sportsbites', baseUrl));
+  if (!session.user.hiveUsername) {
+    return NextResponse.redirect(new URL('/onboarding/username', baseUrl));
   }
 
-  return NextResponse.redirect(new URL('/onboarding/username', baseUrl));
+  if (!session.user.onboardingCompleted) {
+    return NextResponse.redirect(new URL('/onboarding/guide', baseUrl));
+  }
+
+  return NextResponse.redirect(new URL('/sportsbites', baseUrl));
 }

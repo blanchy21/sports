@@ -48,17 +48,18 @@ export const authOptions: NextAuthOptions = {
         token.avatarUrl = custodialUser.avatarUrl ?? undefined;
         token.hiveUsername = custodialUser.hiveUsername ?? undefined;
         token.keysDownloaded = custodialUser.keysDownloaded;
+        token.onboardingCompleted = custodialUser.onboardingCompleted;
       } else if (token.custodialUserId) {
         // On subsequent requests, re-check mutable fields (cached with 5-min TTL)
         const cacheKey = `jwt-fields:${token.custodialUserId}`;
         const tag = `custodial-user:${token.custodialUserId}`;
-        type JwtFields = { hiveUsername: string | null; keysDownloaded: boolean };
+        type JwtFields = { hiveUsername: string | null; keysDownloaded: boolean; onboardingCompleted: boolean };
 
         let fields = jwtFieldsCache.get<JwtFields>(cacheKey);
         if (!fields) {
           const freshUser = await prisma.custodialUser.findUnique({
             where: { id: token.custodialUserId as string },
-            select: { hiveUsername: true, keysDownloaded: true },
+            select: { hiveUsername: true, keysDownloaded: true, onboardingCompleted: true },
           });
           if (freshUser) {
             fields = freshUser;
@@ -71,6 +72,7 @@ export const authOptions: NextAuthOptions = {
             token.hiveUsername = fields.hiveUsername;
           }
           token.keysDownloaded = fields.keysDownloaded;
+          token.onboardingCompleted = fields.onboardingCompleted;
         }
       }
 
@@ -87,6 +89,7 @@ export const authOptions: NextAuthOptions = {
         session.user.avatarUrl = (token.avatarUrl as string) ?? undefined;
         session.user.hiveUsername = (token.hiveUsername as string) ?? undefined;
         session.user.keysDownloaded = (token.keysDownloaded as boolean) ?? undefined;
+        session.user.onboardingCompleted = (token.onboardingCompleted as boolean) ?? undefined;
       }
       return session;
     },

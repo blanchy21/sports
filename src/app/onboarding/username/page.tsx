@@ -28,7 +28,7 @@ export default function OnboardingUsernamePage() {
     if (!isClient) return;
     if (user?.username) {
       if (user.hiveUsername) {
-        router.replace('/sportsbites');
+        router.replace('/onboarding/guide');
       }
       // User is set and has no hiveUsername — stay on this page
       return;
@@ -152,8 +152,8 @@ export default function OnboardingUsernamePage() {
         }),
       });
 
-      // Success — redirect to main feed
-      router.replace('/sportsbites');
+      // Success — redirect to onboarding guide
+      router.replace('/onboarding/guide');
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
