@@ -11,6 +11,7 @@ export interface User {
   isHiveAuth: boolean;
   hiveUsername?: string;
   keysDownloaded?: boolean;
+  onboardingCompleted?: boolean;
   reputation?: number;
   reputationFormatted?: string;
   // Liquid balances

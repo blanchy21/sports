@@ -12,6 +12,7 @@ declare module 'next-auth' {
       avatarUrl?: string;
       hiveUsername?: string;
       keysDownloaded?: boolean;
+      onboardingCompleted?: boolean;
     };
   }
 }
@@ -23,5 +24,6 @@ declare module 'next-auth/jwt' {
     avatarUrl?: string;
     hiveUsername?: string;
     keysDownloaded?: boolean;
+    onboardingCompleted?: boolean;
   }
 }
