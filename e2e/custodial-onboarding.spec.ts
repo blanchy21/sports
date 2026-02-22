@@ -13,7 +13,7 @@ async function mockSession(
     hiveUsername?: string;
   } = {}
 ) {
-  const { userId = 'firebase-uid-e2e-test', email = 'e2e-test@example.com', hiveUsername } = opts;
+  const { userId = 'google-uid-e2e-test', email = 'e2e-test@example.com', hiveUsername } = opts;
 
   await page.route('**/api/auth/sb-session', async (route, request) => {
     const method = request.method();

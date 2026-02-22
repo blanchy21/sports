@@ -32,11 +32,11 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 The following are in scope:
 - Sportsblock web application
 - API endpoints
-- Authentication flows (Hive wallet, Firebase)
-- Smart contract interactions
+- Authentication flows (Hive wallet, Google OAuth, custodial signing relay)
+- Custodial key management
 
 The following are out of scope:
-- Third-party services (Hive blockchain, Firebase infrastructure)
+- Third-party services (Hive blockchain infrastructure, Supabase, Vercel)
 - Social engineering attacks
 - Denial of service attacks
 

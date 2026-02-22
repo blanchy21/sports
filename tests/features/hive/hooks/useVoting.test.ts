@@ -82,7 +82,7 @@ function setAuthState(overrides: Partial<ReturnType<typeof useAuth>> = {}) {
     login: jest.fn(),
     loginWithHiveUser: jest.fn(),
     loginWithAioha: jest.fn(),
-    loginWithFirebase: jest.fn(),
+    loginWithGoogle: jest.fn(),
     logout: jest.fn(),
     updateUser: jest.fn(),
     upgradeToHive: jest.fn(),

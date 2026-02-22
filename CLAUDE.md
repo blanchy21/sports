@@ -2,7 +2,7 @@
 # Workflow Orchestration – Senior Engineer Mode
 
 ## 1. Plan Mode Default
-- Activate **plan mode** for any non-trivial task  
+- Activate **plan mode** for any non-trivial task
   (≥ 3 steps, architectural decisions, or risky changes)
 - If behavior diverges / goes sideways → **STOP immediately**, do **not** keep pushing, re-plan
 - Use plan mode heavily for **verification** steps — not only for initial building
@@ -28,17 +28,17 @@ After user points out mistake or serious regression:
 ## 4. Verification Before Declaring Done
 - **Never** mark task complete without proving it actually works
 - When relevant: show diff in behavior (old → new)
-- Ask seriously: **“Would a staff+ engineer approve and merge this?”**
+- Ask seriously: **"Would a staff+ engineer approve and merge this?"**
 - Prefer hard evidence:
   - Passing tests
   - Clean logs
   - Reproduced correct behavior
-  over “it seems fine”
+  over "it seems fine"
 
 ## 5. Elegance (Balanced – avoid both hacky and over-engineered)
 For any non-trivial change, pause and ask:
-- “Is there a meaningfully **more elegant** / simpler / more idiomatic way?”
-- If current fix feels hacky → prefer honesty (“I don’t see a clean solution yet”) over clever-but-fragile code
+- "Is there a meaningfully **more elegant** / simpler / more idiomatic way?"
+- If current fix feels hacky → prefer honesty ("I don't see a clean solution yet") over clever-but-fragile code
 - Challenge your own diff before presenting
 - Do **not** over-engineer obvious, simple fixes
 
@@ -52,32 +52,32 @@ When given:
 **Expected behavior**:
 - **Just fix it** — do not immediately ask for step-by-step hand-holding
 - Use the context already provided (logs, errors, test names, repro steps)
-- Zero “please tell me how to debug this” requests
+- Zero "please tell me how to debug this" requests
 
 ## Task Management Discipline
 
-1. **Plan First**  
+1. **Plan First**
    → Write concrete, checkable plan → `tasks/todo.md`
 
-2. **Verify Plan**  
+2. **Verify Plan**
    → Internal or explicit check-in before heavy implementation
 
-3. **Explain Changes**  
-   → High-level “what & why” summary at each meaningful step
+3. **Explain Changes**
+   → High-level "what & why" summary at each meaningful step
 
-4. **Track Progress**  
+4. **Track Progress**
    → Cross out / mark complete items in `todo.md` as you go
 
-5. **Document Results**  
-   → Add “Review / Outcome / Verification” section to task in `todo.md`
+5. **Document Results**
+   → Add "Review / Outcome / Verification" section to task in `todo.md`
 
-6. **Capture Lessons**  
+6. **Capture Lessons**
    → After fixes / important realisations → update `tasks/lessons.md`
 
 ## Core Simplicity Mantra
 
-- **Simplicity First** — every change must be as simple as reasonably possible  
-- **No Laziness** — hunt **root causes**. No band-aids. Senior developer bar.  
+- **Simplicity First** — every change must be as simple as reasonably possible
+- **No Laziness** — hunt **root causes**. No band-aids. Senior developer bar.
 - **Minimal Impact** — touch only what must be touched. Minimize new risk.
 
 ## Deployment
@@ -89,13 +89,15 @@ When given:
 
 Sportsblock is a Next.js 15 (App Router) sports content platform integrated with the Hive blockchain. Users can authenticate via Hive wallets (Keychain, HiveSigner, HiveAuth) or Google OAuth, then read and publish sports-related posts to the Hive blockchain.
 
+**Key tech:** TypeScript, Tailwind CSS, Zustand + React Query, Prisma (PostgreSQL/Supabase), NextAuth, Aioha, WorkerBee/Wax, Upstash Redis, Sentry, Framer Motion.
+
 ## Commands
 
 ```bash
 # Development
 npm run dev              # Start dev server on port 3000
 npm run dev:force        # Start with port cleanup script
-npm run build            # Production build
+npm run build            # prisma generate + next build
 npm run lint             # ESLint
 
 # Testing
@@ -138,26 +140,36 @@ import { getWorkerBeeClient } from '@/lib/hive-workerbee/client';
 
 Two auth paths converge in `AuthContext`:
 1. **Hive Auth** (Aioha): Keychain, HiveSigner, HiveAuth, Ledger, PeakVault → full blockchain posting
-2. **Soft Auth** (Google OAuth via NextAuth): Google sign-in → custodial Hive account created, can download keys for full self-custody
+2. **Google OAuth** (NextAuth): Google sign-in → custodial Hive account created, can download keys for full self-custody
 
 `src/contexts/AiohaProvider.tsx` wraps the Aioha library for client-side wallet interactions.
 `src/contexts/AuthContext.tsx` manages auth state and persists to localStorage.
+`src/hooks/useBroadcast.ts` abstracts transaction broadcasting (routes to wallet or signing relay).
 
 ### Custodial Onboarding Flow
 
 Google OAuth users go through this flow:
 1. Sign in with Google → NextAuth creates session → Prisma stores user
 2. Redirect to `/onboarding/username` → user picks a Hive username (`sb-` prefix)
-3. Server calls `create_claimed_account` using @niallon11's ACTs → real Hive account created
+3. Server calls `create_claimed_account` using account creation tokens → real Hive account created
 4. Keys encrypted + stored server-side → signing relay handles blockchain ops
 5. User can download keys anytime (`/api/hive/download-keys`) for full self-custody
 
 Key files:
 - `src/app/api/hive/create-account/route.ts` — Account creation endpoint
-- `src/app/api/auth/signing-relay/route.ts` — Custodial transaction signing
+- `src/app/api/hive/sign/route.ts` — Custodial transaction signing relay
 - `src/app/api/hive/download-keys/route.ts` — Key export for graduation
+- `src/lib/hive/signing-relay.ts` — Signing relay logic (validates + broadcasts)
+- `src/lib/hive/account-creation.ts` — Account creation logic
 - `src/hooks/useBroadcast.ts` — Unified broadcast abstraction (handles both auth types)
 - `src/app/onboarding/username/page.tsx` — Username picker page
+
+### Database (Prisma + PostgreSQL)
+
+- Schema at `prisma/schema.prisma`
+- Client at `src/lib/db/prisma.ts`
+- Custodial users, soft posts/comments/likes, notifications, metrics all stored in PostgreSQL via Prisma
+- Hive posts/comments/votes stored on the Hive blockchain
 
 ### State Management
 
@@ -165,25 +177,21 @@ Key files:
 - **React Query** (`src/lib/react-query/queries/*`): Server state with caching
 - **Contexts** (`src/contexts/*`): Auth, theme, notifications, price data
 
-### Hive Integration (`src/lib/hive-workerbee/`)
+### Key API Route Groups (`src/app/api/`)
 
-| File | Purpose |
-| ------ | --------- |
-| `client.ts` | WorkerBee/Wax singleton, node configuration |
-| `content.ts` | Fetch posts from Hive community |
-| `posting.ts` | Create/broadcast posts and comments |
-| `voting.ts` | Upvote/downvote operations |
-| `account.ts` | User account data fetching |
-| `realtime.ts` | Block streaming for live updates |
+| Group | Purpose |
+| ----- | ------- |
+| `/api/hive/*` | Blockchain operations (posts, comments, voting, accounts, signing relay) |
+| `/api/hive-engine/*` | Hive Engine tokens (balances, staking, transfers, market) |
+| `/api/soft/*` | Custodial user operations (comments, likes, follows, notifications) |
+| `/api/unified/*` | Merged Hive + custodial data (posts, sportsbites) |
+| `/api/match-threads/*` | Live match thread CRUD |
+| `/api/cron/*` | Scheduled tasks (rewards, cleanup, analytics) |
+| `/api/auth/*` | NextAuth + session endpoints |
+| `/api/communities/*` | Community browsing and membership |
 
-### API Routes (`src/app/api/`)
-
-- `/api/hive/posts` - Fetch community posts
-- `/api/hive/comments` - Post comments
-- `/api/hive/posting` - Create posts
-- `/api/hive/realtime` - Realtime feed
-- `/api/hive/account/summary` - User account data
-- `/api/crypto/prices` - HIVE/HBD price data
+### Sports Community Config
+The app targets the `hive-115814` community. Configuration in `src/lib/hive-workerbee/client.ts` (`SPORTS_ARENA_CONFIG`).
 
 ## Key Patterns
 
@@ -193,19 +201,10 @@ All imports use `@/*` alias mapped to `src/*`:
 import { useAuth } from '@/contexts/AuthContext';
 ```
 
-### Sports Community Config
-The app targets the `hive-115814` community (Sportsblock). Configuration in `src/lib/hive-workerbee/client.ts`:
-```typescript
-export const SPORTS_ARENA_CONFIG = {
-  APP_NAME: 'sportsblock',
-  COMMUNITY_ID: 'hive-115814',
-  TAGS: ['sportsblock', 'hive-115814'],
-  DEFAULT_BENEFICIARIES: [{ account: 'sportsblock', weight: 500 }]
-};
-```
-
 ### Error Handling in API Routes
 Use `src/lib/utils/api-retry.ts` for retryable Hive node calls.
+Use `src/lib/api/response.ts` for standardized API responses (`createApiHandler`, `apiSuccess`, `apiError`).
+Use `src/lib/api/session-auth.ts` for session-based auth in API routes (`getAuthenticatedUserFromSession`).
 
 ### Image Handling
 External images are proxied through `/api/image-proxy` to handle CORS. Allowed domains configured in `next.config.ts`.
