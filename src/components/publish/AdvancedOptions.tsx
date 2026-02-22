@@ -106,23 +106,23 @@ export function AdvancedOptions({
   const totalBeneficiaryWeight = beneficiaries.reduce((sum, b) => sum + b.weight, 0);
 
   return (
-    <div className="bg-card rounded-lg border">
+    <div className="rounded-lg border bg-card">
       {/* Toggle header */}
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           'flex w-full items-center justify-between px-4 py-3',
-          'text-foreground text-sm font-medium',
-          'hover:bg-muted/50 transition-colors',
+          'text-sm font-medium text-foreground',
+          'transition-colors hover:bg-muted/50',
           isExpanded && 'border-b'
         )}
       >
         <span>ADVANCED OPTIONS</span>
         {isExpanded ? (
-          <ChevronUp className="text-muted-foreground h-4 w-4" />
+          <ChevronUp className="h-4 w-4 text-muted-foreground" />
         ) : (
-          <ChevronDown className="text-muted-foreground h-4 w-4" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
         )}
       </button>
 
@@ -131,7 +131,7 @@ export function AdvancedOptions({
         <div className="space-y-6 p-4">
           {/* Community Selection */}
           <div className="space-y-2">
-            <label className="text-foreground text-sm font-medium">Community (Optional)</label>
+            <label className="text-sm font-medium text-foreground">Community (Optional)</label>
             <select
               value={selectedCommunity?.id || ''}
               onChange={(e) => {
@@ -146,8 +146,8 @@ export function AdvancedOptions({
                 }
               }}
               className={cn(
-                'bg-background w-full rounded-lg border px-3 py-2',
-                'focus:ring-ring text-sm focus:ring-2 focus:outline-hidden'
+                'w-full rounded-lg border bg-background px-3 py-2',
+                'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
               )}
             >
               <option value="">Main Sportsblock Feed</option>
@@ -177,13 +177,13 @@ export function AdvancedOptions({
           {/* Rewards Distribution (Hive users only) */}
           {isHiveUser && (
             <div className="space-y-2">
-              <label className="text-foreground text-sm font-medium">Rewards Distribution</label>
+              <label className="text-sm font-medium text-foreground">Rewards Distribution</label>
               <select
                 value={rewardsOption}
                 onChange={(e) => onRewardsChange(e.target.value as RewardsOption)}
                 className={cn(
-                  'bg-background w-full rounded-lg border px-3 py-2',
-                  'focus:ring-ring text-sm focus:ring-2 focus:outline-hidden'
+                  'w-full rounded-lg border bg-background px-3 py-2',
+                  'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
                 )}
               >
                 {REWARDS_OPTIONS.map((option) => (
@@ -192,7 +192,7 @@ export function AdvancedOptions({
                   </option>
                 ))}
               </select>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-xs text-muted-foreground">
                 {REWARDS_OPTIONS.find((o) => o.value === rewardsOption)?.description}
               </p>
             </div>
@@ -202,8 +202,8 @@ export function AdvancedOptions({
           {isHiveUser && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-foreground text-sm font-medium">Beneficiaries</label>
-                <span className="text-muted-foreground text-xs">
+                <label className="text-sm font-medium text-foreground">Beneficiaries</label>
+                <span className="text-xs text-muted-foreground">
                   {totalBeneficiaryWeight}% allocated
                 </span>
               </div>
@@ -221,18 +221,18 @@ export function AdvancedOptions({
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">@{ben.account}</span>
                       {ben.account === 'sportsblock' && (
-                        <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs">
+                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                           Platform
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground text-sm">{ben.weight}%</span>
+                      <span className="text-sm text-muted-foreground">{ben.weight}%</span>
                       {ben.account !== 'sportsblock' && (
                         <button
                           type="button"
                           onClick={() => handleRemoveBeneficiary(ben.account)}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          className="text-muted-foreground transition-colors hover:text-destructive"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -253,8 +253,8 @@ export function AdvancedOptions({
                     }
                     placeholder="Username"
                     className={cn(
-                      'bg-background flex-1 rounded-lg border px-3 py-2',
-                      'focus:ring-ring text-sm focus:ring-2 focus:outline-hidden'
+                      'flex-1 rounded-lg border bg-background px-3 py-2',
+                      'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
                     )}
                   />
                   <input
@@ -272,11 +272,11 @@ export function AdvancedOptions({
                     min={1}
                     max={100 - totalBeneficiaryWeight}
                     className={cn(
-                      'bg-background w-16 rounded-lg border px-3 py-2',
-                      'focus:ring-ring text-center text-sm focus:ring-2 focus:outline-hidden'
+                      'w-16 rounded-lg border bg-background px-3 py-2',
+                      'text-center text-sm focus:outline-none focus:ring-2 focus:ring-ring'
                     )}
                   />
-                  <span className="text-muted-foreground text-sm">%</span>
+                  <span className="text-sm text-muted-foreground">%</span>
                   <Button
                     type="button"
                     variant="outline"
@@ -290,7 +290,7 @@ export function AdvancedOptions({
                 </div>
               )}
 
-              <p className="text-muted-foreground text-xs">
+              <p className="text-xs text-muted-foreground">
                 Beneficiaries receive a percentage of your post rewards. The platform takes 5% to
                 support development.
               </p>
@@ -299,7 +299,7 @@ export function AdvancedOptions({
 
           {/* Cover Image */}
           <div className="space-y-3">
-            <label className="text-foreground text-sm font-medium">Cover Image</label>
+            <label className="text-sm font-medium text-foreground">Cover Image</label>
 
             {/* Current cover image */}
             {coverImage && (
@@ -317,7 +317,7 @@ export function AdvancedOptions({
                   type="button"
                   onClick={() => onCoverImageChange('')}
                   className={cn(
-                    'absolute top-2 right-2 rounded-full p-1',
+                    'absolute right-2 top-2 rounded-full p-1',
                     'bg-black/50 text-white transition-colors hover:bg-black/70'
                   )}
                 >
@@ -333,15 +333,15 @@ export function AdvancedOptions({
               onChange={(e) => onCoverImageChange(e.target.value)}
               placeholder="Enter image URL or select from detected images"
               className={cn(
-                'bg-background w-full rounded-lg border px-3 py-2',
-                'focus:ring-ring text-sm focus:ring-2 focus:outline-hidden'
+                'w-full rounded-lg border bg-background px-3 py-2',
+                'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
               )}
             />
 
             {/* Detected images from content */}
             {detectedImages.length > 0 && (
               <div className="space-y-2">
-                <span className="text-muted-foreground text-xs">Detected images in content:</span>
+                <span className="text-xs text-muted-foreground">Detected images in content:</span>
                 <div className="flex flex-wrap gap-2">
                   {detectedImages.slice(0, 4).map((img, index) => (
                     <button
@@ -350,9 +350,9 @@ export function AdvancedOptions({
                       onClick={() => onCoverImageChange(img)}
                       className={cn(
                         'relative h-16 w-16 overflow-hidden rounded-lg border-2',
-                        'hover:border-primary transition-all',
+                        'transition-all hover:border-primary',
                         coverImage === img
-                          ? 'border-primary ring-primary/20 ring-2'
+                          ? 'border-primary ring-2 ring-primary/20'
                           : 'border-border'
                       )}
                     >
@@ -366,8 +366,8 @@ export function AdvancedOptions({
                         }}
                       />
                       {coverImage === img && (
-                        <div className="bg-primary/20 absolute inset-0 flex items-center justify-center">
-                          <ImageIcon className="text-primary h-4 w-4" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
+                          <ImageIcon className="h-4 w-4 text-primary" />
                         </div>
                       )}
                     </button>

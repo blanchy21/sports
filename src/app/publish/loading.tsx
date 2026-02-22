@@ -1,54 +1,54 @@
 /**
  * Publish Page Loading State
- *
+ * 
  * Note: Does NOT use MainLayout to avoid context dependency issues.
  */
 export default function PublishLoading() {
   return (
-    <div className="bg-background min-h-screen">
+    <div className="min-h-screen bg-background">
       {/* Top Navigation Placeholder */}
-      <div className="from-primary/10 to-accent/10 h-24 bg-linear-to-r" />
-
+      <div className="h-24 bg-gradient-to-r from-primary/10 to-accent/10" />
+      
       <div className="lg:pl-80">
-        <div className="mx-auto max-w-4xl space-y-6 px-6 py-6">
+        <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
           {/* Header Skeleton */}
-          <div className="flex animate-pulse items-center justify-between">
+          <div className="flex items-center justify-between animate-pulse">
             <div className="flex items-center space-x-3">
-              <div className="bg-muted h-6 w-6 rounded" />
-              <div className="bg-muted h-8 w-40 rounded" />
+              <div className="h-6 w-6 bg-muted rounded" />
+              <div className="h-8 w-40 bg-muted rounded" />
             </div>
             <div className="flex gap-2">
-              <div className="bg-muted h-10 w-24 rounded" />
-              <div className="bg-muted h-10 w-24 rounded" />
+              <div className="h-10 w-24 bg-muted rounded" />
+              <div className="h-10 w-24 bg-muted rounded" />
             </div>
           </div>
 
           {/* Title Input Skeleton */}
-          <div className="bg-muted h-14 w-full animate-pulse rounded-lg" />
+          <div className="h-14 w-full bg-muted rounded-lg animate-pulse" />
 
           {/* Editor Skeleton */}
-          <div className="bg-card animate-pulse rounded-lg border">
-            <div className="flex gap-2 border-b p-2">
+          <div className="bg-card border rounded-lg animate-pulse">
+            <div className="border-b p-2 flex gap-2">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="bg-muted h-8 w-8 rounded" />
+                <div key={i} className="h-8 w-8 bg-muted rounded" />
               ))}
             </div>
-            <div className="space-y-3 p-4">
-              <div className="bg-muted h-4 w-full rounded" />
-              <div className="bg-muted h-4 w-5/6 rounded" />
-              <div className="bg-muted h-4 w-4/6 rounded" />
-              <div className="bg-muted h-4 w-full rounded" />
-              <div className="bg-muted h-4 w-3/4 rounded" />
+            <div className="p-4 space-y-3">
+              <div className="h-4 w-full bg-muted rounded" />
+              <div className="h-4 w-5/6 bg-muted rounded" />
+              <div className="h-4 w-4/6 bg-muted rounded" />
+              <div className="h-4 w-full bg-muted rounded" />
+              <div className="h-4 w-3/4 bg-muted rounded" />
               <div className="h-40" />
             </div>
           </div>
 
           {/* Options Skeleton */}
-          <div className="bg-card animate-pulse rounded-lg border p-4">
-            <div className="bg-muted mb-4 h-5 w-24 rounded" />
+          <div className="bg-card border rounded-lg p-4 animate-pulse">
+            <div className="h-5 w-24 bg-muted rounded mb-4" />
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-muted h-10 rounded" />
-              <div className="bg-muted h-10 rounded" />
+              <div className="h-10 bg-muted rounded" />
+              <div className="h-10 bg-muted rounded" />
             </div>
           </div>
         </div>

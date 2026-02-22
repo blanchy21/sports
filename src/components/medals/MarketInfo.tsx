@@ -166,7 +166,7 @@ const PriceDisplay: React.FC<{ market: MedalsMarket }> = ({ market }) => {
   const priceChange = formatPercentChange(market.priceChange24h);
 
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-amber-100 bg-linear-to-r from-amber-50 to-yellow-50 p-4">
+    <div className="flex items-center gap-4 rounded-lg border border-amber-100 bg-gradient-to-r from-amber-50 to-yellow-50 p-4">
       <div className="rounded-full bg-amber-100 p-3">
         <DollarSign className="h-6 w-6 text-amber-600" />
       </div>

@@ -176,7 +176,7 @@ export default function UserProfileClient() {
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">⚠️</div>
             <h3 className="mb-2 text-xl font-semibold">User Not Found</h3>
-            <p className="text-muted-foreground mb-4">
+            <p className="mb-4 text-muted-foreground">
               The user profile you&apos;re looking for doesn&apos;t exist.
             </p>
             <Button onClick={() => router.push('/')} variant="outline">
@@ -199,9 +199,9 @@ export default function UserProfileClient() {
         </Button>
 
         {/* Profile Header */}
-        <div className="bg-card overflow-hidden rounded-lg border">
+        <div className="overflow-hidden rounded-lg border bg-card">
           {/* Cover Photo */}
-          <div className="from-primary via-bright-cobalt to-accent relative h-32 bg-linear-to-r sm:h-48">
+          <div className="relative h-32 bg-gradient-to-r from-primary via-bright-cobalt to-accent sm:h-48">
             {!isSoftUser &&
               (profile as { profile?: { coverImage?: string } }).profile?.coverImage && (
                 /* eslint-disable-next-line @next/next/no-img-element */
@@ -231,13 +231,13 @@ export default function UserProfileClient() {
                   }
                   fallback={username}
                   size="lg"
-                  className="border-background h-24 w-24 border-4 sm:h-32 sm:w-32"
+                  className="h-24 w-24 border-4 border-background sm:h-32 sm:w-32"
                 />
               </div>
 
               <div className="mt-4 flex-1 text-center sm:text-left">
                 <div className="mb-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start sm:gap-3">
-                  <h1 className="text-foreground text-2xl font-bold sm:text-3xl">
+                  <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
                     {isSoftUser
                       ? (profile as { displayName?: string }).displayName || username
                       : (profile as { profile?: { name?: string } }).profile?.name || username}
@@ -245,8 +245,8 @@ export default function UserProfileClient() {
                   {!isSoftUser && premiumTier && <PremiumBadge tier={premiumTier} size="md" />}
                   {!isSoftUser &&
                     (profile as { reputationFormatted?: string }).reputationFormatted && (
-                      <div className="bg-accent/20 dark:bg-accent/20 rounded-full px-2 py-1">
-                        <span className="text-accent dark:text-accent text-xs font-medium">
+                      <div className="rounded-full bg-accent/20 px-2 py-1 dark:bg-accent/20">
+                        <span className="text-xs font-medium text-accent dark:text-accent">
                           Rep: {(profile as { reputationFormatted?: string }).reputationFormatted}
                         </span>
                       </div>
@@ -270,14 +270,14 @@ export default function UserProfileClient() {
                       />
                     )}
                 </div>
-                <p className="text-muted-foreground mb-2 text-base sm:text-lg">@{username}</p>
+                <p className="mb-2 text-base text-muted-foreground sm:text-lg">@{username}</p>
 
                 {/* Profile Details */}
                 <div className="mt-4 space-y-3">
                   {!isSoftUser &&
                     (profile as { profile?: { location?: string } }).profile?.location && (
                       <div className="flex items-center space-x-3 text-sm">
-                        <MapPin className="text-muted-foreground h-4 w-4" />
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
                         <span className="text-foreground">
                           {(profile as { profile?: { location?: string } }).profile!.location}
                         </span>
@@ -285,7 +285,7 @@ export default function UserProfileClient() {
                     )}
 
                   <div className="flex items-center space-x-3 text-sm">
-                    <Calendar className="text-muted-foreground h-4 w-4" />
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-foreground">
                       Joined{' '}
                       {new Date(profile.createdAt).toLocaleDateString('en-US', {
@@ -305,7 +305,7 @@ export default function UserProfileClient() {
                   {!isSoftUser &&
                     (profile as { profile?: { website?: string } }).profile?.website && (
                       <div className="flex items-center space-x-3 text-sm">
-                        <LinkIcon className="text-muted-foreground h-4 w-4" />
+                        <LinkIcon className="h-4 w-4 text-muted-foreground" />
                         <a
                           href={(profile as { profile?: { website?: string } }).profile!.website!}
                           className="text-primary transition-colors hover:underline"
@@ -325,7 +325,7 @@ export default function UserProfileClient() {
                   ? (profile as { bio?: string }).bio
                   : (profile as { profile?: { about?: string } }).profile?.about) && (
                   <div className="mt-6">
-                    <p className="text-foreground max-w-2xl text-base leading-relaxed">
+                    <p className="max-w-2xl text-base leading-relaxed text-foreground">
                       {isSoftUser
                         ? (profile as { bio?: string }).bio
                         : (profile as { profile?: { about?: string } }).profile?.about}
@@ -334,30 +334,30 @@ export default function UserProfileClient() {
                 )}
 
                 {/* Stats Section */}
-                <div className="border-border mt-6 flex items-center justify-center gap-4 border-t pt-4 sm:justify-start sm:gap-6">
+                <div className="mt-6 flex items-center justify-center gap-4 border-t border-border pt-4 sm:justify-start sm:gap-6">
                   {!isSoftUser ? (
                     <>
                       <div
                         className="cursor-pointer text-center transition-opacity hover:opacity-70"
                         onClick={() => openModal('followersList', { username, type: 'following' })}
                       >
-                        <div className="text-foreground text-2xl font-bold">
+                        <div className="text-2xl font-bold text-foreground">
                           {followingCount || 0}
                         </div>
-                        <div className="text-muted-foreground text-sm">Following</div>
+                        <div className="text-sm text-muted-foreground">Following</div>
                       </div>
                       <div
                         className="cursor-pointer text-center transition-opacity hover:opacity-70"
                         onClick={() => openModal('followersList', { username, type: 'followers' })}
                       >
-                        <div className="text-foreground text-2xl font-bold">
+                        <div className="text-2xl font-bold text-foreground">
                           {followerCount || 0}
                         </div>
-                        <div className="text-muted-foreground text-sm">Followers</div>
+                        <div className="text-sm text-muted-foreground">Followers</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-foreground text-2xl font-bold">{userPosts.length}</div>
-                        <div className="text-muted-foreground text-sm">Posts</div>
+                        <div className="text-2xl font-bold text-foreground">{userPosts.length}</div>
+                        <div className="text-sm text-muted-foreground">Posts</div>
                       </div>
                     </>
                   ) : (
@@ -372,10 +372,10 @@ export default function UserProfileClient() {
                           })
                         }
                       >
-                        <div className="text-foreground text-2xl font-bold">
+                        <div className="text-2xl font-bold text-foreground">
                           {softFollowingCount}
                         </div>
-                        <div className="text-muted-foreground text-sm">Following</div>
+                        <div className="text-sm text-muted-foreground">Following</div>
                       </div>
                       <div
                         className="cursor-pointer text-center transition-opacity hover:opacity-70"
@@ -387,14 +387,14 @@ export default function UserProfileClient() {
                           })
                         }
                       >
-                        <div className="text-foreground text-2xl font-bold">
+                        <div className="text-2xl font-bold text-foreground">
                           {softFollowerCount}
                         </div>
-                        <div className="text-muted-foreground text-sm">Followers</div>
+                        <div className="text-sm text-muted-foreground">Followers</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-foreground text-2xl font-bold">{userPosts.length}</div>
-                        <div className="text-muted-foreground text-sm">Posts</div>
+                        <div className="text-2xl font-bold text-foreground">{userPosts.length}</div>
+                        <div className="text-sm text-muted-foreground">Posts</div>
                       </div>
                     </>
                   )}
@@ -405,14 +405,14 @@ export default function UserProfileClient() {
         </div>
 
         {/* Posts Section */}
-        <div className="bg-card rounded-lg border">
+        <div className="rounded-lg border bg-card">
           <div className="p-4 sm:p-6">
             <h2 className="mb-4 text-xl font-bold">Posts</h2>
 
             {isLoadingPosts ? (
               <div className="flex items-center justify-center py-12">
-                <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent"></div>
-                <span className="text-muted-foreground ml-2">Loading posts...</span>
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                <span className="ml-2 text-muted-foreground">Loading posts...</span>
               </div>
             ) : postsError ? (
               <div className="py-12 text-center">

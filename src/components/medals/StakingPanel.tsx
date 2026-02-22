@@ -111,7 +111,7 @@ const AmountInput: React.FC<AmountInputProps> = ({
           onChange={handleChange}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 bg-transparent font-mono text-lg text-slate-900 outline-hidden placeholder:text-slate-400"
+          className="flex-1 bg-transparent font-mono text-lg text-slate-900 outline-none placeholder:text-slate-400"
         />
         <span className="font-medium text-slate-500">MEDALS</span>
         {max !== undefined && (
@@ -330,7 +330,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
         </div>
 
         {/* Premium Tier Progress */}
-        <div className="rounded-lg bg-linear-to-r from-slate-50 to-amber-50 p-4">
+        <div className="rounded-lg bg-gradient-to-r from-slate-50 to-amber-50 p-4">
           <PremiumTierProgress currentStaked={stakedBalance} />
         </div>
 
@@ -423,7 +423,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
         {/* Unstaking Warning */}
         {action === 'unstake' && (
           <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div>
               <span className="font-medium">Unstaking period:</span>
               <span className="ml-1">

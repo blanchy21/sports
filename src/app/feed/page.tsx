@@ -219,7 +219,7 @@ export default function FeedPage() {
     <MainLayout>
       <div className="mx-auto max-w-4xl space-y-6">
         {/* Write Post Section */}
-        <div className="bg-card rounded-lg border p-4">
+        <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center space-x-3">
             <Avatar
               src={user?.avatar}
@@ -231,7 +231,7 @@ export default function FeedPage() {
               <input
                 type="text"
                 placeholder="What's happening in sports today?"
-                className="bg-background focus:ring-primary w-full cursor-pointer rounded-lg border px-4 py-2 focus:ring-2 focus:outline-hidden"
+                className="w-full cursor-pointer rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={!user}
                 onClick={() => user && router.push('/sportsbites')}
                 readOnly
@@ -249,10 +249,10 @@ export default function FeedPage() {
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={index} className="bg-card rounded-lg border p-4">
+              <div key={index} className="rounded-lg border bg-card p-4">
                 <div className="flex items-center space-x-3">
-                  <div className="bg-primary/10 rounded-lg p-2">
-                    <Icon className="text-primary h-5 w-5" />
+                  <div className="rounded-lg bg-primary/10 p-2">
+                    <Icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <div className="text-2xl font-bold">
@@ -264,7 +264,7 @@ export default function FeedPage() {
                         stat.value
                       )}
                     </div>
-                    <div className="text-muted-foreground text-sm">{stat.label}</div>
+                    <div className="text-sm text-muted-foreground">{stat.label}</div>
                   </div>
                 </div>
               </div>
@@ -280,12 +280,12 @@ export default function FeedPage() {
                 {selectedSportName ? `${selectedSportName} Posts` : 'Featured Posts'}
               </h2>
               {selectedSportName && (
-                <div className="bg-primary/10 text-primary flex items-center gap-2 rounded-full px-3 py-1 text-sm">
+                <div className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
                   <span>{SPORT_CATEGORIES.find((s) => s.id === selectedSport)?.icon}</span>
                   <span>{selectedSportName}</span>
                   <button
                     onClick={() => setSelectedSport('')}
-                    className="text-primary/70 hover:text-primary ml-1 transition-colors"
+                    className="ml-1 text-primary/70 transition-colors hover:text-primary"
                   >
                     ×
                   </button>
@@ -301,7 +301,7 @@ export default function FeedPage() {
             {isLoading ? (
               // Loading skeleton
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-card animate-pulse rounded-lg border p-6">
+                <div key={i} className="animate-pulse rounded-lg border bg-card p-6">
                   <div className="mb-4 flex items-center space-x-3">
                     <div className="h-10 w-10 rounded-full bg-gray-300"></div>
                     <div className="flex-1">
@@ -356,7 +356,7 @@ export default function FeedPage() {
         {/* Infinite Scroll Loading Indicator */}
         {isFetchingNextPage && (
           <div className="mt-8 flex justify-center">
-            <div className="text-muted-foreground flex items-center">
+            <div className="flex items-center text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Loading more posts...
             </div>
@@ -366,7 +366,7 @@ export default function FeedPage() {
         {/* End of feed indicator */}
         {!hasNextPage && posts.length > 0 && (
           <div className="mt-8 flex justify-center">
-            <div className="text-muted-foreground text-sm">
+            <div className="text-sm text-muted-foreground">
               You&apos;ve reached the end of the feed
             </div>
           </div>

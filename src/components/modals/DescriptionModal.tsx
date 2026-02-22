@@ -80,20 +80,20 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="focus:ring-primary w-full resize-none rounded-lg border p-3 focus:ring-2 focus:outline-hidden"
+                className="w-full resize-none rounded-lg border p-3 focus:outline-none focus:ring-2 focus:ring-primary"
                 rows={8}
                 placeholder="Enter a description..."
               />
             ) : (
-              <div className="bg-muted/30 min-h-[200px] rounded-lg border p-3">
-                <p className="text-foreground text-sm whitespace-pre-wrap">
+              <div className="min-h-[200px] rounded-lg border bg-muted/30 p-3">
+                <p className="whitespace-pre-wrap text-sm text-foreground">
                   {description || 'No description available.'}
                 </p>
               </div>
             )}
           </div>
 
-          <div className="text-muted-foreground text-sm">
+          <div className="text-sm text-muted-foreground">
             <p>• Keep descriptions concise and informative</p>
             <p>• Use markdown formatting for better readability</p>
             <p>• Descriptions help other users understand your content</p>
@@ -101,8 +101,8 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({
 
           {/* Error message */}
           {error && (
-            <div className="border-destructive/20 bg-destructive/10 rounded-lg border p-3">
-              <p className="text-destructive text-sm">{error}</p>
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
         </div>

@@ -428,7 +428,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                   setFilterType(e.target.value);
                   setOffset(0);
                 }}
-                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
               >
                 {FILTER_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>

@@ -84,14 +84,14 @@ export function NavigationProgress() {
 
   return (
     <div
-      className="pointer-events-none fixed top-0 right-0 left-0 z-9999 h-1"
+      className="pointer-events-none fixed left-0 right-0 top-0 z-[9999] h-1"
       role="progressbar"
       aria-valuenow={progress}
       aria-valuemin={0}
       aria-valuemax={100}
     >
       <div
-        className="from-primary to-accent shadow-primary/30 h-full bg-linear-to-r shadow-lg"
+        className="h-full bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/30"
         style={{
           width: `${progress}%`,
           opacity: progress >= 100 ? 0 : 1,

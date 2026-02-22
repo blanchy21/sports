@@ -165,7 +165,7 @@ export default function OnboardingUsernamePage() {
   if (!isClient || !user) return null;
 
   return (
-    <div className="bg-background flex min-h-screen items-center justify-center p-6">
+    <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -176,12 +176,12 @@ export default function OnboardingUsernamePage() {
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-3xl font-black tracking-tight">
             <span className="text-foreground">SPORTS</span>
-            <span className="from-accent to-aegean-sky bg-linear-to-r bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-accent to-aegean-sky bg-clip-text text-transparent">
               BLOCK
             </span>
           </h1>
-          <h2 className="text-foreground mb-2 text-xl font-bold">Choose your Hive username</h2>
-          <p className="text-muted-foreground text-sm">
+          <h2 className="mb-2 text-xl font-bold text-foreground">Choose your Hive username</h2>
+          <p className="text-sm text-muted-foreground">
             This creates a real blockchain account. Your username is permanent and cannot be
             changed.
           </p>
@@ -189,11 +189,11 @@ export default function OnboardingUsernamePage() {
 
         {/* Username input */}
         <div className="mb-6">
-          <label htmlFor="hive-username" className="text-foreground mb-2 block text-sm font-medium">
+          <label htmlFor="hive-username" className="mb-2 block text-sm font-medium text-foreground">
             Username
           </label>
           <div className="relative">
-            <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
               @
             </span>
             <input
@@ -205,12 +205,12 @@ export default function OnboardingUsernamePage() {
               }
               placeholder="your-username"
               maxLength={16}
-              className="border-border bg-muted/30 text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:ring-accent/20 h-12 w-full rounded-xl border pr-10 pl-8 focus:ring-2 focus:outline-hidden"
+              className="h-12 w-full rounded-xl border border-border bg-muted/30 pl-8 pr-10 text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               disabled={isCreating}
             />
-            <div className="absolute top-1/2 right-3 -translate-y-1/2">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
               {validationState === 'checking' && (
-                <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               )}
               {validationState === 'valid' && <CheckCircle className="h-5 w-5 text-emerald-500" />}
               {(validationState === 'invalid' || validationState === 'taken') && (
@@ -245,7 +245,7 @@ export default function OnboardingUsernamePage() {
           )}
 
           {/* Rules hint */}
-          <p className="text-muted-foreground mt-3 text-xs">
+          <p className="mt-3 text-xs text-muted-foreground">
             3-16 characters. Lowercase letters, digits, dashes, and dots. Must start with a letter.
           </p>
         </div>
@@ -265,7 +265,7 @@ export default function OnboardingUsernamePage() {
         <Button
           onClick={handleCreate}
           disabled={validationState !== 'valid' || isCreating}
-          className="bg-accent shadow-accent/20 hover:bg-accent/90 hover:shadow-accent/30 flex h-14 w-full items-center justify-center gap-3 rounded-xl text-base font-semibold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] disabled:scale-100 disabled:opacity-50"
+          className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-accent text-base font-semibold text-white shadow-lg shadow-accent/20 transition-all duration-300 hover:scale-[1.02] hover:bg-accent/90 hover:shadow-accent/30 disabled:scale-100 disabled:opacity-50"
         >
           {isCreating ? (
             <>
@@ -280,7 +280,7 @@ export default function OnboardingUsernamePage() {
           )}
         </Button>
 
-        <p className="text-muted-foreground mt-4 text-center text-xs">
+        <p className="mt-4 text-center text-xs text-muted-foreground">
           Your keys are encrypted and stored securely. You can export them at any time.
         </p>
       </motion.div>

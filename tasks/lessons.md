@@ -220,18 +220,3 @@ Replace the HTTP self-fetch with a direct call to `fetchSportsblockPosts()`. Ser
 ### Rule
 **Never make HTTP requests from an API route to another API route on the same server.** Import the function directly instead. Self-referencing fetches fail in serverless environments (Vercel, Lambda) where `localhost` doesn't work.
 
----
-
-## Tailwind v4 upgrade tool renames non-CSS strings
-
-**Date:** 2026-02-22
-**Severity:** Medium — causes type errors that block build
-
-### Problem
-`npx @tailwindcss/upgrade` renames Tailwind utility classes in templates, but is over-aggressive: it also renames string literals that happen to match class names but are actually component prop values or Next.js API values. Examples found:
-- `variant="outline"` → `variant="outline-solid"` (Button/Badge variant prop)
-- `placeholder="blur"` → `placeholder="blur-sm"` (Next.js Image prop)
-
-### Rule
-**After running `npx @tailwindcss/upgrade`, always check for incorrect renames in non-CSS contexts.** Search for `outline-solid`, `blur-sm`, and other renamed strings in TypeScript files and verify they are actual Tailwind classes, not component props or API values. The tool cannot distinguish CSS class strings from non-CSS string values.
-

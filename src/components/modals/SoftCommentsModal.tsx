@@ -214,7 +214,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
               <span className="text-sm font-medium">
                 {comment.authorDisplayName || `@${comment.authorUsername}`}
               </span>
-              <span className="text-muted-foreground text-xs">@{comment.authorUsername}</span>
+              <span className="text-xs text-muted-foreground">@{comment.authorUsername}</span>
               {comment.isHiveUser ? (
                 <Badge variant="default" className="px-1.5 py-0 text-[10px]">
                   Hive
@@ -224,16 +224,16 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
                   Off Chain
                 </Badge>
               )}
-              <span className="text-muted-foreground text-xs">
+              <span className="text-xs text-muted-foreground">
                 {formatDate(new Date(comment.createdAt))}
               </span>
               {comment.updatedAt !== comment.createdAt && !comment.isDeleted && (
-                <span className="text-muted-foreground text-xs">(edited)</span>
+                <span className="text-xs text-muted-foreground">(edited)</span>
               )}
             </div>
-            <div className="prose prose-sm dark:prose-invert max-w-none">
+            <div className="prose prose-sm max-w-none dark:prose-invert">
               {comment.isDeleted ? (
-                <p className="text-muted-foreground text-sm whitespace-pre-wrap italic">
+                <p className="whitespace-pre-wrap text-sm italic text-muted-foreground">
                   {comment.body}
                 </p>
               ) : (
@@ -287,7 +287,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
           <MessageCircle className="h-5 w-5" />
           <span>Comments</span>
           {comments.length > 0 && (
-            <span className="text-muted-foreground text-sm">({comments.length})</span>
+            <span className="text-sm text-muted-foreground">({comments.length})</span>
           )}
         </div>
       }
@@ -297,7 +297,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : error ? (
           <div className="py-12 text-center">
@@ -329,7 +329,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
 
       {/* Reply indicator with original comment preview */}
       {replyingTo && (
-        <div className="bg-muted/50 border-t border-b px-4 py-3">
+        <div className="border-b border-t bg-muted/50 px-4 py-3">
           <div className="flex items-start gap-3">
             <Avatar
               src={
@@ -343,7 +343,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
             />
             <div className="min-w-0 flex-1">
               <span className="text-sm font-medium">@{replyingTo.authorUsername}</span>
-              <p className="text-muted-foreground mt-0.5 line-clamp-2 text-sm">{replyingTo.body}</p>
+              <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{replyingTo.body}</p>
             </div>
             <Button
               variant="ghost"
@@ -379,7 +379,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
                   placeholder={
                     replyingTo ? `Reply to @${replyingTo.authorUsername}...` : 'Write a comment...'
                   }
-                  className="bg-background text-foreground focus:ring-primary w-full resize-none rounded-lg border p-3 text-sm focus:ring-2 focus:outline-hidden sm:text-base"
+                  className="w-full resize-none rounded-lg border bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary sm:text-base"
                   rows={2}
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
@@ -415,8 +415,8 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
             </Button>
           </div>
         ) : (
-          <div className="bg-muted/50 rounded-lg py-4 text-center">
-            <p className="text-muted-foreground text-sm">Sign in to comment on this post.</p>
+          <div className="rounded-lg bg-muted/50 py-4 text-center">
+            <p className="text-sm text-muted-foreground">Sign in to comment on this post.</p>
           </div>
         )}
       </div>

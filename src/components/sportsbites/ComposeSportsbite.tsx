@@ -359,14 +359,14 @@ export function ComposeSportsbite({
 
   if (!user) {
     return (
-      <div className="bg-card rounded-xl border p-6 text-center">
+      <div className="rounded-xl border bg-card p-6 text-center">
         <p className="text-muted-foreground">Sign in to post sportsbites</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-card rounded-xl border">
+    <div className="rounded-xl border bg-card">
       <div className="p-4">
         <div className="flex gap-3">
           <Avatar
@@ -374,7 +374,7 @@ export function ComposeSportsbite({
             fallback={user.username || '?'}
             alt={user.displayName || user.username || 'User'}
             size="md"
-            className="shrink-0"
+            className="flex-shrink-0"
           />
 
           <div className="min-w-0 flex-1">
@@ -384,8 +384,8 @@ export function ComposeSportsbite({
               onChange={(e) => setContent(e.target.value)}
               placeholder="What's happening in sports?"
               className={cn(
-                'w-full resize-none border-none bg-transparent outline-hidden',
-                'placeholder:text-muted-foreground/60 text-lg',
+                'w-full resize-none border-none bg-transparent outline-none',
+                'text-lg placeholder:text-muted-foreground/60',
                 'max-h-[200px] min-h-[60px]'
               )}
               disabled={isPublishing}
@@ -406,7 +406,7 @@ export function ComposeSportsbite({
                     />
                     <button
                       onClick={() => handleRemoveImage(index)}
-                      className="absolute top-1 right-1 rounded-full bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="absolute right-1 top-1 rounded-full bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <X className="h-3 w-3 text-white" />
                     </button>
@@ -424,12 +424,12 @@ export function ComposeSportsbite({
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={gif} alt={`GIF ${index + 1}`} className="h-24 w-24 object-cover" />
-                    <div className="absolute top-1 left-1 rounded bg-purple-600/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                    <div className="absolute left-1 top-1 rounded bg-purple-600/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
                       GIF
                     </div>
                     <button
                       onClick={() => handleRemoveGif(index)}
-                      className="absolute top-1 right-1 rounded-full bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="absolute right-1 top-1 rounded-full bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <X className="h-3 w-3 text-white" />
                     </button>
@@ -440,13 +440,13 @@ export function ComposeSportsbite({
 
             {sportCategory && (
               <div className="mt-3 flex items-center gap-2">
-                <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-sm text-primary">
                   <Trophy className="h-3 w-3" />
                   {SPORT_CATEGORIES.find((s) => s.id === sportCategory)?.icon}{' '}
                   {SPORT_CATEGORIES.find((s) => s.id === sportCategory)?.name}
                   <button
                     onClick={() => setSportCategory('')}
-                    className="hover:text-primary/70 ml-1"
+                    className="ml-1 hover:text-primary/70"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -457,9 +457,9 @@ export function ComposeSportsbite({
             {poll && <PollComposer poll={poll} onChange={(p) => setPoll(p)} className="mt-3" />}
 
             {showImageInput && (
-              <div className="bg-muted/50 mt-3 rounded-lg border p-3">
+              <div className="mt-3 rounded-lg border bg-muted/50 p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm font-medium">
+                  <span className="text-sm font-medium text-muted-foreground">
                     Add image from URL
                   </span>
                   <Button
@@ -480,7 +480,7 @@ export function ComposeSportsbite({
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
                     placeholder="Paste image URL..."
-                    className="bg-background focus:ring-primary flex-1 rounded-lg border px-3 py-2 text-sm outline-hidden focus:ring-2"
+                    className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -493,19 +493,19 @@ export function ComposeSportsbite({
                     Add
                   </Button>
                 </div>
-                {uploadError && <p className="text-destructive mt-2 text-sm">{uploadError}</p>}
+                {uploadError && <p className="mt-2 text-sm text-destructive">{uploadError}</p>}
               </div>
             )}
 
             {uploadError && !showImageInput && (
-              <p className="text-destructive mt-2 text-sm">{uploadError}</p>
+              <p className="mt-2 text-sm text-destructive">{uploadError}</p>
             )}
           </div>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="bg-muted/30 flex items-center justify-between border-t px-4 py-3">
+      <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-3">
         <div className="flex items-center gap-1">
           <input
             ref={fileInputRef}
@@ -523,7 +523,7 @@ export function ComposeSportsbite({
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploadingImage}
-            className="text-primary hover:bg-primary/10 h-9 w-9 p-0"
+            className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
             title="Upload image"
           >
             {isUploadingImage ? (
@@ -537,7 +537,7 @@ export function ComposeSportsbite({
             variant="ghost"
             size="sm"
             onClick={() => setShowImageInput(!showImageInput)}
-            className="text-primary hover:bg-primary/10 h-9 w-9 p-0"
+            className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
             title="Add image from URL"
           >
             <LinkIcon className="h-5 w-5" />
@@ -549,14 +549,14 @@ export function ComposeSportsbite({
               variant="ghost"
               size="sm"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="text-primary hover:bg-primary/10 h-9 w-9 p-0"
+              className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
               title="Add emoji"
             >
               <Smile className="h-5 w-5" />
             </Button>
 
             {showEmojiPicker && (
-              <div className="absolute top-full left-0 z-50 mt-2">
+              <div className="absolute left-0 top-full z-50 mt-2">
                 <EmojiPicker
                   onEmojiClick={handleEmojiSelect}
                   emojiStyle={'native' as unknown as import('emoji-picker-react').EmojiStyle}
@@ -571,7 +571,7 @@ export function ComposeSportsbite({
               variant="ghost"
               size="sm"
               onClick={() => setShowGifPicker(!showGifPicker)}
-              className="text-primary hover:bg-primary/10 h-9 w-9 p-0"
+              className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
               title="Add GIF"
             >
               <Film className="h-5 w-5" />
@@ -592,14 +592,14 @@ export function ComposeSportsbite({
               variant="ghost"
               size="sm"
               onClick={() => setShowSportPicker(!showSportPicker)}
-              className="text-primary hover:bg-primary/10 h-9 w-9 p-0"
+              className="h-9 w-9 p-0 text-primary hover:bg-primary/10"
               title="Tag sport"
             >
               <Trophy className="h-5 w-5" />
             </Button>
 
             {showSportPicker && (
-              <div className="bg-card absolute top-full left-0 z-50 mt-2 max-h-60 w-48 overflow-y-auto rounded-lg border p-2 shadow-lg">
+              <div className="absolute left-0 top-full z-50 mt-2 max-h-60 w-48 overflow-y-auto rounded-lg border bg-card p-2 shadow-lg">
                 {SPORT_CATEGORIES.map((sport) => (
                   <button
                     key={sport.id}
@@ -609,7 +609,7 @@ export function ComposeSportsbite({
                     }}
                     className={cn(
                       'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm',
-                      'hover:bg-muted transition-colors',
+                      'transition-colors hover:bg-muted',
                       sportCategory === sport.id && 'bg-primary/10 text-primary'
                     )}
                   >
@@ -626,7 +626,7 @@ export function ComposeSportsbite({
             size="sm"
             onClick={() => setPoll(poll ? null : { question: '', options: ['', ''] })}
             className={cn(
-              'hover:bg-primary/10 h-9 w-9 p-0',
+              'h-9 w-9 p-0 hover:bg-primary/10',
               poll ? 'text-primary' : 'text-primary'
             )}
             title={poll ? 'Remove poll' : 'Add poll'}
@@ -637,7 +637,7 @@ export function ComposeSportsbite({
 
         <div className="flex items-center gap-3">
           {charCount > 0 && (
-            <span className="text-muted-foreground text-xs">
+            <span className="text-xs text-muted-foreground">
               {content.trim().split(/\s+/).filter(Boolean).length}w
             </span>
           )}
@@ -684,7 +684,7 @@ export function ComposeSportsbite({
             )}
           </div>
 
-          {charCount > 0 && <div className="bg-border h-6 w-px" />}
+          {charCount > 0 && <div className="h-6 w-px bg-border" />}
 
           <Button
             onClick={handlePublish}
@@ -709,7 +709,7 @@ export function ComposeSportsbite({
       {authType === 'soft' && user && !user.keysDownloaded && (
         <a
           href="/api/hive/download-keys"
-          className="flex items-center gap-2 border-t border-amber-200 bg-linear-to-r from-amber-50 to-orange-50 px-4 py-2.5 transition-colors hover:from-amber-100 hover:to-orange-100 dark:border-amber-800/50 dark:from-amber-950/20 dark:to-orange-950/20 dark:hover:from-amber-950/30 dark:hover:to-orange-950/30"
+          className="flex items-center gap-2 border-t border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2.5 transition-colors hover:from-amber-100 hover:to-orange-100 dark:border-amber-800/50 dark:from-amber-950/20 dark:to-orange-950/20 dark:hover:from-amber-950/30 dark:hover:to-orange-950/30"
         >
           <Download className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
           <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
