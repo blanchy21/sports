@@ -129,7 +129,7 @@ describe('/api/auth/sb-session', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Hive auth requires challenge-response verification');
+      expect(response.body.error).toBe('Hive auth requires verification (challenge-response or HiveSigner token)');
     });
 
     it('returns 401 when hive challenge verification fails', async () => {
