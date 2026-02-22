@@ -1,8 +1,7 @@
-import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { Providers, KeyTypes } from '@aioha/aioha';
-import type { LoginResult, LoginResultSuccess } from '@aioha/aioha/build/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAioha } from '@/contexts/AiohaProvider';
 import type { HiveAccount } from '@/lib/shared/types';
@@ -106,8 +105,6 @@ interface UseAuthPageResult {
   showAiohaModal: boolean;
   openAiohaModal: () => void;
   closeAiohaModal: () => void;
-  setShowAiohaModal: Dispatch<SetStateAction<boolean>>;
-  handleAiohaModalLogin: (result: LoginResult) => Promise<void>;
   resetConnectionState: () => void;
 }
 
@@ -190,9 +187,7 @@ export const useAuthPage = (): UseAuthPageResult => {
     setSuccessMessage(null);
   }, []);
 
-  // No force-logout needed here — our custom WalletConnectionModal always shows
-  // the wallet grid (no "connected profile" view). Session cleanup happens inside
-  // performAiohaLogin right before the actual login call.
+  // Pre-login logout was removed because it prevents the Keychain popup from appearing.
   const openAiohaModal = useCallback(() => setShowAiohaModal(true), []);
   const closeAiohaModal = useCallback(() => setShowAiohaModal(false), []);
 
@@ -381,8 +376,7 @@ export const useAuthPage = (): UseAuthPageResult => {
         const usernameToUse =
           usernameRequiredProviders.has(provider) && hiveUsername.trim() ? hiveUsername.trim() : '';
 
-        // Let Aioha handle session management internally — force-logout before
-        // login prevents the Keychain popup from appearing.
+        // No pre-login logout — it prevents the Keychain popup from appearing.
         const loginPromise = (
           aioha as {
             login: (
@@ -400,13 +394,14 @@ export const useAuthPage = (): UseAuthPageResult => {
         // popup which takes much longer than the normal 10s timeout. For HiveSigner
         // the popup callback (hivesigner.html) handles login via postMessage, so we
         // just await the Aioha promise without a tight timeout.
-        const result = provider === 'hivesigner'
-          ? await loginPromise
-          : await withTimeout(
-              loginPromise,
-              LOGIN_TIMEOUT_MS,
-              `${provider === 'keychain' ? 'Hive Keychain' : provider} did not respond. Please check if the extension is working and try again.`
-            );
+        const result =
+          provider === 'hivesigner'
+            ? await loginPromise
+            : await withTimeout(
+                loginPromise,
+                LOGIN_TIMEOUT_MS,
+                `${provider === 'keychain' ? 'Hive Keychain' : provider} did not respond. Please check if the extension is working and try again.`
+              );
 
         const loginResult: AiohaLoginResult = {
           ...(result as Record<string, unknown>),
@@ -475,67 +470,6 @@ export const useAuthPage = (): UseAuthPageResult => {
     resetHivePrompt();
   }, [resetConnectionState, resetHivePrompt]);
 
-  /**
-   * Handle login result from AiohaModal
-   */
-  const handleAiohaModalLogin = useCallback(
-    async (result: LoginResult) => {
-      if (!result.success) {
-        setErrorMessage('Login failed: ' + (result.error || 'Unknown error'));
-        return;
-      }
-
-      const successResult: LoginResultSuccess = result;
-
-      setIsConnecting(true);
-      setErrorMessage(null);
-
-      try {
-        let username: string = successResult.username;
-
-        if (!username && aioha) {
-          const aiohaInstance = aioha as {
-            getCurrentUser?: () => string;
-            user?: { username?: string };
-            username?: string;
-          };
-          const instanceUsername =
-            aiohaInstance.getCurrentUser?.() ||
-            aiohaInstance.user?.username ||
-            aiohaInstance.username;
-          if (instanceUsername) {
-            username = instanceUsername;
-          }
-        }
-
-        const loginResult: AiohaLoginResult = {
-          username,
-          provider: successResult.provider,
-          success: true,
-        };
-
-        await loginWithAioha(loginResult);
-        if (username) {
-          try {
-            localStorage.setItem(REMEMBERED_HIVE_USERNAME_KEY, username);
-          } catch {
-            // localStorage may be unavailable
-          }
-        }
-        setShowAiohaModal(false);
-        router.push('/sportsbites');
-      } catch (error) {
-        logger.error('Aioha modal login failed', 'useAuthPage', error);
-        setErrorMessage(
-          'Login failed: ' + (error instanceof Error ? error.message : 'Unknown error')
-        );
-      } finally {
-        setIsConnecting(false);
-      }
-    },
-    [loginWithAioha, router, aioha]
-  );
-
   return {
     isConnecting,
     errorMessage,
@@ -554,8 +488,6 @@ export const useAuthPage = (): UseAuthPageResult => {
     showAiohaModal,
     openAiohaModal,
     closeAiohaModal,
-    setShowAiohaModal,
-    handleAiohaModalLogin,
     resetConnectionState,
   };
 };

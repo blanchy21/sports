@@ -21,20 +21,6 @@ const WALLET_PROVIDERS = [
     logo: '/hivesigner-icon.png',
     requiresUsername: false,
   },
-  {
-    id: 'hiveauth',
-    name: 'HiveAuth',
-    description: 'Mobile app',
-    logo: '/hiveauth-logo.png',
-    requiresUsername: true,
-  },
-  {
-    id: 'ledger',
-    name: 'Ledger',
-    description: 'Hardware wallet',
-    logo: '/ledger-logo.png',
-    requiresUsername: false,
-  },
 ] as const;
 
 interface WalletConnectionModalProps {
@@ -83,12 +69,7 @@ export const WalletConnectionModal: React.FC<WalletConnectionModalProps> = ({
   };
 
   return (
-    <BaseModal
-      isOpen={isOpen}
-      onClose={handleClose}
-      size="lg"
-      showHeader={false}
-    >
+    <BaseModal isOpen={isOpen} onClose={handleClose} size="lg" showHeader={false}>
       {showUsernameInput && selectedConfig ? (
         /* Username input view */
         <div className="space-y-6">
@@ -115,9 +96,7 @@ export const WalletConnectionModal: React.FC<WalletConnectionModalProps> = ({
                 className="object-contain"
               />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Enter your Hive username to connect
-            </p>
+            <p className="text-sm text-muted-foreground">Enter your Hive username to connect</p>
           </div>
 
           <div className="space-y-4">
@@ -157,9 +136,7 @@ export const WalletConnectionModal: React.FC<WalletConnectionModalProps> = ({
         /* Wallet grid view */
         <div className="space-y-6">
           <div className="text-center">
-            <h2 className="text-xl font-bold text-foreground sm:text-2xl">
-              Connect Hive Wallet
-            </h2>
+            <h2 className="text-xl font-bold text-foreground sm:text-2xl">Connect Hive Wallet</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Choose your preferred wallet to connect
             </p>
@@ -183,12 +160,8 @@ export const WalletConnectionModal: React.FC<WalletConnectionModalProps> = ({
                   />
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-semibold text-foreground">
-                    {provider.name}
-                  </div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">
-                    {provider.description}
-                  </div>
+                  <div className="text-sm font-semibold text-foreground">{provider.name}</div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">{provider.description}</div>
                 </div>
               </button>
             ))}
