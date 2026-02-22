@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AiohaProvider as AiohaUIProvider } from '@aioha/react-ui';
+import '@aioha/react-ui/dist/build.css';
 import { AIOHA_STUB_EVENT, getAiohaInstance } from '@/lib/aioha/config';
 import { logger } from '@/lib/logger';
 

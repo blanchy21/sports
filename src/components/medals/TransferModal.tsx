@@ -82,7 +82,7 @@ const TextInput: React.FC<TextInputProps> = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="flex-1 bg-transparent text-slate-900 outline-none placeholder:text-slate-400"
+        className="flex-1 bg-transparent text-slate-900 outline-hidden placeholder:text-slate-400"
       />
     </div>
     {error && (
@@ -130,7 +130,7 @@ const AmountInput: React.FC<AmountInputProps> = ({ value, onChange, max, disable
           onChange={handleChange}
           placeholder="0.000"
           disabled={disabled}
-          className="flex-1 bg-transparent font-mono text-lg text-slate-900 outline-none placeholder:text-slate-400"
+          className="flex-1 bg-transparent font-mono text-lg text-slate-900 outline-hidden placeholder:text-slate-400"
         />
         <span className="font-medium text-slate-500">MEDALS</span>
         {max !== undefined && (
@@ -282,7 +282,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
         </div>
       </div>
 
-      <ModalFooter className="border-t-0 px-0 pb-0 pt-4">
+      <ModalFooter className="border-t-0 px-0 pt-4 pb-0">
         <Button variant="outline" onClick={handleClose}>
           Cancel
         </Button>
@@ -333,7 +333,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
 
         {/* Warning */}
         <div className="flex items-start gap-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
-          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400" />
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
           <p>
             This action cannot be undone. Please verify the recipient address and amount before
             confirming.
@@ -356,7 +356,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
         )}
       </div>
 
-      <ModalFooter className="border-t-0 px-0 pb-0 pt-4">
+      <ModalFooter className="border-t-0 px-0 pt-4 pb-0">
         <Button
           variant="outline"
           onClick={() => setStep('form')}
@@ -415,7 +415,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
         </div>
       </div>
 
-      <ModalFooter className="justify-center border-t-0 px-0 pb-0 pt-4">
+      <ModalFooter className="justify-center border-t-0 px-0 pt-4 pb-0">
         <Button onClick={handleClose}>Close</Button>
       </ModalFooter>
     </>

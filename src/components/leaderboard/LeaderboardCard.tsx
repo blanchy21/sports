@@ -104,18 +104,18 @@ export function LeaderboardCard({
 
   if (displayEntries.length === 0) {
     return (
-      <div className="rounded-lg border bg-card p-4">
+      <div className="bg-card rounded-lg border p-4">
         <div className="mb-4 flex items-center gap-2">
           <Icon className={`h-5 w-5 ${config.color}`} />
           <h3 className="font-semibold">{config.title}</h3>
         </div>
-        <p className="py-4 text-center text-sm text-muted-foreground">No entries yet this week</p>
+        <p className="text-muted-foreground py-4 text-center text-sm">No entries yet this week</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="bg-card rounded-lg border p-4">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -123,7 +123,7 @@ export function LeaderboardCard({
           <h3 className="font-semibold">{config.title}</h3>
         </div>
         {showReward && reward && (
-          <div className="flex items-center gap-1 rounded-full bg-accent/10 px-2 py-1 text-sm text-accent">
+          <div className="bg-accent/10 text-accent flex items-center gap-1 rounded-full px-2 py-1 text-sm">
             <Trophy className="h-3.5 w-3.5" />
             <span>{reward.toLocaleString()} MEDALS</span>
           </div>
@@ -137,11 +137,11 @@ export function LeaderboardCard({
             key={`${entry.account}-${entry.postId || entry.rank}`}
             className={`flex items-center gap-3 ${
               compact ? 'py-1' : 'py-2'
-            } ${entry.rank === 1 ? '-mx-2 rounded-lg bg-accent/5 px-2' : ''}`}
+            } ${entry.rank === 1 ? 'bg-accent/5 -mx-2 rounded-lg px-2' : ''}`}
           >
             {/* Rank Badge */}
             <div
-              className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${getRankBadgeClass(
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${getRankBadgeClass(
                 entry.rank
               )}`}
             >
@@ -158,10 +158,10 @@ export function LeaderboardCard({
             </Link>
 
             {/* Value */}
-            <div className="flex-shrink-0 text-right">
+            <div className="shrink-0 text-right">
               <span className="text-sm font-semibold">{entry.value.toLocaleString()}</span>
               {!compact && (
-                <span className="ml-1 text-xs text-muted-foreground">{config.metric}</span>
+                <span className="text-muted-foreground ml-1 text-xs">{config.metric}</span>
               )}
             </div>
           </div>
@@ -173,7 +173,7 @@ export function LeaderboardCard({
         <div className="mt-3 border-t pt-3">
           <Link
             href={`/leaderboard?category=${category}`}
-            className="text-sm text-primary hover:underline"
+            className="text-primary text-sm hover:underline"
           >
             View all {entries.length} entries →
           </Link>

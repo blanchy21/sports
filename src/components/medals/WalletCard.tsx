@@ -244,7 +244,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
         </div>
 
         {/* Total Balance Highlight */}
-        <div className="mt-6 rounded-lg border border-amber-100 bg-gradient-to-r from-amber-50 to-yellow-50 p-4">
+        <div className="mt-6 rounded-lg border border-amber-100 bg-linear-to-r from-amber-50 to-yellow-50 p-4">
           <div className="flex items-center justify-between">
             <div>
               <span className="text-sm text-amber-700">Total Balance</span>

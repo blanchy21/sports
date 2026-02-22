@@ -21,10 +21,10 @@ export default function MonetisationPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="flex items-center space-x-3 text-3xl font-bold">
-              <DollarSign className="h-8 w-8 text-primary" />
+              <DollarSign className="text-primary h-8 w-8" />
               <span>Monetisation</span>
             </h1>
-            <p className="mt-2 text-muted-foreground">
+            <p className="text-muted-foreground mt-2">
               Track your earnings and rewards from the Hive blockchain
             </p>
           </div>
@@ -36,26 +36,26 @@ export default function MonetisationPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border bg-card p-6">
+          <div className="bg-card rounded-lg border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Earnings</p>
+                <p className="text-muted-foreground text-sm">Total Earnings</p>
                 <h3 className="mt-1 text-2xl font-bold">$1,234.56</h3>
                 <p className="mt-2 flex items-center text-xs text-green-500">
                   <ArrowUpRight className="mr-1 h-3 w-3" />
                   +12.5% from last month
                 </p>
               </div>
-              <div className="rounded-lg bg-primary/10 p-3">
-                <DollarSign className="h-6 w-6 text-primary" />
+              <div className="bg-primary/10 rounded-lg p-3">
+                <DollarSign className="text-primary h-6 w-6" />
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg border bg-card p-6">
+          <div className="bg-card rounded-lg border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">This Month</p>
+                <p className="text-muted-foreground text-sm">This Month</p>
                 <h3 className="mt-1 text-2xl font-bold">$156.78</h3>
                 <p className="mt-2 flex items-center text-xs text-green-500">
                   <ArrowUpRight className="mr-1 h-3 w-3" />
@@ -68,12 +68,12 @@ export default function MonetisationPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border bg-card p-6">
+          <div className="bg-card rounded-lg border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Pending</p>
+                <p className="text-muted-foreground text-sm">Pending</p>
                 <h3 className="mt-1 text-2xl font-bold">$89.45</h3>
-                <p className="mt-2 text-xs text-muted-foreground">Available in 7 days</p>
+                <p className="text-muted-foreground mt-2 text-xs">Available in 7 days</p>
               </div>
               <div className="rounded-lg bg-cyan-500/10 p-3">
                 <Calendar className="h-6 w-6 text-cyan-500" />
@@ -81,12 +81,12 @@ export default function MonetisationPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border bg-card p-6">
+          <div className="bg-card rounded-lg border p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Posts</p>
+                <p className="text-muted-foreground text-sm">Total Posts</p>
                 <h3 className="mt-1 text-2xl font-bold">47</h3>
-                <p className="mt-2 text-xs text-muted-foreground">23 this month</p>
+                <p className="text-muted-foreground mt-2 text-xs">23 this month</p>
               </div>
               <div className="rounded-lg bg-purple-500/10 p-3">
                 <FileText className="h-6 w-6 text-purple-500" />
@@ -98,13 +98,13 @@ export default function MonetisationPage() {
         {/* Charts and Details */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Earnings Chart */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="bg-card rounded-lg border p-6">
             <div className="mb-6 flex items-center justify-between">
               <h3 className="flex items-center space-x-2 text-lg font-semibold">
-                <PieChart className="h-5 w-5 text-primary" />
+                <PieChart className="text-primary h-5 w-5" />
                 <span>Earnings Overview</span>
               </h3>
-              <select className="rounded-md border bg-background px-3 py-1.5 text-sm">
+              <select className="bg-background rounded-md border px-3 py-1.5 text-sm">
                 <option>Last 30 days</option>
                 <option>Last 90 days</option>
                 <option>Last year</option>
@@ -117,8 +117,8 @@ export default function MonetisationPage() {
                   <span className="text-muted-foreground">Author Rewards</span>
                   <span className="font-medium">$789.23</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-secondary">
-                  <div className="h-full rounded-full bg-primary" style={{ width: '64%' }}></div>
+                <div className="bg-secondary h-2 overflow-hidden rounded-full">
+                  <div className="bg-primary h-full rounded-full" style={{ width: '64%' }}></div>
                 </div>
               </div>
 
@@ -127,7 +127,7 @@ export default function MonetisationPage() {
                   <span className="text-muted-foreground">Curation Rewards</span>
                   <span className="font-medium">$345.67</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-secondary">
+                <div className="bg-secondary h-2 overflow-hidden rounded-full">
                   <div className="h-full rounded-full bg-teal-500" style={{ width: '28%' }}></div>
                 </div>
               </div>
@@ -137,7 +137,7 @@ export default function MonetisationPage() {
                   <span className="text-muted-foreground">Beneficiary Rewards</span>
                   <span className="font-medium">$99.66</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-secondary">
+                <div className="bg-secondary h-2 overflow-hidden rounded-full">
                   <div className="h-full rounded-full bg-cyan-500" style={{ width: '8%' }}></div>
                 </div>
               </div>
@@ -145,9 +145,9 @@ export default function MonetisationPage() {
           </div>
 
           {/* Top Performing Posts */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="bg-card rounded-lg border p-6">
             <h3 className="mb-6 flex items-center space-x-2 text-lg font-semibold">
-              <TrendingUp className="h-5 w-5 text-primary" />
+              <TrendingUp className="text-primary h-5 w-5" />
               <span>Top Performing Posts</span>
             </h3>
 
@@ -160,14 +160,14 @@ export default function MonetisationPage() {
               ].map((post, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-accent"
+                  className="hover:bg-accent flex items-center justify-between rounded-lg p-3 transition-colors"
                 >
                   <div className="flex-1">
                     <p className="line-clamp-1 text-sm font-medium">{post.title}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{post.views} views</p>
+                    <p className="text-muted-foreground mt-1 text-xs">{post.views} views</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-primary">{post.earnings}</p>
+                    <p className="text-primary font-bold">{post.earnings}</p>
                   </div>
                 </div>
               ))}
@@ -176,9 +176,9 @@ export default function MonetisationPage() {
         </div>
 
         {/* Recent Transactions */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="bg-card rounded-lg border p-6">
           <h3 className="mb-6 flex items-center space-x-2 text-lg font-semibold">
-            <Wallet className="h-5 w-5 text-primary" />
+            <Wallet className="text-primary h-5 w-5" />
             <span>Recent Transactions</span>
           </h3>
 
@@ -186,19 +186,19 @@ export default function MonetisationPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                  <th className="text-muted-foreground px-4 py-3 text-left text-sm font-medium">
                     Date
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                  <th className="text-muted-foreground px-4 py-3 text-left text-sm font-medium">
                     Type
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                  <th className="text-muted-foreground px-4 py-3 text-left text-sm font-medium">
                     Post
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
+                  <th className="text-muted-foreground px-4 py-3 text-right text-sm font-medium">
                     Amount
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
+                  <th className="text-muted-foreground px-4 py-3 text-right text-sm font-medium">
                     Status
                   </th>
                 </tr>
@@ -241,7 +241,7 @@ export default function MonetisationPage() {
                     status: 'Completed',
                   },
                 ].map((transaction, index) => (
-                  <tr key={index} className="border-b transition-colors hover:bg-accent">
+                  <tr key={index} className="hover:bg-accent border-b transition-colors">
                     <td className="px-4 py-3 text-sm">{transaction.date}</td>
                     <td className="px-4 py-3 text-sm">{transaction.type}</td>
                     <td className="max-w-xs truncate px-4 py-3 text-sm">{transaction.post}</td>
@@ -267,7 +267,7 @@ export default function MonetisationPage() {
         </div>
 
         {/* Hive Account Info */}
-        <div className="rounded-lg bg-gradient-to-r from-primary via-teal-500 to-cyan-500 p-6 text-white">
+        <div className="from-primary rounded-lg bg-linear-to-r via-teal-500 to-cyan-500 p-6 text-white">
           <div className="flex items-start justify-between">
             <div>
               <h3 className="mb-2 text-lg font-semibold">Hive Account Connected</h3>
@@ -289,7 +289,7 @@ export default function MonetisationPage() {
               </div>
             </div>
 
-            <Button variant="outline" className="bg-white text-primary hover:bg-white/90">
+            <Button variant="outline" className="text-primary bg-white hover:bg-white/90">
               View on Hive
             </Button>
           </div>

@@ -98,7 +98,7 @@ export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
               disabled={isDisabled}
               className={cn(
                 'transition-all duration-150 ease-in-out',
-                'focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2',
+                'focus:ring-accent focus:ring-2 focus:ring-offset-2 focus:outline-hidden',
                 'rounded-sm p-0.5',
                 isDisabled && 'cursor-not-allowed opacity-50'
               )}
@@ -111,7 +111,7 @@ export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
               }
             >
               {starState === 'loading' ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
               ) : (
                 <Star
                   className={cn(

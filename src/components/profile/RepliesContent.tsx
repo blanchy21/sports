@@ -44,8 +44,8 @@ export function RepliesContent() {
   if (!isClient) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-muted-foreground">Loading...</span>
+        <Loader2 className="text-primary h-8 w-8 animate-spin" />
+        <span className="text-muted-foreground ml-2">Loading...</span>
       </div>
     );
   }
@@ -76,19 +76,19 @@ export function RepliesContent() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="flex items-center space-x-3 text-2xl font-bold">
-            <MessageSquare className="h-7 w-7 text-primary" />
+            <MessageSquare className="text-primary h-7 w-7" />
             <span>Replies</span>
             {isConnected && (
               <div className="ml-4 flex items-center space-x-2">
-                <div className="flex items-center space-x-1 text-accent">
+                <div className="text-accent flex items-center space-x-1">
                   <Wifi className="h-4 w-4" />
                   <span className="text-sm font-medium">Live</span>
                 </div>
-                <div className="h-2 w-2 animate-pulse rounded-full bg-accent"></div>
+                <div className="bg-accent h-2 w-2 animate-pulse rounded-full"></div>
               </div>
             )}
           </h2>
-          <p className="mt-2 text-muted-foreground">
+          <p className="text-muted-foreground mt-2">
             Your conversations and interactions
             {realtimeError && (
               <span className="ml-2 text-red-500">&bull; Real-time updates unavailable</span>
@@ -99,16 +99,16 @@ export function RepliesContent() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-lg border bg-card p-4">
+        <div className="bg-card rounded-lg border p-4">
           <div className="flex items-center space-x-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
+            <div className="bg-primary/10 rounded-lg p-2">
+              <MessageSquare className="text-primary h-5 w-5" />
             </div>
             <div>
               <div className="text-2xl font-bold">{allReplies.length}</div>
-              <div className="text-sm text-muted-foreground">Total Comments</div>
+              <div className="text-muted-foreground text-sm">Total Comments</div>
               {realtimeReplies.length > 0 && (
-                <div className="flex items-center text-xs text-accent">
+                <div className="text-accent flex items-center text-xs">
                   <Zap className="mr-1 h-3 w-3" />
                   {realtimeReplies.length} live
                 </div>
@@ -117,30 +117,30 @@ export function RepliesContent() {
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-4">
+        <div className="bg-card rounded-lg border p-4">
           <div className="flex items-center space-x-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <Reply className="h-5 w-5 text-primary" />
+            <div className="bg-primary/10 rounded-lg p-2">
+              <Reply className="text-primary h-5 w-5" />
             </div>
             <div>
               <div className="text-2xl font-bold">
                 {new Set(allReplies.map((r) => `${r.parentAuthor}/${r.parentPermlink}`)).size}
               </div>
-              <div className="text-sm text-muted-foreground">Unique Posts</div>
+              <div className="text-muted-foreground text-sm">Unique Posts</div>
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-4">
+        <div className="bg-card rounded-lg border p-4">
           <div className="flex items-center space-x-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <ThumbsUp className="h-5 w-5 text-primary" />
+            <div className="bg-primary/10 rounded-lg p-2">
+              <ThumbsUp className="text-primary h-5 w-5" />
             </div>
             <div>
               <div className="text-2xl font-bold">
                 {allReplies.reduce((sum, r) => sum + (r.netVotes || 0), 0)}
               </div>
-              <div className="text-sm text-muted-foreground">Total Votes</div>
+              <div className="text-muted-foreground text-sm">Total Votes</div>
             </div>
           </div>
         </div>
@@ -152,13 +152,13 @@ export function RepliesContent() {
 
         {isLoading && (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2 text-muted-foreground">Loading comments...</span>
+            <Loader2 className="text-primary h-8 w-8 animate-spin" />
+            <span className="text-muted-foreground ml-2">Loading comments...</span>
           </div>
         )}
 
         {error && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+          <div className="border-destructive/20 bg-destructive/10 rounded-lg border p-4">
             <p className="text-destructive">Failed to load comments. Please try again.</p>
           </div>
         )}
@@ -168,9 +168,9 @@ export function RepliesContent() {
             {allReplies.map((reply) => (
               <div
                 key={`${reply.author}/${reply.permlink}`}
-                className={`rounded-lg border bg-card p-5 transition-all duration-300 hover:shadow-md ${
+                className={`bg-card rounded-lg border p-5 transition-all duration-300 hover:shadow-md ${
                   reply.isNew
-                    ? 'animate-pulse border-accent/30 bg-accent/10 shadow-lg'
+                    ? 'border-accent/30 bg-accent/10 animate-pulse shadow-lg'
                     : 'hover:shadow-md'
                 }`}
               >
@@ -191,11 +191,11 @@ export function RepliesContent() {
                     <div className="mb-2 flex items-center space-x-2">
                       <span className="font-medium">@{reply.author}</span>
                       <span className="text-muted-foreground">&bull;</span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-muted-foreground text-sm">
                         {formatTimestamp(reply.created)}
                       </span>
                       {reply.isNew && (
-                        <span className="inline-flex items-center rounded-full bg-accent/20 px-2 py-1 text-xs font-medium text-accent-foreground">
+                        <span className="bg-accent/20 text-accent-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
                           <Zap className="mr-1 h-3 w-3" />
                           New
                         </span>
@@ -203,14 +203,14 @@ export function RepliesContent() {
                     </div>
 
                     <div className="mb-2 overflow-hidden">
-                      <span className="text-sm text-muted-foreground">Replied to: </span>
-                      <span className="break-all text-sm font-medium">
+                      <span className="text-muted-foreground text-sm">Replied to: </span>
+                      <span className="text-sm font-medium break-all">
                         {getPostTitle(reply.parentAuthor, reply.parentPermlink)}
                       </span>
                     </div>
 
                     <div
-                      className="prose prose-sm mb-3 max-w-none overflow-hidden whitespace-pre-wrap break-words text-foreground"
+                      className="prose prose-sm text-foreground mb-3 max-w-none overflow-hidden wrap-break-word whitespace-pre-wrap"
                       dangerouslySetInnerHTML={{ __html: sanitizePostContent(reply.body) }}
                     />
 
@@ -223,7 +223,7 @@ export function RepliesContent() {
                         onVoteError={() => {}}
                       />
 
-                      <button className="flex items-center space-x-1 text-sm text-muted-foreground transition-colors hover:text-primary">
+                      <button className="text-muted-foreground hover:text-primary flex items-center space-x-1 text-sm transition-colors">
                         <Reply className="h-4 w-4" />
                         <span>Reply</span>
                       </button>
@@ -238,10 +238,10 @@ export function RepliesContent() {
 
       {/* Empty State */}
       {!isLoading && !error && (!allReplies || allReplies.length === 0) && (
-        <div className="rounded-lg border bg-card p-12 text-center">
+        <div className="bg-card rounded-lg border p-12 text-center">
           <div className="mb-4 flex justify-center">
-            <div className="rounded-full bg-muted p-4">
-              <MessageSquare className="h-12 w-12 text-muted-foreground" />
+            <div className="bg-muted rounded-full p-4">
+              <MessageSquare className="text-muted-foreground h-12 w-12" />
             </div>
           </div>
           <h2 className="mb-2 text-xl font-semibold">No comments yet</h2>

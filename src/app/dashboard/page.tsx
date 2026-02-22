@@ -241,8 +241,8 @@ export default function DashboardPage() {
               <p className="text-muted-foreground">@{user.username}</p>
               {authType === 'hive' && (
                 <div className="mt-1 flex items-center space-x-1">
-                  <Award className="h-4 w-4 text-accent" />
-                  <span className="text-sm font-medium text-accent">Hive Authenticated</span>
+                  <Award className="text-accent h-4 w-4" />
+                  <span className="text-accent text-sm font-medium">Hive Authenticated</span>
                 </div>
               )}
             </div>
@@ -276,10 +276,10 @@ export default function DashboardPage() {
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={index} className="rounded-lg border bg-card p-4">
+              <div key={index} className="bg-card rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">{stat.title}</p>
+                    <p className="text-muted-foreground text-sm">{stat.title}</p>
                     <p className="text-2xl font-bold">{stat.value}</p>
                     <p
                       className={`text-xs ${
@@ -293,8 +293,8 @@ export default function DashboardPage() {
                       {stat.change}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-primary/10 p-3">
-                    <Icon className="h-6 w-6 text-primary" />
+                  <div className="bg-primary/10 rounded-lg p-3">
+                    <Icon className="text-primary h-6 w-6" />
                   </div>
                 </div>
               </div>
@@ -304,7 +304,7 @@ export default function DashboardPage() {
 
         {/* Rewards Stats (Hive users only) */}
         {rewardsStats.length > 0 && (
-          <div className="rounded-lg bg-gradient-to-r from-primary to-accent p-4 sm:p-6">
+          <div className="from-primary to-accent rounded-lg bg-linear-to-r p-4 sm:p-6">
             <div className="mb-4 flex items-center space-x-2">
               <DollarSign className="h-5 w-5 text-white" />
               <h3 className="text-lg font-semibold text-white">Hive Account Balances</h3>
@@ -315,7 +315,7 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={index}
-                    className="rounded-lg border border-white/20 bg-white/10 p-4 backdrop-blur-sm"
+                    className="rounded-lg border border-white/20 bg-white/10 p-4 backdrop-blur-xs"
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -338,7 +338,7 @@ export default function DashboardPage() {
         {authType === 'soft' && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <PotentialEarningsWidget />
-            <div className="rounded-lg bg-gradient-to-r from-primary to-accent p-6 text-white">
+            <div className="from-primary to-accent rounded-lg bg-linear-to-r p-6 text-white">
               <div className="mb-3 flex items-center space-x-2">
                 <Zap className="h-5 w-5" />
                 <h3 className="text-lg font-semibold">Unlock Rewards</h3>
@@ -364,7 +364,7 @@ export default function DashboardPage() {
               <Link href="/auth">
                 <Button
                   variant="secondary"
-                  className="bg-white font-semibold text-primary hover:bg-white/90"
+                  className="text-primary bg-white font-semibold hover:bg-white/90"
                 >
                   Connect Hive Wallet
                 </Button>
@@ -375,10 +375,10 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Recent Posts */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="bg-card rounded-lg border p-6">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
+                <BarChart3 className="text-primary h-5 w-5" />
                 <h3 className="text-lg font-semibold">Recent Posts</h3>
               </div>
               {authType === 'hive' && (
@@ -405,8 +405,8 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {postsLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  <span className="ml-2 text-muted-foreground">Loading posts...</span>
+                  <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+                  <span className="text-muted-foreground ml-2">Loading posts...</span>
                 </div>
               ) : recentPosts.length > 0 ? (
                 recentPosts.map((post, index) => {
@@ -414,11 +414,11 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={`${post.author}-${post.permlink}` || `post-${index}`}
-                      className="flex cursor-pointer items-start space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                      className="hover:bg-muted/50 flex cursor-pointer items-start space-x-3 rounded-lg border p-3 transition-colors"
                       onClick={() => router.push(`/post/${post.author}/${post.permlink}`)}
                     >
                       {/* Thumbnail */}
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         {thumbnail ? (
                           <Image
                             src={
@@ -434,18 +434,18 @@ export default function DashboardPage() {
                             }}
                           />
                         ) : (
-                          <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
-                            <FileText className="h-6 w-6 text-muted-foreground" />
+                          <div className="bg-muted flex h-16 w-16 items-center justify-center rounded-lg">
+                            <FileText className="text-muted-foreground h-6 w-6" />
                           </div>
                         )}
                       </div>
 
                       {/* Content */}
                       <div className="min-w-0 flex-1">
-                        <h4 className="line-clamp-2 text-sm font-medium leading-tight">
+                        <h4 className="line-clamp-2 text-sm leading-tight font-medium">
                           {post.title}
                         </h4>
-                        <div className="mt-2 flex items-center space-x-3 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground mt-2 flex items-center space-x-3 text-xs">
                           <span className="flex items-center space-x-1">
                             <Heart className="h-3 w-3" />
                             <span>{post.net_votes}</span>
@@ -462,10 +462,10 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         <div className="mt-2 flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             {formatDate(post.created)}
                           </span>
-                          <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                          <ExternalLink className="text-muted-foreground h-3 w-3" />
                         </div>
                       </div>
                     </div>
@@ -473,9 +473,9 @@ export default function DashboardPage() {
                 })
               ) : (
                 <div className="py-8 text-center">
-                  <FileText className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
-                  <h4 className="mb-2 font-medium text-muted-foreground">No posts yet</h4>
-                  <p className="mb-4 text-sm text-muted-foreground">
+                  <FileText className="text-muted-foreground mx-auto mb-3 h-12 w-12" />
+                  <h4 className="text-muted-foreground mb-2 font-medium">No posts yet</h4>
+                  <p className="text-muted-foreground mb-4 text-sm">
                     Start creating content to see your posts here!
                   </p>
                   <Button onClick={() => router.push('/publish')} size="sm">
@@ -497,9 +497,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Activity */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="bg-card rounded-lg border p-6">
             <div className="mb-4 flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-primary" />
+              <Calendar className="text-primary h-5 w-5" />
               <h3 className="text-lg font-semibold">Recent Activity</h3>
             </div>
             <div className="space-y-3">
@@ -533,16 +533,16 @@ export default function DashboardPage() {
               ].map((activity, index) => (
                 <div
                   key={index}
-                  className="flex items-start space-x-3 rounded-lg p-2 transition-colors hover:bg-muted/50"
+                  className="hover:bg-muted/50 flex items-start space-x-3 rounded-lg p-2 transition-colors"
                 >
-                  <div className="mt-2 h-2 w-2 rounded-full bg-primary"></div>
+                  <div className="bg-primary mt-2 h-2 w-2 rounded-full"></div>
                   <div className="flex-1">
                     <p className="text-sm">
                       <span className="font-medium">{activity.action}</span>
                       <span className="text-muted-foreground"> on </span>
                       <span className="font-medium">{activity.target}</span>
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">{activity.time}</p>
+                    <p className="text-muted-foreground mt-1 text-xs">{activity.time}</p>
                   </div>
                 </div>
               ))}

@@ -144,7 +144,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         <div className="flex items-center space-x-2">
           <MessageCircle className="h-5 w-5" />
           <span>Comments</span>
-          {comments && <span className="text-sm text-muted-foreground">({comments.length})</span>}
+          {comments && <span className="text-muted-foreground text-sm">({comments.length})</span>}
         </div>
       }
       size="xl"
@@ -201,11 +201,11 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                           Hive
                         </Badge>
                       )}
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {formatDate(new Date(comment.created))}
                       </span>
                       {isNestedReply && (
-                        <span className="rounded bg-accent/20 px-2 py-1 text-xs text-accent">
+                        <span className="bg-accent/20 text-accent rounded px-2 py-1 text-xs">
                           Reply to @{comment.parent_author}
                         </span>
                       )}
@@ -264,7 +264,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
 
       {/* Reply indicator with original comment preview */}
       {replyingTo && (
-        <div className="border-b border-t bg-muted/50 px-4 py-3">
+        <div className="bg-muted/50 border-t border-b px-4 py-3">
           <div className="flex items-start gap-3">
             <Avatar
               src={getHiveAvatarUrl(replyingTo.author)}
@@ -274,7 +274,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
             />
             <div className="min-w-0 flex-1">
               <span className="text-sm font-medium">@{replyingTo.author}</span>
-              <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{replyingTo.body}</p>
+              <p className="text-muted-foreground mt-0.5 line-clamp-2 text-sm">{replyingTo.body}</p>
             </div>
             <Button
               variant="ghost"
@@ -305,7 +305,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                 placeholder={
                   replyingTo ? `Reply to @${replyingTo.author}...` : 'Write a comment...'
                 }
-                className="w-full resize-none rounded-lg border bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary sm:text-base"
+                className="bg-background text-foreground focus:ring-primary w-full resize-none rounded-lg border p-3 text-sm focus:ring-2 focus:outline-hidden sm:text-base"
                 rows={2}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}

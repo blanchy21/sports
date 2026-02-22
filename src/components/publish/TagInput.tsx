@@ -85,8 +85,8 @@ export function TagInput({
     <div className={cn('space-y-2', className)}>
       {/* Tag count label */}
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground">Tags</label>
-        <span className="text-xs text-muted-foreground">
+        <label className="text-foreground text-sm font-medium">Tags</label>
+        <span className="text-muted-foreground text-xs">
           {value.length}/{maxTags}
         </span>
       </div>
@@ -94,8 +94,8 @@ export function TagInput({
       {/* Tag input container */}
       <div
         className={cn(
-          'flex min-h-[42px] flex-wrap gap-1.5 rounded-lg border bg-background p-2',
-          'focus-within:border-transparent focus-within:ring-2 focus-within:ring-ring',
+          'bg-background flex min-h-[42px] flex-wrap gap-1.5 rounded-lg border p-2',
+          'focus-within:ring-ring focus-within:border-transparent focus-within:ring-2',
           'cursor-text transition-colors'
         )}
         onClick={() => inputRef.current?.focus()}
@@ -106,7 +106,7 @@ export function TagInput({
             key={tag}
             className={cn(
               'inline-flex items-center gap-1 rounded-md px-2 py-0.5',
-              'bg-primary/10 text-sm font-medium text-primary'
+              'bg-primary/10 text-primary text-sm font-medium'
             )}
           >
             #{tag}
@@ -116,7 +116,7 @@ export function TagInput({
                 e.stopPropagation();
                 removeTag(tag);
               }}
-              className="rounded p-0.5 transition-colors hover:bg-primary/20"
+              className="hover:bg-primary/20 rounded p-0.5 transition-colors"
             >
               <X className="h-3 w-3" />
             </button>
@@ -133,8 +133,8 @@ export function TagInput({
             onKeyDown={handleKeyDown}
             placeholder={value.length === 0 ? placeholder : ''}
             className={cn(
-              'min-w-[120px] flex-1 border-none bg-transparent outline-none',
-              'text-sm placeholder:text-muted-foreground'
+              'min-w-[120px] flex-1 border-none bg-transparent outline-hidden',
+              'placeholder:text-muted-foreground text-sm'
             )}
           />
         )}
@@ -143,7 +143,7 @@ export function TagInput({
       {/* Recently used tags */}
       {availableRecentTags.length > 0 && value.length < maxTags && (
         <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Recently used:</span>
+          <span className="text-muted-foreground text-xs">Recently used:</span>
           <div className="flex flex-wrap gap-1.5">
             {availableRecentTags.slice(0, 8).map((tag) => (
               <button
@@ -164,7 +164,7 @@ export function TagInput({
       )}
 
       {/* Helper text */}
-      <p className="text-xs text-muted-foreground">
+      <p className="text-muted-foreground text-xs">
         Press Enter or comma to add tags. Tags help others discover your post.
       </p>
     </div>

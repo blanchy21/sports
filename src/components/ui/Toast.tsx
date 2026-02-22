@@ -75,7 +75,7 @@ interface ToastContainerProps {
 
 const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, removeToast }) => {
   return (
-    <div className="fixed right-4 top-4 z-50 space-y-2">
+    <div className="fixed top-4 right-4 z-50 space-y-2">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={() => removeToast(toast.id)} />
       ))}
@@ -122,7 +122,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
       className={cn(
         'flex max-w-sm items-start space-x-3 rounded-lg border p-4 shadow-xl',
         getBackgroundColor(),
-        'duration-300 animate-in slide-in-from-right-full'
+        'animate-in slide-in-from-right-full duration-300'
       )}
     >
       {getIcon()}
@@ -136,7 +136,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
       </div>
       <button
         onClick={onRemove}
-        className="flex-shrink-0 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+        className="shrink-0 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
       >
         <X className="h-4 w-4" />
       </button>

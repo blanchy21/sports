@@ -218,7 +218,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
           {step === 'intro' && (
             <div className="space-y-6">
               <div className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-orange-500">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-yellow-400 to-orange-500">
                   <Crown className="h-8 w-8 text-white" />
                 </div>
                 <h3 className="mb-2 text-xl font-semibold text-slate-900">
@@ -232,7 +232,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
 
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-green-100">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100">
                     <Zap className="h-4 w-4 text-green-600" />
                   </div>
                   <div>
@@ -244,7 +244,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                 </div>
 
                 <div className="flex items-start space-x-3">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100">
                     <Shield className="h-4 w-4 text-blue-600" />
                   </div>
                   <div>
@@ -256,7 +256,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                 </div>
 
                 <div className="flex items-start space-x-3">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-purple-100">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-100">
                     <Star className="h-4 w-4 text-purple-600" />
                   </div>
                   <div>
@@ -284,7 +284,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
 
               <Button
                 onClick={() => setStep('wallet')}
-                className="h-12 w-full bg-gradient-to-r from-blue-600 to-purple-600 text-base font-semibold text-white hover:from-blue-700 hover:to-purple-700"
+                className="h-12 w-full bg-linear-to-r from-blue-600 to-purple-600 text-base font-semibold text-white hover:from-blue-700 hover:to-purple-700"
               >
                 Connect Hive Wallet
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -333,7 +333,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                       value={hiveUsername}
                       onChange={(e) => setHiveUsername(e.target.value)}
                       placeholder="Enter your Hive username (e.g., blanchy)"
-                      className="flex-1 rounded-md border border-yellow-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      className="flex-1 rounded-md border border-yellow-300 px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
                       onKeyPress={(e) =>
                         e.key === 'Enter' &&
                         selectedProvider &&

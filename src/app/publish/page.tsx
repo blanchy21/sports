@@ -692,11 +692,11 @@ function PublishPageContent() {
   // User not authenticated
   if (!user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="bg-background flex h-screen items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+          <AlertCircle className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
           <h2 className="mb-2 text-xl font-semibold">Authentication Required</h2>
-          <p className="mb-4 text-muted-foreground">Please sign in to create and publish posts.</p>
+          <p className="text-muted-foreground mb-4">Please sign in to create and publish posts.</p>
           <Button onClick={() => router.push('/')}>Go Home</Button>
         </div>
       </div>
@@ -708,9 +708,9 @@ function PublishPageContent() {
   const previewLink = `sportsblock.com/@${username}/[post-slug]`;
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="bg-background flex h-screen flex-col">
       {/* Minimal Header */}
-      <div className="border-b bg-card">
+      <div className="bg-card border-b">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <Button
@@ -722,7 +722,7 @@ function PublishPageContent() {
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-foreground">
+            <span className="text-foreground text-sm">
               Write a new post in{' '}
               <select
                 value={selectedCommunity?.id || ''}
@@ -738,7 +738,7 @@ function PublishPageContent() {
                     setSelectedCommunity(community || null);
                   }
                 }}
-                className="cursor-pointer border-none bg-transparent font-medium text-primary outline-none hover:underline"
+                className="text-primary cursor-pointer border-none bg-transparent font-medium outline-hidden hover:underline"
               >
                 <option value="">Sportsblock</option>
                 {userCommunities?.map((c) => (
@@ -775,13 +775,13 @@ function PublishPageContent() {
               </Button>
 
               {showMenu && (
-                <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border bg-card py-1 shadow-lg">
+                <div className="bg-card absolute top-full right-0 z-50 mt-1 w-48 rounded-lg border py-1 shadow-lg">
                   <button
                     onClick={() => {
                       handleSaveDraft();
                       setShowMenu(false);
                     }}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
+                    className="hover:bg-muted flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
                   >
                     <Save className="h-4 w-4" />
                     Save Draft
@@ -791,7 +791,7 @@ function PublishPageContent() {
                       setShowScheduleModal(true);
                       setShowMenu(false);
                     }}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
+                    className="hover:bg-muted flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
                   >
                     <Calendar className="h-4 w-4" />
                     Schedule Post
@@ -808,7 +808,7 @@ function PublishPageContent() {
         {/* Left Side - Editor (60%) */}
         <div
           className={cn(
-            'flex w-full flex-col overflow-hidden border-b md:w-3/5 md:border-b-0 md:border-r',
+            'flex w-full flex-col overflow-hidden border-b md:w-3/5 md:border-r md:border-b-0',
             showPreview && 'hidden md:flex'
           )}
         >
@@ -819,7 +819,7 @@ function PublishPageContent() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Post Title"
-              className="w-full border-none bg-transparent text-xl font-bold outline-none placeholder:text-muted-foreground sm:text-2xl"
+              className="placeholder:text-muted-foreground w-full border-none bg-transparent text-xl font-bold outline-hidden sm:text-2xl"
             />
           </div>
 
@@ -841,7 +841,7 @@ function PublishPageContent() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Write your post using Markdown..."
-              className="h-full w-full resize-none border-none bg-background px-4 py-3 font-mono text-sm leading-relaxed outline-none sm:px-6 sm:py-4"
+              className="bg-background h-full w-full resize-none border-none px-4 py-3 font-mono text-sm leading-relaxed outline-hidden sm:px-6 sm:py-4"
             />
           </div>
 
@@ -851,7 +851,7 @@ function PublishPageContent() {
               const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
               return (
                 <div className="border-t px-4 py-1.5 sm:px-6">
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     {wordCount} {wordCount === 1 ? 'word' : 'words'} · {formatReadTime(wordCount)}
                   </span>
                 </div>
@@ -863,8 +863,8 @@ function PublishPageContent() {
             {/* Short Description / Excerpt */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">Short Description</label>
-                <span className="text-xs text-muted-foreground">{excerpt.length}/120</span>
+                <label className="text-foreground text-sm font-medium">Short Description</label>
+                <span className="text-muted-foreground text-xs">{excerpt.length}/120</span>
               </div>
               <input
                 type="text"
@@ -872,8 +872,8 @@ function PublishPageContent() {
                 onChange={(e) => setExcerpt(e.target.value.slice(0, 120))}
                 placeholder="Brief description of your post (optional)"
                 className={cn(
-                  'w-full rounded-lg border bg-background px-3 py-2',
-                  'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
+                  'bg-background w-full rounded-lg border px-3 py-2',
+                  'focus:ring-ring text-sm focus:ring-2 focus:outline-hidden'
                 )}
                 maxLength={120}
               />
@@ -881,15 +881,15 @@ function PublishPageContent() {
 
             {/* Sport Category (Required - Prominent Position) */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
+              <label className="text-foreground text-sm font-medium">
                 Choose a Sport <span className="text-destructive">*</span>
               </label>
               <select
                 value={selectedSport}
                 onChange={(e) => setSelectedSport(e.target.value)}
                 className={cn(
-                  'w-full rounded-lg border bg-background px-3 py-2.5',
-                  'text-sm focus:outline-none focus:ring-2 focus:ring-ring',
+                  'bg-background w-full rounded-lg border px-3 py-2.5',
+                  'focus:ring-ring text-sm focus:ring-2 focus:outline-hidden',
                   !selectedSport && 'text-muted-foreground'
                 )}
               >
@@ -934,10 +934,10 @@ function PublishPageContent() {
 
             {/* Error Display */}
             {publishError && (
-              <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+              <div className="border-destructive/20 bg-destructive/10 rounded-lg border p-3">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
-                  <p className="text-sm text-destructive">{publishError}</p>
+                  <AlertCircle className="text-destructive mt-0.5 h-4 w-4" />
+                  <p className="text-destructive text-sm">{publishError}</p>
                 </div>
               </div>
             )}
@@ -949,7 +949,7 @@ function PublishPageContent() {
                   'rounded-lg p-3',
                   rcStatus.canPost
                     ? 'border border-green-500/20 bg-green-500/10'
-                    : 'border border-destructive/20 bg-destructive/10'
+                    : 'border-destructive/20 bg-destructive/10 border'
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -964,7 +964,7 @@ function PublishPageContent() {
                   </span>
                 </div>
                 {rcStatus.message && (
-                  <p className="mt-1 text-xs text-muted-foreground">{rcStatus.message}</p>
+                  <p className="text-muted-foreground mt-1 text-xs">{rcStatus.message}</p>
                 )}
               </div>
             )}
@@ -988,7 +988,7 @@ function PublishPageContent() {
                       Your post will be visible to everyone. Connect with Hive to earn rewards!
                     </p>
                     {postLimitInfo && !postLimitInfo.isNearLimit && (
-                      <span className="ml-2 whitespace-nowrap text-xs text-muted-foreground">
+                      <span className="text-muted-foreground ml-2 text-xs whitespace-nowrap">
                         {postLimitInfo.remaining}/{postLimitInfo.limit} posts left
                       </span>
                     )}
@@ -1002,17 +1002,17 @@ function PublishPageContent() {
         {/* Right Side - Preview (40%) */}
         <div
           className={cn(
-            'overflow-hidden bg-muted/30 md:flex md:w-2/5 md:flex-col',
+            'bg-muted/30 overflow-hidden md:flex md:w-2/5 md:flex-col',
             showPreview ? 'flex w-full flex-col' : 'hidden'
           )}
         >
           {/* Preview Header */}
-          <div className="border-b bg-background px-6 py-3">
+          <div className="bg-background border-b px-6 py-3">
             <div className="flex items-center gap-2 text-sm">
-              <Eye className="h-4 w-4 text-muted-foreground" />
+              <Eye className="text-muted-foreground h-4 w-4" />
               <span className="font-medium">Preview</span>
             </div>
-            <p className="mt-1 truncate text-xs text-muted-foreground">Link: {previewLink}</p>
+            <p className="text-muted-foreground mt-1 truncate text-xs">Link: {previewLink}</p>
           </div>
 
           {/* Preview Content */}
@@ -1033,12 +1033,12 @@ function PublishPageContent() {
 
             {title && <h1 className="mb-4 text-2xl font-bold">{title}</h1>}
 
-            {excerpt && <p className="mb-4 text-sm italic text-muted-foreground">{excerpt}</p>}
+            {excerpt && <p className="text-muted-foreground mb-4 text-sm italic">{excerpt}</p>}
 
             {tags.length > 0 && (
               <div className="mb-4 flex flex-wrap gap-1">
                 {tags.map((tag) => (
-                  <span key={tag} className="text-xs text-primary">
+                  <span key={tag} className="text-primary text-xs">
                     #{tag}
                   </span>
                 ))}
@@ -1046,7 +1046,7 @@ function PublishPageContent() {
             )}
 
             {content ? (
-              <div className="prose prose-sm prose-slate max-w-none dark:prose-invert">
+              <div className="prose prose-sm prose-slate dark:prose-invert max-w-none">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[
@@ -1085,14 +1085,14 @@ function PublishPageContent() {
                 </ReactMarkdown>
               </div>
             ) : (
-              <p className="italic text-muted-foreground">Start writing to see the preview...</p>
+              <p className="text-muted-foreground italic">Start writing to see the preview...</p>
             )}
           </div>
         </div>
       </div>
 
       {/* Fixed Bottom Action Bar */}
-      <div className="border-t bg-card px-4 py-3 sm:px-6 sm:py-4">
+      <div className="bg-card border-t px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
           <Button
             variant="outline"
@@ -1134,7 +1134,7 @@ function PublishPageContent() {
       {/* Image Dialog */}
       {showImageDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-md rounded-lg border bg-card p-6 shadow-xl">
+          <div className="bg-card mx-4 w-full max-w-md rounded-lg border p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold">Insert Image</h3>
               <button
@@ -1159,7 +1159,7 @@ function PublishPageContent() {
                   'flex-1 border-b-2 py-2 text-sm font-medium transition-colors',
                   imageTab === 'url'
                     ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                    : 'text-muted-foreground hover:text-foreground border-transparent'
                 )}
               >
                 <LinkIcon className="mr-2 inline h-4 w-4" />
@@ -1171,7 +1171,7 @@ function PublishPageContent() {
                   'flex-1 border-b-2 py-2 text-sm font-medium transition-colors',
                   imageTab === 'upload'
                     ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                    : 'text-muted-foreground hover:text-foreground border-transparent'
                 )}
               >
                 <Upload className="mr-2 inline h-4 w-4" />
@@ -1188,7 +1188,7 @@ function PublishPageContent() {
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
                     placeholder="https://example.com/image.jpg"
-                    className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="bg-background focus:ring-ring w-full rounded-lg border px-3 py-2 focus:ring-2 focus:outline-hidden"
                     autoFocus
                   />
                 </div>
@@ -1205,13 +1205,13 @@ function PublishPageContent() {
                   >
                     {isUploadingImage ? (
                       <div className="flex flex-col items-center gap-2">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="text-sm text-muted-foreground">Uploading...</p>
+                        <Loader2 className="text-primary h-8 w-8 animate-spin" />
+                        <p className="text-muted-foreground text-sm">Uploading...</p>
                       </div>
                     ) : (
                       <>
-                        <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                        <p className="mb-2 text-sm text-muted-foreground">
+                        <Upload className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+                        <p className="text-muted-foreground mb-2 text-sm">
                           Drag and drop or click to select
                         </p>
                         <input
@@ -1241,13 +1241,13 @@ function PublishPageContent() {
                         >
                           Choose File
                         </Button>
-                        <p className="mt-2 text-xs text-muted-foreground">
+                        <p className="text-muted-foreground mt-2 text-xs">
                           Max 5MB • JPG, PNG, GIF, WebP
                         </p>
                       </>
                     )}
                   </div>
-                  {uploadError && <p className="mt-2 text-sm text-destructive">{uploadError}</p>}
+                  {uploadError && <p className="text-destructive mt-2 text-sm">{uploadError}</p>}
                 </div>
               )}
 
@@ -1258,13 +1258,13 @@ function PublishPageContent() {
                   value={imageAlt}
                   onChange={(e) => setImageAlt(e.target.value)}
                   placeholder="Optional caption below image"
-                  className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="bg-background focus:ring-ring w-full rounded-lg border px-3 py-2 focus:ring-2 focus:outline-hidden"
                 />
               </div>
 
               {imageUrl && (
                 <div className="rounded-lg border p-2">
-                  <p className="mb-2 text-xs text-muted-foreground">Preview:</p>
+                  <p className="text-muted-foreground mb-2 text-xs">Preview:</p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imageUrl}
@@ -1303,7 +1303,7 @@ function PublishPageContent() {
       {/* Link Dialog */}
       {showLinkDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-md rounded-lg border bg-card p-6 shadow-xl">
+          <div className="bg-card mx-4 w-full max-w-md rounded-lg border p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold">Insert Link</h3>
               <button
@@ -1326,7 +1326,7 @@ function PublishPageContent() {
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
                   placeholder="https://example.com"
-                  className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="bg-background focus:ring-ring w-full rounded-lg border px-3 py-2 focus:ring-2 focus:outline-hidden"
                   autoFocus
                 />
               </div>
@@ -1338,7 +1338,7 @@ function PublishPageContent() {
                   value={linkText}
                   onChange={(e) => setLinkText(e.target.value)}
                   placeholder="Click here"
-                  className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="bg-background focus:ring-ring w-full rounded-lg border px-3 py-2 focus:ring-2 focus:outline-hidden"
                 />
               </div>
 
@@ -1373,13 +1373,13 @@ function PublishPageContent() {
       {/* Post Published Success Modal with Upgrade Prompt (Soft Users) */}
       {showPostPublishedPrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-md rounded-lg border bg-card p-6 shadow-xl">
+          <div className="bg-card mx-4 w-full max-w-md rounded-lg border p-6 shadow-xl">
             <div className="mb-4 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
                 <Send className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">Post Published!</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <h3 className="text-foreground text-lg font-semibold">Post Published!</h3>
+              <p className="text-muted-foreground mt-1 text-sm">
                 Your post is now live on Sportsblock.
               </p>
             </div>

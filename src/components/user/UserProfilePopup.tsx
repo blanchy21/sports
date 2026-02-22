@@ -150,7 +150,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
       {/* Popup */}
       <div
         ref={popupRef}
-        className="fixed z-50 min-w-[320px] rounded-xl border border-border bg-card shadow-2xl"
+        className="border-border bg-card fixed z-50 min-w-[320px] rounded-xl border shadow-2xl"
         style={{
           left: triggerRef.current?.getBoundingClientRect().left || 0,
           bottom: window.innerHeight - (triggerRef.current?.getBoundingClientRect().top || 0) + 10,
@@ -167,54 +167,54 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
                 size="lg"
               />
               {/* Reputation Badge */}
-              <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-gradient-to-r from-primary to-bright-cobalt shadow-md">
+              <div className="from-primary to-bright-cobalt absolute -right-1 -bottom-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-linear-to-r shadow-md">
                 <span className="text-[10px] font-bold text-white">
                   {(user.reputation || 0).toFixed(1)}
                 </span>
               </div>
             </div>
             <div>
-              <div className="text-base font-semibold text-foreground">
+              <div className="text-foreground text-base font-semibold">
                 {user.displayName || user.username}
               </div>
-              <div className="text-sm text-muted-foreground">@{user.username}</div>
+              <div className="text-muted-foreground text-sm">@{user.username}</div>
             </div>
           </div>
 
           {/* Hive Resources */}
           <div className="mb-5 flex space-x-2">
             {/* HP (Hive Power) */}
-            <div className="flex-1 rounded-lg border border-primary bg-gradient-to-br from-primary to-primary/80 px-3 py-2.5 text-center shadow-sm">
-              <div className="text-xs font-semibold text-primary-foreground">
+            <div className="border-primary from-primary to-primary/80 flex-1 rounded-lg border bg-linear-to-br px-3 py-2.5 text-center shadow-xs">
+              <div className="text-primary-foreground text-xs font-semibold">
                 {user.hivePower !== undefined ? user.hivePower.toFixed(0) : 0} HP
               </div>
             </div>
             {/* MEDALS */}
-            <div className="flex-1 rounded-lg border border-accent bg-gradient-to-br from-accent to-accent/80 px-3 py-2.5 text-center shadow-sm">
-              <div className="text-xs font-semibold text-primary-foreground">
+            <div className="border-accent from-accent to-accent/80 flex-1 rounded-lg border bg-linear-to-br px-3 py-2.5 text-center shadow-xs">
+              <div className="text-primary-foreground text-xs font-semibold">
                 {user.sbBalance || 0} MEDALS
               </div>
             </div>
             {/* RC */}
-            <div className="relative flex-1 rounded-lg border border-bright-cobalt bg-gradient-to-br from-bright-cobalt to-primary px-3 py-2.5 text-center shadow-sm">
+            <div className="border-bright-cobalt from-bright-cobalt to-primary relative flex-1 rounded-lg border bg-linear-to-br px-3 py-2.5 text-center shadow-xs">
               <button
                 onClick={handleRefreshRC}
                 disabled={isRefreshingRC}
-                className="absolute right-1 top-1 rounded-full p-1 transition-colors hover:bg-white/20 disabled:opacity-50"
+                className="absolute top-1 right-1 rounded-full p-1 transition-colors hover:bg-white/20 disabled:opacity-50"
                 title="Refresh RC data"
               >
                 <RefreshCw
                   className={`h-3 w-3 text-white ${isRefreshingRC ? 'animate-spin' : ''}`}
                 />
               </button>
-              <div className="text-xs font-semibold text-primary-foreground">
+              <div className="text-primary-foreground text-xs font-semibold">
                 RC
                 {user.rcPercentage !== undefined ? (
-                  <div className="text-xs font-normal text-primary-foreground/80">
+                  <div className="text-primary-foreground/80 text-xs font-normal">
                     {user.rcPercentage.toFixed(1)}%
                   </div>
                 ) : (
-                  <div className="text-xs font-normal text-primary-foreground/80">
+                  <div className="text-primary-foreground/80 text-xs font-normal">
                     Resource Credits information not available
                   </div>
                 )}
@@ -229,7 +229,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
               <>
                 <button
                   onClick={() => setShowAccountsList(!showAccountsList)}
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/10"
+                  className="hover:bg-accent/10 flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors"
                 >
                   <div className="flex items-center space-x-3">
                     <Avatar
@@ -238,14 +238,14 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
                       fallback={Object.keys(otherAccounts)[0]}
                       size="sm"
                     />
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="text-foreground text-sm font-medium">
                       Switch accounts ({Object.keys(otherAccounts).length})
                     </span>
                   </div>
                   {showAccountsList ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    <ChevronUp className="text-muted-foreground h-4 w-4" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    <ChevronDown className="text-muted-foreground h-4 w-4" />
                   )}
                 </button>
 
@@ -257,7 +257,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
                         key={username}
                         onClick={() => handleSwitchAccount(username)}
                         disabled={isSwitching}
-                        className="flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-accent/10 disabled:opacity-50"
+                        className="hover:bg-accent/10 flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-left transition-colors disabled:opacity-50"
                       >
                         <Avatar
                           src={getHiveAvatarUrl(username)}
@@ -266,8 +266,8 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
                           size="sm"
                         />
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium text-foreground">@{username}</span>
-                          <span className="text-xs capitalize text-muted-foreground">
+                          <span className="text-foreground text-sm font-medium">@{username}</span>
+                          <span className="text-muted-foreground text-xs capitalize">
                             {provider}
                           </span>
                         </div>
@@ -281,26 +281,26 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
             {/* Add Account */}
             <button
               onClick={handleAddAccount}
-              className="flex w-full items-center space-x-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/10"
+              className="hover:bg-accent/10 flex w-full items-center space-x-3 rounded-lg px-3 py-2.5 text-left transition-colors"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                <UserPlus className="h-4 w-4 text-muted-foreground" />
+              <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-full">
+                <UserPlus className="text-muted-foreground h-4 w-4" />
               </div>
-              <span className="text-sm font-medium text-foreground">Add/Switch account</span>
+              <span className="text-foreground text-sm font-medium">Add/Switch account</span>
             </button>
 
             {/* Divider */}
-            <div className="my-2 border-t border-border" />
+            <div className="border-border my-2 border-t" />
 
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="group flex w-full items-center space-x-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-destructive/10"
+              className="group hover:bg-destructive/10 flex w-full items-center space-x-3 rounded-lg px-3 py-2.5 text-left transition-colors"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 transition-colors group-hover:bg-destructive/20">
-                <LogOut className="h-4 w-4 text-destructive" />
+              <div className="bg-destructive/10 group-hover:bg-destructive/20 flex h-8 w-8 items-center justify-center rounded-full transition-colors">
+                <LogOut className="text-destructive h-4 w-4" />
               </div>
-              <span className="text-sm font-medium text-destructive">Logout @{user.username}</span>
+              <span className="text-destructive text-sm font-medium">Logout @{user.username}</span>
             </button>
           </div>
         </div>

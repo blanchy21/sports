@@ -168,16 +168,16 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="max-h-[90vh] w-full max-w-2xl overflow-y-auto bg-card">
+      <Card className="bg-card max-h-[90vh] w-full max-w-2xl overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card p-6">
+        <div className="bg-card sticky top-0 z-10 flex items-center justify-between border-b p-6">
           <div className="flex items-center space-x-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <Users className="h-6 w-6 text-primary" />
+            <div className="bg-primary/10 rounded-lg p-2">
+              <Users className="text-primary h-6 w-6" />
             </div>
             <div>
               <h2 className="text-xl font-semibold">Create Community</h2>
-              <p className="text-sm text-muted-foreground">Build your own sports community</p>
+              <p className="text-muted-foreground text-sm">Build your own sports community</p>
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -199,7 +199,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               onChange={handleInputChange}
               placeholder="e.g., Tottenham Supporters Club"
               className={cn(
-                'w-full rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary',
+                'bg-background focus:ring-primary w-full rounded-lg border px-4 py-2 focus:ring-2 focus:outline-hidden',
                 errors.name && 'border-red-500'
               )}
             />
@@ -218,13 +218,13 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               placeholder="Brief description of your community (10-500 characters)"
               rows={2}
               className={cn(
-                'w-full resize-none rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary',
+                'bg-background focus:ring-primary w-full resize-none rounded-lg border px-4 py-2 focus:ring-2 focus:outline-hidden',
                 errors.about && 'border-red-500'
               )}
             />
             <div className="mt-1 flex justify-between">
               {errors.about ? <p className="text-sm text-red-500">{errors.about}</p> : <span />}
-              <span className="text-xs text-muted-foreground">{formData.about.length}/500</span>
+              <span className="text-muted-foreground text-xs">{formData.about.length}/500</span>
             </div>
           </div>
 
@@ -237,7 +237,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               onChange={handleInputChange}
               placeholder="Community guidelines, rules, and detailed description..."
               rows={4}
-              className="w-full resize-none rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="bg-background focus:ring-primary w-full resize-none rounded-lg border px-4 py-2 focus:ring-2 focus:outline-hidden"
             />
           </div>
 
@@ -251,7 +251,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               value={formData.sportCategory}
               onChange={handleInputChange}
               className={cn(
-                'w-full rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary',
+                'bg-background focus:ring-primary w-full rounded-lg border px-4 py-2 focus:ring-2 focus:outline-hidden',
                 errors.sportCategory && 'border-red-500'
               )}
             >
@@ -281,7 +281,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
                   className={cn(
                     'rounded-lg border p-4 text-left transition-all',
                     formData.type === type.value
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary'
+                      ? 'border-primary bg-primary/5 ring-primary ring-2'
                       : 'border-border hover:border-primary/50'
                   )}
                 >
@@ -295,7 +295,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
                     </span>
                     <span className="font-medium">{type.label}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">{type.description}</p>
+                  <p className="text-muted-foreground text-xs">{type.description}</p>
                 </button>
               ))}
             </div>
@@ -315,7 +315,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
                 onChange={handleInputChange}
                 placeholder="https://example.com/avatar.jpg"
                 className={cn(
-                  'w-full rounded-lg border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary',
+                  'bg-background focus:ring-primary w-full rounded-lg border px-4 py-2 text-sm focus:ring-2 focus:outline-hidden',
                   errors.avatar && 'border-red-500'
                 )}
               />
@@ -334,7 +334,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
                 onChange={handleInputChange}
                 placeholder="https://example.com/cover.jpg"
                 className={cn(
-                  'w-full rounded-lg border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary',
+                  'bg-background focus:ring-primary w-full rounded-lg border px-4 py-2 text-sm focus:ring-2 focus:outline-hidden',
                   errors.coverImage && 'border-red-500'
                 )}
               />

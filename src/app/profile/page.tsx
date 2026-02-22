@@ -152,9 +152,9 @@ export default function ProfilePage() {
     <MainLayout>
       <div className="mx-auto max-w-4xl space-y-6">
         {/* Profile Header */}
-        <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="bg-card overflow-hidden rounded-lg border">
           {/* Cover Photo */}
-          <div className="relative h-48 bg-gradient-to-r from-primary via-bright-cobalt to-accent">
+          <div className="from-primary via-bright-cobalt to-accent relative h-48 bg-linear-to-r">
             {user.hiveProfile?.coverImage && (
               <Image
                 src={user.hiveProfile.coverImage}
@@ -177,23 +177,23 @@ export default function ProfilePage() {
                     alt={user.displayName || user.username}
                     fallback={user.username}
                     size="lg"
-                    className="h-32 w-32 border-4 border-background"
+                    className="border-background h-32 w-32 border-4"
                   />
                 </div>
 
                 <div className="mt-4 flex-1">
                   <div className="mb-2 flex items-center space-x-3">
-                    <h1 className="text-3xl font-bold text-foreground">
+                    <h1 className="text-foreground text-3xl font-bold">
                       {user.displayName || user.username}
                     </h1>
                     {authType === 'hive' && (
                       <div className="flex items-center space-x-2">
-                        <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-red-500 to-red-600 px-2.5 py-1 shadow-md shadow-red-500/25">
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-red-500 to-red-600 px-2.5 py-1 shadow-md shadow-red-500/25">
                           <Zap className="h-3.5 w-3.5 text-white" />
                           <span className="text-xs font-semibold text-white">Hive</span>
                         </div>
                         {user.reputationFormatted && (
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-2.5 py-1 shadow-md shadow-amber-500/25">
+                          <div className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-amber-500 to-yellow-500 px-2.5 py-1 shadow-md shadow-amber-500/25">
                             <Star className="h-3.5 w-3.5 text-white" />
                             <span className="text-xs font-semibold text-white">
                               {user.reputationFormatted}
@@ -203,7 +203,7 @@ export default function ProfilePage() {
                       </div>
                     )}
                   </div>
-                  <p className="mb-2 text-lg text-muted-foreground">@{user.username}</p>
+                  <p className="text-muted-foreground mb-2 text-lg">@{user.username}</p>
 
                   {/* Error Display */}
                   {refreshError && (
@@ -225,13 +225,13 @@ export default function ProfilePage() {
                   <div className="mt-4 space-y-3">
                     {user.hiveProfile?.location && (
                       <div className="flex items-center space-x-3 text-sm">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <MapPin className="text-muted-foreground h-4 w-4" />
                         <span className="text-foreground">{user.hiveProfile.location}</span>
                       </div>
                     )}
 
                     <div className="flex items-center space-x-3 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <Calendar className="text-muted-foreground h-4 w-4" />
                       <span className="text-foreground">
                         Joined{' '}
                         {user.createdAt instanceof Date
@@ -245,7 +245,7 @@ export default function ProfilePage() {
 
                     {user.hiveProfile?.website && (
                       <div className="flex items-center space-x-3 text-sm">
-                        <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                        <LinkIcon className="text-muted-foreground h-4 w-4" />
                         <a
                           href={user.hiveProfile.website}
                           className="text-primary transition-colors hover:underline"
@@ -260,65 +260,65 @@ export default function ProfilePage() {
 
                   {/* Bio Section */}
                   <div className="mt-6">
-                    <p className="max-w-2xl text-base leading-relaxed text-foreground">
+                    <p className="text-foreground max-w-2xl text-base leading-relaxed">
                       {user.bio || user.hiveProfile?.about || 'No bio available.'}
                     </p>
                   </div>
 
                   {/* Stats Section */}
-                  <div className="mt-6 flex items-center space-x-6 border-t border-border pt-4">
+                  <div className="border-border mt-6 flex items-center space-x-6 border-t pt-4">
                     {authType === 'hive' ? (
                       <>
                         <button
                           onClick={() => router.push('/following')}
                           className="cursor-pointer text-center transition-opacity hover:opacity-70"
                         >
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-foreground text-2xl font-bold">
                             {isRefreshing
                               ? '...'
                               : (user.hiveStats?.following || 0).toLocaleString()}
                           </div>
-                          <div className="text-sm text-muted-foreground">Following</div>
+                          <div className="text-muted-foreground text-sm">Following</div>
                         </button>
                         <button
                           onClick={() => router.push('/followers')}
                           className="cursor-pointer text-center transition-opacity hover:opacity-70"
                         >
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-foreground text-2xl font-bold">
                             {isRefreshing
                               ? '...'
                               : (user.hiveStats?.followers || 0).toLocaleString()}
                           </div>
-                          <div className="text-sm text-muted-foreground">Followers</div>
+                          <div className="text-muted-foreground text-sm">Followers</div>
                         </button>
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-foreground text-2xl font-bold">
                             {isRefreshing
                               ? '...'
                               : (user.hiveStats?.postCount || 0).toLocaleString()}
                           </div>
-                          <div className="text-sm text-muted-foreground">Posts</div>
+                          <div className="text-muted-foreground text-sm">Posts</div>
                         </div>
                       </>
                     ) : (
                       <>
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-foreground text-2xl font-bold">
                             {userPosts.length}
                           </div>
-                          <div className="text-sm text-muted-foreground">Posts</div>
+                          <div className="text-muted-foreground text-sm">Posts</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-foreground text-2xl font-bold">
                             {userPosts.reduce((sum, p) => sum + getPostLikeCount(p), 0)}
                           </div>
-                          <div className="text-sm text-muted-foreground">Likes</div>
+                          <div className="text-muted-foreground text-sm">Likes</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-foreground text-2xl font-bold">
                             {userPosts.reduce((sum, p) => sum + getPostViewCount(p), 0)}
                           </div>
-                          <div className="text-sm text-muted-foreground">Views</div>
+                          <div className="text-muted-foreground text-sm">Views</div>
                         </div>
                       </>
                     )}
@@ -355,16 +355,16 @@ export default function ProfilePage() {
         </div>
 
         {/* Tabs */}
-        <div className="rounded-lg border bg-card">
-          <div className="flex items-center border-b border-border px-6">
+        <div className="bg-card rounded-lg border">
+          <div className="border-border flex items-center border-b px-6">
             {(['posts', 'drafts', 'replies', 'bookmarks'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={
                   activeTab === tab
-                    ? 'border-b-2 border-primary px-4 py-3 font-medium text-primary transition-colors'
-                    : 'border-b-2 border-transparent px-4 py-3 text-muted-foreground transition-colors hover:text-foreground'
+                    ? 'border-primary text-primary border-b-2 px-4 py-3 font-medium transition-colors'
+                    : 'text-muted-foreground hover:text-foreground border-b-2 border-transparent px-4 py-3 transition-colors'
                 }
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -378,14 +378,14 @@ export default function ProfilePage() {
               <>
                 {isLoadingPosts ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <span className="ml-2 text-muted-foreground">Loading posts...</span>
+                    <Loader2 className="text-primary h-8 w-8 animate-spin" />
+                    <span className="text-muted-foreground ml-2">Loading posts...</span>
                   </div>
                 ) : postsError ? (
                   <div className="py-12 text-center">
                     <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
                     <h3 className="mb-2 text-lg font-semibold">Error loading posts</h3>
-                    <p className="mb-4 text-muted-foreground">{postsError}</p>
+                    <p className="text-muted-foreground mb-4">{postsError}</p>
                     <Button onClick={loadUserPosts}>Try Again</Button>
                   </div>
                 ) : userPosts.length > 0 ? (

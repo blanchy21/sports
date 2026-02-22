@@ -302,17 +302,17 @@ export function SportsbitesFeed({
     return (
       <div className={cn('space-y-4', className)}>
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="animate-pulse rounded-xl border bg-card p-4">
+          <div key={i} className="bg-card animate-pulse rounded-xl border p-4">
             <div className="flex gap-3">
-              <div className="h-12 w-12 rounded-full bg-muted" />
+              <div className="bg-muted h-12 w-12 rounded-full" />
               <div className="flex-1 space-y-3">
                 <div className="flex gap-2">
-                  <div className="h-4 w-24 rounded bg-muted" />
-                  <div className="h-4 w-16 rounded bg-muted" />
+                  <div className="bg-muted h-4 w-24 rounded" />
+                  <div className="bg-muted h-4 w-16 rounded" />
                 </div>
                 <div className="space-y-2">
-                  <div className="h-4 w-full rounded bg-muted" />
-                  <div className="h-4 w-3/4 rounded bg-muted" />
+                  <div className="bg-muted h-4 w-full rounded" />
+                  <div className="bg-muted h-4 w-3/4 rounded" />
                 </div>
               </div>
             </div>
@@ -324,14 +324,14 @@ export function SportsbitesFeed({
 
   if (error) {
     return (
-      <div className={cn('rounded-xl border bg-card p-8 text-center', className)}>
+      <div className={cn('bg-card rounded-xl border p-8 text-center', className)}>
         <div className="mb-4 flex justify-center">
           <div className="rounded-full bg-red-100 p-3 dark:bg-red-950">
             <AlertCircle className="h-8 w-8 text-red-500" />
           </div>
         </div>
         <h3 className="mb-2 text-lg font-semibold">Failed to Load Sportsbites</h3>
-        <p className="mb-4 text-sm text-muted-foreground">{error}</p>
+        <p className="text-muted-foreground mb-4 text-sm">{error}</p>
         <Button onClick={() => loadBites()} variant="outline">
           <RefreshCw className="mr-2 h-4 w-4" />
           Try Again
@@ -343,14 +343,14 @@ export function SportsbitesFeed({
   if (bites.length === 0) {
     if (filterMode === 'following') {
       return (
-        <div className={cn('rounded-xl border bg-card p-8 text-center', className)}>
+        <div className={cn('bg-card rounded-xl border p-8 text-center', className)}>
           <div className="mb-4 flex justify-center">
-            <div className="rounded-full bg-primary/10 p-3">
-              <Zap className="h-8 w-8 text-primary" />
+            <div className="bg-primary/10 rounded-full p-3">
+              <Zap className="text-primary h-8 w-8" />
             </div>
           </div>
           <h3 className="mb-2 text-lg font-semibold">No sportsbites from people you follow</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {followingList.length === 0
               ? 'Follow some users to see their sportsbites here!'
               : "The people you follow haven't posted any sportsbites yet."}
@@ -359,16 +359,16 @@ export function SportsbitesFeed({
       );
     }
     return (
-      <div className={cn('rounded-xl border bg-card p-12 text-center', className)}>
+      <div className={cn('bg-card rounded-xl border p-12 text-center', className)}>
         <div className="mb-4 flex justify-center">
-          <div className="rounded-full bg-primary/10 p-4">
-            <Zap className="h-12 w-12 text-primary" />
+          <div className="bg-primary/10 rounded-full p-4">
+            <Zap className="text-primary h-12 w-12" />
           </div>
         </div>
         <h3 className="mb-2 text-xl font-semibold">
           {author ? `No sportsbites from @${author}` : 'No sportsbites yet'}
         </h3>
-        <p className="mx-auto max-w-sm text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-sm">
           {author
             ? "This user hasn't posted any sportsbites yet."
             : 'Be the first to share a quick sports take! Sportsbites are perfect for live match reactions and quick thoughts.'}
@@ -384,13 +384,13 @@ export function SportsbitesFeed({
           onClick={showNewBites}
           className={cn(
             'flex w-full items-center justify-center gap-2 px-4 py-3',
-            'bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20',
-            'rounded-xl border border-primary/30',
-            'text-sm font-medium text-primary',
+            'from-primary/20 via-primary/10 to-primary/20 bg-linear-to-r',
+            'border-primary/30 rounded-xl border',
+            'text-primary text-sm font-medium',
             'hover:from-primary/30 hover:via-primary/20 hover:to-primary/30',
             'cursor-pointer transition-all duration-300',
             'animate-pulse hover:animate-none',
-            'shadow-lg shadow-primary/10'
+            'shadow-primary/10 shadow-lg'
           )}
         >
           <ArrowUp className="h-4 w-4" />
@@ -419,7 +419,7 @@ export function SportsbitesFeed({
 
       {isLoadingMore && (
         <div className="flex justify-center py-6">
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-2">
             <Loader2 className="h-5 w-5 animate-spin" />
             <span>Loading more sportsbites...</span>
           </div>
@@ -428,7 +428,7 @@ export function SportsbitesFeed({
 
       {!hasMore && bites.length > 0 && (
         <div className="flex justify-center py-6">
-          <p className="text-sm text-muted-foreground">You&apos;ve reached the end of the feed</p>
+          <p className="text-muted-foreground text-sm">You&apos;ve reached the end of the feed</p>
         </div>
       )}
     </div>

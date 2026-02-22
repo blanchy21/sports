@@ -42,31 +42,31 @@ export const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-border bg-card shadow-lg"
+      className="border-border bg-card absolute top-full right-0 z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border shadow-lg"
       data-testid="settings-dropdown"
     >
       {/* Header */}
-      <div className="border-b border-border bg-muted/50 p-4">
+      <div className="border-border bg-muted/50 border-b p-4">
         <div className="flex items-center space-x-2">
-          <Settings className="h-5 w-5 text-muted-foreground" />
-          <h3 className="font-semibold text-foreground">Settings</h3>
+          <Settings className="text-muted-foreground h-5 w-5" />
+          <h3 className="text-foreground font-semibold">Settings</h3>
         </div>
       </div>
 
       {/* Settings Options */}
       <div className="p-2">
         {/* Theme Toggle */}
-        <div className="rounded-lg p-3 transition-colors hover:bg-muted/50">
+        <div className="hover:bg-muted/50 rounded-lg p-3 transition-colors">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               {theme === 'dark' ? (
-                <Moon className="h-5 w-5 text-muted-foreground" />
+                <Moon className="text-muted-foreground h-5 w-5" />
               ) : (
-                <Sun className="h-5 w-5 text-muted-foreground" />
+                <Sun className="text-muted-foreground h-5 w-5" />
               )}
               <div>
-                <p className="text-sm font-medium text-foreground">Appearance</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-foreground text-sm font-medium">Appearance</p>
+                <p className="text-muted-foreground text-xs">
                   {theme === 'dark' ? 'Dark mode' : 'Light mode'}
                 </p>
               </div>
@@ -75,7 +75,7 @@ export const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
             {/* Toggle Switch */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+              className={`focus:ring-primary relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-hidden ${
                 theme === 'dark' ? 'bg-primary' : 'bg-muted-foreground/30'
               }`}
               role="switch"

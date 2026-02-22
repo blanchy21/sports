@@ -38,7 +38,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="landing-dark min-h-screen overflow-x-hidden bg-background">
+    <div className="landing-dark bg-background min-h-screen overflow-x-hidden">
       {/* Hero Section */}
       <motion.section
         style={{ opacity: heroOpacity, scale: heroScale }}
@@ -50,11 +50,11 @@ export default function LandingPage() {
           {/* Subtle centered radial glow */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_40%,rgba(60,96,152,0.15),transparent)]" />
           {/* Bottom fade to --background */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
+          <div className="to-background absolute inset-0 bg-linear-to-b from-transparent via-transparent" />
         </motion.div>
 
         {/* Ambient blur blobs */}
-        <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 z-1 overflow-hidden">
           <motion.div
             animate={{
               scale: [1, 1.3, 1],
@@ -63,7 +63,7 @@ export default function LandingPage() {
               y: [0, -20, 0],
             }}
             transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#3C6098]/15 blur-3xl"
+            className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#3C6098]/15 blur-3xl"
           />
           <motion.div
             animate={{
@@ -73,7 +73,7 @@ export default function LandingPage() {
               y: [0, 30, 0],
             }}
             transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -bottom-48 -left-48 h-[500px] w-[500px] rounded-full bg-primary/10 blur-3xl"
+            className="bg-primary/10 absolute -bottom-48 -left-48 h-[500px] w-[500px] rounded-full blur-3xl"
           />
         </div>
 
@@ -114,7 +114,7 @@ export default function LandingPage() {
                 PURE SPORTS.
               </span>
               <br />
-              <span className="animate-shimmer bg-gradient-to-r from-accent via-aegean-sky via-50% to-accent bg-clip-text text-transparent">
+              <span className="animate-shimmer from-accent via-aegean-sky to-accent bg-linear-to-r via-50% bg-clip-text text-transparent">
                 REAL REWARDS.
               </span>
             </h1>
@@ -126,7 +126,7 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.7 }}
           >
-            <p className="mx-auto mb-2 max-w-3xl text-lg font-light leading-relaxed text-white/90 sm:text-xl md:text-2xl">
+            <p className="mx-auto mb-2 max-w-3xl text-lg leading-relaxed font-light text-white/90 sm:text-xl md:text-2xl">
               No politics. No drama. No noise.
             </p>
             <p className="mx-auto mb-10 max-w-2xl text-base text-white/60 sm:text-lg md:text-xl">
@@ -143,7 +143,7 @@ export default function LandingPage() {
           >
             <Button
               size="lg"
-              className="group bg-accent px-10 py-7 text-lg font-semibold text-white shadow-2xl shadow-accent/25 transition-all duration-300 hover:scale-105 hover:bg-accent/90 hover:shadow-accent/40"
+              className="group bg-accent shadow-accent/25 hover:bg-accent/90 hover:shadow-accent/40 px-10 py-7 text-lg font-semibold text-white shadow-2xl transition-all duration-300 hover:scale-105"
               onClick={() => signIn('google', { callbackUrl: '/auth/google-callback' })}
             >
               Sign Up Free
@@ -152,7 +152,7 @@ export default function LandingPage() {
             <Button
               size="lg"
               variant="outline"
-              className="border-white/30 bg-white/5 px-10 py-7 text-lg text-white backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/15"
+              className="border-white/30 bg-white/5 px-10 py-7 text-lg text-white backdrop-blur-xs transition-all duration-300 hover:border-white/50 hover:bg-white/15"
               onClick={() => openModal('keychainLogin')}
             >
               Sign In
@@ -170,7 +170,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center justify-center gap-4 text-white/70 sm:gap-8">
               {['Zero fees', 'Free to join', 'You own everything'].map((text, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  <div className="bg-accent h-1.5 w-1.5 rounded-full" />
                   <span className="text-sm font-medium">{text}</span>
                 </div>
               ))}
@@ -218,7 +218,7 @@ export default function LandingPage() {
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
             className="flex flex-col items-center text-white/50"
           >
-            <span className="mb-3 text-xs uppercase tracking-widest">Discover More</span>
+            <span className="mb-3 text-xs tracking-widest uppercase">Discover More</span>
             <div className="flex h-10 w-6 items-start justify-center rounded-full border-2 border-white/30 p-1.5">
               <motion.div
                 animate={{ y: [0, 12, 0], opacity: [1, 0.3, 1] }}
@@ -230,7 +230,7 @@ export default function LandingPage() {
         </motion.div>
 
         {/* Bottom Gradient Fade */}
-        <div className="absolute bottom-0 left-0 right-0 z-[5] h-32 bg-gradient-to-t from-background to-transparent" />
+        <div className="from-background absolute right-0 bottom-0 left-0 z-5 h-32 bg-linear-to-t to-transparent" />
       </motion.section>
 
       {/* Lazy load all sections below the fold */}

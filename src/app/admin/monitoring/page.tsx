@@ -210,7 +210,7 @@ export default function MonitoringPage() {
       <MainLayout>
         <div className="mx-auto max-w-7xl p-6">
           <div className="flex h-64 items-center justify-center">
-            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+            <RefreshCw className="text-primary h-8 w-8 animate-spin" />
             <span className="ml-2 text-lg">Loading monitoring data...</span>
           </div>
         </div>
@@ -221,13 +221,13 @@ export default function MonitoringPage() {
   return (
     <MainLayout>
       <div className="mx-auto max-w-7xl space-y-6 p-6">
-        <LazyRealtimeFeed className="shadow-sm" />
+        <LazyRealtimeFeed className="shadow-xs" />
 
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">WorkerBee Monitoring Dashboard</h1>
-            <p className="mt-1 text-muted-foreground">
+            <h1 className="text-foreground text-3xl font-bold">WorkerBee Monitoring Dashboard</h1>
+            <p className="text-muted-foreground mt-1">
               Real-time performance monitoring and optimization metrics
             </p>
           </div>
@@ -254,7 +254,7 @@ export default function MonitoringPage() {
 
         {/* Last Updated */}
         {isClient && lastUpdated && (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             Last updated: {lastUpdated.toLocaleString()}
           </div>
         )}
@@ -312,17 +312,17 @@ export default function MonitoringPage() {
               <div className="flex items-center space-x-4">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-green-600">{nodeHealthData.healthyNodes}</p>
-                  <p className="text-xs text-muted-foreground">Healthy</p>
+                  <p className="text-muted-foreground text-xs">Healthy</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-red-600">{nodeHealthData.unhealthyNodes}</p>
-                  <p className="text-xs text-muted-foreground">Unhealthy</p>
+                  <p className="text-muted-foreground text-xs">Unhealthy</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-blue-600">
                     {nodeHealthData.averageLatency.toFixed(0)}ms
                   </p>
-                  <p className="text-xs text-muted-foreground">Avg Latency</p>
+                  <p className="text-muted-foreground text-xs">Avg Latency</p>
                 </div>
               </div>
             </div>
@@ -340,7 +340,7 @@ export default function MonitoringPage() {
                     />
                     <div>
                       <p className="text-sm font-medium">{node.url}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-muted-foreground text-xs">
                         Health Score: {node.healthScore.toFixed(0)}% | Success Rate:{' '}
                         {node.successRate.toFixed(1)}% | Latency: {node.latency}ms
                       </p>
@@ -380,12 +380,12 @@ export default function MonitoringPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Operations</p>
+                <p className="text-muted-foreground text-sm font-medium">Total Operations</p>
                 <p className="text-2xl font-bold">
                   {monitoringData?.performance.totalOperations.toLocaleString() || '0'}
                 </p>
               </div>
-              <BarChart3 className="h-8 w-8 text-primary" />
+              <BarChart3 className="text-primary h-8 w-8" />
             </div>
           </Card>
 
@@ -393,12 +393,12 @@ export default function MonitoringPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg Response Time</p>
+                <p className="text-muted-foreground text-sm font-medium">Avg Response Time</p>
                 <p className="text-2xl font-bold">
                   {monitoringData?.performance.averageDuration.toFixed(0) || '0'}ms
                 </p>
               </div>
-              <Clock className="h-8 w-8 text-accent" />
+              <Clock className="text-accent h-8 w-8" />
             </div>
           </Card>
 
@@ -406,7 +406,7 @@ export default function MonitoringPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
+                <p className="text-muted-foreground text-sm font-medium">Success Rate</p>
                 <p className="text-2xl font-bold">
                   {monitoringData?.performance.successRate.toFixed(1) || '0'}%
                 </p>
@@ -419,7 +419,7 @@ export default function MonitoringPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Cache Hit Rate</p>
+                <p className="text-muted-foreground text-sm font-medium">Cache Hit Rate</p>
                 <p className="text-2xl font-bold">{cacheStats?.hitRate || '0%'}</p>
               </div>
               <Database className="h-8 w-8 text-blue-600" />
@@ -438,19 +438,19 @@ export default function MonitoringPage() {
             <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="text-center">
                 <p className="text-3xl font-bold text-red-600">{monitoringData.errors.total}</p>
-                <p className="text-sm text-muted-foreground">Total Errors</p>
+                <p className="text-muted-foreground text-sm">Total Errors</p>
               </div>
               <div className="text-center">
                 <p className="text-3xl font-bold text-orange-600">
                   {monitoringData.errors.unresolved}
                 </p>
-                <p className="text-sm text-muted-foreground">Unresolved</p>
+                <p className="text-muted-foreground text-sm">Unresolved</p>
               </div>
               <div className="text-center">
                 <p className="text-3xl font-bold text-green-600">
                   {monitoringData.errors.total - monitoringData.errors.unresolved}
                 </p>
-                <p className="text-sm text-muted-foreground">Resolved</p>
+                <p className="text-muted-foreground text-sm">Resolved</p>
               </div>
             </div>
 
@@ -471,9 +471,9 @@ export default function MonitoringPage() {
                           {error.severity}
                         </Badge>
                         <span className="text-sm font-medium">{error.type}</span>
-                        <span className="text-sm text-muted-foreground">{error.message}</span>
+                        <span className="text-muted-foreground text-sm">{error.message}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {new Date(error.timestamp).toLocaleString()}
                       </span>
                     </div>
@@ -495,15 +495,15 @@ export default function MonitoringPage() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="text-center">
                 <p className="text-3xl font-bold text-blue-600">{cacheStats.size}</p>
-                <p className="text-sm text-muted-foreground">Cache Size</p>
+                <p className="text-muted-foreground text-sm">Cache Size</p>
               </div>
               <div className="text-center">
                 <p className="text-3xl font-bold text-purple-600">{cacheStats.maxSize}</p>
-                <p className="text-sm text-muted-foreground">Max Size</p>
+                <p className="text-muted-foreground text-sm">Max Size</p>
               </div>
               <div className="text-center">
                 <p className="text-3xl font-bold text-green-600">{cacheStats.hitRate}</p>
-                <p className="text-sm text-muted-foreground">Hit Rate</p>
+                <p className="text-muted-foreground text-sm">Hit Rate</p>
               </div>
             </div>
           </Card>
@@ -530,8 +530,8 @@ export default function MonitoringPage() {
                     <span className="text-sm font-medium">{op.operation}</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className="text-sm text-muted-foreground">{op.duration}ms</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">{op.duration}ms</span>
+                    <span className="text-muted-foreground text-xs">
                       {new Date(op.timestamp).toLocaleString()}
                     </span>
                   </div>

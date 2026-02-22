@@ -92,34 +92,34 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Default fallback UI
       return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4">
-          <div className="w-full max-w-md space-y-6 rounded-lg border border-destructive/50 bg-card p-6 shadow-lg">
+        <div className="bg-background flex min-h-screen items-center justify-center p-4">
+          <div className="border-destructive/50 bg-card w-full max-w-md space-y-6 rounded-lg border p-6 shadow-lg">
             <div className="flex items-center space-x-3">
-              <AlertCircle className="h-8 w-8 text-destructive" />
-              <h1 className="text-2xl font-bold text-foreground">Something went wrong</h1>
+              <AlertCircle className="text-destructive h-8 w-8" />
+              <h1 className="text-foreground text-2xl font-bold">Something went wrong</h1>
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 An unexpected error occurred. Don&apos;t worry, your data is safe.
               </p>
 
               {process.env.NODE_ENV === 'development' && this.state.error && (
-                <details className="mt-4 rounded-md bg-muted p-3">
-                  <summary className="cursor-pointer text-sm font-medium text-foreground">
+                <details className="bg-muted mt-4 rounded-md p-3">
+                  <summary className="text-foreground cursor-pointer text-sm font-medium">
                     Error Details (Development Only)
                   </summary>
                   <div className="mt-2 space-y-2">
                     <div>
-                      <p className="text-xs font-semibold text-destructive">Error:</p>
-                      <p className="break-all font-mono text-xs text-muted-foreground">
+                      <p className="text-destructive text-xs font-semibold">Error:</p>
+                      <p className="text-muted-foreground font-mono text-xs break-all">
                         {this.state.error.toString()}
                       </p>
                     </div>
                     {this.state.errorInfo && (
                       <div>
-                        <p className="text-xs font-semibold text-destructive">Stack Trace:</p>
-                        <pre className="max-h-40 overflow-auto font-mono text-xs text-muted-foreground">
+                        <p className="text-destructive text-xs font-semibold">Stack Trace:</p>
+                        <pre className="text-muted-foreground max-h-40 overflow-auto font-mono text-xs">
                           {this.state.errorInfo.componentStack}
                         </pre>
                       </div>
@@ -129,7 +129,7 @@ export class ErrorBoundary extends Component<Props, State> {
               )}
             </div>
 
-            <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
               <Button onClick={this.resetErrorBoundary} variant="default" className="flex-1">
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Try Again
@@ -185,9 +185,9 @@ export function CompactErrorFallback({
   onRetry?: () => void;
 }): React.ReactElement {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-destructive/20 bg-destructive/10 p-4">
-      <AlertCircle className="mb-2 h-6 w-6 text-destructive" />
-      <p className="mb-2 text-sm text-muted-foreground">{message}</p>
+    <div className="border-destructive/20 bg-destructive/10 flex flex-col items-center justify-center rounded-lg border p-4">
+      <AlertCircle className="text-destructive mb-2 h-6 w-6" />
+      <p className="text-muted-foreground mb-2 text-sm">{message}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
           <RefreshCw className="mr-1 h-3 w-3" />
@@ -235,10 +235,10 @@ export function ApiErrorFallback({
 
   if (compact) {
     return (
-      <div className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+      <div className="border-destructive/20 bg-destructive/10 flex items-center justify-between rounded-lg border p-3">
         <div className="flex items-center space-x-2">
-          <AlertCircle className="h-4 w-4 flex-shrink-0 text-destructive" />
-          <p className="text-sm text-muted-foreground">{title}</p>
+          <AlertCircle className="text-destructive h-4 w-4 shrink-0" />
+          <p className="text-muted-foreground text-sm">{title}</p>
         </div>
         {onRetry && (
           <Button variant="ghost" size="sm" onClick={onRetry} className="ml-2">
@@ -250,12 +250,12 @@ export function ApiErrorFallback({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted/50 p-6">
-      <div className="mb-4 rounded-full bg-destructive/10 p-3">
-        <AlertCircle className="h-6 w-6 text-destructive" />
+    <div className="border-border bg-muted/50 flex flex-col items-center justify-center rounded-lg border p-6">
+      <div className="bg-destructive/10 mb-4 rounded-full p-3">
+        <AlertCircle className="text-destructive h-6 w-6" />
       </div>
-      <h3 className="mb-1 text-lg font-semibold text-foreground">{title}</h3>
-      <p className="mb-4 max-w-sm text-center text-sm text-muted-foreground">
+      <h3 className="text-foreground mb-1 text-lg font-semibold">{title}</h3>
+      <p className="text-muted-foreground mb-4 max-w-sm text-center text-sm">
         {getUserFriendlyMessage()}
       </p>
       {onRetry && (
@@ -288,13 +288,13 @@ export function EmptyStateFallback({
   const IconComponent = Icon || AlertCircle;
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg bg-muted/30 p-8">
-      <div className="mb-4 rounded-full bg-muted p-3">
-        <IconComponent className="h-6 w-6 text-muted-foreground" />
+    <div className="bg-muted/30 flex flex-col items-center justify-center rounded-lg p-8">
+      <div className="bg-muted mb-4 rounded-full p-3">
+        <IconComponent className="text-muted-foreground h-6 w-6" />
       </div>
-      <h3 className="mb-1 text-lg font-semibold text-foreground">{title}</h3>
+      <h3 className="text-foreground mb-1 text-lg font-semibold">{title}</h3>
       {description && (
-        <p className="mb-4 max-w-sm text-center text-sm text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground mb-4 max-w-sm text-center text-sm">{description}</p>
       )}
       {action && (
         <Button variant="outline" onClick={action.onClick}>
@@ -320,7 +320,7 @@ export function LoadingFallback({
       {Array.from({ length: lines }).map((_, i) => (
         <div
           key={i}
-          className="h-4 rounded bg-muted"
+          className="bg-muted h-4 rounded"
           style={{ width: `${Math.random() * 40 + 60}%` }}
         />
       ))}

@@ -19,9 +19,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   showRightSidebar = true,
 }) => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background min-h-screen">
       <TopNavigation />
-      <div className={cn('lg:pl-64 xl:pl-80', showRightSidebar && 'xl:pr-80 2xl:pr-[28rem]')}>
+      <div className={cn('lg:pl-64 xl:pl-80', showRightSidebar && 'xl:pr-80 2xl:pr-112')}>
         <main className={cn('mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6', className)}>
           <KeyDownloadBanner />
           {children}

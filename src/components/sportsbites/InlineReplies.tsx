@@ -86,13 +86,13 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
   };
 
   return (
-    <div className="border-t bg-muted/20 px-3 py-3 sm:px-4 sm:pl-[60px]">
+    <div className="bg-muted/20 border-t px-3 py-3 sm:px-4 sm:pl-[60px]">
       {isLoading ? (
         <div className="flex items-center justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
         </div>
       ) : error ? (
-        <p className="py-3 text-center text-sm text-muted-foreground">Failed to load replies.</p>
+        <p className="text-muted-foreground py-3 text-center text-sm">Failed to load replies.</p>
       ) : comments && comments.length > 0 ? (
         <div className="space-y-3">
           {comments.map((comment) => {
@@ -100,7 +100,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
             return (
               <div
                 key={`${comment.author}-${comment.permlink}`}
-                className={`flex gap-2 ${isNestedReply ? 'ml-6 border-l-2 border-muted-foreground/20 pl-3' : ''}`}
+                className={`flex gap-2 ${isNestedReply ? 'border-muted-foreground/20 ml-6 border-l-2 pl-3' : ''}`}
               >
                 <Avatar
                   src={getHiveAvatarUrl(comment.author)}
@@ -120,7 +120,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
                         Hive
                       </Badge>
                     )}
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {formatDate(new Date(comment.created))}
                     </span>
                   </div>
@@ -144,7 +144,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
           })}
         </div>
       ) : (
-        <p className="py-2 text-center text-sm text-muted-foreground">
+        <p className="text-muted-foreground py-2 text-center text-sm">
           No replies yet — be the first!
         </p>
       )}
@@ -163,7 +163,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
             <textarea
               ref={textareaRef}
               placeholder="Write a reply..."
-              className="flex-1 resize-none rounded-lg border bg-background p-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="bg-background text-foreground focus:ring-primary flex-1 resize-none rounded-lg border p-2 text-sm focus:ring-2 focus:outline-hidden"
               rows={1}
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}

@@ -1,42 +1,42 @@
 /**
  * Communities Page Loading State
- * 
+ *
  * Note: Does NOT use MainLayout to avoid context dependency issues.
  */
 export default function CommunitiesLoading() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background min-h-screen">
       {/* Top Navigation Placeholder */}
-      <div className="h-24 bg-gradient-to-r from-primary/10 to-accent/10" />
-      
-      <div className="lg:pl-80 xl:pr-[28rem]">
-        <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
+      <div className="from-primary/10 to-accent/10 h-24 bg-linear-to-r" />
+
+      <div className="lg:pl-80 xl:pr-112">
+        <div className="mx-auto max-w-4xl space-y-6 px-6 py-6">
           {/* Header Skeleton */}
-          <div className="flex items-center space-x-3 animate-pulse">
-            <div className="h-6 w-6 bg-muted rounded" />
-            <div className="h-8 w-36 bg-muted rounded" />
+          <div className="flex animate-pulse items-center space-x-3">
+            <div className="bg-muted h-6 w-6 rounded" />
+            <div className="bg-muted h-8 w-36 rounded" />
           </div>
 
           {/* Communities Grid Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-card border rounded-lg p-6 animate-pulse"
+                className="bg-card animate-pulse rounded-lg border p-6"
                 style={{ animationDelay: `${i * 50}ms` }}
               >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="h-12 w-12 bg-muted rounded-full" />
+                <div className="mb-4 flex items-center gap-4">
+                  <div className="bg-muted h-12 w-12 rounded-full" />
                   <div className="flex-1">
-                    <div className="h-5 w-32 bg-muted rounded mb-1" />
-                    <div className="h-3 w-20 bg-muted rounded" />
+                    <div className="bg-muted mb-1 h-5 w-32 rounded" />
+                    <div className="bg-muted h-3 w-20 rounded" />
                   </div>
                 </div>
-                <div className="h-4 w-full bg-muted rounded mb-2" />
-                <div className="h-4 w-3/4 bg-muted rounded mb-4" />
+                <div className="bg-muted mb-2 h-4 w-full rounded" />
+                <div className="bg-muted mb-4 h-4 w-3/4 rounded" />
                 <div className="flex gap-4">
-                  <div className="h-4 w-16 bg-muted rounded" />
-                  <div className="h-4 w-16 bg-muted rounded" />
+                  <div className="bg-muted h-4 w-16 rounded" />
+                  <div className="bg-muted h-4 w-16 rounded" />
                 </div>
               </div>
             ))}

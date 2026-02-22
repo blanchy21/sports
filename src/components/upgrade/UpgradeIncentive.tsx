@@ -46,7 +46,7 @@ const incentiveConfigs: Record<
     getMessage: () =>
       'Upgrade to Hive to earn crypto rewards for your content. Your posts could earn real money!',
     ctaText: 'Start Earning',
-    bgClass: 'bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20',
+    bgClass: 'bg-linear-to-r from-primary/10 to-accent/10 border-primary/20',
     iconBgClass: 'bg-primary/20 text-primary',
   },
   'popular-post': {
@@ -57,7 +57,7 @@ const incentiveConfigs: Record<
       return `With ${props.likeCount || 10}+ likes, this post could have earned you ${earnings} on Hive. Connect a wallet to start earning!`;
     },
     ctaText: 'See Potential Earnings',
-    bgClass: 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20',
+    bgClass: 'bg-linear-to-r from-green-500/10 to-emerald-500/10 border-green-500/20',
     iconBgClass: 'bg-green-500/20 text-green-600 dark:text-green-400',
   },
   'storage-warning': {
@@ -66,7 +66,7 @@ const incentiveConfigs: Record<
     getMessage: (props) =>
       `You have ${props.postsRemaining || 10} posts remaining out of ${props.totalPosts || 50}. Upgrade to Hive for unlimited posts!`,
     ctaText: 'Upgrade Now',
-    bgClass: 'bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/20',
+    bgClass: 'bg-linear-to-r from-amber-500/10 to-orange-500/10 border-amber-500/20',
     iconBgClass: 'bg-amber-500/20 text-amber-600 dark:text-amber-400',
   },
   'storage-critical': {
@@ -75,7 +75,7 @@ const incentiveConfigs: Record<
     getMessage: (props) =>
       `Only ${props.postsRemaining || 5} posts left! Connect a Hive wallet now to get unlimited storage and earn rewards.`,
     ctaText: 'Connect Hive Wallet',
-    bgClass: 'bg-gradient-to-r from-red-500/10 to-rose-500/10 border-red-500/20',
+    bgClass: 'bg-linear-to-r from-red-500/10 to-rose-500/10 border-red-500/20',
     iconBgClass: 'bg-red-500/20 text-red-600 dark:text-red-400',
   },
   milestone: {
@@ -84,7 +84,7 @@ const incentiveConfigs: Record<
     getMessage: (props) =>
       `You've reached ${props.milestoneName || 'a milestone'}! Hive users earn MEDALS badges for achievements like this.`,
     ctaText: 'Learn About MEDALS',
-    bgClass: 'bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20',
+    bgClass: 'bg-linear-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20',
     iconBgClass: 'bg-purple-500/20 text-purple-600 dark:text-purple-400',
   },
   general: {
@@ -93,7 +93,7 @@ const incentiveConfigs: Record<
     getMessage: () =>
       'Connect a Hive wallet to earn rewards, vote on content, and unlock unlimited storage.',
     ctaText: 'Connect Wallet',
-    bgClass: 'bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-500/20',
+    bgClass: 'bg-linear-to-r from-blue-500/10 to-indigo-500/10 border-blue-500/20',
     iconBgClass: 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
   },
 };
@@ -116,21 +116,19 @@ export const UpgradeIncentive: React.FC<UpgradeIncentiveProps> = (props) => {
       {dismissible && (
         <button
           onClick={handleDismiss}
-          className="absolute right-2 top-2 rounded-full p-1 transition-colors hover:bg-foreground/10"
+          className="hover:bg-foreground/10 absolute top-2 right-2 rounded-full p-1 transition-colors"
           aria-label="Dismiss"
         >
-          <X className="h-4 w-4 text-muted-foreground" />
+          <X className="text-muted-foreground h-4 w-4" />
         </button>
       )}
 
       <div className="flex items-start gap-4">
-        <div className={cn('flex-shrink-0 rounded-full p-2', config.iconBgClass)}>
-          {config.icon}
-        </div>
+        <div className={cn('shrink-0 rounded-full p-2', config.iconBgClass)}>{config.icon}</div>
 
         <div className="min-w-0 flex-1">
-          <h4 className="font-semibold text-foreground">{config.title}</h4>
-          <p className="mt-1 text-sm text-muted-foreground">{config.getMessage(props)}</p>
+          <h4 className="text-foreground font-semibold">{config.title}</h4>
+          <p className="text-muted-foreground mt-1 text-sm">{config.getMessage(props)}</p>
 
           <Link href="/settings?tab=wallet" className="mt-3 block">
             <Button size="sm" className="gap-2">
@@ -171,7 +169,7 @@ export const UpgradeIncentiveBanner: React.FC<
       )}
     >
       <div className="flex items-center gap-2">
-        <Zap className="h-4 w-4 flex-shrink-0" />
+        <Zap className="h-4 w-4 shrink-0" />
         <span>
           {isStorageWarning
             ? `${postsRemaining}/${totalPosts} posts remaining.`
@@ -184,7 +182,7 @@ export const UpgradeIncentiveBanner: React.FC<
       {onDismiss && (
         <button
           onClick={handleDismiss}
-          className="rounded p-1 transition-colors hover:bg-foreground/10"
+          className="hover:bg-foreground/10 rounded p-1 transition-colors"
           aria-label="Dismiss"
         >
           <X className="h-4 w-4" />
@@ -205,7 +203,7 @@ export const UpgradeIncentiveToast: React.FC<{
 
   return (
     <div
-      className={cn('flex items-center gap-3 rounded-lg border bg-card p-3 shadow-lg', className)}
+      className={cn('bg-card flex items-center gap-3 rounded-lg border p-3 shadow-lg', className)}
     >
       <div
         className={cn(
@@ -222,7 +220,7 @@ export const UpgradeIncentiveToast: React.FC<{
         <p className="text-sm font-medium">
           {isPopular ? `${likeCount}+ likes! You could be earning.` : 'Post published!'}
         </p>
-        <Link href="/settings?tab=wallet" className="text-xs text-primary hover:underline">
+        <Link href="/settings?tab=wallet" className="text-primary text-xs hover:underline">
           {isPopular ? 'See potential earnings' : 'Upgrade to earn rewards'}
         </Link>
       </div>
@@ -230,10 +228,10 @@ export const UpgradeIncentiveToast: React.FC<{
       {onDismiss && (
         <button
           onClick={onDismiss}
-          className="rounded p-1 transition-colors hover:bg-muted"
+          className="hover:bg-muted rounded p-1 transition-colors"
           aria-label="Dismiss"
         >
-          <X className="h-4 w-4 text-muted-foreground" />
+          <X className="text-muted-foreground h-4 w-4" />
         </button>
       )}
     </div>

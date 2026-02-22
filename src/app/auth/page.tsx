@@ -36,18 +36,18 @@ function AuthPageContent() {
   } = useAuthPage();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background min-h-screen">
       {/* Back button */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.4 }}
-        className="absolute left-0 top-0 z-20 p-6"
+        className="absolute top-0 left-0 z-20 p-6"
       >
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          className="text-muted-foreground hover:bg-muted/50 hover:text-foreground flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back</span>
@@ -70,11 +70,11 @@ function AuthPageContent() {
             <div className="mb-8 text-center lg:hidden">
               <h1 className="mb-2 text-3xl font-black tracking-tight">
                 <span className="text-foreground">SPORTS</span>
-                <span className="bg-gradient-to-r from-accent to-aegean-sky bg-clip-text text-transparent">
+                <span className="from-accent to-aegean-sky bg-linear-to-r bg-clip-text text-transparent">
                   BLOCK
                 </span>
               </h1>
-              <p className="text-sm text-muted-foreground">The arena where your passion pays off</p>
+              <p className="text-muted-foreground text-sm">The arena where your passion pays off</p>
             </div>
 
             {/* Heading */}
@@ -83,7 +83,7 @@ function AuthPageContent() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
-                className="mb-2 text-2xl font-bold text-foreground sm:text-3xl"
+                className="text-foreground mb-2 text-2xl font-bold sm:text-3xl"
               >
                 Welcome Back
               </motion.h2>
@@ -110,7 +110,7 @@ function AuthPageContent() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/50"
               >
-                <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                 <div className="flex-1">
                   <p className="text-sm text-emerald-800 dark:text-emerald-200">{successMessage}</p>
                 </div>
@@ -133,18 +133,18 @@ function AuthPageContent() {
               <div className="relative">
                 {/* Recommended badge */}
                 <div className="absolute -top-3 left-4 z-10">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white shadow-lg shadow-accent/25">
+                  <span className="bg-accent shadow-accent/25 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-lg">
                     <Sparkles className="h-3 w-3" />
                     Recommended
                   </span>
                 </div>
 
-                <div className="rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 p-6 pt-8">
+                <div className="border-primary/20 from-primary/5 to-accent/5 rounded-2xl border-2 bg-linear-to-br p-6 pt-8">
                   <div className="mb-5 text-center">
-                    <h3 className="mb-1 text-lg font-semibold text-foreground">
+                    <h3 className="text-foreground mb-1 text-lg font-semibold">
                       Connect with Hive
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Full access with earning capabilities
                     </p>
                   </div>
@@ -152,7 +152,7 @@ function AuthPageContent() {
                   <Button
                     onClick={() => setShowAiohaModal(true)}
                     disabled={isConnecting || !aioha}
-                    className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-primary/30"
+                    className="bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/30 flex h-14 w-full items-center justify-center gap-3 rounded-xl text-base font-semibold shadow-lg transition-all duration-300 hover:scale-[1.02]"
                   >
                     <Wallet className="h-5 w-5" />
                     <span>Connect Hive Wallet</span>
@@ -162,7 +162,7 @@ function AuthPageContent() {
                     {['Keychain', 'HiveSigner', 'HiveAuth', 'Ledger'].map((wallet) => (
                       <span
                         key={wallet}
-                        className="rounded-md bg-muted/50 px-2 py-1 text-xs text-muted-foreground"
+                        className="bg-muted/50 text-muted-foreground rounded-md px-2 py-1 text-xs"
                       >
                         {wallet}
                       </span>
@@ -180,10 +180,10 @@ function AuthPageContent() {
               className="relative mb-8"
             >
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
+                <div className="border-border w-full border-t" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-background px-4 text-muted-foreground">
+                <span className="bg-background text-muted-foreground px-4">
                   Or continue with Google
                 </span>
               </div>

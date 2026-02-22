@@ -167,7 +167,7 @@ export const TopNavigation: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-primary to-bright-cobalt shadow-md">
+    <header className="from-primary to-bright-cobalt sticky top-0 z-50 w-full border-b bg-linear-to-r shadow-md">
       <div className="h-16 sm:h-20 lg:h-24">
         <div className="relative flex h-full items-center px-4 sm:px-6">
           {/* Mobile Menu Button */}
@@ -182,7 +182,7 @@ export const TopNavigation: React.FC = () => {
           </Button>
 
           {/* Left - Logo */}
-          <div className="flex-shrink-0 lg:w-80">
+          <div className="shrink-0 lg:w-80">
             <Link
               href="/"
               className="flex items-center space-x-2 sm:space-x-3"
@@ -193,7 +193,7 @@ export const TopNavigation: React.FC = () => {
                 alt="SportsBlock Logo"
                 width={72}
                 height={72}
-                className="lg:w-18 lg:h-18 h-10 w-10 sm:h-14 sm:w-14"
+                className="h-10 w-10 sm:h-14 sm:w-14 lg:h-18 lg:w-18"
                 unoptimized
               />
               <div className="hidden text-xl font-bold text-white sm:block sm:text-2xl lg:text-4xl">
@@ -279,7 +279,7 @@ export const TopNavigation: React.FC = () => {
           </div>
 
           {/* Right - User Actions */}
-          <div className="flex flex-1 items-center justify-end space-x-2 sm:space-x-4 lg:w-auto lg:flex-none xl:w-[28rem]">
+          <div className="flex flex-1 items-center justify-end space-x-2 sm:space-x-4 lg:w-auto lg:flex-none xl:w-md">
             <Button
               variant="ghost"
               size="icon"
@@ -303,7 +303,7 @@ export const TopNavigation: React.FC = () => {
                   >
                     <Bell className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
                     {unreadCount > 0 && (
-                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-xs text-white sm:h-5 sm:min-w-5 sm:text-xs">
+                      <span className="absolute -top-1 -right-1 flex h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-red-500 px-1 text-xs text-[10px] text-white sm:h-5 sm:min-w-5 sm:text-xs">
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
@@ -372,14 +372,14 @@ export const TopNavigation: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => router.push('/auth')}
-                  className="hidden border-white bg-white text-xs font-medium text-primary hover:bg-white/90 hover:text-primary/80 sm:flex sm:text-sm"
+                  className="text-primary hover:text-primary/80 hidden border-white bg-white text-xs font-medium hover:bg-white/90 sm:flex sm:text-sm"
                 >
                   Sign In
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => router.push('/auth')}
-                  className="bg-white text-xs font-medium text-primary hover:bg-white/90 sm:text-sm"
+                  className="text-primary bg-white text-xs font-medium hover:bg-white/90 sm:text-sm"
                 >
                   Sign Up
                 </Button>
@@ -391,7 +391,7 @@ export const TopNavigation: React.FC = () => {
 
       {/* Mobile Navigation Menu */}
       {showMobileMenu && (
-        <div className="border-t border-white/20 bg-gradient-to-r from-primary to-bright-cobalt lg:hidden">
+        <div className="from-primary to-bright-cobalt border-t border-white/20 bg-linear-to-r lg:hidden">
           <nav className="flex flex-col space-y-2 p-4">
             <Link
               href="/"
@@ -516,7 +516,7 @@ export const TopNavigation: React.FC = () => {
 
       {/* Upgrade Prompt for soft users */}
       {user && !user.isHiveAuth && showUpgradePrompt && (
-        <div className="fixed right-4 top-20 z-40 max-w-sm">
+        <div className="fixed top-20 right-4 z-40 max-w-sm">
           <UpgradePrompt
             user={user}
             onUpgrade={() => {
@@ -533,16 +533,16 @@ export const TopNavigation: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
           <div className="fixed inset-0 bg-black/50" onClick={() => setShowSearch(false)} />
           <div className="relative z-10 mx-4 w-full max-w-2xl">
-            <div className="overflow-hidden rounded-lg border bg-card shadow-2xl">
+            <div className="bg-card overflow-hidden rounded-lg border shadow-2xl">
               {/* Search Input */}
               <div className="flex items-center space-x-4 border-b p-4">
-                <Search className="h-6 w-6 text-muted-foreground" />
+                <Search className="text-muted-foreground h-6 w-6" />
                 <input
                   type="text"
                   placeholder="Search users..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 border-none bg-transparent text-lg outline-none"
+                  className="flex-1 border-none bg-transparent text-lg outline-hidden"
                   autoFocus
                 />
                 <Button
@@ -558,9 +558,9 @@ export const TopNavigation: React.FC = () => {
               {/* Search Results */}
               <div className="max-h-96 overflow-y-auto p-4">
                 {isSearching ? (
-                  <div className="py-8 text-center text-muted-foreground">Searching...</div>
+                  <div className="text-muted-foreground py-8 text-center">Searching...</div>
                 ) : searchQuery.length < 3 ? (
-                  <div className="py-8 text-center text-muted-foreground">
+                  <div className="text-muted-foreground py-8 text-center">
                     Start typing to search for users...
                   </div>
                 ) : searchResults.length > 0 ? (
@@ -569,7 +569,7 @@ export const TopNavigation: React.FC = () => {
                       <button
                         key={result.username}
                         onClick={() => handleUserClick(result.username)}
-                        className="flex w-full items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-muted"
+                        className="hover:bg-muted flex w-full items-center space-x-3 rounded-lg p-3 transition-colors"
                       >
                         <Avatar
                           src={result.avatar}
@@ -579,11 +579,11 @@ export const TopNavigation: React.FC = () => {
                         />
                         <div className="flex-1 text-left">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-foreground">
+                            <span className="text-foreground font-semibold">
                               {result.displayName || result.username}
                             </span>
                             {result.isHiveUser ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-red-500 to-red-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-red-500 to-red-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
                                 <Zap className="h-2.5 w-2.5" />
                                 Hive
                               </span>
@@ -593,16 +593,16 @@ export const TopNavigation: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">@{result.username}</div>
+                          <div className="text-muted-foreground text-sm">@{result.username}</div>
                         </div>
-                        <div className="text-right text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-right text-sm">
                           {result.isHiveUser ? `${result.followers || 0} followers` : ''}
                         </div>
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="py-8 text-center text-muted-foreground">
+                  <div className="text-muted-foreground py-8 text-center">
                     No user found with that username
                   </div>
                 )}

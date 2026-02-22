@@ -79,9 +79,9 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
     return (
       <div className={`space-y-4 ${className}`}>
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="animate-pulse rounded-lg border bg-card p-4 sm:p-6">
+          <div key={i} className="bg-card animate-pulse rounded-lg border p-4 sm:p-6">
             <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="h-12 w-12 rounded-full bg-gray-300 dark:bg-gray-700 sm:h-16 sm:w-16"></div>
+              <div className="h-12 w-12 rounded-full bg-gray-300 sm:h-16 sm:w-16 dark:bg-gray-700"></div>
               <div className="flex-1">
                 <div className="mb-2 h-6 w-1/3 rounded bg-gray-300 dark:bg-gray-700"></div>
                 <div className="mb-2 h-4 w-2/3 rounded bg-gray-300 dark:bg-gray-700"></div>
@@ -121,13 +121,13 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
           {/* Search Bar */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
               <input
                 type="text"
                 placeholder="Search communities..."
                 value={filters.search || ''}
                 onChange={handleSearchChange}
-                className="w-full rounded-lg border bg-background py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="bg-background focus:ring-primary w-full rounded-lg border py-2 pr-4 pl-10 focus:ring-2 focus:outline-hidden"
               />
             </div>
             <Button
@@ -289,7 +289,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
 
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-center gap-2">
-              <h3 className="text-lg font-semibold transition-colors hover:text-primary sm:text-xl">
+              <h3 className="hover:text-primary text-lg font-semibold transition-colors sm:text-xl">
                 {community.name}
               </h3>
               <span
@@ -309,15 +309,15 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
             </div>
 
             {sportCategory && (
-              <div className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
+              <div className="text-muted-foreground mb-2 flex items-center gap-1 text-sm">
                 <span>{sportCategory.icon}</span>
                 <span>{sportCategory.name}</span>
               </div>
             )}
 
-            <p className="mb-4 line-clamp-2 text-muted-foreground">{community.about}</p>
+            <p className="text-muted-foreground mb-4 line-clamp-2">{community.about}</p>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-sm">
               <div className="flex items-center space-x-1">
                 <Users className="h-4 w-4" />
                 <span>{community.memberCount?.toLocaleString() || 0} members</span>

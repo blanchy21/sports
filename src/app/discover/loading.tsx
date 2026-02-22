@@ -8,16 +8,16 @@ import { PostLoadingSkeleton } from '@/components/core/Loading';
  */
 export default function DiscoverLoading() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background min-h-screen">
       {/* Top Navigation Placeholder */}
-      <div className="h-24 bg-gradient-to-r from-primary/10 to-accent/10" />
+      <div className="from-primary/10 to-accent/10 h-24 bg-linear-to-r" />
 
-      <div className="lg:pl-80 xl:pr-[28rem]">
+      <div className="lg:pl-80 xl:pr-112">
         <div className="mx-auto max-w-4xl space-y-6 px-6 py-6">
           {/* Header Skeleton */}
           <div className="flex animate-pulse items-center space-x-3">
-            <div className="h-6 w-6 rounded bg-muted" />
-            <div className="h-8 w-40 rounded bg-muted" />
+            <div className="bg-muted h-6 w-6 rounded" />
+            <div className="bg-muted h-8 w-40 rounded" />
           </div>
 
           {/* Sport Filter Skeleton */}
@@ -25,7 +25,7 @@ export default function DiscoverLoading() {
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="h-9 w-24 animate-pulse rounded bg-muted"
+                className="bg-muted h-9 w-24 animate-pulse rounded"
                 style={{ animationDelay: `${i * 30}ms` }}
               />
             ))}
@@ -33,8 +33,8 @@ export default function DiscoverLoading() {
 
           {/* Trending Posts Header Skeleton */}
           <div className="flex animate-pulse items-center space-x-2">
-            <div className="h-5 w-5 rounded bg-muted" />
-            <div className="h-7 w-36 rounded bg-muted" />
+            <div className="bg-muted h-5 w-5 rounded" />
+            <div className="bg-muted h-7 w-36 rounded" />
           </div>
 
           {/* Posts Skeleton */}

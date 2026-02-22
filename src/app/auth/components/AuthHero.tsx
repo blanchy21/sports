@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import React from "react";
-import { motion } from "framer-motion";
-import { Zap, Shield, Users, Trophy, TrendingUp } from "lucide-react";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Zap, Shield, Users, Trophy, TrendingUp } from 'lucide-react';
 
 export const AuthHero: React.FC = () => (
-  <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+  <div className="relative hidden overflow-hidden lg:flex lg:w-1/2">
     {/* Background layers */}
     <div className="absolute inset-0">
       {/* Primary gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-fibonacci-blue via-bright-cobalt to-fibonacci-blue" />
+      <div className="from-fibonacci-blue via-bright-cobalt to-fibonacci-blue absolute inset-0 bg-linear-to-br" />
 
       {/* Sports action background */}
       <div
@@ -21,37 +21,37 @@ export const AuthHero: React.FC = () => (
       />
 
       {/* Overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-t from-fibonacci-blue/90 via-transparent to-fibonacci-blue/50" />
+      <div className="from-fibonacci-blue/90 to-fibonacci-blue/50 absolute inset-0 bg-linear-to-t via-transparent" />
 
       {/* Accent gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-primary/20" />
+      <div className="from-accent/10 to-primary/20 absolute inset-0 bg-linear-to-br via-transparent" />
     </div>
 
     {/* Animated floating elements */}
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
       <motion.div
         animate={{
           y: [0, -20, 0],
           opacity: [0.3, 0.5, 0.3],
         }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-20 right-20 w-64 h-64 bg-accent/20 rounded-full blur-3xl"
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        className="bg-accent/20 absolute top-20 right-20 h-64 w-64 rounded-full blur-3xl"
       />
       <motion.div
         animate={{
           y: [0, 20, 0],
           opacity: [0.2, 0.4, 0.2],
         }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-32 left-10 w-80 h-80 bg-white/10 rounded-full blur-3xl"
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute bottom-32 left-10 h-80 w-80 rounded-full bg-white/10 blur-3xl"
       />
       <motion.div
         animate={{
           scale: [1, 1.1, 1],
           opacity: [0.1, 0.2, 0.1],
         }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/2 right-1/4 w-40 h-40 bg-aegean-sky/30 rounded-full blur-2xl"
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        className="bg-aegean-sky/30 absolute top-1/2 right-1/4 h-40 w-40 rounded-full blur-2xl"
       />
     </div>
 
@@ -65,15 +65,13 @@ export const AuthHero: React.FC = () => (
           transition={{ duration: 0.6 }}
           className="mb-10"
         >
-          <h1 className="text-5xl font-black tracking-tight mb-3">
+          <h1 className="mb-3 text-5xl font-black tracking-tight">
             <span className="text-white">SPORTS</span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-aegean-sky">
+            <span className="from-accent to-aegean-sky bg-linear-to-r bg-clip-text text-transparent">
               BLOCK
             </span>
           </h1>
-          <p className="text-xl text-white/80 font-light">
-            The arena where your passion pays off
-          </p>
+          <p className="text-xl font-light text-white/80">The arena where your passion pays off</p>
         </motion.div>
 
         {/* Tagline */}
@@ -81,7 +79,7 @@ export const AuthHero: React.FC = () => (
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-white/60 text-sm mb-10"
+          className="mb-10 text-sm text-white/60"
         >
           Join thousands of sports fans already earning on the Hive blockchain
         </motion.p>
@@ -118,9 +116,9 @@ export const AuthHero: React.FC = () => (
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.8 }}
-          className="mt-12 pt-8 border-t border-white/10"
+          className="mt-12 border-t border-white/10 pt-8"
         >
-          <div className="flex items-center gap-6 text-white/50 text-xs">
+          <div className="flex items-center gap-6 text-xs text-white/50">
             <div className="flex items-center gap-2">
               <Trophy className="h-4 w-4" />
               <span>MEDALS Token</span>
@@ -139,8 +137,8 @@ export const AuthHero: React.FC = () => (
     </div>
 
     {/* Decorative corner element */}
-    <div className="absolute bottom-0 right-0 w-64 h-64 overflow-hidden pointer-events-none">
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-accent/30 to-transparent rounded-full transform translate-x-1/2 translate-y-1/2" />
+    <div className="pointer-events-none absolute right-0 bottom-0 h-64 w-64 overflow-hidden">
+      <div className="from-accent/30 absolute right-0 bottom-0 h-96 w-96 translate-x-1/2 translate-y-1/2 transform rounded-full bg-linear-to-tl to-transparent" />
     </div>
   </div>
 );
@@ -157,13 +155,13 @@ const Benefit: React.FC<BenefitProps> = ({ icon, title, description, delay }) =>
     initial={{ opacity: 0, x: -20 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ duration: 0.5, delay: 0.5 + delay }}
-    className="flex items-start gap-4 group"
+    className="group flex items-start gap-4"
   >
-    <div className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-white/20 transition-colors border border-white/10">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/10 backdrop-blur-xs transition-colors group-hover:bg-white/20">
       {icon}
     </div>
     <div>
-      <h3 className="font-semibold text-base mb-0.5 text-white">{title}</h3>
+      <h3 className="mb-0.5 text-base font-semibold text-white">{title}</h3>
       <p className="text-sm text-white/60">{description}</p>
     </div>
   </motion.div>

@@ -8,25 +8,25 @@ import { Button } from '@/components/core/Button';
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-6 mt-16 border-b border-border pb-3 text-3xl font-bold first:mt-0">
+    <h2 className="border-border mt-16 mb-6 border-b pb-3 text-3xl font-bold first:mt-0">
       {children}
     </h2>
   );
 }
 
 function SubHeading({ children }: { children: React.ReactNode }) {
-  return <h3 className="mb-4 mt-10 text-xl font-bold">{children}</h3>;
+  return <h3 className="mt-10 mb-4 text-xl font-bold">{children}</h3>;
 }
 
 function Paragraph({ children }: { children: React.ReactNode }) {
-  return <p className="mb-4 leading-relaxed text-muted-foreground">{children}</p>;
+  return <p className="text-muted-foreground mb-4 leading-relaxed">{children}</p>;
 }
 
 function BulletList({ items }: { items: React.ReactNode[] }) {
   return (
     <ul className="mb-6 space-y-2 pl-6">
       {items.map((item, i) => (
-        <li key={i} className="list-disc leading-relaxed text-muted-foreground">
+        <li key={i} className="text-muted-foreground list-disc leading-relaxed">
           {item}
         </li>
       ))}
@@ -43,7 +43,7 @@ function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
             {headers.map((h, i) => (
               <th
                 key={i}
-                className="border border-border bg-primary px-4 py-3 text-left font-semibold text-primary-foreground"
+                className="border-border bg-primary text-primary-foreground border px-4 py-3 text-left font-semibold"
               >
                 {h}
               </th>
@@ -54,7 +54,7 @@ function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
           {rows.map((row, i) => (
             <tr key={i} className="even:bg-muted/30">
               {row.map((cell, j) => (
-                <td key={j} className="border border-border px-4 py-3 text-muted-foreground">
+                <td key={j} className="border-border text-muted-foreground border px-4 py-3">
                   {cell}
                 </td>
               ))}
@@ -68,13 +68,13 @@ function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
 
 export default function WhitepaperPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
+      <header className="border-border bg-background/80 sticky top-0 z-50 border-b backdrop-blur-lg">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <Link
             href="/"
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm font-medium transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Home
@@ -93,23 +93,23 @@ export default function WhitepaperPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-gradient-to-b from-primary/5 to-background px-6 py-20 text-center"
+        className="from-primary/5 to-background bg-linear-to-b px-6 py-20 text-center"
       >
         <div className="mx-auto max-w-4xl">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
+          <div className="bg-primary/10 text-primary mb-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold">
             <FileText className="h-4 w-4" />
             Version 4.0 &middot; February 2026
           </div>
           <h1 className="mb-4 text-5xl font-black tracking-tight sm:text-6xl">
             <span className="text-foreground">SPORTSBLOCK</span>{' '}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <span className="from-primary to-accent bg-linear-to-r bg-clip-text text-transparent">
               WHITEPAPER
             </span>
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
             A Layer-2 Decentralized Sports Community on the Hive Blockchain
           </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+          <div className="text-muted-foreground mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
             <span>
               <strong>Token:</strong> MEDALS
             </span>
@@ -127,7 +127,7 @@ export default function WhitepaperPage() {
       </motion.section>
 
       {/* Table of Contents */}
-      <nav className="border-b border-border bg-muted/30 px-6 py-8">
+      <nav className="border-border bg-muted/30 border-b px-6 py-8">
         <div className="mx-auto max-w-4xl">
           <h2 className="mb-4 text-lg font-bold">Table of Contents</h2>
           <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
@@ -149,7 +149,7 @@ export default function WhitepaperPage() {
               <a
                 key={item}
                 href={`#${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-2 rounded-md px-3 py-2 transition-colors"
               >
                 <span className="text-primary">&bull;</span>
                 {item}
@@ -617,11 +617,11 @@ export default function WhitepaperPage() {
         </section>
 
         {/* Footer */}
-        <div className="mt-16 border-t border-border pt-8 text-center">
-          <p className="text-sm italic text-muted-foreground">
+        <div className="border-border mt-16 border-t pt-8 text-center">
+          <p className="text-muted-foreground text-sm italic">
             For updates, follow @sportsblockinfo on X or visit sportsblock.app
           </p>
-          <p className="mt-4 text-sm font-bold text-muted-foreground">End of Whitepaper</p>
+          <p className="text-muted-foreground mt-4 text-sm font-bold">End of Whitepaper</p>
           <div className="mt-8">
             <Link href="/">
               <Button variant="outline" className="gap-2">
