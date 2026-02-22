@@ -3,7 +3,7 @@
  *
  * Tests the publish workflow for both auth types:
  * - Hive auth: publishPost() -> Wax operation -> Aioha broadcast
- * - Soft auth: fetch('/api/posts') -> Firebase
+ * - Soft auth: fetch('/api/posts') -> Prisma/PostgreSQL
  *
  * The existing posting.test.ts covers publishPost internals.
  * This file covers the auth-type branching and soft-auth API path.

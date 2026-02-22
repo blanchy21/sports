@@ -1,11 +1,13 @@
 # Sportsblock
 
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-Private-red)](#license)
 
-A Next.js 15 sports content platform integrated with the Hive blockchain. Users can authenticate via Hive wallets for full blockchain access, or use Firebase email for a streamlined experience with an optional upgrade path.
+A Next.js 15 sports content platform integrated with the Hive blockchain. Users can authenticate via Hive wallets for full self-custody, or sign up with Google for a streamlined custodial experience with an upgrade path to full blockchain access.
+
+**Production:** [https://sportsblock.app](https://sportsblock.app)
 
 ## Table of Contents
 
@@ -17,23 +19,25 @@ A Next.js 15 sports content platform integrated with the Hive blockchain. Users 
 - [Project Structure](#project-structure)
 - [Environment Variables](#environment-variables)
 - [Architecture](#architecture)
-- [Documentation](#documentation)
 - [Contributing](#contributing)
 - [Acknowledgments](#acknowledgments)
 - [License](#license)
 
 ## Features
 
-- **Dual Authentication** - Hive blockchain wallets or email/password signup
-- **Unified Feed** - Content from both Hive and Firebase displayed together
-- **Blockchain Publishing** - Posts permanently stored on Hive blockchain
-- **Cryptocurrency Rewards** - Hive users earn HIVE/HBD for quality content
-- **Community System** - Create and join sports communities
+- **Dual Authentication** - Hive blockchain wallets or Google OAuth with custodial onboarding
+- **Blockchain Publishing** - Posts permanently stored on the Hive blockchain
+- **Cryptocurrency Rewards** - Earn HIVE/HBD for quality content
+- **SportsBites** - Short-form sports content (think tweets for sports)
+- **Match Threads** - Live discussion threads tied to real sports events
+- **Hive Engine Integration** - Token balances, staking, transfers, and market data
+- **Wallet** - View and manage HIVE, HBD, and Hive Engine tokens
+- **Leaderboard** - Community engagement rankings and medals
+- **Community System** - Browse and join sports communities
 - **Real-time Updates** - Live feed updates via blockchain streaming
 - **Dark/Light Mode** - Full theme support
 - **Mobile Responsive** - Optimized for all device sizes
-- **Rich Text Editor** - Markdown support with image uploads
-- **Notifications** - Real-time alerts for votes, comments, and follows
+- **Rich Text Editor** - Markdown support with image uploads and GIF picker
 
 ## Tech Stack
 
@@ -43,17 +47,20 @@ A Next.js 15 sports content platform integrated with the Hive blockchain. Users 
 | Language | TypeScript |
 | Styling | Tailwind CSS |
 | State | Zustand + React Query |
-| Blockchain | Hive (WorkerBee/Wax) |
-| Auth | Aioha (Hive) + Firebase |
-| Database | Firebase Firestore |
+| Blockchain | Hive (WorkerBee / Wax / dhive) |
+| Auth | Aioha (Hive wallets) + NextAuth (Google OAuth) |
+| Database | PostgreSQL (Supabase) via Prisma |
+| Rate Limiting | Upstash Redis |
+| Animation | Framer Motion |
 | Testing | Jest + Playwright |
 | Monitoring | Sentry |
+| Deployment | Vercel |
 
 ## Authentication
 
-Sportsblock supports two authentication methods:
+Sportsblock supports two authentication methods that converge in a unified `AuthContext`:
 
-### Hive Users (Full Access)
+### Hive Users (Full Self-Custody)
 
 - Authenticate via Hive wallets (Keychain, HiveSigner, HiveAuth, Ledger, PeakVault)
 - Posts published directly to the Hive blockchain
@@ -61,33 +68,31 @@ Sportsblock supports two authentication methods:
 - Vote on posts with blockchain voting power
 - Full decentralized experience
 
-### Soft Users (Firebase/Email)
+### Google OAuth Users (Custodial)
 
-- Quick signup with email and password
-- Posts stored in Firebase ("soft posts")
-- Like and comment on soft posts
-- Posts appear in the unified feed alongside Hive content
-- **Upgrade path**: Connect a Hive wallet anytime to unlock blockchain features
+- Sign in with Google via NextAuth
+- A real Hive account is created server-side (`sb-` prefixed username)
+- Keys encrypted and stored in PostgreSQL; signing relay handles blockchain ops
+- Posts go directly to the Hive blockchain (same as native Hive users)
+- **Graduation path**: Download keys anytime for full self-custody
 
-### Feature Comparison
+### Custodial Onboarding Flow
 
-| Feature | Hive Users | Soft Users |
-| ------- | ---------- | ---------- |
-| Create posts | Blockchain | Firebase |
-| Vote/Like | Blockchain voting | Soft likes |
-| Comments | Blockchain | Firebase |
-| Earn rewards | Yes (HIVE/HBD) | No |
-| Post limit | Unlimited | 50 posts |
-| Data permanence | Permanent | 180-day inactivity policy |
-| Upgrade available | N/A | Yes |
+1. Sign in with Google -> NextAuth session created -> user stored in PostgreSQL via Prisma
+2. Redirect to `/onboarding/username` -> user picks a Hive username (`sb-` prefix)
+3. Server calls `create_claimed_account` using account creation tokens
+4. Keys encrypted + stored server-side -> signing relay handles blockchain ops
+5. User can download keys anytime (`/api/hive/download-keys`) for full self-custody
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or yarn
-- Firebase project (for soft auth)
+- Node.js 20+
+- npm
+- PostgreSQL database (Supabase recommended)
+- Upstash Redis (for rate limiting)
+- Google OAuth credentials (for custodial auth)
 - Hive account (optional - for blockchain features)
 
 ### Installation
@@ -113,25 +118,34 @@ Sportsblock supports two authentication methods:
 
    Edit `.env.local` with your configuration values (see [Environment Variables](#environment-variables)).
 
-4. **Run the development server**
+4. **Generate Prisma client and run migrations**
+
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
+
+5. **Run the development server**
 
    ```bash
    npm run dev
    ```
 
-5. **Open [http://localhost:3000](http://localhost:3000)**
+6. **Open [http://localhost:3000](http://localhost:3000)**
 
 ## Scripts
 
 | Command | Description |
 | ------- | ----------- |
 | `npm run dev` | Start development server |
-| `npm run build` | Create production build |
+| `npm run dev:force` | Start with port cleanup script |
+| `npm run build` | Generate Prisma client + production build |
 | `npm run start` | Start production server |
 | `npm run lint` | Run ESLint |
 | `npm run type-check` | TypeScript type checking |
 | `npm run test` | Run Jest unit tests |
 | `npm run test:e2e` | Run Playwright E2E tests |
+| `npm run format` | Format code with Prettier |
 
 ### Testing
 
@@ -158,32 +172,52 @@ npm run test:workerbee:integration
 src/
 ├── app/                    # Next.js App Router
 │   ├── api/               # API routes
-│   │   ├── hive/         # Hive blockchain endpoints
-│   │   ├── soft/         # Soft user endpoints
-│   │   ├── unified/      # Merged Hive + Firebase endpoints
+│   │   ├── hive/          # Hive blockchain endpoints
+│   │   ├── hive-engine/   # Hive Engine token endpoints
+│   │   ├── soft/          # Custodial user endpoints (Prisma)
+│   │   ├── unified/       # Merged Hive + custodial endpoints
+│   │   ├── auth/          # NextAuth + session endpoints
+│   │   ├── match-threads/ # Live match thread endpoints
+│   │   ├── cron/          # Scheduled task endpoints
 │   │   └── ...
-│   ├── feed/             # Main feed page
-│   ├── profile/          # User profile
-│   ├── publish/          # Post creation
+│   ├── feed/              # Main feed page
+│   ├── sportsbites/       # Short-form content
+│   ├── match-threads/     # Live match discussions
+│   ├── wallet/            # Token management
+│   ├── leaderboard/       # Rankings
+│   ├── publish/           # Post creation
+│   ├── onboarding/        # Custodial user onboarding
 │   └── ...
-├── components/            # React components
-│   ├── ui/               # Base UI components
-│   ├── layout/           # Layout components
-│   ├── modals/           # Modal components
+├── components/             # React components
+│   ├── ui/                # Base UI components
+│   ├── layout/            # Layout components
+│   ├── posts/             # Post display components
+│   ├── sportsbites/       # SportsBites components
+│   ├── match-threads/     # Match thread components
+│   ├── wallet/            # Wallet components
+│   ├── voting/            # Voting components
+│   ├── modals/            # Modal components
 │   └── ...
-├── contexts/              # React Context providers
-├── stores/                # Zustand state stores
-├── lib/                   # Utility libraries
-│   ├── hive-workerbee/   # Hive blockchain integration
-│   ├── firebase/         # Firebase integration
-│   └── react-query/      # Server state queries
-├── hooks/                 # Custom React hooks
-└── types/                 # TypeScript types
+├── contexts/               # React Context providers
+├── stores/                 # Zustand state stores
+├── lib/                    # Utility libraries
+│   ├── hive-workerbee/    # Hive blockchain integration (server-only)
+│   ├── hive/              # Hive account creation + signing relay
+│   ├── hive-engine/       # Hive Engine token operations
+│   ├── db/                # Prisma client
+│   ├── auth/              # NextAuth configuration
+│   ├── api/               # API helpers (CSRF, session auth, responses)
+│   ├── react-query/       # Server state queries
+│   ├── metrics/           # Engagement tracking
+│   ├── rewards/           # Reward distribution logic
+│   └── utils/             # Shared utilities
+├── hooks/                  # Custom React hooks
+└── types/                  # TypeScript types
 
-tests/                     # Jest tests
-e2e/                       # Playwright E2E tests
-scripts/                   # Development utilities
-docs/                      # Documentation
+prisma/                     # Prisma schema + migrations
+tests/                      # Jest tests
+e2e/                        # Playwright E2E tests
+scripts/                    # Development utilities
 ```
 
 ## Environment Variables
@@ -194,78 +228,73 @@ Copy `.env.example` to `.env.local` and configure:
 
 | Variable | Description |
 | -------- | ----------- |
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase API key |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase project ID |
-| `FIREBASE_SERVICE_ACCOUNT_KEY` | Firebase Admin SDK JSON (server-side) |
+| `DATABASE_URL` | PostgreSQL connection string (Supabase) |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+| `NEXTAUTH_SECRET` | NextAuth session encryption secret |
+| `NEXTAUTH_URL` | App URL (http://localhost:3000 for dev) |
+| `SESSION_SECRET` | Session cookie encryption key (min 32 chars) |
+| `KEY_ENCRYPTION_SECRET` | Secret for encrypting custodial Hive keys |
 
 ### Optional
 
 | Variable | Description |
 | -------- | ----------- |
-| `NEXT_PUBLIC_SENTRY_DSN` | Sentry error tracking DSN |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis URL (rate limiting) |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis token |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry error tracking DSN |
+| `HIVE_NODE_URL` | Primary Hive node (default: api.hive.blog) |
 | `CRON_SECRET` | Secret for cron job authentication |
-| `TENOR_API_KEY` | Tenor API key (GIF picker) |
+| `THESPORTSDB_API_KEY` | TheSportsDB API key (match threads) |
+| `ACCOUNT_CREATOR` | Hive account with creation tokens |
+| `OPERATIONS_ACTIVE_KEY` | Active key for blockchain operations account |
+
+See `.env.example` for the full list.
 
 ## Architecture
 
 ### Server/Client Boundary
 
-WorkerBee and Wax (Hive WASM libraries) run server-side only. Client components must use API routes at `/api/hive/*`.
+WorkerBee and Wax (Hive WASM libraries) run **server-side only**. Client components must use API routes at `/api/hive/*`.
 
-### Dual Authentication System
+### Authentication System
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
 │                      AuthContext                         │
 ├─────────────────────────┬───────────────────────────────┤
-│     AiohaProvider       │       FirebaseAuth            │
-│   (Hive Wallets)        │     (Email/Password)          │
+│     AiohaProvider       │     NextAuth (Google)         │
+│   (Hive Wallets)        │   + Custodial Signing Relay   │
 ├─────────────────────────┴───────────────────────────────┤
-│                    Unified User Object                   │
+│                 Unified User Object                      │
+│              useBroadcast() hook                         │
+│          (routes to wallet or relay)                     │
 └─────────────────────────────────────────────────────────┘
 ```
 
-- **Hive Auth** (`AiohaProvider`): Wallet-based authentication for blockchain operations
-- **Soft Auth** (`FirebaseAuth`): Email/password authentication stored in Firebase
+- **Hive Auth** (`AiohaProvider`): Wallet-based authentication for direct blockchain operations
+- **Google Auth** (`NextAuth`): Google OAuth -> custodial Hive account -> signing relay
 - **Unified AuthContext**: Merges both auth states, provides consistent user object
+- **useBroadcast**: Abstraction that routes transactions to either the wallet or signing relay
 
 ### Data Storage
 
-| Data Type | Hive Users | Soft Users |
-| --------- | ---------- | ---------- |
-| Posts | Hive Blockchain | Firebase `soft_posts` |
-| Comments | Hive Blockchain | Firebase `soft_comments` |
-| Votes/Likes | Hive Blockchain | Firebase `soft_likes` |
-| Profiles | Hive Blockchain | Firebase `profiles` |
-| Notifications | N/A | Firebase `soft_notifications` |
-
-### Unified Feed
-
-The `/api/unified/posts` endpoint merges content from both sources:
-
-1. Hive posts fetched via WorkerBee
-2. Soft posts fetched via Firebase Admin SDK
-3. Combined, deduplicated, and sorted by creation date
+| Data Type | Storage |
+| --------- | ------- |
+| Posts (all users) | Hive Blockchain |
+| Comments (Hive users) | Hive Blockchain |
+| Comments (custodial users) | PostgreSQL (via Prisma) |
+| Votes / Likes | Hive Blockchain or PostgreSQL |
+| User accounts (custodial) | PostgreSQL |
+| Encrypted keys | PostgreSQL |
+| Notifications | PostgreSQL |
+| Engagement metrics | PostgreSQL |
 
 ### State Management
 
 - **Zustand**: UI state (modals, bookmarks, communities)
 - **React Query**: Server state with caching and revalidation
 - **Contexts**: Auth, theme, notifications, price data
-
-## Documentation
-
-Additional documentation is available in the `docs/` directory:
-
-- **[docs/setup/](docs/setup/)** - Firebase and analytics setup guides
-- **[docs/architecture/](docs/architecture/)** - Technical architecture decisions
-- **[docs/features/](docs/features/)** - Feature implementation details
-- **[docs/operations/](docs/operations/)** - Operational guides
-
-See [CLAUDE.md](CLAUDE.md) for AI assistant context and development patterns.
 
 ## Contributing
 
@@ -278,7 +307,7 @@ See [CLAUDE.md](CLAUDE.md) for AI assistant context and development patterns.
 ### Code Style
 
 - Follow existing code patterns
-- Run `npm run lint` before committing
+- Run `npm run lint` and `npm run format` before committing
 - Write tests for new features
 - Update documentation as needed
 
@@ -289,7 +318,8 @@ See [CLAUDE.md](CLAUDE.md) for AI assistant context and development patterns.
 - [WorkerBee](https://gitlab.syncad.com/hive/workerbee) - Hive blockchain client
 - [Next.js](https://nextjs.org/) - React framework
 - [Tailwind CSS](https://tailwindcss.com/) - CSS framework
-- [Firebase](https://firebase.google.com/) - Backend services
+- [Prisma](https://www.prisma.io/) - Database ORM
+- [Supabase](https://supabase.com/) - PostgreSQL hosting
 
 ## License
 

@@ -366,10 +366,10 @@ describe('AuthContext integration', () => {
   });
 
   // =========================================================================
-  // Firebase auth restore
+  // Google OAuth auth restore
   // =========================================================================
 
-  describe('Firebase auth session', () => {
+  describe('Google OAuth auth session', () => {
     it('restores soft auth session from cookie', async () => {
       mockFetch.mockResolvedValue(
         createSessionResponse({
