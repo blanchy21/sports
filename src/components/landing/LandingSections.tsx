@@ -1280,6 +1280,29 @@ export default function LandingSections() {
           </div>
         </motion.div>
       </section>
+
+      {/* ━━━ Footer ━━━ */}
+      <footer className="border-t border-border/50 bg-muted/30 px-6 py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 sm:flex-row sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} Sportsblock
+          </p>
+          <div className="flex items-center gap-6">
+            <Link
+              href="/legal/privacy"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/legal/terms"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Terms of Service
+            </Link>
+          </div>
+        </div>
+      </footer>
     </>
   );
 }
