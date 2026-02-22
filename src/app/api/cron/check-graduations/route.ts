@@ -64,7 +64,9 @@ export async function GET() {
     logger.info(`Checking ${users.length} custodial users`, 'cron:check-graduations');
 
     // Batch-fetch Hive accounts (dhive supports up to 50 at once)
-    const usernames = users.map((u) => u.hiveUsername!);
+    const usernames = users.map(
+      (u: { id: string; hiveUsername: string | null }) => u.hiveUsername!
+    );
     const accounts = await dhive.database.getAccounts(usernames);
     const globalProps = await dhive.database.getDynamicGlobalProperties();
 

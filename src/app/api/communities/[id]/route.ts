@@ -66,7 +66,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         take: 10,
       });
 
-      team = members.map((m) => ({
+      team = members.map((m: { username: string; role: string; joinedAt: Date }) => ({
         username: m.username,
         role: m.role,
         joinedAt: m.joinedAt.toISOString(),

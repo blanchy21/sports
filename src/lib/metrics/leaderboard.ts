@@ -316,13 +316,21 @@ export async function getRewardDistributions(weekId: string): Promise<ContentRew
       where: { weekId },
     });
 
-    return rewards.map((r) => ({
-      weekId: r.weekId,
-      category: r.category as RewardCategory,
-      winner: r.winner as unknown as { account: string; postId?: string; value: number },
-      amount: r.amount,
-      status: r.status as 'pending' | 'distributed' | 'failed',
-    }));
+    return rewards.map(
+      (r: {
+        weekId: string;
+        category: string;
+        winner: unknown;
+        amount: number;
+        status: string;
+      }) => ({
+        weekId: r.weekId,
+        category: r.category as RewardCategory,
+        winner: r.winner as unknown as { account: string; postId?: string; value: number },
+        amount: r.amount,
+        status: r.status as 'pending' | 'distributed' | 'failed',
+      })
+    );
   } catch (error) {
     console.error('Error getting reward distributions:', error);
     return [];

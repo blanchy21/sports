@@ -26,7 +26,29 @@ async function getSoftPostsByCommunity(
     });
 
     return posts.map(
-      (post) =>
+      (post: {
+        id: string;
+        authorId: string;
+        authorUsername: string | null;
+        authorDisplayName: string | null;
+        authorAvatar: string | null;
+        title: string;
+        content: string;
+        excerpt: string | null;
+        permlink: string;
+        tags: string[];
+        sportCategory: string | null;
+        featuredImage: string | null;
+        communityId: string | null;
+        communitySlug: string | null;
+        communityName: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        isPublishedToHive: boolean;
+        hivePermlink: string | null;
+        viewCount: number;
+        likeCount: number;
+      }) =>
         ({
           id: post.id,
           authorId: post.authorId,

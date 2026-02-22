@@ -235,7 +235,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     // Batch query: user's reactions for all requested IDs
-    const userReactions = user
+    const userReactions: Array<{ sportsbiteId: string; emoji: string }> = user
       ? await prisma.reaction.findMany({
           where: { userId: user.userId, sportsbiteId: { in: sportsbiteIds } },
           select: { sportsbiteId: true, emoji: true },
