@@ -2,7 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AiohaProvider as AiohaUIProvider } from '@aioha/react-ui';
-import '@aioha/react-ui/dist/build.css';
+// CSS import removed — @aioha/react-ui/dist/build.css uses Tailwind v4
+// @layer syntax incompatible with this project's Tailwind v3 setup.
+// Our custom WalletConnectionModal replaces AiohaModal on the auth page.
 import { AIOHA_STUB_EVENT, getAiohaInstance } from '@/lib/aioha/config';
 import { logger } from '@/lib/logger';
 

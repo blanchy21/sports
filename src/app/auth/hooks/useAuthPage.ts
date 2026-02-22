@@ -190,6 +190,9 @@ export const useAuthPage = (): UseAuthPageResult => {
     setSuccessMessage(null);
   }, []);
 
+  // No force-logout needed here — our custom WalletConnectionModal always shows
+  // the wallet grid (no "connected profile" view). Session cleanup happens inside
+  // performAiohaLogin right before the actual login call.
   const openAiohaModal = useCallback(() => setShowAiohaModal(true), []);
   const closeAiohaModal = useCallback(() => setShowAiohaModal(false), []);
 
@@ -378,18 +381,8 @@ export const useAuthPage = (): UseAuthPageResult => {
         const usernameToUse =
           usernameRequiredProviders.has(provider) && hiveUsername.trim() ? hiveUsername.trim() : '';
 
-        // Force logout any existing Aioha session to ensure fresh Keychain authorization
-        if (!isAddAccountFlow) {
-          try {
-            const aiohaWithLogout = aioha as { logout?: () => Promise<void> };
-            if (typeof aiohaWithLogout.logout === 'function') {
-              await aiohaWithLogout.logout();
-            }
-          } catch (logoutError) {
-            console.debug('Aioha logout (pre-login cleanup):', logoutError);
-          }
-        }
-
+        // Let Aioha handle session management internally — force-logout before
+        // login prevents the Keychain popup from appearing.
         const loginPromise = (
           aioha as {
             login: (

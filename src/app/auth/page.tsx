@@ -4,13 +4,12 @@ import React, { Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Wallet, CheckCircle, Sparkles } from 'lucide-react';
-import { KeyTypes } from '@aioha/aioha';
-import { AiohaModal } from '@aioha/react-ui';
 import { Button } from '@/components/core/Button';
 import { useAioha } from '@/contexts/AiohaProvider';
 import { AuthHero } from './components/AuthHero';
 import { ErrorAlert } from './components/ErrorAlert';
 import { GoogleAuthSection } from './components/GoogleAuthSection';
+import { WalletConnectionModal } from './components/WalletConnectionModal';
 import { useAuthPage } from './hooks/useAuthPage';
 
 export default function AuthPage() {
@@ -30,8 +29,15 @@ function AuthPageContent() {
     successMessage,
     dismissError,
     showAiohaModal,
-    setShowAiohaModal,
-    handleAiohaModalLogin,
+    openAiohaModal,
+    closeAiohaModal,
+    onProviderSelect,
+    showHiveUsernameInput,
+    selectedProvider,
+    hiveUsername,
+    onHiveUsernameChange,
+    onHiveUsernameSubmit,
+    onHiveUsernameCancel,
     handleGoogleSignIn,
   } = useAuthPage();
 
@@ -150,7 +156,7 @@ function AuthPageContent() {
                   </div>
 
                   <Button
-                    onClick={() => setShowAiohaModal(true)}
+                    onClick={openAiohaModal}
                     disabled={isConnecting || !aioha}
                     className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-primary/30"
                   >
@@ -201,20 +207,18 @@ function AuthPageContent() {
         </div>
       </div>
 
-      {/* AiohaModal handles all Hive wallet authentication */}
-      {Boolean(aioha) && (
-        <AiohaModal
-          displayed={showAiohaModal}
-          loginTitle="Connect to Sportsblock"
-          arrangement="grid"
-          loginOptions={{
-            msg: 'Login to Sportsblock',
-            keyType: KeyTypes.Posting,
-          }}
-          onLogin={handleAiohaModalLogin}
-          onClose={setShowAiohaModal}
-        />
-      )}
+      <WalletConnectionModal
+        isOpen={showAiohaModal}
+        onClose={closeAiohaModal}
+        onProviderSelect={onProviderSelect}
+        isConnecting={isConnecting}
+        showUsernameInput={showHiveUsernameInput}
+        selectedProvider={selectedProvider}
+        hiveUsername={hiveUsername}
+        onUsernameChange={onHiveUsernameChange}
+        onUsernameSubmit={onHiveUsernameSubmit}
+        onUsernameCancel={onHiveUsernameCancel}
+      />
     </div>
   );
 }
