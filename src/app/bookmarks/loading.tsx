@@ -7,16 +7,16 @@ import { PostLoadingSkeleton } from '@/components/core/Loading';
  */
 export default function BookmarksLoading() {
   return (
-    <div className="bg-background min-h-screen">
+    <div className="min-h-screen bg-background">
       {/* Top Navigation Placeholder */}
-      <div className="from-primary/10 to-accent/10 h-24 bg-linear-to-r" />
+      <div className="h-24 bg-gradient-to-r from-primary/10 to-accent/10" />
 
-      <div className="lg:pl-80 xl:pr-112">
+      <div className="lg:pl-80 xl:pr-[28rem]">
         <div className="mx-auto max-w-4xl space-y-6 px-6 py-6">
           {/* Header Skeleton */}
           <div className="flex animate-pulse items-center space-x-3">
-            <div className="bg-muted h-6 w-6 rounded" />
-            <div className="bg-muted h-8 w-32 rounded" />
+            <div className="h-6 w-6 rounded bg-muted" />
+            <div className="h-8 w-32 rounded bg-muted" />
           </div>
 
           {/* Posts Skeleton */}

@@ -223,19 +223,19 @@ export function GifPicker({ isOpen, onClose, onSelect }: GifPickerProps) {
       ref={containerRef}
       style={{ top: position.top, left: position.left }}
       className={cn(
-        'bg-card fixed z-100 max-h-96 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border shadow-lg'
+        'fixed z-[100] max-h-96 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border bg-card shadow-lg'
       )}
     >
       {/* Search input */}
       <div className="border-b p-2">
         <div className="relative">
-          <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Search GIFs..."
-            className="bg-muted focus:ring-primary w-full rounded-md py-2 pr-8 pl-8 text-sm outline-hidden focus:ring-2"
+            className="w-full rounded-md bg-muted py-2 pl-8 pr-8 text-sm outline-none focus:ring-2 focus:ring-primary"
             autoFocus
           />
           {searchQuery && (
@@ -245,7 +245,7 @@ export function GifPicker({ isOpen, onClose, onSelect }: GifPickerProps) {
                 setSearchQuery('');
                 loadTrendingGifs();
               }}
-              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
@@ -257,21 +257,21 @@ export function GifPicker({ isOpen, onClose, onSelect }: GifPickerProps) {
       <div className="max-h-72 overflow-y-auto p-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="text-primary h-6 w-6 animate-spin" />
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <div className="text-muted-foreground py-8 text-center text-sm">
+          <div className="py-8 text-center text-sm text-muted-foreground">
             {error}
             <button
               type="button"
               onClick={loadTrendingGifs}
-              className="text-primary mt-2 block w-full hover:underline"
+              className="mt-2 block w-full text-primary hover:underline"
             >
               Try again
             </button>
           </div>
         ) : gifs.length === 0 ? (
-          <div className="text-muted-foreground py-8 text-center text-sm">
+          <div className="py-8 text-center text-sm text-muted-foreground">
             {searchQuery ? 'No GIFs found' : 'Search for GIFs'}
           </div>
         ) : (
@@ -281,7 +281,7 @@ export function GifPicker({ isOpen, onClose, onSelect }: GifPickerProps) {
                 key={gif.id}
                 type="button"
                 onClick={() => handleSelect(gif)}
-                className="focus:ring-primary relative aspect-square overflow-hidden rounded transition-opacity hover:opacity-80 focus:ring-2 focus:outline-hidden"
+                className="relative aspect-square overflow-hidden rounded transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -297,12 +297,12 @@ export function GifPicker({ isOpen, onClose, onSelect }: GifPickerProps) {
       </div>
 
       {/* Giphy attribution */}
-      <div className="bg-muted/50 border-t px-2 py-1.5 text-center">
+      <div className="border-t bg-muted/50 px-2 py-1.5 text-center">
         <a
           href="https://giphy.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-[10px]"
+          className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
         >
           Powered by GIPHY
         </a>

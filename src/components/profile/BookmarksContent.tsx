@@ -70,27 +70,27 @@ export function BookmarksContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <Bookmark className="text-primary h-6 w-6" />
+          <Bookmark className="h-6 w-6 text-primary" />
           <h2 className="text-2xl font-bold">Bookmarks</h2>
-          <span className="text-muted-foreground text-sm">({bookmarks.length} saved)</span>
+          <span className="text-sm text-muted-foreground">({bookmarks.length} saved)</span>
         </div>
 
         <div className="flex items-center space-x-2">
           <div className="relative">
-            <Search className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search bookmarks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-background focus:ring-primary rounded-lg border py-2 pr-4 pl-10 focus:ring-2 focus:outline-hidden"
+              className="rounded-lg border bg-background py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'title')}
-            className="bg-background focus:ring-primary rounded-lg border px-3 py-2 focus:ring-2 focus:outline-hidden"
+            className="rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="newest">Newest First</option>
             <option value="oldest">Oldest First</option>
@@ -114,8 +114,8 @@ export function BookmarksContent() {
       {/* Bookmarks */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="text-primary h-8 w-8 animate-spin" />
-          <span className="text-muted-foreground ml-2">Loading bookmarks...</span>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Loading bookmarks...</span>
         </div>
       ) : error ? (
         <div className="py-12 text-center">
@@ -130,18 +130,18 @@ export function BookmarksContent() {
         </div>
       ) : searchQuery ? (
         <div className="py-12 text-center">
-          <Search className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+          <Search className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
           <h3 className="mb-2 text-lg font-semibold">No bookmarks found</h3>
-          <p className="text-muted-foreground mb-4">
+          <p className="mb-4 text-muted-foreground">
             No bookmarks match your search query &quot;{searchQuery}&quot;.
           </p>
           <Button onClick={() => setSearchQuery('')}>Clear Search</Button>
         </div>
       ) : (
         <div className="py-12 text-center">
-          <Bookmark className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+          <Bookmark className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
           <h3 className="mb-2 text-lg font-semibold">No bookmarks yet</h3>
-          <p className="text-muted-foreground mb-4">
+          <p className="mb-4 text-muted-foreground">
             Save posts you want to read later by clicking the bookmark button.
           </p>
           <Button onClick={() => router.push('/')}>Explore Posts</Button>
@@ -150,10 +150,10 @@ export function BookmarksContent() {
 
       {/* Clear All Confirmation Modal */}
       {showClearConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-card mx-4 max-w-md rounded-lg p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="mx-4 max-w-md rounded-lg bg-card p-6">
             <h3 className="mb-2 text-lg font-semibold">Clear All Bookmarks</h3>
-            <p className="text-muted-foreground mb-4">
+            <p className="mb-4 text-muted-foreground">
               Are you sure you want to remove all {bookmarks.length} bookmarks? This action cannot
               be undone.
             </p>

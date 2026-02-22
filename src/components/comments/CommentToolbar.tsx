@@ -245,7 +245,7 @@ export function CommentToolbar({
         </Button>
 
         {activePanel === 'image' && (
-          <div className="bg-card absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg border p-3 shadow-lg">
+          <div className="absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg border bg-card p-3 shadow-lg">
             <div className="mb-3 flex gap-1">
               <button
                 type="button"
@@ -307,22 +307,22 @@ export function CommentToolbar({
                 disabled={isUploadingImage}
                 className={cn(
                   'flex w-full flex-col items-center justify-center gap-2 p-4',
-                  'border-muted-foreground/30 rounded-lg border-2 border-dashed',
-                  'hover:border-primary/50 hover:bg-primary/5 transition-colors',
+                  'rounded-lg border-2 border-dashed border-muted-foreground/30',
+                  'transition-colors hover:border-primary/50 hover:bg-primary/5',
                   'text-muted-foreground',
                   isUploadingImage && 'cursor-not-allowed opacity-50'
                 )}
               >
                 {isUploadingImage ? (
                   <>
-                    <Loader2 className="text-primary h-5 w-5 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
                     <span className="text-sm">Uploading...</span>
                   </>
                 ) : (
                   <>
                     <Upload className="h-5 w-5" />
                     <span className="text-sm">Click to select an image</span>
-                    <span className="text-muted-foreground/70 text-xs">Max 5MB</span>
+                    <span className="text-xs text-muted-foreground/70">Max 5MB</span>
                   </>
                 )}
               </button>
@@ -333,7 +333,7 @@ export function CommentToolbar({
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="Paste image URL..."
-                  className="bg-background focus:ring-primary flex-1 rounded-lg border px-3 py-2 text-sm outline-hidden focus:ring-2"
+                  className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -347,7 +347,7 @@ export function CommentToolbar({
               </div>
             )}
 
-            {uploadError && <p className="text-destructive mt-2 text-sm">{uploadError}</p>}
+            {uploadError && <p className="mt-2 text-sm text-destructive">{uploadError}</p>}
           </div>
         )}
       </div>

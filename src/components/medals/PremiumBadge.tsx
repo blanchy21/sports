@@ -36,7 +36,7 @@ const TIER_CONFIG: Record<
   BRONZE: {
     label: 'Bronze',
     icon: Medal,
-    bgGradient: 'bg-linear-to-r from-amber-700 to-amber-600',
+    bgGradient: 'bg-gradient-to-r from-amber-700 to-amber-600',
     textColor: 'text-amber-900',
     borderColor: 'border-amber-600',
     iconColor: 'text-amber-700',
@@ -45,7 +45,7 @@ const TIER_CONFIG: Record<
   SILVER: {
     label: 'Silver',
     icon: Star,
-    bgGradient: 'bg-linear-to-r from-slate-400 to-slate-300',
+    bgGradient: 'bg-gradient-to-r from-slate-400 to-slate-300',
     textColor: 'text-slate-700',
     borderColor: 'border-slate-400',
     iconColor: 'text-slate-500',
@@ -54,7 +54,7 @@ const TIER_CONFIG: Record<
   GOLD: {
     label: 'Gold',
     icon: Award,
-    bgGradient: 'bg-linear-to-r from-yellow-500 to-amber-400',
+    bgGradient: 'bg-gradient-to-r from-yellow-500 to-amber-400',
     textColor: 'text-yellow-900',
     borderColor: 'border-yellow-500',
     iconColor: 'text-yellow-600',
@@ -63,7 +63,7 @@ const TIER_CONFIG: Record<
   PLATINUM: {
     label: 'Platinum',
     icon: Crown,
-    bgGradient: 'bg-linear-to-r from-purple-500 via-indigo-400 to-cyan-400',
+    bgGradient: 'bg-gradient-to-r from-purple-500 via-indigo-400 to-cyan-400',
     textColor: 'text-white',
     borderColor: 'border-purple-400',
     iconColor: 'text-purple-500',
@@ -140,7 +140,7 @@ export const PremiumBadge: React.FC<PremiumBadgeProps> = ({
         )}
         title={`${config.label} tier - ${formatThreshold(PREMIUM_TIERS[tier])}+ MEDALS staked`}
       >
-        <Icon className={cn(sizeConfig.icon, 'text-white drop-shadow-xs')} />
+        <Icon className={cn(sizeConfig.icon, 'text-white drop-shadow-sm')} />
       </div>
     );
   }
@@ -156,8 +156,8 @@ export const PremiumBadge: React.FC<PremiumBadgeProps> = ({
       )}
       title={`${formatThreshold(PREMIUM_TIERS[tier])}+ MEDALS staked`}
     >
-      <Icon className={cn(sizeConfig.icon, 'text-white drop-shadow-xs')} />
-      <span className="text-white drop-shadow-xs">{config.label}</span>
+      <Icon className={cn(sizeConfig.icon, 'text-white drop-shadow-sm')} />
+      <span className="text-white drop-shadow-sm">{config.label}</span>
       {showThreshold && (
         <span className="ml-1 text-xs text-white/80">
           ({formatThreshold(PREMIUM_TIERS[tier])}+)

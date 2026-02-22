@@ -201,17 +201,17 @@ export function MatchThreadFeed({
     return (
       <div className={cn('space-y-4', className)}>
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="bg-card animate-pulse rounded-xl border p-4">
+          <div key={i} className="animate-pulse rounded-xl border bg-card p-4">
             <div className="flex gap-3">
-              <div className="bg-muted h-12 w-12 rounded-full" />
+              <div className="h-12 w-12 rounded-full bg-muted" />
               <div className="flex-1 space-y-3">
                 <div className="flex gap-2">
-                  <div className="bg-muted h-4 w-24 rounded" />
-                  <div className="bg-muted h-4 w-16 rounded" />
+                  <div className="h-4 w-24 rounded bg-muted" />
+                  <div className="h-4 w-16 rounded bg-muted" />
                 </div>
                 <div className="space-y-2">
-                  <div className="bg-muted h-4 w-full rounded" />
-                  <div className="bg-muted h-4 w-3/4 rounded" />
+                  <div className="h-4 w-full rounded bg-muted" />
+                  <div className="h-4 w-3/4 rounded bg-muted" />
                 </div>
               </div>
             </div>
@@ -223,14 +223,14 @@ export function MatchThreadFeed({
 
   if (error) {
     return (
-      <div className={cn('bg-card rounded-xl border p-8 text-center', className)}>
+      <div className={cn('rounded-xl border bg-card p-8 text-center', className)}>
         <div className="mb-4 flex justify-center">
           <div className="rounded-full bg-red-100 p-3 dark:bg-red-950">
             <AlertCircle className="h-8 w-8 text-red-500" />
           </div>
         </div>
         <h3 className="mb-2 text-lg font-semibold">Failed to Load Thread</h3>
-        <p className="text-muted-foreground mb-4 text-sm">{error}</p>
+        <p className="mb-4 text-sm text-muted-foreground">{error}</p>
         <Button onClick={() => loadBites()} variant="outline">
           <RefreshCw className="mr-2 h-4 w-4" />
           Try Again
@@ -241,14 +241,14 @@ export function MatchThreadFeed({
 
   if (bites.length === 0) {
     return (
-      <div className={cn('bg-card rounded-xl border p-12 text-center', className)}>
+      <div className={cn('rounded-xl border bg-card p-12 text-center', className)}>
         <div className="mb-4 flex justify-center">
-          <div className="bg-primary/10 rounded-full p-4">
-            <MessageSquare className="text-primary h-12 w-12" />
+          <div className="rounded-full bg-primary/10 p-4">
+            <MessageSquare className="h-12 w-12 text-primary" />
           </div>
         </div>
         <h3 className="mb-2 text-xl font-semibold">No sportsbites yet</h3>
-        <p className="text-muted-foreground mx-auto max-w-sm">
+        <p className="mx-auto max-w-sm text-muted-foreground">
           Be the first to share your thoughts on this match!
         </p>
       </div>
@@ -262,13 +262,13 @@ export function MatchThreadFeed({
           onClick={showNewBites}
           className={cn(
             'flex w-full items-center justify-center gap-2 px-4 py-3',
-            'from-primary/20 via-primary/10 to-primary/20 bg-linear-to-r',
-            'border-primary/30 rounded-xl border',
-            'text-primary text-sm font-medium',
+            'bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20',
+            'rounded-xl border border-primary/30',
+            'text-sm font-medium text-primary',
             'hover:from-primary/30 hover:via-primary/20 hover:to-primary/30',
             'cursor-pointer transition-all duration-300',
             'animate-pulse hover:animate-none',
-            'shadow-primary/10 shadow-lg'
+            'shadow-lg shadow-primary/10'
           )}
         >
           <ArrowUp className="h-4 w-4" />
@@ -291,7 +291,7 @@ export function MatchThreadFeed({
 
       {isLoadingMore && (
         <div className="flex justify-center py-6">
-          <div className="text-muted-foreground flex items-center gap-2">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
             <span>Loading more...</span>
           </div>
@@ -300,7 +300,7 @@ export function MatchThreadFeed({
 
       {!hasMore && bites.length > 0 && (
         <div className="flex justify-center py-6">
-          <p className="text-muted-foreground text-sm">End of thread</p>
+          <p className="text-sm text-muted-foreground">End of thread</p>
         </div>
       )}
     </div>

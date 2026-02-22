@@ -53,7 +53,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
   if (isLoading) {
     return (
       <div className={`space-y-6 ${className}`}>
-        <div className="bg-card animate-pulse rounded-lg border p-6">
+        <div className="animate-pulse rounded-lg border bg-card p-6">
           <div className="mb-6 flex items-center space-x-4">
             <div className="h-20 w-20 rounded-full bg-gray-300 dark:bg-gray-700"></div>
             <div className="flex-1">
@@ -106,7 +106,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
     <div className={`space-y-6 ${className}`}>
       {/* Cover Image */}
       {community.coverImage && (
-        <div className="relative aspect-3/1 overflow-hidden rounded-xl">
+        <div className="relative aspect-[3/1] overflow-hidden rounded-xl">
           <Image
             src={community.coverImage}
             alt={`${community.name} cover`}
@@ -114,7 +114,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
       )}
 
@@ -127,7 +127,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
               fallback={community.name}
               alt={community.name}
               size="lg"
-              className="border-background h-20 w-20 border-4 shadow-lg"
+              className="h-20 w-20 border-4 border-background shadow-lg"
             />
 
             <div>
@@ -150,13 +150,13 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
               </div>
 
               {sportCategory && (
-                <div className="text-muted-foreground mb-2 flex items-center gap-1">
+                <div className="mb-2 flex items-center gap-1 text-muted-foreground">
                   <span className="text-lg">{sportCategory.icon}</span>
                   <span>{sportCategory.name}</span>
                 </div>
               )}
 
-              <p className="text-muted-foreground max-w-2xl">{community.about}</p>
+              <p className="max-w-2xl text-muted-foreground">{community.about}</p>
             </div>
           </div>
 
@@ -175,21 +175,21 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
         {/* Community Stats */}
         <div className="mt-6 flex flex-wrap items-center gap-6 border-t pt-6">
           <div className="flex items-center space-x-2">
-            <Users className="text-muted-foreground h-5 w-5" />
+            <Users className="h-5 w-5 text-muted-foreground" />
             <span className="text-lg font-semibold">
               {community.memberCount?.toLocaleString() || 0}
             </span>
             <span className="text-muted-foreground">members</span>
           </div>
           <div className="flex items-center space-x-2">
-            <FileText className="text-muted-foreground h-5 w-5" />
+            <FileText className="h-5 w-5 text-muted-foreground" />
             <span className="text-lg font-semibold">
               {(postsData?.posts?.length ?? community.postCount ?? 0).toLocaleString()}
             </span>
             <span className="text-muted-foreground">posts</span>
           </div>
           <div className="flex items-center space-x-2">
-            <Calendar className="text-muted-foreground h-5 w-5" />
+            <Calendar className="h-5 w-5 text-muted-foreground" />
             <span className="text-muted-foreground">
               Created {new Date(community.createdAt).toLocaleDateString()}
             </span>
@@ -206,7 +206,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
               'border-b-2 px-4 py-2 text-sm font-medium transition-colors',
               activeTab === 'posts'
                 ? 'border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground border-transparent'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
             <FileText className="mr-2 inline h-4 w-4" />
@@ -218,7 +218,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
               'border-b-2 px-4 py-2 text-sm font-medium transition-colors',
               activeTab === 'about'
                 ? 'border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground border-transparent'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
             About
@@ -229,7 +229,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
               'border-b-2 px-4 py-2 text-sm font-medium transition-colors',
               activeTab === 'members'
                 ? 'border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground border-transparent'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
             <Users className="mr-2 inline h-4 w-4" />
@@ -245,8 +245,8 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
         <Card className="p-6">
           <h2 className="mb-4 text-xl font-semibold">About {community.name}</h2>
           {community.description ? (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
                 {community.description}
               </p>
             </div>
@@ -265,7 +265,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
                     <div>
                       <Link
                         href={`/user/${admin.hiveUsername || admin.username}`}
-                        className="hover:text-primary font-medium"
+                        className="font-medium hover:text-primary"
                       >
                         @{admin.hiveUsername || admin.username}
                       </Link>
@@ -282,7 +282,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
                     <div>
                       <Link
                         href={`/user/${mod.hiveUsername || mod.username}`}
-                        className="hover:text-primary font-medium"
+                        className="font-medium hover:text-primary"
                       >
                         @{mod.hiveUsername || mod.username}
                       </Link>
@@ -304,7 +304,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold">
               Members
-              <span className="text-muted-foreground ml-2 text-sm font-normal">
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
                 ({community.memberCount || 0})
               </span>
             </h2>
@@ -323,11 +323,11 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/user/${member.hiveUsername || member.username}`}
-                    className="hover:text-primary block truncate font-medium"
+                    className="block truncate font-medium hover:text-primary"
                   >
                     @{member.hiveUsername || member.username}
                   </Link>
-                  <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     {member.role === 'admin' && (
                       <span className="flex items-center gap-1 text-yellow-600">
                         <Crown className="h-3 w-3" /> Admin
@@ -346,7 +346,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
           </div>
 
           {(!members || members.length === 0) && (
-            <p className="text-muted-foreground py-8 text-center">No members to display.</p>
+            <p className="py-8 text-center text-muted-foreground">No members to display.</p>
           )}
         </Card>
       )}

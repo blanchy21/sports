@@ -140,7 +140,7 @@ export default function LandingSections() {
   return (
     <>
       {/* ━━━ Trust Bar ━━━ */}
-      <section className="border-border/50 bg-muted/30 border-b px-6 py-8">
+      <section className="border-b border-border/50 bg-muted/30 px-6 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -150,7 +150,7 @@ export default function LandingSections() {
         >
           {/* Hive logo + text */}
           <div className="flex items-center gap-3">
-            <span className="text-muted-foreground text-sm">Powered by</span>
+            <span className="text-sm text-muted-foreground">Powered by</span>
             <div className="flex items-center gap-2">
               <Image
                 src="/hive-logo.svg"
@@ -163,7 +163,7 @@ export default function LandingSections() {
             </div>
           </div>
 
-          <div className="bg-border hidden h-6 w-px sm:block" />
+          <div className="hidden h-6 w-px bg-border sm:block" />
 
           {[
             { label: 'MEDALS Supply', value: '500M' },
@@ -178,8 +178,8 @@ export default function LandingSections() {
               transition={{ duration: 0.4, delay: 0.1 + i * 0.1 }}
               className="text-center"
             >
-              <div className="text-primary text-lg font-bold">{item.value}</div>
-              <div className="text-muted-foreground text-xs">{item.label}</div>
+              <div className="text-lg font-bold text-primary">{item.value}</div>
+              <div className="text-xs text-muted-foreground">{item.label}</div>
             </motion.div>
           ))}
         </motion.div>
@@ -188,11 +188,11 @@ export default function LandingSections() {
       {/* ━━━ Photo Marquee ━━━ */}
       <section className="relative overflow-hidden py-8 sm:py-12">
         {/* Gradient fade edges */}
-        <div className="from-background pointer-events-none absolute top-0 left-0 z-10 h-full w-16 bg-linear-to-r to-transparent sm:w-32" />
-        <div className="from-background pointer-events-none absolute top-0 right-0 z-10 h-full w-16 bg-linear-to-l to-transparent sm:w-32" />
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-background to-transparent sm:w-32" />
+        <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 bg-gradient-to-l from-background to-transparent sm:w-32" />
 
         {/* Row 1 — scrolls left */}
-        <div className="animate-marquee-left mb-4 flex">
+        <div className="mb-4 flex animate-marquee-left">
           {[
             '/enrique-guzman-egas-Q1zq6ZLnRJA-unsplash.jpg',
             '/david-pisnoy-At5I1OSl_2M-unsplash.jpg',
@@ -209,7 +209,7 @@ export default function LandingSections() {
           ].map((src, i) => (
             <div
               key={i}
-              className="mx-2 h-32 w-52 shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
+              className="mx-2 h-32 w-52 flex-shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -218,7 +218,7 @@ export default function LandingSections() {
         </div>
 
         {/* Row 2 — scrolls right */}
-        <div className="animate-marquee-right flex">
+        <div className="flex animate-marquee-right">
           {[
             '/ben-weber-r-krWscXjvQ-unsplash.jpg',
             '/jeff-cadestin-wRXJuof2eD4-unsplash.jpg',
@@ -235,7 +235,7 @@ export default function LandingSections() {
           ].map((src, i) => (
             <div
               key={i}
-              className="mx-2 h-32 w-52 shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
+              className="mx-2 h-32 w-52 flex-shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -246,7 +246,7 @@ export default function LandingSections() {
 
       {/* ━━━ Problem / Solution ━━━ */}
       <section className="relative overflow-hidden px-6 py-24">
-        <div className="from-background via-muted/20 to-background absolute inset-0 bg-linear-to-b" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background" />
 
         <div className="relative z-10 mx-auto max-w-6xl">
           <motion.div
@@ -256,13 +256,13 @@ export default function LandingSections() {
             transition={{ duration: 0.8 }}
             className="mb-16 text-center"
           >
-            <div className="bg-accent/10 text-accent mb-6 inline-flex items-center gap-2 rounded-full px-4 py-2 font-semibold">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-accent/10 px-4 py-2 font-semibold text-accent">
               <Target className="h-4 w-4" />
               Why Sportsblock Exists
             </div>
             <h2 className="text-4xl font-bold md:text-5xl">
               Built for{' '}
-              <span className="from-primary to-accent bg-linear-to-r bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 True Sports Fans
               </span>
             </h2>
@@ -275,9 +275,9 @@ export default function LandingSections() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="border-destructive/20 from-destructive/5 rounded-3xl border bg-linear-to-br to-transparent p-8 sm:p-10"
+              className="rounded-3xl border border-destructive/20 bg-gradient-to-br from-destructive/5 to-transparent p-8 sm:p-10"
             >
-              <div className="bg-destructive/10 text-destructive mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-destructive/10 px-3 py-1.5 text-sm font-semibold text-destructive">
                 <Ban className="h-4 w-4" />
                 Sound Familiar?
               </div>
@@ -296,8 +296,8 @@ export default function LandingSections() {
                     transition={{ duration: 0.5, delay: 0.2 + i * 0.15 }}
                     className="flex items-start gap-3"
                   >
-                    <div className="bg-destructive/10 mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                      <X className="text-destructive h-3.5 w-3.5" />
+                    <div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                      <X className="h-3.5 w-3.5 text-destructive" />
                     </div>
                     <p className="text-muted-foreground">{text}</p>
                   </motion.div>
@@ -311,9 +311,9 @@ export default function LandingSections() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="border-accent/30 from-accent/5 rounded-3xl border bg-linear-to-br to-transparent p-8 sm:p-10"
+              className="rounded-3xl border border-accent/30 bg-gradient-to-br from-accent/5 to-transparent p-8 sm:p-10"
             >
-              <div className="bg-accent/10 text-accent mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1.5 text-sm font-semibold text-accent">
                 <Heart className="h-4 w-4" />
                 Welcome to Sportsblock
               </div>
@@ -334,8 +334,8 @@ export default function LandingSections() {
                     transition={{ duration: 0.5, delay: 0.3 + i * 0.15 }}
                     className="flex items-start gap-3"
                   >
-                    <div className="bg-accent/10 mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                      <CheckCircle className="text-accent h-3.5 w-3.5" />
+                    <div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-accent/10">
+                      <CheckCircle className="h-3.5 w-3.5 text-accent" />
                     </div>
                     <p className="text-foreground">{text}</p>
                   </motion.div>
@@ -347,8 +347,8 @@ export default function LandingSections() {
       </section>
 
       {/* ━━━ Features: Articles & Sportsbites ━━━ */}
-      <section className="from-muted/30 to-background relative overflow-hidden bg-linear-to-b px-6 py-24">
-        <div className="from-primary/5 absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] via-transparent to-transparent" />
+      <section className="relative overflow-hidden bg-gradient-to-b from-muted/30 to-background px-6 py-24">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
 
         <div className="relative z-10 mx-auto max-w-6xl">
           <motion.div
@@ -358,17 +358,17 @@ export default function LandingSections() {
             transition={{ duration: 0.8 }}
             className="mb-16 text-center"
           >
-            <div className="bg-primary/10 text-primary mb-6 inline-flex items-center gap-2 rounded-full px-4 py-2 font-semibold">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 font-semibold text-primary">
               <Zap className="h-4 w-4" />
               Two Ways to Play
             </div>
             <h2 className="mb-6 text-4xl font-bold md:text-5xl">
               Articles &{' '}
-              <span className="from-primary to-accent bg-linear-to-r bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Sportsbites
               </span>
             </h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
+            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
               Long-form analysis or quick-fire takes. Both earn rewards.
             </p>
           </motion.div>
@@ -382,38 +382,38 @@ export default function LandingSections() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
               whileHover={{ y: -8 }}
-              className="group bg-card overflow-hidden rounded-3xl border shadow-lg transition-shadow hover:shadow-xl"
+              className="group overflow-hidden rounded-3xl border bg-card shadow-lg transition-shadow hover:shadow-xl"
             >
-              <div className="from-primary to-bright-cobalt h-2 bg-linear-to-r" />
+              <div className="h-2 bg-gradient-to-r from-primary to-bright-cobalt" />
               <div className="p-8">
-                <div className="bg-primary/10 text-primary mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
                   <FileText className="h-3.5 w-3.5" />
                   Full Articles
                 </div>
                 {/* Mock article preview */}
-                <div className="bg-muted/30 mb-6 rounded-2xl border p-5">
+                <div className="mb-6 rounded-2xl border bg-muted/30 p-5">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="from-primary to-accent h-8 w-8 rounded-full bg-linear-to-br" />
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-accent" />
                     <div>
                       <div className="text-sm font-semibold">@sportsfanatic</div>
-                      <div className="text-muted-foreground text-xs">5 min read</div>
+                      <div className="text-xs text-muted-foreground">5 min read</div>
                     </div>
                   </div>
                   <h4 className="mb-2 font-bold">
                     Why Liverpool&apos;s Midfield Press Is Unstoppable This Season
                   </h4>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Breaking down the tactical genius behind the Reds&apos; relentless high press
                     and why opponents can&apos;t find answers...
                   </p>
-                  <div className="text-muted-foreground mt-3 flex items-center gap-4 text-xs">
+                  <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
                     <span>42 upvotes</span>
                     <span>18 comments</span>
-                    <span className="text-accent font-semibold">$7.84 earned</span>
+                    <span className="font-semibold text-accent">$7.84 earned</span>
                   </div>
                 </div>
-                <p className="text-primary text-lg font-semibold">Deep analysis. Real earnings.</p>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-lg font-semibold text-primary">Deep analysis. Real earnings.</p>
+                <p className="text-sm text-muted-foreground">
                   Earn $3-$10+ per quality article from community upvotes.
                 </p>
               </div>
@@ -426,9 +426,9 @@ export default function LandingSections() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.15 }}
               whileHover={{ y: -8 }}
-              className="group bg-card overflow-hidden rounded-3xl border shadow-lg transition-shadow hover:shadow-xl"
+              className="group overflow-hidden rounded-3xl border bg-card shadow-lg transition-shadow hover:shadow-xl"
             >
-              <div className="from-accent to-aegean-sky h-2 bg-linear-to-r" />
+              <div className="h-2 bg-gradient-to-r from-accent to-aegean-sky" />
               <div className="p-8">
                 <div className="mb-4 flex items-center gap-3">
                   <Image
@@ -438,15 +438,15 @@ export default function LandingSections() {
                     height={32}
                     className="h-8 w-auto"
                   />
-                  <span className="text-accent text-sm font-semibold">Sportsbites</span>
+                  <span className="text-sm font-semibold text-accent">Sportsbites</span>
                 </div>
                 {/* Mock sportsbite */}
-                <div className="bg-muted/30 mb-6 rounded-2xl border p-5">
+                <div className="mb-6 rounded-2xl border bg-muted/30 p-5">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="from-accent to-aegean-sky h-8 w-8 rounded-full bg-linear-to-br" />
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-accent to-aegean-sky" />
                     <div>
                       <div className="text-sm font-semibold">@matchday_maven</div>
-                      <div className="text-muted-foreground text-xs">Just now</div>
+                      <div className="text-xs text-muted-foreground">Just now</div>
                     </div>
                   </div>
                   <p className="mb-3 text-sm">
@@ -454,15 +454,15 @@ export default function LandingSections() {
                     are running away with it. #PremierLeague
                   </p>
                   <div className="flex items-center justify-between">
-                    <div className="text-muted-foreground flex items-center gap-4 text-xs">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <span>28 upvotes</span>
-                      <span className="text-accent font-semibold">$1.42 earned</span>
+                      <span className="font-semibold text-accent">$1.42 earned</span>
                     </div>
-                    <span className="text-muted-foreground text-xs">138/280</span>
+                    <span className="text-xs text-muted-foreground">138/280</span>
                   </div>
                 </div>
-                <p className="text-accent text-lg font-semibold">Quick takes. Live reactions.</p>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-lg font-semibold text-accent">Quick takes. Live reactions.</p>
+                <p className="text-sm text-muted-foreground">
                   280-character posts for live match moments. Earn daily.
                 </p>
               </div>
@@ -508,13 +508,13 @@ export default function LandingSections() {
                 variants={itemVariants}
                 whileHover={{ y: -6, scale: 1.02 }}
                 transition={{ duration: 0.3 }}
-                className="bg-card hover:shadow-primary/5 rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg"
+                className="rounded-2xl border bg-card p-6 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
               >
                 <div className={`inline-flex p-3 ${item.bg} mb-4 rounded-xl`}>
                   <item.icon className={`h-6 w-6 ${item.color}`} />
                 </div>
                 <h3 className="mb-2 text-lg font-bold">{item.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{item.description}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -540,7 +540,7 @@ export default function LandingSections() {
       </section>
 
       {/* ━━━ How Earnings Work ━━━ */}
-      <section className="from-muted/30 via-muted/50 to-muted/30 bg-linear-to-b px-6 py-24">
+      <section className="bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30 px-6 py-24">
         <div className="mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -549,17 +549,17 @@ export default function LandingSections() {
             transition={{ duration: 0.8 }}
             className="mb-16 text-center"
           >
-            <div className="bg-primary/10 text-primary mb-6 inline-flex items-center gap-2 rounded-full px-4 py-2 font-semibold">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 font-semibold text-primary">
               <Zap className="h-4 w-4" />
               Powered by Hive Blockchain
             </div>
             <h2 className="mb-6 text-4xl font-bold md:text-5xl">
               Your Opinions Have{' '}
-              <span className="from-accent to-primary bg-linear-to-r bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
                 Real Value
               </span>
             </h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
+            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
               No premium subscriptions required. No follower thresholds. Start earning from day one.
             </p>
           </motion.div>
@@ -605,13 +605,13 @@ export default function LandingSections() {
                   className="group flex items-start gap-5"
                 >
                   <div className="relative">
-                    <div className="from-primary to-accent shadow-primary/25 flex h-14 w-14 items-center justify-center rounded-xl bg-linear-to-br text-lg font-bold text-white shadow-lg transition-transform group-hover:scale-110">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-lg font-bold text-white shadow-lg shadow-primary/25 transition-transform group-hover:scale-110">
                       {item.step}
                     </div>
                   </div>
                   <div className="flex-1">
                     <h3 className="mb-2 flex items-center gap-2 text-xl font-bold">
-                      <item.icon className="text-accent h-5 w-5" />
+                      <item.icon className="h-5 w-5 text-accent" />
                       {item.title}
                     </h3>
                     <p className="text-muted-foreground">{item.description}</p>
@@ -626,11 +626,11 @@ export default function LandingSections() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="border-primary/20 bg-card shadow-primary/5 rounded-3xl border-2 p-8 shadow-xl"
+              className="rounded-3xl border-2 border-primary/20 bg-card p-8 shadow-xl shadow-primary/5"
             >
               <div className="mb-8 text-center">
                 <h3 className="mb-2 text-2xl font-bold">Earning Potential</h3>
-                <p className="text-muted-foreground text-sm">Based on community engagement</p>
+                <p className="text-sm text-muted-foreground">Based on community engagement</p>
               </div>
 
               <div className="space-y-4">
@@ -674,9 +674,9 @@ export default function LandingSections() {
                   >
                     <div className="mb-2 flex items-center justify-between">
                       <span className="font-semibold">{tier.level}</span>
-                      <span className="text-primary text-lg font-bold">{tier.earnings}</span>
+                      <span className="text-lg font-bold text-primary">{tier.earnings}</span>
                     </div>
-                    <div className="bg-muted h-3 overflow-hidden rounded-full">
+                    <div className="h-3 overflow-hidden rounded-full bg-muted">
                       <motion.div
                         initial={{ width: 0 }}
                         whileInView={{ width: '100%' }}
@@ -685,14 +685,14 @@ export default function LandingSections() {
                         className={`h-full ${tier.color} ${tier.width} rounded-full`}
                       />
                     </div>
-                    <p className="text-muted-foreground mt-1 text-xs">{tier.upvotes}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{tier.upvotes}</p>
                   </motion.div>
                 ))}
               </div>
 
               <div className="mt-8 border-t pt-6 text-center">
-                <p className="text-muted-foreground text-sm">
-                  <Zap className="text-accent mr-1 inline h-4 w-4" />
+                <p className="text-sm text-muted-foreground">
+                  <Zap className="mr-1 inline h-4 w-4 text-accent" />
                   Rewards paid in HIVE & HBD cryptocurrency
                 </p>
               </div>
@@ -712,10 +712,10 @@ export default function LandingSections() {
               { icon: Shield, label: 'Zero platform fees', value: '0%' },
               { icon: Clock, label: 'Rewards distributed daily', value: '24h' },
             ].map((stat, i) => (
-              <div key={i} className="bg-card rounded-xl border p-4 text-center sm:p-5">
-                <stat.icon className="text-accent mx-auto mb-2 h-5 w-5" />
-                <div className="text-primary text-lg font-bold sm:text-xl">{stat.value}</div>
-                <div className="text-muted-foreground text-xs">{stat.label}</div>
+              <div key={i} className="rounded-xl border bg-card p-4 text-center sm:p-5">
+                <stat.icon className="mx-auto mb-2 h-5 w-5 text-accent" />
+                <div className="text-lg font-bold text-primary sm:text-xl">{stat.value}</div>
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
               </div>
             ))}
           </motion.div>
@@ -735,7 +735,7 @@ export default function LandingSections() {
           transition={{ duration: 0.8 }}
           className="relative z-10 px-6 text-center"
         >
-          <h2 className="text-4xl font-black tracking-wider text-white uppercase md:text-6xl">
+          <h2 className="text-4xl font-black uppercase tracking-wider text-white md:text-6xl">
             Every Sport. One Community.
           </h2>
         </motion.div>
@@ -757,11 +757,11 @@ export default function LandingSections() {
             </div>
             <h2 className="mb-6 text-4xl font-bold md:text-5xl">
               Stake & Unlock{' '}
-              <span className="bg-linear-to-r from-[#D4A84B] to-[#C08860] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#D4A84B] to-[#C08860] bg-clip-text text-transparent">
                 Premium Perks
               </span>
             </h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
+            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
               MEDALS is our community token. Stake to earn passive rewards and unlock exclusive
               features.
             </p>
@@ -817,24 +817,26 @@ export default function LandingSections() {
                 key={index}
                 variants={itemVariants}
                 whileHover={{ y: -8, scale: 1.03 }}
-                className="group bg-card relative overflow-hidden rounded-2xl border p-6"
+                className="group relative overflow-hidden rounded-2xl border bg-card p-6"
               >
-                <div className={`absolute top-0 right-0 left-0 h-1 bg-linear-to-r ${item.color}`} />
+                <div
+                  className={`absolute left-0 right-0 top-0 h-1 bg-gradient-to-r ${item.color}`}
+                />
                 <div className={`mb-4 inline-flex rounded-xl p-3 ${item.iconBg}`}>
                   <item.Icon className={`h-8 w-8 ${item.iconColor}`} />
                 </div>
                 <h3 className="mb-1 text-xl font-bold">{item.tier}</h3>
                 <div className="mb-4 flex items-baseline gap-1">
-                  <span className="text-primary text-2xl font-bold">
+                  <span className="text-2xl font-bold text-primary">
                     <AnimatedCounter end={item.stake} />
                   </span>
-                  <span className="text-muted-foreground text-sm">MEDALS</span>
+                  <span className="text-sm text-muted-foreground">MEDALS</span>
                 </div>
 
                 <ul className="space-y-2">
                   {item.benefits.map((benefit, i) => (
-                    <li key={i} className="text-muted-foreground flex items-center gap-2 text-sm">
-                      <CheckCircle className="text-accent h-4 w-4 shrink-0" />
+                    <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <CheckCircle className="h-4 w-4 flex-shrink-0 text-accent" />
                       {benefit}
                     </li>
                   ))}
@@ -863,13 +865,13 @@ export default function LandingSections() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="rounded-xl border border-[#D4A84B]/20 bg-linear-to-br from-[#D4A84B]/5 to-[#C08860]/5 p-5 text-center"
+                className="rounded-xl border border-[#D4A84B]/20 bg-gradient-to-br from-[#D4A84B]/5 to-[#C08860]/5 p-5 text-center"
               >
                 <stat.icon className="mx-auto mb-2 h-6 w-6 text-[#D4A84B]" />
-                <div className="text-primary text-xl font-bold">
+                <div className="text-xl font-bold text-primary">
                   <AnimatedCounter end={stat.value} suffix={stat.suffix} />
                 </div>
-                <div className="text-muted-foreground text-xs">{stat.label}</div>
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
               </motion.div>
             ))}
           </motion.div>
@@ -880,16 +882,16 @@ export default function LandingSections() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="animate-border-pulse border-accent/30 from-accent/10 via-accent/5 to-accent/10 overflow-hidden rounded-2xl border-2 bg-linear-to-r p-8 text-center"
+            className="animate-border-pulse overflow-hidden rounded-2xl border-2 border-accent/30 bg-gradient-to-r from-accent/10 via-accent/5 to-accent/10 p-8 text-center"
           >
-            <div className="bg-accent/20 text-accent mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/20 px-3 py-1 text-sm font-bold text-accent">
               <Flame className="h-4 w-4" />
               TOKEN PRESALE
             </div>
             <h3 className="mb-2 text-2xl font-bold">
               <AnimatedCounter end={10} suffix="M" /> MEDALS at 0.04 HIVE each
             </h3>
-            <p className="text-muted-foreground mb-6">
+            <p className="mb-6 text-muted-foreground">
               Get in early. Stake for rewards and unlock premium features.
             </p>
             <Button
@@ -917,11 +919,11 @@ export default function LandingSections() {
           >
             <h2 className="mb-6 text-4xl font-bold md:text-5xl">
               Your Sports.{' '}
-              <span className="from-primary to-accent bg-linear-to-r bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Your Feed.
               </span>
             </h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
+            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
               Follow the sports you love. Filter out the rest.
             </p>
           </motion.div>
@@ -938,14 +940,14 @@ export default function LandingSections() {
                 key={index}
                 variants={itemVariants}
                 whileHover={{ scale: 1.05, y: -5 }}
-                className="group relative aspect-3/2 cursor-pointer overflow-hidden rounded-2xl shadow-lg"
+                className="group relative aspect-[3/2] cursor-pointer overflow-hidden rounded-2xl shadow-lg"
               >
                 <div
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
                   style={{ backgroundImage: `url('${sport.image}')` }}
                 />
                 <div
-                  className={`absolute inset-0 bg-linear-to-t ${sport.color} opacity-70 transition-opacity duration-300 group-hover:opacity-80`}
+                  className={`absolute inset-0 bg-gradient-to-t ${sport.color} opacity-70 transition-opacity duration-300 group-hover:opacity-80`}
                 />
                 <div className="absolute inset-0 flex items-end p-4 sm:p-6">
                   <h3 className="text-lg font-bold text-white drop-shadow-lg sm:text-xl md:text-2xl">
@@ -961,7 +963,7 @@ export default function LandingSections() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-muted-foreground mt-10 text-center"
+            className="mt-10 text-center text-muted-foreground"
           >
             Plus Hockey, F1, MMA, and many more...
           </motion.p>
@@ -969,7 +971,7 @@ export default function LandingSections() {
       </section>
 
       {/* ━━━ Blockchain Trust Section ━━━ */}
-      <section className="from-fibonacci-blue/5 to-background bg-linear-to-b px-6 py-24">
+      <section className="bg-gradient-to-b from-fibonacci-blue/5 to-background px-6 py-24">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -978,17 +980,17 @@ export default function LandingSections() {
             transition={{ duration: 0.8 }}
             className="mb-16 text-center"
           >
-            <div className="bg-primary/10 text-primary mb-6 inline-flex items-center gap-2 rounded-full px-4 py-2 font-semibold">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 font-semibold text-primary">
               <Shield className="h-4 w-4" />
               Powered by Hive
             </div>
             <h2 className="mb-6 text-4xl font-bold md:text-5xl">
               Your Content. Your Wallet.{' '}
-              <span className="from-primary to-accent bg-linear-to-r bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Your Rules.
               </span>
             </h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
+            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
               Sportsblock is built on the Hive blockchain — the most censorship-resistant social
               layer in crypto.
             </p>
@@ -1033,13 +1035,13 @@ export default function LandingSections() {
                 variants={itemVariants}
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ duration: 0.3 }}
-                className="bg-card hover:shadow-primary/5 rounded-2xl border p-8 text-center transition-all duration-300 hover:shadow-xl"
+                className="rounded-2xl border bg-card p-8 text-center transition-all duration-300 hover:shadow-xl hover:shadow-primary/5"
               >
                 <div className={`mx-auto inline-flex p-3 ${item.bg} mb-5 rounded-xl`}>
                   <item.icon className={`h-7 w-7 ${item.color}`} />
                 </div>
                 <h3 className="mb-3 text-xl font-bold">{item.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+                <p className="leading-relaxed text-muted-foreground">{item.description}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -1052,7 +1054,7 @@ export default function LandingSections() {
             transition={{ duration: 0.8 }}
             className="text-center"
           >
-            <p className="text-muted-foreground mb-6 text-sm font-medium">
+            <p className="mb-6 text-sm font-medium text-muted-foreground">
               Connect with any Hive wallet to start earning
             </p>
             <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
@@ -1070,7 +1072,7 @@ export default function LandingSections() {
                   transition={{ duration: 0.5, delay: i * 0.1 }}
                   className="flex flex-col items-center gap-2"
                 >
-                  <div className="bg-card flex h-16 w-16 items-center justify-center rounded-2xl border p-3 transition-shadow hover:shadow-lg">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border bg-card p-3 transition-shadow hover:shadow-lg">
                     <Image
                       src={wallet.src}
                       alt={wallet.alt}
@@ -1079,7 +1081,7 @@ export default function LandingSections() {
                       className="h-10 w-10 object-contain"
                     />
                   </div>
-                  <span className="text-muted-foreground text-xs">{wallet.label}</span>
+                  <span className="text-xs text-muted-foreground">{wallet.label}</span>
                 </motion.div>
               ))}
             </div>
@@ -1088,7 +1090,7 @@ export default function LandingSections() {
       </section>
 
       {/* ━━━ Authentication CTA ━━━ */}
-      <section className="from-primary/5 via-background to-accent/5 bg-linear-to-br px-6 py-24">
+      <section className="bg-gradient-to-br from-primary/5 via-background to-accent/5 px-6 py-24">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -1099,11 +1101,11 @@ export default function LandingSections() {
           >
             <h2 className="mb-6 text-4xl font-bold md:text-5xl">
               Ready to{' '}
-              <span className="from-accent to-primary bg-linear-to-r bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
                 Get Started?
               </span>
             </h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
+            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
               Choose how you want to get started
             </p>
           </motion.div>
@@ -1116,13 +1118,13 @@ export default function LandingSections() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
               whileHover={{ y: -8 }}
-              className="border-primary bg-card relative overflow-hidden rounded-3xl border-2 p-8"
+              className="relative overflow-hidden rounded-3xl border-2 border-primary bg-card p-8"
             >
-              <div className="bg-primary text-primary-foreground absolute top-4 right-4 rounded-full px-3 py-1 text-xs font-bold">
+              <div className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
                 RECOMMENDED
               </div>
 
-              <div className="bg-primary/10 mb-6 w-fit rounded-xl p-3">
+              <div className="mb-6 w-fit rounded-xl bg-primary/10 p-3">
                 <Image
                   src="/hive-keychain-logo.svg"
                   alt="Hive Keychain"
@@ -1133,7 +1135,7 @@ export default function LandingSections() {
               </div>
 
               <h3 className="mb-3 text-2xl font-bold">Full Access with Hive</h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="mb-6 text-muted-foreground">
                 Full platform access with earning capabilities. Use any Hive wallet.
               </p>
 
@@ -1145,7 +1147,7 @@ export default function LandingSections() {
                   'Multiple wallet support',
                 ].map((benefit, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm">
-                    <CheckCircle className="text-accent h-5 w-5 shrink-0" />
+                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-accent" />
                     <span>{benefit}</span>
                   </li>
                 ))}
@@ -1160,7 +1162,7 @@ export default function LandingSections() {
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
 
-              <p className="text-muted-foreground mt-4 text-center text-xs">
+              <p className="mt-4 text-center text-xs text-muted-foreground">
                 Keychain &bull; HiveSigner &bull; HiveAuth &bull; Ledger
               </p>
             </motion.div>
@@ -1172,14 +1174,14 @@ export default function LandingSections() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
               whileHover={{ y: -8 }}
-              className="bg-card rounded-3xl border p-8"
+              className="rounded-3xl border bg-card p-8"
             >
-              <div className="bg-accent/10 mb-6 w-fit rounded-xl p-3">
-                <User className="text-accent h-8 w-8" />
+              <div className="mb-6 w-fit rounded-xl bg-accent/10 p-3">
+                <User className="h-8 w-8 text-accent" />
               </div>
 
               <h3 className="mb-3 text-2xl font-bold">Quick Start</h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="mb-6 text-muted-foreground">
                 Jump in instantly with your email or Google account.
               </p>
 
@@ -1187,7 +1189,7 @@ export default function LandingSections() {
                 {['Instant access', 'Read & explore content', 'Upgrade to Hive anytime'].map(
                   (benefit, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm">
-                      <CheckCircle className="text-accent h-5 w-5 shrink-0" />
+                      <CheckCircle className="h-5 w-5 flex-shrink-0 text-accent" />
                       <span>{benefit}</span>
                     </li>
                   )
@@ -1204,7 +1206,7 @@ export default function LandingSections() {
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
 
-              <p className="text-muted-foreground mt-4 text-center text-xs">
+              <p className="mt-4 text-center text-xs text-muted-foreground">
                 Email &bull; Google &bull; Upgrade to earn later
               </p>
             </motion.div>
@@ -1213,7 +1215,7 @@ export default function LandingSections() {
       </section>
 
       {/* ━━━ Final CTA ━━━ */}
-      <section className="from-fibonacci-blue via-bright-cobalt to-fibonacci-blue relative overflow-hidden bg-linear-to-r px-6 py-20 text-white">
+      <section className="relative overflow-hidden bg-gradient-to-r from-fibonacci-blue via-bright-cobalt to-fibonacci-blue px-6 py-20 text-white">
         {/* Floating particles */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           {[
@@ -1261,7 +1263,7 @@ export default function LandingSections() {
           </p>
           <Button
             size="lg"
-            className="bg-accent shadow-accent/30 hover:bg-accent/90 hover:shadow-accent/50 px-12 py-7 text-lg font-semibold text-white shadow-2xl transition-all duration-300 hover:scale-105"
+            className="bg-accent px-12 py-7 text-lg font-semibold text-white shadow-2xl shadow-accent/30 transition-all duration-300 hover:scale-105 hover:bg-accent/90 hover:shadow-accent/50"
             onClick={() => signIn('google', { callbackUrl: '/auth/google-callback' })}
           >
             Sign Up Free

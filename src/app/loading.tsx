@@ -8,18 +8,18 @@ import { PostLoadingSkeleton } from '@/components/core/Loading';
  */
 export default function Loading() {
   return (
-    <div className="bg-background min-h-screen">
+    <div className="min-h-screen bg-background">
       {/* Top Navigation Placeholder */}
-      <div className="from-primary/10 to-accent/10 h-24 animate-pulse bg-linear-to-r" />
+      <div className="h-24 animate-pulse bg-gradient-to-r from-primary/10 to-accent/10" />
 
       <div className="flex">
         {/* Left Sidebar Placeholder */}
-        <aside className="bg-background hidden lg:fixed lg:inset-y-0 lg:block lg:w-80 lg:border-r lg:pt-24 lg:pb-4">
+        <aside className="hidden bg-background lg:fixed lg:inset-y-0 lg:block lg:w-80 lg:border-r lg:pb-4 lg:pt-24">
           <div className="space-y-2 px-4 py-4">
             {Array.from({ length: 12 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-muted h-12 animate-pulse rounded-md"
+                className="h-12 animate-pulse rounded-md bg-muted"
                 style={{ animationDelay: `${i * 50}ms` }}
               />
             ))}
@@ -27,13 +27,13 @@ export default function Loading() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 lg:pl-80 xl:pr-112">
+        <main className="flex-1 lg:pl-80 xl:pr-[28rem]">
           <div className="mx-auto max-w-4xl px-6 py-6">
             {/* Page Header Skeleton */}
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="bg-muted h-6 w-6 animate-pulse rounded" />
-                <div className="bg-muted h-8 w-40 animate-pulse rounded" />
+                <div className="h-6 w-6 animate-pulse rounded bg-muted" />
+                <div className="h-8 w-40 animate-pulse rounded bg-muted" />
               </div>
             </div>
 
@@ -43,15 +43,15 @@ export default function Loading() {
         </main>
 
         {/* Right Sidebar Placeholder */}
-        <aside className="bg-background hidden xl:fixed xl:inset-y-0 xl:right-0 xl:block xl:w-md xl:border-l xl:pt-24 xl:pb-4">
+        <aside className="hidden bg-background xl:fixed xl:inset-y-0 xl:right-0 xl:block xl:w-[28rem] xl:border-l xl:pb-4 xl:pt-24">
           <div className="space-y-6 px-6 py-4">
             {/* Upcoming Events Skeleton */}
             <div className="space-y-3">
-              <div className="bg-muted h-5 w-32 animate-pulse rounded" />
+              <div className="h-5 w-32 animate-pulse rounded bg-muted" />
               {Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-muted h-20 animate-pulse rounded-lg"
+                  className="h-20 animate-pulse rounded-lg bg-muted"
                   style={{ animationDelay: `${i * 100}ms` }}
                 />
               ))}
@@ -59,11 +59,11 @@ export default function Loading() {
 
             {/* Trending Topics Skeleton */}
             <div className="space-y-3">
-              <div className="bg-muted h-5 w-36 animate-pulse rounded" />
+              <div className="h-5 w-36 animate-pulse rounded bg-muted" />
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-muted h-8 animate-pulse rounded"
+                  className="h-8 animate-pulse rounded bg-muted"
                   style={{ animationDelay: `${i * 100}ms` }}
                 />
               ))}

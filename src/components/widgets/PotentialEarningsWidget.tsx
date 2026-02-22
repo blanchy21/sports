@@ -111,13 +111,13 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
     return (
       <div
         className={cn(
-          'rounded-lg border bg-linear-to-br from-green-500/5 to-emerald-500/5 p-4',
+          'rounded-lg border bg-gradient-to-br from-green-500/5 to-emerald-500/5 p-4',
           className
         )}
       >
         <div className="flex animate-pulse items-center gap-2">
           <RefreshCw className="h-5 w-5 animate-spin text-green-500" />
-          <span className="text-muted-foreground text-sm">Calculating potential earnings...</span>
+          <span className="text-sm text-muted-foreground">Calculating potential earnings...</span>
         </div>
       </div>
     );
@@ -126,7 +126,7 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
   return (
     <div
       className={cn(
-        'rounded-lg border bg-linear-to-br from-green-500/5 to-emerald-500/5 p-4',
+        'rounded-lg border bg-gradient-to-br from-green-500/5 to-emerald-500/5 p-4',
         className
       )}
     >
@@ -136,18 +136,18 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
           <div className="rounded-full bg-green-500/10 p-1.5">
             <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
           </div>
-          <h3 className="text-foreground font-semibold">Potential Earnings</h3>
+          <h3 className="font-semibold text-foreground">Potential Earnings</h3>
         </div>
         <div className="relative">
           <button
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
-            className="hover:bg-muted rounded-full p-1 transition-colors"
+            className="rounded-full p-1 transition-colors hover:bg-muted"
           >
-            <Info className="text-muted-foreground h-4 w-4" />
+            <Info className="h-4 w-4 text-muted-foreground" />
           </button>
           {showTooltip && (
-            <div className="bg-popover text-muted-foreground absolute top-full right-0 z-10 mt-1 w-64 rounded-lg border p-3 text-xs shadow-lg">
+            <div className="absolute right-0 top-full z-10 mt-1 w-64 rounded-lg border bg-popover p-3 text-xs text-muted-foreground shadow-lg">
               <p>
                 This is an estimate based on average Hive rewards. Actual earnings depend on content
                 quality, timing, and community engagement.
@@ -163,13 +163,13 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
           <div className="mb-4 space-y-3">
             {/* Total Potential */}
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">Total potential:</span>
+              <span className="text-sm text-muted-foreground">Total potential:</span>
               <div className="text-right">
                 <span className="text-lg font-bold text-green-600 dark:text-green-400">
                   ${earnings.totalUsd}
                 </span>
                 {earnings.totalHive && (
-                  <span className="text-muted-foreground ml-1 text-xs">
+                  <span className="ml-1 text-xs text-muted-foreground">
                     ({earnings.totalHive} HIVE)
                   </span>
                 )}
@@ -178,11 +178,11 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
 
             {/* Weekly Estimate */}
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">Est. weekly:</span>
+              <span className="text-sm text-muted-foreground">Est. weekly:</span>
               <div className="text-right">
-                <span className="text-foreground font-medium">${earnings.weeklyUsd}</span>
+                <span className="font-medium text-foreground">${earnings.weeklyUsd}</span>
                 {earnings.weeklyHive && (
-                  <span className="text-muted-foreground ml-1 text-xs">
+                  <span className="ml-1 text-xs text-muted-foreground">
                     ({earnings.weeklyHive} HIVE)
                   </span>
                 )}
@@ -190,8 +190,8 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
             </div>
 
             {/* Stats breakdown */}
-            <div className="border-border border-t pt-2">
-              <div className="text-muted-foreground flex items-center gap-4 text-xs">
+            <div className="border-t border-border pt-2">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span>{stats.postCount} posts</span>
                 <span>{stats.totalLikes} likes received</span>
               </div>
@@ -210,10 +210,10 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
       ) : (
         /* No activity state */
         <div className="py-2 text-center">
-          <p className="text-muted-foreground mb-3 text-sm">
+          <p className="mb-3 text-sm text-muted-foreground">
             Start posting to see your potential earnings!
           </p>
-          <div className="text-muted-foreground mb-3 flex items-center justify-center gap-2 text-xs">
+          <div className="mb-3 flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Zap className="h-3 w-3 text-amber-500" />
             <span>Hive users can earn rewards on every post</span>
           </div>
@@ -228,8 +228,8 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
 
       {/* HIVE Price footer */}
       {hivePrice && (
-        <div className="border-border mt-3 border-t pt-2">
-          <div className="text-muted-foreground flex items-center justify-between text-xs">
+        <div className="mt-3 border-t border-border pt-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>HIVE Price</span>
             <span>${hivePrice.toFixed(4)} USD</span>
           </div>

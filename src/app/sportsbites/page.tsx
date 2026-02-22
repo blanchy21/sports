@@ -94,7 +94,7 @@ export default function SportsBitesPage() {
     <MainLayout>
       <div className="mx-auto max-w-3xl">
         {/* Header */}
-        <div className="border-border/50 bg-background/95 sticky top-0 z-10 -mx-4 mb-4 border-b px-4 backdrop-blur-xl">
+        <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-border/50 bg-background/95 px-4 backdrop-blur-xl">
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
               <Image
@@ -105,10 +105,10 @@ export default function SportsBitesPage() {
                 className="rounded-xl shadow-lg"
               />
               <div>
-                <h1 className="from-foreground to-foreground/70 bg-linear-to-r bg-clip-text text-2xl font-bold">
+                <h1 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-2xl font-bold">
                   Sportsbites
                 </h1>
-                <p className="text-muted-foreground text-sm">Quick takes & live reactions</p>
+                <p className="text-sm text-muted-foreground">Quick takes & live reactions</p>
               </div>
             </div>
 
@@ -134,8 +134,8 @@ export default function SportsBitesPage() {
                   className={cn(
                     'flex-1 gap-2 transition-all duration-300',
                     isActive
-                      ? 'bg-primary text-primary-foreground shadow-primary/25 scale-[1.02] shadow-lg'
-                      : 'hover:bg-muted/80 hover:scale-[1.01]'
+                      ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                      : 'hover:scale-[1.01] hover:bg-muted/80'
                   )}
                 >
                   <Icon className={cn('h-4 w-4', isActive && 'animate-pulse')} />
@@ -160,9 +160,9 @@ export default function SportsBitesPage() {
 
         {/* Tag filter banner */}
         {tagFilter && (
-          <div className="border-primary/20 bg-primary/5 mb-4 flex items-center justify-between rounded-xl border px-4 py-3">
+          <div className="mb-4 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
             <div className="flex items-center gap-2">
-              <Hash className="text-primary h-4 w-4" />
+              <Hash className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">
                 Showing bites tagged <span className="text-primary">#{tagFilter}</span>
               </span>
@@ -171,7 +171,7 @@ export default function SportsBitesPage() {
               variant="ghost"
               size="sm"
               onClick={() => router.push('/sportsbites')}
-              className="text-muted-foreground hover:text-foreground h-7 px-2 text-xs"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
             >
               <X className="mr-1 h-3 w-3" />
               Clear
@@ -186,14 +186,14 @@ export default function SportsBitesPage() {
 
         {/* Info banner */}
         {!infoBannerDismissed && (
-          <div className="border-primary/20 from-primary/10 to-accent/10 mb-6 rounded-xl border bg-linear-to-r p-4">
+          <div className="mb-6 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10 p-4">
             <div className="flex items-start gap-3">
-              <div className="bg-primary/20 rounded-lg p-2">
-                <Zap className="text-primary h-5 w-5" />
+              <div className="rounded-lg bg-primary/20 p-2">
+                <Zap className="h-5 w-5 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-primary font-semibold">What are Sportsbites?</h3>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <h3 className="font-semibold text-primary">What are Sportsbites?</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Quick 280-character posts perfect for live match reactions, hot takes, and instant
                   sports commentary. All posts are stored on the Hive blockchain and can earn
                   rewards!
@@ -204,7 +204,7 @@ export default function SportsBitesPage() {
                   setInfoBannerDismissed(true);
                   localStorage.setItem('sportsbites-info-dismissed', 'true');
                 }}
-                className="text-muted-foreground hover:bg-muted hover:text-foreground shrink-0 rounded-md p-1 transition-colors"
+                className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 aria-label="Dismiss"
               >
                 <X className="h-4 w-4" />
@@ -223,22 +223,22 @@ export default function SportsBitesPage() {
 
         {/* Feature highlights */}
         <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="bg-card rounded-xl border p-5 text-center">
+          <div className="rounded-xl border bg-card p-5 text-center">
             <div className="mb-3 text-3xl">&#9889;</div>
             <h3 className="mb-1 font-semibold">Quick Takes</h3>
-            <p className="text-muted-foreground text-sm">280 characters for instant reactions</p>
+            <p className="text-sm text-muted-foreground">280 characters for instant reactions</p>
           </div>
 
-          <div className="bg-card rounded-xl border p-5 text-center">
+          <div className="rounded-xl border bg-card p-5 text-center">
             <div className="mb-3 text-3xl">&#127942;</div>
             <h3 className="mb-1 font-semibold">Earn Rewards</h3>
-            <p className="text-muted-foreground text-sm">Get upvoted and earn HIVE/HBD</p>
+            <p className="text-sm text-muted-foreground">Get upvoted and earn HIVE/HBD</p>
           </div>
 
-          <div className="bg-card rounded-xl border p-5 text-center">
+          <div className="rounded-xl border bg-card p-5 text-center">
             <div className="mb-3 text-3xl">&#128279;</div>
             <h3 className="mb-1 font-semibold">Decentralized</h3>
-            <p className="text-muted-foreground text-sm">Stored forever on Hive blockchain</p>
+            <p className="text-sm text-muted-foreground">Stored forever on Hive blockchain</p>
           </div>
         </div>
       </div>

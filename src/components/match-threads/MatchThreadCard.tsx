@@ -45,14 +45,14 @@ export function MatchThreadCard({ thread }: MatchThreadCardProps) {
     <Link
       href={`/match-threads/${thread.eventId}`}
       className={cn(
-        'bg-card block rounded-xl border p-4 transition-all hover:shadow-md',
-        isLive && 'border-green-500/50 shadow-xs shadow-green-500/10'
+        'block rounded-xl border bg-card p-4 transition-all hover:shadow-md',
+        isLive && 'border-green-500/50 shadow-sm shadow-green-500/10'
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           {/* Sport + League */}
-          <div className="text-muted-foreground mb-2 flex items-center gap-2 text-sm">
+          <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
             <span>{event.icon}</span>
             <span>{event.sport}</span>
             {event.league && (
@@ -66,17 +66,17 @@ export function MatchThreadCard({ thread }: MatchThreadCardProps) {
           {/* Teams */}
           {event.teams ? (
             <div className="mb-2">
-              <h3 className="text-lg leading-tight font-semibold">
+              <h3 className="text-lg font-semibold leading-tight">
                 {event.teams.home} <span className="text-muted-foreground">vs</span>{' '}
                 {event.teams.away}
               </h3>
             </div>
           ) : (
-            <h3 className="mb-2 text-lg leading-tight font-semibold">{event.name}</h3>
+            <h3 className="mb-2 text-lg font-semibold leading-tight">{event.name}</h3>
           )}
 
           {/* Kickoff time + bite count */}
-          <div className="text-muted-foreground flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span>{formatRelativeTime(event.date, isLive)}</span>
             <span className="flex items-center gap-1">
               <MessageSquare className="h-3.5 w-3.5" />
@@ -94,7 +94,7 @@ export function MatchThreadCard({ thread }: MatchThreadCardProps) {
             </span>
           )}
           {!isOpen && (
-            <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium">
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
               <Lock className="h-3 w-3" />
               Read Only
             </span>

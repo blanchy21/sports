@@ -177,10 +177,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Preview Section */}
-        <div className="bg-muted/30 relative overflow-hidden rounded-lg">
+        <div className="relative overflow-hidden rounded-lg bg-muted/30">
           {/* Cover Image Preview */}
           <div
-            className="from-primary via-bright-cobalt to-accent h-24 bg-linear-to-r"
+            className="h-24 bg-gradient-to-r from-primary via-bright-cobalt to-accent"
             style={
               formData.cover_image
                 ? {
@@ -199,7 +199,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               alt={formData.name || user?.username || 'Profile'}
               fallback={user?.username || 'U'}
               size="lg"
-              className="border-background h-16 w-16 border-4"
+              className="h-16 w-16 border-4 border-background"
             />
           </div>
         </div>
@@ -208,7 +208,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
           {/* Display Name */}
           <div className="space-y-2">
             <label htmlFor="name" className="flex items-center gap-2 text-sm font-medium">
-              <User className="text-muted-foreground h-4 w-4" />
+              <User className="h-4 w-4 text-muted-foreground" />
               Display Name
             </label>
             <input
@@ -218,14 +218,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               value={formData.name}
               onChange={handleInputChange('name')}
               maxLength={50}
-              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-primary w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:outline-hidden"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           {/* Bio */}
           <div className="space-y-2">
             <label htmlFor="about" className="flex items-center gap-2 text-sm font-medium">
-              <FileText className="text-muted-foreground h-4 w-4" />
+              <FileText className="h-4 w-4 text-muted-foreground" />
               Bio
             </label>
             <textarea
@@ -235,15 +235,15 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               onChange={handleInputChange('about')}
               rows={3}
               maxLength={500}
-              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-primary w-full resize-none rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:outline-hidden"
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <p className="text-muted-foreground text-right text-xs">{formData.about.length}/500</p>
+            <p className="text-right text-xs text-muted-foreground">{formData.about.length}/500</p>
           </div>
 
           {/* Location */}
           <div className="space-y-2">
             <label htmlFor="location" className="flex items-center gap-2 text-sm font-medium">
-              <MapPin className="text-muted-foreground h-4 w-4" />
+              <MapPin className="h-4 w-4 text-muted-foreground" />
               Location
             </label>
             <input
@@ -253,14 +253,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               value={formData.location}
               onChange={handleInputChange('location')}
               maxLength={100}
-              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-primary w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:outline-hidden"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           {/* Website */}
           <div className="space-y-2">
             <label htmlFor="website" className="flex items-center gap-2 text-sm font-medium">
-              <LinkIcon className="text-muted-foreground h-4 w-4" />
+              <LinkIcon className="h-4 w-4 text-muted-foreground" />
               Website
             </label>
             <input
@@ -269,14 +269,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               placeholder="https://yourwebsite.com"
               value={formData.website}
               onChange={handleInputChange('website')}
-              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-primary w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:outline-hidden"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           {/* Profile Image URL */}
           <div className="space-y-2">
             <label htmlFor="profile_image" className="flex items-center gap-2 text-sm font-medium">
-              <Camera className="text-muted-foreground h-4 w-4" />
+              <Camera className="h-4 w-4 text-muted-foreground" />
               Profile Image URL
             </label>
             <input
@@ -285,9 +285,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               placeholder="https://example.com/your-avatar.jpg"
               value={formData.profile_image}
               onChange={handleInputChange('profile_image')}
-              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-primary w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:outline-hidden"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Enter a URL to an image. You can upload images to services like Imgur or use existing
               image URLs.
             </p>
@@ -296,7 +296,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
           {/* Cover Image URL */}
           <div className="space-y-2">
             <label htmlFor="cover_image" className="flex items-center gap-2 text-sm font-medium">
-              <ImageIcon className="text-muted-foreground h-4 w-4" />
+              <ImageIcon className="h-4 w-4 text-muted-foreground" />
               Cover Image URL
             </label>
             <input
@@ -305,9 +305,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               placeholder="https://example.com/your-cover.jpg"
               value={formData.cover_image}
               onChange={handleInputChange('cover_image')}
-              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-primary w-full rounded-lg border px-3 py-2 focus:border-transparent focus:ring-2 focus:outline-hidden"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Recommended size: 1500x500 pixels for best results.
             </p>
           </div>

@@ -74,7 +74,7 @@ export function Loading({
         {Array.from({ length: skeletonLines }).map((_, i) => (
           <div key={i} className="animate-pulse">
             <div
-              className={cn('bg-muted h-4 rounded', i === skeletonLines - 1 ? 'w-3/4' : 'w-full')}
+              className={cn('h-4 rounded bg-muted', i === skeletonLines - 1 ? 'w-3/4' : 'w-full')}
             />
           </div>
         ))}
@@ -90,9 +90,9 @@ export function Loading({
   // Full page loading
   if (fullPage) {
     return (
-      <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
         <div className="flex flex-col items-center space-y-4">
-          <Loader2 className={cn('text-primary animate-spin', sizeClasses.lg)} />
+          <Loader2 className={cn('animate-spin text-primary', sizeClasses.lg)} />
           {text && <p className={cn('text-muted-foreground', textSizeClasses.md)}>{text}</p>}
         </div>
       </div>
@@ -102,7 +102,7 @@ export function Loading({
   // Default loading (centered in container)
   return (
     <div className={cn('flex flex-col items-center justify-center space-y-4 py-8', className)}>
-      <Loader2 className={cn('text-primary animate-spin', sizeClasses[size])} />
+      <Loader2 className={cn('animate-spin text-primary', sizeClasses[size])} />
       {text && <p className={cn('text-muted-foreground', textSizeClasses[size])}>{text}</p>}
     </div>
   );
@@ -117,24 +117,24 @@ export function PostLoadingSkeleton({ count = 3 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="border-border bg-card animate-pulse space-y-4 rounded-lg border p-6"
+          className="animate-pulse space-y-4 rounded-lg border border-border bg-card p-6"
         >
           <div className="flex items-center space-x-3">
-            <div className="bg-muted h-10 w-10 rounded-full" />
+            <div className="h-10 w-10 rounded-full bg-muted" />
             <div className="flex-1 space-y-2">
-              <div className="bg-muted h-4 w-1/4 rounded" />
-              <div className="bg-muted h-3 w-1/6 rounded" />
+              <div className="h-4 w-1/4 rounded bg-muted" />
+              <div className="h-3 w-1/6 rounded bg-muted" />
             </div>
           </div>
           <div className="space-y-2">
-            <div className="bg-muted h-6 w-3/4 rounded" />
-            <div className="bg-muted h-4 w-full rounded" />
-            <div className="bg-muted h-4 w-5/6 rounded" />
+            <div className="h-6 w-3/4 rounded bg-muted" />
+            <div className="h-4 w-full rounded bg-muted" />
+            <div className="h-4 w-5/6 rounded bg-muted" />
           </div>
           <div className="flex items-center space-x-4">
-            <div className="bg-muted h-4 w-16 rounded" />
-            <div className="bg-muted h-4 w-16 rounded" />
-            <div className="bg-muted h-4 w-16 rounded" />
+            <div className="h-4 w-16 rounded bg-muted" />
+            <div className="h-4 w-16 rounded bg-muted" />
+            <div className="h-4 w-16 rounded bg-muted" />
           </div>
         </div>
       ))}
@@ -149,10 +149,10 @@ export function CardLoadingSkeleton({ count = 1 }: { count?: number }) {
   return (
     <div className="space-y-4">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="border-border bg-card animate-pulse rounded-lg border p-4">
-          <div className="bg-muted mb-2 h-4 w-1/3 rounded" />
-          <div className="bg-muted mb-1 h-3 w-full rounded" />
-          <div className="bg-muted h-3 w-2/3 rounded" />
+        <div key={i} className="animate-pulse rounded-lg border border-border bg-card p-4">
+          <div className="mb-2 h-4 w-1/3 rounded bg-muted" />
+          <div className="mb-1 h-3 w-full rounded bg-muted" />
+          <div className="h-3 w-2/3 rounded bg-muted" />
         </div>
       ))}
     </div>

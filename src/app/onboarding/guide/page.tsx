@@ -157,7 +157,7 @@ export default function OnboardingGuidePage() {
   const Icon = step.icon;
 
   return (
-    <div className="bg-background flex min-h-screen items-center justify-center p-6">
+    <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <div className="w-full max-w-lg">
         {/* Header */}
         <motion.div
@@ -168,12 +168,12 @@ export default function OnboardingGuidePage() {
         >
           <h1 className="mb-2 text-3xl font-black tracking-tight">
             <span className="text-foreground">SPORTS</span>
-            <span className="from-accent to-aegean-sky bg-linear-to-r bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-accent to-aegean-sky bg-clip-text text-transparent">
               BLOCK
             </span>
           </h1>
-          <p className="text-muted-foreground text-sm">
-            Welcome, <span className="text-foreground font-medium">@{user.hiveUsername}</span>
+          <p className="text-sm text-muted-foreground">
+            Welcome, <span className="font-medium text-foreground">@{user.hiveUsername}</span>
           </p>
         </motion.div>
 
@@ -188,10 +188,10 @@ export default function OnboardingGuidePage() {
               }}
               className={`h-2.5 rounded-full transition-all duration-300 ${
                 i === currentStep
-                  ? 'bg-accent w-8'
+                  ? 'w-8 bg-accent'
                   : i < currentStep
-                    ? 'bg-accent/40 hover:bg-accent/60 w-2.5'
-                    : 'bg-muted-foreground/20 w-2.5'
+                    ? 'w-2.5 bg-accent/40 hover:bg-accent/60'
+                    : 'w-2.5 bg-muted-foreground/20'
               }`}
               aria-label={`Step ${i + 1}`}
             />
@@ -206,20 +206,22 @@ export default function OnboardingGuidePage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -40 }}
             transition={{ duration: 0.3 }}
-            className="border-border bg-card rounded-2xl border p-8"
+            className="rounded-2xl border border-border bg-card p-8"
           >
             {/* Icon */}
             <div className="mb-6 flex justify-center">
-              <div className="bg-accent/10 flex h-16 w-16 items-center justify-center rounded-2xl">
-                <Icon className="text-accent h-8 w-8" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10">
+                <Icon className="h-8 w-8 text-accent" />
               </div>
             </div>
 
             {/* Title */}
-            <h2 className="text-foreground mb-4 text-center text-xl font-bold">{step.title}</h2>
+            <h2 className="mb-4 text-center text-xl font-bold text-foreground">
+              {step.title}
+            </h2>
 
             {/* Body */}
-            <p className="text-muted-foreground mb-6 text-center text-sm leading-relaxed">
+            <p className="mb-6 text-center text-sm leading-relaxed text-muted-foreground">
               {step.body}
             </p>
 
@@ -257,7 +259,7 @@ export default function OnboardingGuidePage() {
                     {downloadError && (
                       <p className="text-center text-xs text-red-400">{downloadError}</p>
                     )}
-                    <p className="text-muted-foreground text-center text-xs">
+                    <p className="text-center text-xs text-muted-foreground">
                       You must download your keys to continue
                     </p>
                   </div>
@@ -273,7 +275,7 @@ export default function OnboardingGuidePage() {
                     href="https://chromewebstore.google.com/detail/hive-keychain/jcacnejopjdphbnjgfaaobbfafkihpep"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="border-border text-muted-foreground hover:border-accent hover:text-foreground inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-xs font-medium transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
                   >
                     Chrome
                     <ExternalLink className="h-3 w-3" />
@@ -282,13 +284,13 @@ export default function OnboardingGuidePage() {
                     href="https://addons.mozilla.org/en-US/firefox/addon/hive-keychain/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="border-border text-muted-foreground hover:border-accent hover:text-foreground inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-xs font-medium transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
                   >
                     Firefox
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-xs text-muted-foreground">
                   Install Hive Keychain for your browser
                 </p>
               </div>
@@ -299,7 +301,7 @@ export default function OnboardingGuidePage() {
               {currentStep > 0 ? (
                 <button
                   onClick={handleBack}
-                  className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm transition-colors"
+                  className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back
@@ -311,7 +313,7 @@ export default function OnboardingGuidePage() {
               <Button
                 onClick={handleNext}
                 disabled={!canAdvance || completing}
-                className="bg-accent hover:bg-accent/90 flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all disabled:opacity-50"
+                className="flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-accent/90 disabled:opacity-50"
               >
                 {completing ? (
                   <>
@@ -335,7 +337,7 @@ export default function OnboardingGuidePage() {
         </AnimatePresence>
 
         {/* Step counter */}
-        <p className="text-muted-foreground mt-4 text-center text-xs">
+        <p className="mt-4 text-center text-xs text-muted-foreground">
           Step {currentStep + 1} of {STEPS.length}
         </p>
       </div>

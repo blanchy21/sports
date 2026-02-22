@@ -38,7 +38,7 @@ export const AccountBadge: React.FC<AccountBadgeProps> = ({
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
         <div
-          className={`flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-purple-600 font-semibold text-white ${size === 'sm' ? 'h-6 w-6 text-xs' : size === 'lg' ? 'h-10 w-10 text-lg' : ''}`}
+          className={`flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 font-semibold text-white ${size === 'sm' ? 'h-6 w-6 text-xs' : size === 'lg' ? 'h-10 w-10 text-lg' : ''}`}
         >
           {user.displayName?.charAt(0).toUpperCase() ||
             user.username?.charAt(0).toUpperCase() ||
@@ -64,7 +64,7 @@ export const AccountBadge: React.FC<AccountBadgeProps> = ({
     <div className={`flex items-center space-x-2 ${className}`}>
       {/* Avatar */}
       <div
-        className={`flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-purple-600 font-semibold text-white ${size === 'sm' ? 'h-6 w-6 text-xs' : size === 'lg' ? 'h-10 w-10 text-lg' : ''}`}
+        className={`flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 font-semibold text-white ${size === 'sm' ? 'h-6 w-6 text-xs' : size === 'lg' ? 'h-10 w-10 text-lg' : ''}`}
       >
         {user.avatar ? (
           <Image
@@ -170,10 +170,10 @@ export const UpgradePrompt: React.FC<{
 
   return (
     <div
-      className={`rounded-lg border border-yellow-200 bg-linear-to-r from-yellow-50 to-orange-50 p-4 ${className}`}
+      className={`rounded-lg border border-yellow-200 bg-gradient-to-r from-yellow-50 to-orange-50 p-4 ${className}`}
     >
       <div className="flex items-start space-x-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-100">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100">
           <Star className="h-4 w-4 text-yellow-600" />
         </div>
         <div className="min-w-0 flex-1">

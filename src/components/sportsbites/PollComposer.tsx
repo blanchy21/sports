@@ -31,14 +31,14 @@ export function PollComposer({ poll, onChange, className }: PollComposerProps) {
   };
 
   return (
-    <div className={cn('border-primary/20 bg-primary/5 rounded-lg border p-3', className)}>
+    <div className={cn('rounded-lg border border-primary/20 bg-primary/5 p-3', className)}>
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-primary text-sm font-medium">Quick Poll</span>
+        <span className="text-sm font-medium text-primary">Quick Poll</span>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => onChange(null)}
-          className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
         >
           <X className="h-4 w-4" />
         </Button>
@@ -51,10 +51,10 @@ export function PollComposer({ poll, onChange, className }: PollComposerProps) {
             value={poll.question}
             onChange={(e) => handleQuestionChange(e.target.value)}
             placeholder="Ask a question..."
-            className="bg-background focus:ring-primary/40 w-full rounded-md border px-3 py-2 text-sm outline-hidden focus:ring-2"
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
             maxLength={MAX_QUESTION_LENGTH}
           />
-          <p className="text-muted-foreground mt-0.5 text-right text-[10px]">
+          <p className="mt-0.5 text-right text-[10px] text-muted-foreground">
             {poll.question.length}/{MAX_QUESTION_LENGTH}
           </p>
         </div>
@@ -66,7 +66,7 @@ export function PollComposer({ poll, onChange, className }: PollComposerProps) {
               value={option}
               onChange={(e) => handleOptionChange(index as 0 | 1, e.target.value)}
               placeholder={`Option ${index + 1}`}
-              className="bg-background focus:ring-primary/40 w-full rounded-md border px-3 py-2 text-sm outline-hidden focus:ring-2"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
               maxLength={MAX_OPTION_LENGTH}
             />
           </div>
