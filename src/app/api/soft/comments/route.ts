@@ -111,22 +111,39 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    const comments: SoftComment[] = rows.map((row) => ({
-      id: row.id,
-      postId: row.postId,
-      postPermlink: row.postPermlink,
-      authorId: row.authorId,
-      authorUsername: row.authorUsername,
-      authorDisplayName: row.authorDisplayName || undefined,
-      authorAvatar: row.authorAvatar || undefined,
-      isHiveUser: row.isHiveUser || false,
-      parentCommentId: row.parentCommentId || undefined,
-      body: row.body,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
-      likeCount: row.likeCount || 0,
-      isDeleted: row.isDeleted || false,
-    }));
+    const comments: SoftComment[] = rows.map(
+      (row: {
+        id: string;
+        postId: string;
+        postPermlink: string;
+        authorId: string;
+        authorUsername: string;
+        authorDisplayName: string | null;
+        authorAvatar: string | null;
+        isHiveUser: boolean;
+        parentCommentId: string | null;
+        body: string;
+        createdAt: Date;
+        updatedAt: Date;
+        likeCount: number;
+        isDeleted: boolean;
+      }) => ({
+        id: row.id,
+        postId: row.postId,
+        postPermlink: row.postPermlink,
+        authorId: row.authorId,
+        authorUsername: row.authorUsername,
+        authorDisplayName: row.authorDisplayName || undefined,
+        authorAvatar: row.authorAvatar || undefined,
+        isHiveUser: row.isHiveUser || false,
+        parentCommentId: row.parentCommentId || undefined,
+        body: row.body,
+        createdAt: row.createdAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
+        likeCount: row.likeCount || 0,
+        isDeleted: row.isDeleted || false,
+      })
+    );
 
     return NextResponse.json(
       {

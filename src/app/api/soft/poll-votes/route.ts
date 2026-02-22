@@ -215,7 +215,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     // Batch query: user's votes for all requested IDs
-    const userVotes = user
+    const userVotes: Array<{ sportsbiteId: string; option: number }> = user
       ? await prisma.pollVote.findMany({
           where: { userId: user.userId, sportsbiteId: { in: sportsbiteIds } },
           select: { sportsbiteId: true, option: true },
@@ -223,7 +223,12 @@ export async function PATCH(request: NextRequest) {
       : [];
 
     // Build lookup map
-    const userVoteMap = new Map(userVotes.map((v) => [v.sportsbiteId, v.option as 0 | 1]));
+    const userVoteMap = new Map(
+      userVotes.map((v: { sportsbiteId: string; option: number }) => [
+        v.sportsbiteId,
+        v.option as 0 | 1,
+      ])
+    );
 
     // Aggregate into response shape
     const results: Record<

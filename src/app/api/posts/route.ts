@@ -299,7 +299,7 @@ export async function POST(request: NextRequest) {
             where: { id: data.communityId },
             data: { postCount: { increment: 1 } },
           })
-          .catch((err) => {
+          .catch((err: unknown) => {
             ctx.log.warn('Failed to increment community post count', {
               communityId: data.communityId,
               error: err,

@@ -78,13 +78,13 @@ export async function GET(request: NextRequest) {
             : null,
         pendingDistributions:
           contentRewards.status === 'fulfilled'
-            ? contentRewards.value.filter((r) => r.status === 'pending').length
+            ? contentRewards.value.filter((r: { status: string }) => r.status === 'pending').length
             : 0,
         totalDistributed:
           contentRewards.status === 'fulfilled'
             ? contentRewards.value
-                .filter((r) => r.status === 'distributed')
-                .reduce((sum, r) => sum + r.amount, 0)
+                .filter((r: { status: string }) => r.status === 'distributed')
+                .reduce((sum: number, r: { amount: number }) => sum + r.amount, 0)
             : 0,
         status: null as string | null,
       },

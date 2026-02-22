@@ -95,23 +95,40 @@ export async function GET(request: NextRequest) {
     const hasMore = rows.length > limit;
     const pageRows = hasMore ? rows.slice(0, limit) : rows;
 
-    const sportsbites: SoftSportsbite[] = pageRows.map((row) => ({
-      id: row.id,
-      authorId: row.authorId,
-      authorUsername: row.authorUsername,
-      authorDisplayName: row.authorDisplayName || undefined,
-      authorAvatar: row.authorAvatar || undefined,
-      body: row.body,
-      sportCategory: row.sportCategory || undefined,
-      images: row.images || [],
-      gifs: row.gifs || [],
-      poll: (row.poll as SoftSportsbite['poll']) || undefined,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-      likeCount: row.likeCount || 0,
-      commentCount: row.commentCount || 0,
-      isDeleted: false,
-    }));
+    const sportsbites: SoftSportsbite[] = pageRows.map(
+      (row: {
+        id: string;
+        authorId: string;
+        authorUsername: string;
+        authorDisplayName: string | null;
+        authorAvatar: string | null;
+        body: string;
+        sportCategory: string | null;
+        images: string[];
+        gifs: string[];
+        poll: unknown;
+        createdAt: Date;
+        updatedAt: Date;
+        likeCount: number;
+        commentCount: number;
+      }) => ({
+        id: row.id,
+        authorId: row.authorId,
+        authorUsername: row.authorUsername,
+        authorDisplayName: row.authorDisplayName || undefined,
+        authorAvatar: row.authorAvatar || undefined,
+        body: row.body,
+        sportCategory: row.sportCategory || undefined,
+        images: row.images || [],
+        gifs: row.gifs || [],
+        poll: (row.poll as SoftSportsbite['poll']) || undefined,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        likeCount: row.likeCount || 0,
+        commentCount: row.commentCount || 0,
+        isDeleted: false,
+      })
+    );
 
     const nextCursor = hasMore ? pageRows[pageRows.length - 1]?.id : undefined;
 

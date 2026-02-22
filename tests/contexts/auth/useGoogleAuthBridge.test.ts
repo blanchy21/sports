@@ -65,7 +65,7 @@ describe('useGoogleAuthBridge', () => {
     expect(authType).toBe('soft');
     expect(user).toMatchObject({
       id: 'u1',
-      username: 'test@example.com',
+      username: 'sb-test',
       displayName: 'Test User',
       avatar: 'https://img.com/a.jpg',
       isHiveAuth: false,
@@ -85,8 +85,8 @@ describe('useGoogleAuthBridge', () => {
     });
 
     const [user] = props.login.mock.calls[0];
-    // username falls back to email
-    expect(user.username).toBe('test@example.com');
+    // username prefers hiveUsername over email
+    expect(user.username).toBe('sb-test');
     // avatar maps from avatarUrl
     expect(user.avatar).toBe('https://img.com/a.jpg');
     expect(user.isHiveAuth).toBe(false);

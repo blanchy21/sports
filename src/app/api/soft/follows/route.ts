@@ -114,12 +114,21 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Collect related user IDs and batch-check follow status
-    const relatedUsers = rows.map((row) => ({
-      docId: row.id,
-      userId: type === 'followers' ? row.followerId : row.followedId,
-      username: type === 'followers' ? row.followerUsername : row.followedUsername,
-      createdAt: row.createdAt.toISOString(),
-    }));
+    const relatedUsers = rows.map(
+      (row: {
+        id: string;
+        followerId: string;
+        followerUsername: string;
+        followedId: string;
+        followedUsername: string;
+        createdAt: Date;
+      }) => ({
+        docId: row.id,
+        userId: type === 'followers' ? row.followerId : row.followedId,
+        username: type === 'followers' ? row.followerUsername : row.followedUsername,
+        createdAt: row.createdAt.toISOString(),
+      })
+    );
 
     // Batch follow-check
     const followStatusMap = new Map<string, boolean>();
@@ -133,7 +142,9 @@ export async function GET(request: NextRequest) {
           where: { followerId: currentUser.userId, followedId: { in: userIdsToCheck } },
           select: { followedId: true },
         });
-        const followedSet = new Set(existingFollows.map((f) => f.followedId));
+        const followedSet = new Set(
+          existingFollows.map((f: { followedId: string }) => f.followedId)
+        );
         userIdsToCheck.forEach((uid) => {
           followStatusMap.set(uid, followedSet.has(uid));
         });

@@ -105,18 +105,31 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    const notifications: SoftNotification[] = rows.map((row) => ({
-      id: row.id,
-      recipientId: row.recipientId,
-      type: row.type as SoftNotification['type'],
-      title: row.title,
-      message: row.message,
-      sourceUserId: row.sourceUserId || undefined,
-      sourceUsername: row.sourceUsername || undefined,
-      data: row.data as SoftNotification['data'],
-      read: row.read,
-      createdAt: row.createdAt.toISOString(),
-    }));
+    const notifications: SoftNotification[] = rows.map(
+      (row: {
+        id: string;
+        recipientId: string;
+        type: string;
+        title: string;
+        message: string;
+        sourceUserId: string | null;
+        sourceUsername: string | null;
+        data: unknown;
+        read: boolean;
+        createdAt: Date;
+      }) => ({
+        id: row.id,
+        recipientId: row.recipientId,
+        type: row.type as SoftNotification['type'],
+        title: row.title,
+        message: row.message,
+        sourceUserId: row.sourceUserId || undefined,
+        sourceUsername: row.sourceUsername || undefined,
+        data: row.data as SoftNotification['data'],
+        read: row.read,
+        createdAt: row.createdAt.toISOString(),
+      })
+    );
 
     return NextResponse.json({
       success: true,
