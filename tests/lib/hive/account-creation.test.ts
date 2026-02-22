@@ -64,7 +64,7 @@ describe('account-creation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    process.env.ACCOUNT_CREATOR_ACTIVE_KEY = 'fake-active-key';
+    process.env.OPERATIONS_ACTIVE_KEY = 'fake-active-key';
     process.env.OPERATIONS_POSTING_KEY = 'fake-ops-key';
 
     // Default happy-path mocks
@@ -81,7 +81,7 @@ describe('account-creation', () => {
   });
 
   afterEach(() => {
-    delete process.env.ACCOUNT_CREATOR_ACTIVE_KEY;
+    delete process.env.OPERATIONS_ACTIVE_KEY;
     delete process.env.OPERATIONS_POSTING_KEY;
   });
 
@@ -115,11 +115,11 @@ describe('account-creation', () => {
       );
     });
 
-    it('throws when ACCOUNT_CREATOR_ACTIVE_KEY is not configured', async () => {
-      delete process.env.ACCOUNT_CREATOR_ACTIVE_KEY;
+    it('throws when OPERATIONS_ACTIVE_KEY is not configured', async () => {
+      delete process.env.OPERATIONS_ACTIVE_KEY;
 
       await expect(createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID)).rejects.toThrow(
-        'ACCOUNT_CREATOR_ACTIVE_KEY is not configured'
+        'OPERATIONS_ACTIVE_KEY is not configured'
       );
     });
   });
