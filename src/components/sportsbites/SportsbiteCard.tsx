@@ -498,13 +498,34 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                   className={cn(
                     'relative overflow-hidden bg-muted',
                     allImages.length === 1
-                      ? 'aspect-video'
+                      ? ''
                       : allImages.length === 3 && index === 0
                         ? 'row-span-2 aspect-square'
                         : 'aspect-square'
                   )}
                 >
-                  {canUseNextImage ? (
+                  {allImages.length === 1 ? (
+                    canUseNextImage ? (
+                      <Image
+                        src={finalUrl}
+                        alt={`Image ${index + 1}`}
+                        width={600}
+                        height={600}
+                        sizes="(max-width: 768px) 100vw, 400px"
+                        className="h-auto max-h-[600px] w-full rounded-xl object-contain"
+                        unoptimized={shouldProxyImage(img)}
+                        onError={() => handleImageError(img)}
+                      />
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={finalUrl}
+                        alt={`Image ${index + 1}`}
+                        className="h-auto max-h-[600px] w-full rounded-xl object-contain"
+                        onError={() => handleImageError(img)}
+                      />
+                    )
+                  ) : canUseNextImage ? (
                     <Image
                       src={finalUrl}
                       alt={`Image ${index + 1}`}
