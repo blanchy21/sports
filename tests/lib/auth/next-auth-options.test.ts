@@ -136,6 +136,7 @@ describe('next-auth-options', () => {
       mockFindUnique.mockResolvedValue({
         hiveUsername: 'sb-fresh',
         keysDownloaded: true,
+        onboardingCompleted: true,
       });
 
       const result = await jwtCallback({
@@ -146,7 +147,7 @@ describe('next-auth-options', () => {
 
       expect(mockFindUnique).toHaveBeenCalledWith({
         where: { id: 'cust-123' },
-        select: { hiveUsername: true, keysDownloaded: true },
+        select: { hiveUsername: true, keysDownloaded: true, onboardingCompleted: true },
       });
 
       expect(result.hiveUsername).toBe('sb-fresh');
@@ -157,6 +158,7 @@ describe('next-auth-options', () => {
       expect(cached).toEqual({
         hiveUsername: 'sb-fresh',
         keysDownloaded: true,
+        onboardingCompleted: true,
       });
     });
 
@@ -177,6 +179,7 @@ describe('next-auth-options', () => {
       mockFindUnique.mockResolvedValue({
         hiveUsername: null,
         keysDownloaded: false,
+        onboardingCompleted: false,
       });
 
       const result = await jwtCallback({
@@ -197,7 +200,7 @@ describe('next-auth-options', () => {
     it('reads from cache without DB call', async () => {
       jwtFieldsCache.set(
         'jwt-fields:cust-123',
-        { hiveUsername: 'sb-cached', keysDownloaded: true },
+        { hiveUsername: 'sb-cached', keysDownloaded: true, onboardingCompleted: true },
         { tags: ['custodial-user:cust-123'] }
       );
 
@@ -263,12 +266,12 @@ describe('next-auth-options', () => {
     it('invalidateByTag clears tagged entries', () => {
       jwtFieldsCache.set(
         'jwt-fields:cust-123',
-        { hiveUsername: 'sb-user', keysDownloaded: false },
+        { hiveUsername: 'sb-user', keysDownloaded: false, onboardingCompleted: true },
         { tags: ['custodial-user:cust-123'] }
       );
       jwtFieldsCache.set(
         'jwt-fields:cust-456',
-        { hiveUsername: 'sb-other', keysDownloaded: true },
+        { hiveUsername: 'sb-other', keysDownloaded: true, onboardingCompleted: true },
         { tags: ['custodial-user:cust-456'] }
       );
 
