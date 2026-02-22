@@ -113,15 +113,17 @@
           document.getElementById('status').textContent = 'Login information saved. Redirecting\u2026';
 
           // In popup mode the opener handles login via the postMessage above.
-          // Just close the popup so Aioha can detect completion.
+          // Close the popup so Aioha can detect completion via its polling interval.
+          // Aioha polls every 1000ms checking hsWindow.closed, then reads localStorage.
+          // We use 1500ms to guarantee at least one poll fires after localStorage is written.
           if (window.opener) {
             document.getElementById('status').textContent = 'Login successful! This window will close\u2026';
-            // Brief delay so the postMessage is delivered before the window closes.
-            setTimeout(function () { window.close(); }, 300);
+            setTimeout(function () { window.close(); }, 1500);
             return;
           }
 
           // Mobile / redirect mode (no opener) — create session cookie and redirect.
+          // Include the OAuth access token so the server can verify identity.
           fetch('/api/auth/sb-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -132,6 +134,7 @@
               authType: 'hive',
               hiveUsername: username,
               loginAt: Date.now(),
+              hivesignerToken: accessToken,
             }),
           })
             .catch(function (err) {

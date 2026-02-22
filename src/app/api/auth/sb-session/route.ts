@@ -39,6 +39,8 @@ const sessionSchema = z.object({
   challenge: z.string().optional(),
   challengeMac: z.string().optional(),
   signature: z.string().optional(),
+  // HiveSigner OAuth token for server-side verification (alternative to challenge-response)
+  hivesignerToken: z.string().optional(),
 });
 
 // Session data stored in cookie (without challenge artifacts)
@@ -70,6 +72,42 @@ function encryptSession(data: SessionData): string {
 }
 
 /**
+ * Verify a HiveSigner OAuth access token by calling the HiveSigner API.
+ * Returns the username if valid, or an error reason.
+ */
+async function verifyHivesignerToken(
+  token: string,
+  expectedUsername: string
+): Promise<{ valid: boolean; reason?: string }> {
+  try {
+    const res = await fetch('https://hivesigner.com/api/me', {
+      headers: { Authorization: token },
+    });
+
+    if (!res.ok) {
+      return { valid: false, reason: `HiveSigner API returned ${res.status}` };
+    }
+
+    const data = await res.json();
+    const tokenUsername = (data.user ?? data.name ?? data.account ?? '').toLowerCase();
+    const expected = expectedUsername.toLowerCase();
+
+    if (!tokenUsername) {
+      return { valid: false, reason: 'HiveSigner token did not return a username' };
+    }
+
+    if (tokenUsername !== expected) {
+      return { valid: false, reason: 'HiveSigner token username mismatch' };
+    }
+
+    return { valid: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { valid: false, reason: `HiveSigner verification failed: ${message}` };
+  }
+}
+
+/**
  * POST /api/auth/sb-session - Create/update session
  */
 export async function POST(request: NextRequest) {
@@ -86,7 +124,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid session data' }, { status: 400 });
     }
 
-    const { challenge, challengeMac, signature, ...sessionFields } = parseResult.data;
+    const { challenge, challengeMac, signature, hivesignerToken, ...sessionFields } =
+      parseResult.data;
     const sessionData: SessionData = sessionFields;
 
     // For Hive auth: verify wallet ownership via challenge-response
@@ -114,14 +153,18 @@ export async function POST(request: NextRequest) {
         if (existingSession?.loginAt) {
           sessionData.loginAt = existingSession.loginAt;
         }
-      } else {
-        // Fresh login: require challenge + signature
-        if (!challenge || !challengeMac || !signature) {
+      } else if (hivesignerToken) {
+        // HiveSigner OAuth: verify access token server-side
+        // HiveSigner doesn't support message signing, so we verify the OAuth token instead.
+        const tokenResult = await verifyHivesignerToken(hivesignerToken, sessionData.username);
+        if (!tokenResult.valid) {
           return NextResponse.json(
-            { success: false, error: 'Hive auth requires challenge-response verification' },
+            { success: false, error: `HiveSigner verification failed: ${tokenResult.reason}` },
             { status: 401 }
           );
         }
+      } else if (challenge && challengeMac && signature) {
+        // Wallet auth (Keychain, HiveAuth, etc.): verify challenge-response
 
         // Verify challenge integrity and expiry
         const challengeResult = verifyChallenge(challenge, challengeMac, sessionData.username);
@@ -144,6 +187,15 @@ export async function POST(request: NextRequest) {
             { status: 401 }
           );
         }
+      } else {
+        // No verification data provided
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Hive auth requires verification (challenge-response or HiveSigner token)',
+          },
+          { status: 401 }
+        );
       }
     }
 

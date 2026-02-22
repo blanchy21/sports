@@ -106,10 +106,15 @@ export const syncSessionCookie = async (sessionData: {
   hiveUsername?: string;
   loginAt?: number;
   challengeData?: ChallengeData;
+  hivesignerToken?: string;
 }): Promise<boolean> => {
   try {
-    const { challengeData, ...coreData } = sessionData;
-    const body = challengeData ? { ...coreData, ...challengeData } : coreData;
+    const { challengeData, hivesignerToken, ...coreData } = sessionData;
+    const body = challengeData
+      ? { ...coreData, ...challengeData }
+      : hivesignerToken
+        ? { ...coreData, hivesignerToken }
+        : coreData;
 
     const response = await fetch('/api/auth/sb-session', {
       method: 'POST',
@@ -215,6 +220,7 @@ let pendingPersistState: {
   hiveUser: HiveAuthUser | null;
   loginAt?: number;
   challengeData?: ChallengeData;
+  hivesignerToken?: string;
 } | null = null;
 
 let persistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -233,6 +239,7 @@ const executePersist = async (): Promise<void> => {
     hiveUser: hiveUserToPersist,
     loginAt: loginAtToPersist,
     challengeData: challengeDataToPersist,
+    hivesignerToken: hivesignerTokenToPersist,
   } = pendingPersistState;
   pendingPersistState = null;
 
@@ -251,6 +258,7 @@ const executePersist = async (): Promise<void> => {
       hiveUsername: hiveUserToPersist?.username,
       loginAt: loginAtToPersist ?? Date.now(),
       challengeData: challengeDataToPersist,
+      hivesignerToken: hivesignerTokenToPersist,
     });
 
     // SECONDARY: Save non-sensitive UI hint for hydration
@@ -280,12 +288,14 @@ export const persistAuthState = ({
   hiveUser: hiveUserToPersist,
   loginAt: loginAtToPersist,
   challengeData: challengeDataToPersist,
+  hivesignerToken: hivesignerTokenToPersist,
 }: {
   user: User | null;
   authType: AuthType;
   hiveUser: HiveAuthUser | null;
   loginAt?: number;
   challengeData?: ChallengeData;
+  hivesignerToken?: string;
 }): void => {
   // Only persist on client-side
   if (typeof window === 'undefined') {
@@ -302,6 +312,7 @@ export const persistAuthState = ({
     hiveUser: hiveUserToPersist,
     loginAt: loginAtToPersist,
     challengeData: challengeDataToPersist ?? pendingPersistState?.challengeData,
+    hivesignerToken: hivesignerTokenToPersist ?? pendingPersistState?.hivesignerToken,
   };
 
   // Clear any existing timer

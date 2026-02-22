@@ -246,13 +246,28 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         const { username, sessionId } = extracted;
         const now = Date.now();
 
-        // Sign challenge to prove wallet ownership.
+        // Prove wallet/account ownership for session creation.
         // Skip for auto-reconnect (no loginResult) — the server allows session refresh
         // via existing cookie without re-signing.
         let challengeData: ChallengeData | undefined;
+        let hivesignerToken: string | undefined;
+
         if (loginResult) {
-          const aiohaInstance = aioha as AiohaInstance;
-          challengeData = await signHiveChallenge(aiohaInstance, username);
+          const providerName =
+            (loginResult as { provider?: string }).provider ?? extracted.provider;
+
+          if (providerName === 'hivesigner' || providerName === 'HiveSigner') {
+            // HiveSigner uses OAuth — doesn't support signMessage().
+            // Pass the access token for server-side verification instead.
+            hivesignerToken =
+              typeof window !== 'undefined'
+                ? (localStorage.getItem('hivesignerToken') ?? undefined)
+                : undefined;
+          } else {
+            // Other wallets (Keychain, HiveAuth, Ledger, PeakVault) sign a challenge
+            const aiohaInstance = aioha as AiohaInstance;
+            challengeData = await signHiveChallenge(aiohaInstance, username);
+          }
         }
 
         // Use Hive's avatar service as immediate fallback until profile loads
@@ -286,6 +301,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           hiveUser: newHiveUser,
           loginAt: now,
           challengeData,
+          hivesignerToken,
         });
 
         // Fetch profile in background
