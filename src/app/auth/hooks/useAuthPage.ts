@@ -454,7 +454,7 @@ export const useAuthPage = (): UseAuthPageResult => {
         setIsConnecting(false);
       }
     },
-    [aioha, hiveUsername, isAddAccountFlow, isInitialized, loginWithAioha, resetHivePrompt, router]
+    [aioha, hiveUsername, isInitialized, loginWithAioha, resetHivePrompt, router]
   );
 
   const onProviderSelect = useCallback(
