@@ -20,6 +20,7 @@ jest.mock('@/contexts/WalletProvider', () => ({
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import type { UserAccountData } from '@/lib/hive-workerbee/account';
 import { useWallet } from '@/contexts/WalletProvider';
+import type { WalletProvider } from '@/lib/wallet/types';
 
 type AuthApi = ReturnType<typeof useAuth>;
 
@@ -64,7 +65,7 @@ const walletStub = {
   isReady: true,
   currentUser: DEFAULT_USERNAME,
   currentProvider: 'keychain' as const,
-  availableProviders: ['keychain', 'hivesigner'] as const,
+  availableProviders: ['keychain', 'hivesigner'] as WalletProvider[],
   error: null as string | null,
   login: jest.fn(),
   logout: jest.fn(),
