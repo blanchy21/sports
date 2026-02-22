@@ -3,12 +3,9 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Avatar } from '@/components/core/Avatar';
-import { LogOut, UserPlus, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { LogOut, UserPlus, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAioha } from '@/contexts/AiohaProvider';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
-import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
-import type { AiohaInstance } from '@/lib/aioha/types';
 
 interface UserProfilePopupProps {
   isOpen: boolean;
@@ -22,14 +19,10 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
   triggerRef,
 }) => {
   const router = useRouter();
-  const { user, logout, updateUser, loginWithHiveUser } = useAuth();
-  const { aioha } = useAioha();
+  const { user, logout, updateUser } = useAuth();
   const popupRef = useRef<HTMLDivElement>(null);
   const [isRefreshingRC, setIsRefreshingRC] = useState(false);
   const hasRefreshedRef = useRef(false);
-  const [otherAccounts, setOtherAccounts] = useState<{ [username: string]: string }>({});
-  const [showAccountsList, setShowAccountsList] = useState(false);
-  const [isSwitching, setIsSwitching] = useState(false);
 
   // Close popup when clicking outside
   useEffect(() => {
@@ -103,37 +96,8 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
     if (!isOpen) {
       setIsRefreshingRC(false);
       hasRefreshedRef.current = false;
-      setShowAccountsList(false);
     }
   }, [isOpen]);
-
-  // Load other accounts when popup opens
-  useEffect(() => {
-    if (isOpen && aioha) {
-      try {
-        const others = (aioha as AiohaInstance).getOtherLogins?.();
-        setOtherAccounts(others || {});
-      } catch {
-        setOtherAccounts({});
-      }
-    }
-  }, [isOpen, aioha]);
-
-  const handleSwitchAccount = async (username: string) => {
-    if (!aioha || isSwitching) return;
-    setIsSwitching(true);
-    try {
-      const success = (aioha as AiohaInstance).switchUser?.(username);
-      if (success) {
-        await loginWithHiveUser(username);
-        onClose();
-      }
-    } catch {
-      // Switch failed silently
-    } finally {
-      setIsSwitching(false);
-    }
-  };
 
   const handleAddAccount = () => {
     onClose();
@@ -224,60 +188,6 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
 
           {/* Menu Items */}
           <div className="space-y-1">
-            {/* Switch Accounts */}
-            {Object.keys(otherAccounts).length > 0 && (
-              <>
-                <button
-                  onClick={() => setShowAccountsList(!showAccountsList)}
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/10"
-                >
-                  <div className="flex items-center space-x-3">
-                    <Avatar
-                      src={getHiveAvatarUrl(Object.keys(otherAccounts)[0])}
-                      alt={Object.keys(otherAccounts)[0]}
-                      fallback={Object.keys(otherAccounts)[0]}
-                      size="sm"
-                    />
-                    <span className="text-sm font-medium text-foreground">
-                      Switch accounts ({Object.keys(otherAccounts).length})
-                    </span>
-                  </div>
-                  {showAccountsList ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </button>
-
-                {/* Account List */}
-                {showAccountsList && (
-                  <div className="ml-4 space-y-1">
-                    {Object.entries(otherAccounts).map(([username, provider]) => (
-                      <button
-                        key={username}
-                        onClick={() => handleSwitchAccount(username)}
-                        disabled={isSwitching}
-                        className="flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-accent/10 disabled:opacity-50"
-                      >
-                        <Avatar
-                          src={getHiveAvatarUrl(username)}
-                          alt={username}
-                          fallback={username}
-                          size="sm"
-                        />
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-foreground">@{username}</span>
-                          <span className="text-xs capitalize text-muted-foreground">
-                            {provider}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
             {/* Add Account */}
             <button
               onClick={handleAddAccount}

@@ -4,15 +4,15 @@
 
 ### 1. **Real Hive API Integration** (`src/lib/hive-workerbee/social.ts`)
 - ✅ `isFollowingUser()` - Uses Hive's `get_relationships` API
-- ✅ `followUser()` - Creates and broadcasts follow transactions via Aioha
-- ✅ `unfollowUser()` - Creates and broadcasts unfollow transactions via Aioha
+- ✅ `followUser()` - Creates and broadcasts follow transactions via wallet
+- ✅ `unfollowUser()` - Creates and broadcasts unfollow transactions via wallet
 - ✅ `fetchFollowers()` - Uses `get_followers` API
 - ✅ `fetchFollowing()` - Uses `get_following` API
 - ✅ `getFollowerCount()` - Uses `get_follow_count` API
 - ✅ `getFollowingCount()` - Uses `get_follow_count` API
 
 ### 2. **Blockchain Transaction Integration**
-- ✅ Uses Aioha for wallet integration (supports Hive Keychain, Hivesigner, HiveAuth, Ledger, Peak Vault)
+- ✅ Uses wallet integration (supports Hive Keychain and HiveSigner)
 - ✅ Creates proper `custom_json` operations with `follow` operation ID
 - ✅ Signs transactions with posting key
 - ✅ Broadcasts to Hive blockchain

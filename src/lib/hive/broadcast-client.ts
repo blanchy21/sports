@@ -2,8 +2,8 @@
 
 import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAioha } from '@/contexts/AiohaProvider';
-import type { AiohaInstance } from '@/lib/aioha/types';
+import { useWallet } from '@/contexts/WalletProvider';
+import type { WalletContextValue } from '@/lib/wallet/types';
 import type { AuthType } from '@/types/ui';
 
 // ---------------------------------------------------------------------------
@@ -68,11 +68,11 @@ export async function broadcastOperations(
   operations: HiveOperation[],
   options: {
     authType: AuthType;
-    aioha?: unknown;
+    wallet?: WalletContextValue;
     keyType?: KeyType;
   }
 ): Promise<BroadcastResult> {
-  const { authType, aioha, keyType = 'posting' } = options;
+  const { authType, wallet, keyType = 'posting' } = options;
 
   // Custodial path → server-side signing relay (posting key only)
   if (authType === 'soft') {
@@ -85,26 +85,16 @@ export async function broadcastOperations(
     return relayBroadcast(operations);
   }
 
-  // Wallet path → Aioha client-side signing
+  // Wallet path → client-side signing
   if (authType === 'hive') {
-    const instance = aioha as AiohaInstance | undefined;
-    if (!instance?.signAndBroadcastTx) {
+    if (!wallet || !wallet.currentUser) {
       return {
         success: false,
-        error: 'Aioha wallet is not available. Please refresh and try again.',
+        error: 'Wallet is not connected. Please refresh and try again.',
       };
     }
 
-    try {
-      const result = await instance.signAndBroadcastTx(operations, keyType);
-      const transactionId = (result as { id?: string })?.id || 'unknown';
-      return { success: true, transactionId };
-    } catch (err) {
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : String(err),
-      };
-    }
+    return wallet.signAndBroadcast(operations, keyType);
   }
 
   // Guest or unknown auth type
@@ -117,13 +107,13 @@ export async function broadcastOperations(
 
 export function useBroadcast() {
   const { authType } = useAuth();
-  const { aioha } = useAioha();
+  const wallet = useWallet();
 
   const broadcast = useCallback(
     (operations: HiveOperation[], keyType?: KeyType): Promise<BroadcastResult> => {
-      return broadcastOperations(operations, { authType, aioha, keyType });
+      return broadcastOperations(operations, { authType, wallet, keyType });
     },
-    [authType, aioha]
+    [authType, wallet]
   );
 
   const isCustodial = authType === 'soft';

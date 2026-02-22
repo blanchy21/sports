@@ -154,7 +154,7 @@ export async function publishPost(
 /**
  * Publish a comment/reply to an existing post using Wax
  * @param commentData - Comment data
- * @param aiohaInstance - Aioha instance (optional, will use default if not provided)
+ * @param broadcastFn - Broadcast function (optional, will use default if not provided)
  * @returns Publish result
  */
 export async function publishComment(

@@ -1,17 +1,7 @@
 import '@testing-library/jest-dom';
-import React from 'react';
 
 // Note: TextEncoder, TextDecoder, Request, Response, Headers polyfills
 // are now in jest.polyfills.ts which runs before module loading
-
-// Mock @aioha/react-ui to avoid TypeScript resolution issues
-jest.mock('@aioha/react-ui', () => ({
-  AiohaProvider: ({ children }: { children: React.ReactNode }) => children,
-  useAiohaModal: () => ({
-    show: jest.fn(),
-    hide: jest.fn(),
-  }),
-}));
 
 class ResizeObserver {
   callback: ResizeObserverCallback;

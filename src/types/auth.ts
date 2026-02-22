@@ -6,7 +6,7 @@
  *   AuthType    -> @/types/ui
  *   AuthState   -> @/types/ui
  *   HivePost    -> @/lib/shared/types
- *   AiohaInstance -> @/lib/aioha/types
+ *   WalletContextValue -> @/lib/wallet/types
  */
 
 // Post types for soft (custodial) system

@@ -100,7 +100,7 @@ describe('Auth Persistence', () => {
       const hiveUser: HiveAuthUser = {
         username: 'testuser',
         isAuthenticated: true,
-        provider: 'aioha',
+        provider: 'keychain',
         sessionId: 'secret-session-id',
       };
 
@@ -110,27 +110,12 @@ describe('Auth Persistence', () => {
       expect(sanitized?.username).toBe('testuser');
     });
 
-    it('removes aiohaUserId from HiveUser', () => {
-      const hiveUser: HiveAuthUser = {
-        username: 'testuser',
-        isAuthenticated: true,
-        provider: 'aioha',
-        aiohaUserId: 'internal-aioha-id',
-      };
-
-      const sanitized = sanitizeHiveUserForStorage(hiveUser);
-
-      expect(sanitized).not.toHaveProperty('aiohaUserId');
-      expect(sanitized?.username).toBe('testuser');
-    });
-
-    it('removes both sessionId and aiohaUserId', () => {
+    it('removes all sensitive fields', () => {
       const hiveUser: HiveAuthUser = {
         username: 'testuser',
         isAuthenticated: true,
         provider: 'keychain',
         sessionId: 'secret-session',
-        aiohaUserId: 'internal-id',
       };
 
       const sanitized = sanitizeHiveUserForStorage(hiveUser);

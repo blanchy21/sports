@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAioha } from '@/contexts/AiohaProvider';
+import { useWallet } from '@/contexts/WalletProvider';
 import { HiveAuthState, DiscoveredAccount } from '../types';
 import { logger } from '@/lib/logger';
 
 export const useHiveAuth = () => {
-  const { loginWithHiveUser, loginWithAioha } = useAuth();
-  const { aioha, isInitialized } = useAioha();
+  const { loginWithHiveUser, loginWithWallet } = useAuth();
+  const wallet = useWallet();
 
   const [hiveState, setHiveState] = useState<HiveAuthState>({
     hiveUsername: '',
@@ -35,41 +35,38 @@ export const useHiveAuth = () => {
     }
   }, [hiveState.hiveUsername, loginWithHiveUser]);
 
-  const handleAiohaLogin = useCallback(
+  const handleWalletLogin = useCallback(
     async (provider: string) => {
-      if (!isInitialized || !aioha) {
-        throw new Error('Aioha not initialized');
+      if (!wallet.isReady) {
+        throw new Error('Wallet not ready');
       }
 
       try {
-        if (provider === 'keychain' || provider === 'hiveauth') {
-          if (!hiveState.hiveUsername.trim()) {
-            throw new Error('Username is required for this provider');
-          }
-          // Handle provider-specific login logic
-          await loginWithAioha({ username: hiveState.hiveUsername, provider });
+        const usernameToUse = provider === 'keychain' ? hiveState.hiveUsername.trim() : '';
+        const result = await wallet.login(provider as 'keychain' | 'hivesigner', usernameToUse);
+
+        if (result.success) {
+          await loginWithWallet(result);
         } else {
-          // Handle other providers
-          await loginWithAioha({ provider });
+          throw new Error(result.error || 'Login failed');
         }
       } catch (error) {
-        logger.error('Aioha login failed', 'useHiveAuth', error);
+        logger.error('Wallet login failed', 'useHiveAuth', error);
         throw error;
       }
     },
-    [hiveState.hiveUsername, isInitialized, aioha, loginWithAioha]
+    [hiveState.hiveUsername, wallet, loginWithWallet]
   );
 
   const handleAccountDiscovery = useCallback(async () => {
-    if (!isInitialized || !aioha) {
-      throw new Error('Aioha not initialized');
+    if (!wallet.isReady) {
+      throw new Error('Wallet not ready');
     }
 
     try {
-      // Simulate account discovery
       const mockAccounts: DiscoveredAccount[] = [
         { username: 'user1', provider: 'keychain', balance: '100.5' },
-        { username: 'user2', provider: 'hiveauth', balance: '50.2' },
+        { username: 'user2', provider: 'hivesigner', balance: '50.2' },
       ];
 
       updateHiveField('discoveredAccounts', mockAccounts);
@@ -78,25 +75,34 @@ export const useHiveAuth = () => {
       logger.error('Account discovery failed', 'useHiveAuth', error);
       throw error;
     }
-  }, [isInitialized, aioha, updateHiveField]);
+  }, [wallet, updateHiveField]);
 
   const handleAccountSelect = useCallback(
     async (account: DiscoveredAccount) => {
       try {
-        await loginWithAioha({ username: account.username, provider: account.provider });
+        const result = await wallet.login(
+          account.provider as 'keychain' | 'hivesigner',
+          account.username
+        );
+
+        if (result.success) {
+          await loginWithWallet(result);
+        } else {
+          throw new Error(result.error || 'Login failed');
+        }
       } catch (error) {
         logger.error('Account selection failed', 'useHiveAuth', error);
         throw error;
       }
     },
-    [loginWithAioha]
+    [wallet, loginWithWallet]
   );
 
   return {
     hiveState,
     updateHiveField,
     handleHiveKeychainLogin,
-    handleAiohaLogin,
+    handleWalletLogin,
     handleAccountDiscovery,
     handleAccountSelect,
   };

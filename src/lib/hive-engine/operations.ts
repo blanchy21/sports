@@ -2,7 +2,7 @@
  * Hive Engine Operations Builder
  *
  * Functions for building custom_json operations for Hive Engine transactions.
- * These operations are signed and broadcast via Aioha wallet integration.
+ * These operations are signed and broadcast via the wallet integration (Keychain / HiveSigner).
  */
 
 import { MEDALS_CONFIG, CONTRACTS, CONTRACT_ACTIONS } from './constants';
@@ -437,9 +437,7 @@ export function buildContentRewardOp(
 ): CustomJsonOp {
   const amount = CONTENT_REWARD_AMOUNTS[category];
   const weekId = getWeekId();
-  const memo = postId
-    ? `${category} reward ${weekId}: ${postId}`
-    : `${category} reward ${weekId}`;
+  const memo = postId ? `${category} reward ${weekId}: ${postId}` : `${category} reward ${weekId}`;
 
   return buildTransferOpFromAmount(
     MEDALS_CONFIG.ACCOUNTS.REWARDS,

@@ -1,6 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { broadcastOperations, useBroadcast } from '@/lib/hive/broadcast-client';
 import type { HiveOperation } from '@/types/hive-operations';
+import type { WalletContextValue } from '@/lib/wallet/types';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -11,9 +12,9 @@ jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-const mockUseAioha = jest.fn();
-jest.mock('@/contexts/AiohaProvider', () => ({
-  useAioha: () => mockUseAioha(),
+const mockUseWallet = jest.fn();
+jest.mock('@/contexts/WalletProvider', () => ({
+  useWallet: () => mockUseWallet(),
 }));
 
 const mockFetch = jest.fn();
@@ -26,6 +27,20 @@ global.fetch = mockFetch;
 const sampleOps: HiveOperation[] = [
   ['vote', { voter: 'alice', author: 'bob', permlink: 'post-1', weight: 10000 }],
 ];
+
+function createMockWallet(overrides: Partial<WalletContextValue> = {}): WalletContextValue {
+  return {
+    isReady: true,
+    currentUser: 'testuser',
+    currentProvider: 'keychain',
+    availableProviders: ['keychain', 'hivesigner'],
+    login: jest.fn(),
+    logout: jest.fn(),
+    signMessage: jest.fn(),
+    signAndBroadcast: jest.fn().mockResolvedValue({ success: true, transactionId: 'tx-456' }),
+    ...overrides,
+  } as WalletContextValue;
+}
 
 // ---------------------------------------------------------------------------
 // broadcastOperations — soft (custodial relay)
@@ -107,95 +122,54 @@ describe('broadcastOperations — soft (custodial relay)', () => {
 // ---------------------------------------------------------------------------
 
 describe('broadcastOperations — hive (wallet)', () => {
-  it('returns success when aioha signs and broadcasts', async () => {
-    const mockAioha = {
-      signAndBroadcastTx: jest.fn().mockResolvedValue({ id: 'tx-456' }),
-    };
+  it('returns success when wallet signs and broadcasts', async () => {
+    const mockWallet = createMockWallet();
 
     const result = await broadcastOperations(sampleOps, {
       authType: 'hive',
-      aioha: mockAioha,
+      wallet: mockWallet,
     });
 
     expect(result).toEqual({ success: true, transactionId: 'tx-456' });
-    expect(mockAioha.signAndBroadcastTx).toHaveBeenCalledWith(sampleOps, 'posting');
+    expect(mockWallet.signAndBroadcast).toHaveBeenCalledWith(sampleOps, 'posting');
   });
 
-  it('passes keyType through to signAndBroadcastTx', async () => {
-    const mockAioha = {
-      signAndBroadcastTx: jest.fn().mockResolvedValue({ id: 'tx-789' }),
-    };
+  it('passes keyType through to signAndBroadcast', async () => {
+    const mockWallet = createMockWallet();
 
     await broadcastOperations(sampleOps, {
       authType: 'hive',
-      aioha: mockAioha,
+      wallet: mockWallet,
       keyType: 'active',
     });
 
-    expect(mockAioha.signAndBroadcastTx).toHaveBeenCalledWith(sampleOps, 'active');
+    expect(mockWallet.signAndBroadcast).toHaveBeenCalledWith(sampleOps, 'active');
   });
 
-  it('returns "unknown" transactionId when result has no id', async () => {
-    const mockAioha = {
-      signAndBroadcastTx: jest.fn().mockResolvedValue({}),
-    };
-
+  it('returns error when wallet is undefined', async () => {
     const result = await broadcastOperations(sampleOps, {
       authType: 'hive',
-      aioha: mockAioha,
-    });
-
-    expect(result).toEqual({ success: true, transactionId: 'unknown' });
-  });
-
-  it('returns error when aioha is undefined', async () => {
-    const result = await broadcastOperations(sampleOps, {
-      authType: 'hive',
-      aioha: undefined,
+      wallet: undefined,
     });
 
     expect(result).toEqual({
       success: false,
-      error: 'Aioha wallet is not available. Please refresh and try again.',
+      error: 'Wallet is not connected. Please refresh and try again.',
     });
   });
 
-  it('returns error when aioha lacks signAndBroadcastTx', async () => {
+  it('returns error when wallet has no currentUser', async () => {
+    const mockWallet = createMockWallet({ currentUser: null });
+
     const result = await broadcastOperations(sampleOps, {
       authType: 'hive',
-      aioha: { someOtherMethod: jest.fn() },
+      wallet: mockWallet,
     });
 
     expect(result).toEqual({
       success: false,
-      error: 'Aioha wallet is not available. Please refresh and try again.',
+      error: 'Wallet is not connected. Please refresh and try again.',
     });
-  });
-
-  it('catches Error thrown by aioha and returns error message', async () => {
-    const mockAioha = {
-      signAndBroadcastTx: jest.fn().mockRejectedValue(new Error('User rejected')),
-    };
-
-    const result = await broadcastOperations(sampleOps, {
-      authType: 'hive',
-      aioha: mockAioha,
-    });
-
-    expect(result).toEqual({ success: false, error: 'User rejected' });
-  });
-
-  it('catches non-Error thrown by aioha and stringifies it', async () => {
-    const mockAioha = {
-      signAndBroadcastTx: jest.fn().mockRejectedValue('string error'),
-    };
-
-    const result = await broadcastOperations(sampleOps, {
-      authType: 'hive',
-      aioha: mockAioha,
-    });
-
-    expect(result).toEqual({ success: false, error: 'string error' });
   });
 });
 
@@ -232,13 +206,13 @@ describe('broadcastOperations — guest / unknown authType', () => {
 describe('useBroadcast', () => {
   beforeEach(() => {
     mockUseAuth.mockReset();
-    mockUseAioha.mockReset();
+    mockUseWallet.mockReset();
     mockFetch.mockReset();
   });
 
   it('returns broadcast function and isCustodial flag', () => {
     mockUseAuth.mockReturnValue({ authType: 'soft' });
-    mockUseAioha.mockReturnValue({ aioha: null });
+    mockUseWallet.mockReturnValue(createMockWallet({ currentUser: null }));
 
     const { result } = renderHook(() => useBroadcast());
 
@@ -248,7 +222,7 @@ describe('useBroadcast', () => {
 
   it('sets isCustodial=true for soft auth', () => {
     mockUseAuth.mockReturnValue({ authType: 'soft' });
-    mockUseAioha.mockReturnValue({ aioha: null });
+    mockUseWallet.mockReturnValue(createMockWallet({ currentUser: null }));
 
     const { result } = renderHook(() => useBroadcast());
 
@@ -257,7 +231,7 @@ describe('useBroadcast', () => {
 
   it('sets isCustodial=false for hive auth', () => {
     mockUseAuth.mockReturnValue({ authType: 'hive' });
-    mockUseAioha.mockReturnValue({ aioha: {} });
+    mockUseWallet.mockReturnValue(createMockWallet());
 
     const { result } = renderHook(() => useBroadcast());
 
@@ -266,7 +240,7 @@ describe('useBroadcast', () => {
 
   it('sets isCustodial=false for guest auth', () => {
     mockUseAuth.mockReturnValue({ authType: 'guest' });
-    mockUseAioha.mockReturnValue({ aioha: null });
+    mockUseWallet.mockReturnValue(createMockWallet({ currentUser: null }));
 
     const { result } = renderHook(() => useBroadcast());
 
@@ -275,7 +249,7 @@ describe('useBroadcast', () => {
 
   it('broadcast delegates to relay for soft auth', async () => {
     mockUseAuth.mockReturnValue({ authType: 'soft' });
-    mockUseAioha.mockReturnValue({ aioha: null });
+    mockUseWallet.mockReturnValue(createMockWallet({ currentUser: null }));
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({ success: true, data: { transactionId: 'relay-tx' } }),
@@ -288,17 +262,15 @@ describe('useBroadcast', () => {
     expect(mockFetch).toHaveBeenCalled();
   });
 
-  it('broadcast delegates to aioha for hive auth', async () => {
-    const mockAioha = {
-      signAndBroadcastTx: jest.fn().mockResolvedValue({ id: 'wallet-tx' }),
-    };
+  it('broadcast delegates to wallet for hive auth', async () => {
+    const mockWallet = createMockWallet();
     mockUseAuth.mockReturnValue({ authType: 'hive' });
-    mockUseAioha.mockReturnValue({ aioha: mockAioha });
+    mockUseWallet.mockReturnValue(mockWallet);
 
     const { result } = renderHook(() => useBroadcast());
     const broadcastResult = await result.current.broadcast(sampleOps, 'active');
 
-    expect(broadcastResult).toEqual({ success: true, transactionId: 'wallet-tx' });
-    expect(mockAioha.signAndBroadcastTx).toHaveBeenCalledWith(sampleOps, 'active');
+    expect(broadcastResult).toEqual({ success: true, transactionId: 'tx-456' });
+    expect(mockWallet.signAndBroadcast).toHaveBeenCalledWith(sampleOps, 'active');
   });
 });

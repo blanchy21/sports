@@ -71,7 +71,7 @@ export function useHivePowerInfo(account: string | undefined) {
 
 /**
  * Hook for power up/down mutations
- * Signs and broadcasts operations using Aioha
+ * Signs and broadcasts operations using the wallet
  */
 export function useHivePowerMutation() {
   const queryClient = useQueryClient();

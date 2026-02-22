@@ -21,13 +21,18 @@ import { SESSION_DURATION_MS } from '@/contexts/auth/auth-types';
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
-// Aioha provider mock
-jest.mock('@/contexts/AiohaProvider', () => ({
-  useAioha: () => ({
-    aioha: null,
-    isInitialized: false,
+// Wallet provider mock
+jest.mock('@/contexts/WalletProvider', () => ({
+  useWallet: () => ({
+    isReady: false,
+    currentUser: null,
+    currentProvider: null,
+    availableProviders: [],
+    login: jest.fn(),
+    logout: jest.fn(),
+    signMessage: jest.fn(),
+    signAndBroadcast: jest.fn(),
   }),
-  AiohaProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 jest.mock('@/lib/logger', () => ({

@@ -2,7 +2,7 @@
  * @jest-environment node
  *
  * Tests the publish workflow for both auth types:
- * - Hive auth: publishPost() -> Wax operation -> Aioha broadcast
+ * - Hive auth: publishPost() -> Wax operation -> wallet broadcast
  * - Soft auth: fetch('/api/posts') -> Prisma/PostgreSQL
  *
  * The existing posting.test.ts covers publishPost internals.

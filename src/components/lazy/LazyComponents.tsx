@@ -142,7 +142,7 @@ export const LazySportsFilterPopup = withLazyErrorBoundary(
   'SportsFilterPopup'
 );
 
-// Lazy load UpgradeFlow (uses Aioha wallet library, only shown when upgrading)
+// Lazy load UpgradeFlow (uses wallet library, only shown when upgrading)
 const LazyUpgradeFlowBase = dynamic(
   () => import('@/components/upgrade/UpgradeFlow').then((mod) => ({ default: mod.UpgradeFlow })),
   { ssr: false }

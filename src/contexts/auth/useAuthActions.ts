@@ -1,12 +1,11 @@
 import { useCallback } from 'react';
 import { signOut as nextAuthSignOut } from 'next-auth/react';
-import { KeyTypes } from '@aioha/aioha';
 import { logger } from '@/lib/logger';
 import { AuthType, User } from '@/types';
 import { HiveAuthUser } from '@/lib/shared/types';
-import { useAioha } from '@/contexts/AiohaProvider';
-import type { AiohaInstance, AiohaRawLoginResult, ExtractedAiohaUser } from '@/lib/aioha/types';
-import { extractFromRawLoginResult, extractFromAiohaInstance } from '@/lib/aioha/types';
+import { useWallet } from '@/contexts/WalletProvider';
+import type { WalletLoginResult, WalletSignOutcome } from '@/lib/wallet/types';
+import { getHivesignerToken } from '@/lib/wallet/hivesigner';
 import {
   persistAuthState,
   clearPersistedAuthState,
@@ -29,7 +28,7 @@ export interface UseAuthActionsOptions {
 export interface UseAuthActionsReturn {
   login: (newUser: User, newAuthType: AuthType) => void;
   loginWithHiveUser: (hiveUsername: string) => Promise<void>;
-  loginWithAioha: (loginResult?: AiohaRawLoginResult) => Promise<void>;
+  loginWithWallet: (loginResult?: WalletLoginResult) => Promise<void>;
   logout: () => Promise<void>;
   upgradeToHive: (hiveUsername: string) => Promise<void>;
   updateUser: (userUpdate: Partial<User>) => void;
@@ -40,8 +39,10 @@ export interface UseAuthActionsReturn {
  * Fetch a challenge from the server and sign it with the user's Hive posting key.
  * Returns ChallengeData for inclusion in the session creation request.
  */
-async function signHiveChallenge(aioha: AiohaInstance, username: string): Promise<ChallengeData> {
-  // 1. Fetch challenge from server
+async function signHiveChallenge(
+  signFn: (username: string, message: string) => Promise<WalletSignOutcome>,
+  username: string
+): Promise<ChallengeData> {
   const challengeRes = await fetch(
     `/api/auth/hive-challenge?username=${encodeURIComponent(username)}`
   );
@@ -50,28 +51,19 @@ async function signHiveChallenge(aioha: AiohaInstance, username: string): Promis
   }
   const { challenge, mac } = await challengeRes.json();
 
-  // 2. Sign with Hive posting key via Aioha
-  const aiohaAny = aioha as Record<string, unknown>;
-  const signFn = aiohaAny.signMessage;
-  if (typeof signFn !== 'function') {
-    throw new Error('Wallet does not support message signing');
-  }
+  const signResult = await signFn(username, challenge);
 
-  const signResult = await (
-    signFn as (
-      msg: string,
-      keyType: KeyTypes
-    ) => Promise<{ success: boolean; result?: string; error?: string }>
-  ).call(aioha, challenge, KeyTypes.Posting);
-
-  if (!signResult.success || !signResult.result) {
-    throw new Error(signResult.error || 'Failed to sign authentication challenge');
+  if (!signResult.success) {
+    throw new Error(
+      ('error' in signResult ? signResult.error : undefined) ||
+        'Failed to sign authentication challenge'
+    );
   }
 
   return {
     challenge,
     challengeMac: mac,
-    signature: signResult.result,
+    signature: signResult.signature,
   };
 }
 
@@ -81,7 +73,7 @@ async function signHiveChallenge(aioha: AiohaInstance, username: string): Promis
  */
 export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsReturn {
   const { dispatch, getState } = options;
-  const { aioha, isInitialized } = useAioha();
+  const wallet = useWallet();
 
   // Profile fetching callbacks
   const onProfileLoaded = useCallback(
@@ -142,14 +134,12 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
       try {
         const now = Date.now();
 
-        // Sign challenge to prove wallet ownership (requires Aioha to be logged in)
+        // Sign challenge to prove wallet ownership
         let challengeData: ChallengeData | undefined;
-        if (aioha && isInitialized) {
-          const aiohaInstance = aioha as AiohaInstance;
-          challengeData = await signHiveChallenge(aiohaInstance, hiveUsername);
+        if (wallet.isReady) {
+          challengeData = await signHiveChallenge(wallet.signMessage, hiveUsername);
         }
 
-        // Use Hive's avatar service as immediate fallback until profile loads
         const hiveAvatarUrl = getHiveAvatarUrl(hiveUsername);
 
         const basicUser: User = {
@@ -177,73 +167,46 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           challengeData,
         });
 
-        // Fetch profile in background
         fetchProfileInBackground(hiveUsername, basicUser, newHiveUser);
       } catch (error) {
         logger.error('Error logging in with Hive user', 'useAuthActions', error);
         throw error;
       }
     },
-    [aioha, isInitialized, dispatch, fetchProfileInBackground]
+    [wallet, dispatch, fetchProfileInBackground]
   );
 
-  const loginWithAioha = useCallback(
-    async (loginResult?: AiohaRawLoginResult) => {
-      if (!isInitialized || !aioha) {
-        throw new Error(
-          'Aioha authentication is not available. Please refresh the page and try again.'
-        );
-      }
-
+  const loginWithWallet = useCallback(
+    async (loginResult?: WalletLoginResult) => {
       try {
-        const aiohaInstance = aioha as AiohaInstance;
-        let extracted: ExtractedAiohaUser | null = null;
+        let username: string | undefined;
+        let provider: string | undefined;
 
-        if (loginResult) extracted = extractFromRawLoginResult(loginResult);
-        if (!extracted) extracted = extractFromAiohaInstance(aiohaInstance);
-
-        if (!extracted && loginResult) {
-          for (let attempt = 1; attempt <= 3; attempt++) {
-            await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
-            extracted = extractFromAiohaInstance(aiohaInstance);
-            if (extracted) break;
-          }
-        }
-
-        if (!extracted && typeof aiohaInstance.getUser === 'function') {
-          try {
-            const getUserResult = await aiohaInstance.getUser();
-            if (getUserResult?.username)
-              extracted = { username: getUserResult.username, sessionId: getUserResult.sessionId };
-          } catch {
-            // getUser failed
-          }
-        }
-
-        // Fallback: try to get username from current session cookie
-        if (!extracted && typeof window !== 'undefined') {
-          try {
-            const sessionResponse = await fetchSessionFromCookie();
-            if (sessionResponse.authenticated && sessionResponse.session?.hiveUsername) {
-              extracted = { username: sessionResponse.session.hiveUsername };
+        if (loginResult) {
+          username = loginResult.username;
+          provider = loginResult.provider;
+        } else {
+          // Auto-reconnect: check wallet state
+          username = wallet.currentUser ?? undefined;
+          if (!username) {
+            try {
+              const sessionResponse = await fetchSessionFromCookie();
+              if (sessionResponse.authenticated && sessionResponse.session?.hiveUsername) {
+                username = sessionResponse.session.hiveUsername;
+              }
+            } catch {
+              // Session fetch failed
             }
-          } catch {
-            // Session fetch failed
           }
         }
 
-        if (!extracted) {
-          // If called without a loginResult (e.g., auto-reconnect attempt),
-          // silently return instead of throwing - the user simply isn't logged in
-          if (!loginResult) {
-            return;
-          }
+        if (!username) {
+          if (!loginResult) return; // Auto-reconnect, silently return
           throw new Error(
-            'Unable to determine username from Aioha authentication. Please try again.'
+            'Unable to determine username from wallet authentication. Please try again.'
           );
         }
 
-        const { username, sessionId } = extracted;
         const now = Date.now();
 
         // Prove wallet/account ownership for session creation.
@@ -253,24 +216,13 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         let hivesignerToken: string | undefined;
 
         if (loginResult) {
-          const providerName =
-            (loginResult as { provider?: string }).provider ?? extracted.provider;
-
-          if (providerName === 'hivesigner' || providerName === 'HiveSigner') {
-            // HiveSigner uses OAuth — doesn't support signMessage().
-            // Pass the access token for server-side verification instead.
-            hivesignerToken =
-              typeof window !== 'undefined'
-                ? (localStorage.getItem('hivesignerToken') ?? undefined)
-                : undefined;
+          if (provider === 'hivesigner') {
+            hivesignerToken = getHivesignerToken() ?? undefined;
           } else {
-            // Other wallets (Keychain, HiveAuth, Ledger, PeakVault) sign a challenge
-            const aiohaInstance = aioha as AiohaInstance;
-            challengeData = await signHiveChallenge(aiohaInstance, username);
+            challengeData = await signHiveChallenge(wallet.signMessage, username);
           }
         }
 
-        // Use Hive's avatar service as immediate fallback until profile loads
         const hiveAvatarUrl = getHiveAvatarUrl(username);
 
         const basicUser: User = {
@@ -287,8 +239,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         const newHiveUser: HiveAuthUser = {
           username: username,
           isAuthenticated: true,
-          provider: loginResult?.provider ?? 'aioha',
-          sessionId: sessionId,
+          provider: provider,
         };
 
         dispatch({
@@ -304,39 +255,13 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           hivesignerToken,
         });
 
-        // Fetch profile in background
         fetchProfileInBackground(username, basicUser, newHiveUser);
       } catch (error) {
-        // Skip logging for empty object errors - these occur during logout transitions
-        // when Aioha is in an inconsistent state
-        const isEmptyObjectError =
-          error !== null &&
-          typeof error === 'object' &&
-          !(error instanceof Error) &&
-          Object.keys(error as object).length === 0;
-
-        if (isEmptyObjectError) {
-          // Silently return - this is expected during logout
-          return;
-        }
-
-        // Improve error logging for debugging - handle various error types
-        const errorInfo = {
-          type: typeof error,
-          isError: error instanceof Error,
-          message: error instanceof Error ? error.message : String(error),
-          value: error,
-        };
-        logger.error(
-          'Error processing Aioha authentication',
-          'useAuthActions',
-          error instanceof Error ? error : new Error(errorInfo.message),
-          errorInfo
-        );
+        logger.error('Error processing wallet authentication', 'useAuthActions', error);
         throw error;
       }
     },
-    [aioha, isInitialized, dispatch, fetchProfileInBackground]
+    [wallet, dispatch, fetchProfileInBackground]
   );
 
   // ============================================================================
@@ -346,15 +271,10 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
   const logout = useCallback(async () => {
     abortFetch();
 
-    const { hiveUser } = getState();
-
-    if (hiveUser?.provider && aioha) {
-      try {
-        const aiohaInstance = aioha as AiohaInstance;
-        if (aiohaInstance.logout) await aiohaInstance.logout();
-      } catch (error) {
-        logger.error('Error logging out from Aioha', 'useAuthActions', error);
-      }
+    try {
+      await wallet.logout();
+    } catch (error) {
+      logger.error('Error logging out from wallet', 'useAuthActions', error);
     }
 
     dispatch({ type: 'LOGOUT' });
@@ -366,7 +286,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
     });
 
     queryClient.clear();
-  }, [aioha, dispatch, getState, abortFetch]);
+  }, [wallet, dispatch, abortFetch]);
 
   // ============================================================================
   // Upgrade and Update
@@ -397,7 +317,6 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           loginAt: now,
         });
 
-        // Fetch profile synchronously for upgrade flow
         try {
           const accountData = await fetchProfile(hiveUsername);
           if (accountData) {
@@ -458,7 +377,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
   return {
     login,
     loginWithHiveUser,
-    loginWithAioha,
+    loginWithWallet,
     logout,
     upgradeToHive,
     updateUser,

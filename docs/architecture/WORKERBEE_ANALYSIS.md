@@ -64,7 +64,7 @@ WorkerBee provides:
 - Proper subscription management
 
 #### Broadcasting (`src/lib/hive-workerbee/posting.ts`, `voting.ts`)
-- Uses WorkerBee's `broadcast()` method (though currently using Aioha directly)
+- Uses WorkerBee's `broadcast()` method (though currently using wallet directly)
 - Good transaction creation with Wax helpers
 
 ### 2.2 Areas for Improvement ⚠️
@@ -167,17 +167,17 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
 
 **Recommendation:** For real-time content, use observers. For historical/paginated content, current approach is fine, but could use `providePastOperations()` for historical data processing.
 
-#### 6. **Broadcasting - Using Aioha Instead of WorkerBee**
+#### 6. **Broadcasting - Using Wallet Instead of WorkerBee**
 
 **Current Implementation:**
 ```typescript
 // src/lib/hive-workerbee/posting.ts
-const result = await (aioha as AiohaInstance).signAndBroadcastTx!(operations, 'posting');
+const result = await wallet.signAndBroadcast(operations, 'posting');
 ```
 
-**Issue:** Using Aioha directly instead of WorkerBee's `broadcast()` method.
+**Issue:** Using wallet directly instead of WorkerBee's `broadcast()` method.
 
-**Recommendation:** If Aioha is required for signing (which it is for user authentication), we can still use WorkerBee for broadcasting after signing. However, if Aioha handles both signing and broadcasting, current approach is fine.
+**Recommendation:** If the wallet is required for signing (which it is for user authentication), we can still use WorkerBee for broadcasting after signing. However, if the wallet handles both signing and broadcasting, current approach is fine.
 
 ---
 

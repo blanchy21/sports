@@ -116,7 +116,7 @@ function buildShortMetadata(data: PublishShortData): string {
 }
 
 /**
- * Create a short operation for Aioha to broadcast
+ * Create a short operation for wallet to broadcast
  */
 export function createShortOperation(data: PublishShortData) {
   const validation = validateShortContent(data.body);

@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import { AiohaProvider } from '@/contexts/AiohaProvider';
+import { WalletProvider } from '@/contexts/WalletProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { PriceProvider } from '@/contexts/PriceContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
@@ -42,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ErrorBoundary>
           <QueryClientProvider>
             <ThemeProvider>
-              <AiohaProvider>
+              <WalletProvider>
                 <AuthProvider>
                   <NotificationProvider>
                     <PriceProvider>
@@ -58,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </PriceProvider>
                   </NotificationProvider>
                 </AuthProvider>
-              </AiohaProvider>
+              </WalletProvider>
             </ThemeProvider>
           </QueryClientProvider>
         </ErrorBoundary>

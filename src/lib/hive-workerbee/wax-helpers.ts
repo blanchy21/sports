@@ -541,7 +541,7 @@ export async function broadcastWaxTransaction(
     });
 
     // For now, return success without actual broadcasting
-    // The actual broadcasting should be handled by Aioha
+    // The actual broadcasting should be handled by the wallet
     workerBeeLog('[Wax Helpers] Wax operations created successfully', undefined, waxOperations);
     return {
       success: true,

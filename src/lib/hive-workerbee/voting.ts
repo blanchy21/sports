@@ -80,7 +80,7 @@ export async function castVote(voteData: VoteData, broadcastFn: BroadcastFn): Pr
 }
 
 /**
- * Remove a vote (set weight to 0) using Aioha
+ * Remove a vote (set weight to 0)
  * @param voteData - Vote data (weight will be set to 0)
  * @returns Vote result
  */
@@ -482,12 +482,12 @@ export async function batchVote(
 
     workerBeeLog('[batchVote] Created Wax vote operations', undefined, operations);
 
-    const aiohaOperations: [string, (typeof operations)[0]][] = operations.map((op) => [
+    const walletOperations: [string, (typeof operations)[0]][] = operations.map((op) => [
       'vote',
       op,
     ]);
 
-    const result = await broadcastFn(aiohaOperations, 'posting');
+    const result = await broadcastFn(walletOperations, 'posting');
 
     if (!result.success) {
       return votes.map(() => ({

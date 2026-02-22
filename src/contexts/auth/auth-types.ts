@@ -1,6 +1,6 @@
 import { AuthState, AuthType, User } from '@/types';
 import { HiveAuthUser } from '@/lib/shared/types';
-import type { AiohaRawLoginResult } from '@/lib/aioha/types';
+import type { WalletLoginResult } from '@/lib/wallet/types';
 
 // ============================================================================
 // Constants
@@ -27,7 +27,7 @@ export const PERSIST_DEBOUNCE_MS = 100;
 export interface AuthContextValue extends AuthState {
   login: (user: User, authType: AuthType) => void;
   loginWithHiveUser: (hiveUsername: string) => Promise<void>;
-  loginWithAioha: (loginResult?: AiohaRawLoginResult) => Promise<void>;
+  loginWithWallet: (loginResult?: WalletLoginResult) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
   upgradeToHive: (hiveUsername: string) => Promise<void>;

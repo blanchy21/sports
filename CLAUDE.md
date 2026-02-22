@@ -89,7 +89,7 @@ When given:
 
 Sportsblock is a Next.js 15 (App Router) sports content platform integrated with the Hive blockchain. Users can authenticate via Hive wallets (Keychain, HiveSigner, HiveAuth) or Google OAuth, then read and publish sports-related posts to the Hive blockchain.
 
-**Key tech:** TypeScript, Tailwind CSS, Zustand + React Query, Prisma (PostgreSQL/Supabase), NextAuth, Aioha, WorkerBee/Wax, Upstash Redis, Sentry, Framer Motion.
+**Key tech:** TypeScript, Tailwind CSS, Zustand + React Query, Prisma (PostgreSQL/Supabase), NextAuth, WorkerBee/Wax, Upstash Redis, Sentry, Framer Motion.
 
 ## Commands
 
@@ -139,12 +139,12 @@ import { getWorkerBeeClient } from '@/lib/hive-workerbee/client';
 ### Authentication Flow
 
 Two auth paths converge in `AuthContext`:
-1. **Hive Auth** (Aioha): Keychain, HiveSigner, HiveAuth, Ledger, PeakVault → full blockchain posting
+1. **Hive Auth** (WalletProvider): Keychain, HiveSigner → full blockchain posting
 2. **Google OAuth** (NextAuth): Google sign-in → custodial Hive account created, can download keys for full self-custody
 
-`src/contexts/AiohaProvider.tsx` wraps the Aioha library for client-side wallet interactions.
+`src/contexts/WalletProvider.tsx` provides client-side wallet interactions (Keychain + HiveSigner).
 `src/contexts/AuthContext.tsx` manages auth state and persists to localStorage.
-`src/hooks/useBroadcast.ts` abstracts transaction broadcasting (routes to wallet or signing relay).
+`src/lib/hive/broadcast-client.ts` abstracts transaction broadcasting (routes to wallet or signing relay).
 
 ### Custodial Onboarding Flow
 

@@ -48,7 +48,7 @@ A Next.js 15 sports content platform integrated with the Hive blockchain. Users 
 | Styling | Tailwind CSS |
 | State | Zustand + React Query |
 | Blockchain | Hive (WorkerBee / Wax / dhive) |
-| Auth | Aioha (Hive wallets) + NextAuth (Google OAuth) |
+| Auth | Hive Keychain + HiveSigner (wallets) + NextAuth (Google OAuth) |
 | Database | PostgreSQL (Supabase) via Prisma |
 | Rate Limiting | Upstash Redis |
 | Animation | Framer Motion |
@@ -62,7 +62,7 @@ Sportsblock supports two authentication methods that converge in a unified `Auth
 
 ### Hive Users (Full Self-Custody)
 
-- Authenticate via Hive wallets (Keychain, HiveSigner, HiveAuth, Ledger, PeakVault)
+- Authenticate via Hive wallets (Keychain, HiveSigner)
 - Posts published directly to the Hive blockchain
 - Earn cryptocurrency rewards (HIVE, HBD) for content
 - Vote on posts with blockchain voting power
@@ -263,8 +263,8 @@ WorkerBee and Wax (Hive WASM libraries) run **server-side only**. Client compone
 ┌─────────────────────────────────────────────────────────┐
 │                      AuthContext                         │
 ├─────────────────────────┬───────────────────────────────┤
-│     AiohaProvider       │     NextAuth (Google)         │
-│   (Hive Wallets)        │   + Custodial Signing Relay   │
+│     WalletProvider      │     NextAuth (Google)         │
+│ (Keychain / HiveSigner) │   + Custodial Signing Relay   │
 ├─────────────────────────┴───────────────────────────────┤
 │                 Unified User Object                      │
 │              useBroadcast() hook                         │
@@ -272,7 +272,7 @@ WorkerBee and Wax (Hive WASM libraries) run **server-side only**. Client compone
 └─────────────────────────────────────────────────────────┘
 ```
 
-- **Hive Auth** (`AiohaProvider`): Wallet-based authentication for direct blockchain operations
+- **Hive Auth** (`WalletProvider`): Wallet-based authentication for direct blockchain operations
 - **Google Auth** (`NextAuth`): Google OAuth -> custodial Hive account -> signing relay
 - **Unified AuthContext**: Merges both auth states, provides consistent user object
 - **useBroadcast**: Abstraction that routes transactions to either the wallet or signing relay
@@ -314,7 +314,8 @@ WorkerBee and Wax (Hive WASM libraries) run **server-side only**. Client compone
 ## Acknowledgments
 
 - [Hive Blockchain](https://hive.io/) - Decentralized social blockchain
-- [Aioha](https://github.com/aioha-hive/aioha) - Hive authentication library
+- [Hive Keychain](https://hive-keychain.com/) - Hive wallet browser extension
+- [HiveSigner](https://hivesigner.com/) - Hive OAuth authentication
 - [WorkerBee](https://gitlab.syncad.com/hive/workerbee) - Hive blockchain client
 - [Next.js](https://nextjs.org/) - React framework
 - [Tailwind CSS](https://tailwindcss.com/) - CSS framework

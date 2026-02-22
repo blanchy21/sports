@@ -24,7 +24,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, 
     isConnecting,
     errorMessage,
     isKeychainAvailable,
-    isAiohaReady,
+    isWalletReady,
     performKeychainLogin,
     dismissError,
     resetState,
@@ -62,7 +62,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, 
     router.push('/auth?addAccount=true');
   }, [onClose, router]);
 
-  const isLoginDisabled = !hiveUsername.trim() || isConnecting || !isAiohaReady;
+  const isLoginDisabled = !hiveUsername.trim() || isConnecting || !isWalletReady;
 
   return (
     <BaseModal

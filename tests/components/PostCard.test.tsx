@@ -45,7 +45,7 @@ jest.mock('@/components/core/Toast', () => ({
   },
 }));
 
-// Mock useBroadcast (broadcast-client requires AiohaProvider)
+// Mock useBroadcast (broadcast-client requires WalletProvider)
 jest.mock('@/lib/hive/broadcast-client', () => ({
   useBroadcast: () => ({ broadcast: jest.fn() }),
 }));

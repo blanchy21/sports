@@ -1,9 +1,9 @@
 /** @jest-environment jsdom */
 
 /**
- * Integration tests for AuthProvider + Aioha
+ * Integration tests for AuthProvider + Wallet
  *
- * Tests the full authentication flow when logging in via Aioha (Hive wallet).
+ * Tests the full authentication flow when logging in via wallet (Hive Keychain/HiveSigner).
  * Uses the cookie-based session API for persistence.
  */
 
@@ -12,19 +12,18 @@ import { act, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '../test-utils';
 import { createAuthMockFetch, createMockLocalStorage } from './auth-test-utils';
 
-// Mock Aioha provider
-jest.mock('@/contexts/AiohaProvider', () => ({
-  useAioha: jest.fn(),
+// Mock Wallet provider
+jest.mock('@/contexts/WalletProvider', () => ({
+  useWallet: jest.fn(),
 }));
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import type { HiveAccount } from '@/lib/shared/types';
 import type { UserAccountData } from '@/lib/hive-workerbee/account';
-import { useAioha } from '@/contexts/AiohaProvider';
+import { useWallet } from '@/contexts/WalletProvider';
 
 type AuthApi = ReturnType<typeof useAuth>;
 
-const useAiohaMock = useAioha as jest.MockedFunction<typeof useAioha>;
+const useWalletMock = useWallet as jest.MockedFunction<typeof useWallet>;
 
 const DEFAULT_USERNAME = 'integration-user';
 
@@ -61,29 +60,16 @@ const mockAccountData: UserAccountData = {
   votingPower: 78,
 };
 
-const aiohaStub = {
-  user: {
-    username: DEFAULT_USERNAME,
-    session: 'session-from-user',
-    sessionId: 'session-from-user',
-    session_id: 'session-from-user',
-  },
-  currentUser: {
-    username: DEFAULT_USERNAME,
-    session: 'session-from-current-user',
-    sessionId: 'session-from-current-user',
-    session_id: 'session-from-current-user',
-  },
-  username: DEFAULT_USERNAME,
-  session: 'session-top-level',
-  sessionId: 'session-top-level',
-  session_id: 'session-top-level',
-  account: {
-    name: DEFAULT_USERNAME,
-  },
-  providers: {},
+const walletStub = {
+  isReady: true,
+  currentUser: DEFAULT_USERNAME,
+  currentProvider: 'keychain' as const,
+  availableProviders: ['keychain', 'hivesigner'] as const,
+  error: null as string | null,
+  login: jest.fn(),
   logout: jest.fn(),
-  signMessage: jest.fn().mockResolvedValue({ success: true, result: 'mock-signature-hex' }),
+  signMessage: jest.fn().mockResolvedValue({ success: true, signature: 'mock-signature-hex' }),
+  signAndBroadcast: jest.fn().mockResolvedValue({ success: true, transactionId: 'tx-123' }),
 };
 
 // Setup localStorage mock
@@ -106,7 +92,7 @@ const Harness: React.FC<{ onChange: (auth: AuthApi) => void }> = ({ onChange }) 
   return null;
 };
 
-describe('AuthProvider + Aioha integration', () => {
+describe('AuthProvider + Wallet integration', () => {
   let authMock: ReturnType<typeof createAuthMockFetch>;
 
   beforeEach(() => {
@@ -114,13 +100,9 @@ describe('AuthProvider + Aioha integration', () => {
     localStorageMock.clear();
 
     // Re-set signMessage mock after clearAllMocks
-    aiohaStub.signMessage.mockResolvedValue({ success: true, result: 'mock-signature-hex' });
+    walletStub.signMessage.mockResolvedValue({ success: true, signature: 'mock-signature-hex' });
 
-    useAiohaMock.mockReturnValue({
-      aioha: aiohaStub,
-      isInitialized: true,
-      error: null,
-    });
+    useWalletMock.mockReturnValue(walletStub as ReturnType<typeof useWallet>);
 
     // Create auth mock with custom account data
     authMock = createAuthMockFetch({
@@ -129,7 +111,7 @@ describe('AuthProvider + Aioha integration', () => {
     global.fetch = authMock.mockFetch as unknown as typeof fetch;
   });
 
-  it('logs in via Aioha and updates auth state correctly', async () => {
+  it('logs in via wallet and updates auth state correctly', async () => {
     let latestAuth: AuthApi | null = null;
 
     const handleAuthChange = (auth: AuthApi) => {
@@ -148,15 +130,13 @@ describe('AuthProvider + Aioha integration', () => {
     });
 
     const loginResult = {
+      success: true as const,
       username: DEFAULT_USERNAME,
-      sessionId: 'primary-session',
-      user: { username: DEFAULT_USERNAME, session: 'primary-session' },
-      account: { name: DEFAULT_USERNAME } as HiveAccount,
-      provider: 'aioha',
+      provider: 'keychain' as const,
     };
 
     await act(async () => {
-      await latestAuth!.loginWithAioha(loginResult);
+      await latestAuth!.loginWithWallet(loginResult);
     });
 
     // Verify auth state is correctly updated
@@ -166,7 +146,7 @@ describe('AuthProvider + Aioha integration', () => {
       expect(latestAuth?.isAuthenticated).toBe(true);
       expect(latestAuth?.hiveUser?.username).toBe(DEFAULT_USERNAME);
       expect(latestAuth?.hiveUser?.isAuthenticated).toBe(true);
-      expect(latestAuth?.hiveUser?.provider).toBe('aioha');
+      expect(latestAuth?.hiveUser?.provider).toBe('keychain');
     });
 
     // Verify account summary API was called for profile hydration
@@ -188,16 +168,15 @@ describe('AuthProvider + Aioha integration', () => {
       { timeout: 500 }
     );
 
-    // Verify hiveUser doesn't have sessionId (sanitized for storage)
-    // Note: The sessionId should NOT be persisted but is kept in memory
+    // Verify hiveUser has correct provider
     expect(latestAuth!.hiveUser).toMatchObject({
       username: DEFAULT_USERNAME,
       isAuthenticated: true,
-      provider: 'aioha',
+      provider: 'keychain',
     });
   });
 
-  it('extracts username from various login result shapes', async () => {
+  it('accepts typed WalletLoginResult directly', async () => {
     let latestAuth: AuthApi | null = null;
 
     renderWithProviders(
@@ -214,17 +193,18 @@ describe('AuthProvider + Aioha integration', () => {
       expect(latestAuth?.isLoading).toBe(false);
     });
 
-    // Test with username in nested user object
-    const loginResultWithNestedUser = {
-      user: { username: 'nested-user', session: 'session-123' },
-      provider: 'keychain',
+    // Test with keychain provider
+    const loginResult = {
+      success: true as const,
+      username: 'keychain-user',
+      provider: 'keychain' as const,
     };
 
     await act(async () => {
-      await latestAuth!.loginWithAioha(loginResultWithNestedUser);
+      await latestAuth!.loginWithWallet(loginResult);
     });
 
-    expect(latestAuth!.user?.username).toBe('nested-user');
+    expect(latestAuth!.user?.username).toBe('keychain-user');
     expect(latestAuth!.authType).toBe('hive');
   });
 });

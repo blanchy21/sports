@@ -136,7 +136,7 @@ export function isHiveDuplicateError(error?: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Create sportsbite operation for match threads (client-side, signed via Aioha)
+// Create sportsbite operation for match threads (client-side, signed via wallet)
 // ---------------------------------------------------------------------------
 
 export function createMatchThreadSportsbiteOperation(

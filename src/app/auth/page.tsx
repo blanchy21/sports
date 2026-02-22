@@ -3,11 +3,9 @@
 import React, { Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Wallet, CheckCircle, Sparkles } from 'lucide-react';
-import { KeyTypes } from '@aioha/aioha';
-import { AiohaModal } from '@aioha/react-ui';
+import { ArrowLeft, CheckCircle, Sparkles } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/core/Button';
-import { useAioha } from '@/contexts/AiohaProvider';
 import { AuthHero } from './components/AuthHero';
 import { ErrorAlert } from './components/ErrorAlert';
 import { GoogleAuthSection } from './components/GoogleAuthSection';
@@ -21,17 +19,51 @@ export default function AuthPage() {
   );
 }
 
+const providerConfig: Record<string, { name: string; icon: React.ReactNode; description: string }> =
+  {
+    keychain: {
+      name: 'Hive Keychain',
+      icon: (
+        <Image
+          src="/hive-keychain-logo.svg"
+          alt="Hive Keychain"
+          width={24}
+          height={24}
+          className="h-6 w-6"
+        />
+      ),
+      description: 'Browser Extension',
+    },
+    hivesigner: {
+      name: 'HiveSigner',
+      icon: (
+        <Image
+          src="/hivesigner-icon.png"
+          alt="HiveSigner"
+          width={24}
+          height={24}
+          className="h-6 w-6"
+        />
+      ),
+      description: 'Web Wallet',
+    },
+  };
+
 function AuthPageContent() {
   const router = useRouter();
-  const { aioha } = useAioha();
   const {
     isConnecting,
     errorMessage,
     successMessage,
     dismissError,
-    showAiohaModal,
-    setShowAiohaModal,
-    handleAiohaModalLogin,
+    availableProviders,
+    isWalletReady,
+    showHiveUsernameInput,
+    hiveUsername,
+    onHiveUsernameChange,
+    onHiveUsernameSubmit,
+    onHiveUsernameCancel,
+    onProviderSelect,
     handleGoogleSignIn,
   } = useAuthPage();
 
@@ -149,24 +181,61 @@ function AuthPageContent() {
                     </p>
                   </div>
 
-                  <Button
-                    onClick={() => setShowAiohaModal(true)}
-                    disabled={isConnecting || !aioha}
-                    className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-primary/30"
-                  >
-                    <Wallet className="h-5 w-5" />
-                    <span>Connect Hive Wallet</span>
-                  </Button>
-
-                  <div className="mt-4 flex flex-wrap justify-center gap-2">
-                    {['Keychain', 'HiveSigner', 'HiveAuth', 'Ledger'].map((wallet) => (
-                      <span
-                        key={wallet}
-                        className="rounded-md bg-muted/50 px-2 py-1 text-xs text-muted-foreground"
+                  {/* Username input for Keychain */}
+                  {showHiveUsernameInput && (
+                    <div className="mb-4 rounded-lg border border-primary/20 bg-background p-4">
+                      <label className="mb-2 block text-sm font-medium text-foreground">
+                        Enter your Hive username
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={hiveUsername}
+                          onChange={(e) => onHiveUsernameChange(e.target.value)}
+                          placeholder="e.g., blanchy"
+                          className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          onKeyDown={(e) => e.key === 'Enter' && onHiveUsernameSubmit()}
+                          autoFocus
+                        />
+                        <Button
+                          onClick={onHiveUsernameSubmit}
+                          disabled={!hiveUsername.trim() || isConnecting}
+                          size="sm"
+                        >
+                          {isConnecting ? 'Connecting...' : 'Connect'}
+                        </Button>
+                      </div>
+                      <button
+                        onClick={onHiveUsernameCancel}
+                        className="mt-2 text-xs text-muted-foreground hover:text-foreground"
                       >
-                        {wallet}
-                      </span>
-                    ))}
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Provider buttons */}
+                  <div className="space-y-3">
+                    {availableProviders.map((provider) => {
+                      const config = providerConfig[provider];
+                      if (!config) return null;
+                      return (
+                        <Button
+                          key={provider}
+                          onClick={() => onProviderSelect(provider)}
+                          disabled={isConnecting || !isWalletReady}
+                          className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-primary/30"
+                        >
+                          {config.icon}
+                          <div className="flex flex-col items-start">
+                            <span>{config.name}</span>
+                            <span className="text-xs font-normal opacity-80">
+                              {config.description}
+                            </span>
+                          </div>
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -200,21 +269,6 @@ function AuthPageContent() {
           </motion.div>
         </div>
       </div>
-
-      {/* AiohaModal handles all Hive wallet authentication */}
-      {Boolean(aioha) && (
-        <AiohaModal
-          displayed={showAiohaModal}
-          loginTitle="Connect to Sportsblock"
-          arrangement="grid"
-          loginOptions={{
-            msg: 'Login to Sportsblock',
-            keyType: KeyTypes.Posting,
-          }}
-          onLogin={handleAiohaModalLogin}
-          onClose={setShowAiohaModal}
-        />
-      )}
     </div>
   );
 }

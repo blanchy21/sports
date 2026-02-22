@@ -6,7 +6,7 @@
  *
  * Flow:
  *   1. Server creates a challenge string + HMAC (tamper-proof, stateless)
- *   2. Client signs the challenge with their Hive posting key (via Aioha)
+ *   2. Client signs the challenge with their Hive posting key (via wallet)
  *   3. Server recovers the public key from the signature and verifies it
  *      matches the account's on-chain posting keys
  */
@@ -115,7 +115,7 @@ export async function verifyHivePostingSignature(
   username: string
 ): Promise<{ valid: boolean; reason?: string }> {
   try {
-    // 1. Hash the challenge (same as Aioha's signMessage: cryptoUtils.sha256(message))
+    // 1. Hash the challenge (same as wallet signMessage: cryptoUtils.sha256(message))
     const messageHash = cryptoUtils.sha256(challenge);
 
     // 2. Recover public key from signature

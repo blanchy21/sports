@@ -344,16 +344,16 @@ export interface UserAccountData {
 
 export interface HiveAuthUser {
   username: string;
-  postingKey?: string; // Deprecated: Aioha manages keys internally
-  activeKey?: string; // Deprecated: Aioha manages keys internally
+  postingKey?: string; // Deprecated: wallet manages keys
+  activeKey?: string; // Deprecated: wallet manages keys
   isAuthenticated: boolean;
   /** Processed account data from the API (not raw HiveAccount) */
   account?: UserAccountData;
   resourceCredits?: HiveResourceCredit;
-  // Aioha-specific properties
-  provider?: string; // 'keychain', 'hivesigner', 'hiveauth', 'ledger', 'peakvault'
-  aiohaUserId?: string; // Aioha's internal user ID
-  sessionId?: string; // Aioha session identifier
+  // Wallet properties
+  provider?: string; // 'keychain' | 'hivesigner'
+  aiohaUserId?: string; // Legacy field, kept for backwards compat
+  sessionId?: string; // Session identifier
 }
 
 // ============================================================================

@@ -27,16 +27,20 @@ jest.mock('@/lib/hive-workerbee/account', () => ({
   fetchUserAccount: jest.fn(),
 }));
 
-// Mock Aioha provider
-const mockAioha = {
-  user: null,
+// Mock Wallet provider
+const mockWallet = {
+  isReady: true,
+  currentUser: null as string | null,
+  currentProvider: null,
+  availableProviders: ['keychain', 'hivesigner'],
+  login: jest.fn(),
   logout: jest.fn(),
-  signMessage: jest.fn().mockResolvedValue({ success: true, result: 'mock-signature-hex' }),
+  signMessage: jest.fn().mockResolvedValue({ success: true, signature: 'mock-signature-hex' }),
+  signAndBroadcast: jest.fn(),
 };
 
-jest.mock('@/contexts/AiohaProvider', () => ({
-  useAioha: jest.fn(() => ({ aioha: mockAioha, isInitialized: true })),
-  AiohaProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+jest.mock('@/contexts/WalletProvider', () => ({
+  useWallet: jest.fn(() => mockWallet),
 }));
 
 // Setup localStorage mock
@@ -79,9 +83,9 @@ describe('Auth Race Conditions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.clear();
-    mockAioha.logout.mockReset();
-    mockAioha.signMessage.mockResolvedValue({ success: true, result: 'mock-signature-hex' });
-    mockAioha.user = null;
+    mockWallet.logout.mockReset();
+    mockWallet.signMessage.mockResolvedValue({ success: true, signature: 'mock-signature-hex' });
+    mockWallet.currentUser = null;
 
     // Create fresh mock for each test
     authMock = createAuthMockFetch();

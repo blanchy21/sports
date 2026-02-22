@@ -71,11 +71,9 @@
             localStorage.setItem('hivesignerTokenType', tokenType);
           }
 
-          // Mirror the general Aioha keys so the library can restore session.
-          localStorage.setItem('aiohaUsername', username);
-          localStorage.setItem('aiohaProvider', 'hivesigner');
-
-          window.localStorage.setItem('aiohaLastLoginAt', new Date().toISOString());
+          // Save wallet session keys for WalletProvider to restore.
+          localStorage.setItem('sportsblock:walletProvider', 'hivesigner');
+          localStorage.setItem('sportsblock:walletUsername', username);
 
           // Save auth state in the format AuthContext expects
           const authState = {
@@ -113,9 +111,8 @@
           document.getElementById('status').textContent = 'Login information saved. Redirecting\u2026';
 
           // In popup mode the opener handles login via the postMessage above.
-          // Close the popup so Aioha can detect completion via its polling interval.
-          // Aioha polls every 1000ms checking hsWindow.closed, then reads localStorage.
-          // We use 1500ms to guarantee at least one poll fires after localStorage is written.
+          // Close the popup so the opener can detect completion.
+          // Small delay ensures localStorage is written before the window closes.
           if (window.opener) {
             document.getElementById('status').textContent = 'Login successful! This window will close\u2026';
             setTimeout(function () { window.close(); }, 1500);

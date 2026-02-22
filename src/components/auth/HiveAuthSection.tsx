@@ -1,52 +1,45 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/core/Button';
 import { HiveAuthSectionProps } from './types';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAioha } from '@/contexts/AiohaProvider';
-import { AiohaModal } from '@aioha/react-ui';
+import { useWallet } from '@/contexts/WalletProvider';
+import { isKeychainAvailable } from '@/lib/wallet/detect';
 import { Loader2 } from 'lucide-react';
-import { Providers } from '@aioha/aioha';
 
-// Provider configurations for display
-const PROVIDER_CONFIGS = {
+const PROVIDER_CONFIGS: Record<
+  string,
+  { name: string; description: string; icon: React.ReactNode }
+> = {
   keychain: {
     name: 'Hive Keychain',
     description: 'Browser Extension',
-    icon: '🔑',
-  },
-  hiveauth: {
-    name: 'HiveAuth',
-    description: 'Mobile App',
-    icon: '📱',
+    icon: (
+      <Image
+        src="/hive-keychain-logo.svg"
+        alt="Hive Keychain"
+        width={20}
+        height={20}
+        className="h-5 w-5"
+      />
+    ),
   },
   hivesigner: {
     name: 'HiveSigner',
     description: 'Web Wallet',
-    icon: '🌐',
-  },
-  peakvault: {
-    name: 'Peak Vault',
-    description: 'Advanced Wallet',
-    icon: '⛰️',
-  },
-  ledger: {
-    name: 'Ledger',
-    description: 'Hardware Wallet',
-    icon: '🔒',
+    icon: (
+      <Image
+        src="/hivesigner-icon.png"
+        alt="HiveSigner"
+        width={20}
+        height={20}
+        className="h-5 w-5"
+      />
+    ),
   },
 };
-
-interface AiohaLoginResult {
-  success: boolean;
-  username?: string;
-  provider?: Providers;
-  publicKey?: string;
-  result?: string;
-  error?: string;
-  errorCode?: number;
-}
 
 export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
   isConnecting,
@@ -54,69 +47,54 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
   onError,
   onSuccess,
 }) => {
-  const { loginWithAioha } = useAuth();
-  const { aioha, isInitialized, error: aiohaError } = useAioha();
-  const [showAiohaModal, setShowAiohaModal] = useState(false);
+  const { loginWithWallet } = useAuth();
+  const wallet = useWallet();
   const [isProcessingLogin, setIsProcessingLogin] = useState(false);
+  const [hiveUsername, setHiveUsername] = useState('');
+  const [showUsernameInput, setShowUsernameInput] = useState(false);
 
-  // Handle successful Aioha login
-  const handleAiohaLogin = useCallback(
-    async (result: AiohaLoginResult) => {
-      if (!result.success) {
-        onError(result.error || 'Login failed');
+  const handleWalletLogin = useCallback(
+    async (provider: 'keychain' | 'hivesigner') => {
+      if (provider === 'keychain' && !isKeychainAvailable()) {
+        onError('Hive Keychain extension not detected. Please install it and refresh the page.');
+        return;
+      }
+
+      if (provider === 'keychain' && !hiveUsername.trim()) {
+        setShowUsernameInput(true);
         return;
       }
 
       setIsProcessingLogin(true);
 
       try {
-        // Pass the login result to AuthContext
-        await loginWithAioha({
-          username: result.username,
-          provider: result.provider,
-          session: result.result,
-        });
+        const usernameToUse = provider === 'keychain' ? hiveUsername.trim() : '';
+        const result = await wallet.login(provider, usernameToUse);
 
-        setShowAiohaModal(false);
-        onSuccess();
+        if (result.success) {
+          await loginWithWallet(result);
+          setShowUsernameInput(false);
+          onSuccess();
+        } else {
+          onError(result.error || 'Login failed');
+        }
       } catch (error) {
         onError(error instanceof Error ? error.message : 'Failed to process login');
       } finally {
         setIsProcessingLogin(false);
       }
     },
-    [loginWithAioha, onError, onSuccess]
+    [wallet, loginWithWallet, hiveUsername, onError, onSuccess]
   );
-
-  // Check if Aioha is available - explicit boolean to avoid unknown in JSX
-  const isAiohaAvailable = isInitialized && aioha !== null;
-
-  // Get available providers from Aioha
-  const getAvailableProviders = (): string[] => {
-    if (!isAiohaAvailable || !aioha) return [];
-
-    try {
-      const aiohaInstance = aioha as { getProviders?: () => string[] };
-      if (typeof aiohaInstance.getProviders === 'function') {
-        return aiohaInstance.getProviders();
-      }
-    } catch {
-      // Fallback to default providers
-    }
-
-    return ['keychain', 'hiveauth', 'hivesigner'];
-  };
-
-  const availableProviders = getAvailableProviders();
 
   return (
     <div className="bg-gray-50/50 p-6">
       <h3 className="mb-4 text-lg font-semibold">Or connect with Hive Blockchain</h3>
 
       {/* Error Message */}
-      {(errorMessage || aiohaError) && (
+      {errorMessage && (
         <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2">
-          <p className="text-sm text-red-800">{errorMessage ?? aiohaError ?? ''}</p>
+          <p className="text-sm text-red-800">{errorMessage}</p>
           <button
             onClick={() => onError('')}
             className="mt-1 text-xs text-red-600 underline hover:text-red-800"
@@ -126,7 +104,6 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
         </div>
       )}
 
-      {/* Aioha Authentication Section */}
       <div className="space-y-3">
         <div className="text-center">
           <h4 className="mb-1 text-base font-semibold text-gray-800">
@@ -137,54 +114,82 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
           </p>
         </div>
 
-        {/* Loading state while Aioha initializes */}
-        {!isInitialized && (
+        {/* Loading state */}
+        {!wallet.isReady && (
           <div className="flex items-center justify-center p-4">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
             <span className="ml-2 text-sm text-gray-600">Loading wallets...</span>
           </div>
         )}
 
-        {/* Main Connect Button - Opens AiohaModal */}
-        {isAiohaAvailable && (
-          <Button
-            onClick={() => setShowAiohaModal(true)}
-            disabled={isConnecting || isProcessingLogin}
-            className="w-full bg-accent py-3 text-base font-semibold text-white hover:bg-accent/90"
-          >
-            {isProcessingLogin ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              'Connect Hive Wallet'
-            )}
-          </Button>
+        {/* Username input for Keychain */}
+        {showUsernameInput && (
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
+            <label className="mb-1 block text-sm font-medium text-yellow-800">
+              Enter your Hive username for Keychain
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={hiveUsername}
+                onChange={(e) => setHiveUsername(e.target.value)}
+                placeholder="e.g., blanchy"
+                className="flex-1 rounded-md border border-yellow-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                onKeyDown={(e) => e.key === 'Enter' && handleWalletLogin('keychain')}
+                autoFocus
+              />
+              <Button
+                onClick={() => handleWalletLogin('keychain')}
+                disabled={!hiveUsername.trim() || isProcessingLogin}
+                size="sm"
+              >
+                {isProcessingLogin ? 'Connecting...' : 'Connect'}
+              </Button>
+            </div>
+            <button
+              onClick={() => {
+                setShowUsernameInput(false);
+                setHiveUsername('');
+              }}
+              className="mt-1 text-xs text-yellow-700 underline hover:text-yellow-800"
+            >
+              Cancel
+            </button>
+          </div>
         )}
 
-        {/* Show available provider icons */}
-        {isAiohaAvailable && availableProviders.length > 0 && (
-          <div className="flex justify-center gap-3 py-2">
-            {availableProviders.slice(0, 4).map((provider) => {
-              const config = PROVIDER_CONFIGS[provider as keyof typeof PROVIDER_CONFIGS];
+        {/* Wallet Provider Buttons */}
+        {wallet.isReady && (
+          <div className="space-y-2">
+            {wallet.availableProviders.map((provider) => {
+              const config = PROVIDER_CONFIGS[provider];
               if (!config) return null;
               return (
-                <div
+                <Button
                   key={provider}
-                  className="flex flex-col items-center text-xs text-gray-500"
-                  title={config.name}
+                  onClick={() => handleWalletLogin(provider)}
+                  disabled={isConnecting || isProcessingLogin}
+                  className="w-full bg-accent py-3 text-base font-semibold text-white hover:bg-accent/90"
                 >
-                  <span className="text-lg">{config.icon}</span>
-                  <span className="mt-1">{config.name.split(' ')[0]}</span>
-                </div>
+                  {isProcessingLogin ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      {config.icon}
+                      <span>{config.name}</span>
+                    </span>
+                  )}
+                </Button>
               );
             })}
           </div>
         )}
 
         {/* No providers message */}
-        {isInitialized && !isAiohaAvailable && (
+        {wallet.isReady && wallet.availableProviders.length === 0 && (
           <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
             <div className="text-center">
               <div className="mb-2 text-sm font-medium text-yellow-800">
@@ -196,7 +201,7 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
               <div className="space-y-1 text-xs text-yellow-600">
                 <div>• Refreshing the page</div>
                 <div>• Installing Hive Keychain browser extension</div>
-                <div>• Using HiveAuth mobile app</div>
+                <div>• Using HiveSigner web wallet</div>
               </div>
             </div>
           </div>
@@ -213,21 +218,6 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
           <li>• Join the decentralized community</li>
         </ul>
       </div>
-
-      {/* Aioha Modal */}
-      {isAiohaAvailable && (
-        <AiohaModal
-          displayed={showAiohaModal}
-          loginTitle="Connect to Sportsblock"
-          loginHelpUrl="https://hive.io/wallets"
-          loginOptions={{
-            msg: 'Login to Sportsblock',
-          }}
-          onLogin={handleAiohaLogin}
-          onClose={setShowAiohaModal}
-          arrangement="list"
-        />
-      )}
     </div>
   );
 };

@@ -200,7 +200,7 @@ function buildSportsbiteMetadata(data: PublishSportsbiteData): string {
 }
 
 // ---------------------------------------------------------------------------
-// Create operation (client-side, signed via Aioha)
+// Create operation (client-side, signed via wallet)
 // ---------------------------------------------------------------------------
 
 export function createSportsbiteOperation(data: PublishSportsbiteData) {

@@ -5,10 +5,9 @@ import { Button } from '@/components/core/Button';
 import { Card } from '@/components/core/Card';
 import { X, Zap, Shield, Star, CheckCircle, ArrowRight, Wallet, Crown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAioha } from '@/contexts/AiohaProvider';
+import { useWallet } from '@/contexts/WalletProvider';
+import { isKeychainAvailable } from '@/lib/wallet/detect';
 import { logger } from '@/lib/logger';
-// import { AiohaModal } from "@aioha/react-ui";
-import { Providers, KeyTypes } from '@aioha/aioha';
 
 interface UpgradeFlowProps {
   isOpen: boolean;
@@ -17,48 +16,17 @@ interface UpgradeFlowProps {
 
 export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => {
   const { user, upgradeToHive } = useAuth();
-  const { aioha, isInitialized } = useAioha();
+  const wallet = useWallet();
 
   const [step, setStep] = useState<'intro' | 'wallet' | 'connecting' | 'success'>('intro');
   const [isConnecting, setIsConnecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hiveUsername, setHiveUsername] = useState('');
   const [showHiveUsernameInput, setShowHiveUsernameInput] = useState(false);
-  const [availableProviders, setAvailableProviders] = useState<string[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
 
-  // Check available providers when Aioha is initialized
-  React.useEffect(() => {
-    if (!aioha || !isInitialized) return;
-
-    try {
-      const providers = (aioha as { getProviders: () => unknown[] }).getProviders();
-      const providerStrings = providers.map((provider: unknown) => {
-        const providerValue = provider as Providers;
-        switch (providerValue) {
-          case Providers.Keychain:
-            return 'keychain';
-          case Providers.HiveSigner:
-            return 'hivesigner';
-          case Providers.HiveAuth:
-            return 'hiveauth';
-          case Providers.Ledger:
-            return 'ledger';
-          case Providers.PeakVault:
-            return 'peakvault';
-          default:
-            return String(provider);
-        }
-      });
-
-      setAvailableProviders(providerStrings);
-    } catch (error) {
-      logger.error('Error getting available providers', 'UpgradeFlow', error);
-    }
-  }, [aioha, isInitialized]);
-
   const handleWalletSelection = (provider: string) => {
-    if (provider === 'keychain' || provider === 'hiveauth') {
+    if (provider === 'keychain') {
       setSelectedProvider(provider);
       setShowHiveUsernameInput(true);
     } else {
@@ -67,9 +35,14 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
   };
 
   const handleConnectWallet = async (provider: string) => {
-    if (!isInitialized || !aioha) {
+    if (!wallet.isReady) {
+      setErrorMessage('Wallet is not available. Please refresh the page and try again.');
+      return;
+    }
+
+    if (provider === 'keychain' && !isKeychainAvailable()) {
       setErrorMessage(
-        'Aioha authentication is not available. Please refresh the page and try again.'
+        'Hive Keychain extension not detected. Please install it and refresh the page.'
       );
       return;
     }
@@ -79,62 +52,18 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
     setStep('connecting');
 
     try {
-      const availableProviders = (aioha as { getProviders: () => unknown[] }).getProviders();
+      const usernameToUse = provider === 'keychain' ? hiveUsername.trim() : '';
 
-      let providerEnum;
-      switch (provider) {
-        case 'keychain':
-          providerEnum = Providers.Keychain;
-          break;
-        case 'hivesigner':
-          providerEnum = Providers.HiveSigner;
-          break;
-        case 'hiveauth':
-          providerEnum = Providers.HiveAuth;
-          break;
-        case 'ledger':
-          providerEnum = Providers.Ledger;
-          break;
-        case 'peakvault':
-          providerEnum = Providers.PeakVault;
-          break;
-        default:
-          throw new Error(`Unknown provider: ${provider}`);
-      }
+      const result = await wallet.login(provider as 'keychain' | 'hivesigner', usernameToUse);
 
-      if (!availableProviders.includes(providerEnum)) {
-        throw new Error(
-          `${provider} is not available. Please install the required wallet or try a different provider.`
-        );
-      }
-
-      let usernameToUse = '';
-      if (provider === 'keychain' || provider === 'hiveauth') {
-        usernameToUse = hiveUsername.trim();
-      }
-
-      const result = await (
-        aioha as {
-          login: (provider: unknown, username: string, options: unknown) => Promise<unknown>;
-        }
-      ).login(providerEnum, usernameToUse, {
-        msg: 'Upgrade to Hive account on Sportsblock',
-        keyType: KeyTypes.Posting,
-      });
-
-      if (
-        result &&
-        (result as { username?: string }).username &&
-        (result as { success?: boolean }).success !== false
-      ) {
-        // Upgrade the account to Hive
-        await upgradeToHive((result as { username: string }).username);
-
+      if (result.success) {
+        await upgradeToHive(result.username);
         setStep('success');
       } else {
-        throw new Error((result as { error?: string })?.error || 'Invalid authentication result');
+        throw new Error(result.error || 'Invalid authentication result');
       }
     } catch (error) {
+      logger.error('Wallet connection failed', 'UpgradeFlow', error);
       setErrorMessage(
         'Connection failed: ' + (error instanceof Error ? error.message : 'Unknown error')
       );
@@ -150,12 +79,6 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
         return '🔑';
       case 'hivesigner':
         return '🌐';
-      case 'hiveauth':
-        return '📱';
-      case 'ledger':
-        return '🔒';
-      case 'peakvault':
-        return '⛰️';
       default:
         return '💳';
     }
@@ -167,12 +90,6 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
         return 'Hive Keychain';
       case 'hivesigner':
         return 'HiveSigner';
-      case 'hiveauth':
-        return 'HiveAuth';
-      case 'ledger':
-        return 'Ledger';
-      case 'peakvault':
-        return 'Peak Vault';
       default:
         return provider;
     }
@@ -184,12 +101,6 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
         return 'Browser Extension';
       case 'hivesigner':
         return 'Web Wallet';
-      case 'hiveauth':
-        return 'Mobile App';
-      case 'ledger':
-        return 'Hardware Wallet';
-      case 'peakvault':
-        return 'Advanced Wallet';
       default:
         return 'Wallet';
     }
@@ -324,8 +235,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
               {showHiveUsernameInput && (
                 <Card className="border-yellow-200 bg-yellow-50 p-4">
                   <h4 className="mb-2 text-sm font-medium text-yellow-800">
-                    Enter your Hive username for{' '}
-                    {selectedProvider === 'keychain' ? 'Hive Keychain' : 'HiveAuth'}
+                    Enter your Hive username for Hive Keychain
                   </h4>
                   <div className="flex space-x-2">
                     <input
@@ -334,7 +244,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                       onChange={(e) => setHiveUsername(e.target.value)}
                       placeholder="Enter your Hive username (e.g., blanchy)"
                       className="flex-1 rounded-md border border-yellow-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                      onKeyPress={(e) =>
+                      onKeyDown={(e) =>
                         e.key === 'Enter' &&
                         selectedProvider &&
                         handleConnectWallet(selectedProvider)
@@ -350,13 +260,13 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                     </Button>
                   </div>
                   <p className="mt-1 text-xs text-yellow-700">
-                    This will open {selectedProvider === 'keychain' ? 'Hive Keychain' : 'HiveAuth'}{' '}
-                    to sign in as @{hiveUsername || 'your-username'}
+                    This will open Hive Keychain to sign in as @{hiveUsername || 'your-username'}
                   </p>
                   <button
                     onClick={() => {
                       setSelectedProvider(null);
                       setHiveUsername('');
+                      setShowHiveUsernameInput(false);
                       setErrorMessage(null);
                     }}
                     className="mt-1 text-xs text-yellow-700 underline hover:text-yellow-800"
@@ -368,7 +278,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
 
               {/* Wallet Provider Buttons */}
               <div className="space-y-3">
-                {availableProviders.map((provider) => (
+                {wallet.availableProviders.map((provider) => (
                   <Button
                     key={provider}
                     onClick={() => handleWalletSelection(provider)}
@@ -391,7 +301,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                 ))}
 
                 {/* No providers available message */}
-                {availableProviders.length === 0 && (
+                {wallet.availableProviders.length === 0 && (
                   <Card className="border-yellow-200 bg-yellow-50 p-6 text-center">
                     <div className="mb-3 text-yellow-800">
                       <div className="mb-2 text-sm font-medium">No Hive Wallets Detected</div>
@@ -401,7 +311,6 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                       <div className="space-y-1 text-xs text-yellow-600">
                         <div>• Install Hive Keychain browser extension</div>
                         <div>• Use HiveSigner web wallet</div>
-                        <div>• Download HiveAuth mobile app</div>
                       </div>
                     </div>
                     <Button

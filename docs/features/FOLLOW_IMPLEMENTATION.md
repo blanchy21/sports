@@ -1,7 +1,7 @@
 # Follow/Unfollow Implementation Summary
 
 ## Overview
-The follow and unfollow buttons are now fully functional with complete blockchain integration using Aioha wallet authentication.
+The follow and unfollow buttons are now fully functional with complete blockchain integration using wallet authentication (Keychain / HiveSigner).
 
 ## Changes Made
 
@@ -10,12 +10,12 @@ The follow and unfollow buttons are now fully functional with complete blockchai
 - **`followUser()`**: 
   - Checks current follow status
   - Creates a follow operation with proper Hive blockchain format
-  - Broadcasts transaction using Aioha's `signAndBroadcastTx` method
+  - Broadcasts transaction using the wallet's `signAndBroadcast` method
   - Uses `custom_json` operation with `follow` ID and `['blog']` in the `what` array
 - **`unfollowUser()`**: 
   - Checks current follow status
   - Creates an unfollow operation (empty `what` array)
-  - Broadcasts transaction using Aioha
+  - Broadcasts transaction using the wallet
 - **`fetchFollowers()`**: Uses `get_followers` API to fetch user's followers
 - **`fetchFollowing()`**: Uses `get_following` API to fetch users that a user is following
 - **`getFollowerCount()`**: Uses `get_follow_count` API for follower count
@@ -41,8 +41,8 @@ The follow and unfollow buttons are now fully functional with complete blockchai
 ```
 
 ### Transaction Broadcasting
-- Uses Aioha's unified wallet interface
-- Supports Hive Keychain, Hivesigner, HiveAuth, Ledger, and Peak Vault
+- Uses unified wallet interface (WalletProvider)
+- Supports Hive Keychain and HiveSigner
 - Requires posting key permission
 - Transaction format: `custom_json` operation with `follow` operation ID
 
@@ -81,4 +81,4 @@ To test the follow functionality:
 - Follow/unfollow operations consume Resource Credits (RC)
 - Transactions are permanent on the blockchain
 - The implementation uses Hive's standard follow operations
-- All operations are signed and broadcast securely through Aioha
+- All operations are signed and broadcast securely through the wallet
