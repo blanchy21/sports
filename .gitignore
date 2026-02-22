@@ -49,6 +49,9 @@ next-env.d.ts
 .cursor/
 .idea/
 
+# Claude Code
+.claude/
+
 # Python virtual environment
 .venv/
 
@@ -64,6 +67,6 @@ next-env.d.ts
 /src/generated/prisma/
 
 # Task plans (local only)
-/tasks/replace-firebase-hive-onboarding.md
+/tasks/
 
 /src/generated/prisma
