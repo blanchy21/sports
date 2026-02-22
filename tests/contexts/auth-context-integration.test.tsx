@@ -206,7 +206,7 @@ describe('AuthContext integration', () => {
         expect(capturedAuth?.isAuthenticated).toBe(true);
       });
 
-      // After restore, a POST to /api/auth/session should refresh the cookie
+      // After restore, a POST to /api/auth/sb-session should refresh the cookie
       await waitFor(() => {
         const postCalls = mockFetch.mock.calls.filter((call) => call[1]?.method === 'POST');
         expect(postCalls.length).toBeGreaterThan(0);

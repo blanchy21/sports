@@ -4,9 +4,9 @@
  * Handles secure session tokens using httpOnly cookies with AES-256-GCM encryption.
  * This prevents XSS attacks from accessing session data and ensures integrity.
  *
- * POST /api/auth/session - Set session (login)
- * DELETE /api/auth/session - Clear session (logout)
- * GET /api/auth/session - Get current session info
+ * POST /api/auth/sb-session - Set session (login)
+ * DELETE /api/auth/sb-session - Clear session (logout)
+ * GET /api/auth/sb-session - Get current session info
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -70,7 +70,7 @@ function encryptSession(data: SessionData): string {
 }
 
 /**
- * POST /api/auth/session - Create/update session
+ * POST /api/auth/sb-session - Create/update session
  */
 export async function POST(request: NextRequest) {
   // CSRF protection for session creation
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/auth/session - Get current session
+ * GET /api/auth/sb-session - Get current session
  */
 export async function GET() {
   try {
@@ -252,7 +252,7 @@ export async function GET() {
 }
 
 /**
- * DELETE /api/auth/session - Clear session (logout)
+ * DELETE /api/auth/sb-session - Clear session (logout)
  */
 export async function DELETE(request: NextRequest) {
   // CSRF protection for logout

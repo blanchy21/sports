@@ -267,6 +267,43 @@ export const useAuthPage = (): UseAuthPageResult => {
     };
   }, [aioha, closeAiohaModal, loginWithAioha, resetHivePrompt, router]);
 
+  // Listen for HiveSigner popup callback via postMessage.
+  // The popup (hivesigner.html) sends { source: 'hivesigner-callback', success, username }
+  // after the user approves in HiveSigner.
+  useEffect(() => {
+    const handleHiveSignerMessage = async (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (!data || data.source !== 'hivesigner-callback') return;
+
+      if (data.success && data.username) {
+        setIsConnecting(true);
+        setErrorMessage(null);
+        try {
+          await loginWithAioha({
+            username: data.username,
+            provider: 'hivesigner',
+          });
+          resetHivePrompt();
+          router.push('/sportsbites');
+        } catch (error) {
+          logger.error('HiveSigner postMessage login failed', 'useAuthPage', error);
+          setErrorMessage(
+            'Login failed: ' + (error instanceof Error ? error.message : 'Unknown error')
+          );
+        } finally {
+          setIsConnecting(false);
+        }
+      } else if (!data.success) {
+        setErrorMessage('HiveSigner authentication failed: ' + (data.error || 'Unknown error'));
+        setIsConnecting(false);
+      }
+    };
+
+    window.addEventListener('message', handleHiveSignerMessage);
+    return () => window.removeEventListener('message', handleHiveSignerMessage);
+  }, [loginWithAioha, resetHivePrompt, router]);
+
   const handleGoogleSignIn = useCallback(() => {
     signIn('google', { callbackUrl: '/auth/google-callback' });
   }, []);
@@ -366,24 +403,33 @@ export const useAuthPage = (): UseAuthPageResult => {
           keyType: KeyTypes.Posting,
         });
 
-        const result = await withTimeout(
-          loginPromise,
-          LOGIN_TIMEOUT_MS,
-          `${provider === 'keychain' ? 'Hive Keychain' : provider} did not respond. Please check if the extension is working and try again.`
-        );
+        // HiveSigner is an OAuth redirect flow — the user enters credentials in a
+        // popup which takes much longer than the normal 10s timeout. For HiveSigner
+        // the popup callback (hivesigner.html) handles login via postMessage, so we
+        // just await the Aioha promise without a tight timeout.
+        const result = provider === 'hivesigner'
+          ? await loginPromise
+          : await withTimeout(
+              loginPromise,
+              LOGIN_TIMEOUT_MS,
+              `${provider === 'keychain' ? 'Hive Keychain' : provider} did not respond. Please check if the extension is working and try again.`
+            );
 
         const loginResult: AiohaLoginResult = {
           ...(result as Record<string, unknown>),
           success: (result as { success?: boolean })?.success !== false,
         };
 
-        if (
-          result &&
-          ((result as { username?: string }).username ||
-            (result as { user?: unknown }).user ||
-            (result as { account?: unknown }).account) &&
-          (loginResult.success ?? true)
-        ) {
+        // Check if the result contains a usable username or is at least successful.
+        // HiveSigner may resolve with { success: true, result: accessToken } without
+        // a top-level username — loginWithAioha will extract it from the Aioha instance.
+        const hasIdentity =
+          (result as { username?: string })?.username ||
+          (result as { user?: unknown })?.user ||
+          (result as { account?: unknown })?.account;
+        const isSuccess = loginResult.success ?? true;
+
+        if (result && (hasIdentity || isSuccess)) {
           await loginWithAioha(loginResult);
           if (usernameToUse) {
             try {

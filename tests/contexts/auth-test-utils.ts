@@ -2,7 +2,7 @@
  * Auth Test Utilities
  *
  * Provides mock setup for auth-related tests. The auth system uses httpOnly cookies
- * via /api/auth/session API, so we need to properly mock these endpoints.
+ * via /api/auth/sb-session API, so we need to properly mock these endpoints.
  */
 
 import { AuthType } from '@/types';

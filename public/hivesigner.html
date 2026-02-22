@@ -112,9 +112,17 @@
 
           document.getElementById('status').textContent = 'Login information saved. Redirecting\u2026';
 
-          // Create the httpOnly session cookie so AuthContext can restore the session.
-          // This is critical for mobile where the entire page redirects (no popup/opener).
-          fetch('/api/auth/session', {
+          // In popup mode the opener handles login via the postMessage above.
+          // Just close the popup so Aioha can detect completion.
+          if (window.opener) {
+            document.getElementById('status').textContent = 'Login successful! This window will close\u2026';
+            // Brief delay so the postMessage is delivered before the window closes.
+            setTimeout(function () { window.close(); }, 300);
+            return;
+          }
+
+          // Mobile / redirect mode (no opener) — create session cookie and redirect.
+          fetch('/api/auth/sb-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -130,9 +138,7 @@
               console.warn('[HiveSigner callback] Failed to create session cookie:', err);
             })
             .finally(function () {
-              // Redirect to /feed — the session cookie is now set so AuthContext
-              // will recognise the user on page load.
-              window.location.replace('/feed');
+              window.location.replace('/sportsbites');
             });
         } catch (error) {
           console.error('[HiveSigner callback] Failed to process response', error);

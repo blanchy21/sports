@@ -187,7 +187,7 @@ describe('Auth Persistence', () => {
   // ==========================================================================
 
   describe('syncSessionCookie', () => {
-    it('sends POST request to /api/auth/session with session data', async () => {
+    it('sends POST request to /api/auth/sb-session with session data', async () => {
       const sessionData = {
         userId: 'user-123',
         username: 'testuser',
@@ -244,7 +244,7 @@ describe('Auth Persistence', () => {
   });
 
   describe('clearSessionCookie', () => {
-    it('sends DELETE request to /api/auth/session', async () => {
+    it('sends DELETE request to /api/auth/sb-session', async () => {
       await clearSessionCookie();
 
       expect(mockFetch).toHaveBeenCalledWith('/api/auth/sb-session', {
@@ -262,7 +262,7 @@ describe('Auth Persistence', () => {
   });
 
   describe('fetchSessionFromCookie', () => {
-    it('sends GET request to /api/auth/session with credentials', async () => {
+    it('sends GET request to /api/auth/sb-session with credentials', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({

@@ -4,7 +4,7 @@ import { test, expect, Page } from '@playwright/test';
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Intercept /api/auth/session with a mocked custodial session. */
+/** Intercept /api/auth/sb-session with a mocked custodial session. */
 async function mockSession(
   page: Page,
   opts: {
@@ -15,7 +15,7 @@ async function mockSession(
 ) {
   const { userId = 'firebase-uid-e2e-test', email = 'e2e-test@example.com', hiveUsername } = opts;
 
-  await page.route('**/api/auth/session', async (route, request) => {
+  await page.route('**/api/auth/sb-session', async (route, request) => {
     const method = request.method();
 
     if (method === 'GET') {
@@ -100,7 +100,7 @@ test.describe('Auth Page — Google sign-in', () => {
 test.describe('Onboarding Username Page', () => {
   test('redirects unauthenticated visitors to /auth', async ({ page }) => {
     // No session mock — server returns unauthenticated
-    await page.route('**/api/auth/session', async (route, request) => {
+    await page.route('**/api/auth/sb-session', async (route, request) => {
       if (request.method() !== 'GET') return route.continue();
       return route.fulfill({
         status: 200,
