@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Unified Logging System
  *
@@ -35,7 +34,7 @@ export interface LogEntry {
   level: LogLevel;
   message: string;
   context?: string;
-  data?: any;
+  data?: unknown;
   error?: {
     name: string;
     message: string;
@@ -129,7 +128,7 @@ class Logger {
   /**
    * Log a debug message (suppressed in production unless DEBUG=true)
    */
-  debug(message: string, context?: string, data?: any): void {
+  debug(message: string, context?: string, data?: unknown): void {
     if (this.shouldLog('debug')) {
       this.log('debug', message, context, data);
     }
@@ -138,7 +137,7 @@ class Logger {
   /**
    * Log an info message (suppressed in production unless DEBUG=true)
    */
-  info(message: string, context?: string, data?: any): void {
+  info(message: string, context?: string, data?: unknown): void {
     if (this.shouldLog('info')) {
       this.log('info', message, context, data);
     }
@@ -147,19 +146,25 @@ class Logger {
   /**
    * Log a warning message (always logged)
    */
-  warn(message: string, context?: string, data?: any): void {
+  warn(message: string, context?: string, data?: unknown): void {
     this.log('warn', message, context, data);
   }
 
   /**
    * Log an error message (always logged)
    */
-  error(message: string, context?: string, err?: Error | unknown, data?: any): void {
+  error(message: string, context?: string, err?: Error | unknown, data?: unknown): void {
     const error = err instanceof Error ? err : undefined;
     this.log('error', message, context, data, error);
   }
 
-  private log(level: LogLevel, message: string, context?: string, data?: any, error?: Error): void {
+  private log(
+    level: LogLevel,
+    message: string,
+    context?: string,
+    data?: unknown,
+    error?: Error
+  ): void {
     if (this.shouldRateLimit(level, message, context)) {
       return;
     }
@@ -200,7 +205,7 @@ class Logger {
         level,
         message,
         ...(context && { context }),
-        ...(data && { data }),
+        ...(data !== undefined ? { data } : {}),
         ...(error && { error }),
       };
 
@@ -287,16 +292,16 @@ class Logger {
 export const logger = new Logger();
 
 // Convenience exports
-export const debug = (message: string, context?: string, data?: any) =>
+export const debug = (message: string, context?: string, data?: unknown) =>
   logger.debug(message, context, data);
 
-export const info = (message: string, context?: string, data?: any) =>
+export const info = (message: string, context?: string, data?: unknown) =>
   logger.info(message, context, data);
 
-export const warn = (message: string, context?: string, data?: any) =>
+export const warn = (message: string, context?: string, data?: unknown) =>
   logger.warn(message, context, data);
 
-export const error = (message: string, context?: string, err?: Error | unknown, data?: any) =>
+export const error = (message: string, context?: string, err?: Error | unknown, data?: unknown) =>
   logger.error(message, context, err, data);
 
 export default logger;

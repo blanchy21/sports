@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * WorkerBee Logging System
  *
@@ -23,7 +22,7 @@ class WorkerBeeLogger {
   /**
    * Log a debug message
    */
-  debug(message: string, context?: string, data?: any): void {
+  debug(message: string, context?: string, data?: unknown): void {
     if (this.debugSettings.workerBee || this.debugSettings.general) {
       sharedLogger.debug(message, context, data);
     }
@@ -32,40 +31,41 @@ class WorkerBeeLogger {
   /**
    * Log an info message
    */
-  info(message: string, context?: string, data?: any): void {
+  info(message: string, context?: string, data?: unknown): void {
     sharedLogger.info(message, context, data);
   }
 
   /**
    * Log a warning message
    */
-  warn(message: string, context?: string, data?: any): void {
+  warn(message: string, context?: string, data?: unknown): void {
     sharedLogger.warn(message, context, data);
   }
 
   /**
    * Log an error message
    */
-  error(message: string, context?: string, error?: Error, data?: any): void {
+  error(message: string, context?: string, error?: Error, data?: unknown): void {
     sharedLogger.error(message, context, error, data);
   }
 
   /**
    * Log performance metrics
    */
-  performance(operation: string, duration: number, context?: string, data?: any): void {
+  performance(operation: string, duration: number, context?: string, data?: unknown): void {
     if (this.config.performanceLogging) {
-      sharedLogger.info(`Performance: ${operation} completed in ${duration}ms`, context, {
-        ...data,
+      const perfData = {
+        ...(typeof data === 'object' && data !== null ? data : {}),
         performance: { operation, duration },
-      });
+      };
+      sharedLogger.info(`Performance: ${operation} completed in ${duration}ms`, context, perfData);
     }
   }
 
   /**
    * Log WorkerBee-specific operations
    */
-  workerBee(message: string, context?: string, data?: any): void {
+  workerBee(message: string, context?: string, data?: unknown): void {
     if (this.debugSettings.workerBee) {
       sharedLogger.debug(`[WorkerBee] ${message}`, context, data);
     }
@@ -74,7 +74,7 @@ class WorkerBeeLogger {
   /**
    * Log Wax-specific operations
    */
-  wax(message: string, context?: string, data?: any): void {
+  wax(message: string, context?: string, data?: unknown): void {
     if (this.debugSettings.wax) {
       sharedLogger.debug(`[Wax] ${message}`, context, data);
     }
@@ -83,7 +83,7 @@ class WorkerBeeLogger {
   /**
    * Log real-time events
    */
-  realtime(event: string, context?: string, data?: any): void {
+  realtime(event: string, context?: string, data?: unknown): void {
     if (this.config.realtimeEnabled) {
       sharedLogger.info(`[Realtime] ${event}`, context, data);
     }
@@ -115,28 +115,32 @@ class WorkerBeeLogger {
 export const logger = new WorkerBeeLogger();
 
 // Export convenience functions
-export const debug = (message: string, context?: string, data?: any) =>
+export const debug = (message: string, context?: string, data?: unknown) =>
   logger.debug(message, context, data);
 
-export const info = (message: string, context?: string, data?: any) =>
+export const info = (message: string, context?: string, data?: unknown) =>
   logger.info(message, context, data);
 
-export const warn = (message: string, context?: string, data?: any) =>
+export const warn = (message: string, context?: string, data?: unknown) =>
   logger.warn(message, context, data);
 
-export const error = (message: string, context?: string, error?: Error, data?: any) =>
+export const error = (message: string, context?: string, error?: Error, data?: unknown) =>
   logger.error(message, context, error, data);
 
-export const performance = (operation: string, duration: number, context?: string, data?: any) =>
-  logger.performance(operation, duration, context, data);
+export const performance = (
+  operation: string,
+  duration: number,
+  context?: string,
+  data?: unknown
+) => logger.performance(operation, duration, context, data);
 
-export const workerBee = (message: string, context?: string, data?: any) =>
+export const workerBee = (message: string, context?: string, data?: unknown) =>
   logger.workerBee(message, context, data);
 
-export const wax = (message: string, context?: string, data?: any) =>
+export const wax = (message: string, context?: string, data?: unknown) =>
   logger.wax(message, context, data);
 
-export const realtime = (event: string, context?: string, data?: any) =>
+export const realtime = (event: string, context?: string, data?: unknown) =>
   logger.realtime(event, context, data);
 
 export default logger;

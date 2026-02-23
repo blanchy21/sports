@@ -505,13 +505,16 @@ export async function DELETE(request: NextRequest) {
         },
       });
 
-      // Decrement comment count on the post (clamped to 0)
+      // Decrement comment count on the post (clamped to 0 via gt guard)
       const postId = commentDoc.postId;
       if (postId && (postId.startsWith('soft-') || !postId.includes('-'))) {
         const actualPostId = postId.replace('soft-', '');
-        prisma.$executeRaw`UPDATE soft_posts SET comment_count = GREATEST(0, comment_count - 1) WHERE id = ${actualPostId}`.catch(
-          (err: unknown) => console.error('Failed to decrement comment count:', err)
-        );
+        prisma.post
+          .updateMany({
+            where: { id: actualPostId, commentCount: { gt: 0 } },
+            data: { commentCount: { decrement: 1 } },
+          })
+          .catch((err: unknown) => console.error('Failed to decrement comment count:', err));
       }
 
       return NextResponse.json({

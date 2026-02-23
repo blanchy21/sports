@@ -320,14 +320,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           where: { communityId_userId: { communityId, userId: targetUserId } },
           data: { status: 'banned' },
         });
-        // Decrement member count (clamped to 0)
-        prisma.$executeRaw`UPDATE communities SET member_count = GREATEST(0, member_count - 1) WHERE id = ${communityId}`.catch(
-          (err) => {
+        // Decrement member count (clamped to 0 via gt guard)
+        prisma.community
+          .updateMany({
+            where: { id: communityId, memberCount: { gt: 0 } },
+            data: { memberCount: { decrement: 1 } },
+          })
+          .catch((err) => {
             logger.error('Failed to update memberCount', 'community-members', {
               error: err instanceof Error ? err.message : String(err),
             });
-          }
-        );
+          });
         return NextResponse.json({ success: true, message: 'Member banned' });
 
       case 'unban':
@@ -395,14 +398,17 @@ export async function DELETE(
       where: { communityId_userId: { communityId, userId } },
     });
 
-    // Decrement member count (clamped to 0)
-    prisma.$executeRaw`UPDATE communities SET member_count = GREATEST(0, member_count - 1) WHERE id = ${communityId}`.catch(
-      (err) => {
+    // Decrement member count (clamped to 0 via gt guard)
+    prisma.community
+      .updateMany({
+        where: { id: communityId, memberCount: { gt: 0 } },
+        data: { memberCount: { decrement: 1 } },
+      })
+      .catch((err) => {
         logger.error('Failed to update memberCount', 'community-members', {
           error: err instanceof Error ? err.message : String(err),
         });
-      }
-    );
+      });
 
     return NextResponse.json({
       success: true,

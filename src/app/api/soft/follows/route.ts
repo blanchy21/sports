@@ -248,8 +248,14 @@ export async function POST(request: NextRequest) {
         if (existingFollow) {
           // Unfollow
           await tx.follow.delete({ where: { id: existingFollow.id } });
-          await tx.$executeRaw`UPDATE profiles SET following_count = GREATEST(0, following_count - 1) WHERE id = ${user.userId}`;
-          await tx.$executeRaw`UPDATE profiles SET follower_count = GREATEST(0, follower_count - 1) WHERE id = ${targetUserId}`;
+          await tx.profile.updateMany({
+            where: { id: user.userId, followingCount: { gt: 0 } },
+            data: { followingCount: { decrement: 1 } },
+          });
+          await tx.profile.updateMany({
+            where: { id: targetUserId, followerCount: { gt: 0 } },
+            data: { followerCount: { decrement: 1 } },
+          });
           return { isFollowing: false };
         } else {
           // Follow
