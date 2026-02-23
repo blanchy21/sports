@@ -54,6 +54,8 @@ export const sanitizeHiveUserForStorage = (hiveUser: HiveAuthUser | null): HiveA
 export interface SessionResponse {
   success: boolean;
   authenticated: boolean;
+  /** True when the session check failed due to a network error (fetch threw). */
+  networkError?: boolean;
   session: {
     userId: string;
     username: string;
@@ -82,7 +84,7 @@ export const fetchSessionFromCookie = async (): Promise<SessionResponse> => {
     return await response.json();
   } catch (error) {
     logger.error('Error fetching session from cookie', 'AuthPersistence', error);
-    return { success: false, authenticated: false, session: null };
+    return { success: false, authenticated: false, networkError: true, session: null };
   }
 };
 
@@ -252,7 +254,7 @@ const executePersist = async (): Promise<void> => {
     });
 
     // PRIMARY: Sync to httpOnly cookie for server-side validation
-    await syncSessionCookie({
+    const synced = await syncSessionCookie({
       userId: userToPersist.id,
       username: userToPersist.username,
       authType: authTypeToPersist,
@@ -261,6 +263,9 @@ const executePersist = async (): Promise<void> => {
       challengeData: challengeDataToPersist,
       hivesignerToken: hivesignerTokenToPersist,
     });
+    if (!synced) {
+      console.warn('Failed to sync session cookie for user:', userToPersist.username);
+    }
 
     // SECONDARY: Save non-sensitive UI hint for hydration
     saveUIHint({

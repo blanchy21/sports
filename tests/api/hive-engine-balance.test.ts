@@ -67,16 +67,14 @@ describe('GET /api/hive-engine/balance', () => {
     const response = await request(server).get('/api/hive-engine/balance');
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Account parameter is required');
+    expect(response.body.error.message).toBe('Account parameter is required');
   });
 
   it('should return 400 for invalid account name', async () => {
-    const response = await request(server)
-      .get('/api/hive-engine/balance')
-      .query({ account: 'ab' });
+    const response = await request(server).get('/api/hive-engine/balance').query({ account: 'ab' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Invalid account name');
+    expect(response.body.error.message).toBe('Invalid account name');
   });
 
   it('should return zero balance for user with no MEDALS', async () => {
@@ -145,8 +143,8 @@ describe('GET /api/hive-engine/balance', () => {
       .query({ account: 'testuser' });
 
     expect(response.status).toBe(500);
-    expect(response.body.error).toBe('Failed to fetch balance. Please try again later.');
-    expect(response.body.code).toBe('BALANCE_FETCH_ERROR');
+    expect(response.body.error).toBe('Network error');
+    expect(response.body.code).toBe('INTERNAL_ERROR');
   });
 
   it('should set proper cache headers', async () => {

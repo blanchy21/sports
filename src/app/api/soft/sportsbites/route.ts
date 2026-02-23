@@ -6,6 +6,7 @@ import { createRequestContext, validationError, unauthorizedError } from '@/lib/
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { logger } from '@/lib/logger';
 import { SPORTSBITES_CONFIG } from '@/lib/hive-workerbee/sportsbites';
 import { SoftSportsbite } from '@/types/auth';
 
@@ -250,7 +251,11 @@ export async function POST(request: NextRequest) {
             where: { id: user.userId },
             data: { lastActiveAt: new Date() },
           })
-          .catch(() => {})
+          .catch((err) => {
+            logger.warn('Failed to update lastActiveAt', 'soft-sportsbites', {
+              error: err instanceof Error ? err.message : String(err),
+            });
+          })
       );
 
       const sportsbite: SoftSportsbite = {

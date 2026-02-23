@@ -6,6 +6,7 @@ import { createRequestContext, validationError, unauthorizedError } from '@/lib/
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -252,7 +253,11 @@ export async function POST(request: NextRequest) {
             where: { id: user.userId },
             data: { lastActiveAt: new Date() },
           })
-          .catch(() => {})
+          .catch((err) => {
+            logger.warn('Failed to update lastActiveAt', 'soft-comments', {
+              error: err instanceof Error ? err.message : String(err),
+            });
+          })
       );
 
       // Update comment count on the parent entity
@@ -285,68 +290,74 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Fetch post doc and parent comment doc in parallel for notifications
-      const [postDoc, parentDoc] = await Promise.all([
-        prisma.post.findUnique({ where: { id: postId.replace('soft-', '') } }),
-        parentCommentId
-          ? prisma.comment.findUnique({ where: { id: parentCommentId } })
-          : Promise.resolve(null),
-      ]);
+      // Notifications are non-critical — wrap in try/catch so failures
+      // don't return 500 when the comment was already saved successfully.
+      try {
+        // Fetch post doc and parent comment doc in parallel for notifications
+        const [postDoc, parentDoc] = await Promise.all([
+          prisma.post.findUnique({ where: { id: postId.replace('soft-', '') } }),
+          parentCommentId
+            ? prisma.comment.findUnique({ where: { id: parentCommentId } })
+            : Promise.resolve(null),
+        ]);
 
-      // Create notifications in parallel
-      const notificationPromises: Promise<unknown>[] = [];
+        // Create notifications in parallel
+        const notificationPromises: Promise<unknown>[] = [];
 
-      if (postDoc) {
-        if (postDoc.authorId && postDoc.authorId !== user.userId) {
-          notificationPromises.push(
-            prisma.notification.create({
-              data: {
-                recipientId: postDoc.authorId,
-                type: 'comment',
-                title: 'New Comment',
-                message: `${user.username} commented on your post`,
-                sourceUserId: user.userId,
-                sourceUsername: user.username,
+        if (postDoc) {
+          if (postDoc.authorId && postDoc.authorId !== user.userId) {
+            notificationPromises.push(
+              prisma.notification.create({
                 data: {
-                  postId,
-                  postPermlink,
-                  commentId: newComment.id,
+                  recipientId: postDoc.authorId,
+                  type: 'comment',
+                  title: 'New Comment',
+                  message: `${user.username} commented on your post`,
+                  sourceUserId: user.userId,
+                  sourceUsername: user.username,
+                  data: {
+                    postId,
+                    postPermlink,
+                    commentId: newComment.id,
+                  },
+                  read: false,
+                  createdAt: now,
                 },
-                read: false,
-                createdAt: now,
-              },
-            })
-          );
+              })
+            );
+          }
         }
-      }
 
-      if (parentDoc) {
-        if (parentDoc.authorId && parentDoc.authorId !== user.userId) {
-          notificationPromises.push(
-            prisma.notification.create({
-              data: {
-                recipientId: parentDoc.authorId,
-                type: 'reply',
-                title: 'New Reply',
-                message: `${user.username} replied to your comment`,
-                sourceUserId: user.userId,
-                sourceUsername: user.username,
+        if (parentDoc) {
+          if (parentDoc.authorId && parentDoc.authorId !== user.userId) {
+            notificationPromises.push(
+              prisma.notification.create({
                 data: {
-                  postId,
-                  postPermlink,
-                  commentId: newComment.id,
-                  parentCommentId,
+                  recipientId: parentDoc.authorId,
+                  type: 'reply',
+                  title: 'New Reply',
+                  message: `${user.username} replied to your comment`,
+                  sourceUserId: user.userId,
+                  sourceUsername: user.username,
+                  data: {
+                    postId,
+                    postPermlink,
+                    commentId: newComment.id,
+                    parentCommentId,
+                  },
+                  read: false,
+                  createdAt: now,
                 },
-                read: false,
-                createdAt: now,
-              },
-            })
-          );
+              })
+            );
+          }
         }
-      }
 
-      if (notificationPromises.length > 0) {
-        await Promise.all(notificationPromises);
+        if (notificationPromises.length > 0) {
+          await Promise.all(notificationPromises);
+        }
+      } catch (notifError) {
+        logger.error('Failed to create notifications', 'soft-comments', notifError);
       }
 
       const comment: SoftComment = {

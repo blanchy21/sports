@@ -23,6 +23,7 @@ import { getCuratorRewardAmount } from '@/lib/rewards/config';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
+import { parseJsonMetadata } from '@/lib/utils/hive';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
 import { logger } from '@/lib/logger';
 
@@ -238,9 +239,9 @@ async function verifySportsblockPost(author: string, permlink: string): Promise<
 
     // Check if post is in Sportsblock community
     const category = post.category || '';
-    const jsonMetadata = JSON.parse(post.json_metadata || '{}');
-    const tags = jsonMetadata.tags || [];
-    const community = jsonMetadata.community || category;
+    const jsonMetadata = parseJsonMetadata(post.json_metadata || '');
+    const tags = Array.isArray(jsonMetadata.tags) ? jsonMetadata.tags : [];
+    const community = (jsonMetadata.community as string) || category;
 
     return (
       community === SPORTS_ARENA_CONFIG.COMMUNITY_ID ||

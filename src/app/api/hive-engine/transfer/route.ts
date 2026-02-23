@@ -21,181 +21,177 @@ import { isValidAccountName, isValidQuantity, parseQuantity } from '@/lib/hive-e
 import { MEDALS_CONFIG } from '@/lib/hive-engine/constants';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { createApiHandler, apiError } from '@/lib/api/response';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST - Build transfer or delegation operation
  */
-export async function POST(request: NextRequest) {
-  return withCsrfProtection(request, async () => {
+export const POST = createApiHandler('/api/hive-engine/transfer', async (request, ctx) => {
+  return withCsrfProtection(request as NextRequest, async () => {
     // Require authentication
-    const user = await getAuthenticatedUserFromSession(request);
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return apiError('Authentication required', 'UNAUTHORIZED', 401, {
+        requestId: ctx.requestId,
+      });
     }
 
-    try {
-      const body = await request.json();
-      const { action = 'transfer', from, to, quantity, memo } = body;
+    const body = await request.json();
+    const { action = 'transfer', from, to, quantity, memo } = body;
 
-      // Verify the authenticated user matches the sender
-      if (user.hiveUsername !== from && user.username !== from) {
-        return NextResponse.json(
-          { error: 'Cannot build operations for other accounts' },
-          { status: 403 }
-        );
-      }
+    // Verify the authenticated user matches the sender
+    if (user.hiveUsername !== from && user.username !== from) {
+      return apiError('Cannot build operations for other accounts', 'FORBIDDEN', 403, {
+        requestId: ctx.requestId,
+      });
+    }
 
-      // Validate from account
-      if (!from || !isValidAccountName(from)) {
-        return NextResponse.json(
-          { error: 'Valid sender account (from) is required' },
-          { status: 400 }
-        );
-      }
+    // Validate from account
+    if (!from || !isValidAccountName(from)) {
+      return apiError('Valid sender account (from) is required', 'VALIDATION_ERROR', 400, {
+        requestId: ctx.requestId,
+      });
+    }
 
-      // Validate to account
-      if (!to || !isValidAccountName(to)) {
-        return NextResponse.json(
-          { error: 'Valid recipient account (to) is required' },
-          { status: 400 }
-        );
-      }
+    // Validate to account
+    if (!to || !isValidAccountName(to)) {
+      return apiError('Valid recipient account (to) is required', 'VALIDATION_ERROR', 400, {
+        requestId: ctx.requestId,
+      });
+    }
 
-      // Validate quantity
-      if (!quantity || !isValidQuantity(quantity)) {
-        return NextResponse.json(
-          { error: 'Valid quantity is required (e.g., "100.000")' },
-          { status: 400 }
-        );
-      }
+    // Validate quantity
+    if (!quantity || !isValidQuantity(quantity)) {
+      return apiError('Valid quantity is required (e.g., "100.000")', 'VALIDATION_ERROR', 400, {
+        requestId: ctx.requestId,
+      });
+    }
 
-      // Check sender's balance
-      const senderBalance = await getMedalsBalance(from);
-      const requestedAmount = parseQuantity(quantity);
+    // Check sender's balance
+    const senderBalance = await getMedalsBalance(from);
+    const requestedAmount = parseQuantity(quantity);
 
-      switch (action) {
-        case 'transfer': {
-          // Check liquid balance for transfers
-          if (!senderBalance || senderBalance.liquid < requestedAmount) {
-            return NextResponse.json(
-              {
-                error: 'Insufficient balance',
-                available: senderBalance?.liquid.toFixed(3) || '0.000',
-                requested: quantity,
-              },
-              { status: 400 }
-            );
-          }
-
-          // Cannot transfer to self
-          if (from === to) {
-            return NextResponse.json({ error: 'Cannot transfer to yourself' }, { status: 400 });
-          }
-
-          const operation = buildTransferOp(from, to, quantity, MEDALS_CONFIG.SYMBOL, memo);
-          const validation = validateOperation(operation);
-
-          if (!validation.valid) {
-            return NextResponse.json({ error: validation.error }, { status: 400 });
-          }
-
-          return NextResponse.json({
-            success: true,
-            action: 'transfer',
-            operation,
-            message: `Transfer ${quantity} ${MEDALS_CONFIG.SYMBOL} to @${to}`,
+    switch (action) {
+      case 'transfer': {
+        // Check liquid balance for transfers
+        if (!senderBalance || senderBalance.liquid < requestedAmount) {
+          return apiError('Insufficient balance', 'VALIDATION_ERROR', 400, {
+            requestId: ctx.requestId,
             details: {
-              from,
-              to,
-              quantity,
-              symbol: MEDALS_CONFIG.SYMBOL,
-              memo: memo || null,
+              available: senderBalance?.liquid.toFixed(3) || '0.000',
+              requested: quantity,
             },
           });
         }
 
-        case 'delegate': {
-          // Check staked balance for delegations
-          if (!senderBalance || senderBalance.staked < requestedAmount) {
-            return NextResponse.json(
-              {
-                error: 'Insufficient staked balance',
-                available: senderBalance?.staked.toFixed(3) || '0.000',
-                requested: quantity,
-              },
-              { status: 400 }
-            );
-          }
-
-          // Cannot delegate to self
-          if (from === to) {
-            return NextResponse.json({ error: 'Cannot delegate to yourself' }, { status: 400 });
-          }
-
-          const operation = buildDelegateOp(from, to, quantity);
-          const validation = validateOperation(operation);
-
-          if (!validation.valid) {
-            return NextResponse.json({ error: validation.error }, { status: 400 });
-          }
-
-          return NextResponse.json({
-            success: true,
-            action: 'delegate',
-            operation,
-            message: `Delegate ${quantity} ${MEDALS_CONFIG.SYMBOL} to @${to}`,
-            details: {
-              from,
-              to,
-              quantity,
-              symbol: MEDALS_CONFIG.SYMBOL,
-            },
+        // Cannot transfer to self
+        if (from === to) {
+          return apiError('Cannot transfer to yourself', 'VALIDATION_ERROR', 400, {
+            requestId: ctx.requestId,
           });
         }
 
-        case 'undelegate': {
-          // For undelegation, 'to' is actually the account we're undelegating FROM
-          // The operation will return tokens to 'from' (the delegator)
-          const operation = buildUndelegateOp(from, to, quantity);
-          const validation = validateOperation(operation);
+        const operation = buildTransferOp(from, to, quantity, MEDALS_CONFIG.SYMBOL, memo);
+        const validation = validateOperation(operation);
 
-          if (!validation.valid) {
-            return NextResponse.json({ error: validation.error }, { status: 400 });
-          }
-
-          return NextResponse.json({
-            success: true,
-            action: 'undelegate',
-            operation,
-            message: `Undelegate ${quantity} ${MEDALS_CONFIG.SYMBOL} from @${to}`,
-            details: {
-              from,
-              undelegateFrom: to,
-              quantity,
-              symbol: MEDALS_CONFIG.SYMBOL,
-            },
+        if (!validation.valid) {
+          return apiError(validation.error || 'Invalid operation', 'VALIDATION_ERROR', 400, {
+            requestId: ctx.requestId,
           });
         }
 
-        default:
-          return NextResponse.json(
-            { error: 'Invalid action. Use: transfer, delegate, or undelegate' },
-            { status: 400 }
-          );
+        return NextResponse.json({
+          success: true,
+          action: 'transfer',
+          operation,
+          message: `Transfer ${quantity} ${MEDALS_CONFIG.SYMBOL} to @${to}`,
+          details: {
+            from,
+            to,
+            quantity,
+            symbol: MEDALS_CONFIG.SYMBOL,
+            memo: memo || null,
+          },
+        });
       }
-    } catch (error) {
-      console.error('[API] Error building transfer operation:', error);
-      // Sanitize error response - don't expose internal details
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to build transfer operation. Please check your input and try again.',
-          code: 'TRANSFER_BUILD_ERROR',
-        },
-        { status: 500 }
-      );
+
+      case 'delegate': {
+        // Check staked balance for delegations
+        if (!senderBalance || senderBalance.staked < requestedAmount) {
+          return apiError('Insufficient staked balance', 'VALIDATION_ERROR', 400, {
+            requestId: ctx.requestId,
+            details: {
+              available: senderBalance?.staked.toFixed(3) || '0.000',
+              requested: quantity,
+            },
+          });
+        }
+
+        // Cannot delegate to self
+        if (from === to) {
+          return apiError('Cannot delegate to yourself', 'VALIDATION_ERROR', 400, {
+            requestId: ctx.requestId,
+          });
+        }
+
+        const operation = buildDelegateOp(from, to, quantity);
+        const validation = validateOperation(operation);
+
+        if (!validation.valid) {
+          return apiError(validation.error || 'Invalid operation', 'VALIDATION_ERROR', 400, {
+            requestId: ctx.requestId,
+          });
+        }
+
+        return NextResponse.json({
+          success: true,
+          action: 'delegate',
+          operation,
+          message: `Delegate ${quantity} ${MEDALS_CONFIG.SYMBOL} to @${to}`,
+          details: {
+            from,
+            to,
+            quantity,
+            symbol: MEDALS_CONFIG.SYMBOL,
+          },
+        });
+      }
+
+      case 'undelegate': {
+        // For undelegation, 'to' is actually the account we're undelegating FROM
+        // The operation will return tokens to 'from' (the delegator)
+        const operation = buildUndelegateOp(from, to, quantity);
+        const validation = validateOperation(operation);
+
+        if (!validation.valid) {
+          return apiError(validation.error || 'Invalid operation', 'VALIDATION_ERROR', 400, {
+            requestId: ctx.requestId,
+          });
+        }
+
+        return NextResponse.json({
+          success: true,
+          action: 'undelegate',
+          operation,
+          message: `Undelegate ${quantity} ${MEDALS_CONFIG.SYMBOL} from @${to}`,
+          details: {
+            from,
+            undelegateFrom: to,
+            quantity,
+            symbol: MEDALS_CONFIG.SYMBOL,
+          },
+        });
+      }
+
+      default:
+        return apiError(
+          'Invalid action. Use: transfer, delegate, or undelegate',
+          'VALIDATION_ERROR',
+          400,
+          { requestId: ctx.requestId }
+        );
     }
   });
-}
+});

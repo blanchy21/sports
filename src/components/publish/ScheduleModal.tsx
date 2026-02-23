@@ -4,6 +4,7 @@ import React from 'react';
 import { X, Calendar, Clock, Globe } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
+import { useToast, toast } from '@/components/core/Toast';
 
 export interface ScheduleModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export interface ScheduleModalProps {
 }
 
 export function ScheduleModal({ isOpen, onClose, onSchedule, initialDate }: ScheduleModalProps) {
+  const { addToast } = useToast();
   // Initialize with date 1 hour from now, rounded to nearest 15 minutes
   const getDefaultDate = () => {
     const now = new Date();
@@ -55,7 +57,7 @@ export function ScheduleModal({ isOpen, onClose, onSchedule, initialDate }: Sche
   const handleSchedule = () => {
     // Validate that the date is in the future
     if (selectedDate <= new Date()) {
-      alert('Please select a future date and time');
+      addToast(toast.error('Error', 'Please select a future date and time'));
       return;
     }
     onSchedule(selectedDate);

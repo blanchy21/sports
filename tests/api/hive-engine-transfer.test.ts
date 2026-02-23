@@ -83,7 +83,7 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ from: 'sender', to: 'recipient', quantity: '100.000' });
 
     expect(response.status).toBe(401);
-    expect(response.body.error).toBe('Authentication required');
+    expect(response.body.error.message).toBe('Authentication required');
   });
 
   it('should return 403 when from does not match authenticated user', async () => {
@@ -92,7 +92,7 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ from: 'other-user', to: 'recipient', quantity: '100.000' });
 
     expect(response.status).toBe(403);
-    expect(response.body.error).toContain('Cannot build operations for other accounts');
+    expect(response.body.error.message).toContain('Cannot build operations for other accounts');
   });
 
   it('should return 400 for invalid from account', async () => {
@@ -108,7 +108,7 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ from: 'x', to: 'recipient', quantity: '100.000' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('sender account');
+    expect(response.body.error.message).toContain('sender account');
   });
 
   it('should return 400 for missing to account', async () => {
@@ -117,7 +117,7 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ from: 'sender', quantity: '100.000' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('recipient account');
+    expect(response.body.error.message).toContain('recipient account');
   });
 
   it('should return 400 for invalid quantity', async () => {
@@ -126,7 +126,7 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ from: 'sender', to: 'recipient', quantity: 'invalid' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('quantity');
+    expect(response.body.error.message).toContain('quantity');
   });
 
   it('should return 400 for insufficient balance on transfer', async () => {
@@ -137,8 +137,8 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ action: 'transfer', from: 'sender', to: 'recipient', quantity: '100.000' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Insufficient balance');
-    expect(response.body.available).toBe('50.000');
+    expect(response.body.error.message).toBe('Insufficient balance');
+    expect(response.body.error.details.available).toBe('50.000');
   });
 
   it('should return 400 for transfer to self', async () => {
@@ -149,7 +149,7 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ action: 'transfer', from: 'sender', to: 'sender', quantity: '100.000' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Cannot transfer to yourself');
+    expect(response.body.error.message).toBe('Cannot transfer to yourself');
   });
 
   it('should build transfer operation successfully', async () => {
@@ -194,8 +194,8 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ action: 'delegate', from: 'sender', to: 'recipient', quantity: '100.000' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Insufficient staked balance');
-    expect(response.body.available).toBe('50.000');
+    expect(response.body.error.message).toBe('Insufficient staked balance');
+    expect(response.body.error.details.available).toBe('50.000');
   });
 
   it('should return 400 for delegate to self', async () => {
@@ -206,7 +206,7 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ action: 'delegate', from: 'sender', to: 'sender', quantity: '100.000' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Cannot delegate to yourself');
+    expect(response.body.error.message).toBe('Cannot delegate to yourself');
   });
 
   it('should build delegate operation successfully', async () => {
@@ -270,7 +270,7 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ action: 'invalid', from: 'sender', to: 'recipient', quantity: '100.000' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('Invalid action');
+    expect(response.body.error.message).toContain('Invalid action');
   });
 
   it('should return 400 when operation validation fails', async () => {
@@ -283,7 +283,7 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ action: 'transfer', from: 'sender', to: 'recipient', quantity: '100.000' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Invalid operation format');
+    expect(response.body.error.message).toBe('Invalid operation format');
   });
 
   it('should handle errors gracefully', async () => {
@@ -294,9 +294,7 @@ describe('POST /api/hive-engine/transfer', () => {
       .send({ from: 'sender', to: 'recipient', quantity: '100.000' });
 
     expect(response.status).toBe(500);
-    expect(response.body.error).toBe(
-      'Failed to build transfer operation. Please check your input and try again.'
-    );
-    expect(response.body.code).toBe('TRANSFER_BUILD_ERROR');
+    expect(response.body.error).toBe('Network error');
+    expect(response.body.code).toBe('INTERNAL_ERROR');
   });
 });

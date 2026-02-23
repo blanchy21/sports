@@ -5,6 +5,8 @@
  * to prevent XSS attacks.
  */
 
+import { TRUSTED_IMAGE_HOSTS } from '@/lib/constants/image-hosts';
+
 // Lazy-load isomorphic-dompurify to avoid jsdom initialization during SSG prerender.
 // jsdom tries to read a default-stylesheet.css that doesn't exist in Vercel's build env.
 // Deferring via require() ensures jsdom only loads when sanitize functions are actually called.
@@ -480,27 +482,10 @@ const IMAGE_EXTENSIONS = [
 ];
 
 /**
- * Hosts that are known to serve images (even without file extensions in URL)
+ * Hosts that are known to serve images (even without file extensions in URL).
+ * Uses the shared TRUSTED_IMAGE_HOSTS constant.
  */
-const KNOWN_IMAGE_HOSTS = [
-  'images.hive.blog',
-  'images.ecency.com',
-  'files.peakd.com',
-  'cdn.steemitimages.com',
-  'steemitimages.com',
-  'images.unsplash.com',
-  'gateway.ipfs.io',
-  'ipfs.io',
-  'files.3speak.tv',
-  'files.dtube.tv',
-  'i.imgur.com',
-  'imgur.com',
-  'media.tenor.com',
-  'media1.tenor.com',
-  'c.tenor.com',
-  'pbs.twimg.com',
-  'media.giphy.com',
-];
+const KNOWN_IMAGE_HOSTS = TRUSTED_IMAGE_HOSTS;
 
 /**
  * Check if a URL appears to be an image URL
@@ -595,25 +580,9 @@ export function validateImageUrl(url: string): {
  * @returns true if URL is from a trusted host
  */
 export function isTrustedImageHost(url: string): boolean {
-  const trustedHosts = [
-    'images.hive.blog',
-    'images.ecency.com',
-    'files.peakd.com',
-    'cdn.steemitimages.com',
-    'steemitimages.com',
-    'images.unsplash.com',
-    'gateway.ipfs.io',
-    'ipfs.io',
-    'files.3speak.tv',
-    'files.dtube.tv',
-    'i.imgur.com',
-    'imgur.com',
-    'media.tenor.com',
-  ];
-
   try {
     const parsed = new URL(url);
-    return trustedHosts.some(
+    return TRUSTED_IMAGE_HOSTS.some(
       (host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`)
     );
   } catch {

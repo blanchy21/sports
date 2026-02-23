@@ -15,6 +15,7 @@ import { UserPlus, UserMinus, Calendar, MapPin, Link as LinkIcon } from 'lucide-
 import { formatDate } from '@/lib/utils/client';
 import { BaseModal } from '@/components/core/BaseModal';
 import { logger } from '@/lib/logger';
+import { useToast, toast } from '@/components/core/Toast';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ interface UserProfileModalProps {
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, data }) => {
   const username = data?.username as string;
   const { user: currentUser } = useAuth();
+  const { addToast } = useToast();
   const { data: profile, isLoading, error } = useUserProfile(username || '');
   const { data: followerCount } = useUserFollowerCount(username || '');
   const { data: followingCount } = useUserFollowingCount(username || '');
@@ -45,7 +47,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
   const handleFollowToggle = async () => {
     if (!username || !currentUser?.username) {
-      alert('Please login to follow users');
+      addToast(toast.error('Error', 'Please login to follow users'));
       return;
     }
 
@@ -57,7 +59,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           follower: currentUser.username,
         });
         if (!result.success) {
-          alert(`Failed to unfollow: ${result.error || 'Unknown error'}`);
+          addToast(toast.error('Error', `Failed to unfollow: ${result.error || 'Unknown error'}`));
         }
       } else {
         const result = await followMutation.mutateAsync({
@@ -65,7 +67,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           follower: currentUser.username,
         });
         if (!result.success) {
-          alert(`Failed to follow: ${result.error || 'Unknown error'}`);
+          addToast(toast.error('Error', `Failed to follow: ${result.error || 'Unknown error'}`));
         }
       }
 
@@ -75,7 +77,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       }, 500);
     } catch (error) {
       logger.error('Error toggling follow status', 'UserProfileModal', error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      addToast(toast.error('Error', `${error instanceof Error ? error.message : 'Unknown error'}`));
     } finally {
       setIsFollowLoading(false);
     }

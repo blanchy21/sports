@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 // ============================================================================
 // Account Schemas
@@ -312,7 +313,7 @@ export function validateAccountData(data: unknown): ValidatedUserAccountData | n
   if (result.success) {
     return result.data;
   }
-  console.warn('Account data validation failed:', result.error.issues);
+  logger.warn('Account data validation failed', 'hive-schemas', { issues: result.error.issues });
   return null;
 }
 
@@ -324,7 +325,7 @@ export function validatePostData(data: unknown): HiveRawPost | null {
   if (result.success) {
     return result.data;
   }
-  console.warn('Post data validation failed:', result.error.issues);
+  logger.warn('Post data validation failed', 'hive-schemas', { issues: result.error.issues });
   return null;
 }
 
@@ -338,8 +339,13 @@ export function parsePostMetadata(jsonMetadata: string): HivePostMetadata | null
     if (result.success) {
       return result.data;
     }
+    logger.warn('Post metadata validation failed', 'hive-schemas', { issues: result.error.issues });
     return null;
-  } catch {
+  } catch (err) {
+    logger.warn('Failed to parse post metadata JSON', 'hive-schemas', {
+      error: err instanceof Error ? err.message : String(err),
+      metadata: typeof jsonMetadata === 'string' ? jsonMetadata.slice(0, 200) : 'non-string',
+    });
     return null;
   }
 }
@@ -352,7 +358,9 @@ export function validateDynamicProperties(data: unknown): HiveDynamicProperties 
   if (result.success) {
     return result.data;
   }
-  console.warn('Dynamic properties validation failed:', result.error.issues);
+  logger.warn('Dynamic properties validation failed', 'hive-schemas', {
+    issues: result.error.issues,
+  });
   return null;
 }
 
@@ -368,7 +376,9 @@ export function validateHivePosts(data: unknown[]): HiveRawPost[] {
     if (result.success) {
       validPosts.push(result.data);
     } else {
-      console.warn(`Post at index ${i} failed validation:`, result.error.issues);
+      logger.warn(`Post at index ${i} failed validation`, 'hive-schemas', {
+        issues: result.error.issues,
+      });
     }
   }
 
@@ -387,7 +397,9 @@ export function validateHiveComments(data: unknown[]): HiveRawComment[] {
     if (result.success) {
       validComments.push(result.data);
     } else {
-      console.warn(`Comment at index ${i} failed validation:`, result.error.issues);
+      logger.warn(`Comment at index ${i} failed validation`, 'hive-schemas', {
+        issues: result.error.issues,
+      });
     }
   }
 
@@ -402,6 +414,6 @@ export function validateCommentData(data: unknown): HiveRawComment | null {
   if (result.success) {
     return result.data;
   }
-  console.warn('Comment data validation failed:', result.error.issues);
+  logger.warn('Comment data validation failed', 'hive-schemas', { issues: result.error.issues });
   return null;
 }

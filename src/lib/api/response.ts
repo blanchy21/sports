@@ -738,6 +738,16 @@ export type ApiRouteHandler<T = unknown> = (
 ) => Promise<NextResponse<ApiSuccessResponse<T>> | NextResponse<ApiErrorResponse>>;
 
 /**
+ * Permissive handler type for routes that return domain-specific response shapes
+ * (not wrapped in ApiSuccessResponse envelope). Use during migration of legacy routes
+ * that need createApiHandler's error handling + logging but keep their existing response shapes.
+ */
+export type LegacyApiRouteHandler = (
+  request: Request,
+  context: ApiHandlerContext
+) => Promise<NextResponse>;
+
+/**
  * Create a wrapped API route handler with automatic error handling
  *
  * This wrapper:
@@ -756,9 +766,17 @@ export type ApiRouteHandler<T = unknown> = (
  *   return apiSuccess({ posts, total: posts.length });
  * });
  */
+export function createApiHandler(
+  route: string,
+  handler: LegacyApiRouteHandler
+): (request: Request) => Promise<NextResponse>;
 export function createApiHandler<T = unknown>(
   route: string,
   handler: ApiRouteHandler<T>
+): (request: Request) => Promise<NextResponse>;
+export function createApiHandler<T = unknown>(
+  route: string,
+  handler: ApiRouteHandler<T> | LegacyApiRouteHandler
 ): (request: Request) => Promise<NextResponse> {
   return async (request: Request): Promise<NextResponse> => {
     const requestId = generateRequestId();
