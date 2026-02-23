@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/core/Button';
-import { Badge } from '@/components/core/Badge';
 import { Avatar } from '@/components/core/Avatar';
+import { RoleBadge } from '@/components/user/RoleBadge';
 import { MessageCircle, Send, Loader2, Reply } from 'lucide-react';
 import { formatDate } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -215,15 +215,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
                 {comment.authorDisplayName || `@${comment.authorUsername}`}
               </span>
               <span className="text-xs text-muted-foreground">@{comment.authorUsername}</span>
-              {comment.isHiveUser ? (
-                <Badge variant="default" className="px-1.5 py-0 text-[10px]">
-                  Hive
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-                  Off Chain
-                </Badge>
-              )}
+              <RoleBadge username={comment.authorUsername} />
               <span className="text-xs text-muted-foreground">
                 {formatDate(new Date(comment.createdAt))}
               </span>
