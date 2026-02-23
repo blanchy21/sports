@@ -19,6 +19,8 @@ export interface WalletLoginResult {
   success: true;
   username: string;
   provider: WalletProvider;
+  /** Keychain: the hex signature from requestSignBuffer (used for challenge-response auth) */
+  signature?: string;
 }
 
 export interface WalletLoginFailure {
@@ -58,7 +60,11 @@ export interface WalletState {
 }
 
 export interface WalletActions {
-  login: (provider: WalletProvider, username: string) => Promise<WalletLoginOutcome>;
+  login: (
+    provider: WalletProvider,
+    username: string,
+    message?: string
+  ) => Promise<WalletLoginOutcome>;
   logout: () => Promise<void>;
   signMessage: (username: string, message: string) => Promise<WalletSignOutcome>;
   signAndBroadcast: (operations: HiveOperation[], keyType: KeyType) => Promise<BroadcastResult>;

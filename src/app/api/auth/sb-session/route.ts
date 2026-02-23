@@ -159,6 +159,7 @@ export async function POST(request: NextRequest) {
         // HiveSigner doesn't support message signing, so we verify the OAuth token instead.
         const tokenResult = await verifyHivesignerToken(hivesignerToken, sessionData.username);
         if (!tokenResult.valid) {
+          console.warn('[sb-session] HiveSigner verification failed:', tokenResult.reason);
           return NextResponse.json(
             { success: false, error: `HiveSigner verification failed: ${tokenResult.reason}` },
             { status: 401 }
@@ -170,6 +171,12 @@ export async function POST(request: NextRequest) {
         // Verify challenge integrity and expiry
         const challengeResult = verifyChallenge(challenge, challengeMac, sessionData.username);
         if (!challengeResult.valid) {
+          console.warn(
+            '[sb-session] Challenge verification failed:',
+            challengeResult.reason,
+            '| user:',
+            sessionData.username
+          );
           return NextResponse.json(
             { success: false, error: `Challenge verification failed: ${challengeResult.reason}` },
             { status: 401 }
@@ -183,6 +190,12 @@ export async function POST(request: NextRequest) {
           sessionData.username
         );
         if (!sigResult.valid) {
+          console.warn(
+            '[sb-session] Signature verification failed:',
+            sigResult.reason,
+            '| user:',
+            sessionData.username
+          );
           return NextResponse.json(
             { success: false, error: `Signature verification failed: ${sigResult.reason}` },
             { status: 401 }
@@ -190,6 +203,18 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // No verification data provided
+        console.warn(
+          '[sb-session] No verification data provided | user:',
+          sessionData.username,
+          '| has challenge:',
+          !!challenge,
+          '| has mac:',
+          !!challengeMac,
+          '| has sig:',
+          !!signature,
+          '| has token:',
+          !!hivesignerToken
+        );
         return NextResponse.json(
           {
             success: false,
@@ -220,6 +245,15 @@ export async function POST(request: NextRequest) {
     }
 
     const encryptedSession = encryptSession(sessionData);
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        '[sb-session] Session created for:',
+        sessionData.username,
+        '| authType:',
+        sessionData.authType
+      );
+    }
 
     // Create response with session cookie
     const response = NextResponse.json({

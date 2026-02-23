@@ -168,7 +168,11 @@ export default function FeedPage() {
   // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
-      router.push('/');
+      // Grace period — auth state may still be propagating after login
+      const timer = setTimeout(() => {
+        router.push('/');
+      }, 150);
+      return () => clearTimeout(timer);
     }
   }, [user, isAuthLoading, router]);
 

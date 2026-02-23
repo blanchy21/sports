@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletProvider';
 import { isKeychainAvailable } from '@/lib/wallet/detect';
 import { logger } from '@/lib/logger';
+import type { ChallengeData } from '@/contexts/auth/auth-persistence';
 
 export interface UseKeychainLoginResult {
   hiveUsername: string;
@@ -59,10 +60,33 @@ export const useKeychainLogin = (onSuccess?: () => void): UseKeychainLoginResult
     setErrorMessage(null);
 
     try {
-      const result = await wallet.login('keychain', hiveUsername.trim());
+      const username = hiveUsername.trim();
+
+      // Fetch server challenge BEFORE the Keychain popup so we can sign
+      // both the login proof and the challenge in a single popup
+      const challengeRes = await fetch(
+        `/api/auth/hive-challenge?username=${encodeURIComponent(username)}`
+      );
+      if (!challengeRes.ok) {
+        throw new Error('Failed to fetch authentication challenge');
+      }
+      const { challenge, mac } = await challengeRes.json();
+
+      // Single Keychain popup: signs the challenge (proves key ownership + creates session proof)
+      const result = await wallet.login('keychain', username, challenge);
 
       if (result.success) {
-        await loginWithWallet(result);
+        // Bundle challenge data from the login signature
+        let challengeData: ChallengeData | undefined;
+        if (result.signature) {
+          challengeData = {
+            challenge,
+            challengeMac: mac,
+            signature: result.signature,
+          };
+        }
+
+        await loginWithWallet(result, challengeData);
         resetState();
         onSuccess?.();
         router.push('/sportsbites');

@@ -73,7 +73,12 @@ export default function SportsBitesPage() {
 
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
-      router.push('/');
+      // Give a brief grace period — auth state may still be propagating
+      // (e.g. after login dispatch + navigation, or HMR in dev mode)
+      const timer = setTimeout(() => {
+        router.push('/');
+      }, 150);
+      return () => clearTimeout(timer);
     }
     // Redirect custodial users who haven't completed onboarding
     if (!isAuthLoading && user && authType === 'soft' && !user.onboardingCompleted) {
