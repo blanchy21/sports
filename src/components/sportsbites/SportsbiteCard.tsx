@@ -23,7 +23,6 @@ import { useUserProfileCard } from '@/lib/react-query/queries/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { cn, formatDate } from '@/lib/utils/client';
-import { formatReputation } from '@/lib/utils/hive';
 import { extractMediaFromBody } from '@/lib/hive-workerbee/shared';
 import type {
   Sportsbite,
@@ -375,11 +374,6 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               </button>
               <span className="text-muted-foreground">@{sportsbite.author}</span>
               <RoleBadge username={sportsbite.author} />
-              {sportsbite.author_reputation && (
-                <span className="text-xs text-muted-foreground">
-                  ({formatReputation(parseFloat(sportsbite.author_reputation) || 0)})
-                </span>
-              )}
               <span className="text-muted-foreground">·</span>
               <span className="text-sm text-muted-foreground">
                 {formatDate(
