@@ -34,7 +34,9 @@ export const GET = createApiHandler('/api/hive/download-keys', async (request: R
   }
 
   // 1b. Rate limit — prevent bulk download attempts
-  const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.keyDownload, 'keyDownload');
+  const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.keyDownload, 'keyDownload', {
+    strict: true,
+  });
   if (!rateLimit.success) {
     return apiError(
       'Too many key download attempts. Please try again later.',

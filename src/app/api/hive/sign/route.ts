@@ -65,7 +65,9 @@ export const POST = createApiHandler('/api/hive/sign', async (request: Request, 
   }
 
   // 5. Rate limit (distributed — works across serverless invocations)
-  const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.signingRelay, 'signingRelay');
+  const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.signingRelay, 'signingRelay', {
+    strict: true,
+  });
   if (!rateLimit.success) {
     return apiError('Too many requests — max 10 operations per minute', 'RATE_LIMITED', 429, {
       requestId: ctx.requestId,

@@ -26,7 +26,8 @@ export const POST = createApiHandler('/api/hive/create-account', async (request:
   const rateLimit = await checkRateLimit(
     user.userId,
     RATE_LIMITS.accountCreation,
-    'accountCreation'
+    'accountCreation',
+    { strict: true }
   );
   if (!rateLimit.success) {
     return apiError(
@@ -47,6 +48,10 @@ export const POST = createApiHandler('/api/hive/create-account', async (request:
 
   if (!username) {
     return apiError('username is required', 'VALIDATION_ERROR', 400);
+  }
+
+  if (!username.startsWith('sb-')) {
+    return apiError('Username must start with "sb-"', 'VALIDATION_ERROR', 400);
   }
 
   // Look up the custodial user record

@@ -142,7 +142,8 @@ function getRatelimiter(type: string, config: RateLimitConfig): Ratelimit | null
 export async function checkRateLimit(
   identifier: string,
   config: RateLimitConfig,
-  type: string = 'default'
+  type: string = 'default',
+  options?: { strict?: boolean }
 ): Promise<RateLimitResult> {
   // Try distributed rate limiting first
   // If Redis was marked down, retry after REDIS_RETRY_AFTER_MS
@@ -175,6 +176,11 @@ export async function checkRateLimit(
         redisDownSince = Date.now();
       }
     }
+  }
+
+  // In strict mode, deny when Redis is unavailable rather than falling back
+  if (options?.strict) {
+    return { success: false, remaining: 0, reset: Date.now() + 60_000 };
   }
 
   // Fallback to in-memory rate limiting

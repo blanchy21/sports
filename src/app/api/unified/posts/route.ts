@@ -17,46 +17,31 @@ const ROUTE = '/api/unified/posts';
 // ============================================
 
 async function getSoftPostsByUsername(username: string, postsLimit: number): Promise<SoftPost[]> {
-  try {
-    const posts = await prisma.post.findMany({
-      where: { authorUsername: username },
-      orderBy: { createdAt: 'desc' },
-      take: postsLimit,
-    });
+  const posts = await prisma.post.findMany({
+    where: { authorUsername: username },
+    orderBy: { createdAt: 'desc' },
+    take: postsLimit,
+  });
 
-    return posts.map(postToSoftPost);
-  } catch (error) {
-    console.error('[unified/posts] Error fetching soft posts by username:', error);
-    return [];
-  }
+  return posts.map(postToSoftPost);
 }
 
 async function getSoftPostsByAuthorId(authorId: string): Promise<SoftPost[]> {
-  try {
-    const posts = await prisma.post.findMany({
-      where: { authorId },
-      orderBy: { createdAt: 'desc' },
-    });
+  const posts = await prisma.post.findMany({
+    where: { authorId },
+    orderBy: { createdAt: 'desc' },
+  });
 
-    return posts.map(postToSoftPost);
-  } catch (error) {
-    console.error('[unified/posts] Error fetching soft posts by authorId:', error);
-    return [];
-  }
+  return posts.map(postToSoftPost);
 }
 
 async function getAllSoftPosts(postsLimit: number): Promise<SoftPost[]> {
-  try {
-    const posts = await prisma.post.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: postsLimit,
-    });
+  const posts = await prisma.post.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: postsLimit,
+  });
 
-    return posts.map(postToSoftPost);
-  } catch (error) {
-    console.error('[unified/posts] Error fetching all soft posts:', error);
-    return [];
-  }
+  return posts.map(postToSoftPost);
 }
 
 function postToSoftPost(post: {

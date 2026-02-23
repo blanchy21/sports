@@ -65,6 +65,10 @@ export async function createHiveAccountForUser(
   custodialUserId: string
 ): Promise<AccountCreationResult> {
   // 1. Validate username
+  if (!username.startsWith('sb-')) {
+    throw new Error('Username must start with "sb-"');
+  }
+
   const validation = isValidHiveUsername(username);
   if (!validation.valid) {
     throw new Error(`Invalid username: ${validation.reason}`);

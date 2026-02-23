@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -24,7 +25,7 @@ export async function GET() {
     return NextResponse.json(createUnauthorizedResponse(), { status: 401 });
   }
 
-  console.log('[Cron] Starting notification cleanup...');
+  logger.info('Starting notification cleanup', 'cron:notification-cleanup');
 
   const results = {
     notificationsDeleted: 0,
@@ -67,8 +68,9 @@ export async function GET() {
         });
 
         results.notificationsDeleted += deleteResult.count;
-        console.log(
-          `[Cron] Deleted ${deleteResult.count} old notifications (iteration ${iterations})`
+        logger.info(
+          `Deleted ${deleteResult.count} old notifications (iteration ${iterations})`,
+          'cron:notification-cleanup'
         );
 
         // Check if we've deleted all
@@ -88,13 +90,16 @@ export async function GET() {
       });
       if (orphanResult.count > 0) {
         results.notificationsDeleted += orphanResult.count;
-        console.log(`[Cron] Deleted ${orphanResult.count} orphaned notifications`);
+        logger.info(
+          `Deleted ${orphanResult.count} orphaned notifications`,
+          'cron:notification-cleanup'
+        );
       }
     } catch {
       // Ignore orphan cleanup errors
     }
 
-    console.log('[Cron] Notification cleanup completed', results);
+    logger.info('Notification cleanup completed', 'cron:notification-cleanup', results);
 
     return NextResponse.json({
       success: true,
@@ -102,7 +107,7 @@ export async function GET() {
       results,
     });
   } catch (error) {
-    console.error('[Cron] Error during notification cleanup:', error);
+    logger.error('Error during notification cleanup', 'cron:notification-cleanup', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
 
     return NextResponse.json(

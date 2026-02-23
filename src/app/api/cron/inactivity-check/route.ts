@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,7 +29,7 @@ export async function GET() {
     return NextResponse.json(createUnauthorizedResponse(), { status: 401 });
   }
 
-  console.log('[Cron] Starting inactivity check...');
+  logger.info('Starting inactivity check', 'cron:inactivity-check');
 
   const results = {
     firstWarningsSent: 0,
@@ -55,7 +56,7 @@ export async function GET() {
     // ============================================
     // Step 1: Send first warnings (150+ days inactive)
     // ============================================
-    console.log('[Cron] Checking for 150+ day inactive users...');
+    logger.info('Checking for 150+ day inactive users', 'cron:inactivity-check');
 
     const firstWarningUsers = await prisma.profile.findMany({
       where: {
@@ -103,7 +104,7 @@ export async function GET() {
     // ============================================
     // Step 2: Send final warnings (170+ days inactive)
     // ============================================
-    console.log('[Cron] Checking for 170+ day inactive users...');
+    logger.info('Checking for 170+ day inactive users', 'cron:inactivity-check');
 
     const finalWarningUsers = await prisma.profile.findMany({
       where: {
@@ -152,7 +153,7 @@ export async function GET() {
     // ============================================
     // Step 3: Archive content for expired users (180+ days inactive)
     // ============================================
-    console.log('[Cron] Checking for 180+ day inactive users...');
+    logger.info('Checking for 180+ day inactive users', 'cron:inactivity-check');
 
     const expiredUsers = await prisma.profile.findMany({
       where: {
@@ -179,15 +180,16 @@ export async function GET() {
 
         results.usersArchived++;
 
-        console.log(
-          `[Cron] Archived user ${user.id}: ${postResult.count} posts, ${commentResult.count} comments`
+        logger.info(
+          `Archived user ${user.id}: ${postResult.count} posts, ${commentResult.count} comments`,
+          'cron:inactivity-check'
         );
       } catch (error) {
         results.errors.push(`Failed to archive user ${user.id}: ${error}`);
       }
     }
 
-    console.log('[Cron] Inactivity check completed', results);
+    logger.info('Inactivity check completed', 'cron:inactivity-check', results);
 
     return NextResponse.json({
       success: true,
@@ -195,7 +197,7 @@ export async function GET() {
       results,
     });
   } catch (error) {
-    console.error('[Cron] Error during inactivity check:', error);
+    logger.error('Error during inactivity check', 'cron:inactivity-check', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
 
     return NextResponse.json(

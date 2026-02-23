@@ -1195,52 +1195,6 @@ export async function getRecentOperations(
 }
 
 /**
- * Calculate actual comment count and vote count by fetching user's posts
- * @param username - Hive username
- * @returns Comment count and vote count
- */
-async function _calculateUserStats(username: string): Promise<{
-  commentCount: number;
-  voteCount: number;
-}> {
-  try {
-    debugLog(`[WorkerBee calculateUserStats] Calculating stats for: ${username}`);
-
-    // Fetch user's posts to calculate actual stats
-    const posts = (await makeHiveApiCall('condenser_api', 'get_discussions_by_author_before_date', [
-      username,
-      '', // before date (empty for most recent)
-      '', // before permlink (empty for most recent)
-      20, // Hive API caps discussion queries at 20
-    ])) as HivePost[];
-
-    debugLog(`[WorkerBee calculateUserStats] Found ${posts.length} posts for ${username}`);
-
-    const totalVotes = posts.reduce((sum, post) => sum + (post.net_votes || 0), 0);
-    const totalComments = posts.reduce((sum, post) => sum + (post.children || 0), 0);
-
-    debugLog(
-      `[WorkerBee calculateUserStats] Calculated stats for ${username}: ${totalComments} comments, ${totalVotes} votes`
-    );
-
-    return {
-      commentCount: totalComments,
-      voteCount: totalVotes,
-    };
-  } catch (error) {
-    logError(
-      'Error calculating user stats',
-      'calculateUserStats',
-      error instanceof Error ? error : undefined
-    );
-    return {
-      commentCount: 0,
-      voteCount: 0,
-    };
-  }
-}
-
-/**
  * Update user profile metadata using WorkerBee/Wax
  * @param username - Username
  * @param profileData - Profile data to update

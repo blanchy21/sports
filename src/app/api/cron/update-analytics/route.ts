@@ -6,6 +6,7 @@ import { fetchSoftSportsbites } from '@/lib/hive-workerbee/sportsbites-server';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -35,7 +36,7 @@ export async function GET() {
   }
 
   try {
-    console.log('[Cron] Starting analytics update...');
+    logger.info('Starting analytics update', 'cron:update-analytics');
 
     // Fetch posts, Hive sportsbites, and soft sportsbites in parallel
     const [result, bitesResult, softBites] = await Promise.all([
@@ -47,7 +48,7 @@ export async function GET() {
     const allBites = [...bitesResult.sportsbites, ...softBites];
 
     if (result.posts.length === 0 && allBites.length === 0) {
-      console.log('[Cron] No posts or sportsbites found, skipping update');
+      logger.info('No posts or sportsbites found, skipping update', 'cron:update-analytics');
       return NextResponse.json({
         success: true,
         message: 'No posts to analyze',
@@ -55,8 +56,9 @@ export async function GET() {
       });
     }
 
-    console.log(
-      `[Cron] Fetched ${result.posts.length} posts, ${bitesResult.sportsbites.length} hive bites, ${softBites.length} soft bites, calculating analytics...`
+    logger.info(
+      `Fetched ${result.posts.length} posts, ${bitesResult.sportsbites.length} hive bites, ${softBites.length} soft bites, calculating analytics`,
+      'cron:update-analytics'
     );
 
     // Calculate analytics -- sportsbites (hive + soft) drive trending topics
@@ -90,7 +92,7 @@ export async function GET() {
       }),
     ]);
 
-    console.log('[Cron] Analytics update completed successfully');
+    logger.info('Analytics update completed successfully', 'cron:update-analytics');
 
     return NextResponse.json({
       success: true,
@@ -104,7 +106,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('[Cron] Error updating analytics:', error);
+    logger.error('Error updating analytics', 'cron:update-analytics', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
 
     return NextResponse.json(

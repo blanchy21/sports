@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/core/Button';
 import { AccountDiscoveryProps } from './types';
 
 export const AccountDiscovery: React.FC<AccountDiscoveryProps> = ({
