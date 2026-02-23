@@ -32,8 +32,8 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 The following are in scope:
 - Sportsblock web application
 - API endpoints
-- Authentication flows (Hive wallet, Google OAuth, custodial signing relay)
-- Custodial key management
+- Authentication flows (Hive wallet, Google OAuth, managed signing relay)
+- Encrypted key storage and signing relay
 
 The following are out of scope:
 - Third-party services (Hive blockchain infrastructure, Supabase, Vercel)

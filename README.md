@@ -5,7 +5,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-Private-red)](#license)
 
-A Next.js 15 sports content platform integrated with the Hive blockchain. Users can authenticate via Hive wallets for full self-custody, or sign up with Google for a streamlined custodial experience with an upgrade path to full blockchain access.
+A Next.js 15 sports content platform integrated with the Hive blockchain. Every user gets a real Hive account with their own keys — sign up with a Hive wallet or Google, and you're on-chain.
 
 **Production:** [https://sportsblock.app](https://sportsblock.app)
 
@@ -25,7 +25,7 @@ A Next.js 15 sports content platform integrated with the Hive blockchain. Users 
 
 ## Features
 
-- **Dual Authentication** - Hive blockchain wallets or Google OAuth with custodial onboarding
+- **Flexible Sign-Up** - Hive wallet or Google OAuth — every user gets a real Hive account
 - **Blockchain Publishing** - Posts permanently stored on the Hive blockchain
 - **Cryptocurrency Rewards** - Earn HIVE/HBD for quality content
 - **SportsBites** - Short-form sports content (think tweets for sports)
@@ -58,31 +58,27 @@ A Next.js 15 sports content platform integrated with the Hive blockchain. Users 
 
 ## Authentication
 
-Sportsblock supports two authentication methods that converge in a unified `AuthContext`:
+Sportsblock supports two sign-up methods that converge in a unified `AuthContext`. Regardless of method, every user ends up with a real Hive account and their own keys.
 
-### Hive Users (Full Self-Custody)
+### Hive Wallet Sign-In
 
 - Authenticate via Hive wallets (Keychain, HiveSigner)
-- Posts published directly to the Hive blockchain
-- Earn cryptocurrency rewards (HIVE, HBD) for content
-- Vote on posts with blockchain voting power
-- Full decentralized experience
+- Existing Hive users connect directly
 
-### Google OAuth Users (Custodial)
+### Google OAuth Sign-Up
 
 - Sign in with Google via NextAuth
-- A real Hive account is created server-side (`sb-` prefixed username)
-- Keys encrypted and stored in PostgreSQL; signing relay handles blockchain ops
-- Posts go directly to the Hive blockchain (same as native Hive users)
-- **Graduation path**: Download keys anytime for full self-custody
+- Onboarding creates a real Hive account (`sb-` prefixed username)
+- User downloads their Hive keys during onboarding
+- A managed signing relay is available as a convenience for blockchain operations
 
-### Custodial Onboarding Flow
+### Google OAuth Onboarding Flow
 
 1. Sign in with Google -> NextAuth session created -> user stored in PostgreSQL via Prisma
 2. Redirect to `/onboarding/username` -> user picks a Hive username (`sb-` prefix)
 3. Server calls `create_claimed_account` using account creation tokens
-4. Keys encrypted + stored server-side -> signing relay handles blockchain ops
-5. User can download keys anytime (`/api/hive/download-keys`) for full self-custody
+4. User downloads their Hive keys during onboarding
+5. Managed signing relay available for convenience
 
 ## Getting Started
 
@@ -92,7 +88,7 @@ Sportsblock supports two authentication methods that converge in a unified `Auth
 - npm
 - PostgreSQL database (Supabase recommended)
 - Upstash Redis (for rate limiting)
-- Google OAuth credentials (for custodial auth)
+- Google OAuth credentials (for Google sign-up)
 - Hive account (optional - for blockchain features)
 
 ### Installation
@@ -174,8 +170,8 @@ src/
 │   ├── api/               # API routes
 │   │   ├── hive/          # Hive blockchain endpoints
 │   │   ├── hive-engine/   # Hive Engine token endpoints
-│   │   ├── soft/          # Custodial user endpoints (Prisma)
-│   │   ├── unified/       # Merged Hive + custodial endpoints
+│   │   ├── soft/          # Legacy endpoints (Prisma-backed operations)
+│   │   ├── unified/       # Merged Hive + database endpoints
 │   │   ├── auth/          # NextAuth + session endpoints
 │   │   ├── match-threads/ # Live match thread endpoints
 │   │   ├── cron/          # Scheduled task endpoints
@@ -186,7 +182,7 @@ src/
 │   ├── wallet/            # Token management
 │   ├── leaderboard/       # Rankings
 │   ├── publish/           # Post creation
-│   ├── onboarding/        # Custodial user onboarding
+│   ├── onboarding/        # New user onboarding
 │   └── ...
 ├── components/             # React components
 │   ├── ui/                # Base UI components
@@ -234,7 +230,7 @@ Copy `.env.example` to `.env.local` and configure:
 | `NEXTAUTH_SECRET` | NextAuth session encryption secret |
 | `NEXTAUTH_URL` | App URL (http://localhost:3000 for dev) |
 | `SESSION_SECRET` | Session cookie encryption key (min 32 chars) |
-| `KEY_ENCRYPTION_SECRET` | Secret for encrypting custodial Hive keys |
+| `KEY_ENCRYPTION_SECRET` | Secret for encrypting Hive keys (signing relay) |
 
 ### Optional
 
@@ -264,7 +260,7 @@ WorkerBee and Wax (Hive WASM libraries) run **server-side only**. Client compone
 │                      AuthContext                         │
 ├─────────────────────────┬───────────────────────────────┤
 │     WalletProvider      │     NextAuth (Google)         │
-│ (Keychain / HiveSigner) │   + Custodial Signing Relay   │
+│ (Keychain / HiveSigner) │   + Managed Signing Relay     │
 ├─────────────────────────┴───────────────────────────────┤
 │                 Unified User Object                      │
 │              useBroadcast() hook                         │
@@ -273,7 +269,7 @@ WorkerBee and Wax (Hive WASM libraries) run **server-side only**. Client compone
 ```
 
 - **Hive Auth** (`WalletProvider`): Wallet-based authentication for direct blockchain operations
-- **Google Auth** (`NextAuth`): Google OAuth -> custodial Hive account -> signing relay
+- **Google Auth** (`NextAuth`): Google OAuth -> Hive account created during onboarding -> managed signing relay
 - **Unified AuthContext**: Merges both auth states, provides consistent user object
 - **useBroadcast**: Abstraction that routes transactions to either the wallet or signing relay
 
@@ -281,12 +277,11 @@ WorkerBee and Wax (Hive WASM libraries) run **server-side only**. Client compone
 
 | Data Type | Storage |
 | --------- | ------- |
-| Posts (all users) | Hive Blockchain |
-| Comments (Hive users) | Hive Blockchain |
-| Comments (custodial users) | PostgreSQL (via Prisma) |
-| Votes / Likes | Hive Blockchain or PostgreSQL |
-| User accounts (custodial) | PostgreSQL |
-| Encrypted keys | PostgreSQL |
+| Posts | Hive Blockchain |
+| Comments | Hive Blockchain |
+| Votes | Hive Blockchain |
+| User accounts (Google sign-up) | PostgreSQL (via Prisma) |
+| Encrypted keys (signing relay) | PostgreSQL |
 | Notifications | PostgreSQL |
 | Engagement metrics | PostgreSQL |
 

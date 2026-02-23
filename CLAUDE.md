@@ -138,27 +138,27 @@ import { getWorkerBeeClient } from '@/lib/hive-workerbee/client';
 
 ### Authentication Flow
 
-Two auth paths converge in `AuthContext`:
-1. **Hive Auth** (WalletProvider): Keychain, HiveSigner → full blockchain posting
-2. **Google OAuth** (NextAuth): Google sign-in → custodial Hive account created, can download keys for full self-custody
+Two sign-up methods converge in `AuthContext` — every user ends up with a real Hive account and their own keys:
+1. **Hive Auth** (WalletProvider): Keychain, HiveSigner → existing Hive users connect directly
+2. **Google OAuth** (NextAuth): Google sign-in → Hive account created during onboarding, keys downloaded by user
 
 `src/contexts/WalletProvider.tsx` provides client-side wallet interactions (Keychain + HiveSigner).
 `src/contexts/AuthContext.tsx` manages auth state and persists to localStorage.
 `src/lib/hive/broadcast-client.ts` abstracts transaction broadcasting (routes to wallet or signing relay).
 
-### Custodial Onboarding Flow
+### Google OAuth Onboarding Flow
 
 Google OAuth users go through this flow:
 1. Sign in with Google → NextAuth creates session → Prisma stores user
 2. Redirect to `/onboarding/username` → user picks a Hive username (`sb-` prefix)
 3. Server calls `create_claimed_account` using account creation tokens → real Hive account created
-4. Keys encrypted + stored server-side → signing relay handles blockchain ops
-5. User can download keys anytime (`/api/hive/download-keys`) for full self-custody
+4. User downloads their Hive keys during onboarding
+5. Managed signing relay available as a convenience for blockchain operations
 
 Key files:
 - `src/app/api/hive/create-account/route.ts` — Account creation endpoint
-- `src/app/api/hive/sign/route.ts` — Custodial transaction signing relay
-- `src/app/api/hive/download-keys/route.ts` — Key export for graduation
+- `src/app/api/hive/sign/route.ts` — Managed signing relay endpoint
+- `src/app/api/hive/download-keys/route.ts` — Key download endpoint
 - `src/lib/hive/signing-relay.ts` — Signing relay logic (validates + broadcasts)
 - `src/lib/hive/account-creation.ts` — Account creation logic
 - `src/hooks/useBroadcast.ts` — Unified broadcast abstraction (handles both auth types)
@@ -168,8 +168,8 @@ Key files:
 
 - Schema at `prisma/schema.prisma`
 - Client at `src/lib/db/prisma.ts`
-- Custodial users, soft posts/comments/likes, notifications, metrics all stored in PostgreSQL via Prisma
-- Hive posts/comments/votes stored on the Hive blockchain
+- User accounts (Google sign-up), notifications, metrics stored in PostgreSQL via Prisma
+- Posts, comments, and votes stored on the Hive blockchain
 
 ### State Management
 
@@ -183,8 +183,8 @@ Key files:
 | ----- | ------- |
 | `/api/hive/*` | Blockchain operations (posts, comments, voting, accounts, signing relay) |
 | `/api/hive-engine/*` | Hive Engine tokens (balances, staking, transfers, market) |
-| `/api/soft/*` | Custodial user operations (comments, likes, follows, notifications) |
-| `/api/unified/*` | Merged Hive + custodial data (posts, sportsbites) |
+| `/api/soft/*` | Legacy endpoints — Prisma-backed operations (comments, likes, follows, notifications) |
+| `/api/unified/*` | Merged Hive + database endpoints (posts, sportsbites) |
 | `/api/match-threads/*` | Live match thread CRUD |
 | `/api/cron/*` | Scheduled tasks (rewards, cleanup, analytics) |
 | `/api/auth/*` | NextAuth + session endpoints |
