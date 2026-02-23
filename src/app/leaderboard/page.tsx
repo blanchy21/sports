@@ -3,21 +3,30 @@
 /**
  * Leaderboard Page
  *
- * Displays weekly content leaderboards and MEDALS rewards.
+ * Two views:
+ *  - Content Rankings: Weekly content leaderboards with MEDALS rewards (default)
+ *  - Token Stakers: MEDALS token holder leaderboard
  */
 
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { LeaderboardGrid, WeeklyRewardsSummary } from '@/components/leaderboard';
+import { LeaderboardGrid, WeeklyRewardsSummary, MedalsStakersLeaderboard } from '@/components/leaderboard';
 import { Button } from '@/components/core/Button';
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, Trophy, Medal } from 'lucide-react';
 import type { WeeklyLeaderboards } from '@/lib/metrics/types';
 import { logger } from '@/lib/logger';
 
+type LeaderboardView = 'content' | 'stakers';
+
 export default function LeaderboardPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const _categoryFilter = searchParams.get('category'); // Reserved for future filtering
+
+  // Tab state from URL
+  const viewParam = searchParams.get('view');
+  const activeView: LeaderboardView = viewParam === 'stakers' ? 'stakers' : 'content';
 
   const [leaderboards, setLeaderboards] = useState<WeeklyLeaderboards | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +47,9 @@ export default function LeaderboardPage() {
   };
 
   useEffect(() => {
+    // Only fetch content leaderboards when on the content tab
+    if (activeView !== 'content') return;
+
     const fetchLeaderboards = async () => {
       setIsLoading(true);
       setError(null);
@@ -71,11 +83,30 @@ export default function LeaderboardPage() {
     };
 
     fetchLeaderboards();
-  }, [weekOffset]);
+  }, [weekOffset, activeView]);
+
+  // Ensure weekId is set even on stakers tab (for header display consistency)
+  useEffect(() => {
+    if (!currentWeekId) {
+      setCurrentWeekId(getWeekId(0));
+    }
+  }, [currentWeekId]);
 
   const handlePreviousWeek = () => setWeekOffset((prev) => prev + 1);
   const handleNextWeek = () => setWeekOffset((prev) => Math.max(0, prev - 1));
   const handleRefresh = () => setWeekOffset(weekOffset); // Trigger re-fetch
+
+  const setView = (view: LeaderboardView) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (view === 'content') {
+      params.delete('view');
+    } else {
+      params.set('view', view);
+    }
+    router.push(`/leaderboard${params.toString() ? `?${params.toString()}` : ''}`, {
+      scroll: false,
+    });
+  };
 
   return (
     <MainLayout>
@@ -85,93 +116,131 @@ export default function LeaderboardPage() {
           <div>
             <h1 className="text-3xl font-bold">MEDALS Leaderboards</h1>
             <p className="mt-1 text-muted-foreground">
-              Compete for weekly rewards by creating engaging content
+              {activeView === 'content'
+                ? 'Compete for weekly rewards by creating engaging content'
+                : 'Top MEDALS token holders and stakers'}
             </p>
           </div>
 
-          {/* Week Navigation */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePreviousWeek}
-              aria-label="Previous week"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="min-w-[100px] rounded bg-muted px-3 py-1 text-center text-sm font-medium">
-              {currentWeekId}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextWeek}
-              disabled={weekOffset === 0}
-              aria-label="Next week"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleRefresh} aria-label="Refresh">
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
+          {/* Week Navigation — only on content tab */}
+          {activeView === 'content' && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousWeek}
+                aria-label="Previous week"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="min-w-[100px] rounded bg-muted px-3 py-1 text-center text-sm font-medium">
+                {currentWeekId}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextWeek}
+                disabled={weekOffset === 0}
+                aria-label="Next week"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleRefresh} aria-label="Refresh">
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          )}
         </div>
 
-        {/* Weekly Rewards Summary */}
-        <WeeklyRewardsSummary weekId={currentWeekId} />
-
-        {/* Leaderboards Grid */}
-        <LeaderboardGrid
-          leaderboards={leaderboards}
-          isLoading={isLoading}
-          error={error}
-          weekId={currentWeekId}
-          showRewards={true}
-        />
-
-        {/* How to Compete Section */}
-        <div className="rounded-lg border bg-card p-6">
-          <h2 className="mb-4 text-xl font-bold">How to Compete</h2>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <h3 className="mb-2 font-semibold">📈 Most External Views</h3>
-              <p className="text-sm text-muted-foreground">
-                Share your posts on social media and other platforms to drive traffic to
-                Sportsblock.
-              </p>
-            </div>
-            <div>
-              <h3 className="mb-2 font-semibold">👀 Most Viewed Post</h3>
-              <p className="text-sm text-muted-foreground">
-                Create content that keeps users engaged and coming back for more.
-              </p>
-            </div>
-            <div>
-              <h3 className="mb-2 font-semibold">💬 Top Commenter</h3>
-              <p className="text-sm text-muted-foreground">
-                Engage with the community by leaving thoughtful comments on posts.
-              </p>
-            </div>
-            <div>
-              <h3 className="mb-2 font-semibold">🔥 Most Engaged Post</h3>
-              <p className="text-sm text-muted-foreground">
-                Create content that sparks discussions and earns votes.
-              </p>
-            </div>
-            <div>
-              <h3 className="mb-2 font-semibold">⭐ Post of the Week</h3>
-              <p className="text-sm text-muted-foreground">
-                Selected by our curator team for exceptional quality content.
-              </p>
-            </div>
-            <div>
-              <h3 className="mb-2 font-semibold">✨ Best Newcomer</h3>
-              <p className="text-sm text-muted-foreground">
-                New to Sportsblock? Make a great first impression! (Available Year 4+)
-              </p>
-            </div>
-          </div>
+        {/* Tab Switcher */}
+        <div className="flex gap-1 rounded-lg bg-muted p-1">
+          <button
+            onClick={() => setView('content')}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeView === 'content'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Trophy className="h-4 w-4" />
+            Content Rankings
+          </button>
+          <button
+            onClick={() => setView('stakers')}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeView === 'stakers'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Medal className="h-4 w-4" />
+            Token Stakers
+          </button>
         </div>
+
+        {/* Content Rankings Tab */}
+        {activeView === 'content' && (
+          <>
+            {/* Weekly Rewards Summary */}
+            <WeeklyRewardsSummary weekId={currentWeekId} />
+
+            {/* Leaderboards Grid */}
+            <LeaderboardGrid
+              leaderboards={leaderboards}
+              isLoading={isLoading}
+              error={error}
+              weekId={currentWeekId}
+              showRewards={true}
+            />
+
+            {/* How to Compete Section */}
+            <div className="rounded-lg border bg-card p-6">
+              <h2 className="mb-4 text-xl font-bold">How to Compete</h2>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <h3 className="mb-2 font-semibold">📈 Most External Views</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Share your posts on social media and other platforms to drive traffic to
+                    Sportsblock.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-2 font-semibold">👀 Most Viewed Post</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Create content that keeps users engaged and coming back for more.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-2 font-semibold">💬 Top Commenter</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Engage with the community by leaving thoughtful comments on posts.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-2 font-semibold">🔥 Most Engaged Post</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Create content that sparks discussions and earns votes.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-2 font-semibold">⭐ Post of the Week</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Selected by our curator team for exceptional quality content.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-2 font-semibold">✨ Best Newcomer</h3>
+                  <p className="text-sm text-muted-foreground">
+                    New to Sportsblock? Make a great first impression! (Available Year 4+)
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Token Stakers Tab */}
+        {activeView === 'stakers' && <MedalsStakersLeaderboard />}
       </div>
     </MainLayout>
   );
