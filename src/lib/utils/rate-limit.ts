@@ -198,16 +198,15 @@ export function checkRateLimitSync(identifier: string, config: RateLimitConfig):
 
 /**
  * Get client identifier from request
- * Uses IP address with fallback to forwarded headers
+ * Prefers Vercel's non-spoofable header, then falls back to standard headers
  */
 export function getClientIdentifier(request: Request): string {
   const headers = request.headers;
 
-  // Check various headers for client IP
-  const forwardedFor = headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    // Take the first IP in the chain (original client)
-    return forwardedFor.split(',')[0].trim();
+  // Prefer Vercel's platform-set header (cannot be spoofed by clients)
+  const vercelForwardedFor = headers.get('x-vercel-forwarded-for');
+  if (vercelForwardedFor) {
+    return vercelForwardedFor.split(',')[0].trim();
   }
 
   const realIp = headers.get('x-real-ip');
@@ -215,13 +214,12 @@ export function getClientIdentifier(request: Request): string {
     return realIp;
   }
 
-  // Vercel-specific header
-  const vercelForwardedFor = headers.get('x-vercel-forwarded-for');
-  if (vercelForwardedFor) {
-    return vercelForwardedFor.split(',')[0].trim();
+  // Fallback to x-forwarded-for (spoofable, but better than nothing outside Vercel)
+  const forwardedFor = headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
   }
 
-  // Fallback
   return 'anonymous';
 }
 

@@ -152,7 +152,7 @@ describe('Rate Limiting', () => {
       expect(identifier).toBe('192.168.1.3');
     });
 
-    it('should prioritize x-forwarded-for over other headers', () => {
+    it('should prioritize x-vercel-forwarded-for over other headers', () => {
       const request = createMockRequest({
         'x-forwarded-for': '192.168.1.1',
         'x-real-ip': '192.168.1.2',
@@ -160,7 +160,7 @@ describe('Rate Limiting', () => {
       });
 
       const identifier = getClientIdentifier(request);
-      expect(identifier).toBe('192.168.1.1');
+      expect(identifier).toBe('192.168.1.3');
     });
 
     it('should return anonymous when no IP headers present', () => {

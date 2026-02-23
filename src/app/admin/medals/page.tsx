@@ -46,12 +46,6 @@ interface DashboardMetrics {
   };
 }
 
-interface EnvironmentInfo {
-  nodeEnv: string;
-  cronSecretSet: boolean;
-  curatorAccounts: string[];
-}
-
 interface AdminConfig {
   platformYear: number;
   weeklyPool: number;
@@ -63,7 +57,6 @@ export default function MedalsAdminDashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [environmentInfo, setEnvironmentInfo] = useState<EnvironmentInfo | null>(null);
   const [config, setConfig] = useState<AdminConfig | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +84,6 @@ export default function MedalsAdminDashboard() {
       }
 
       setMetrics(data.metrics);
-      setEnvironmentInfo(data.environmentInfo);
       setConfig(data.config);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch metrics');
@@ -487,31 +479,10 @@ export default function MedalsAdminDashboard() {
           </div>
         </div>
 
-        {/* Environment Info */}
+        {/* Admin Info */}
         <div className="rounded-lg bg-muted/50 p-4 text-sm">
-          <h3 className="mb-2 font-medium">Environment</h3>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div>
-              <span className="text-muted-foreground">Mode:</span>{' '}
-              <span className="font-mono">{environmentInfo?.nodeEnv ?? '...'}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Cron Secret:</span>{' '}
-              <span className="font-mono">
-                {environmentInfo ? (environmentInfo.cronSecretSet ? '✓ Set' : '✗ Not set') : '...'}
-              </span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Curator Accounts:</span>{' '}
-              <span className="font-mono">
-                {environmentInfo?.curatorAccounts?.join(', ') || '...'}
-              </span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Logged in as:</span>{' '}
-              <span className="font-mono">@{username}</span>
-            </div>
-          </div>
+          <span className="text-muted-foreground">Logged in as:</span>{' '}
+          <span className="font-mono">@{username}</span>
         </div>
       </div>
     </MainLayout>

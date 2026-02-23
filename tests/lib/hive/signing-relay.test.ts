@@ -338,6 +338,70 @@ describe('validateOperations', () => {
     expect(() => validateOperations(ops, USER)).toThrow('posting_json_metadata must be valid JSON');
   });
 
+  it('passes for account_update2 with valid profile URLs', () => {
+    const ops: HiveOperation[] = [
+      [
+        'account_update2',
+        {
+          account: USER,
+          posting_json_metadata: JSON.stringify({
+            profile: {
+              website: 'https://example.com',
+              profile_image: 'https://images.hive.blog/avatar.jpg',
+              cover_image: 'http://example.com/cover.png',
+            },
+          }),
+        },
+      ],
+    ];
+    expect(() => validateOperations(ops, USER)).not.toThrow();
+  });
+
+  it('throws for account_update2 with javascript: URL in profile field', () => {
+    const ops: HiveOperation[] = [
+      [
+        'account_update2',
+        {
+          account: USER,
+          posting_json_metadata: JSON.stringify({
+            profile: { website: 'javascript:alert(1)' },
+          }),
+        },
+      ],
+    ];
+    expect(() => validateOperations(ops, USER)).toThrow('must use http or https protocol');
+  });
+
+  it('throws for account_update2 with invalid URL in profile_image', () => {
+    const ops: HiveOperation[] = [
+      [
+        'account_update2',
+        {
+          account: USER,
+          posting_json_metadata: JSON.stringify({
+            profile: { profile_image: 'not-a-url' },
+          }),
+        },
+      ],
+    ];
+    expect(() => validateOperations(ops, USER)).toThrow('must be a valid URL');
+  });
+
+  it('allows empty string profile URL fields', () => {
+    const ops: HiveOperation[] = [
+      [
+        'account_update2',
+        {
+          account: USER,
+          posting_json_metadata: JSON.stringify({
+            profile: { website: '', profile_image: '', cover_image: '' },
+          }),
+        },
+      ],
+    ];
+    expect(() => validateOperations(ops, USER)).not.toThrow();
+  });
+
   // ---- multiple operations ----
 
   it('throws on second operation when first is valid but second is invalid', () => {
