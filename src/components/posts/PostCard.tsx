@@ -105,7 +105,13 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
   const { tier: authorPremiumTier } = usePremiumTier(authorUsername);
 
   // Helper functions to get author data (combining fetched profile with post data)
-  const getAuthorName = () => authorUsername;
+  // Safety net: mask emails that may have leaked into authorUsername from older posts
+  const getAuthorName = () => {
+    if (authorUsername.includes('@')) {
+      return authorUsername.split('@')[0];
+    }
+    return authorUsername;
+  };
 
   const getAuthorAvatar = () => {
     if (isHivePost) {

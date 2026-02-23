@@ -57,6 +57,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Server-side enforcement: use hiveUsername from session to prevent email leaks
+      if (sessionUser.hiveUsername) {
+        postData.authorUsername = sessionUser.hiveUsername;
+      }
+
       const scheduledPost = await prisma.scheduledPost.create({
         data: {
           userId,

@@ -105,6 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             authType: sessionAuthType,
             hiveUsername,
             loginAt: sessionLoginAt,
+            keysDownloaded,
           } = sessionResponse.session;
 
           // Check if session is expired
@@ -131,6 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             displayName: uiHint?.displayHint || username,
             isHiveAuth: isHiveAuth,
             hiveUsername: hiveUsername,
+            keysDownloaded: keysDownloaded,
             // Set Hive avatar immediately so it renders before async profile refresh
             avatar: isHiveAuth && hiveUsername ? getHiveAvatarUrl(hiveUsername) : undefined,
             createdAt: new Date(),
@@ -141,8 +143,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             ? { username: hiveUsername, isAuthenticated: true }
             : null;
 
-          // Schedule profile refresh for Hive users
-          if (isHiveAuth) {
+          // Schedule profile refresh for Hive users and keysDownloaded soft users
+          // (they have a real Hive account with on-chain balances)
+          if (isHiveAuth || (keysDownloaded && hiveUsername)) {
             needsHiveRefresh.current = true;
           }
 

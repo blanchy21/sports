@@ -163,6 +163,12 @@ export async function POST(request: NextRequest) {
         return forbiddenError('You can only create posts as yourself', ctx.requestId);
       }
 
+      // Server-side enforcement: always use hiveUsername from session if available,
+      // preventing stale client data from storing emails as authorUsername
+      if (sessionUser.hiveUsername) {
+        data.authorUsername = sessionUser.hiveUsername;
+      }
+
       // Rate limiting check
       const rateLimit = await checkRateLimit(
         authenticatedUserId,

@@ -19,6 +19,7 @@ import { getSessionEncryptionKey } from '@/lib/api/session-encryption';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/next-auth-options';
 import { verifyChallenge, verifyHivePostingSignature } from '@/lib/auth/hive-challenge';
+import { prisma } from '@/lib/db/prisma';
 
 const SESSION_COOKIE_NAME = 'sb_session';
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
@@ -286,6 +287,20 @@ export async function GET() {
       return response;
     }
 
+    // For soft users, enrich with keysDownloaded from DB so wallet page works after refresh
+    let keysDownloaded: boolean | undefined;
+    if (session.authType === 'soft' && session.hiveUsername) {
+      try {
+        const custodialUser = await prisma.custodialUser.findFirst({
+          where: { hiveUsername: session.hiveUsername },
+          select: { keysDownloaded: true },
+        });
+        keysDownloaded = custodialUser?.keysDownloaded ?? false;
+      } catch {
+        // Non-critical — wallet page will just show upgrade CTA
+      }
+    }
+
     return NextResponse.json({
       success: true,
       authenticated: true,
@@ -295,6 +310,7 @@ export async function GET() {
         authType: session.authType,
         hiveUsername: session.hiveUsername,
         loginAt: session.loginAt,
+        ...(keysDownloaded !== undefined && { keysDownloaded }),
       },
     });
   } catch (error) {

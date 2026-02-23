@@ -84,15 +84,21 @@ export default function WalletPage() {
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const refreshAccountDataRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
+  // Custodial users who downloaded their keys have a real Hive account
+  // and should see the full wallet view with balances
+  const hasFullWallet =
+    authType === 'hive' || (authType === 'soft' && user?.keysDownloaded === true);
+  const walletUsername = hiveUser?.username || user?.hiveUsername;
+
   // Function to fetch transaction history
   const fetchTransactions = useCallback(async () => {
-    if (!user?.username) return;
+    if (!walletUsername) return;
 
     setTransactionsLoading(true);
     setTransactionsError(null);
 
     try {
-      const response = await fetch(`/api/hive/account/history?username=${user.username}&limit=500`);
+      const response = await fetch(`/api/hive/account/history?username=${walletUsername}&limit=500`);
       const data = await response.json();
 
       if (data.success) {
@@ -106,7 +112,7 @@ export default function WalletPage() {
     } finally {
       setTransactionsLoading(false);
     }
-  }, [user?.username]);
+  }, [walletUsername]);
 
   // Redirect only if not authenticated at all (wait for auth to load first)
   useEffect(() => {
@@ -117,13 +123,13 @@ export default function WalletPage() {
 
   // Fetch transactions when user is available
   useEffect(() => {
-    if (user?.username && isAuthenticated && authType === 'hive') {
+    if (walletUsername && isAuthenticated && hasFullWallet) {
       fetchTransactions();
     }
-  }, [user?.username, isAuthenticated, authType, fetchTransactions]);
+  }, [walletUsername, isAuthenticated, hasFullWallet, fetchTransactions]);
 
   const refreshAccountData = useCallback(async () => {
-    if (!hiveUser?.username) {
+    if (!walletUsername) {
       return;
     }
 
@@ -136,7 +142,7 @@ export default function WalletPage() {
     } finally {
       setIsRefreshingAccount(false);
     }
-  }, [hiveUser?.username, refreshHiveAccount]);
+  }, [walletUsername, refreshHiveAccount]);
 
   // Store the latest refreshAccountData in a ref to avoid recreating intervals
   useEffect(() => {
@@ -145,7 +151,7 @@ export default function WalletPage() {
 
   // Initial refresh on mount and automatic refresh interval
   useEffect(() => {
-    if (!isAuthenticated || authType !== 'hive' || !hiveUser?.username) {
+    if (!isAuthenticated || !hasFullWallet || !walletUsername) {
       // Clear interval if user logs out or is not authenticated
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
@@ -179,7 +185,7 @@ export default function WalletPage() {
         refreshIntervalRef.current = null;
       }
     };
-  }, [isAuthenticated, authType, hiveUser?.username]);
+  }, [isAuthenticated, hasFullWallet, walletUsername]);
 
   // Helper function to get icon for transaction type
   const getTransactionIcon = (type: string) => {
@@ -243,8 +249,8 @@ export default function WalletPage() {
     );
   }
 
-  // Show soft user wallet view with upgrade incentives
-  if (authType === 'soft' || authType !== 'hive') {
+  // Show upgrade CTA for users without full wallet access
+  if (!hasFullWallet) {
     return (
       <MainLayout showRightSidebar={false} className="max-w-none">
         <div className="space-y-6">
@@ -625,7 +631,7 @@ export default function WalletPage() {
           {/* Power Up/Down Panel */}
           <div className="mt-6">
             <PowerPanel
-              account={user.username}
+              account={walletUsername || user.username}
               liquidHive={user.liquidHiveBalance}
               onOperationComplete={() => refreshAccountData()}
             />
@@ -703,7 +709,7 @@ export default function WalletPage() {
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Staking Panel */}
-            <StakingPanel account={user.username} />
+            <StakingPanel account={walletUsername || user.username} />
 
             {/* MEDALS Market Info */}
             <div className="space-y-4">
@@ -860,7 +866,7 @@ export default function WalletPage() {
         <TransferModal
           isOpen={transferModalOpen}
           onClose={() => setTransferModalOpen(false)}
-          account={user.username}
+          account={walletUsername || user.username}
         />
       </div>
     </MainLayout>

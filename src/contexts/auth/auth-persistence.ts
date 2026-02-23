@@ -60,6 +60,7 @@ export interface SessionResponse {
     authType: AuthType;
     hiveUsername?: string;
     loginAt?: number;
+    keysDownloaded?: boolean;
   } | null;
 }
 
