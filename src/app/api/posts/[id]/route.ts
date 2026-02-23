@@ -45,7 +45,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Deduplicated view count increment (fire and forget)
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const ip =
+      request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      'unknown';
     const ua = request.headers.get('user-agent') || 'unknown';
     const fingerprint = crypto
       .createHash('sha256')

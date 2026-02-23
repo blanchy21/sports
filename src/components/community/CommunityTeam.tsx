@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useCommunity } from '@/lib/react-query/queries/useCommunity';
-import { Card } from '@/components/ui/Card';
+import { Card } from '@/components/core/Card';
 import { Avatar } from '@/components/core/Avatar';
 import { Badge } from '@/components/core/Badge';
 import { Crown, Shield, User, Calendar } from 'lucide-react';

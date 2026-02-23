@@ -125,6 +125,25 @@ export const syncSessionCookie = async (sessionData: {
       credentials: 'include',
       body: JSON.stringify(body),
     });
+    if (!response.ok) {
+      try {
+        const errorData = await response.json();
+        console.warn(
+          '[syncSessionCookie] Failed:',
+          response.status,
+          errorData.error,
+          '| has challenge:',
+          !!sessionData.challengeData
+        );
+      } catch {
+        console.warn(
+          '[syncSessionCookie] Failed:',
+          response.status,
+          '| has challenge:',
+          !!sessionData.challengeData
+        );
+      }
+    }
     return response.ok;
   } catch (error) {
     logger.error('Error syncing session cookie', 'AuthPersistence', error);

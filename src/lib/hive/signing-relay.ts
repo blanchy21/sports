@@ -145,6 +145,28 @@ export function validateOperations(operations: HiveOperation[], hiveUsername: st
                 );
               }
             }
+            // Validate URL fields in the profile object
+            if (meta.profile && typeof meta.profile === 'object') {
+              const URL_FIELDS = ['website', 'profile_image', 'cover_image'];
+              for (const field of URL_FIELDS) {
+                const value = meta.profile[field];
+                if (value && typeof value === 'string' && value.trim() !== '') {
+                  try {
+                    const parsed = new URL(value);
+                    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+                      throw new OperationValidationError(
+                        `Profile field "${field}" must use http or https protocol`
+                      );
+                    }
+                  } catch (urlErr) {
+                    if (urlErr instanceof OperationValidationError) throw urlErr;
+                    throw new OperationValidationError(
+                      `Profile field "${field}" must be a valid URL`
+                    );
+                  }
+                }
+              }
+            }
           } catch (e) {
             if (e instanceof OperationValidationError) throw e;
             throw new OperationValidationError('posting_json_metadata must be valid JSON');
@@ -169,7 +191,11 @@ export async function signAndBroadcast(
     select: { encryptedKeys: true, encryptionIv: true, encryptionSalt: true },
   });
 
-  if (!custodialUser?.encryptedKeys || !custodialUser.encryptionIv) {
+  if (
+    !custodialUser?.encryptedKeys ||
+    !custodialUser.encryptionIv ||
+    !custodialUser.encryptionSalt
+  ) {
     throw new Error(`No encrypted keys found for custodial user ${custodialUserId}`);
   }
 
@@ -179,7 +205,7 @@ export async function signAndBroadcast(
     const decrypted = decryptKeys(
       custodialUser.encryptedKeys,
       custodialUser.encryptionIv,
-      custodialUser.encryptionSalt ?? undefined
+      custodialUser.encryptionSalt
     );
     const keys = JSON.parse(decrypted) as Record<string, string>;
 

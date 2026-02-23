@@ -88,13 +88,19 @@ describe('account-creation', () => {
   // ── Validation ──────────────────────────────────────────────────────
 
   describe('createHiveAccountForUser - validation', () => {
+    it('throws when username does not start with sb-', async () => {
+      await expect(createHiveAccountForUser('testuser', TEST_USER_ID)).rejects.toThrow(
+        'Username must start with "sb-"'
+      );
+    });
+
     it('throws when username is invalid', async () => {
       mockIsValidHiveUsername.mockReturnValue({
         valid: false,
         reason: 'Username must be at least 3 characters',
       });
 
-      await expect(createHiveAccountForUser('ab', TEST_USER_ID)).rejects.toThrow(
+      await expect(createHiveAccountForUser('sb-ab', TEST_USER_ID)).rejects.toThrow(
         'Invalid username: Username must be at least 3 characters'
       );
     });

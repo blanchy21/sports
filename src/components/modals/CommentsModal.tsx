@@ -10,7 +10,7 @@ import { formatDate } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { useToast, toast } from '@/components/core/Toast';
-import { createCommentOperation } from '@/lib/hive-workerbee/wax-helpers';
+import { createCommentOperation } from '@/lib/hive-workerbee/shared';
 import { useInvalidateComments } from '@/lib/react-query/queries/useComments';
 import { CommentVoteButton } from '@/components/posts/CommentVoteButton';
 import { BaseModal } from '@/components/core/BaseModal';

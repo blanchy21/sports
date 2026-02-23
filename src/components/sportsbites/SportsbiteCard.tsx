@@ -19,12 +19,17 @@ import { StarVoteButton } from '@/components/voting/StarVoteButton';
 import { SoftLikeButton } from '@/components/voting/SoftLikeButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast, toast } from '@/components/core/Toast';
-import { useUserProfile } from '@/features/user/hooks/useUserProfile';
+import { useUserProfileCard } from '@/lib/react-query/queries/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { cn, formatDate } from '@/lib/utils/client';
-import { Sportsbite, extractMediaFromBody } from '@/lib/hive-workerbee/sportsbites';
-import type { ReactionEmoji, ReactionCounts, PollResults } from '@/lib/hive-workerbee/sportsbites';
+import { extractMediaFromBody } from '@/lib/hive-workerbee/shared';
+import type {
+  Sportsbite,
+  ReactionEmoji,
+  ReactionCounts,
+  PollResults,
+} from '@/lib/hive-workerbee/shared';
 import { SPORT_CATEGORIES } from '@/types';
 import { getProxyImageUrl, shouldProxyImage, proxyImagesInContent } from '@/lib/utils/image-proxy';
 import { isTrustedImageHost, sanitizePostContent } from '@/lib/utils/sanitize';
@@ -68,7 +73,9 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const { broadcast } = useBroadcast();
 
-  const { profile: authorProfile, isLoading: isProfileLoading } = useUserProfile(sportsbite.author);
+  const { profile: authorProfile, isLoading: isProfileLoading } = useUserProfileCard(
+    sportsbite.author
+  );
 
   const { text: biteText, images: bodyImages } = React.useMemo(
     () => extractMediaFromBody(sportsbite.body),

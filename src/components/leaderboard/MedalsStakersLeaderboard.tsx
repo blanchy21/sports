@@ -144,7 +144,7 @@ export function MedalsStakersLeaderboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {data.totalHolders} holder{data.totalHolders !== 1 ? 's' : ''} (excl. treasury)
+          {data.totalHolders} holder{data.totalHolders !== 1 ? 's' : ''} (excl. treasury &amp; founders)
         </p>
         <Button variant="outline" size="sm" onClick={fetchLeaderboard} aria-label="Refresh">
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />

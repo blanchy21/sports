@@ -10,7 +10,7 @@ import { createRequestContext, forbiddenError } from '@/lib/api/response';
 import { isAdminAccount } from '@/lib/admin/config';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { getWeekId } from '@/lib/rewards/staking-distribution';
-import { getDailyKey, getCuratorAccounts } from '@/lib/rewards/curator-rewards';
+import { getDailyKey } from '@/lib/rewards/curator-rewards';
 import {
   getPlatformYear,
   getWeeklyStakingPool,
@@ -90,12 +90,6 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    const environmentInfo = {
-      nodeEnv: process.env.NODE_ENV || 'unknown',
-      cronSecretSet: !!process.env.CRON_SECRET,
-      curatorAccounts: getCuratorAccounts(),
-    };
-
     const config = {
       platformYear: getPlatformYear(),
       weeklyPool: getWeeklyStakingPool(),
@@ -106,7 +100,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       metrics,
-      environmentInfo,
       config,
     });
   } catch (error) {

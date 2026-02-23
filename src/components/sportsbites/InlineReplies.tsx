@@ -10,7 +10,7 @@ import { CommentVoteButton } from '@/components/posts/CommentVoteButton';
 import { useComments, useInvalidateComments } from '@/lib/react-query/queries/useComments';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast, toast } from '@/components/core/Toast';
-import { createCommentOperation } from '@/lib/hive-workerbee/wax-helpers';
+import { createCommentOperation } from '@/lib/hive-workerbee/shared';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { formatDate } from '@/lib/utils/client';
 import { CommentToolbar } from '@/components/comments/CommentToolbar';

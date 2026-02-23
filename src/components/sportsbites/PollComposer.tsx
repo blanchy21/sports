@@ -4,7 +4,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { Button } from '@/components/core/Button';
-import type { PollDefinition } from '@/lib/hive-workerbee/sportsbites';
+import type { PollDefinition } from '@/lib/hive-workerbee/shared';
 
 interface PollComposerProps {
   poll: PollDefinition;

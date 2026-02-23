@@ -1,32 +1,13 @@
 import { makeWorkerBeeApiCall } from './api';
-import { createVoteOperation, getVotingPowerWax } from './wax-helpers';
+import { createVoteOperation } from './shared';
 import { workerBee as workerBeeLog, error as logError, debug as logDebug } from './logger';
 import { waitForTransaction } from './transaction-confirmation';
 import type { BroadcastFn } from '@/lib/hive/broadcast-client';
 
-// Types matching the original voting.ts interface
-export interface VoteResult {
-  success: boolean;
-  transactionId?: string;
-  confirmed?: boolean;
-  error?: string;
-}
+// Re-export types from shared for backward compatibility
+export type { VoteResult, VoteData, HiveVote } from './shared';
 
-export interface VoteData {
-  voter: string;
-  author: string;
-  permlink: string;
-  weight: number; // 0-100 percentage
-}
-
-export interface HiveVote {
-  voter: string;
-  weight: number;
-  rshares: string;
-  percent: number;
-  reputation: string;
-  time: string;
-}
+import type { VoteResult, VoteData, HiveVote } from './shared';
 
 // Utility functions
 function getUserVote(post: { active_votes?: HiveVote[] }, voter: string): HiveVote | null {
@@ -160,7 +141,8 @@ export async function getUserVotingPower(username: string): Promise<number> {
   try {
     workerBeeLog(`[getUserVotingPower] Getting voting power for ${username} using Wax`);
 
-    // Use Wax helpers for voting power
+    // Dynamic import to avoid static WASM dependency chain
+    const { getVotingPowerWax } = await import('./wax-helpers');
     const votingPower = await getVotingPowerWax(username);
 
     workerBeeLog(

@@ -14,7 +14,7 @@ import { SportsblockPost } from '@/lib/shared/types';
 import { CommunityStats } from '@/lib/hive-workerbee/analytics';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useFeedPosts } from '@/lib/react-query/queries/usePosts';
-import { prefetchUserProfiles } from '@/features/user/hooks/useUserProfile';
+import { prefetchUserProfiles } from '@/lib/react-query/queries/useUserProfile';
 import { prefetchStakedBalances } from '@/lib/premium/hooks';
 import { logger } from '@/lib/logger';
 import { interleaveAds } from '@/lib/utils/interleave-ads';
@@ -168,7 +168,11 @@ export default function FeedPage() {
   // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
-      router.push('/');
+      // Grace period — auth state may still be propagating after login
+      const timer = setTimeout(() => {
+        router.push('/');
+      }, 150);
+      return () => clearTimeout(timer);
     }
   }, [user, isAuthLoading, router]);
 

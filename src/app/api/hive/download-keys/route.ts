@@ -34,7 +34,9 @@ export const GET = createApiHandler('/api/hive/download-keys', async (request: R
   }
 
   // 1b. Rate limit — prevent bulk download attempts
-  const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.keyDownload, 'keyDownload');
+  const rateLimit = await checkRateLimit(user.userId, RATE_LIMITS.keyDownload, 'keyDownload', {
+    strict: true,
+  });
   if (!rateLimit.success) {
     return apiError(
       'Too many key download attempts. Please try again later.',
@@ -60,7 +62,11 @@ export const GET = createApiHandler('/api/hive/download-keys', async (request: R
     select: { id: true, encryptedKeys: true, encryptionIv: true, encryptionSalt: true },
   });
 
-  if (!custodialUser?.encryptedKeys || !custodialUser.encryptionIv) {
+  if (
+    !custodialUser?.encryptedKeys ||
+    !custodialUser.encryptionIv ||
+    !custodialUser.encryptionSalt
+  ) {
     return apiError('No keys found for this account', 'NOT_FOUND', 404, {
       requestId: ctx.requestId,
     });
@@ -72,7 +78,7 @@ export const GET = createApiHandler('/api/hive/download-keys', async (request: R
     const keysJson = decryptKeys(
       custodialUser.encryptedKeys,
       custodialUser.encryptionIv,
-      custodialUser.encryptionSalt ?? undefined
+      custodialUser.encryptionSalt
     );
     keys = JSON.parse(keysJson);
   } catch (err) {

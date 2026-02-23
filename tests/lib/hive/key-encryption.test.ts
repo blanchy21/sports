@@ -117,22 +117,12 @@ describe('key-encryption', () => {
 
       expect(() => decryptKeys(encrypted, badIv, salt)).toThrow();
     });
-  });
 
-  describe('legacy salt fallback', () => {
-    it('fails when salt param is omitted (mismatched random vs legacy salt)', () => {
+    it('throws on wrong salt', () => {
       const { encrypted, iv } = encryptKeys(REALISTIC_KEYS_JSON);
+      const wrongSalt = Buffer.from('wrong-salt-value').toString('base64');
 
-      // encryptKeys uses a random salt, but omitting the salt param in
-      // decryptKeys falls back to the static legacy salt -- they won't match
-      expect(() => decryptKeys(encrypted, iv)).toThrow();
-    });
-
-    it('succeeds when the correct salt is provided', () => {
-      const { encrypted, iv, salt } = encryptKeys(REALISTIC_KEYS_JSON);
-
-      const decrypted = decryptKeys(encrypted, iv, salt);
-      expect(decrypted).toBe(REALISTIC_KEYS_JSON);
+      expect(() => decryptKeys(encrypted, iv, wrongSalt)).toThrow();
     });
   });
 

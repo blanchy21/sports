@@ -44,7 +44,12 @@ export function keychainLogin(username: string, message: string): Promise<Wallet
   const raw = new Promise<WalletLoginOutcome>((resolve) => {
     keychain.requestSignBuffer!(username, message, 'Posting', (response: KeychainResponse) => {
       if (response.success) {
-        resolve({ success: true, username, provider: 'keychain' });
+        resolve({
+          success: true,
+          username,
+          provider: 'keychain',
+          signature: response.result || undefined,
+        });
       } else {
         const msg = response.error || response.message || 'Keychain login failed';
         const cancelled =

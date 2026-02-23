@@ -7,7 +7,7 @@ import {
   useNewVotes,
   useNewComments,
 } from '@/features/hive/hooks/useRealtime';
-import { RealtimeEvent } from '@/lib/hive-workerbee/realtime';
+import type { RealtimeEvent } from '@/lib/hive-workerbee/shared';
 import { Button } from '@/components/core/Button';
 import { Card } from '@/components/core/Card';
 import { Badge } from '@/components/core/Badge';

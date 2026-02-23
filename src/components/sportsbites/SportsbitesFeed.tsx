@@ -8,7 +8,7 @@ import type {
   ReactionEmoji,
   ReactionCounts,
   PollResults,
-} from '@/lib/hive-workerbee/sportsbites';
+} from '@/lib/hive-workerbee/shared';
 import { Loader2, RefreshCw, AlertCircle, Zap, ArrowUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';

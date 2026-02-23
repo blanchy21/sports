@@ -15,8 +15,8 @@ jest.mock('@/contexts/AuthContext', () => ({
   }),
 }));
 
-jest.mock('@/features/user/hooks/useUserProfile', () => ({
-  useUserProfile: () => ({
+jest.mock('@/lib/react-query/queries/useUserProfile', () => ({
+  useUserProfileCard: () => ({
     profile: { avatar: null, displayName: 'Test User' },
     isLoading: false,
   }),

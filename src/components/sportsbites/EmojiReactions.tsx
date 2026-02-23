@@ -4,8 +4,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { cn } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModal } from '@/components/modals/ModalProvider';
-import type { ReactionEmoji, ReactionCounts } from '@/lib/hive-workerbee/sportsbites';
-import { REACTION_EMOJIS } from '@/lib/hive-workerbee/sportsbites';
+import type { ReactionEmoji, ReactionCounts } from '@/lib/hive-workerbee/shared';
+import { REACTION_EMOJIS } from '@/lib/hive-workerbee/shared';
 
 interface EmojiReactionsProps {
   sportsbiteId: string;

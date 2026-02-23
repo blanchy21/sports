@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { SportsbiteCard } from '@/components/sportsbites/SportsbiteCard';
-import type { Sportsbite, SportsbiteApiResponse } from '@/lib/hive-workerbee/sportsbites';
+import type { Sportsbite, SportsbiteApiResponse } from '@/lib/hive-workerbee/shared';
 import { Loader2, RefreshCw, AlertCircle, MessageSquare, ArrowUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';

@@ -55,7 +55,12 @@ export async function GET() {
           premiumTier: getPremiumTier(staked),
         };
       })
-      .filter((h) => h.account !== MEDALS_CONFIG.ACCOUNTS.MAIN && h.total > 0)
+      .filter(
+        (h) =>
+          h.account !== MEDALS_CONFIG.ACCOUNTS.MAIN &&
+          !MEDALS_CONFIG.ACCOUNTS.FOUNDERS.includes(h.account) &&
+          h.total > 0
+      )
       .sort((a, b) => b.total - a.total)
       .map((h, i) => ({ rank: i + 1, ...h }));
 

@@ -54,7 +54,7 @@ async function getProcessedVoteIds(): Promise<Set<string>> {
     return new Set();
   } catch (error) {
     logger.error('Error getting processed vote IDs', 'cron:curator-rewards', error);
-    return new Set();
+    throw error;
   }
 }
 
@@ -76,7 +76,7 @@ async function getCuratorDailyCounts(): Promise<Map<string, number>> {
     return new Map();
   } catch (error) {
     logger.error('Error getting curator daily counts', 'cron:curator-rewards', error);
-    return new Map();
+    throw error;
   }
 }
 

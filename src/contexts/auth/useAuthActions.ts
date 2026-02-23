@@ -8,6 +8,7 @@ import type { WalletLoginResult, WalletSignOutcome } from '@/lib/wallet/types';
 import { getHivesignerToken } from '@/lib/wallet/hivesigner';
 import {
   persistAuthState,
+  syncSessionCookie,
   clearPersistedAuthState,
   fetchSessionFromCookie,
   type ChallengeData,
@@ -28,7 +29,10 @@ export interface UseAuthActionsOptions {
 export interface UseAuthActionsReturn {
   login: (newUser: User, newAuthType: AuthType) => void;
   loginWithHiveUser: (hiveUsername: string) => Promise<void>;
-  loginWithWallet: (loginResult?: WalletLoginResult) => Promise<void>;
+  loginWithWallet: (
+    loginResult?: WalletLoginResult,
+    preSignedChallengeData?: ChallengeData
+  ) => Promise<void>;
   logout: () => Promise<void>;
   upgradeToHive: (hiveUsername: string) => Promise<void>;
   updateUser: (userUpdate: Partial<User>) => void;
@@ -159,6 +163,18 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           type: 'LOGIN',
           payload: { user: basicUser, authType: 'hive', hiveUser: newHiveUser, loginAt: now },
         });
+
+        // Sync cookie immediately (not debounced) so it survives page refresh / HMR
+        await syncSessionCookie({
+          userId: basicUser.id,
+          username: basicUser.username,
+          authType: 'hive',
+          hiveUsername: hiveUsername,
+          loginAt: now,
+          challengeData,
+        });
+
+        // Debounced persist for UI hint & activity updates
         persistAuthState({
           user: basicUser,
           authType: 'hive',
@@ -177,7 +193,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
   );
 
   const loginWithWallet = useCallback(
-    async (loginResult?: WalletLoginResult) => {
+    async (loginResult?: WalletLoginResult, preSignedChallengeData?: ChallengeData) => {
       try {
         let username: string | undefined;
         let provider: string | undefined;
@@ -209,16 +225,15 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
 
         const now = Date.now();
 
-        // Prove wallet/account ownership for session creation.
-        // Skip for auto-reconnect (no loginResult) — the server allows session refresh
-        // via existing cookie without re-signing.
-        let challengeData: ChallengeData | undefined;
+        // Use pre-signed challenge data if provided (single-popup Keychain flow).
+        // Otherwise, sign a new challenge (triggers a second popup for non-Keychain providers).
+        let challengeData: ChallengeData | undefined = preSignedChallengeData;
         let hivesignerToken: string | undefined;
 
-        if (loginResult) {
+        if (!challengeData && loginResult) {
           if (provider === 'hivesigner') {
             hivesignerToken = getHivesignerToken() ?? undefined;
-          } else {
+          } else if (wallet.isReady) {
             challengeData = await signHiveChallenge(wallet.signMessage, username);
           }
         }
@@ -246,6 +261,37 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           type: 'LOGIN',
           payload: { user: basicUser, authType: 'hive', hiveUser: newHiveUser, loginAt: now },
         });
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[loginWithWallet] challengeData present:',
+            !!challengeData,
+            '| fields:',
+            challengeData
+              ? {
+                  challenge: !!challengeData.challenge,
+                  mac: !!challengeData.challengeMac,
+                  sig: !!challengeData.signature,
+                }
+              : 'none'
+          );
+        }
+
+        // Sync cookie immediately (not debounced) so it survives page refresh / HMR
+        const cookieSynced = await syncSessionCookie({
+          userId: basicUser.id,
+          username: basicUser.username,
+          authType: 'hive',
+          hiveUsername: username,
+          loginAt: now,
+          challengeData,
+          hivesignerToken,
+        });
+        if (process.env.NODE_ENV === 'development' && !cookieSynced) {
+          console.warn('[loginWithWallet] Direct cookie sync FAILED for user:', username);
+        }
+
+        // Debounced persist for UI hint & activity updates
         persistAuthState({
           user: basicUser,
           authType: 'hive',

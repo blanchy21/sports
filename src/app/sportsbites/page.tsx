@@ -6,7 +6,7 @@ import { ComposeSportsbite, SportsbitesFeed } from '@/components/sportsbites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast, toast } from '@/components/core/Toast';
-import type { Sportsbite } from '@/lib/hive-workerbee/sportsbites';
+import type { Sportsbite } from '@/lib/hive-workerbee/shared';
 import Image from 'next/image';
 import { Zap, TrendingUp, Clock, Users, X, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
@@ -73,7 +73,12 @@ export default function SportsBitesPage() {
 
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
-      router.push('/');
+      // Give a brief grace period — auth state may still be propagating
+      // (e.g. after login dispatch + navigation, or HMR in dev mode)
+      const timer = setTimeout(() => {
+        router.push('/');
+      }, 150);
+      return () => clearTimeout(timer);
     }
     // Redirect custodial users who haven't completed onboarding
     if (!isAuthLoading && user && authType === 'soft' && !user.onboardingCompleted) {

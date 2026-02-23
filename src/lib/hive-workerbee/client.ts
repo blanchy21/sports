@@ -25,26 +25,8 @@ function hasRpcCall(
 import { HIVE_NODES } from './nodes';
 export { HIVE_NODES };
 
-// Authors muted at the platform level — their posts and comments are hidden from all feeds.
-// Add Hive usernames (without @) to block spam or abusive accounts.
-export const MUTED_AUTHORS: readonly string[] = ['kgakakillerg', 'heimindanger'];
-
-// Sportsblock configuration (same as current implementation)
-export const SPORTS_ARENA_CONFIG = {
-  APP_NAME: 'sportsblock',
-  APP_VERSION: '1.0.0',
-  COMMUNITY_ID: 'hive-115814',
-  COMMUNITY_NAME: 'sportsblock',
-  TAGS: ['sportsblock', 'hive-115814'],
-  // Account that distributes block rewards to users
-  REWARDS_ACCOUNT: 'sp-blockrewards',
-  DEFAULT_BENEFICIARIES: [
-    {
-      account: 'sportsblock',
-      weight: 500, // 5% to platform (per MEDALS whitepaper v4)
-    },
-  ],
-};
+// Re-export pure config from shared (WASM-free) module for backward compatibility
+export { MUTED_AUTHORS, SPORTS_ARENA_CONFIG } from './shared';
 
 // WorkerBee client instance
 let workerBeeClient: InstanceType<typeof WorkerBee> | null = null;

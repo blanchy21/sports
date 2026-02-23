@@ -142,7 +142,8 @@ function getRatelimiter(type: string, config: RateLimitConfig): Ratelimit | null
 export async function checkRateLimit(
   identifier: string,
   config: RateLimitConfig,
-  type: string = 'default'
+  type: string = 'default',
+  options?: { strict?: boolean }
 ): Promise<RateLimitResult> {
   // Try distributed rate limiting first
   // If Redis was marked down, retry after REDIS_RETRY_AFTER_MS
@@ -177,6 +178,11 @@ export async function checkRateLimit(
     }
   }
 
+  // In strict mode, deny when Redis is unavailable rather than falling back
+  if (options?.strict) {
+    return { success: false, remaining: 0, reset: Date.now() + 60_000 };
+  }
+
   // Fallback to in-memory rate limiting
   return checkRateLimitInMemory(identifier, config);
 }
@@ -192,16 +198,15 @@ export function checkRateLimitSync(identifier: string, config: RateLimitConfig):
 
 /**
  * Get client identifier from request
- * Uses IP address with fallback to forwarded headers
+ * Prefers Vercel's non-spoofable header, then falls back to standard headers
  */
 export function getClientIdentifier(request: Request): string {
   const headers = request.headers;
 
-  // Check various headers for client IP
-  const forwardedFor = headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    // Take the first IP in the chain (original client)
-    return forwardedFor.split(',')[0].trim();
+  // Prefer Vercel's platform-set header (cannot be spoofed by clients)
+  const vercelForwardedFor = headers.get('x-vercel-forwarded-for');
+  if (vercelForwardedFor) {
+    return vercelForwardedFor.split(',')[0].trim();
   }
 
   const realIp = headers.get('x-real-ip');
@@ -209,13 +214,12 @@ export function getClientIdentifier(request: Request): string {
     return realIp;
   }
 
-  // Vercel-specific header
-  const vercelForwardedFor = headers.get('x-vercel-forwarded-for');
-  if (vercelForwardedFor) {
-    return vercelForwardedFor.split(',')[0].trim();
+  // Fallback to x-forwarded-for (spoofable, but better than nothing outside Vercel)
+  const forwardedFor = headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
   }
 
-  // Fallback
   return 'anonymous';
 }
 

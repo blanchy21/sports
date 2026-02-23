@@ -96,13 +96,17 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   // -------------------------------------------------------------------------
 
   const login = useCallback(
-    async (provider: WalletProviderType, username: string): Promise<WalletLoginOutcome> => {
+    async (
+      provider: WalletProviderType,
+      username: string,
+      message?: string
+    ): Promise<WalletLoginOutcome> => {
       setError(null);
 
       let result: WalletLoginOutcome;
 
       if (provider === 'keychain') {
-        result = await keychainLogin(username, 'Login to Sportsblock');
+        result = await keychainLogin(username, message || 'Login to Sportsblock');
       } else {
         result = await hivesignerLogin();
       }

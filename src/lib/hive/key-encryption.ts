@@ -36,11 +36,8 @@ export function encryptKeys(keysJson: string): { encrypted: string; iv: string; 
   };
 }
 
-export function decryptKeys(encrypted: string, iv: string, salt?: string): string {
-  // Support legacy keys encrypted with the old static salt
-  const saltBuffer = salt
-    ? Buffer.from(salt, 'base64')
-    : Buffer.from('sportsblock-key-encryption-salt', 'utf8');
+export function decryptKeys(encrypted: string, iv: string, salt: string): string {
+  const saltBuffer = Buffer.from(salt, 'base64');
   const key = getEncryptionKey(saltBuffer);
   const ivBuffer = Buffer.from(iv, 'base64');
   const combined = Buffer.from(encrypted, 'base64');

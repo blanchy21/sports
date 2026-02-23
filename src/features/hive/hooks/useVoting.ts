@@ -4,14 +4,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { queryKeys } from '@/lib/react-query/queryClient';
 import { logger } from '@/lib/logger';
+import type { VoteData, VoteResult } from '@/lib/hive-workerbee/shared';
 import {
   castVote,
   removeVote,
   checkUserVote,
   canUserVote,
   calculateOptimalVoteWeight,
-  VoteData,
-  VoteResult,
 } from '@/lib/hive-workerbee/voting';
 import { HiveVote } from '@/lib/shared/types';
 

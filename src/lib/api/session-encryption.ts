@@ -11,7 +11,7 @@ export function getSessionEncryptionKey(): Buffer {
   const secret = process.env.SESSION_SECRET;
 
   if (!secret) {
-    if (process.env.NODE_ENV !== 'development') {
+    if (process.env.NODE_ENV !== 'development' || process.env.VERCEL) {
       throw new Error(
         'SESSION_SECRET environment variable is required in non-development environments'
       );
@@ -19,7 +19,10 @@ export function getSessionEncryptionKey(): Buffer {
     return crypto.scryptSync('development-only-insecure-key', 'salt', 32);
   }
 
-  if (process.env.NODE_ENV !== 'development' && !process.env.SESSION_ENCRYPTION_SALT) {
+  if (
+    (process.env.NODE_ENV !== 'development' || process.env.VERCEL) &&
+    !process.env.SESSION_ENCRYPTION_SALT
+  ) {
     throw new Error('SESSION_ENCRYPTION_SALT is required in non-development environments');
   }
   const salt = process.env.SESSION_ENCRYPTION_SALT || 'sportsblock-session-salt';

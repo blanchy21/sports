@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModal } from '@/components/modals/ModalProvider';
-import type { PollDefinition, PollResults } from '@/lib/hive-workerbee/sportsbites';
+import type { PollDefinition, PollResults } from '@/lib/hive-workerbee/shared';
 import { BarChart3 } from 'lucide-react';
 
 interface QuickPollProps {

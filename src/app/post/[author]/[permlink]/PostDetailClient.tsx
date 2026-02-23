@@ -25,7 +25,7 @@ interface SoftPostMeta {
   authorAvatar?: string;
 }
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserProfile } from '@/features/user/hooks/useUserProfile';
+import { useUserProfileCard } from '@/lib/react-query/queries/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { formatDate, formatReadTime } from '@/lib/utils/client';
@@ -52,7 +52,7 @@ export default function PostDetailClient() {
   const permlink = params.permlink as string;
 
   // Fetch Hive user profile (only for non-soft posts)
-  const { profile: hiveProfile, isLoading: isProfileLoading } = useUserProfile(author);
+  const { profile: hiveProfile, isLoading: isProfileLoading } = useUserProfileCard(author);
 
   // Track if this is a soft post for different UI handling
   const [isSoftPost, setIsSoftPost] = useState(false);
