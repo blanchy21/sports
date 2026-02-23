@@ -196,15 +196,15 @@ export default function LandingSections() {
           {[
             '/enrique-guzman-egas-Q1zq6ZLnRJA-unsplash.jpg',
             '/david-pisnoy-At5I1OSl_2M-unsplash.jpg',
-            '/horst-heuck-fBigUP6u1QE-unsplash.jpg',
+            '/markus-spiske-WUehAgqO5hE-unsplash.jpg',
             '/robert-ruggiero-LUqej0W6BSI-unsplash.jpg',
-            '/ubaid-e-alyafizi-SubXpGkzeUs-unsplash.jpg',
+            '/moises-alex-WqI-PbYugn4-unsplash.jpg',
             '/welcome-3Q-2blmd5o8-unsplash.jpg',
             '/enrique-guzman-egas-Q1zq6ZLnRJA-unsplash.jpg',
             '/david-pisnoy-At5I1OSl_2M-unsplash.jpg',
-            '/horst-heuck-fBigUP6u1QE-unsplash.jpg',
+            '/markus-spiske-WUehAgqO5hE-unsplash.jpg',
             '/robert-ruggiero-LUqej0W6BSI-unsplash.jpg',
-            '/ubaid-e-alyafizi-SubXpGkzeUs-unsplash.jpg',
+            '/moises-alex-WqI-PbYugn4-unsplash.jpg',
             '/welcome-3Q-2blmd5o8-unsplash.jpg',
           ].map((src, i) => (
             <div
@@ -224,13 +224,15 @@ export default function LandingSections() {
             '/jeff-cadestin-wRXJuof2eD4-unsplash.jpg',
             '/jack-hunter-Ph0Aa13k5-c-unsplash.jpg',
             '/mat-weller-Hk92KV4zU8M-unsplash.jpg',
-            '/ben-pham-qdghsJAE09A-unsplash.jpg',
+            '/muktasim-azlan-pPfOLOK0oeI-unsplash.jpg',
+            '/riley-mccullough-iezcEpGuYdE-unsplash.jpg',
             '/chris-chow-IuWcgImMY0k-unsplash.jpg',
             '/ben-weber-r-krWscXjvQ-unsplash.jpg',
             '/jeff-cadestin-wRXJuof2eD4-unsplash.jpg',
             '/jack-hunter-Ph0Aa13k5-c-unsplash.jpg',
             '/mat-weller-Hk92KV4zU8M-unsplash.jpg',
-            '/ben-pham-qdghsJAE09A-unsplash.jpg',
+            '/muktasim-azlan-pPfOLOK0oeI-unsplash.jpg',
+            '/riley-mccullough-iezcEpGuYdE-unsplash.jpg',
             '/chris-chow-IuWcgImMY0k-unsplash.jpg',
           ].map((src, i) => (
             <div
