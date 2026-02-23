@@ -10,6 +10,7 @@ import { useBatchFollowStatus } from '@/lib/react-query/queries/useUserProfile';
 import { useSidebarAnalytics } from '@/lib/react-query/queries/useSidebarAnalytics';
 import { Avatar } from '@/components/core/Avatar';
 import { MyCommunitiesWidget } from '@/components/community/MyCommunitiesWidget';
+import { TopStakersWidget } from '@/components/leaderboard';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { logger } from '@/lib/logger';
 
@@ -116,6 +117,9 @@ export const RightSidebar: React.FC = () => {
       <div className="space-y-6">
         {/* My Communities */}
         <MyCommunitiesWidget maxItems={5} className="rounded-lg border bg-card p-4" />
+
+        {/* Top MEDALS Stakers */}
+        <TopStakersWidget />
 
         {/* Trending Topics */}
         <div className="rounded-lg border bg-card p-4">
