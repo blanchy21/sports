@@ -6,7 +6,7 @@ import { ComposeSportsbite, SportsbitesFeed } from '@/components/sportsbites';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast, toast } from '@/components/core/Toast';
-import type { Sportsbite } from '@/lib/hive-workerbee/sportsbites';
+import type { Sportsbite } from '@/lib/hive-workerbee/shared';
 import Image from 'next/image';
 import { Zap, TrendingUp, Clock, Users, X, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils/client';

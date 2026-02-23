@@ -7,7 +7,7 @@ import { Button } from '@/components/core/Button';
 import { MatchThreadHeader } from '@/components/match-threads/MatchThreadHeader';
 import { MatchThreadFeed } from '@/components/match-threads/MatchThreadFeed';
 import { ComposeSportsbite } from '@/components/sportsbites/ComposeSportsbite';
-import { Sportsbite } from '@/lib/hive-workerbee/sportsbites';
+import type { Sportsbite } from '@/lib/hive-workerbee/shared';
 import { MatchThread } from '@/types/sports';
 
 interface MatchThreadDetailPageProps {

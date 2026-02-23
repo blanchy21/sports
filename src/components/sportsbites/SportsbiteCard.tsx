@@ -24,8 +24,13 @@ import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { cn, formatDate } from '@/lib/utils/client';
 import { formatReputation } from '@/lib/utils/hive';
-import { Sportsbite, extractMediaFromBody } from '@/lib/hive-workerbee/sportsbites';
-import type { ReactionEmoji, ReactionCounts, PollResults } from '@/lib/hive-workerbee/sportsbites';
+import { extractMediaFromBody } from '@/lib/hive-workerbee/shared';
+import type {
+  Sportsbite,
+  ReactionEmoji,
+  ReactionCounts,
+  PollResults,
+} from '@/lib/hive-workerbee/shared';
 import { SPORT_CATEGORIES } from '@/types';
 import { getProxyImageUrl, shouldProxyImage, proxyImagesInContent } from '@/lib/utils/image-proxy';
 import { isTrustedImageHost, sanitizePostContent } from '@/lib/utils/sanitize';

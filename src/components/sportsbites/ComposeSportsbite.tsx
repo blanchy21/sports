@@ -22,12 +22,11 @@ import {
   SPORTSBITES_CONFIG,
   createSportsbiteOperation,
   validateSportsbiteContent,
-  Sportsbite,
-} from '@/lib/hive-workerbee/sportsbites';
-import type { PollDefinition } from '@/lib/hive-workerbee/sportsbites';
+  createCommentOptionsOperation,
+} from '@/lib/hive-workerbee/shared';
+import type { Sportsbite, PollDefinition } from '@/lib/hive-workerbee/shared';
 import { PollComposer } from '@/components/sportsbites/PollComposer';
 import { createMatchThreadSportsbiteOperation } from '@/lib/hive-workerbee/match-threads';
-import { createCommentOptionsOperation } from '@/lib/hive-workerbee/wax-helpers';
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { validateImageUrl } from '@/lib/utils/sanitize';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';

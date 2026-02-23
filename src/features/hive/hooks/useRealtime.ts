@@ -1,7 +1,6 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
+import type { RealtimeEvent, RealtimeEventCallback } from '@/lib/hive-workerbee/shared';
 import {
-  RealtimeEvent,
-  RealtimeEventCallback,
   addRealtimeCallback,
   removeRealtimeCallback,
   startRealtimeMonitoring,

@@ -1,8 +1,26 @@
-import { getWorkerBeeClient, initializeWorkerBeeClient, SPORTS_ARENA_CONFIG } from './client';
+import { getWorkerBeeClient, initializeWorkerBeeClient } from './client';
+import { SPORTS_ARENA_CONFIG } from './shared';
 import type { IStartConfiguration } from '@hiveio/workerbee';
 import { workerBee as workerBeeLog, error as logError, warn as logWarn } from './logger';
 import { fetchSportsblockPosts } from './content';
 import { makeWorkerBeeApiCall } from './api';
+
+// Re-export event types from shared for backward compatibility
+export type {
+  RealtimePostEvent,
+  RealtimeVoteEvent,
+  RealtimeCommentEvent,
+  RealtimeEvent,
+  RealtimeEventCallback,
+} from './shared';
+
+import type {
+  RealtimePostEvent,
+  RealtimeVoteEvent,
+  RealtimeCommentEvent,
+  RealtimeEvent,
+  RealtimeEventCallback,
+} from './shared';
 
 const REALTIME_DEBUG_ENABLED =
   process.env.NEXT_PUBLIC_WORKERBEE_DEBUG === 'true' || process.env.NODE_ENV === 'development';
@@ -22,47 +40,6 @@ const realtimeDebugLog = (message: string, data?: unknown) => {
   }
   workerBeeLog(message, 'RealtimeMonitor', data);
 };
-
-// Real-time event types
-export interface RealtimePostEvent {
-  type: 'new_post';
-  data: {
-    author: string;
-    permlink: string;
-    title: string;
-    body: string;
-    created: string;
-    sportCategory?: string;
-  };
-}
-
-export interface RealtimeVoteEvent {
-  type: 'new_vote';
-  data: {
-    voter: string;
-    author: string;
-    permlink: string;
-    weight: number;
-    timestamp: string;
-  };
-}
-
-export interface RealtimeCommentEvent {
-  type: 'new_comment';
-  data: {
-    author: string;
-    permlink: string;
-    parentAuthor: string;
-    parentPermlink: string;
-    body: string;
-    created: string;
-  };
-}
-
-export type RealtimeEvent = RealtimePostEvent | RealtimeVoteEvent | RealtimeCommentEvent;
-
-// Event callback type
-export type RealtimeEventCallback = (event: RealtimeEvent) => void;
 
 // WorkerBee client type - flexible interface to match actual WorkerBee
 export type WorkerBeeClient = {
