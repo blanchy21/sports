@@ -3,8 +3,8 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { Send, Loader2, Reply, X } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
-import { Badge } from '@/components/core/Badge';
 import { Button } from '@/components/core/Button';
+import { RoleBadge } from '@/components/user/RoleBadge';
 import { CommentContent } from '@/components/comments/CommentContent';
 import { CommentVoteButton } from '@/components/posts/CommentVoteButton';
 import { useComments, useInvalidateComments } from '@/lib/react-query/queries/useComments';
@@ -268,15 +268,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
                 )}
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-sm font-medium">@{node.comment.author}</span>
-                  {node.comment.source === 'soft' ? (
-                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-                      Off Chain
-                    </Badge>
-                  ) : (
-                    <Badge variant="default" className="px-1.5 py-0 text-[10px]">
-                      Hive
-                    </Badge>
-                  )}
+                  <RoleBadge username={node.comment.author} />
                   <span className="text-xs text-muted-foreground">
                     {formatDate(new Date(node.comment.created))}
                   </span>

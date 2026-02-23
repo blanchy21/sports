@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
-import { Badge } from '@/components/core/Badge';
 import { StarVoteButton } from '@/components/voting/StarVoteButton';
 import { SoftLikeButton } from '@/components/voting/SoftLikeButton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +33,7 @@ import { linkifyHashtags } from '@/lib/utils/hashtags';
 import { InlineReplies } from '@/components/sportsbites/InlineReplies';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { EmojiReactions } from '@/components/sportsbites/EmojiReactions';
+import { RoleBadge } from '@/components/user/RoleBadge';
 import { QuickPoll } from '@/components/sportsbites/QuickPoll';
 
 interface SportsbiteCardProps {
@@ -367,15 +367,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                 {authorProfile?.displayName || sportsbite.author}
               </button>
               <span className="text-muted-foreground">@{sportsbite.author}</span>
-              {sportsbite.source === 'soft' ? (
-                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-                  Off Chain
-                </Badge>
-              ) : (
-                <Badge variant="default" className="px-1.5 py-0 text-[10px]">
-                  Hive
-                </Badge>
-              )}
+              <RoleBadge username={sportsbite.author} />
               {sportsbite.author_reputation && (
                 <span className="text-xs text-muted-foreground">
                   ({formatReputation(parseFloat(sportsbite.author_reputation) || 0)})
