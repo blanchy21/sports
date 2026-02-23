@@ -38,6 +38,15 @@ jest.mock('@/lib/auth/next-auth-options', () => ({
   authOptions: {},
 }));
 
+const mockPrismaFindFirst = jest.fn();
+jest.mock('@/lib/db/prisma', () => ({
+  prisma: {
+    custodialUser: {
+      findFirst: (...args: unknown[]) => mockPrismaFindFirst(...args),
+    },
+  },
+}));
+
 // Mock next/headers cookies()
 const mockCookieGet = jest.fn();
 const mockCookieSet = jest.fn();

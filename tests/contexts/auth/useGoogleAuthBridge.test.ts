@@ -66,7 +66,7 @@ describe('useGoogleAuthBridge', () => {
     expect(user).toMatchObject({
       id: 'u1',
       username: 'sb-test',
-      displayName: 'Test User',
+      displayName: 'sb-test',
       avatar: 'https://img.com/a.jpg',
       isHiveAuth: false,
       hiveUsername: 'sb-test',
