@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { MessageCircle, Bookmark, MapPin, Repeat2, Users } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
-import { Badge } from '@/components/core/Badge';
 import { StarVoteButton } from '@/components/voting/StarVoteButton';
 import { SoftLikeButton } from '@/components/voting/SoftLikeButton';
 import { cn, formatDate, formatReadTime } from '@/lib/utils/client';
@@ -18,6 +17,7 @@ import { useBroadcast } from '@/hooks/useBroadcast';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { usePremiumTier } from '@/lib/premium/hooks';
 import { PremiumBadge } from '@/components/medals';
+import { RoleBadge } from '@/components/user/RoleBadge';
 // HiveUpgradePrompt no longer needed - soft users can now interact with all content
 import { getProxyImageUrl, shouldProxyImage } from '@/lib/utils/image-proxy';
 import {
@@ -226,15 +226,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
               >
                 @{getAuthorName()}
               </span>
-              {isSoftPost ? (
-                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-                  Off Chain
-                </Badge>
-              ) : isActualHivePost ? (
-                <Badge variant="default" className="px-1.5 py-0 text-[10px]">
-                  Hive
-                </Badge>
-              ) : null}
+              <RoleBadge username={getAuthorName()} />
               {authorPremiumTier && (
                 <PremiumBadge tier={authorPremiumTier} size="sm" showLabel={false} />
               )}
