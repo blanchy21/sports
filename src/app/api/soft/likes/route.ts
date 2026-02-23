@@ -6,6 +6,7 @@ import { createRequestContext, validationError, unauthorizedError } from '@/lib/
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -171,7 +172,11 @@ export async function POST(request: NextRequest) {
             where: { id: user.userId },
             data: { lastActiveAt: new Date() },
           })
-          .catch(() => {})
+          .catch((err) => {
+            logger.warn('Failed to update lastActiveAt', 'soft-likes', {
+              error: err instanceof Error ? err.message : String(err),
+            });
+          })
       );
 
       // Compute new count from pre-toggle count instead of re-querying

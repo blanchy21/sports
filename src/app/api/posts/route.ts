@@ -10,6 +10,7 @@ import {
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -296,7 +297,11 @@ export async function POST(request: NextRequest) {
           where: { id: data.authorId },
           data: { lastActiveAt: new Date() },
         })
-        .catch(() => {});
+        .catch((err) => {
+          logger.warn('Failed to update lastActiveAt', 'posts', {
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
 
       // Increment community post count (fire-and-forget)
       if (data.communityId) {

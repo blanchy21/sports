@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useCallback, Suspense } from 'react';
 import { Button } from '@/components/core/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -31,6 +31,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { logger } from '@/lib/logger';
 import { useBroadcast } from '@/hooks/useBroadcast';
+import { useToast, toast } from '@/components/core/Toast';
 
 // Import new components
 import { EditorToolbar, FormatType } from '@/components/publish/EditorToolbar';
@@ -63,6 +64,7 @@ const ReactMarkdown = dynamic(() => import('react-markdown'), {
 function PublishPageContent() {
   const { user, authType, hiveUser, isLoading: isAuthLoading } = useAuth();
   const { broadcast } = useBroadcast();
+  const { addToast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -142,44 +144,8 @@ function PublishPageContent() {
     }
   }, [user, isAuthLoading, router]);
 
-  // Load draft if draft ID is provided
-  React.useEffect(() => {
-    const draftId = searchParams.get('draft');
-    if (draftId && user) {
-      setTimeout(() => loadDraft(draftId), 100);
-    }
-  }, [searchParams, user]);
-
-  // Pre-select community from URL parameter
-  React.useEffect(() => {
-    const communitySlug = searchParams.get('community');
-    if (communitySlug && !selectedCommunity) {
-      // Find community in user communities or all communities
-      const allAvailableCommunities = [
-        ...(userCommunities || []),
-        ...(allCommunities?.communities || []),
-      ];
-      const community = allAvailableCommunities.find(
-        (c) => c.slug === communitySlug || c.id === communitySlug
-      );
-      if (community) {
-        setSelectedCommunity(community);
-      }
-    }
-  }, [searchParams, userCommunities, allCommunities, selectedCommunity]);
-
-  // Close menu on click outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const loadDraft = (draftId: string) => {
+  // Load draft function
+  const loadDraft = useCallback((draftId: string) => {
     if (typeof window === 'undefined') return;
 
     try {
@@ -210,7 +176,44 @@ function PublishPageContent() {
     } catch (err) {
       logger.error('Error loading draft', 'PublishPage', err);
     }
-  };
+  }, []);
+
+  // Load draft if draft ID is provided
+  React.useEffect(() => {
+    const draftId = searchParams.get('draft');
+    if (draftId && user) {
+      loadDraft(draftId);
+    }
+  }, [searchParams, user, loadDraft]);
+
+  // Pre-select community from URL parameter
+  React.useEffect(() => {
+    const communitySlug = searchParams.get('community');
+    if (communitySlug && !selectedCommunity) {
+      // Find community in user communities or all communities
+      const allAvailableCommunities = [
+        ...(userCommunities || []),
+        ...(allCommunities?.communities || []),
+      ];
+      const community = allAvailableCommunities.find(
+        (c) => c.slug === communitySlug || c.id === communitySlug
+      );
+      if (community) {
+        setSelectedCommunity(community);
+      }
+    }
+  }, [searchParams, userCommunities, allCommunities, selectedCommunity]);
+
+  // Close menu on click outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const checkRCStatus = React.useCallback(async () => {
     if (!hiveUser?.username) return;
@@ -482,19 +485,19 @@ function PublishPageContent() {
       );
       try {
         localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
-        alert('Draft updated!');
+        addToast(toast.success('Success', 'Draft updated!'));
       } catch (error) {
         logger.error('Error saving draft', 'PublishPage', error);
-        alert('Failed to save draft.');
+        addToast(toast.error('Error', 'Failed to save draft.'));
       }
     } else {
       existingDrafts.push(draftData);
       try {
         localStorage.setItem('drafts', JSON.stringify(existingDrafts));
-        alert('Draft saved!');
+        addToast(toast.success('Success', 'Draft saved!'));
       } catch (error) {
         logger.error('Error saving draft', 'PublishPage', error);
-        alert('Failed to save draft.');
+        addToast(toast.error('Error', 'Failed to save draft.'));
       }
     }
   };
@@ -550,7 +553,7 @@ function PublishPageContent() {
         addRecentTags(tags);
       }
 
-      alert(`Post scheduled for ${scheduledAt.toLocaleString()}`);
+      addToast(toast.success('Success', `Post scheduled for ${scheduledAt.toLocaleString()}`));
       router.push('/feed');
     } catch (error) {
       logger.error('Error scheduling post', 'PublishPage', error);
@@ -615,7 +618,7 @@ function PublishPageContent() {
           if (tags.length > 0) {
             addRecentTags(tags);
           }
-          alert(`Post published to Hive! View: ${result.url}`);
+          addToast(toast.success('Success', `Post published to Hive! View: ${result.url}`));
           router.push('/feed');
         } else {
           setPublishError(result.error || 'Failed to publish post');
@@ -705,7 +708,7 @@ function PublishPageContent() {
 
   // Generate preview link - always show Sportsblock URL
   const username = hiveUser?.username || user?.username || 'username';
-  const previewLink = `sportsblock.com/@${username}/[post-slug]`;
+  const previewLink = `sportsblock.app/@${username}/[post-slug]`;
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -1073,8 +1076,8 @@ function PublishPageContent() {
                           ...defaultSchema.attributes,
                           img: ['src', 'alt', 'title', 'width', 'height', 'loading', 'className'],
                           iframe: ['src', 'width', 'height', 'frameBorder', 'allowFullScreen'],
-                          div: ['className', 'style'],
-                          span: ['className', 'style'],
+                          div: ['className'],
+                          span: ['className'],
                           '*': ['className'],
                         },
                       },

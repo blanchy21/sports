@@ -1,3 +1,4 @@
+import dns from 'node:dns/promises';
 import { NextRequest, NextResponse } from 'next/server';
 import { imageProxyQuerySchema, parseSearchParams } from '@/lib/api/validation';
 import {
@@ -7,6 +8,7 @@ import {
   timeoutError,
   internalError,
 } from '@/lib/api/response';
+import { PROXY_ALLOWED_HOSTS } from '@/lib/constants/image-hosts';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,29 +22,53 @@ const ROUTE = '/api/image-proxy';
  *
  * Usage: /api/image-proxy?url=https://files.peakd.com/...
  *
- * Security: Only allows specific trusted domains
+ * Security: Only allows specific trusted domains. Validates DNS resolution
+ * against private IP ranges to prevent SSRF attacks.
  */
-const ALLOWED_DOMAINS = [
-  'files.peakd.com',
-  'files.ecency.com',
-  'files.3speak.tv',
-  'files.dtube.tv',
-  'cdn.steemitimages.com',
-  'steemitimages.com',
-  'images.hive.blog',
-  'gateway.ipfs.io',
-  'ipfs.io',
-  'images.unsplash.com',
-];
 
 function isAllowedDomain(url: string): boolean {
   try {
     const parsedUrl = new URL(url);
-    return ALLOWED_DOMAINS.some(
+    return PROXY_ALLOWED_HOSTS.some(
       (domain) => parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(`.${domain}`)
     );
   } catch {
     return false;
+  }
+}
+
+/**
+ * Check if an IPv4 address belongs to a private/reserved range.
+ */
+function isPrivateIP(ip: string): boolean {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4) return true; // invalid = blocked
+  const [a, b] = parts;
+  return (
+    a === 127 || // 127.0.0.0/8  (loopback)
+    a === 10 || // 10.0.0.0/8   (private)
+    (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12 (private)
+    (a === 192 && b === 168) || // 192.168.0.0/16 (private)
+    (a === 169 && b === 254) || // 169.254.0.0/16 (link-local)
+    (a === 0 && b === 0) // 0.0.0.0       (unspecified)
+  );
+}
+
+/**
+ * Resolve hostname and verify none of its IPs are private/reserved.
+ * Returns an error message string if blocked, or null if safe.
+ */
+async function validateHostnameIPs(hostname: string): Promise<string | null> {
+  try {
+    const addresses = await dns.resolve4(hostname);
+    for (const ip of addresses) {
+      if (isPrivateIP(ip)) {
+        return `Hostname resolves to private IP`;
+      }
+    }
+    return null;
+  } catch {
+    return `Could not resolve hostname: ${hostname}`;
   }
 }
 
@@ -61,6 +87,12 @@ async function processImageResponse(
   if (!contentType.startsWith('image/')) {
     ctx.log.warn('Non-image content type from proxy', { imageUrl, contentType });
     return forbiddenError('URL does not point to an image', ctx.requestId) as NextResponse;
+  }
+
+  // Block SVGs — they can contain embedded JavaScript
+  if (contentType.includes('image/svg+xml')) {
+    ctx.log.warn('Blocked SVG from proxy', { imageUrl, contentType });
+    return forbiddenError('SVG images are not allowed', ctx.requestId) as NextResponse;
   }
 
   // Enforce size limit via Content-Length header
@@ -144,6 +176,18 @@ export async function GET(request: NextRequest) {
     return forbiddenError('Image URL domain not allowed', ctx.requestId);
   }
 
+  // SSRF protection: resolve hostname and block private IPs before fetching
+  try {
+    const parsed = new URL(imageUrl);
+    const dnsError = await validateHostnameIPs(parsed.hostname);
+    if (dnsError) {
+      ctx.log.warn('Image proxy SSRF block', { imageUrl, reason: dnsError });
+      return forbiddenError(dnsError, ctx.requestId);
+    }
+  } catch {
+    return validationError('Invalid image URL', ctx.requestId);
+  }
+
   try {
     ctx.log.debug('Proxying image', { imageUrl });
 
@@ -165,6 +209,21 @@ export async function GET(request: NextRequest) {
           redirectTo: location,
         });
         return forbiddenError('Image redirect to disallowed domain', ctx.requestId);
+      }
+      // SSRF check on redirect target too
+      try {
+        const redirectParsed = new URL(location);
+        const redirectDnsError = await validateHostnameIPs(redirectParsed.hostname);
+        if (redirectDnsError) {
+          ctx.log.warn('Image proxy SSRF block on redirect', {
+            imageUrl,
+            redirectTo: location,
+            reason: redirectDnsError,
+          });
+          return forbiddenError(redirectDnsError, ctx.requestId);
+        }
+      } catch {
+        return forbiddenError('Invalid redirect URL', ctx.requestId);
       }
       // Re-fetch from the validated redirect target
       const redirectResponse = await fetch(location, {

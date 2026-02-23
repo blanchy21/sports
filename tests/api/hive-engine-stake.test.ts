@@ -89,14 +89,14 @@ describe('GET /api/hive-engine/stake', () => {
     const response = await request(server).get('/api/hive-engine/stake');
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Account parameter is required');
+    expect(response.body.error.message).toBe('Account parameter is required');
   });
 
   it('should return 400 for invalid account name', async () => {
     const response = await request(server).get('/api/hive-engine/stake').query({ account: 'x' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Invalid account name');
+    expect(response.body.error.message).toBe('Invalid account name');
   });
 
   it('should return full stake info', async () => {
@@ -152,9 +152,8 @@ describe('GET /api/hive-engine/stake', () => {
       .query({ account: 'testuser' });
 
     expect(response.status).toBe(500);
-    expect(response.body.error).toBe(
-      'Failed to fetch staking information. Please try again later.'
-    );
+    expect(response.body.error).toBe('Network error');
+    expect(response.body.code).toBe('INTERNAL_ERROR');
   });
 });
 
@@ -192,7 +191,7 @@ describe('POST /api/hive-engine/stake', () => {
       .send({ action: 'stake', quantity: '100.000', account: 'testuser' });
 
     expect(response.status).toBe(401);
-    expect(response.body.error).toBe('Authentication required');
+    expect(response.body.error.message).toBe('Authentication required');
   });
 
   it('should return 403 when account does not match authenticated user', async () => {
@@ -201,7 +200,7 @@ describe('POST /api/hive-engine/stake', () => {
       .send({ action: 'stake', quantity: '100.000', account: 'other-user' });
 
     expect(response.status).toBe(403);
-    expect(response.body.error).toContain('Cannot build operations for other accounts');
+    expect(response.body.error.message).toContain('Cannot build operations for other accounts');
   });
 
   it('should return 400 for invalid account', async () => {
@@ -217,7 +216,7 @@ describe('POST /api/hive-engine/stake', () => {
       .send({ action: 'stake', quantity: '100.000', account: 'x' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Valid account is required');
+    expect(response.body.error.message).toBe('Valid account is required');
   });
 
   it('should build stake operation', async () => {
@@ -299,7 +298,7 @@ describe('POST /api/hive-engine/stake', () => {
       .send({ action: 'invalid', quantity: '100.000', account: 'testuser' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('Invalid action');
+    expect(response.body.error.message).toContain('Invalid action');
   });
 
   it('should return 400 for invalid quantity on stake', async () => {
@@ -308,7 +307,7 @@ describe('POST /api/hive-engine/stake', () => {
       .send({ action: 'stake', quantity: 'invalid', account: 'testuser' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('Valid quantity is required');
+    expect(response.body.error.message).toContain('Valid quantity is required');
   });
 
   it('should return 400 for missing txId on cancelUnstake', async () => {
@@ -317,7 +316,7 @@ describe('POST /api/hive-engine/stake', () => {
       .send({ action: 'cancelUnstake', account: 'testuser' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('Transaction ID');
+    expect(response.body.error.message).toContain('Transaction ID');
   });
 
   it('should return 400 when operation validation fails', async () => {
@@ -329,6 +328,6 @@ describe('POST /api/hive-engine/stake', () => {
       .send({ action: 'stake', quantity: '100.000', account: 'testuser' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Invalid operation');
+    expect(response.body.error.message).toBe('Invalid operation');
   });
 });

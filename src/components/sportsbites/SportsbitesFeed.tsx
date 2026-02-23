@@ -223,8 +223,9 @@ export function SportsbitesFeed({
           setReactionData((prev) => ({ ...prev, ...data.results }));
         }
       })
-      .catch(() => {
-        // Silently fail — reactions are non-critical
+      .catch((err) => {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        console.warn('Failed to fetch sportsbites reactions:', err);
       });
 
     return () => controller.abort();
@@ -252,8 +253,9 @@ export function SportsbitesFeed({
           setPollData((prev) => ({ ...prev, ...data.results }));
         }
       })
-      .catch(() => {
-        // Silently fail — polls are non-critical
+      .catch((err) => {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        console.warn('Failed to fetch sportsbites poll data:', err);
       });
 
     return () => controller.abort();

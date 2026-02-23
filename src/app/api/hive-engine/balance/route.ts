@@ -12,107 +12,88 @@
  * - Estimated APY
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import {
-  getMedalsBalance,
-  getStakeInfo,
-} from '@/lib/hive-engine/tokens';
+import { NextResponse } from 'next/server';
+import { getMedalsBalance, getStakeInfo } from '@/lib/hive-engine/tokens';
 import { getMarketData } from '@/lib/hive-engine/market';
 import { formatQuantity, isValidAccountName } from '@/lib/hive-engine/client';
 import { MEDALS_CONFIG, CACHE_TTLS } from '@/lib/hive-engine/constants';
+import { createApiHandler, apiError } from '@/lib/api/response';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const account = searchParams.get('account');
+export const GET = createApiHandler('/api/hive-engine/balance', async (request, ctx) => {
+  const { searchParams } = new URL(request.url);
+  const account = searchParams.get('account');
 
-    // Validate account parameter
-    if (!account) {
-      return NextResponse.json(
-        { error: 'Account parameter is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!isValidAccountName(account)) {
-      return NextResponse.json(
-        { error: 'Invalid account name' },
-        { status: 400 }
-      );
-    }
-
-    // Fetch balance and market data in parallel
-    const [balance, stakeInfo, marketData] = await Promise.all([
-      getMedalsBalance(account),
-      getStakeInfo(account),
-      getMarketData(MEDALS_CONFIG.SYMBOL),
-    ]);
-
-    // Handle case where user has no MEDALS
-    if (!balance) {
-      return NextResponse.json(
-        {
-          account,
-          symbol: MEDALS_CONFIG.SYMBOL,
-          liquid: '0.000000',
-          staked: '0.000000',
-          pendingUnstake: '0.000000',
-          delegatedIn: '0.000000',
-          delegatedOut: '0.000000',
-          total: '0.000000',
-          estimatedAPY: '0.00',
-          premiumTier: null,
-          hiveValue: '0.000000',
-          cached: false,
-          timestamp: new Date().toISOString(),
-        },
-        {
-          headers: {
-            'Cache-Control': `public, s-maxage=${CACHE_TTLS.BALANCE}, stale-while-revalidate=${CACHE_TTLS.BALANCE * 2}`,
-          },
-        }
-      );
-    }
-
-    // Calculate HIVE value
-    const hiveValue = marketData
-      ? balance.total * marketData.priceHive
-      : 0;
-
-    const response = {
-      account,
-      symbol: MEDALS_CONFIG.SYMBOL,
-      liquid: formatQuantity(balance.liquid),
-      staked: formatQuantity(balance.staked),
-      pendingUnstake: formatQuantity(balance.pendingUnstake),
-      delegatedIn: formatQuantity(balance.delegatedIn),
-      delegatedOut: formatQuantity(balance.delegatedOut),
-      total: formatQuantity(balance.total),
-      estimatedAPY: stakeInfo?.estimatedAPY.toFixed(2) || '0.00',
-      premiumTier: balance.premiumTier,
-      hiveValue: formatQuantity(hiveValue),
-      unstakingCompleteTimestamp: stakeInfo?.unstakingCompleteTimestamp || null,
-      cached: false,
-      timestamp: new Date().toISOString(),
-    };
-
-    return NextResponse.json(response, {
-      headers: {
-        'Cache-Control': `public, s-maxage=${CACHE_TTLS.BALANCE}, stale-while-revalidate=${CACHE_TTLS.BALANCE * 2}`,
-      },
+  // Validate account parameter
+  if (!account) {
+    return apiError('Account parameter is required', 'VALIDATION_ERROR', 400, {
+      requestId: ctx.requestId,
     });
-  } catch (error) {
-    console.error('[API] Error fetching MEDALS balance:', error);
-    // Sanitize error response - don't expose internal details
+  }
+
+  if (!isValidAccountName(account)) {
+    return apiError('Invalid account name', 'VALIDATION_ERROR', 400, {
+      requestId: ctx.requestId,
+    });
+  }
+
+  // Fetch balance and market data in parallel
+  const [balance, stakeInfo, marketData] = await Promise.all([
+    getMedalsBalance(account),
+    getStakeInfo(account),
+    getMarketData(MEDALS_CONFIG.SYMBOL),
+  ]);
+
+  // Handle case where user has no MEDALS
+  if (!balance) {
     return NextResponse.json(
       {
-        success: false,
-        error: 'Failed to fetch balance. Please try again later.',
-        code: 'BALANCE_FETCH_ERROR',
+        account,
+        symbol: MEDALS_CONFIG.SYMBOL,
+        liquid: '0.000000',
+        staked: '0.000000',
+        pendingUnstake: '0.000000',
+        delegatedIn: '0.000000',
+        delegatedOut: '0.000000',
+        total: '0.000000',
+        estimatedAPY: '0.00',
+        premiumTier: null,
+        hiveValue: '0.000000',
+        cached: false,
+        timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      {
+        headers: {
+          'Cache-Control': `public, s-maxage=${CACHE_TTLS.BALANCE}, stale-while-revalidate=${CACHE_TTLS.BALANCE * 2}`,
+        },
+      }
     );
   }
-}
+
+  // Calculate HIVE value
+  const hiveValue = marketData ? balance.total * marketData.priceHive : 0;
+
+  const response = {
+    account,
+    symbol: MEDALS_CONFIG.SYMBOL,
+    liquid: formatQuantity(balance.liquid),
+    staked: formatQuantity(balance.staked),
+    pendingUnstake: formatQuantity(balance.pendingUnstake),
+    delegatedIn: formatQuantity(balance.delegatedIn),
+    delegatedOut: formatQuantity(balance.delegatedOut),
+    total: formatQuantity(balance.total),
+    estimatedAPY: stakeInfo?.estimatedAPY.toFixed(2) || '0.00',
+    premiumTier: balance.premiumTier,
+    hiveValue: formatQuantity(hiveValue),
+    unstakingCompleteTimestamp: stakeInfo?.unstakingCompleteTimestamp || null,
+    cached: false,
+    timestamp: new Date().toISOString(),
+  };
+
+  return NextResponse.json(response, {
+    headers: {
+      'Cache-Control': `public, s-maxage=${CACHE_TTLS.BALANCE}, stale-while-revalidate=${CACHE_TTLS.BALANCE * 2}`,
+    },
+  });
+});

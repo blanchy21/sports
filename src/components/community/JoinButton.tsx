@@ -11,6 +11,7 @@ import {
 } from '@/lib/react-query/queries/useCommunity';
 import { Community } from '@/types';
 import { cn } from '@/lib/utils/client';
+import { useToast, toast } from '@/components/core/Toast';
 
 interface JoinButtonProps {
   community: Community;
@@ -26,6 +27,7 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
   showIcon = true,
 }) => {
   const { user, hiveUser, isLoading: isAuthLoading } = useAuth();
+  const { addToast } = useToast();
   const userId = user?.id || '';
 
   const { data: membership, isLoading: isMembershipLoading } = useMembership(community.id, userId);
@@ -50,7 +52,9 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
     if (!user) return;
 
     if (membership?.role === 'admin') {
-      alert('As the only admin, you cannot leave. Transfer ownership first.');
+      addToast(
+        toast.error('Error', 'As the only admin, you cannot leave. Transfer ownership first.')
+      );
       return;
     }
 

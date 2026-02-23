@@ -11,6 +11,7 @@ import {
 } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -297,7 +298,11 @@ export async function POST(request: NextRequest) {
             where: { id: user.userId },
             data: { lastActiveAt: new Date() },
           })
-          .catch(() => {})
+          .catch((err) => {
+            logger.warn('Failed to update lastActiveAt', 'soft-follows', {
+              error: err instanceof Error ? err.message : String(err),
+            });
+          })
       );
 
       // Get updated follower count for target user

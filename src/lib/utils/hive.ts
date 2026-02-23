@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 // Utility functions for Hive blockchain operations
 
 /**
@@ -182,11 +184,14 @@ export function getUserVote(
  * @param jsonMetadata - JSON metadata string
  * @returns Parsed metadata object
  */
-export function parseJsonMetadata(jsonMetadata: string): Record<string, unknown> {
+export function parseJsonMetadata(json: string): Record<string, unknown> {
   try {
-    return jsonMetadata ? JSON.parse(jsonMetadata) : {};
-  } catch (error) {
-    console.warn('Failed to parse JSON metadata:', error);
+    return json ? JSON.parse(json) : {};
+  } catch (err) {
+    logger.warn('Failed to parse json_metadata', 'hive-utils', {
+      error: err instanceof Error ? err.message : String(err),
+      metadata: typeof json === 'string' ? json.slice(0, 200) : 'non-string',
+    });
     return {};
   }
 }

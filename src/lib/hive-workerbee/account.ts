@@ -432,7 +432,12 @@ export async function fetchUserAccount(username: string): Promise<UserAccountDat
       Promise.race([
         makeHiveApiCall('rc_api', 'find_rc_accounts', { accounts: [username] }),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 500)),
-      ]).catch(() => null),
+      ]).catch((err) => {
+        logWarn('Failed to fetch RC accounts', 'fetchUserAccount', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        return null;
+      }),
     ]);
 
     // Process results from parallel calls

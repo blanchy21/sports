@@ -98,6 +98,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Fetch session from httpOnly cookie (the ONLY source of truth)
         const sessionResponse = await fetchSessionFromCookie();
 
+        if (sessionResponse.networkError) {
+          // Network error — don't clear auth state, user might just be offline
+          console.warn('Network error checking session, preserving auth state');
+          dispatch({ type: 'CLIENT_MOUNTED' });
+          return;
+        }
+
         if (sessionResponse.authenticated && sessionResponse.session) {
           const {
             userId,
