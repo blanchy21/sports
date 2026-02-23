@@ -25,6 +25,8 @@ export const MEDALS_CONFIG = {
     BURN: 'medals.burn',
     /** Rewards distribution account */
     REWARDS: 'sb.rewards',
+    /** Founder accounts (excluded from public leaderboard) */
+    FOUNDERS: ['niallon11', 'blanchy'] as readonly string[],
   },
 
   /** Beneficiary weight for posts (5% = 500 in Hive terms, where 10000 = 100%) */
