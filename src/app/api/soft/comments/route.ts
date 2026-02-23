@@ -255,8 +255,9 @@ export async function POST(request: NextRequest) {
           .catch(() => {})
       );
 
-      // Update comment count on the post if it's a soft post
+      // Update comment count on the parent entity
       if (postId.startsWith('soft-') || !postId.includes('-')) {
+        // Soft post — increment Post.commentCount
         const actualPostId = postId.replace('soft-', '');
         after(
           prisma.post
@@ -265,6 +266,22 @@ export async function POST(request: NextRequest) {
               data: { commentCount: { increment: 1 } },
             })
             .catch((err: unknown) => console.error('Failed to increment comment count:', err))
+        );
+      }
+
+      // Increment Sportsbite.commentCount for soft sportsbite replies
+      // postPermlink is the sportsbite's permlink; for soft sportsbites it's "soft-{uuid}"
+      if (postPermlink.startsWith('soft-')) {
+        const sportsbiteId = postPermlink.replace('soft-', '');
+        after(
+          prisma.sportsbite
+            .update({
+              where: { id: sportsbiteId },
+              data: { commentCount: { increment: 1 } },
+            })
+            .catch((err: unknown) =>
+              console.error('Failed to increment sportsbite comment count:', err)
+            )
         );
       }
 

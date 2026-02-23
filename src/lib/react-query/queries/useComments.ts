@@ -37,6 +37,7 @@ async function fetchSoftComments(author: string, permlink: string): Promise<Hive
     parent_permlink: permlink,
     net_votes: 0,
     source: 'soft',
+    parentCommentId: (c.parentCommentId as string) || undefined,
   }));
 }
 
