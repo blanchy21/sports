@@ -10,7 +10,7 @@ import { SoftLikeButton } from '@/components/voting/SoftLikeButton';
 import { cn, formatDate, formatReadTime } from '@/lib/utils/client';
 import { calculatePendingPayout, formatAsset } from '@/lib/utils/hive';
 import { useToast, toast } from '@/components/core/Toast';
-import { useUserProfile } from '@/features/user/hooks/useUserProfile';
+import { useUserProfileCard } from '@/lib/react-query/queries/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBroadcast } from '@/hooks/useBroadcast';
@@ -97,7 +97,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
     isActualHivePost && isSportsblockPost(post) ? calculatePendingPayout(post) : 0;
 
   // Fetch Hive user profile if it's a Hive post
-  const { profile: hiveProfile, isLoading: isProfileLoading } = useUserProfile(
+  const { profile: hiveProfile, isLoading: isProfileLoading } = useUserProfileCard(
     isHivePost ? authorUsername : null
   );
 
