@@ -190,7 +190,7 @@ describe('useGoogleAuthBridge', () => {
     });
   });
 
-  it('uses id as fallback for username when email is missing', async () => {
+  it('uses displayName as fallback for username when hiveUsername is missing', async () => {
     mockGetSession.mockResolvedValue({
       user: {
         id: 'u2',
@@ -207,7 +207,8 @@ describe('useGoogleAuthBridge', () => {
     });
 
     const [user] = props.login.mock.calls[0];
-    expect(user.username).toBe('u2');
+    // username fallback: hiveUsername ?? displayName ?? id
+    expect(user.username).toBe('No Email');
     expect(user.displayName).toBe('No Email');
   });
 
