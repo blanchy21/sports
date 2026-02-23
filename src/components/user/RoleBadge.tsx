@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Shield, Crown } from 'lucide-react';
+import { Shield, Crown, Gem, Flame } from 'lucide-react';
 import { getUserRole, getRoleConfig, type UserRole } from '@/lib/user-roles';
 
 interface RoleBadgeProps {
@@ -12,6 +12,8 @@ interface RoleBadgeProps {
 const ROLE_ICONS: Record<UserRole, React.ElementType> = {
   founder: Crown,
   captain: Shield,
+  'azzurri-aristocrat': Gem,
+  'la-liga-legend': Flame,
 };
 
 export const RoleBadge: React.FC<RoleBadgeProps> = ({ username, size = 'sm' }) => {
