@@ -169,7 +169,11 @@ export async function signAndBroadcast(
     select: { encryptedKeys: true, encryptionIv: true, encryptionSalt: true },
   });
 
-  if (!custodialUser?.encryptedKeys || !custodialUser.encryptionIv) {
+  if (
+    !custodialUser?.encryptedKeys ||
+    !custodialUser.encryptionIv ||
+    !custodialUser.encryptionSalt
+  ) {
     throw new Error(`No encrypted keys found for custodial user ${custodialUserId}`);
   }
 
@@ -179,7 +183,7 @@ export async function signAndBroadcast(
     const decrypted = decryptKeys(
       custodialUser.encryptedKeys,
       custodialUser.encryptionIv,
-      custodialUser.encryptionSalt ?? undefined
+      custodialUser.encryptionSalt
     );
     const keys = JSON.parse(decrypted) as Record<string, string>;
 
