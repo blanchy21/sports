@@ -12,7 +12,6 @@ import {
   RefreshCw,
   AlertCircle,
   Loader2,
-  Zap,
   Star,
 } from 'lucide-react';
 import { Button } from '@/components/core/Button';
@@ -27,6 +26,7 @@ import { logger } from '@/lib/logger';
 import { DraftsContent } from '@/components/profile/DraftsContent';
 import { RepliesContent } from '@/components/profile/RepliesContent';
 import { BookmarksContent } from '@/components/profile/BookmarksContent';
+import { RoleBadge } from '@/components/user/RoleBadge';
 
 /**
  * Get the like/vote count from a post.
@@ -186,20 +186,13 @@ export default function ProfilePage() {
                     <h1 className="text-3xl font-bold text-foreground">
                       {user.displayName || user.username}
                     </h1>
-                    {authType === 'hive' && (
-                      <div className="flex items-center space-x-2">
-                        <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-red-500 to-red-600 px-2.5 py-1 shadow-md shadow-red-500/25">
-                          <Zap className="h-3.5 w-3.5 text-white" />
-                          <span className="text-xs font-semibold text-white">Hive</span>
-                        </div>
-                        {user.reputationFormatted && (
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-2.5 py-1 shadow-md shadow-amber-500/25">
-                            <Star className="h-3.5 w-3.5 text-white" />
-                            <span className="text-xs font-semibold text-white">
-                              {user.reputationFormatted}
-                            </span>
-                          </div>
-                        )}
+                    <RoleBadge username={user.username} size="md" />
+                    {authType === 'hive' && user.reputationFormatted && (
+                      <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-2.5 py-1 shadow-md shadow-amber-500/25">
+                        <Star className="h-3.5 w-3.5 text-white" />
+                        <span className="text-xs font-semibold text-white">
+                          {user.reputationFormatted}
+                        </span>
                       </div>
                     )}
                   </div>

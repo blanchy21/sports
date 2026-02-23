@@ -3,8 +3,8 @@
 import React, { useState, useRef } from 'react';
 import { useComments } from '@/lib/react-query/queries/useComments';
 import { Button } from '@/components/core/Button';
-import { Badge } from '@/components/core/Badge';
 import { Avatar } from '@/components/core/Avatar';
+import { RoleBadge } from '@/components/user/RoleBadge';
 import { MessageCircle, Send, Reply } from 'lucide-react';
 import { formatDate } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -192,15 +192,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-center space-x-2">
                       <span className="text-sm font-medium">@{comment.author}</span>
-                      {comment.source === 'soft' ? (
-                        <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-                          Off Chain
-                        </Badge>
-                      ) : (
-                        <Badge variant="default" className="px-1.5 py-0 text-[10px]">
-                          Hive
-                        </Badge>
-                      )}
+                      <RoleBadge username={comment.author} />
                       <span className="text-xs text-muted-foreground">
                         {formatDate(new Date(comment.created))}
                       </span>
