@@ -23,7 +23,6 @@ import { useUserProfile } from '@/features/user/hooks/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { cn, formatDate } from '@/lib/utils/client';
-import { formatReputation } from '@/lib/utils/hive';
 import { Sportsbite, extractMediaFromBody } from '@/lib/hive-workerbee/sportsbites';
 import type { ReactionEmoji, ReactionCounts, PollResults } from '@/lib/hive-workerbee/sportsbites';
 import { SPORT_CATEGORIES } from '@/types';
@@ -368,11 +367,6 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               </button>
               <span className="text-muted-foreground">@{sportsbite.author}</span>
               <RoleBadge username={sportsbite.author} />
-              {sportsbite.author_reputation && (
-                <span className="text-xs text-muted-foreground">
-                  ({formatReputation(parseFloat(sportsbite.author_reputation) || 0)})
-                </span>
-              )}
               <span className="text-muted-foreground">·</span>
               <span className="text-sm text-muted-foreground">
                 {formatDate(
