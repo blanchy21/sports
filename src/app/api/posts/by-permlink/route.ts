@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
+import { createRequestContext } from '@/lib/api/response';
+
+const ROUTE = '/api/posts/by-permlink';
 
 /**
  * GET /api/posts/by-permlink?permlink=xxx - Get a soft post by its permlink
@@ -7,6 +10,7 @@ import { prisma } from '@/lib/db/prisma';
  * This is useful for URL-based routing where we use permlink in the URL
  */
 export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
   try {
     const { searchParams } = new URL(request.url);
     const permlink = searchParams.get('permlink');
@@ -36,13 +40,6 @@ export async function GET(request: NextRequest) {
       post,
     });
   } catch (error) {
-    console.error('Error fetching post by permlink:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch post',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

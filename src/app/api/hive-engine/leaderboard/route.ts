@@ -10,10 +10,13 @@
 import { NextResponse } from 'next/server';
 import { getHiveEngineClient, parseQuantity } from '@/lib/hive-engine/client';
 import { MEDALS_CONFIG, CONTRACTS, PREMIUM_TIERS } from '@/lib/hive-engine/constants';
+import { createRequestContext } from '@/lib/api/response';
 import type { TokenBalance } from '@/lib/hive-engine/types';
 import type { PremiumTier } from '@/lib/hive-engine/constants';
 
 export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/hive-engine/leaderboard';
 
 /** Determine premium tier from staked amount */
 function getPremiumTier(staked: number): PremiumTier | null {
@@ -25,6 +28,7 @@ function getPremiumTier(staked: number): PremiumTier | null {
 }
 
 export async function GET() {
+  const ctx = createRequestContext(ROUTE);
   try {
     const client = getHiveEngineClient();
 
@@ -77,10 +81,6 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error('[API] Error fetching MEDALS leaderboard:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch leaderboard. Please try again later.' },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

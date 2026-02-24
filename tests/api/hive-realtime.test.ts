@@ -17,11 +17,9 @@ jest.mock('@/lib/hive-workerbee/realtime', () => ({
   }),
 }));
 
-const {
-  getRealtimeMonitor,
-  startRealtimeMonitoring,
-  stopRealtimeMonitoring,
-} = jest.requireMock('@/lib/hive-workerbee/realtime');
+const { getRealtimeMonitor, startRealtimeMonitoring, stopRealtimeMonitoring } = jest.requireMock(
+  '@/lib/hive-workerbee/realtime'
+);
 
 describe('Realtime monitoring API', () => {
   let server: ReturnType<typeof createRouteTestServer>;
@@ -79,16 +77,15 @@ describe('Realtime monitoring API', () => {
     });
   });
 
-  it('returns 502 when start fails', async () => {
+  it('returns 500 when start fails', async () => {
     (startRealtimeMonitoring as jest.Mock).mockRejectedValueOnce(new Error('subscribe failed'));
 
     const response = await request(server).post('/api/hive/realtime');
 
-    expect(response.status).toBe(502);
-    expect(response.body).toEqual({
-      success: false,
-      error: 'subscribe failed',
-    });
+    expect(response.status).toBe(500);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toBe('subscribe failed');
+    expect(response.body.code).toBe('INTERNAL_ERROR');
   });
 
   it('stops monitoring on DELETE', async () => {
@@ -105,15 +102,14 @@ describe('Realtime monitoring API', () => {
     });
   });
 
-  it('returns 502 when stop fails', async () => {
+  it('returns 500 when stop fails', async () => {
     (stopRealtimeMonitoring as jest.Mock).mockRejectedValueOnce(new Error('shutdown error'));
 
     const response = await request(server).delete('/api/hive/realtime');
 
-    expect(response.status).toBe(502);
-    expect(response.body).toEqual({
-      success: false,
-      error: 'shutdown error',
-    });
+    expect(response.status).toBe(500);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toBe('shutdown error');
+    expect(response.body.code).toBe('INTERNAL_ERROR');
   });
 });

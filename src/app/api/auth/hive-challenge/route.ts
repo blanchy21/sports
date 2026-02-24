@@ -10,12 +10,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createRequestContext } from '@/lib/api/response';
 import { createChallenge } from '@/lib/auth/hive-challenge';
+
+const ROUTE = '/api/auth/hive-challenge';
 
 // Hive username: 3-16 chars, lowercase alphanumeric + dots/dashes, no leading/trailing dots/dashes
 const HIVE_USERNAME_RE = /^[a-z][a-z0-9.-]{1,14}[a-z0-9]$/;
 
 export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
+
   const username = request.nextUrl.searchParams.get('username')?.toLowerCase().trim();
 
   if (!username || !HIVE_USERNAME_RE.test(username)) {
@@ -25,7 +30,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { challenge, mac } = createChallenge(username);
-
-  return NextResponse.json({ success: true, challenge, mac });
+  try {
+    const { challenge, mac } = createChallenge(username);
+    return NextResponse.json({ success: true, challenge, mac });
+  } catch (error) {
+    return ctx.handleError(error);
+  }
 }

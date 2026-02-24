@@ -14,7 +14,9 @@ import {
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
-import { logger } from '@/lib/logger';
+import { createRequestContext } from '@/lib/api/response';
+
+const ROUTE = '/api/metrics/track';
 
 const trackSchema = z.object({
   type: z.enum(['view', 'vote', 'comment', 'share']),
@@ -44,6 +46,8 @@ export async function POST(request: NextRequest) {
       { status: 429, headers: createRateLimitHeaders(0, rateLimit.reset, RATE_LIMITS.read.limit) }
     );
   }
+
+  const ctx = createRequestContext(ROUTE);
 
   try {
     // Parse JSON body with dedicated error handling
@@ -102,12 +106,6 @@ export async function POST(request: NextRequest) {
       tracked: { type, author, permlink },
     });
   } catch (error) {
-    logger.error(
-      'Metrics tracking failed',
-      'metricsTrack',
-      error instanceof Error ? error : undefined
-    );
-
-    return NextResponse.json({ success: false, error: 'Tracking failed' }, { status: 500 });
+    return ctx.handleError(error);
   }
 }

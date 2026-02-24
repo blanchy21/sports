@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SportsEvent } from '@/types/sports';
 import { fetchAllEvents, filterEvents, filterBySport, sortEvents } from '@/lib/sports/espn';
-import { error as logError, info as logInfo } from '@/lib/hive-workerbee/logger';
+import { createRequestContext } from '@/lib/api/response';
 
 interface EventsCache {
   data: SportsEvent[] | null;
@@ -22,12 +22,7 @@ let eventsCache: EventsCache = {
 const ROUTE = '/api/sports/events';
 
 export async function GET(request: NextRequest) {
-  const startTime = Date.now();
-  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
-  const url = request.url;
-
-  logInfo('Request started', ROUTE, { requestId, url });
-
+  const ctx = createRequestContext(ROUTE);
   try {
     const { searchParams } = new URL(request.url);
     const sport = searchParams.get('sport');
@@ -82,24 +77,6 @@ export async function GET(request: NextRequest) {
       timestamp: now,
     });
   } catch (error) {
-    const duration = Date.now() - startTime;
-    logError(
-      `Request failed after ${duration}ms`,
-      ROUTE,
-      error instanceof Error ? error : undefined,
-      {
-        requestId,
-        url,
-      }
-    );
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'An unexpected error occurred',
-        data: [],
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

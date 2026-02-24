@@ -8,12 +8,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createRequestContext } from '@/lib/api/response';
 import { getHiveEngineClient, parseQuantity, isValidAccountName } from '@/lib/hive-engine/client';
 import { MEDALS_CONFIG, CONTRACTS, CACHE_TTLS, PREMIUM_TIERS } from '@/lib/hive-engine/constants';
 import type { TokenBalance } from '@/lib/hive-engine/types';
 import type { PremiumTier } from '@/lib/hive-engine/constants';
 
 export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/hive-engine/batch-balance';
 
 // Maximum accounts per request to prevent abuse
 const MAX_ACCOUNTS = 50;
@@ -37,6 +40,7 @@ function getPremiumTierFromStake(staked: number): PremiumTier | null {
 }
 
 export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
   try {
     const { searchParams } = new URL(request.url);
     const accountsParam = searchParams.get('accounts');
@@ -123,14 +127,6 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('[API] Error fetching batch MEDALS balances:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch balances. Please try again later.',
-        code: 'BATCH_BALANCE_FETCH_ERROR',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

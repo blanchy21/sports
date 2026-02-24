@@ -48,7 +48,9 @@ const {
   calculatePriceImpact,
 } = jest.requireMock('@/lib/hive-engine/market');
 
-const { getTokenInfo, getTotalStaked, getTopHolders } = jest.requireMock('@/lib/hive-engine/tokens');
+const { getTokenInfo, getTotalStaked, getTopHolders } = jest.requireMock(
+  '@/lib/hive-engine/tokens'
+);
 
 describe('GET /api/hive-engine/market', () => {
   let server: ReturnType<typeof createRouteTestServer>;
@@ -354,8 +356,9 @@ describe('GET /api/hive-engine/market', () => {
       const response = await request(server).get('/api/hive-engine/market');
 
       expect(response.status).toBe(500);
-      expect(response.body.error).toBe('Failed to fetch market data. Please try again later.');
-      expect(response.body.code).toBe('MARKET_FETCH_ERROR');
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('API error');
+      expect(response.body.code).toBe('INTERNAL_ERROR');
     });
   });
 

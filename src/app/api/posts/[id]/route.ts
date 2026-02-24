@@ -10,6 +10,9 @@ import {
   RATE_LIMITS,
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
+import { createRequestContext } from '@/lib/api/response';
+
+const ROUTE = '/api/posts/[id]';
 
 // Lazy-init Redis for view dedup (same pattern as rate-limit.ts)
 let viewRedis: Redis | null = null;
@@ -35,6 +38,7 @@ interface RouteContext {
  * GET /api/posts/[id] - Get a single soft post by ID
  */
 export async function GET(request: NextRequest, context: RouteContext) {
+  const ctx = createRequestContext(ROUTE);
   try {
     const { id } = await context.params;
 
@@ -95,14 +99,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       post,
     });
   } catch (error) {
-    console.error('Error fetching post:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch post',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }
 
@@ -135,6 +132,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
+  const ctx = createRequestContext(ROUTE);
   try {
     const { id } = await context.params;
     const body = await request.json();
@@ -231,14 +229,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       message: 'Post updated successfully',
     });
   } catch (error) {
-    console.error('Error updating post:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to update post',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }
 
@@ -266,6 +257,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     );
   }
 
+  const ctx = createRequestContext(ROUTE);
   try {
     const { id } = await context.params;
 
@@ -299,13 +291,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       message: 'Post deleted successfully',
     });
   } catch (error) {
-    console.error('Error deleting post:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to delete post',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

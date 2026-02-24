@@ -13,9 +13,11 @@ import { getTieredCache } from '@/lib/cache';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { isAdminAccount } from '@/lib/admin/config';
-import { logger } from '@/lib/logger';
+import { createRequestContext } from '@/lib/api/response';
 
 export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/monitoring';
 
 export async function GET(request: NextRequest) {
   // Admin-only access
@@ -24,6 +26,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
   }
 
+  const ctx = createRequestContext(ROUTE);
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
@@ -84,12 +87,7 @@ export async function GET(request: NextRequest) {
         );
     }
   } catch (error) {
-    logger.error(
-      'Error in monitoring API',
-      'monitoring',
-      error instanceof Error ? error : undefined
-    );
-    return NextResponse.json({ error: 'Failed to fetch monitoring data' }, { status: 500 });
+    return ctx.handleError(error);
   }
 }
 
@@ -101,6 +99,7 @@ export async function POST(request: NextRequest) {
   }
 
   return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
     try {
       const { action } = await request.json();
 
@@ -133,12 +132,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
       }
     } catch (error) {
-      logger.error(
-        'Error in monitoring API POST',
-        'monitoring',
-        error instanceof Error ? error : undefined
-      );
-      return NextResponse.json({ error: 'Failed to perform action' }, { status: 500 });
+      return ctx.handleError(error);
     }
   });
 }

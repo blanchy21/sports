@@ -11,6 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createRequestContext } from '@/lib/api/response';
 import {
   getTransferHistory,
   getStakingHistory,
@@ -23,7 +24,10 @@ import { MEDALS_CONFIG, CACHE_TTLS } from '@/lib/hive-engine/constants';
 
 export const dynamic = 'force-dynamic';
 
+const ROUTE = '/api/hive-engine/history';
+
 export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
   try {
     const { searchParams } = new URL(request.url);
     const account = searchParams.get('account');
@@ -33,17 +37,11 @@ export async function GET(request: NextRequest) {
 
     // Validate account
     if (!account) {
-      return NextResponse.json(
-        { error: 'Account parameter is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Account parameter is required' }, { status: 400 });
     }
 
     if (!isValidAccountName(account)) {
-      return NextResponse.json(
-        { error: 'Invalid account name' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid account name' }, { status: 400 });
     }
 
     // Parse and validate limit/offset
@@ -227,15 +225,6 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('[API] Error fetching history:', error);
-    // Sanitize error response - don't expose internal details
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch transaction history. Please try again later.',
-        code: 'HISTORY_FETCH_ERROR',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

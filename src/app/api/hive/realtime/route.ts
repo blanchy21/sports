@@ -5,7 +5,9 @@ import {
   stopRealtimeMonitoring,
 } from '@/lib/hive-workerbee/realtime';
 import { withCsrfProtection } from '@/lib/api/csrf';
-import { logger } from '@/lib/logger';
+import { createRequestContext } from '@/lib/api/response';
+
+const ROUTE = '/api/hive/realtime';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,36 +20,26 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
     try {
       await startRealtimeMonitoring();
       const status = getRealtimeMonitor().getStatus();
       return NextResponse.json({ success: true, started: true, status });
     } catch (error) {
-      logger.error(
-        'Failed to start realtime monitoring',
-        'realtime',
-        error instanceof Error ? error : undefined
-      );
-      const message = error instanceof Error ? error.message : 'Unknown realtime error';
-      return NextResponse.json({ success: false, error: message }, { status: 502 });
+      return ctx.handleError(error);
     }
   });
 }
 
 export async function DELETE(request: NextRequest) {
   return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
     try {
       await stopRealtimeMonitoring();
       const status = getRealtimeMonitor().getStatus();
       return NextResponse.json({ success: true, stopped: true, status });
     } catch (error) {
-      logger.error(
-        'Failed to stop realtime monitoring',
-        'realtime',
-        error instanceof Error ? error : undefined
-      );
-      const message = error instanceof Error ? error.message : 'Unknown realtime error';
-      return NextResponse.json({ success: false, error: message }, { status: 502 });
+      return ctx.handleError(error);
     }
   });
 }

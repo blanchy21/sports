@@ -12,6 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createRequestContext } from '@/lib/api/response';
 import {
   getMarketData,
   getMarketStats,
@@ -25,7 +26,10 @@ import { MEDALS_CONFIG, CACHE_TTLS } from '@/lib/hive-engine/constants';
 
 export const dynamic = 'force-dynamic';
 
+const ROUTE = '/api/hive-engine/market';
+
 export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
   try {
     const { searchParams } = new URL(request.url);
     const detail = searchParams.get('detail');
@@ -49,9 +53,10 @@ export async function GET(request: NextRequest) {
               quantity: formatQuantity(a.quantity),
               total: formatQuantity(a.total),
             })),
-            spread: orderBook.asks.length > 0 && orderBook.bids.length > 0
-              ? (orderBook.asks[0].price - orderBook.bids[0].price).toFixed(8)
-              : '0',
+            spread:
+              orderBook.asks.length > 0 && orderBook.bids.length > 0
+                ? (orderBook.asks[0].price - orderBook.bids[0].price).toFixed(8)
+                : '0',
             timestamp: new Date().toISOString(),
           },
           {
@@ -114,10 +119,7 @@ export async function GET(request: NextRequest) {
 
         const tradeAmount = parseQuantity(amount);
         if (tradeAmount <= 0) {
-          return NextResponse.json(
-            { error: 'Invalid amount' },
-            { status: 400 }
-          );
+          return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
         }
 
         const impact = await calculatePriceImpact(tradeAmount, side === 'buy');
@@ -150,10 +152,7 @@ export async function GET(request: NextRequest) {
         ]);
 
         if (!tokenInfo) {
-          return NextResponse.json(
-            { error: 'Token not found' },
-            { status: 404 }
-          );
+          return NextResponse.json({ error: 'Token not found' }, { status: 404 });
         }
 
         const circulatingSupply = parseQuantity(tokenInfo.circulatingSupply);
@@ -254,15 +253,6 @@ export async function GET(request: NextRequest) {
       }
     }
   } catch (error) {
-    console.error('[API] Error fetching market data:', error);
-    // Sanitize error response - don't expose internal details
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch market data. Please try again later.',
-        code: 'MARKET_FETCH_ERROR',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

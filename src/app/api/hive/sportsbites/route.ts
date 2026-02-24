@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createRequestContext } from '@/lib/api/response';
 import {
   fetchSportsbites,
   getSportsbite,
@@ -10,6 +11,8 @@ import { z } from 'zod';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/hive/sportsbites';
 
 // Cache configuration
 const CACHE_DURATION = 20 * 1000; // 20s for aggregated feed
@@ -67,6 +70,7 @@ export async function GET(request: NextRequest) {
 
   if (Math.random() < 0.1) cleanupCache();
 
+  const ctx = createRequestContext(ROUTE);
   try {
     // Single sportsbite lookup
     if (author && permlink) {
@@ -149,7 +153,7 @@ export async function GET(request: NextRequest) {
       timestamp: now,
     });
   } catch (error) {
-    console.error('[Sportsbites API] Error:', error);
+    ctx.log.error('Failed to fetch sportsbites', error);
 
     // Stale-while-error
     const feedCacheKey = `feed:${limit}:${before || 'latest'}:${author || 'all'}`;
@@ -172,13 +176,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch sportsbites',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

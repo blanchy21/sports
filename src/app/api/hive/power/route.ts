@@ -18,8 +18,11 @@ import {
 } from '@/lib/hive-workerbee/wax-helpers';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { createRequestContext } from '@/lib/api/response';
 
 export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/hive/power';
 
 // Validate Hive account name
 function isValidAccountName(account: string): boolean {
@@ -87,6 +90,7 @@ function hiveToVests(
  * GET - Get power down status
  */
 export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
   try {
     const { searchParams } = new URL(request.url);
     const account = searchParams.get('account');
@@ -209,15 +213,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[API] Error fetching power info:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch power information. Please try again later.',
-        code: 'POWER_FETCH_ERROR',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }
 
@@ -226,6 +222,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
+
     // Require authentication for financial operations
     const user = await getAuthenticatedUserFromSession(request);
     if (!user) {
@@ -340,15 +338,7 @@ export async function POST(request: NextRequest) {
           );
       }
     } catch (error) {
-      console.error('[API] Error building power operation:', error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to build power operation. Please check your input and try again.',
-          code: 'POWER_BUILD_ERROR',
-        },
-        { status: 500 }
-      );
+      return ctx.handleError(error);
     }
   });
 }

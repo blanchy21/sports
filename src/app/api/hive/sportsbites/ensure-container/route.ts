@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createRequestContext } from '@/lib/api/response';
 import { broadcastWithKey } from '@/lib/hive-workerbee/broadcast';
 import {
   getContainerPermlink,
@@ -9,6 +10,8 @@ import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/hive/sportsbites/ensure-container';
 
 // In-memory cache of known-created container permlinks for this process.
 // Avoids redundant broadcasts within the same server lifecycle.
@@ -30,6 +33,7 @@ export async function POST() {
     );
   }
 
+  const ctx = createRequestContext(ROUTE);
   try {
     const today = new Date();
     const permlink = getContainerPermlink(today);
@@ -126,13 +130,6 @@ export async function POST() {
     // Genuine failure
     throw new Error(result.error || 'Failed to create container');
   } catch (error) {
-    console.error('[EnsureContainer] Failed:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to ensure container',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

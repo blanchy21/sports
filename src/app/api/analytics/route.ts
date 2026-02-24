@@ -10,6 +10,7 @@ import { fetchSportsblockPosts } from '@/lib/hive-workerbee/content';
 import { fetchSportsbites } from '@/lib/hive-workerbee/sportsbites';
 import { fetchSoftSportsbites } from '@/lib/hive-workerbee/sportsbites-server';
 import { prisma } from '@/lib/db/prisma';
+import { createRequestContext } from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,13 +23,7 @@ const ROUTE = '/api/analytics';
  * This data is custom to Sportsblock and not available from Hive API
  */
 export async function GET() {
-  const startTime = Date.now();
-  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
-
-  console.log(`[${ROUTE}] Request started`, {
-    requestId,
-    timestamp: new Date().toISOString(),
-  });
+  const ctx = createRequestContext(ROUTE);
 
   try {
     const analytics = {
@@ -127,40 +122,6 @@ export async function GET() {
       data: analytics,
     });
   } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error(`[${ROUTE}] Request failed after ${duration}ms`, {
-      requestId,
-      error:
-        error instanceof Error
-          ? {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
-            }
-          : String(error),
-      timestamp: new Date().toISOString(),
-    });
-
-    const message = error instanceof Error ? error.message : 'Unknown error';
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: message,
-        // Return empty data on error so UI doesn't break
-        data: {
-          trendingSports: [],
-          trendingTopics: [],
-          topAuthors: [],
-          communityStats: {
-            totalPosts: 0,
-            totalAuthors: 0,
-            totalRewards: 0,
-            activeToday: 0,
-          },
-        },
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

@@ -18,6 +18,9 @@ import {
   RATE_LIMITS,
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
+import { createRequestContext } from '@/lib/api/response';
+
+const ROUTE = '/api/metrics/leaderboard';
 
 /**
  * GET /api/metrics/leaderboard
@@ -38,6 +41,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const ctx = createRequestContext(ROUTE);
   try {
     const { searchParams } = new URL(request.url);
     const weekId = searchParams.get('weekId') || getCurrentWeekId();
@@ -89,14 +93,6 @@ export async function GET(request: NextRequest) {
       leaderboards: limitedLeaderboards,
     });
   } catch (error) {
-    console.error('Error fetching leaderboards:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

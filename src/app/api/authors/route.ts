@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
+import { createRequestContext } from '@/lib/api/response';
 import { fetchSportsblockPosts } from '@/lib/hive-workerbee/content';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import type { ApiResponse } from '@/types/api';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/authors';
 
 const CACHE_HEADERS = {
   'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600',
@@ -14,6 +17,7 @@ const PAGE_SIZE = 20;
 const MAX_PAGES = 5; // 5 x 20 = up to 100 posts
 
 export async function GET() {
+  const ctx = createRequestContext(ROUTE);
   try {
     const authorMap: Record<
       string,
@@ -58,10 +62,6 @@ export async function GET() {
       { headers: CACHE_HEADERS }
     );
   } catch (error) {
-    console.error('Error fetching authors:', error);
-    return NextResponse.json<ApiResponse<never>>(
-      { success: false, error: 'Failed to fetch authors' },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

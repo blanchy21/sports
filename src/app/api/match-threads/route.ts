@@ -8,10 +8,12 @@ import {
 } from '@/lib/hive-workerbee/match-threads';
 import { MatchThread, SportsEvent } from '@/types/sports';
 import type { ApiResponse } from '@/types/api';
-import { error as logError } from '@/lib/hive-workerbee/logger';
+import { createRequestContext } from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/match-threads';
 
 /**
  * GET /api/match-threads
@@ -20,6 +22,7 @@ export const dynamic = 'force-dynamic';
  * finished (last 24h). Batch-checks which have Hive containers.
  */
 export async function GET() {
+  const ctx = createRequestContext(ROUTE);
   try {
     const { events, liveEventIds } = await fetchAllEvents();
     const now = Date.now();
@@ -97,17 +100,6 @@ export async function GET() {
       }
     );
   } catch (error) {
-    logError(
-      'Failed to fetch match threads',
-      'MatchThreads',
-      error instanceof Error ? error : undefined
-    );
-    return NextResponse.json<ApiResponse<{ matchThreads: MatchThread[] }>>(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch match threads',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

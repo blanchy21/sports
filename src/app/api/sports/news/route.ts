@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createRequestContext } from '@/lib/api/response';
 
 interface ESPNArticle {
   id: string;
@@ -51,7 +52,7 @@ const CACHE_DURATION = 5 * 60 * 1000;
 let newsCache: NewsCache = {
   data: null,
   timestamp: 0,
-  expiresAt: 0
+  expiresAt: 0,
 };
 
 // ESPN API sports configuration
@@ -79,7 +80,7 @@ async function fetchESPNNews(sport: string, league: string): Promise<ESPNArticle
       : `https://site.api.espn.com/apis/site/v2/sports/${sport}/news`;
 
     const response = await fetch(url, {
-      next: { revalidate: 300 } // Cache for 5 minutes
+      next: { revalidate: 300 }, // Cache for 5 minutes
     });
 
     if (!response.ok) {
@@ -103,7 +104,7 @@ function normalizeArticle(
   sportConfig: { name: string; icon: string }
 ): NormalizedArticle {
   // Get the best image (prefer media type, fall back to header)
-  const image = article.images?.find(img => img.type === 'Media') || article.images?.[0];
+  const image = article.images?.find((img) => img.type === 'Media') || article.images?.[0];
 
   return {
     id: article.id,
@@ -112,15 +113,18 @@ function normalizeArticle(
     published: article.published,
     sport: sportConfig.name,
     league: sportConfig.name,
-    image: image ? {
-      url: image.url,
-      caption: image.caption
-    } : undefined,
+    image: image
+      ? {
+          url: image.url,
+          caption: image.caption,
+        }
+      : undefined,
     link: article.links?.web?.href || '#',
-    categories: article.categories
-      ?.filter(cat => cat.description)
-      .map(cat => cat.description!)
-      .slice(0, 3) || []
+    categories:
+      article.categories
+        ?.filter((cat) => cat.description)
+        .map((cat) => cat.description!)
+        .slice(0, 3) || [],
   };
 }
 
@@ -137,16 +141,14 @@ async function fetchAllNews(): Promise<NormalizedArticle[]> {
     if (!config) return [];
 
     const articles = await fetchESPNNews(config.sport, config.league);
-    return articles.slice(0, 5).map(article => normalizeArticle(article, config));
+    return articles.slice(0, 5).map((article) => normalizeArticle(article, config));
   });
 
   const results = await Promise.all(fetchPromises);
-  results.forEach(articles => allArticles.push(...articles));
+  results.forEach((articles) => allArticles.push(...articles));
 
   // Sort by published date (newest first)
-  allArticles.sort((a, b) =>
-    new Date(b.published).getTime() - new Date(a.published).getTime()
-  );
+  allArticles.sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime());
 
   return allArticles;
 }
@@ -154,14 +156,7 @@ async function fetchAllNews(): Promise<NormalizedArticle[]> {
 const ROUTE = '/api/sports/news';
 
 export async function GET(request: NextRequest) {
-  const startTime = Date.now();
-  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
-
-  console.log(`[${ROUTE}] Request started`, {
-    requestId,
-    timestamp: new Date().toISOString()
-  });
-
+  const ctx = createRequestContext(ROUTE);
   try {
     const { searchParams } = new URL(request.url);
     const sport = searchParams.get('sport');
@@ -178,8 +173,8 @@ export async function GET(request: NextRequest) {
       if (sport && sport !== 'all') {
         const sportConfig = ESPN_SPORTS[sport as keyof typeof ESPN_SPORTS];
         if (sportConfig) {
-          filteredNews = filteredNews.filter(article =>
-            article.sport.toLowerCase() === sportConfig.name.toLowerCase()
+          filteredNews = filteredNews.filter(
+            (article) => article.sport.toLowerCase() === sportConfig.name.toLowerCase()
           );
         }
       }
@@ -190,7 +185,7 @@ export async function GET(request: NextRequest) {
         success: true,
         data: filteredNews,
         cached: true,
-        timestamp: newsCache.timestamp
+        timestamp: newsCache.timestamp,
       });
     }
 
@@ -201,7 +196,7 @@ export async function GET(request: NextRequest) {
     newsCache = {
       data: articles,
       timestamp: now,
-      expiresAt: now + CACHE_DURATION
+      expiresAt: now + CACHE_DURATION,
     };
 
     let filteredNews = [...articles];
@@ -210,46 +205,21 @@ export async function GET(request: NextRequest) {
     if (sport && sport !== 'all') {
       const sportConfig = ESPN_SPORTS[sport as keyof typeof ESPN_SPORTS];
       if (sportConfig) {
-        filteredNews = filteredNews.filter(article =>
-          article.sport.toLowerCase() === sportConfig.name.toLowerCase()
+        filteredNews = filteredNews.filter(
+          (article) => article.sport.toLowerCase() === sportConfig.name.toLowerCase()
         );
       }
     }
 
     filteredNews = filteredNews.slice(0, limit);
 
-    const duration = Date.now() - startTime;
-    console.log(`[${ROUTE}] Request completed in ${duration}ms`, {
-      requestId,
-      articleCount: filteredNews.length
-    });
-
     return NextResponse.json({
       success: true,
       data: filteredNews,
       cached: false,
-      timestamp: now
+      timestamp: now,
     });
-
   } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error(`[${ROUTE}] Request failed after ${duration}ms`, {
-      requestId,
-      error: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : String(error),
-      timestamp: new Date().toISOString()
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch sports news',
-        data: []
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

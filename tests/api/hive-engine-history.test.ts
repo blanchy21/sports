@@ -72,9 +72,7 @@ describe('GET /api/hive-engine/history', () => {
   });
 
   it('should return 400 for invalid account name', async () => {
-    const response = await request(server)
-      .get('/api/hive-engine/history')
-      .query({ account: 'ab' });
+    const response = await request(server).get('/api/hive-engine/history').query({ account: 'ab' });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Invalid account name');
@@ -91,7 +89,13 @@ describe('GET /api/hive-engine/history', () => {
 
   it('should return transfers history', async () => {
     const mockTransfers = [
-      { from: 'alice', to: 'testuser', quantity: '100.000', memo: 'payment', timestamp: 1700000000 },
+      {
+        from: 'alice',
+        to: 'testuser',
+        quantity: '100.000',
+        memo: 'payment',
+        timestamp: 1700000000,
+      },
       { from: 'testuser', to: 'bob', quantity: '50.000', memo: '', timestamp: 1700000100 },
     ];
 
@@ -133,7 +137,13 @@ describe('GET /api/hive-engine/history', () => {
     const mockRewards = [
       { type: 'staking', amount: 10, from: 'sportsblock', memo: 'weekly', timestamp: new Date() },
       { type: 'curator', amount: 5, from: 'curator1', memo: '', timestamp: new Date() },
-      { type: 'content', amount: 100, from: 'sportsblock', memo: 'post of week', timestamp: new Date() },
+      {
+        type: 'content',
+        amount: 100,
+        from: 'sportsblock',
+        memo: 'post of week',
+        timestamp: new Date(),
+      },
     ];
 
     getRewardsReceived.mockResolvedValue(mockRewards);
@@ -153,7 +163,13 @@ describe('GET /api/hive-engine/history', () => {
 
   it('should return activity history', async () => {
     const mockActivity = [
-      { type: 'transfer_in', amount: 100, counterparty: 'alice', memo: 'payment', timestamp: new Date() },
+      {
+        type: 'transfer_in',
+        amount: 100,
+        counterparty: 'alice',
+        memo: 'payment',
+        timestamp: new Date(),
+      },
       { type: 'stake', amount: 50, counterparty: null, memo: '', timestamp: new Date() },
     ];
 
@@ -208,7 +224,13 @@ describe('GET /api/hive-engine/history', () => {
   });
 
   it('should respect limit and offset parameters', async () => {
-    const mockTransfers: Array<{ from: string; to: string; quantity: string; memo: string; timestamp: number }> = [];
+    const mockTransfers: Array<{
+      from: string;
+      to: string;
+      quantity: string;
+      memo: string;
+      timestamp: number;
+    }> = [];
     for (let i = 0; i < 100; i++) {
       mockTransfers.push({
         from: 'alice',
@@ -251,8 +273,9 @@ describe('GET /api/hive-engine/history', () => {
       .query({ account: 'testuser', type: 'transfers' });
 
     expect(response.status).toBe(500);
-    expect(response.body.error).toBe('Failed to fetch transaction history. Please try again later.');
-    expect(response.body.code).toBe('HISTORY_FETCH_ERROR');
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toBe('Database error');
+    expect(response.body.code).toBe('INTERNAL_ERROR');
   });
 
   it('should set proper cache headers', async () => {

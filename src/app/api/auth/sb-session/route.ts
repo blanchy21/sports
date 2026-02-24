@@ -14,6 +14,7 @@ import { cookies } from 'next/headers';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
+import { createRequestContext } from '@/lib/api/response';
 import { decryptSession } from '@/lib/api/session-auth';
 import { getSessionEncryptionKey } from '@/lib/api/session-encryption';
 import { getServerSession } from 'next-auth/next';
@@ -21,6 +22,7 @@ import { authOptions } from '@/lib/auth/next-auth-options';
 import { verifyChallenge, verifyHivePostingSignature } from '@/lib/auth/hive-challenge';
 import { prisma } from '@/lib/db/prisma';
 
+const ROUTE = '/api/auth/sb-session';
 const SESSION_COOKIE_NAME = 'sb_session';
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 const SESSION_ABSOLUTE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
@@ -116,6 +118,8 @@ export async function POST(request: NextRequest) {
   if (!validateCsrf(request)) {
     return csrfError('Request blocked: invalid origin');
   }
+
+  const ctx = createRequestContext(ROUTE);
 
   try {
     const body = await request.json();
@@ -272,11 +276,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('[Session API] Error creating session:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to create session' },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }
 
@@ -284,6 +284,8 @@ export async function POST(request: NextRequest) {
  * GET /api/auth/sb-session - Get current session
  */
 export async function GET() {
+  const ctx = createRequestContext(ROUTE);
+
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
@@ -348,8 +350,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('[Session API] Error getting session:', error);
-    return NextResponse.json({ success: false, error: 'Failed to get session' }, { status: 500 });
+    return ctx.handleError(error);
   }
 }
 
@@ -361,6 +362,8 @@ export async function DELETE(request: NextRequest) {
   if (!validateCsrf(request)) {
     return csrfError('Request blocked: invalid origin');
   }
+
+  const ctx = createRequestContext(ROUTE);
 
   try {
     const response = NextResponse.json({
@@ -379,7 +382,6 @@ export async function DELETE(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('[Session API] Error clearing session:', error);
-    return NextResponse.json({ success: false, error: 'Failed to clear session' }, { status: 500 });
+    return ctx.handleError(error);
   }
 }

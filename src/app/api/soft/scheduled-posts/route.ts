@@ -4,6 +4,9 @@ import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { createRequestContext } from '@/lib/api/response';
+
+const ROUTE = '/api/soft/scheduled-posts';
 
 const createScheduledPostSchema = z.object({
   userId: z.string().min(1),
@@ -29,6 +32,8 @@ const createScheduledPostSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
+
     try {
       const sessionUser = await getAuthenticatedUserFromSession(request);
       if (!sessionUser) {
@@ -86,11 +91,7 @@ export async function POST(request: NextRequest) {
         { status: 201 }
       );
     } catch (error) {
-      console.error('Error creating scheduled post:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to create scheduled post' },
-        { status: 500 }
-      );
+      return ctx.handleError(error);
     }
   });
 }

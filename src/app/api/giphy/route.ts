@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { error as logError } from '@/lib/hive-workerbee/logger';
+import { createRequestContext } from '@/lib/api/response';
 
 // Cache for GIF results to reduce API calls
 interface GifCache {
@@ -37,7 +37,10 @@ const searchSchema = z.object({
   offset: z.coerce.number().min(0).default(0),
 });
 
+const ROUTE = '/api/giphy';
+
 export async function GET(request: NextRequest) {
+  const ctx = createRequestContext(ROUTE);
   try {
     const { searchParams } = new URL(request.url);
 
@@ -76,7 +79,7 @@ export async function GET(request: NextRequest) {
     // Get API key from environment (trim whitespace and strip quotes)
     const apiKey = process.env.GIPHY_API_KEY?.trim().replace(/^["']|["']$/g, '');
     if (!apiKey) {
-      logError('GIPHY_API_KEY not configured', 'Giphy API');
+      ctx.log.error('GIPHY_API_KEY not configured');
       return NextResponse.json(
         {
           success: false,
@@ -127,7 +130,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
-      logError(`HTTP ${response.status}: ${errorText}`, 'Giphy API', undefined, {
+      ctx.log.error(`HTTP ${response.status}: ${errorText}`, undefined, {
         keyLength: apiKey.length,
       });
 
@@ -174,14 +177,6 @@ export async function GET(request: NextRequest) {
       cached: false,
     });
   } catch (error) {
-    logError('Unexpected error', 'Giphy API', error instanceof Error ? error : undefined);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

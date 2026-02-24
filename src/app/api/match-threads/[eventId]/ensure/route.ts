@@ -9,7 +9,7 @@ import {
   isHiveDuplicateError,
 } from '@/lib/hive-workerbee/match-threads';
 import { fetchAllEvents } from '@/lib/sports/espn';
-import { error as logError } from '@/lib/hive-workerbee/logger';
+import { createRequestContext } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 
@@ -18,6 +18,8 @@ export const dynamic = 'force-dynamic';
 
 // In-memory cache of known-created container permlinks for this process.
 const createdContainers = new Set<string>();
+
+const ROUTE = '/api/match-threads/[eventId]/ensure';
 
 /**
  * POST /api/match-threads/[eventId]/ensure
@@ -64,6 +66,7 @@ export async function POST(
     );
   }
 
+  const ctx = createRequestContext(ROUTE);
   try {
     const { eventId } = await params;
     const permlink = getMatchThreadPermlink(eventId);
@@ -139,17 +142,6 @@ export async function POST(
 
     throw new Error(result.error || 'Failed to create container');
   } catch (error) {
-    logError(
-      'Failed to ensure match thread container',
-      'EnsureMatchThread',
-      error instanceof Error ? error : undefined
-    );
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to ensure match thread container',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

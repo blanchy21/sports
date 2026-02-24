@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fetchMatchThreadBites } from '@/lib/hive-workerbee/match-threads';
 import { fetchSoftMatchThreadBites } from '@/lib/hive-workerbee/match-threads-server';
 import { Sportsbite } from '@/lib/hive-workerbee/sportsbites';
-import { error as logError } from '@/lib/hive-workerbee/logger';
+import { createRequestContext } from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/match-threads/[eventId]/bites';
 
 /**
  * GET /api/match-threads/[eventId]/bites
@@ -16,6 +18,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ eventId: string }> }
 ) {
+  const ctx = createRequestContext(ROUTE);
   try {
     const { eventId } = await params;
     const { searchParams } = new URL(request.url);
@@ -79,20 +82,6 @@ export async function GET(
       }
     );
   } catch (error) {
-    logError(
-      'Failed to fetch thread bites',
-      'MatchThreadBites',
-      error instanceof Error ? error : undefined
-    );
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch thread bites',
-        sportsbites: [],
-        hasMore: false,
-        count: 0,
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

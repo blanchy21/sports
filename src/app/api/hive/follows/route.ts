@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createRequestContext } from '@/lib/api/response';
 import { isFollowingUser } from '@/lib/hive-workerbee/social';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/hive/follows';
 
 /**
  * GET /api/hive/follows?follower=alice&targets=bob,carol,dave
@@ -41,6 +44,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const ctx = createRequestContext(ROUTE);
   try {
     const results = await Promise.allSettled(
       targets.map((target) => isFollowingUser(target, follower))
@@ -54,10 +58,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, followStatus });
   } catch (error) {
-    console.error('Error checking batch follow status:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to check follow status' },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

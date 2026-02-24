@@ -8,10 +8,12 @@ import {
 } from '@/lib/hive-workerbee/match-threads';
 import { MatchThread } from '@/types/sports';
 import type { ApiResponse } from '@/types/api';
-import { error as logError } from '@/lib/hive-workerbee/logger';
+import { createRequestContext } from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const ROUTE = '/api/match-threads/[eventId]';
 
 /**
  * GET /api/match-threads/[eventId]
@@ -23,6 +25,7 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ eventId: string }> }
 ) {
+  const ctx = createRequestContext(ROUTE);
   try {
     const { eventId } = await params;
 
@@ -66,17 +69,6 @@ export async function GET(
       }
     );
   } catch (error) {
-    logError(
-      'Failed to fetch match thread',
-      'MatchThread',
-      error instanceof Error ? error : undefined
-    );
-    return NextResponse.json<ApiResponse<{ matchThread: MatchThread }>>(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch match thread',
-      },
-      { status: 500 }
-    );
+    return ctx.handleError(error);
   }
 }

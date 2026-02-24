@@ -3,6 +3,9 @@ import { PrivateKey, cryptoUtils } from '@hiveio/dhive';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { checkRateLimit } from '@/lib/utils/rate-limit';
+import { createRequestContext } from '@/lib/api/response';
+
+const ROUTE = '/api/hive/image-upload';
 
 const IMAGE_HOST = 'https://images.hive.blog';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -40,6 +43,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Image upload is not configured.' }, { status: 503 });
   }
 
+  const ctx = createRequestContext(ROUTE);
   try {
     const formData = await request.formData();
     const file = formData.get('file');
@@ -99,7 +103,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'No URL in image host response' }, { status: 502 });
   } catch (error) {
-    console.error('Image upload error:', error);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    return ctx.handleError(error);
   }
 }
