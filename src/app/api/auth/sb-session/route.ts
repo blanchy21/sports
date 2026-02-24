@@ -21,6 +21,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/next-auth-options';
 import { verifyChallenge, verifyHivePostingSignature } from '@/lib/auth/hive-challenge';
 import { prisma } from '@/lib/db/prisma';
+import { logger } from '@/lib/logger';
 
 const ROUTE = '/api/auth/sb-session';
 const SESSION_COOKIE_NAME = 'sb_session';
@@ -107,6 +108,31 @@ async function verifyHivesignerToken(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { valid: false, reason: `HiveSigner verification failed: ${message}` };
+  }
+}
+
+/**
+ * Wipe encrypted keys for a custodial user who has proven self-custody.
+ * No-op if the user was never custodial or already wiped.
+ */
+async function graduateCustodialUser(hiveUsername: string): Promise<void> {
+  const result = await prisma.custodialUser.updateMany({
+    where: {
+      hiveUsername,
+      encryptedKeys: { not: null },
+    },
+    data: {
+      encryptedKeys: null,
+      encryptionIv: null,
+      encryptionSalt: null,
+    },
+  });
+
+  if (result.count > 0) {
+    logger.info(
+      `Custodial keys wiped for @${hiveUsername} — user graduated to self-custody`,
+      'auth:graduate'
+    );
   }
 }
 
@@ -226,6 +252,13 @@ export async function POST(request: NextRequest) {
           },
           { status: 401 }
         );
+      }
+      // Auto-graduate: if a Hive wallet user matches a custodial account, wipe server-side keys.
+      // The user has just proven they have working keys in their wallet — the relay is no longer needed.
+      if (!isSessionRefresh && sessionData.hiveUsername) {
+        graduateCustodialUser(sessionData.hiveUsername).catch((err) => {
+          console.warn('[sb-session] Key wipe failed (non-fatal):', err);
+        });
       }
     }
 

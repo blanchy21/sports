@@ -196,7 +196,10 @@ export async function signAndBroadcast(
     !custodialUser.encryptionIv ||
     !custodialUser.encryptionSalt
   ) {
-    throw new Error(`No encrypted keys found for custodial user ${custodialUserId}`);
+    throw new Error(
+      'Your keys have been removed from our server because you connected a Hive wallet. ' +
+        'Please use Hive Keychain to sign transactions.'
+    );
   }
 
   let postingKeyString: string | null = null;

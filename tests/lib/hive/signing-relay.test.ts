@@ -457,7 +457,7 @@ describe('signAndBroadcast', () => {
     mockFindUnique.mockResolvedValue(null);
 
     await expect(signAndBroadcast(USER, CUSTODIAL_ID, VALID_OPS)).rejects.toThrow(
-      `No encrypted keys found for custodial user ${CUSTODIAL_ID}`
+      'keys have been removed from our server'
     );
   });
 

@@ -110,7 +110,13 @@ export const POST = createApiHandler('/api/hive/sign', async (request: Request, 
     opTypes: operations.map(([type]) => type),
   });
 
-  const result = await signAndBroadcast(user.hiveUsername, custodialUser.id, operations);
-
-  return apiSuccess({ transactionId: result.transactionId });
+  try {
+    const result = await signAndBroadcast(user.hiveUsername, custodialUser.id, operations);
+    return apiSuccess({ transactionId: result.transactionId });
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('keys have been removed')) {
+      return apiError(err.message, 'FORBIDDEN', 403, { requestId: ctx.requestId });
+    }
+    throw err;
+  }
 });
