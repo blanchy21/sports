@@ -170,6 +170,13 @@ Key files:
 - Client at `src/lib/db/prisma.ts`
 - User accounts (Google sign-up), notifications, metrics stored in PostgreSQL via Prisma
 - Posts, comments, and votes stored on the Hive blockchain
+- **Direct DB access** (for schema changes, queries, debugging):
+  ```bash
+  source .env && psql "$DATABASE_URL" -c "SELECT * FROM custodial_users LIMIT 5;"
+  ```
+  The `DATABASE_URL` is in `.env` (Supabase pooler, port 6543). `psql` is available via Homebrew.
+- **Schema changes**: `prisma db push` hangs on the Supabase pooler. Use `psql` with `ALTER TABLE` for column additions, then update `prisma/schema.prisma` and run `npx prisma generate`.
+- **Do NOT use** `prisma migrate dev` — the project uses `db push` / direct SQL, not migrations.
 
 ### State Management
 
