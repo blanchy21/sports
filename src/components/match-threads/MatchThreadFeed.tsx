@@ -28,7 +28,6 @@ export function MatchThreadFeed({
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
-  const [newBitesCount, setNewBitesCount] = useState(0);
   const [pendingBites, setPendingBites] = useState<Sportsbite[]>([]);
   const [newBiteIds, setNewBiteIds] = useState<Set<string>>(new Set());
 
@@ -118,7 +117,6 @@ export function MatchThreadFeed({
           const uniqueNew = newOnes.filter((s) => !existingIds.has(s.id));
           return [...uniqueNew, ...prev];
         });
-        setNewBitesCount((prev) => prev + newOnes.length);
       }
     } catch (err) {
       logger.error('Error checking for new thread bites', 'MatchThreadFeed', err);
@@ -137,7 +135,6 @@ export function MatchThreadFeed({
 
     setBites((prev) => dedupeBites([...pendingBites, ...prev]));
     setPendingBites([]);
-    setNewBitesCount(0);
 
     if (pendingBites.length > 0) {
       latestBiteRef.current = pendingBites[0].id;
@@ -167,7 +164,6 @@ export function MatchThreadFeed({
     setNewBiteIds(new Set([newId]));
     setBites((prev) => dedupeBites([optimisticBite, ...prev]));
     setPendingBites([]);
-    setNewBitesCount(0);
     latestBiteRef.current = newId;
 
     if (newAnimationTimeoutRef.current) clearTimeout(newAnimationTimeoutRef.current);
@@ -257,7 +253,7 @@ export function MatchThreadFeed({
 
   return (
     <div className={cn('space-y-4', className)}>
-      {newBitesCount > 0 && (
+      {pendingBites.length > 0 && (
         <button
           onClick={showNewBites}
           className={cn(
@@ -274,7 +270,9 @@ export function MatchThreadFeed({
           <ArrowUp className="h-4 w-4" />
           <Sparkles className="h-4 w-4" />
           <span>
-            {newBitesCount === 1 ? '1 new sportsbite' : `${newBitesCount} new sportsbites`}
+            {pendingBites.length === 1
+              ? '1 new sportsbite'
+              : `${pendingBites.length} new sportsbites`}
           </span>
           <span className="text-primary/70">— tap to see</span>
         </button>
