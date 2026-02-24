@@ -244,7 +244,7 @@ export function ComposeSportsbite({
         setSportCategory('');
         setPoll(null);
         onSuccess?.(optimisticBite);
-      } else if (user?.isHiveAuth || user?.hiveUsername) {
+      } else if (authType === 'hive' && (user?.isHiveAuth || user?.hiveUsername)) {
         // DEFENSIVE: Hive user whose session state has degraded — force clean logout
         await logout();
         onError?.('Your Hive session was invalid. Please sign in again.');
