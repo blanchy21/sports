@@ -148,7 +148,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       case 'vote':
         return 'bg-accent/10 border-accent/20';
       case 'post':
-        return 'bg-purple-50 border-purple-200';
+        return 'bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800';
       case 'mention':
         return 'bg-accent/10 border-accent/20';
       // Soft notification types
@@ -161,7 +161,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       case 'system':
         return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
       default:
-        return 'bg-gray-50 border-gray-200';
+        return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
     }
   };
 
@@ -174,11 +174,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       data-testid="notification-dropdown"
     >
       {/* Header */}
-      <div className="border-b border-gray-200 bg-gray-50 p-4">
+      <div className="border-b border-border bg-muted/50 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Bell className="h-5 w-5 text-gray-600" />
-            <h3 className="font-semibold text-gray-900">Notifications</h3>
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">Notifications</h3>
             {isRealtimeActive && (
               <div className="flex items-center space-x-1">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-accent"></div>
@@ -192,7 +192,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={markAllAsRead}
-                className="text-xs text-gray-600 hover:text-gray-900"
+                className="text-xs text-muted-foreground hover:text-foreground"
               >
                 <Check className="mr-1 h-3 w-3" />
                 Mark all read
@@ -203,7 +203,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={clearNotifications}
-                className="text-xs text-gray-600 hover:text-red-600"
+                className="text-xs text-muted-foreground hover:text-red-500"
               >
                 <Trash2 className="mr-1 h-3 w-3" />
                 Clear
@@ -216,15 +216,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       {/* Notifications List */}
       <div className="max-h-80 overflow-y-auto">
         {notifications.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
-            <Bell className="mx-auto mb-2 h-8 w-8 text-gray-300" />
+          <div className="p-6 text-center text-muted-foreground">
+            <Bell className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
             <p className="text-sm">No notifications yet</p>
             {!isRealtimeActive && (
-              <p className="mt-1 text-xs text-gray-400">Real-time monitoring is inactive</p>
+              <p className="mt-1 text-xs text-muted-foreground/70">
+                Real-time monitoring is inactive
+              </p>
             )}
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border/50">
             {notifications.map((notification) => (
               <div
                 key={notification.id}
@@ -247,11 +249,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium text-gray-900">{notification.title}</h4>
+                      <h4 className="text-sm font-medium text-foreground">{notification.title}</h4>
                       {!notification.read && <div className="h-2 w-2 rounded-full bg-accent"></div>}
                     </div>
 
-                    <p className="mt-1 text-sm text-gray-600">{notification.message}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{notification.message}</p>
 
                     {notification.data && (
                       <div className="mt-2 flex items-center space-x-2">
@@ -275,7 +277,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                       </div>
                     )}
 
-                    <p className="mt-2 text-xs text-gray-400">
+                    <p className="mt-2 text-xs text-muted-foreground/70">
                       {formatDistanceToNow(notification.timestamp, { addSuffix: true })}
                     </p>
                   </div>
@@ -288,8 +290,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
       {/* Footer */}
       {notifications.length > 0 && (
-        <div className="border-t border-gray-200 bg-gray-50 p-3">
-          <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="border-t border-border bg-muted/50 p-3">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
               {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
             </span>
