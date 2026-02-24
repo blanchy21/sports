@@ -12,6 +12,7 @@ import { QueryClientProvider } from '@/lib/react-query/QueryClientProvider';
 import { ModalProvider } from '@/components/modals/ModalProvider';
 import { ServiceWorkerInitializer } from '@/components/initializers/ServiceWorkerInitializer';
 import { NodeHealthInitializer } from '@/components/initializers/NodeHealthInitializer';
+import { MatchThreadLiveNotifier } from '@/components/initializers/MatchThreadLiveNotifier';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { NavigationProgress } from '@/components/feedback/NavigationProgress';
 import { GlobalErrorHandlerInitializer } from '@/components/feedback/GlobalErrorHandlerInitializer';
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                           <NavigationProgress />
                           <ServiceWorkerInitializer />
                           <NodeHealthInitializer />
+                          <MatchThreadLiveNotifier />
                           {children}
                         </ModalProvider>
                       </ToastProvider>

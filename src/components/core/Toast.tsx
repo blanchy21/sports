@@ -10,6 +10,7 @@ export interface Toast {
   description?: string;
   type?: 'success' | 'error' | 'warning' | 'info';
   duration?: number;
+  onClick?: () => void;
 }
 
 interface ToastContextType {
@@ -119,10 +120,20 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
 
   return (
     <div
+      onClick={
+        toast.onClick
+          ? () => {
+              toast.onClick?.();
+              onRemove();
+            }
+          : undefined
+      }
+      role={toast.onClick ? 'button' : undefined}
       className={cn(
         'flex max-w-sm items-start space-x-3 rounded-lg border p-4 shadow-xl',
         getBackgroundColor(),
-        'duration-300 animate-in slide-in-from-right-full'
+        'duration-300 animate-in slide-in-from-right-full',
+        toast.onClick && 'cursor-pointer transition-opacity hover:opacity-90'
       )}
     >
       {getIcon()}
@@ -135,7 +146,10 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
         )}
       </div>
       <button
-        onClick={onRemove}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
         className="flex-shrink-0 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
       >
         <X className="h-4 w-4" />
