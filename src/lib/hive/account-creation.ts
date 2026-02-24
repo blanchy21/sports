@@ -141,20 +141,37 @@ export async function createHiveAccountForUser(
 
   logger.info(`Hive account @${username} created successfully`, 'account-creation');
 
-  // 6. Delegate RC (non-fatal if this fails)
-  let rcDelegated = true;
-  try {
-    await delegateRcToUser(username);
-    logger.info(`RC delegated to @${username}`, 'account-creation');
-  } catch (rcError) {
-    rcDelegated = false;
-    logger.warn(
-      `RC delegation to @${username} failed — account exists but has no RC. Will need manual retry.`,
-      'account-creation',
-      {
-        error: rcError instanceof Error ? rcError.message : String(rcError),
+  // 6. Delegate RC with retry (non-fatal if all attempts fail)
+  //    Wait for block propagation before first attempt, then retry with delays.
+  let rcDelegated = false;
+  const RC_RETRY_ATTEMPTS = 3;
+  const RC_RETRY_DELAY_MS = 3000;
+
+  await new Promise((r) => setTimeout(r, RC_RETRY_DELAY_MS)); // wait for block propagation
+
+  for (let attempt = 1; attempt <= RC_RETRY_ATTEMPTS; attempt++) {
+    try {
+      await delegateRcToUser(username);
+      rcDelegated = true;
+      logger.info(`RC delegated to @${username} (attempt ${attempt})`, 'account-creation');
+      break;
+    } catch (rcError) {
+      const msg = rcError instanceof Error ? rcError.message : String(rcError);
+      if (attempt < RC_RETRY_ATTEMPTS) {
+        logger.warn(
+          `RC delegation to @${username} failed (attempt ${attempt}/${RC_RETRY_ATTEMPTS}), retrying…`,
+          'account-creation',
+          { error: msg }
+        );
+        await new Promise((r) => setTimeout(r, RC_RETRY_DELAY_MS));
+      } else {
+        logger.warn(
+          `RC delegation to @${username} failed after ${RC_RETRY_ATTEMPTS} attempts. Cron will retry.`,
+          'account-creation',
+          { error: msg }
+        );
       }
-    );
+    }
   }
 
   // 7. Encrypt keys
@@ -198,6 +215,7 @@ export async function createHiveAccountForUser(
           encryptedKeys: encrypted,
           encryptionIv: iv,
           encryptionSalt: salt,
+          ...(rcDelegated && { rcDelegatedAt: new Date() }),
         },
       }),
       prisma.accountToken.create({

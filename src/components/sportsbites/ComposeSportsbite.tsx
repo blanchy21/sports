@@ -174,8 +174,8 @@ export function ComposeSportsbite({
     touchSession();
 
     try {
-      if (authType === 'hive' && hiveUser?.username) {
-        // HIVE USER: Publish to blockchain
+      if (hiveUser?.username) {
+        // ON-CHAIN: Publish to blockchain (Hive wallet users sign via wallet, custodial users sign via relay)
         const ensureUrl = matchThreadEventId
           ? `/api/match-threads/${matchThreadEventId}/ensure`
           : '/api/hive/sportsbites/ensure-container';
@@ -244,13 +244,13 @@ export function ComposeSportsbite({
         setSportCategory('');
         setPoll(null);
         onSuccess?.(optimisticBite);
-      } else if (authType === 'hive' && (user?.isHiveAuth || user?.hiveUsername)) {
-        // DEFENSIVE: Hive user whose session state has degraded — force clean logout
+      } else if (authType === 'hive' && !hiveUser?.username) {
+        // DEFENSIVE: Hive wallet user whose session state has degraded — force clean logout
         await logout();
         onError?.('Your Hive session was invalid. Please sign in again.');
         return;
       } else {
-        // SOFT USER: Publish to database via API
+        // FALLBACK: User without a Hive account — publish to database
         const response = await fetch('/api/soft/sportsbites', {
           method: 'POST',
           credentials: 'include',

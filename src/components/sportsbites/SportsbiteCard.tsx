@@ -541,7 +541,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       <div className="flex items-center justify-between border-t bg-gradient-to-r from-muted/30 to-transparent px-3 py-2 sm:px-4 sm:pl-[60px]">
         <div className="flex items-center gap-4">
           <div className="group/vote flex items-center gap-1">
-            {authType === 'hive' && sportsbite.source !== 'soft' ? (
+            {(authType === 'hive' || authType === 'soft') && sportsbite.source !== 'soft' ? (
               <StarVoteButton
                 author={sportsbite.author}
                 permlink={sportsbite.permlink}

@@ -26,6 +26,7 @@ model CustodialUser {
   keysDownloadedAt     DateTime? @map("keys_downloaded_at")
   onboardingCompleted  Boolean   @default(false) @map("onboarding_completed")
   isGraduated          Boolean   @default(false) @map("is_graduated")
+  rcDelegatedAt        DateTime? @map("rc_delegated_at")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
