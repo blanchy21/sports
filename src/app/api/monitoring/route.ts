@@ -12,7 +12,7 @@ import { getMemoryCache } from '@/lib/cache';
 import { getTieredCache } from '@/lib/cache';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { isAdminAccount } from '@/lib/admin/config';
+import { requireAdmin } from '@/lib/admin/config';
 import { createRequestContext } from '@/lib/api/response';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,7 @@ const ROUTE = '/api/monitoring';
 export async function GET(request: NextRequest) {
   // Admin-only access
   const user = await getAuthenticatedUserFromSession(request);
-  if (!user || !isAdminAccount(user.username)) {
+  if (!user || !requireAdmin(user)) {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
   }
 
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   // Admin-only access
   const user = await getAuthenticatedUserFromSession(request);
-  if (!user || !isAdminAccount(user.username)) {
+  if (!user || !requireAdmin(user)) {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
   }
 

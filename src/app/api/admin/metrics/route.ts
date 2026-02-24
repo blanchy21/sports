@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createRequestContext, forbiddenError } from '@/lib/api/response';
-import { isAdminAccount } from '@/lib/admin/config';
+import { requireAdmin } from '@/lib/admin/config';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { getWeekId } from '@/lib/rewards/staking-distribution';
 import { getDailyKey } from '@/lib/rewards/curator-rewards';
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
   const user = await getAuthenticatedUserFromSession(request);
-  if (!user || !isAdminAccount(user.username)) {
+  if (!user || !requireAdmin(user)) {
     return forbiddenError('Admin access required', ctx.requestId);
   }
 

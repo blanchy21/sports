@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createRequestContext, forbiddenError } from '@/lib/api/response';
-import { isAdminAccount } from '@/lib/admin/config';
+import { requireAdmin } from '@/lib/admin/config';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { withCsrfProtection } from '@/lib/api/csrf';
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const ctx = createRequestContext(ROUTE);
 
     const user = await getAuthenticatedUserFromSession(request);
-    if (!user || !isAdminAccount(user.username)) {
+    if (!user || !requireAdmin(user)) {
       return forbiddenError('Admin access required', ctx.requestId);
     }
 

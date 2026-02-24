@@ -15,3 +15,10 @@ export const ADMIN_ACCOUNTS: readonly string[] = process.env.ADMIN_ACCOUNTS
 export function isAdminAccount(username: string): boolean {
   return ADMIN_ACCOUNTS.includes(username);
 }
+
+/** Check admin access with auth type verification (defense-in-depth) */
+export function requireAdmin(user: { username: string; authType?: string } | null): boolean {
+  if (!user) return false;
+  if (user.authType !== 'hive') return false;
+  return ADMIN_ACCOUNTS.includes(user.username);
+}

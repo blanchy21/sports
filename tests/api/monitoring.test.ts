@@ -35,6 +35,7 @@ jest.mock('@/lib/api/session-auth', () => ({
     userId: 'admin-user',
     username: 'sportsblock',
     hiveUsername: 'sportsblock',
+    authType: 'hive',
   }),
 }));
 
@@ -42,6 +43,10 @@ jest.mock('@/lib/api/session-auth', () => ({
 jest.mock('@/lib/admin/config', () => ({
   ADMIN_ACCOUNTS: ['sportsblock'],
   isAdminAccount: jest.fn((username: string) => username === 'sportsblock'),
+  requireAdmin: jest.fn(
+    (user: { username: string; authType?: string } | null) =>
+      !!user && user.authType === 'hive' && user.username === 'sportsblock'
+  ),
 }));
 
 const { clearMonitoringData } = jest.requireMock('@/lib/hive-workerbee/monitoring');
