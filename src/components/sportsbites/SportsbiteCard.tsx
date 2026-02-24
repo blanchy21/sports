@@ -29,6 +29,16 @@ import { SPORT_CATEGORIES } from '@/types';
 import { getProxyImageUrl, shouldProxyImage } from '@/lib/utils/image-proxy';
 import { isTrustedImageHost } from '@/lib/utils/sanitize';
 
+// OG user custom titles displayed as pills next to usernames
+const OG_TITLES: Record<string, string> = {
+  blanchy: 'Founder',
+  niallon11: 'Founder',
+  zottone444: 'Azzurri Aristocrat',
+  r1c4rd0: 'La Liga Legend',
+  talesfrmthecrypt: 'Captain',
+  'bozz.sports': 'Captain',
+};
+
 interface SportsbiteCardProps {
   sportsbite: Sportsbite;
   className?: string;
@@ -341,6 +351,12 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                 {authorProfile?.displayName || sportsbite.author}
               </button>
               <span className="text-muted-foreground">@{sportsbite.author}</span>
+              {OG_TITLES[sportsbite.author] && (
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                  <span>💎</span>
+                  {OG_TITLES[sportsbite.author]}
+                </span>
+              )}
               {sportsbite.source === 'soft' ? (
                 <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
                   Off Chain
