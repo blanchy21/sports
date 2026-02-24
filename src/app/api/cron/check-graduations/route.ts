@@ -11,7 +11,7 @@ export const maxDuration = 60;
 
 const dhive = new Client(HIVE_NODES);
 
-const OPERATIONS_ACCOUNT = process.env.OPERATIONS_ACCOUNT ?? 'sp-blockrewards';
+const ACCOUNT_CREATOR = process.env.ACCOUNT_CREATOR ?? 'niallon11';
 const HP_GRADUATION_THRESHOLD = 15; // HP required before revoking RC delegation
 const BATCH_SIZE = 50;
 
@@ -22,7 +22,7 @@ const BATCH_SIZE = 50;
  * 1. Fetches on-chain HP
  * 2. If HP >= 15 → revokes RC delegation and marks graduated in DB
  *
- * Frees RC capacity on @sp-blockrewards for new custodial users.
+ * Frees RC capacity on the creator account for new custodial users.
  */
 export async function GET() {
   if (!(await verifyCronRequest())) {
@@ -110,26 +110,28 @@ export async function GET() {
       );
 
       try {
-        const postingKey = process.env.OPERATIONS_POSTING_KEY;
-        if (!postingKey) {
+        const activeKey = process.env.OPERATIONS_ACTIVE_KEY;
+        if (!activeKey) {
           results.errors.push(
-            `OPERATIONS_POSTING_KEY not configured — cannot revoke RC for @${user.hiveUsername}`
+            `OPERATIONS_ACTIVE_KEY not configured — cannot revoke RC for @${user.hiveUsername}`
           );
           results.skipped++;
           continue;
         }
 
         // Revoke RC delegation FIRST (max_rc: 0)
+        // NOTE: Users onboarded before this change may have a legacy 5B RC delegation
+        // from sp-blockrewards. That delegation is not revoked here and is negligible.
         const revokeOp: [string, object] = [
           'custom_json',
           {
-            required_auths: [],
-            required_posting_auths: [OPERATIONS_ACCOUNT],
+            required_auths: [ACCOUNT_CREATOR],
+            required_posting_auths: [],
             id: 'rc',
             json: JSON.stringify([
               'delegate_rc',
               {
-                from: OPERATIONS_ACCOUNT,
+                from: ACCOUNT_CREATOR,
                 delegatees: [user.hiveUsername],
                 max_rc: 0,
               },
@@ -137,7 +139,7 @@ export async function GET() {
           },
         ];
 
-        const key = PrivateKey.fromString(postingKey);
+        const key = PrivateKey.fromString(activeKey);
         await dhive.broadcast.sendOperations([revokeOp as never], key);
 
         // Only mark graduated AFTER successful on-chain revocation

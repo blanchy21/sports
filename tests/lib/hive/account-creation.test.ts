@@ -65,7 +65,6 @@ describe('account-creation', () => {
     jest.clearAllMocks();
 
     process.env.OPERATIONS_ACTIVE_KEY = 'fake-active-key';
-    process.env.OPERATIONS_POSTING_KEY = 'fake-ops-key';
 
     // Default happy-path mocks
     mockIsValidHiveUsername.mockReturnValue({ valid: true });
@@ -82,7 +81,6 @@ describe('account-creation', () => {
 
   afterEach(() => {
     delete process.env.OPERATIONS_ACTIVE_KEY;
-    delete process.env.OPERATIONS_POSTING_KEY;
   });
 
   // ── Validation ──────────────────────────────────────────────────────
@@ -312,12 +310,31 @@ describe('account-creation', () => {
   // ── delegateRcToUser ───────────────────────────────────────────────
 
   describe('delegateRcToUser', () => {
-    it('throws when OPERATIONS_POSTING_KEY is not configured', async () => {
-      delete process.env.OPERATIONS_POSTING_KEY;
+    it('throws when OPERATIONS_ACTIVE_KEY is not configured', async () => {
+      delete process.env.OPERATIONS_ACTIVE_KEY;
 
       await expect(delegateRcToUser('sb-newuser')).rejects.toThrow(
-        'OPERATIONS_POSTING_KEY is not configured'
+        'OPERATIONS_ACTIVE_KEY is not configured'
       );
+    });
+
+    it('delegates 75B RC from ACCOUNT_CREATOR using active authority', async () => {
+      await delegateRcToUser('sb-newuser');
+
+      expect(mockSendOperations).toHaveBeenCalledTimes(1);
+      const [ops] = mockSendOperations.mock.calls[0];
+      const customJson = ops[0][1];
+
+      expect(customJson.required_auths).toEqual(['niallon11']);
+      expect(customJson.required_posting_auths).toEqual([]);
+
+      const parsed = JSON.parse(customJson.json);
+      expect(parsed[0]).toBe('delegate_rc');
+      expect(parsed[1]).toEqual({
+        from: 'niallon11',
+        delegatees: ['sb-newuser'],
+        max_rc: 75_000_000_000,
+      });
     });
   });
 });

@@ -9,8 +9,7 @@ import { encryptKeys } from './key-encryption';
 const dhive = new Client(HIVE_NODES);
 
 const ACCOUNT_CREATOR = process.env.ACCOUNT_CREATOR ?? 'niallon11';
-const OPERATIONS_ACCOUNT = process.env.OPERATIONS_ACCOUNT ?? 'sp-blockrewards';
-const RC_DELEGATION_AMOUNT = 5_000_000_000; // 5 billion RC
+const RC_DELEGATION_AMOUNT = 75_000_000_000; // 75B RC (~10 comments + 2 posts + 20 votes/day)
 
 interface AccountCreationResult {
   hiveUsername: string;
@@ -34,21 +33,21 @@ export async function checkAvailableTokens(): Promise<number> {
 }
 
 export async function delegateRcToUser(username: string): Promise<void> {
-  const operationsKey = process.env.OPERATIONS_POSTING_KEY;
-  if (!operationsKey) {
-    throw new Error('OPERATIONS_POSTING_KEY is not configured');
+  const activeKey = process.env.OPERATIONS_ACTIVE_KEY;
+  if (!activeKey) {
+    throw new Error('OPERATIONS_ACTIVE_KEY is not configured');
   }
 
   const rcDelegationOp: [string, object] = [
     'custom_json',
     {
-      required_auths: [],
-      required_posting_auths: [OPERATIONS_ACCOUNT],
+      required_auths: [ACCOUNT_CREATOR],
+      required_posting_auths: [],
       id: 'rc',
       json: JSON.stringify([
         'delegate_rc',
         {
-          from: OPERATIONS_ACCOUNT,
+          from: ACCOUNT_CREATOR,
           delegatees: [username],
           max_rc: RC_DELEGATION_AMOUNT,
         },
@@ -56,7 +55,7 @@ export async function delegateRcToUser(username: string): Promise<void> {
     },
   ];
 
-  const key = PrivateKey.fromString(operationsKey);
+  const key = PrivateKey.fromString(activeKey);
   await dhive.broadcast.sendOperations([rcDelegationOp as never], key);
 }
 
@@ -85,7 +84,7 @@ export async function createHiveAccountForUser(
     throw new Error('No account creation tokens available. Please try again later.');
   }
 
-  // 3. Get operations active key (sp-blockrewards has active authority on creator account)
+  // 3. Get creator's active key (used for both account creation and RC delegation)
   const creatorActiveKey = process.env.OPERATIONS_ACTIVE_KEY;
   if (!creatorActiveKey) {
     throw new Error('OPERATIONS_ACTIVE_KEY is not configured');
