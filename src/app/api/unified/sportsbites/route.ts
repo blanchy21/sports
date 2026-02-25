@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createRequestContext, validationError } from '@/lib/api/response';
 import { fetchSportsbites, Sportsbite } from '@/lib/hive-workerbee/sportsbites';
 import { fetchSoftSportsbites } from '@/lib/hive-workerbee/sportsbites-server';
+import { prisma } from '@/lib/db/prisma';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -100,6 +101,35 @@ export async function GET(request: NextRequest) {
     const hasMore = allBites.length > limit;
     const page = allBites.slice(0, limit);
     const nextCursor = hasMore ? page[page.length - 1]?.id : undefined;
+
+    // Batch fetch tip totals for hive sportsbites on this page
+    const hiveBitesOnPage = page.filter((s) => s.source !== 'soft');
+    if (hiveBitesOnPage.length > 0) {
+      try {
+        const authors = hiveBitesOnPage.map((s) => s.author);
+        const permlinks = hiveBitesOnPage.map((s) => s.permlink);
+        const tipTotals = await prisma.$queryRaw<
+          Array<{ author: string; permlink: string; total: string; count: number }>
+        >`
+          SELECT author, permlink,
+                 COALESCE(SUM(amount), 0)::text as total,
+                 COUNT(*)::int as count
+          FROM tips
+          WHERE author = ANY(${authors}::text[])
+            AND permlink = ANY(${permlinks}::text[])
+          GROUP BY author, permlink
+        `;
+        for (const bite of page) {
+          const tip = tipTotals.find(
+            (t) => t.author === bite.author && t.permlink === bite.permlink
+          );
+          bite.tipTotal = tip ? parseFloat(tip.total) : 0;
+          bite.tipCount = tip ? tip.count : 0;
+        }
+      } catch {
+        // Non-critical — leave tips at 0
+      }
+    }
 
     const hiveBites = page.filter((s) => s.source !== 'soft');
     const softBites = page.filter((s) => s.source === 'soft');

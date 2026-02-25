@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Trash2,
   Users,
+  Coins,
 } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
@@ -39,6 +40,7 @@ import { useBroadcast } from '@/hooks/useBroadcast';
 import { EmojiReactions } from '@/components/sportsbites/EmojiReactions';
 import { RoleBadge } from '@/components/user/RoleBadge';
 import { QuickPoll } from '@/components/sportsbites/QuickPoll';
+import { TipButton } from '@/components/sportsbites/TipButton';
 
 interface SportsbiteCardProps {
   sportsbite: Sportsbite;
@@ -529,9 +531,23 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
         )}
 
         {pendingPayout > 0 && sportsbite.source !== 'soft' && (
-          <div className="mt-2">
+          <div className="mt-2 flex items-center gap-3">
             <span className="text-xs font-medium text-accent">
               ${pendingPayout.toFixed(2)} pending
+            </span>
+            {(sportsbite.tipTotal ?? 0) > 0 && (
+              <span className="flex items-center gap-1 text-xs font-medium text-amber-500">
+                <Coins className="h-3 w-3" />
+                {sportsbite.tipTotal} MEDALS tipped
+              </span>
+            )}
+          </div>
+        )}
+        {sportsbite.source !== 'soft' && !pendingPayout && (sportsbite.tipTotal ?? 0) > 0 && (
+          <div className="mt-2">
+            <span className="flex items-center gap-1 text-xs font-medium text-amber-500">
+              <Coins className="h-3 w-3" />
+              {sportsbite.tipTotal} MEDALS tipped
             </span>
           </div>
         )}
@@ -624,6 +640,10 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               </div>
             )}
           </div>
+
+          {!isOwner && sportsbite.source !== 'soft' && (
+            <TipButton author={sportsbite.author} permlink={sportsbite.permlink} />
+          )}
         </div>
 
         <Button

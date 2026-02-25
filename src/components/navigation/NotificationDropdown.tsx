@@ -14,6 +14,7 @@ import {
   Heart,
   UserPlus,
   Info,
+  Coins,
 } from 'lucide-react';
 import { useNotifications, Notification } from '@/contexts/NotificationContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -53,6 +54,14 @@ function getNotificationUrl(notification: Notification): string | null {
           return `/post/soft/${data.postId || data.postPermlink}`;
         }
         break;
+    }
+    return null;
+  }
+
+  // Handle tip notifications — navigate to the sportsbite
+  if (notification.type === 'tip') {
+    if (data.author && data.permlink) {
+      return `/@${data.author}/${data.permlink}`;
     }
     return null;
   }
@@ -132,6 +141,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return <MessageSquare className="h-4 w-4 text-blue-500" />;
       case 'follow':
         return <UserPlus className="h-4 w-4 text-green-500" />;
+      case 'tip':
+        return <Coins className="h-4 w-4 text-amber-500" />;
       case 'system':
         return <Info className="h-4 w-4 text-gray-500" />;
       default:
@@ -158,6 +169,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800';
       case 'follow':
         return 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800';
+      case 'tip':
+        return 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800';
       case 'system':
         return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
       default:

@@ -9,6 +9,7 @@ export interface Notification {
     | 'like'
     | 'reply'
     | 'follow'
+    | 'tip'
     | 'system';
   title: string;
   message: string;

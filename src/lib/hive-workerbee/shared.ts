@@ -596,6 +596,8 @@ export interface Sportsbite {
   authorDisplayName?: string;
   authorAvatar?: string;
   poll?: PollDefinition;
+  tipTotal?: number;
+  tipCount?: number;
 }
 
 export interface SportsbiteApiResponse {

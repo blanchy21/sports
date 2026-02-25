@@ -447,6 +447,22 @@ model Leaderboard {
   @@map("leaderboards")
 }
 
+// MEDALS tips on sportsbites
+model Tip {
+  id                String   @id @default(uuid())
+  senderUsername    String   @map("sender_username")
+  recipientUsername String   @map("recipient_username")
+  amount            Decimal  @db.Decimal(16, 6)
+  author            String
+  permlink          String
+  txId              String?  @map("tx_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([author, permlink])
+  @@index([recipientUsername, createdAt])
+  @@map("tips")
+}
+
 // Content reward distributions
 model ContentReward {
   id        String   @id @default(uuid())
