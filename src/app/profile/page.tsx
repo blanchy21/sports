@@ -26,6 +26,8 @@ import { logger } from '@/lib/logger';
 import { DraftsContent } from '@/components/profile/DraftsContent';
 import { RepliesContent } from '@/components/profile/RepliesContent';
 import { BookmarksContent } from '@/components/profile/BookmarksContent';
+import { FollowersContent } from '@/components/profile/FollowersContent';
+import { FollowingContent } from '@/components/profile/FollowingContent';
 import { RoleBadge } from '@/components/user/RoleBadge';
 
 /**
@@ -54,7 +56,9 @@ export default function ProfilePage() {
   const [userPosts, setUserPosts] = useState<SportsblockPost[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'posts' | 'drafts' | 'replies' | 'bookmarks'>('posts');
+  const [activeTab, setActiveTab] = useState<
+    'posts' | 'drafts' | 'replies' | 'bookmarks' | 'following' | 'followers'
+  >('posts');
 
   // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
@@ -263,7 +267,7 @@ export default function ProfilePage() {
                     {authType === 'hive' ? (
                       <>
                         <button
-                          onClick={() => router.push('/following')}
+                          onClick={() => setActiveTab('following')}
                           className="cursor-pointer text-center transition-opacity hover:opacity-70"
                         >
                           <div className="text-2xl font-bold text-foreground">
@@ -274,7 +278,7 @@ export default function ProfilePage() {
                           <div className="text-sm text-muted-foreground">Following</div>
                         </button>
                         <button
-                          onClick={() => router.push('/followers')}
+                          onClick={() => setActiveTab('followers')}
                           className="cursor-pointer text-center transition-opacity hover:opacity-70"
                         >
                           <div className="text-2xl font-bold text-foreground">
@@ -349,15 +353,18 @@ export default function ProfilePage() {
 
         {/* Tabs */}
         <div className="rounded-lg border bg-card">
-          <div className="flex items-center border-b border-border px-6">
-            {(['posts', 'drafts', 'replies', 'bookmarks'] as const).map((tab) => (
+          <div className="flex items-center overflow-x-auto border-b border-border px-6">
+            {(authType === 'hive'
+              ? (['posts', 'drafts', 'replies', 'bookmarks', 'following', 'followers'] as const)
+              : (['posts', 'drafts', 'replies', 'bookmarks'] as const)
+            ).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={
                   activeTab === tab
-                    ? 'border-b-2 border-primary px-4 py-3 font-medium text-primary transition-colors'
-                    : 'border-b-2 border-transparent px-4 py-3 text-muted-foreground transition-colors hover:text-foreground'
+                    ? 'whitespace-nowrap border-b-2 border-primary px-4 py-3 font-medium text-primary transition-colors'
+                    : 'whitespace-nowrap border-b-2 border-transparent px-4 py-3 text-muted-foreground transition-colors hover:text-foreground'
                 }
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -417,6 +424,8 @@ export default function ProfilePage() {
             {activeTab === 'drafts' && <DraftsContent />}
             {activeTab === 'replies' && <RepliesContent />}
             {activeTab === 'bookmarks' && <BookmarksContent />}
+            {activeTab === 'following' && <FollowingContent />}
+            {activeTab === 'followers' && <FollowersContent />}
           </div>
         </div>
       </div>

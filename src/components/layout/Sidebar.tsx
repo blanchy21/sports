@@ -13,8 +13,6 @@ import {
   User,
   DollarSign,
   BookOpen,
-  Users,
-  UserPlus,
   Users2,
   Swords,
 } from 'lucide-react';
@@ -32,8 +30,6 @@ const navigationItems = [
   { href: '/match-threads', icon: Swords, label: 'Match Threads', requireAuth: false },
   { href: '/publish', icon: Edit, label: 'Publish', requireAuth: false },
   { href: '/profile', icon: User, label: 'Profile', requireAuth: false },
-  { href: '/followers', icon: Users, label: 'Followers', requireAuth: true },
-  { href: '/following', icon: UserPlus, label: 'Following', requireAuth: true },
   { href: '/wallet', icon: DollarSign, label: 'Wallet', requireAuth: false },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', requireAuth: false },
 ];
