@@ -5,7 +5,6 @@ import { Button } from '@/components/core/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  ArrowLeft,
   Eye,
   EyeOff,
   Save,
@@ -39,6 +38,7 @@ import { TagInput } from '@/components/publish/TagInput';
 import { AdvancedOptions, RewardsOption, Beneficiary } from '@/components/publish/AdvancedOptions';
 import { ScheduleModal } from '@/components/publish/ScheduleModal';
 import { UpgradeIncentive, UpgradeIncentiveBanner } from '@/components/upgrade/UpgradeIncentive';
+import { TopNavigation } from '@/components/layout/TopNavigation';
 
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -232,6 +232,15 @@ function PublishPageContent() {
       checkRCStatus();
     }
   }, [hiveUser, authType, checkRCStatus]);
+
+  // Auto-grow textarea with content
+  React.useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+  }, [content]);
 
   // Fetch post count for soft users to show limit warnings
   React.useEffect(() => {
@@ -711,47 +720,39 @@ function PublishPageContent() {
   const previewLink = `sportsblock.app/@${username}/[post-slug]`;
 
   return (
-    <div className="flex h-screen flex-col bg-background">
-      {/* Minimal Header */}
-      <div className="border-b bg-card">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push('/feed')}
-              className="h-8 w-8 p-0"
-              title="Back to feed"
+    <div className="min-h-screen bg-gradient-to-b from-primary/[0.03] to-background">
+      {/* App Navigation */}
+      <TopNavigation />
+
+      {/* Sub-header: community selector + actions */}
+      <div className="relative border-b bg-card">
+        <div className="flex items-center justify-between px-4 py-2 sm:px-6">
+          <span className="text-sm text-foreground">
+            Write a new post in{' '}
+            <select
+              value={selectedCommunity?.id || ''}
+              onChange={(e) => {
+                const communityId = e.target.value;
+                if (!communityId) {
+                  setSelectedCommunity(null);
+                } else {
+                  const community = [
+                    ...(userCommunities || []),
+                    ...(allCommunities?.communities || []),
+                  ].find((c) => c.id === communityId);
+                  setSelectedCommunity(community || null);
+                }
+              }}
+              className="cursor-pointer border-none bg-transparent font-medium text-primary outline-none hover:underline"
             >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-foreground">
-              Write a new post in{' '}
-              <select
-                value={selectedCommunity?.id || ''}
-                onChange={(e) => {
-                  const communityId = e.target.value;
-                  if (!communityId) {
-                    setSelectedCommunity(null);
-                  } else {
-                    const community = [
-                      ...(userCommunities || []),
-                      ...(allCommunities?.communities || []),
-                    ].find((c) => c.id === communityId);
-                    setSelectedCommunity(community || null);
-                  }
-                }}
-                className="cursor-pointer border-none bg-transparent font-medium text-primary outline-none hover:underline"
-              >
-                <option value="">Sportsblock</option>
-                {userCommunities?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </span>
-          </div>
+              <option value="">Sportsblock</option>
+              {userCommunities?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </span>
 
           <div className="flex items-center gap-1">
             {/* Mobile preview toggle */}
@@ -804,10 +805,12 @@ function PublishPageContent() {
             </div>
           </div>
         </div>
+        {/* Brand accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-bright-cobalt to-accent" />
       </div>
 
       {/* Main Content - Split View */}
-      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+      <div className="flex h-[calc(100vh-8rem)] flex-col overflow-hidden sm:h-[calc(100vh-9.5rem)] md:flex-row lg:h-[calc(100vh-10.5rem)]">
         {/* Left Side - Editor (60%) */}
         <div
           className={cn(
@@ -826,186 +829,193 @@ function PublishPageContent() {
             />
           </div>
 
-          {/* Editor Toolbar */}
-          <EditorToolbar
-            onFormat={handleFormat}
-            onInsertImage={handleInsertImage}
-            onInsertLink={handleInsertLink}
-            onEmoji={handleEmoji}
-            onInsertGif={handleInsertGif}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-          />
-
-          {/* Editor Textarea */}
+          {/* Single scrollable area for toolbar + editor + fields */}
           <div className="flex-1 overflow-auto">
-            <textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your post using Markdown..."
-              className="h-full w-full resize-none border-none bg-background px-4 py-3 font-mono text-sm leading-relaxed outline-none sm:px-6 sm:py-4"
-            />
-          </div>
-
-          {/* Word Count */}
-          {content.trim() &&
-            (() => {
-              const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
-              return (
-                <div className="border-t px-4 py-1.5 sm:px-6">
-                  <span className="text-xs text-muted-foreground">
-                    {wordCount} {wordCount === 1 ? 'word' : 'words'} · {formatReadTime(wordCount)}
-                  </span>
-                </div>
-              );
-            })()}
-
-          {/* Bottom Fields */}
-          <div className="max-h-[45%] space-y-4 overflow-auto border-t px-4 py-3 sm:px-6 sm:py-4">
-            {/* Short Description / Excerpt */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">Short Description</label>
-                <span className="text-xs text-muted-foreground">{excerpt.length}/120</span>
-              </div>
-              <input
-                type="text"
-                value={excerpt}
-                onChange={(e) => setExcerpt(e.target.value.slice(0, 120))}
-                placeholder="Brief description of your post (optional)"
-                className={cn(
-                  'w-full rounded-lg border bg-background px-3 py-2',
-                  'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
-                )}
-                maxLength={120}
+            {/* Editor Toolbar - sticky within scroll context */}
+            <div className="sticky top-0 z-10">
+              <EditorToolbar
+                onFormat={handleFormat}
+                onInsertImage={handleInsertImage}
+                onInsertLink={handleInsertLink}
+                onEmoji={handleEmoji}
+                onInsertGif={handleInsertGif}
+                onUndo={handleUndo}
+                onRedo={handleRedo}
               />
             </div>
 
-            {/* Sport Category (Required - Prominent Position) */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Choose a Sport <span className="text-destructive">*</span>
-              </label>
-              <select
-                value={selectedSport}
-                onChange={(e) => setSelectedSport(e.target.value)}
-                className={cn(
-                  'w-full rounded-lg border bg-background px-3 py-2.5',
-                  'text-sm focus:outline-none focus:ring-2 focus:ring-ring',
-                  !selectedSport && 'text-muted-foreground'
-                )}
-              >
-                <option value="">Select a sport category</option>
-                {SPORT_CATEGORIES.map((sport) => (
-                  <option key={sport.id} value={sport.id}>
-                    {sport.icon} {sport.name}
-                  </option>
-                ))}
-              </select>
-              {!selectedSport && (
-                <p className="text-xs text-amber-600 dark:text-amber-400">
-                  Sport category is required to publish your post
-                </p>
-              )}
+            {/* Editor Textarea - auto-grows with content */}
+            <div className="px-4 py-3 sm:px-6 sm:py-4">
+              <textarea
+                ref={textareaRef}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Write your post using Markdown..."
+                className="min-h-[60vh] w-full resize-none border-none bg-transparent font-mono text-sm leading-relaxed outline-none"
+                style={{ overflow: 'hidden' }}
+              />
             </div>
 
-            {/* Tags */}
-            <TagInput
-              value={tags}
-              onChange={setTags}
-              maxTags={5}
-              recentTags={recentTags}
-              placeholder="Add tags..."
-            />
+            {/* Word Count */}
+            {content.trim() &&
+              (() => {
+                const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+                return (
+                  <div className="border-t px-4 py-1.5 sm:px-6">
+                    <span className="text-xs text-muted-foreground">
+                      {wordCount} {wordCount === 1 ? 'word' : 'words'} · {formatReadTime(wordCount)}
+                    </span>
+                  </div>
+                );
+              })()}
 
-            {/* Advanced Options */}
-            <AdvancedOptions
-              selectedCommunity={selectedCommunity}
-              onCommunityChange={setSelectedCommunity}
-              userCommunities={userCommunities}
-              allCommunities={allCommunities?.communities}
-              rewardsOption={rewardsOption}
-              onRewardsChange={setRewardsOption}
-              beneficiaries={beneficiaries}
-              onBeneficiariesChange={setBeneficiaries}
-              coverImage={coverImage}
-              onCoverImageChange={setCoverImage}
-              detectedImages={detectedImages}
-              isHiveUser={authType === 'hive'}
-            />
-
-            {/* Error Display */}
-            {publishError && (
-              <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
-                  <p className="text-sm text-destructive">{publishError}</p>
+            {/* Bottom Fields */}
+            <div className="space-y-4 border-t px-4 py-3 sm:px-6 sm:py-4">
+              {/* Short Description / Excerpt */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-foreground">Short Description</label>
+                  <span className="text-xs text-muted-foreground">{excerpt.length}/120</span>
                 </div>
+                <input
+                  type="text"
+                  value={excerpt}
+                  onChange={(e) => setExcerpt(e.target.value.slice(0, 120))}
+                  placeholder="Brief description of your post (optional)"
+                  className={cn(
+                    'w-full rounded-lg border bg-background px-3 py-2',
+                    'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
+                  )}
+                  maxLength={120}
+                />
               </div>
-            )}
 
-            {/* RC Status (Hive users) */}
-            {authType === 'hive' && rcStatus && (
-              <div
-                className={cn(
-                  'rounded-lg p-3',
-                  rcStatus.canPost
-                    ? 'border border-green-500/20 bg-green-500/10'
-                    : 'border border-destructive/20 bg-destructive/10'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className={cn(
-                      'h-2 w-2 rounded-full',
-                      rcStatus.canPost ? 'bg-green-500' : 'bg-destructive'
-                    )}
-                  />
-                  <span className="text-sm">
-                    Resource Credits: {rcStatus.rcPercentage.toFixed(1)}%
-                  </span>
-                </div>
-                {rcStatus.message && (
-                  <p className="mt-1 text-xs text-muted-foreground">{rcStatus.message}</p>
+              {/* Sport Category (Required - Prominent Position) */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Choose a Sport <span className="text-destructive">*</span>
+                </label>
+                <select
+                  value={selectedSport}
+                  onChange={(e) => setSelectedSport(e.target.value)}
+                  className={cn(
+                    'w-full rounded-lg border bg-background px-3 py-2.5',
+                    'text-sm focus:outline-none focus:ring-2 focus:ring-ring',
+                    !selectedSport && 'text-muted-foreground'
+                  )}
+                >
+                  <option value="">Select a sport category</option>
+                  {SPORT_CATEGORIES.map((sport) => (
+                    <option key={sport.id} value={sport.id}>
+                      {sport.icon} {sport.name}
+                    </option>
+                  ))}
+                </select>
+                {!selectedSport && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    Sport category is required to publish your post
+                  </p>
                 )}
               </div>
-            )}
 
-            {/* Soft User Notice */}
-            {authType !== 'hive' && (
-              <div className="space-y-3">
-                {/* Post Limit Warning */}
-                {postLimitInfo && postLimitInfo.isNearLimit && (
-                  <UpgradeIncentiveBanner
-                    type={postLimitInfo.remaining <= 5 ? 'storage-critical' : 'storage-warning'}
-                    postsRemaining={postLimitInfo.remaining}
-                    totalPosts={postLimitInfo.limit}
-                  />
-                )}
+              {/* Tags */}
+              <TagInput
+                value={tags}
+                onChange={setTags}
+                maxTags={5}
+                recentTags={recentTags}
+                placeholder="Add tags..."
+              />
 
-                {/* General soft user notice */}
-                <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-blue-600 dark:text-blue-400">
-                      Your post will be visible to everyone. Connect with Hive to earn rewards!
-                    </p>
-                    {postLimitInfo && !postLimitInfo.isNearLimit && (
-                      <span className="ml-2 whitespace-nowrap text-xs text-muted-foreground">
-                        {postLimitInfo.remaining}/{postLimitInfo.limit} posts left
-                      </span>
-                    )}
+              {/* Advanced Options */}
+              <AdvancedOptions
+                selectedCommunity={selectedCommunity}
+                onCommunityChange={setSelectedCommunity}
+                userCommunities={userCommunities}
+                allCommunities={allCommunities?.communities}
+                rewardsOption={rewardsOption}
+                onRewardsChange={setRewardsOption}
+                beneficiaries={beneficiaries}
+                onBeneficiariesChange={setBeneficiaries}
+                coverImage={coverImage}
+                onCoverImageChange={setCoverImage}
+                detectedImages={detectedImages}
+                isHiveUser={authType === 'hive'}
+              />
+
+              {/* Error Display */}
+              {publishError && (
+                <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
+                    <p className="text-sm text-destructive">{publishError}</p>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* RC Status (Hive users) */}
+              {authType === 'hive' && rcStatus && (
+                <div
+                  className={cn(
+                    'rounded-lg p-3',
+                    rcStatus.canPost
+                      ? 'border border-green-500/20 bg-green-500/10'
+                      : 'border border-destructive/20 bg-destructive/10'
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={cn(
+                        'h-2 w-2 rounded-full',
+                        rcStatus.canPost ? 'bg-green-500' : 'bg-destructive'
+                      )}
+                    />
+                    <span className="text-sm">
+                      Resource Credits: {rcStatus.rcPercentage.toFixed(1)}%
+                    </span>
+                  </div>
+                  {rcStatus.message && (
+                    <p className="mt-1 text-xs text-muted-foreground">{rcStatus.message}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Soft User Notice */}
+              {authType !== 'hive' && (
+                <div className="space-y-3">
+                  {/* Post Limit Warning */}
+                  {postLimitInfo && postLimitInfo.isNearLimit && (
+                    <UpgradeIncentiveBanner
+                      type={postLimitInfo.remaining <= 5 ? 'storage-critical' : 'storage-warning'}
+                      postsRemaining={postLimitInfo.remaining}
+                      totalPosts={postLimitInfo.limit}
+                    />
+                  )}
+
+                  {/* General soft user notice */}
+                  <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-blue-600 dark:text-blue-400">
+                        Your post will be visible to everyone. Connect with Hive to earn rewards!
+                      </p>
+                      {postLimitInfo && !postLimitInfo.isNearLimit && (
+                        <span className="ml-2 whitespace-nowrap text-xs text-muted-foreground">
+                          {postLimitInfo.remaining}/{postLimitInfo.limit} posts left
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+          {/* end single scrollable area */}
         </div>
 
         {/* Right Side - Preview (40%) */}
         <div
           className={cn(
-            'overflow-hidden bg-muted/30 md:flex md:w-2/5 md:flex-col',
+            'overflow-hidden bg-muted/20 md:flex md:w-2/5 md:flex-col',
             showPreview ? 'flex w-full flex-col' : 'hidden'
           )}
         >
@@ -1095,7 +1105,7 @@ function PublishPageContent() {
       </div>
 
       {/* Fixed Bottom Action Bar */}
-      <div className="border-t bg-card px-4 py-3 sm:px-6 sm:py-4">
+      <div className="border-t bg-card/80 px-4 py-3 backdrop-blur-sm sm:px-6 sm:py-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
           <Button
             variant="outline"

@@ -117,7 +117,7 @@ export function EditorToolbar({
   const Separator = () => <div className="mx-1 h-5 w-px bg-border" />;
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/30 px-3 py-2">
+    <div className="flex flex-wrap items-center gap-0.5 border-b bg-card px-3 py-2">
       {/* Text formatting */}
       <ToolbarButton onClick={() => onFormat('bold')} title="Bold (Ctrl+B)">
         <Bold className="h-4 w-4" />
