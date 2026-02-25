@@ -17,6 +17,7 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowRightLeft,
+  ExternalLink,
   Medal,
   Zap,
   Star,
@@ -98,7 +99,9 @@ export default function WalletPage() {
     setTransactionsError(null);
 
     try {
-      const response = await fetch(`/api/hive/account/history?username=${walletUsername}&limit=500`);
+      const response = await fetch(
+        `/api/hive/account/history?username=${walletUsername}&limit=500`
+      );
       const data = await response.json();
 
       if (data.success) {
@@ -715,15 +718,31 @@ export default function WalletPage() {
             <div className="space-y-4">
               <MarketInfo showTradeLinks={true} />
 
-              {/* Transfer Button */}
-              <Button
-                variant="outline"
-                onClick={() => setTransferModalOpen(true)}
-                className="w-full"
-              >
-                <ArrowRightLeft className="mr-2 h-4 w-4" />
-                Transfer MEDALS
-              </Button>
+              {/* Buy & Transfer Buttons */}
+              <div className="flex gap-3">
+                <a
+                  href="https://tribaldex.com/trade/MEDALS"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1"
+                >
+                  <Button
+                    variant="outline"
+                    className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Buy MEDALS
+                  </Button>
+                </a>
+                <Button
+                  variant="outline"
+                  onClick={() => setTransferModalOpen(true)}
+                  className="flex-1"
+                >
+                  <ArrowRightLeft className="mr-2 h-4 w-4" />
+                  Transfer MEDALS
+                </Button>
+              </div>
             </div>
           </div>
         </div>

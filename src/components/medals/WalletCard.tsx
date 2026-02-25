@@ -18,6 +18,7 @@ import {
   RefreshCw,
   AlertCircle,
   Coins,
+  ExternalLink,
 } from 'lucide-react';
 
 interface WalletCardProps {
@@ -195,6 +196,21 @@ export const WalletCard: React.FC<WalletCardProps> = ({
               <ArrowUpRight className="mr-1 h-3 w-3" />
               Send
             </Button>
+            <a
+              href="https://tribaldex.com/trade/MEDALS"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
+              >
+                <ExternalLink className="mr-1 h-3 w-3" />
+                Buy
+              </Button>
+            </a>
           </div>
         </CardContent>
       </Card>
@@ -290,6 +306,20 @@ export const WalletCard: React.FC<WalletCardProps> = ({
           <ArrowUpRight className="mr-2 h-4 w-4" />
           Send MEDALS
         </Button>
+        <a
+          href="https://tribaldex.com/trade/MEDALS"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1"
+        >
+          <Button
+            variant="outline"
+            className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
+          >
+            <ExternalLink className="mr-2 h-4 w-4" />
+            Buy MEDALS
+          </Button>
+        </a>
       </CardFooter>
     </Card>
   );
