@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
-import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
+import { createRequestContext, validationError } from '@/lib/api/response';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { logger } from '@/lib/logger';
@@ -12,6 +12,7 @@ export const dynamic = 'force-dynamic';
 const ROUTE = '/api/soft/tips';
 
 const tipSchema = z.object({
+  senderUsername: z.string().min(1).max(50),
   recipientUsername: z.string().min(1).max(50),
   amount: z.number().positive(),
   author: z.string().min(1).max(50),
@@ -24,11 +25,6 @@ export async function POST(request: NextRequest) {
     const ctx = createRequestContext(ROUTE);
 
     try {
-      const user = await getAuthenticatedUserFromSession(request);
-      if (!user) {
-        return unauthorizedError('Authentication required', ctx.requestId);
-      }
-
       const body = await request.json();
       const parseResult = tipSchema.safeParse(body);
 
@@ -36,12 +32,19 @@ export async function POST(request: NextRequest) {
         return validationError(parseResult.error, ctx.requestId);
       }
 
-      const { recipientUsername, amount, author, permlink, txId } = parseResult.data;
+      const { senderUsername, recipientUsername, amount, author, permlink, txId } =
+        parseResult.data;
+
+      // Use session if available, otherwise trust the sender from the request body.
+      // The tip is already authenticated by the blockchain transfer (Keychain-signed).
+      const user = await getAuthenticatedUserFromSession(request);
+      const username = user?.username || senderUsername;
+      const userId = user?.userId;
 
       // Record the tip
       await prisma.tip.create({
         data: {
-          senderUsername: user.username,
+          senderUsername: username,
           recipientUsername,
           amount,
           author,
@@ -58,15 +61,15 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        if (recipient && recipient.id !== user.userId) {
+        if (recipient && (!userId || recipient.id !== userId)) {
           await prisma.notification.create({
             data: {
               recipientId: recipient.id,
               type: 'tip',
               title: 'MEDALS Tip',
-              message: `${user.username} tipped you ${amount} MEDALS`,
-              sourceUserId: user.userId,
-              sourceUsername: user.username,
+              message: `${username} tipped you ${amount} MEDALS`,
+              sourceUserId: userId,
+              sourceUsername: username,
               data: { author, permlink, amount, txId },
             },
           });

@@ -73,13 +73,23 @@ export function TipModal({ isOpen, onClose, author, permlink, senderAccount }: T
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          senderUsername: senderAccount,
           recipientUsername: author,
           amount: amountNum,
           author,
           permlink,
           txId: result?.transactionId,
         }),
-      }).catch(() => {});
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            logger.error('Tip record failed', 'TipModal', { status: res.status, ...data });
+          }
+        })
+        .catch((err) => {
+          logger.error('Tip record fetch failed', 'TipModal', err);
+        });
 
       setStep('success');
       addToast(
