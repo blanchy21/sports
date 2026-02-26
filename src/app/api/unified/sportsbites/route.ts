@@ -102,15 +102,14 @@ export async function GET(request: NextRequest) {
     const page = allBites.slice(0, limit);
     const nextCursor = hasMore ? page[page.length - 1]?.id : undefined;
 
-    // Batch fetch tip totals for hive sportsbites on this page
+    // Batch fetch tip totals and soft comment counts for hive sportsbites
     const hiveBitesOnPage = page.filter((s) => s.source !== 'soft');
     if (hiveBitesOnPage.length > 0) {
-      try {
-        const authors = hiveBitesOnPage.map((s) => s.author);
-        const permlinks = hiveBitesOnPage.map((s) => s.permlink);
-        const tipTotals = await prisma.$queryRaw<
-          Array<{ author: string; permlink: string; total: string; count: number }>
-        >`
+      const permlinks = hiveBitesOnPage.map((s) => s.permlink);
+      const authors = hiveBitesOnPage.map((s) => s.author);
+
+      const [tipTotals, softCommentCounts] = await Promise.all([
+        prisma.$queryRaw<Array<{ author: string; permlink: string; total: string; count: number }>>`
           SELECT author, permlink,
                  COALESCE(SUM(amount), 0)::text as total,
                  COUNT(*)::int as count
@@ -118,16 +117,28 @@ export async function GET(request: NextRequest) {
           WHERE author = ANY(${authors}::text[])
             AND permlink = ANY(${permlinks}::text[])
           GROUP BY author, permlink
-        `;
-        for (const bite of page) {
-          const tip = tipTotals.find(
-            (t) => t.author === bite.author && t.permlink === bite.permlink
-          );
-          bite.tipTotal = tip ? parseFloat(tip.total) : 0;
-          bite.tipCount = tip ? tip.count : 0;
+        `.catch(
+          () => [] as Array<{ author: string; permlink: string; total: string; count: number }>
+        ),
+        // Count soft (database) comments on Hive sportsbites
+        prisma.$queryRaw<Array<{ post_permlink: string; count: number }>>`
+          SELECT post_permlink, COUNT(*)::int as count
+          FROM comments
+          WHERE post_permlink = ANY(${permlinks}::text[])
+            AND is_deleted = false
+          GROUP BY post_permlink
+        `.catch(() => [] as Array<{ post_permlink: string; count: number }>),
+      ]);
+
+      for (const bite of hiveBitesOnPage) {
+        const tip = tipTotals.find((t) => t.author === bite.author && t.permlink === bite.permlink);
+        bite.tipTotal = tip ? parseFloat(tip.total) : 0;
+        bite.tipCount = tip ? tip.count : 0;
+
+        const softCount = softCommentCounts.find((c) => c.post_permlink === bite.permlink);
+        if (softCount) {
+          bite.children = (bite.children || 0) + softCount.count;
         }
-      } catch {
-        // Non-critical — leave tips at 0
       }
     }
 
