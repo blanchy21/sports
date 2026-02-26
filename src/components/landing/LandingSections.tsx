@@ -209,10 +209,15 @@ export default function LandingSections() {
           ].map((src, i) => (
             <div
               key={i}
-              className="mx-2 h-32 w-52 flex-shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
+              className="relative mx-2 h-32 w-52 flex-shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+              <Image
+                src={src}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="(min-width: 640px) 288px, 208px"
+              />
             </div>
           ))}
         </div>
@@ -237,10 +242,15 @@ export default function LandingSections() {
           ].map((src, i) => (
             <div
               key={i}
-              className="mx-2 h-32 w-52 flex-shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
+              className="relative mx-2 h-32 w-52 flex-shrink-0 overflow-hidden rounded-xl sm:h-44 sm:w-72"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+              <Image
+                src={src}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="(min-width: 640px) 288px, 208px"
+              />
             </div>
           ))}
         </div>

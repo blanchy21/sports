@@ -90,6 +90,14 @@ function getRateLimitType(pathname: string): RateLimitType | null {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Redirect authenticated users from landing page to feed (instant, no hero flash)
+  if (pathname === '/') {
+    if (request.cookies.has('sb_session')) {
+      return NextResponse.redirect(new URL('/new', request.url));
+    }
+    return NextResponse.next();
+  }
+
   // Only apply rate limiting to API routes
   if (!pathname.startsWith('/api/')) {
     return NextResponse.next();
@@ -146,6 +154,8 @@ export async function middleware(request: NextRequest) {
 // Configure which routes the middleware applies to
 export const config = {
   matcher: [
+    // Landing page — redirect authenticated users to feed
+    '/',
     // Match all API routes
     '/api/:path*',
   ],
