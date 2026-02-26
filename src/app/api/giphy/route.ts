@@ -97,11 +97,14 @@ export async function GET(request: NextRequest) {
     const now = Date.now();
     const cached = gifCache.get(cacheKey);
     if (cached && now < cached.expiresAt) {
-      return NextResponse.json({
-        success: true,
-        data: cached.data,
-        cached: true,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          data: cached.data,
+          cached: true,
+        },
+        { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+      );
     }
 
     // Build Giphy API URL
@@ -171,11 +174,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      data: results,
-      cached: false,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: results,
+        cached: false,
+      },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

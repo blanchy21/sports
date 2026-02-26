@@ -75,13 +75,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       ctx.log.warn('Failed to fetch community members', { id, error: memberError });
     }
 
-    return NextResponse.json({
-      success: true,
-      community: {
-        ...community,
-        team,
+    return NextResponse.json(
+      {
+        success: true,
+        community: {
+          ...community,
+          team,
+        },
       },
-    });
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

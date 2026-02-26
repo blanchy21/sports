@@ -181,12 +181,15 @@ export async function GET(request: NextRequest) {
 
       filteredNews = filteredNews.slice(0, limit);
 
-      return NextResponse.json({
-        success: true,
-        data: filteredNews,
-        cached: true,
-        timestamp: newsCache.timestamp,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          data: filteredNews,
+          cached: true,
+          timestamp: newsCache.timestamp,
+        },
+        { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+      );
     }
 
     // Fetch fresh data from ESPN
@@ -213,12 +216,15 @@ export async function GET(request: NextRequest) {
 
     filteredNews = filteredNews.slice(0, limit);
 
-    return NextResponse.json({
-      success: true,
-      data: filteredNews,
-      cached: false,
-      timestamp: now,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: filteredNews,
+        cached: false,
+        timestamp: now,
+      },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

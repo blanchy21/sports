@@ -85,11 +85,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         where: { communityId_userId: { communityId: resolvedCommunityId, userId } },
       });
 
-      return NextResponse.json({
-        success: true,
-        membership: membership || null,
-        isMember: !!membership && membership.status === 'active',
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          membership: membership || null,
+          isMember: !!membership && membership.status === 'active',
+        },
+        { headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' } }
+      );
     }
 
     // Otherwise, list all members
@@ -109,11 +112,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       take: limit,
     });
 
-    return NextResponse.json({
-      success: true,
-      members,
-      count: members.length,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        members,
+        count: members.length,
+      },
+      { headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' } }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }
