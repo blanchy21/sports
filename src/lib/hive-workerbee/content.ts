@@ -277,18 +277,15 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
         const rawLimit = Math.max(limit, 100);
         posts = await fetchTrendingPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_ID, rawLimit);
       } else {
-        // No sport filter — single fetch is fine
-        const trendingPosts = await getContentOptimized('get_discussions_by_trending', [
-          {
-            tag: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
-            limit: Math.min(limit, HIVE_API_MAX_LIMIT),
-          },
-        ]);
-        posts = toTypedHivePosts(trendingPosts);
+        // No sport filter — over-fetch to compensate for container posts/muted authors
+        const rawLimit = Math.max(limit * 3, 30);
+        posts = await fetchTrendingPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_ID, rawLimit);
       }
       fetchedAsTrending = true;
     } else {
       // Chronological fetch with automatic pagination
+      // Over-fetch to compensate for posts removed by filters (container posts, muted authors)
+      const rawLimit = Math.max(limit * 3, 30);
       if (filters.before) {
         const separatorIndex = filters.before.indexOf('/');
         const author = filters.before.slice(0, separatorIndex);
@@ -297,15 +294,15 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
         if (author && permlink) {
           posts = await fetchCreatedPaginated(
             SPORTS_ARENA_CONFIG.COMMUNITY_ID,
-            limit,
+            rawLimit,
             author,
             permlink
           );
         } else {
-          posts = await fetchCreatedPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_ID, limit);
+          posts = await fetchCreatedPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_ID, rawLimit);
         }
       } else {
-        posts = await fetchCreatedPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_ID, limit);
+        posts = await fetchCreatedPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_ID, rawLimit);
       }
     }
 
@@ -332,19 +329,28 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
       filteredPosts = sortPosts(filteredPosts, filters.sort || 'created') as SportsblockPost[];
     }
 
-    // Determine if there are more posts available from the API
-    // Use filtered count > 0 as well — if filters removed everything, there may still be more upstream
-    const hasMore = filteredPosts.length > 0 && posts.length === limit;
+    // We over-fetch raw posts, so hasMore is true if we have more filtered posts than requested
+    const hasMore = filteredPosts.length > limit;
 
-    // Generate next cursor from the last *unfiltered* post, since the Hive API
-    // paginates on the unfiltered stream (not our client-side filtered subset)
-    const nextCursor =
-      hasMore && posts.length > 0
-        ? `${posts[posts.length - 1].author}/${posts[posts.length - 1].permlink}`
-        : undefined;
+    // Trim to requested limit
+    const resultPosts = filteredPosts.slice(0, limit);
+
+    // Generate next cursor from the last *unfiltered* post that corresponds to our last result,
+    // since the Hive API paginates on the unfiltered stream
+    const lastResultPost = resultPosts[resultPosts.length - 1];
+    let nextCursor: string | undefined;
+    if (hasMore && lastResultPost && posts.length > 0) {
+      // Find the raw post index that matches or follows our last filtered result
+      const lastResultIdx = posts.findIndex(
+        (p) => p.author === lastResultPost.author && p.permlink === lastResultPost.permlink
+      );
+      // Use that raw post as the cursor so pagination resumes from the right spot
+      const cursorPost = lastResultIdx >= 0 ? posts[lastResultIdx] : posts[posts.length - 1];
+      nextCursor = `${cursorPost.author}/${cursorPost.permlink}`;
+    }
 
     return {
-      posts: filteredPosts,
+      posts: resultPosts,
       hasMore,
       nextCursor,
     };
