@@ -29,7 +29,9 @@ export function usePlaceStake() {
       });
       const buildData = await buildRes.json();
       if (!buildData.success) {
-        throw new Error(buildData.error?.message || 'Failed to build stake');
+        const buildErr =
+          typeof buildData.error === 'string' ? buildData.error : buildData.error?.message;
+        throw new Error(buildErr || 'Failed to build stake');
       }
 
       const { operation, stakeToken } = buildData.data;
@@ -49,7 +51,9 @@ export function usePlaceStake() {
       });
       const confirmData = await confirmRes.json();
       if (!confirmData.success) {
-        throw new Error(confirmData.error?.message || 'Failed to confirm stake');
+        const confirmErr =
+          typeof confirmData.error === 'string' ? confirmData.error : confirmData.error?.message;
+        throw new Error(confirmErr || 'Failed to confirm stake');
       }
 
       return confirmData.data;

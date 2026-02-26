@@ -143,6 +143,9 @@ export const POST = createApiHandler('/api/predictions', async (request, _ctx) =
       return created;
     });
 
-    return apiSuccess(serializePrediction(prediction, user.username), { status: 201 });
+    return apiSuccess(
+      { prediction: serializePrediction(prediction, user.username), stakeRequired: true },
+      { status: 201 }
+    );
   });
 });

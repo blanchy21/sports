@@ -401,7 +401,9 @@ export function ComposeSportsbite({
 
       const createData = await createRes.json();
       if (!createData.success) {
-        throw new Error(createData.error?.message || 'Failed to create prediction');
+        const errMsg =
+          typeof createData.error === 'string' ? createData.error : createData.error?.message;
+        throw new Error(errMsg || 'Failed to create prediction');
       }
 
       const prediction = createData.data?.prediction;
