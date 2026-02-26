@@ -63,6 +63,7 @@ describe('account-creation', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
 
     process.env.OPERATIONS_ACTIVE_KEY = 'fake-active-key';
 
@@ -80,6 +81,7 @@ describe('account-creation', () => {
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     delete process.env.OPERATIONS_ACTIVE_KEY;
   });
 
@@ -132,7 +134,9 @@ describe('account-creation', () => {
 
   describe('createHiveAccountForUser - success path', () => {
     it('broadcasts a create_claimed_account operation', async () => {
-      await createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      const promise = createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      await jest.runAllTimersAsync();
+      await promise;
 
       // First sendOperations call is create_claimed_account
       const [ops] = mockSendOperations.mock.calls[0];
@@ -144,7 +148,9 @@ describe('account-creation', () => {
     });
 
     it('generates 4 key types via PrivateKey.fromLogin', async () => {
-      await createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      const promise = createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      await jest.runAllTimersAsync();
+      await promise;
 
       const fromLogin = PrivateKey.fromLogin as jest.Mock;
       const roles = fromLogin.mock.calls.map((call: unknown[]) => call[2]);
@@ -153,7 +159,9 @@ describe('account-creation', () => {
     });
 
     it('calls encryptKeys with JSON containing all keys and master', async () => {
-      await createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      const promise = createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      await jest.runAllTimersAsync();
+      await promise;
 
       expect(mockEncryptKeys).toHaveBeenCalledTimes(1);
       const keysJson = JSON.parse(mockEncryptKeys.mock.calls[0][0]);
@@ -165,7 +173,9 @@ describe('account-creation', () => {
     });
 
     it('stores encrypted keys in DB via $transaction', async () => {
-      await createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      const promise = createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      await jest.runAllTimersAsync();
+      await promise;
 
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
       expect(prisma.custodialUser.update).toHaveBeenCalledWith(
@@ -191,7 +201,9 @@ describe('account-creation', () => {
     });
 
     it('returns { hiveUsername } on success', async () => {
-      const result = await createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      const promise = createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      await jest.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toEqual({ hiveUsername: TEST_USERNAME });
     });
@@ -206,7 +218,9 @@ describe('account-creation', () => {
         .mockResolvedValueOnce({ id: 'create-tx' }) // create_claimed_account
         .mockRejectedValueOnce(new Error('RC delegation network error')); // RC delegation
 
-      const result = await createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      const promise = createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      await jest.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toEqual({ hiveUsername: TEST_USERNAME });
       expect(logger.warn).toHaveBeenCalledWith(
@@ -217,7 +231,9 @@ describe('account-creation', () => {
     });
 
     it('logs success when RC delegation succeeds', async () => {
-      await createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      const promise = createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      await jest.runAllTimersAsync();
+      await promise;
 
       expect(logger.info).toHaveBeenCalledWith(
         expect.stringContaining('RC delegated'),
@@ -234,12 +250,13 @@ describe('account-creation', () => {
         throw new Error('encryption boom');
       });
 
-      await expect(createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID)).rejects.toThrow(
-        AccountCreationError
-      );
+      const promise = createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      promise.catch(() => {}); // prevent unhandled rejection during timer flush
+      await jest.runAllTimersAsync();
 
       try {
-        await createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+        await promise;
+        throw new Error('Expected AccountCreationError to be thrown');
       } catch (err) {
         expect(err).toBeInstanceOf(AccountCreationError);
         expect((err as AccountCreationError).code).toBe('ENCRYPTION_FAILED');
@@ -249,12 +266,13 @@ describe('account-creation', () => {
     it('throws AccountCreationError with DB_SAVE_FAILED when DB fails after encryption', async () => {
       (prisma.$transaction as jest.Mock).mockRejectedValue(new Error('DB connection lost'));
 
-      await expect(createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID)).rejects.toThrow(
-        AccountCreationError
-      );
+      const promise = createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      promise.catch(() => {}); // prevent unhandled rejection during timer flush
+      await jest.runAllTimersAsync();
 
       try {
-        await createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+        await promise;
+        throw new Error('Expected AccountCreationError to be thrown');
       } catch (err) {
         expect(err).toBeInstanceOf(AccountCreationError);
         expect((err as AccountCreationError).code).toBe('DB_SAVE_FAILED');
@@ -266,7 +284,9 @@ describe('account-creation', () => {
         throw new Error('encryption boom');
       });
 
-      await createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID).catch(() => {});
+      const promise = createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      promise.catch(() => {}); // prevent unhandled rejection during timer flush
+      await jest.runAllTimersAsync();
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.stringContaining('CRITICAL'),
@@ -278,7 +298,9 @@ describe('account-creation', () => {
     it('logs CRITICAL error when DB fails after encryption', async () => {
       (prisma.$transaction as jest.Mock).mockRejectedValue(new Error('DB connection lost'));
 
-      await createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID).catch(() => {});
+      const promise = createHiveAccountForUser(TEST_USERNAME, TEST_USER_ID);
+      promise.catch(() => {}); // prevent unhandled rejection during timer flush
+      await jest.runAllTimersAsync();
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.stringContaining('CRITICAL'),
