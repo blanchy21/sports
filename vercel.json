@@ -43,6 +43,14 @@
     {
       "path": "/api/cron/retry-rc-delegation",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/lock-predictions",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/settle-predictions",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

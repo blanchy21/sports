@@ -476,3 +476,105 @@ model ContentReward {
   @@unique([weekId, category])
   @@map("content_rewards")
 }
+
+// ============================================================================
+// Phase 3 — Prediction markets
+// ============================================================================
+
+enum PredictionStatus {
+  OPEN
+  LOCKED
+  SETTLING
+  SETTLED
+  VOID
+  REFUNDED
+}
+
+model Prediction {
+  id                String           @id @default(uuid())
+  creatorUsername    String           @map("creator_username")
+  title             String
+  sportCategory     String?          @map("sport_category")
+  matchReference    String?          @map("match_reference")
+  locksAt           DateTime         @map("locks_at")
+  status            PredictionStatus @default(OPEN)
+  winningOutcomeId  String?          @map("winning_outcome_id")
+  totalPool         Decimal          @default(0) @map("total_pool") @db.Decimal(12, 3)
+  platformCut       Decimal          @default(0) @map("platform_cut") @db.Decimal(12, 3)
+  burnedAmount      Decimal          @default(0) @map("burned_amount") @db.Decimal(12, 3)
+  rewardPoolAmount  Decimal          @default(0) @map("reward_pool_amount") @db.Decimal(12, 3)
+  hiveAuthor        String?          @map("hive_author")
+  hivePermlink      String?          @map("hive_permlink")
+  isVoid            Boolean          @default(false) @map("is_void")
+  voidReason        String?          @map("void_reason")
+  settledAt         DateTime?        @map("settled_at")
+  settledBy         String?          @map("settled_by")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  outcomes       PredictionOutcome[]  @relation("PredictionOutcomes")
+  stakes         PredictionStake[]
+  escrowLedger   PredictionEscrowLedger[]
+  winningOutcome PredictionOutcome?   @relation("WinningOutcome", fields: [winningOutcomeId], references: [id])
+
+  @@index([status])
+  @@index([creatorUsername])
+  @@index([sportCategory])
+  @@index([locksAt])
+  @@index([matchReference])
+  @@index([createdAt])
+  @@map("predictions")
+}
+
+model PredictionOutcome {
+  id            String   @id @default(uuid())
+  predictionId  String   @map("prediction_id")
+  label         String
+  totalStaked   Decimal  @default(0) @map("total_staked") @db.Decimal(12, 3)
+  backerCount   Int      @default(0) @map("backer_count")
+  isWinner      Boolean  @default(false) @map("is_winner")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  prediction       Prediction        @relation("PredictionOutcomes", fields: [predictionId], references: [id], onDelete: Cascade)
+  stakes           PredictionStake[]
+  wonPredictions   Prediction[]      @relation("WinningOutcome")
+
+  @@index([predictionId])
+  @@map("prediction_outcomes")
+}
+
+model PredictionStake {
+  id            String   @id @default(uuid())
+  predictionId  String   @map("prediction_id")
+  outcomeId     String   @map("outcome_id")
+  username      String
+  amount        Decimal  @db.Decimal(12, 3)
+  payout        Decimal? @db.Decimal(12, 3)
+  refunded      Boolean  @default(false)
+  stakeTxId     String?  @map("stake_tx_id")
+  payoutTxId    String?  @map("payout_tx_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  prediction Prediction        @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+  outcome    PredictionOutcome @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+
+  @@unique([predictionId, username, outcomeId])
+  @@index([predictionId])
+  @@index([username])
+  @@map("prediction_stakes")
+}
+
+model PredictionEscrowLedger {
+  id            String   @id @default(uuid())
+  predictionId  String   @map("prediction_id")
+  entryType     String   @map("entry_type")
+  username      String?
+  amount        Decimal  @db.Decimal(12, 3)
+  txId          String?  @map("tx_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  prediction Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+
+  @@index([predictionId])
+  @@map("prediction_escrow_ledger")
+}

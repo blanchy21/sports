@@ -25,6 +25,8 @@ export const MEDALS_CONFIG = {
     BURN: 'medals.burn',
     /** Rewards distribution account */
     REWARDS: 'sb.rewards',
+    /** Prediction escrow account */
+    PREDICTIONS: 'sp-predictions',
     /** Founder accounts (excluded from public leaderboard) */
     FOUNDERS: ['niallon11', 'blanchy'] as readonly string[],
   },
