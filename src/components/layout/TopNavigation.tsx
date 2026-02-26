@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
-  LayoutDashboard,
   Bell,
   Plus,
   Settings,
@@ -220,17 +219,17 @@ export const TopNavigation: React.FC = () => {
               </Link>
 
               <Link
-                href="/dashboard"
+                href="/sportsbites"
                 className={cn(
                   'flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
-                  pathname === '/dashboard'
+                  pathname === '/sportsbites'
                     ? 'bg-card text-primary shadow-md'
                     : 'text-white/90 hover:bg-white/20 hover:text-white'
                 )}
                 suppressHydrationWarning
               >
-                <LayoutDashboard className="h-6 w-6 xl:h-8 xl:w-8" />
-                <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Dashboard</span>
+                <Zap className="h-6 w-6 xl:h-8 xl:w-8" />
+                <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Sportsbites</span>
               </Link>
 
               <Link
