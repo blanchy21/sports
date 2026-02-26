@@ -22,8 +22,13 @@ import { RoleBadge } from '@/components/user/RoleBadge';
 import { LastSeenIndicator } from '@/components/user/LastSeenIndicator';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/lib/logger';
+import type { UserAccountData } from '@/lib/hive-workerbee/account';
 
-export default function UserProfileClient() {
+interface UserProfileClientProps {
+  initialProfile?: UserAccountData | null;
+}
+
+export default function UserProfileClient({ initialProfile }: UserProfileClientProps) {
   const params = useParams();
   const router = useRouter();
   const { openModal } = useModal();
@@ -44,16 +49,18 @@ export default function UserProfileClient() {
   // Fetch soft profile in parallel (not gated on Hive completing)
   const { data: softProfile, isLoading: isSoftLoading } = useSoftUserProfile(username);
 
-  // Determine which profile to use (prefer Hive)
-  const isProfileLoading = isHiveLoading || isSoftLoading;
-  const profile = hiveProfile || softProfile;
-  const isSoftUser = !hiveProfile && !!softProfile;
-  const profileError = !hiveProfile && !softProfile && !isProfileLoading ? hiveError : null;
+  // Determine which profile to use (prefer Hive, then server-provided initial, then soft)
+  const effectiveHiveProfile = hiveProfile || initialProfile;
+  const isProfileLoading = !effectiveHiveProfile && (isHiveLoading || isSoftLoading);
+  const profile = effectiveHiveProfile || softProfile;
+  const isSoftUser = !effectiveHiveProfile && !!softProfile;
+  const profileError =
+    !effectiveHiveProfile && !softProfile && !isProfileLoading ? hiveError : null;
 
   // Only fetch follower/following counts for Hive users
-  const { data: followerCount } = useUserFollowerCount(hiveProfile ? username : '');
-  const { data: followingCount } = useUserFollowingCount(hiveProfile ? username : '');
-  const { tier: premiumTier } = usePremiumTier(hiveProfile ? username : '');
+  const { data: followerCount } = useUserFollowerCount(effectiveHiveProfile ? username : '');
+  const { data: followingCount } = useUserFollowingCount(effectiveHiveProfile ? username : '');
+  const { tier: premiumTier } = usePremiumTier(effectiveHiveProfile ? username : '');
 
   const [userPosts, setUserPosts] = useState<SportsblockPost[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
