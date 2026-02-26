@@ -457,16 +457,17 @@ export const TopNavigation: React.FC = () => {
               <span>Latest News</span>
             </button>
 
-            <button
-              onClick={() => {
-                setShowMobileMenu(false);
-                setShowSportsPopup(true);
-              }}
-              className="flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-left text-white/90 transition-all duration-200 hover:bg-white/20"
+            <Link
+              href="/feed"
+              onClick={() => setShowMobileMenu(false)}
+              className={cn(
+                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
+                pathname === '/feed' ? 'bg-card text-primary' : 'text-white/90 hover:bg-white/20'
+              )}
             >
-              <Zap className="h-5 w-5" />
-              <span>Choose Sport</span>
-            </button>
+              <Newspaper className="h-5 w-5" />
+              <span>Feed</span>
+            </Link>
 
             {user && (
               <>
