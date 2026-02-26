@@ -15,8 +15,14 @@ import {
   UserPlus,
   Info,
   Coins,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useNotifications, Notification } from '@/contexts/NotificationContext';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  useNotificationFilter,
+  FILTER_CATEGORIES,
+} from '@/contexts/notifications/useNotificationFilter';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/core/Button';
 import { Badge } from '@/components/core/Badge';
@@ -92,6 +98,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   triggerRef,
 }) => {
   const router = useRouter();
+  const { user } = useAuth();
   const {
     notifications,
     unreadCount,
@@ -100,6 +107,18 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     clearNotifications,
     isRealtimeActive,
   } = useNotifications();
+  const { filters, toggleFilter, isVisible } = useNotificationFilter(user?.username);
+  const [showFilters, setShowFilters] = React.useState(false);
+
+  const filteredNotifications = React.useMemo(
+    () => notifications.filter((n) => isVisible(n.type)),
+    [notifications, isVisible]
+  );
+  const filteredUnreadCount = React.useMemo(
+    () => filteredNotifications.filter((n) => !n.read).length,
+    [filteredNotifications]
+  );
+  const allFiltersEnabled = Object.values(filters).every(Boolean);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -200,6 +219,15 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             )}
           </div>
           <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowFilters((v) => !v)}
+              className={`text-xs ${showFilters || !allFiltersEnabled ? 'text-accent' : 'text-muted-foreground'} hover:text-foreground`}
+            >
+              <SlidersHorizontal className="mr-1 h-3 w-3" />
+              Filter
+            </Button>
             {unreadCount > 0 && (
               <Button
                 variant="ghost"
@@ -226,13 +254,36 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         </div>
       </div>
 
+      {/* Filter chips */}
+      {showFilters && (
+        <div className="flex flex-wrap gap-1.5 border-b border-border bg-muted/30 px-4 py-2.5">
+          {FILTER_CATEGORIES.map((cat) => (
+            <button
+              key={cat.key}
+              onClick={() => toggleFilter(cat.key)}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                filters[cat.key]
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Notifications List */}
       <div className="max-h-80 overflow-y-auto">
-        {notifications.length === 0 ? (
+        {filteredNotifications.length === 0 ? (
           <div className="p-6 text-center text-muted-foreground">
             <Bell className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-            <p className="text-sm">No notifications yet</p>
-            {!isRealtimeActive && (
+            <p className="text-sm">
+              {notifications.length > 0
+                ? 'No notifications match your filters'
+                : 'No notifications yet'}
+            </p>
+            {notifications.length === 0 && !isRealtimeActive && (
               <p className="mt-1 text-xs text-muted-foreground/70">
                 Real-time monitoring is inactive
               </p>
@@ -240,7 +291,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           </div>
         ) : (
           <div className="divide-y divide-border/50">
-            {notifications.map((notification) => (
+            {filteredNotifications.map((notification) => (
               <div
                 key={notification.id}
                 className={`cursor-pointer p-4 transition-colors hover:bg-muted/50 ${
@@ -306,9 +357,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         <div className="border-t border-border bg-muted/50 p-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
-              {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
+              {filteredNotifications.length}
+              {!allFiltersEnabled && ` of ${notifications.length}`} notification
+              {filteredNotifications.length !== 1 ? 's' : ''}
             </span>
-            <span>{unreadCount} unread</span>
+            <span>{filteredUnreadCount} unread</span>
           </div>
         </div>
       )}
