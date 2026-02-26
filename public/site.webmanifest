@@ -1,6 +1,13 @@
 {
   "name": "Sportsblock",
   "short_name": "Sportsblock",
+  "description": "Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.",
+  "start_url": "/",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["sports", "social"],
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -14,6 +21,5 @@
     }
   ],
   "theme_color": "#ffffff",
-  "background_color": "#ffffff",
-  "display": "standalone"
+  "background_color": "#ffffff"
 }

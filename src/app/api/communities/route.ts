@@ -13,6 +13,8 @@ import { Prisma } from '@/generated/prisma/client';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' };
+
 const ROUTE = '/api/communities';
 
 // Validation schemas
@@ -117,12 +119,15 @@ export async function GET(request: NextRequest) {
       prisma.community.count({ where }),
     ]);
 
-    return NextResponse.json({
-      success: true,
-      communities,
-      total,
-      hasMore: offset + communities.length < total,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        communities,
+        total,
+        hasMore: offset + communities.length < total,
+      },
+      { headers: CACHE_HEADERS }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

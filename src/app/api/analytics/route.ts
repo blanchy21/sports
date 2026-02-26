@@ -15,6 +15,8 @@ import { createRequestContext } from '@/lib/api/response';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' };
+
 const ROUTE = '/api/analytics';
 
 /**
@@ -117,10 +119,13 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      data: analytics,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: analytics,
+      },
+      { headers: CACHE_HEADERS }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

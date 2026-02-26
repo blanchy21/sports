@@ -19,6 +19,8 @@ let eventsCache: EventsCache = {
   expiresAt: 0,
 };
 
+const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' };
+
 const ROUTE = '/api/sports/events';
 
 export async function GET(request: NextRequest) {
@@ -42,12 +44,15 @@ export async function GET(request: NextRequest) {
       filteredEvents = sortEvents(filteredEvents);
       filteredEvents = filteredEvents.slice(0, limit);
 
-      return NextResponse.json({
-        success: true,
-        data: filteredEvents,
-        cached: true,
-        timestamp: eventsCache.timestamp,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          data: filteredEvents,
+          cached: true,
+          timestamp: eventsCache.timestamp,
+        },
+        { headers: CACHE_HEADERS }
+      );
     }
 
     // Fetch fresh data from ESPN
@@ -70,12 +75,15 @@ export async function GET(request: NextRequest) {
     filteredEvents = sortEvents(filteredEvents);
     filteredEvents = filteredEvents.slice(0, limit);
 
-    return NextResponse.json({
-      success: true,
-      data: filteredEvents,
-      cached: false,
-      timestamp: now,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: filteredEvents,
+        cached: false,
+        timestamp: now,
+      },
+      { headers: CACHE_HEADERS }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

@@ -20,6 +20,8 @@ import {
 } from '@/lib/utils/rate-limit';
 import { createRequestContext } from '@/lib/api/response';
 
+const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' };
+
 const ROUTE = '/api/metrics/leaderboard';
 
 /**
@@ -53,12 +55,15 @@ export async function GET(request: NextRequest) {
     if (category) {
       const entries = await getCategoryLeaderboard(category, weekId, limit);
 
-      return NextResponse.json({
-        success: true,
-        weekId,
-        category,
-        entries,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          weekId,
+          category,
+          entries,
+        },
+        { headers: CACHE_HEADERS }
+      );
     }
 
     // Get all leaderboards
@@ -70,12 +75,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (!leaderboards) {
-      return NextResponse.json({
-        success: true,
-        weekId,
-        leaderboards: null,
-        message: 'No leaderboard data available for this week',
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          weekId,
+          leaderboards: null,
+          message: 'No leaderboard data available for this week',
+        },
+        { headers: CACHE_HEADERS }
+      );
     }
 
     // Apply limit to each category
@@ -86,12 +94,15 @@ export async function GET(request: NextRequest) {
       ])
     );
 
-    return NextResponse.json({
-      success: true,
-      weekId,
-      generatedAt: leaderboards.generatedAt,
-      leaderboards: limitedLeaderboards,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        weekId,
+        generatedAt: leaderboards.generatedAt,
+        leaderboards: limitedLeaderboards,
+      },
+      { headers: CACHE_HEADERS }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

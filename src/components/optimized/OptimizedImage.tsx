@@ -72,7 +72,10 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   }
 
   return (
-    <div className={cn('relative overflow-hidden', className)}>
+    <div
+      className={cn('relative overflow-hidden', className)}
+      style={{ aspectRatio: `${width} / ${height}` }}
+    >
       {isLoading && (
         <div
           className="absolute inset-0 flex animate-pulse items-center justify-center bg-muted"
