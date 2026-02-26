@@ -1,6 +1,11 @@
 import { useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
-import { fetchSportsblockPosts, fetchTrendingPosts, fetchHotPosts, fetchPost } from '@/lib/hive-workerbee/content';
+import {
+  fetchSportsblockPosts,
+  fetchTrendingPosts,
+  fetchHotPosts,
+  fetchPost,
+} from '@/lib/hive-workerbee/content';
 import { ContentFilters } from '@/lib/hive-workerbee/content';
 import { STALE_TIMES, getPostStaleTime } from '@/lib/constants/cache';
 import { SportsblockPost } from '@/lib/shared/types';
@@ -89,7 +94,7 @@ function unifiedToSportsblockPost(post: UnifiedPost): SportsblockPost {
     root_title: post.title,
     pending_payout_value: post.pendingPayout || '0.000 HBD',
     total_pending_payout_value: post.pendingPayout || '0.000 HBD',
-    active_votes: (post.activeVotes || []).map(v => ({
+    active_votes: (post.activeVotes || []).map((v) => ({
       ...v,
       rshares: '0',
       reputation: '0',
@@ -104,7 +109,7 @@ function unifiedToSportsblockPost(post: UnifiedPost): SportsblockPost {
     img_url: post.featuredImage,
     sport_category: post.sportCategory,
     sportCategory: post.sportCategory,
-    postType: post.isHivePost ? 'sportsblock' : 'soft' as 'sportsblock',
+    postType: post.isHivePost ? 'sportsblock' : ('soft' as 'sportsblock'),
     isSportsblockPost: post.isHivePost,
     // Custom fields for soft posts
     _isSoftPost: post.isSoftPost,
@@ -124,6 +129,7 @@ async function fetchFeedPosts(params: {
   const searchParams = new URLSearchParams();
   if (params.limit) searchParams.set('limit', params.limit.toString());
   if (params.sportCategory) searchParams.set('sportCategory', params.sportCategory);
+  if (params.before) searchParams.set('before', params.before);
   // Include both Hive and soft posts in the feed
   searchParams.set('includeHive', 'true');
   searchParams.set('includeSoft', 'true');
@@ -210,24 +216,27 @@ export function useInvalidatePosts() {
 }
 
 // Infinite query hook for feed with pagination
-export function useFeedPosts(options: {
-  sportCategory?: string;
-  limit?: number;
-  sort?: string;
-  enabled?: boolean;
-} = {}) {
+export function useFeedPosts(
+  options: {
+    sportCategory?: string;
+    limit?: number;
+    sort?: string;
+    enabled?: boolean;
+  } = {}
+) {
   const { sportCategory, limit = 10, sort = 'created', enabled = true } = options;
 
   return useInfiniteQuery({
     queryKey: queryKeys.posts.list({ type: 'feed', sportCategory, sort }),
-    queryFn: ({ pageParam }) => fetchFeedPosts({
-      limit,
-      sort,
-      sportCategory,
-      before: pageParam as string | undefined,
-    }),
+    queryFn: ({ pageParam }) =>
+      fetchFeedPosts({
+        limit,
+        sort,
+        sportCategory,
+        before: pageParam as string | undefined,
+      }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextCursor : undefined,
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextCursor : undefined),
     staleTime: STALE_TIMES.REALTIME,
     enabled,
   });

@@ -1,10 +1,9 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { ArrowLeft, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/core/Button';
+
+export const revalidate = 86400;
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -89,12 +88,7 @@ export default function WhitepaperPage() {
       </header>
 
       {/* Hero */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="bg-gradient-to-b from-primary/5 to-background px-6 py-20 text-center"
-      >
+      <section className="animate-fade-in bg-gradient-to-b from-primary/5 to-background px-6 py-20 text-center">
         <div className="mx-auto max-w-4xl">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
             <FileText className="h-4 w-4" />
@@ -124,7 +118,7 @@ export default function WhitepaperPage() {
             </span>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* Table of Contents */}
       <nav className="border-b border-border bg-muted/30 px-6 py-8">
@@ -160,12 +154,7 @@ export default function WhitepaperPage() {
       </nav>
 
       {/* Content */}
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="mx-auto max-w-4xl px-6 py-12"
-      >
+      <main className="mx-auto max-w-4xl animate-fade-in px-6 py-12">
         {/* Executive Summary */}
         <section id="executive-summary">
           <SectionHeading>Executive Summary</SectionHeading>
@@ -631,7 +620,7 @@ export default function WhitepaperPage() {
             </Link>
           </div>
         </div>
-      </motion.main>
+      </main>
     </div>
   );
 }

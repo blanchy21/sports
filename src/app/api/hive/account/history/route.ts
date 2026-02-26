@@ -25,15 +25,12 @@ export async function GET(request: NextRequest) {
     ctx.log.debug('Fetching transaction history', { username, limit });
 
     // Fetch recent operations using WorkerBee with retry logic
-    const operations = await retryWithBackoff(
-      () => getRecentOperations(username, limit),
-      {
-        maxRetries: 2,
-        initialDelay: 1000,
-        maxDelay: 10000,
-        backoffMultiplier: 2,
-      }
-    );
+    const operations = await retryWithBackoff(() => getRecentOperations(username, limit), {
+      maxRetries: 2,
+      initialDelay: 1000,
+      maxDelay: 10000,
+      backoffMultiplier: 2,
+    });
 
     if (!operations) {
       return internalError('Failed to fetch transaction history', ctx.requestId);
@@ -41,13 +38,15 @@ export async function GET(request: NextRequest) {
 
     ctx.log.debug('Fetched operations', { username, count: operations.length });
 
-    return NextResponse.json({
-      success: true,
-      operations,
-      count: operations.length,
-      username
-    });
-
+    return NextResponse.json(
+      {
+        success: true,
+        operations,
+        count: operations.length,
+        username,
+      },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

@@ -34,7 +34,11 @@ import { sanitizePostContent } from '@/lib/utils/sanitize';
 import { logger } from '@/lib/logger';
 import { useBroadcast } from '@/hooks/useBroadcast';
 
-export default function PostDetailClient() {
+interface PostDetailClientProps {
+  initialPost?: SportsblockPost | null;
+}
+
+export default function PostDetailClient({ initialPost }: PostDetailClientProps) {
   const params = useParams();
   const router = useRouter();
   const { openModal } = useModal();
@@ -42,10 +46,10 @@ export default function PostDetailClient() {
   const { authType, hiveUser } = useAuth();
   const { broadcast } = useBroadcast();
   const { addToast } = useToast();
-  const [post, setPost] = useState<SportsblockPost | null>(null);
+  const [post, setPost] = useState<SportsblockPost | null>(initialPost ?? null);
   const [isReblogging, setIsReblogging] = useState(false);
   const [softPostMeta, setSoftPostMeta] = useState<SoftPostMeta | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialPost);
   const [error, setError] = useState<string | null>(null);
 
   const author = params.author as string;
@@ -62,6 +66,12 @@ export default function PostDetailClient() {
 
     const loadPost = async () => {
       if (!author || !permlink) return;
+
+      // Skip fetch if server already provided the post
+      if (initialPost) {
+        setIsLoading(false);
+        return;
+      }
 
       setIsLoading(true);
       setError(null);
@@ -178,7 +188,7 @@ export default function PostDetailClient() {
     return () => {
       abortController.abort();
     };
-  }, [author, permlink]);
+  }, [author, permlink, initialPost]);
 
   const handleVoteSuccess = () => {
     // Vote recorded - could trigger a refresh of the post data here

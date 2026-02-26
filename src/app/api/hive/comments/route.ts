@@ -45,11 +45,14 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      return NextResponse.json({
-        success: true,
-        comments: comments || [],
-        count: comments?.length || 0,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          comments: comments || [],
+          count: comments?.length || 0,
+        },
+        { headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' } }
+      );
     }
 
     // Fetch user's comments (username is guaranteed by schema refinement)
@@ -62,12 +65,15 @@ export async function GET(request: NextRequest) {
       backoffMultiplier: 2,
     });
 
-    return NextResponse.json({
-      success: true,
-      comments: comments || [],
-      count: comments?.length || 0,
-      username,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        comments: comments || [],
+        count: comments?.length || 0,
+        username,
+      },
+      { headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' } }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

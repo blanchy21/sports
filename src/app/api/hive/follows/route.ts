@@ -56,7 +56,10 @@ export async function GET(request: NextRequest) {
       followStatus[target] = result.status === 'fulfilled' ? result.value : false;
     });
 
-    return NextResponse.json({ success: true, followStatus });
+    return NextResponse.json(
+      { success: true, followStatus },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }

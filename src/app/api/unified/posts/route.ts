@@ -16,9 +16,16 @@ const ROUTE = '/api/unified/posts';
 // Prisma helpers for querying soft posts
 // ============================================
 
-async function getSoftPostsByUsername(username: string, postsLimit: number): Promise<SoftPost[]> {
+async function getSoftPostsByUsername(
+  username: string,
+  postsLimit: number,
+  before?: string
+): Promise<SoftPost[]> {
   const posts = await prisma.post.findMany({
-    where: { authorUsername: username },
+    where: {
+      authorUsername: username,
+      ...(before && { createdAt: { lt: new Date(before) } }),
+    },
     orderBy: { createdAt: 'desc' },
     take: postsLimit,
   });
@@ -26,17 +33,26 @@ async function getSoftPostsByUsername(username: string, postsLimit: number): Pro
   return posts.map(postToSoftPost);
 }
 
-async function getSoftPostsByAuthorId(authorId: string): Promise<SoftPost[]> {
+async function getSoftPostsByAuthorId(
+  authorId: string,
+  postsLimit: number,
+  before?: string
+): Promise<SoftPost[]> {
   const posts = await prisma.post.findMany({
-    where: { authorId },
+    where: {
+      authorId,
+      ...(before && { createdAt: { lt: new Date(before) } }),
+    },
     orderBy: { createdAt: 'desc' },
+    take: postsLimit,
   });
 
   return posts.map(postToSoftPost);
 }
 
-async function getAllSoftPosts(postsLimit: number): Promise<SoftPost[]> {
+async function getAllSoftPosts(postsLimit: number, before?: string): Promise<SoftPost[]> {
   const posts = await prisma.post.findMany({
+    where: before ? { createdAt: { lt: new Date(before) } } : undefined,
     orderBy: { createdAt: 'desc' },
     take: postsLimit,
   });
@@ -104,6 +120,7 @@ const unifiedPostsQuerySchema = z.object({
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 20))
     .pipe(z.number().int().min(1).max(100)),
+  before: z.string().datetime({ offset: true }).optional(),
   includeHive: z
     .string()
     .optional()
@@ -268,7 +285,8 @@ export async function GET(request: NextRequest) {
       return validationError(parseResult.error, ctx.requestId);
     }
 
-    const { username, authorId, limit, includeHive, includeSoft, sportCategory } = parseResult.data;
+    const { username, authorId, limit, before, includeHive, includeSoft, sportCategory } =
+      parseResult.data;
 
     ctx.log.debug('Fetching unified posts', {
       username,
@@ -288,17 +306,23 @@ export async function GET(request: NextRequest) {
     // If authorId is provided, only fetch soft posts
     if (authorId) {
       if (includeSoft) {
-        const softPosts = await getSoftPostsByAuthorId(authorId);
+        const softPosts = await getSoftPostsByAuthorId(authorId, limit + 1, before);
         allPosts.push(...softPosts.map(softPostToUnified));
       }
+
+      const hasMore = allPosts.length > limit;
+      const sliced = allPosts.slice(0, limit);
+      const nextCursor =
+        hasMore && sliced.length > 0 ? sliced[sliced.length - 1].created : undefined;
 
       return NextResponse.json(
         {
           success: true,
-          posts: allPosts.slice(0, limit),
-          count: allPosts.length,
-          hasMore: allPosts.length > limit,
-          sources: { hive: 0, soft: allPosts.length },
+          posts: sliced,
+          count: sliced.length,
+          hasMore,
+          nextCursor,
+          sources: { hive: 0, soft: sliced.length },
         },
         { headers: cacheHeaders }
       );
@@ -312,7 +336,7 @@ export async function GET(request: NextRequest) {
       // Soft posts don't depend on profile -- start immediately
       if (includeSoft) {
         fetchPromises.push(
-          getSoftPostsByUsername(username, limit)
+          getSoftPostsByUsername(username, limit + 1, before)
             .then((posts) => {
               allPosts.push(...posts.map(softPostToUnified));
             })
@@ -355,18 +379,35 @@ export async function GET(request: NextRequest) {
       const softProfile = await profilePromise;
       const isSoftUser = softProfile && !softProfile.isHiveUser;
 
+      // Filter by cursor date if paginating
+      if (before) {
+        const beforeDate = new Date(before).getTime();
+        // Hive posts aren't filtered at the API level, so filter here
+        const hiveBefore = allPosts.filter(
+          (p) => p.source !== 'hive' || new Date(p.created).getTime() < beforeDate
+        );
+        allPosts.length = 0;
+        allPosts.push(...hiveBefore);
+      }
+
       // Sort by created date (newest first)
       allPosts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
 
-      const hivePosts = allPosts.filter((p) => p.source === 'hive');
-      const softPosts = allPosts.filter((p) => p.source === 'soft');
+      const hasMore = allPosts.length > limit;
+      const sliced = allPosts.slice(0, limit);
+      const nextCursor =
+        hasMore && sliced.length > 0 ? sliced[sliced.length - 1].created : undefined;
+
+      const hivePosts = sliced.filter((p) => p.source === 'hive');
+      const softPosts = sliced.filter((p) => p.source === 'soft');
 
       return NextResponse.json(
         {
           success: true,
-          posts: allPosts.slice(0, limit),
-          count: Math.min(allPosts.length, limit),
-          hasMore: allPosts.length > limit,
+          posts: sliced,
+          count: sliced.length,
+          hasMore,
+          nextCursor,
           sources: { hive: hivePosts.length, soft: softPosts.length },
           isSoftUser,
         },
@@ -380,7 +421,7 @@ export async function GET(request: NextRequest) {
     // Fetch soft posts
     if (includeSoft) {
       fetchPromises.push(
-        getAllSoftPosts(limit)
+        getAllSoftPosts(limit + 1, before)
           .then((posts) => {
             let filtered = posts;
             if (sportCategory) {
@@ -416,18 +457,33 @@ export async function GET(request: NextRequest) {
 
     await Promise.all(fetchPromises);
 
+    // Filter Hive posts by cursor date if paginating
+    if (before) {
+      const beforeDate = new Date(before).getTime();
+      const filtered = allPosts.filter(
+        (p) => p.source !== 'hive' || new Date(p.created).getTime() < beforeDate
+      );
+      allPosts.length = 0;
+      allPosts.push(...filtered);
+    }
+
     // Sort by created date (newest first)
     allPosts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
 
-    const hivePosts = allPosts.filter((p) => p.source === 'hive');
-    const softPosts = allPosts.filter((p) => p.source === 'soft');
+    const hasMore = allPosts.length > limit;
+    const sliced = allPosts.slice(0, limit);
+    const nextCursor = hasMore && sliced.length > 0 ? sliced[sliced.length - 1].created : undefined;
+
+    const hivePosts = sliced.filter((p) => p.source === 'hive');
+    const softPosts = sliced.filter((p) => p.source === 'soft');
 
     return NextResponse.json(
       {
         success: true,
-        posts: allPosts.slice(0, limit),
-        count: Math.min(allPosts.length, limit),
-        hasMore: allPosts.length > limit,
+        posts: sliced,
+        count: sliced.length,
+        hasMore,
+        nextCursor,
         sources: { hive: hivePosts.length, soft: softPosts.length },
       },
       { headers: cacheHeaders }
