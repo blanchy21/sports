@@ -27,6 +27,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://sportsblock.app'),
   title: 'Sportsblock - Where Sports Meets Blockchain',
   description:
     'Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.',
@@ -39,6 +40,29 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   manifest: '/site.webmanifest',
+  openGraph: {
+    title: 'Sportsblock - Where Sports Meets Blockchain',
+    description:
+      'Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.',
+    siteName: 'Sportsblock',
+    type: 'website',
+    locale: 'en_US',
+    images: [
+      {
+        url: '/sportsblock-hero.png',
+        width: 1980,
+        height: 1080,
+        alt: 'Sportsblock - Where Sports Meets Blockchain',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sportsblock - Where Sports Meets Blockchain',
+    description:
+      'Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.',
+    images: ['/sportsblock-hero.png'],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -46,6 +70,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <AdSenseScript />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': [
+                {
+                  '@type': 'Organization',
+                  name: 'Sportsblock',
+                  url: 'https://sportsblock.app',
+                  logo: 'https://sportsblock.app/sportsblock512.png',
+                },
+                {
+                  '@type': 'WebSite',
+                  name: 'Sportsblock',
+                  url: 'https://sportsblock.app',
+                  description:
+                    'Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.',
+                },
+              ],
+            }),
+          }}
+        />
       </head>
       <body className={inter.className}>
         <ErrorBoundary>
