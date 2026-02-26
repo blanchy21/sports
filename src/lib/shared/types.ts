@@ -352,7 +352,6 @@ export interface HiveAuthUser {
   resourceCredits?: HiveResourceCredit;
   // Wallet properties
   provider?: string; // 'keychain' | 'hivesigner'
-  aiohaUserId?: string; // Legacy field, kept for backwards compat
   sessionId?: string; // Session identifier
 }
 

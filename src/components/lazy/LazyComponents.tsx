@@ -39,15 +39,6 @@ const LazyAuthModalBase = dynamic(
 );
 export const LazyAuthModal = withLazyErrorBoundary(LazyAuthModalBase, 'AuthModal');
 
-const LazyVotingDemoBase = dynamic(
-  () => import('@/components/voting/VotingDemo').then((mod) => ({ default: mod.VotingDemo })),
-  {
-    ssr: false,
-    loading: () => <LoadingSpinner text="Loading voting demo..." />,
-  }
-);
-export const LazyVotingDemo = withLazyErrorBoundary(LazyVotingDemoBase, 'VotingDemo');
-
 const LazyRealtimeFeedBase = dynamic(
   () => import('@/components/posts/RealtimeFeed').then((mod) => ({ default: mod.RealtimeFeed })),
   {

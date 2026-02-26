@@ -43,7 +43,6 @@ export const sanitizeHiveUserForStorage = (hiveUser: HiveAuthUser | null): HiveA
 
   const sanitizedHiveUser: HiveAuthUser = { ...hiveUser };
   delete sanitizedHiveUser.sessionId;
-  delete sanitizedHiveUser.aiohaUserId;
   return sanitizedHiveUser;
 };
 

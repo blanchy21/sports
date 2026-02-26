@@ -62,11 +62,6 @@ function getRateLimitType(pathname: string): RateLimitType | null {
     return 'write';
   }
 
-  // Test endpoints exempt in development
-  if (pathname.startsWith('/api/test')) {
-    return null;
-  }
-
   // NextAuth OAuth callbacks exempt from rate limiting
   if (pathname.startsWith('/api/auth/')) {
     return null;

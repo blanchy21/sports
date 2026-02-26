@@ -272,12 +272,6 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'files.peakd.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
         hostname: 'files.dtube.tv',
         port: '',
         pathname: '/**',

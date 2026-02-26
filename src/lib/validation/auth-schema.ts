@@ -10,32 +10,34 @@ import { z } from 'zod';
 /**
  * User schema for validation
  */
-const userSchema = z.object({
-  id: z.string(),
-  username: z.string(),
-  displayName: z.string().optional(),
-  avatar: z.string().optional(),
-  bio: z.string().optional(),
-  isHiveAuth: z.boolean().optional(),
-  hiveUsername: z.string().optional(),
-  createdAt: z.union([z.string(), z.date()]).optional(),
-  updatedAt: z.union([z.string(), z.date()]).optional(),
-  // Hive-specific fields
-  reputation: z.number().optional(),
-  reputationFormatted: z.string().optional(),
-  liquidHiveBalance: z.union([z.string(), z.number()]).optional(),
-  liquidHbdBalance: z.union([z.string(), z.number()]).optional(),
-  savingsHiveBalance: z.union([z.string(), z.number()]).optional(),
-  savingsHbdBalance: z.union([z.string(), z.number()]).optional(),
-  hiveBalance: z.union([z.string(), z.number()]).optional(),
-  hbdBalance: z.union([z.string(), z.number()]).optional(),
-  hivePower: z.union([z.string(), z.number()]).optional(),
-  rcPercentage: z.number().optional(),
-  savingsApr: z.number().optional(),
-  pendingWithdrawals: z.array(z.unknown()).optional(),
-  hiveProfile: z.record(z.string(), z.unknown()).optional(),
-  hiveStats: z.record(z.string(), z.unknown()).optional(),
-}).passthrough(); // Allow additional fields
+const userSchema = z
+  .object({
+    id: z.string(),
+    username: z.string(),
+    displayName: z.string().optional(),
+    avatar: z.string().optional(),
+    bio: z.string().optional(),
+    isHiveAuth: z.boolean().optional(),
+    hiveUsername: z.string().optional(),
+    createdAt: z.union([z.string(), z.date()]).optional(),
+    updatedAt: z.union([z.string(), z.date()]).optional(),
+    // Hive-specific fields
+    reputation: z.number().optional(),
+    reputationFormatted: z.string().optional(),
+    liquidHiveBalance: z.union([z.string(), z.number()]).optional(),
+    liquidHbdBalance: z.union([z.string(), z.number()]).optional(),
+    savingsHiveBalance: z.union([z.string(), z.number()]).optional(),
+    savingsHbdBalance: z.union([z.string(), z.number()]).optional(),
+    hiveBalance: z.union([z.string(), z.number()]).optional(),
+    hbdBalance: z.union([z.string(), z.number()]).optional(),
+    hivePower: z.union([z.string(), z.number()]).optional(),
+    rcPercentage: z.number().optional(),
+    savingsApr: z.number().optional(),
+    pendingWithdrawals: z.array(z.unknown()).optional(),
+    hiveProfile: z.record(z.string(), z.unknown()).optional(),
+    hiveStats: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough(); // Allow additional fields
 
 /**
  * Auth type enum
@@ -45,14 +47,16 @@ const authTypeSchema = z.enum(['guest', 'soft', 'hive']);
 /**
  * Hive user schema
  */
-const hiveUserSchema = z.object({
-  username: z.string(),
-  isAuthenticated: z.boolean().optional(),
-  provider: z.string().optional(),
-  sessionId: z.string().optional(),
-  aiohaUserId: z.string().optional(),
-  account: z.record(z.string(), z.unknown()).optional(),
-}).passthrough().nullable();
+const hiveUserSchema = z
+  .object({
+    username: z.string(),
+    isAuthenticated: z.boolean().optional(),
+    provider: z.string().optional(),
+    sessionId: z.string().optional(),
+    account: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough()
+  .nullable();
 
 /**
  * Complete auth state schema

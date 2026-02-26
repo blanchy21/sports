@@ -2,4 +2,3 @@
 export { VoteButton, SimpleVoteButton } from './VoteButton';
 export { StarVoteButton } from './StarVoteButton';
 export { SoftLikeButton, SoftLikeButtonCompact } from './SoftLikeButton';
-export { VotingDemo } from './VotingDemo';

@@ -10,13 +10,6 @@ const KEYS = {
   loginAt: 'sportsblock:walletLoginAt',
 } as const;
 
-// Legacy Aioha keys for one-time migration
-const LEGACY_KEYS = {
-  username: 'aiohaUsername',
-  provider: 'aiohaProvider',
-  loginAt: 'aiohaLastLoginAt',
-} as const;
-
 export interface WalletSession {
   provider: WalletProvider;
   username: string;
@@ -34,31 +27,8 @@ export function saveWalletSession(provider: WalletProvider, username: string): v
 
 export function loadWalletSession(): WalletSession | null {
   try {
-    let provider = localStorage.getItem(KEYS.provider) as WalletProvider | null;
-    let username = localStorage.getItem(KEYS.username);
-
-    // One-time migration from Aioha keys
-    if (!provider || !username) {
-      const legacyProvider = localStorage.getItem(LEGACY_KEYS.provider);
-      const legacyUsername = localStorage.getItem(LEGACY_KEYS.username);
-
-      if (legacyProvider && legacyUsername) {
-        const normalized =
-          legacyProvider === 'keychain' || legacyProvider === 'hivesigner'
-            ? (legacyProvider as WalletProvider)
-            : null;
-
-        if (normalized) {
-          provider = normalized;
-          username = legacyUsername;
-          // Persist in new format and clean up legacy keys
-          saveWalletSession(provider, username);
-          localStorage.removeItem(LEGACY_KEYS.provider);
-          localStorage.removeItem(LEGACY_KEYS.username);
-          localStorage.removeItem(LEGACY_KEYS.loginAt);
-        }
-      }
-    }
+    const provider = localStorage.getItem(KEYS.provider) as WalletProvider | null;
+    const username = localStorage.getItem(KEYS.username);
 
     if (provider && username && (provider === 'keychain' || provider === 'hivesigner')) {
       return { provider, username };
@@ -75,10 +45,6 @@ export function clearWalletSession(): void {
     localStorage.removeItem(KEYS.provider);
     localStorage.removeItem(KEYS.username);
     localStorage.removeItem(KEYS.loginAt);
-    // Also clean any remaining legacy keys
-    localStorage.removeItem(LEGACY_KEYS.provider);
-    localStorage.removeItem(LEGACY_KEYS.username);
-    localStorage.removeItem(LEGACY_KEYS.loginAt);
   } catch {
     // localStorage unavailable
   }
