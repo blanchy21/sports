@@ -6,6 +6,7 @@ import { Avatar } from '@/components/core/Avatar';
 import { LogOut, UserPlus, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
+import { useMedalsBalance } from '@/lib/react-query/queries/useMedals';
 
 interface UserProfilePopupProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
   const { user, logout, updateUser } = useAuth();
   const popupRef = useRef<HTMLDivElement>(null);
   const [isRefreshingRC, setIsRefreshingRC] = useState(false);
+  const { data: medalsBalance } = useMedalsBalance(user?.username);
   const hasRefreshedRef = useRef(false);
 
   // Close popup when clicking outside
@@ -156,7 +158,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
             {/* MEDALS */}
             <div className="flex-1 rounded-lg border border-accent bg-gradient-to-br from-accent to-accent/80 px-3 py-2.5 text-center shadow-sm">
               <div className="text-xs font-semibold text-primary-foreground">
-                {user.sbBalance || 0} MEDALS
+                {medalsBalance ? parseFloat(medalsBalance.total).toFixed(0) : '...'} MEDALS
               </div>
             </div>
             {/* RC */}
