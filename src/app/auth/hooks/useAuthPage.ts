@@ -81,7 +81,9 @@ export const useAuthPage = (): UseAuthPageResult => {
         .then(() => {
           router.replace('/sportsbites');
         })
-        .catch(() => {
+        .catch((error) => {
+          logger.error('Auto-reconnect failed', 'useAuthPage', error);
+          setErrorMessage(error instanceof Error ? error.message : 'Auto-reconnect failed');
           setIsConnecting(false);
         });
     }

@@ -250,6 +250,7 @@ export function CommentToolbar({
               <button
                 type="button"
                 onClick={() => setImageInputMode('upload')}
+                aria-label="Upload image"
                 className={cn(
                   'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                   imageInputMode === 'upload'
@@ -263,6 +264,7 @@ export function CommentToolbar({
               <button
                 type="button"
                 onClick={() => setImageInputMode('url')}
+                aria-label="Use image URL"
                 className={cn(
                   'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                   imageInputMode === 'url'
@@ -278,6 +280,7 @@ export function CommentToolbar({
                 size="sm"
                 variant="ghost"
                 className="h-7 w-7 p-0"
+                aria-label="Close image panel"
                 onClick={() => {
                   setActivePanel(null);
                   setUploadError(null);
