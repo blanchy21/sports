@@ -7,7 +7,7 @@ import { createRequestContext } from '@/lib/api/response';
 
 const ROUTE = '/api/hive/image-upload';
 
-const IMAGE_HOST = 'https://images.hive.blog';
+const IMAGE_HOSTS = ['https://images.hive.blog', 'https://images.ecency.com'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
@@ -75,33 +75,50 @@ export async function POST(request: NextRequest) {
     const privateKey = PrivateKey.fromString(key);
     const signature = privateKey.sign(hash).toString();
 
-    // Upload to images.hive.blog
-    const uploadFormData = new FormData();
-    const blob = new Blob([imageData], { type: (file as File).type || 'image/png' });
-    uploadFormData.append('file', blob, (file as File).name || 'image.png');
+    // Try each image host until one succeeds
+    const fileName = (file as File).name || 'image.png';
+    const mimeType = (file as File).type || 'image/png';
+    let lastStatus = 0;
+    let lastError = '';
 
-    const uploadUrl = `${IMAGE_HOST}/${account}/${signature}`;
-    const response = await fetch(uploadUrl, {
-      method: 'POST',
-      body: uploadFormData,
-    });
+    for (const host of IMAGE_HOSTS) {
+      try {
+        const uploadFormData = new FormData();
+        const blob = new Blob([imageData], { type: mimeType });
+        uploadFormData.append('file', blob, fileName);
 
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      console.error('Hive image upload failed:', response.status, text);
-      return NextResponse.json(
-        { error: `Image host returned ${response.status}` },
-        { status: 502 }
-      );
+        const uploadUrl = `${host}/${account}/${signature}`;
+        const response = await fetch(uploadUrl, {
+          method: 'POST',
+          body: uploadFormData,
+          signal: AbortSignal.timeout(15_000),
+        });
+
+        if (!response.ok) {
+          lastStatus = response.status;
+          lastError = await response.text().catch(() => '');
+          console.error(`Image upload to ${host} failed:`, response.status, lastError);
+          continue;
+        }
+
+        const result = await response.json();
+        if (result.url) {
+          return NextResponse.json({ url: result.url });
+        }
+
+        lastError = 'No URL in response';
+        continue;
+      } catch (err) {
+        console.error(`Image upload to ${host} error:`, err);
+        lastError = err instanceof Error ? err.message : 'Unknown error';
+        continue;
+      }
     }
 
-    const result = await response.json();
-
-    if (result.url) {
-      return NextResponse.json({ url: result.url });
-    }
-
-    return NextResponse.json({ error: 'No URL in image host response' }, { status: 502 });
+    return NextResponse.json(
+      { error: `All image hosts failed (last: ${lastStatus || lastError})` },
+      { status: 502 }
+    );
   } catch (error) {
     return ctx.handleError(error);
   }
