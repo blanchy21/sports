@@ -4,7 +4,6 @@ import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Star,
   Clock,
   Compass,
   LayoutDashboard,
@@ -21,7 +20,6 @@ import { UserProfilePopup } from '@/components/user/UserProfilePopup';
 import { Avatar } from '@/components/core/Avatar';
 
 const navigationItems = [
-  { href: '/', icon: Star, label: 'Featured', requireAuth: false, featured: true },
   { href: '/new', icon: Clock, label: 'New', requireAuth: false, featured: true },
   { href: '/discover', icon: Compass, label: 'Discover', requireAuth: false, featured: true },
   { href: '/feed', icon: BookOpen, label: 'Feed', requireAuth: false, featured: true },

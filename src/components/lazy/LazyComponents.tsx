@@ -129,19 +129,6 @@ export const LazyCommunitiesList = withLazyErrorBoundary(
   'CommunitiesList'
 );
 
-// Lazy load SportsFilterPopup (uses framer-motion, only shown when opened)
-const LazySportsFilterPopupBase = dynamic(
-  () =>
-    import('@/components/navigation/SportsFilterPopup').then((mod) => ({
-      default: mod.SportsFilterPopup,
-    })),
-  { ssr: false }
-);
-export const LazySportsFilterPopup = withLazyErrorBoundary(
-  LazySportsFilterPopupBase,
-  'SportsFilterPopup'
-);
-
 // Lazy load UpgradeFlow (uses wallet library, only shown when upgrading)
 const LazyUpgradeFlowBase = dynamic(
   () => import('@/components/upgrade/UpgradeFlow').then((mod) => ({ default: mod.UpgradeFlow })),

@@ -9,8 +9,6 @@ import { Avatar } from '@/components/core/Avatar';
 import { Plus, TrendingUp, Users, Award, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { SPORT_CATEGORIES } from '@/types';
-import { SportsblockPost } from '@/lib/shared/types';
 import { CommunityStats } from '@/lib/hive-workerbee/analytics';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useFeedPosts } from '@/lib/react-query/queries/usePosts';
@@ -23,7 +21,6 @@ export default function FeedPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [selectedSport, setSelectedSport] = React.useState<string>('');
   const [communityStats, setCommunityStats] = React.useState<CommunityStats>({
     totalPosts: 0,
     totalAuthors: 0,
@@ -44,7 +41,6 @@ export default function FeedPage() {
     isFetchingNextPage,
     refetch,
   } = useFeedPosts({
-    sportCategory: selectedSport || undefined,
     enabled: !isAuthLoading && !!user,
   });
 
@@ -176,33 +172,6 @@ export default function FeedPage() {
     }
   }, [user, isAuthLoading, router]);
 
-  // Listen for sport filter changes from the navigation
-  React.useEffect(() => {
-    const handleSportFilterChange = (event: CustomEvent) => {
-      setSelectedSport(event.detail);
-    };
-
-    window.addEventListener('sportFilterChanged', handleSportFilterChange as EventListener);
-
-    return () => {
-      window.removeEventListener('sportFilterChanged', handleSportFilterChange as EventListener);
-    };
-  }, []);
-
-  // Filter posts based on selected sport (client-side filter for cached data)
-  const filteredPosts = React.useMemo(() => {
-    if (!selectedSport) {
-      return posts;
-    }
-    return posts.filter((post: SportsblockPost) => post.sportCategory === selectedSport);
-  }, [posts, selectedSport]);
-
-  // Get the selected sport name for display
-  const selectedSportName = React.useMemo(() => {
-    if (!selectedSport) return null;
-    return SPORT_CATEGORIES.find((sport) => sport.id === selectedSport)?.name;
-  }, [selectedSport]);
-
   // Show skeleton while auth is loading (handled by loading.tsx for initial load)
   if (isAuthLoading) {
     return null;
@@ -279,23 +248,7 @@ export default function FeedPage() {
         {/* Featured Posts */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold">
-                {selectedSportName ? `${selectedSportName} Posts` : 'Featured Posts'}
-              </h2>
-              {selectedSportName && (
-                <div className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
-                  <span>{SPORT_CATEGORIES.find((s) => s.id === selectedSport)?.icon}</span>
-                  <span>{selectedSportName}</span>
-                  <button
-                    onClick={() => setSelectedSport('')}
-                    className="ml-1 text-primary/70 transition-colors hover:text-primary"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-            </div>
+            <h2 className="text-xl font-semibold">Featured Posts</h2>
             <Button variant="outline" size="sm">
               View All
             </Button>
@@ -327,26 +280,20 @@ export default function FeedPage() {
                 <p className="mb-6 text-gray-500 dark:text-gray-400">{errorMessage}</p>
                 <Button onClick={() => refetch()}>Try Again</Button>
               </div>
-            ) : filteredPosts.length > 0 ? (
+            ) : posts.length > 0 ? (
               interleaveAds(
-                filteredPosts.map((post) => (
+                posts.map((post) => (
                   <PostCard key={`${post.author}/${post.permlink}`} post={post} />
                 ))
               )
             ) : (
               <div className="py-12 text-center">
-                <div className="mb-4 text-6xl">
-                  {selectedSport
-                    ? SPORT_CATEGORIES.find((s) => s.id === selectedSport)?.icon
-                    : '🏆'}
-                </div>
+                <div className="mb-4 text-6xl">🏆</div>
                 <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-                  {selectedSportName ? `No ${selectedSportName} posts yet` : 'No posts available'}
+                  No posts available
                 </h3>
                 <p className="mb-6 text-gray-500 dark:text-gray-400">
-                  {selectedSportName
-                    ? `Be the first to share something about ${selectedSportName}!`
-                    : 'Check back later for new content.'}
+                  Check back later for new content.
                 </p>
                 <Button onClick={() => router.push('/publish')}>
                   <Plus className="mr-2 h-4 w-4" />

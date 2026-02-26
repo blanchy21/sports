@@ -25,7 +25,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      router.push('/sportsbites');
+      router.push('/new');
     }
   }, [user, isLoading, router]);
 

@@ -10,8 +10,11 @@ import { SPORT_CATEGORIES } from '@/types';
 import { SportsblockPost } from '@/lib/shared/types';
 import { logger } from '@/lib/logger';
 
+const VISIBLE_SPORT_COUNT = 8;
+
 export default function DiscoverPage() {
   const [selectedSport, setSelectedSport] = useState<string>('all');
+  const [showAllSports, setShowAllSports] = useState(false);
   const [posts, setPosts] = useState<SportsblockPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,18 +74,32 @@ export default function DiscoverPage() {
           >
             All Sports
           </Button>
-          {SPORT_CATEGORIES.map((sport) => (
+          {(showAllSports ? SPORT_CATEGORIES : SPORT_CATEGORIES.slice(0, VISIBLE_SPORT_COUNT)).map(
+            (sport) => (
+              <Button
+                key={sport.id}
+                variant={selectedSport === sport.id ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedSport(sport.id)}
+                className="flex items-center space-x-2"
+              >
+                <span>{sport.icon}</span>
+                <span>{sport.name}</span>
+              </Button>
+            )
+          )}
+          {SPORT_CATEGORIES.length > VISIBLE_SPORT_COUNT && (
             <Button
-              key={sport.id}
-              variant={selectedSport === sport.id ? 'default' : 'outline'}
+              variant="ghost"
               size="sm"
-              onClick={() => setSelectedSport(sport.id)}
-              className="flex items-center space-x-2"
+              onClick={() => setShowAllSports(!showAllSports)}
+              className="text-muted-foreground hover:text-foreground"
             >
-              <span>{sport.icon}</span>
-              <span>{sport.name}</span>
+              {showAllSports
+                ? 'Show less'
+                : `+${SPORT_CATEGORIES.length - VISIBLE_SPORT_COUNT} more`}
             </Button>
-          ))}
+          )}
         </div>
 
         {/* Trending Posts */}

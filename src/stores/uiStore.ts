@@ -30,7 +30,6 @@ interface UIState {
   };
   sidebarOpen: boolean;
   rightSidebarOpen: boolean;
-  selectedSport: string;
   recentTags: string[];
 }
 
@@ -40,7 +39,6 @@ interface UIActions {
   closeAllModals: () => void;
   setSidebarOpen: (open: boolean) => void;
   setRightSidebarOpen: (open: boolean) => void;
-  setSelectedSport: (sport: string) => void;
   toggleSidebar: () => void;
   toggleRightSidebar: () => void;
   addRecentTags: (tags: string[]) => void;
@@ -65,7 +63,6 @@ export const useUIStore = create<UIState & UIActions>()(
         },
         sidebarOpen: true,
         rightSidebarOpen: true,
-        selectedSport: '',
         recentTags: [],
 
         // Actions
@@ -115,8 +112,6 @@ export const useUIStore = create<UIState & UIActions>()(
 
         setRightSidebarOpen: (open) => set({ rightSidebarOpen: open }),
 
-        setSelectedSport: (sport) => set({ selectedSport: sport }),
-
         toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
         toggleRightSidebar: () => set((state) => ({ rightSidebarOpen: !state.rightSidebarOpen })),
@@ -143,5 +138,4 @@ export const useUIStore = create<UIState & UIActions>()(
 // Granular selectors
 export const useSidebarOpen = () => useUIStore((s) => s.sidebarOpen);
 export const useRightSidebarOpen = () => useUIStore((s) => s.rightSidebarOpen);
-export const useSelectedSport = () => useUIStore((s) => s.selectedSport);
 export const useRecentTags = () => useUIStore((s) => s.recentTags);

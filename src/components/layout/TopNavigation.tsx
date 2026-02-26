@@ -21,7 +21,6 @@ import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
 import {
   LazyAuthModal,
-  LazySportsFilterPopup,
   LazyUpgradeFlow,
   LazyNotificationDropdown,
   LazySettingsDropdown,
@@ -49,12 +48,10 @@ export const TopNavigation: React.FC = () => {
   const router = useRouter();
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
-  const [showSportsPopup, setShowSportsPopup] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUpgradeFlow, setShowUpgradeFlow] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
-  const [selectedSport, setSelectedSport] = useState<string>('');
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -65,14 +62,6 @@ export const TopNavigation: React.FC = () => {
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
   const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
   const newsButtonRef = useRef<HTMLButtonElement | null>(null);
-
-  const handleSportSelect = (sportId: string) => {
-    setSelectedSport(sportId);
-    // Dispatch event to notify other components (session-only, not persisted)
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('sportFilterChanged', { detail: sportId }));
-    }
-  };
 
   // Search functionality - searches both Hive and soft users
   React.useEffect(() => {
@@ -205,10 +194,10 @@ export const TopNavigation: React.FC = () => {
           <div className="hidden flex-1 justify-center lg:flex">
             <nav className="flex items-center space-x-4 xl:space-x-6">
               <Link
-                href="/"
+                href="/new"
                 className={cn(
                   'flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
-                  pathname === '/'
+                  pathname === '/' || pathname === '/new'
                     ? 'bg-card text-primary shadow-md'
                     : 'text-white/90 hover:bg-white/20 hover:text-white'
                 )}
@@ -264,16 +253,6 @@ export const TopNavigation: React.FC = () => {
                   triggerRef={newsButtonRef}
                 />
               </div>
-
-              {/* Sports Filter Button */}
-              <Button
-                variant="ghost"
-                onClick={() => setShowSportsPopup(true)}
-                className="flex h-auto flex-col items-center justify-center rounded-lg px-4 py-2 text-white/90 transition-all duration-200 hover:bg-white/20 hover:text-white xl:px-5 xl:py-3"
-              >
-                <Zap className="h-6 w-6 xl:h-8 xl:w-8" />
-                <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Sports</span>
-              </Button>
             </nav>
           </div>
 
@@ -393,11 +372,13 @@ export const TopNavigation: React.FC = () => {
         <div className="border-t border-white/20 bg-gradient-to-r from-primary to-bright-cobalt lg:hidden">
           <nav className="flex flex-col space-y-2 p-4">
             <Link
-              href="/"
+              href="/new"
               onClick={() => setShowMobileMenu(false)}
               className={cn(
                 'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
-                pathname === '/' ? 'bg-card text-primary' : 'text-white/90 hover:bg-white/20'
+                pathname === '/' || pathname === '/new'
+                  ? 'bg-card text-primary'
+                  : 'text-white/90 hover:bg-white/20'
               )}
             >
               <Home className="h-5 w-5" />
@@ -495,13 +476,6 @@ export const TopNavigation: React.FC = () => {
       )}
 
       <LazyAuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-
-      <LazySportsFilterPopup
-        isOpen={showSportsPopup}
-        onClose={() => setShowSportsPopup(false)}
-        onSportSelect={handleSportSelect}
-        selectedSport={selectedSport}
-      />
 
       <LazyUpgradeFlow isOpen={showUpgradeFlow} onClose={() => setShowUpgradeFlow(false)} />
 
