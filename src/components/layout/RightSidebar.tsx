@@ -113,7 +113,7 @@ export const RightSidebar: React.FC = () => {
   );
 
   return (
-    <aside className="hidden bg-background xl:fixed xl:right-0 xl:top-20 xl:flex xl:h-[calc(100vh-5rem)] xl:w-80 xl:flex-col xl:overflow-y-auto xl:border-l xl:p-4 2xl:top-24 2xl:h-[calc(100vh-6rem)] 2xl:w-[28rem] 2xl:p-6">
+    <aside className="hidden bg-background xl:fixed xl:right-0 xl:top-16 xl:flex xl:h-[calc(100vh-4rem)] xl:w-80 xl:flex-col xl:overflow-y-auto xl:border-l xl:p-4 2xl:top-[4.5rem] 2xl:h-[calc(100vh-4.5rem)] 2xl:w-[28rem] 2xl:p-6">
       <div className="space-y-6">
         {/* My Communities */}
         <MyCommunitiesWidget maxItems={5} className="rounded-lg border bg-card p-4" />

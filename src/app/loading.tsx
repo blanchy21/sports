@@ -10,11 +10,11 @@ export default function Loading() {
   return (
     <div className="min-h-screen bg-background">
       {/* Top Navigation Placeholder */}
-      <div className="h-24 animate-pulse bg-gradient-to-r from-primary/10 to-accent/10" />
+      <div className="h-[4.5rem] animate-pulse bg-gradient-to-r from-primary/10 to-accent/10" />
 
       <div className="flex">
         {/* Left Sidebar Placeholder */}
-        <aside className="hidden bg-background lg:fixed lg:inset-y-0 lg:block lg:w-80 lg:border-r lg:pb-4 lg:pt-24">
+        <aside className="hidden bg-background lg:fixed lg:inset-y-0 lg:block lg:w-80 lg:border-r lg:pb-4 lg:pt-[4.5rem]">
           <div className="space-y-2 px-4 py-4">
             {Array.from({ length: 12 }).map((_, i) => (
               <div
@@ -43,7 +43,7 @@ export default function Loading() {
         </main>
 
         {/* Right Sidebar Placeholder */}
-        <aside className="hidden bg-background xl:fixed xl:inset-y-0 xl:right-0 xl:block xl:w-[28rem] xl:border-l xl:pb-4 xl:pt-24">
+        <aside className="hidden bg-background xl:fixed xl:inset-y-0 xl:right-0 xl:block xl:w-[28rem] xl:border-l xl:pb-4 xl:pt-[4.5rem]">
           <div className="space-y-6 px-6 py-4">
             {/* Upcoming Events Skeleton */}
             <div className="space-y-3">

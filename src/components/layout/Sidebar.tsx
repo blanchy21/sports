@@ -50,7 +50,7 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="hidden bg-background lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:overflow-y-auto lg:border-r lg:pb-4 lg:pt-20 xl:w-80 xl:pt-24">
+    <aside className="hidden bg-background lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:overflow-y-auto lg:border-r lg:pb-4 lg:pt-16 xl:w-80 xl:pt-[4.5rem]">
       <div className="flex min-h-0 flex-1 flex-col">
         {/* Navigation */}
         <nav className="flex-1 space-y-1 px-4 py-4">

@@ -155,15 +155,15 @@ export const TopNavigation: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-primary to-bright-cobalt shadow-md">
-      <div className="h-16 sm:h-20 lg:h-24">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.75)] dark:shadow-none">
+      <div className="h-14 sm:h-16 lg:h-[4.5rem]">
         <div className="relative flex h-full items-center px-4 sm:px-6">
           {/* Mobile Menu Button */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="mr-2 h-10 w-10 text-white/90 hover:bg-white/20 hover:text-white lg:hidden"
+            className="mr-2 h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white lg:hidden"
             aria-label="Menu"
           >
             <Menu className="h-6 w-6" />
@@ -184,7 +184,7 @@ export const TopNavigation: React.FC = () => {
                 className="lg:w-18 lg:h-18 h-10 w-10 sm:h-14 sm:w-14"
                 unoptimized
               />
-              <div className="hidden text-xl font-bold text-white sm:block sm:text-2xl lg:text-4xl">
+              <div className="hidden text-xl font-bold text-foreground sm:block sm:text-2xl lg:text-3xl">
                 Sportsblock
               </div>
             </Link>
@@ -196,42 +196,42 @@ export const TopNavigation: React.FC = () => {
               <Link
                 href="/new"
                 className={cn(
-                  'flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
+                  'relative flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
                   pathname === '/' || pathname === '/new'
-                    ? 'bg-card text-primary shadow-md'
-                    : 'text-white/90 hover:bg-white/20 hover:text-white'
+                    ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:h-[2px] after:w-6 after:-translate-x-1/2 after:rounded-full after:bg-primary dark:text-white dark:after:bg-white'
+                    : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
                 )}
                 suppressHydrationWarning
               >
-                <Home className="h-6 w-6 xl:h-8 xl:w-8" />
+                <Home className="h-5 w-5 xl:h-6 xl:w-6" />
                 <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Home</span>
               </Link>
 
               <Link
                 href="/sportsbites"
                 className={cn(
-                  'flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
+                  'relative flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
                   pathname === '/sportsbites'
-                    ? 'bg-card text-primary shadow-md'
-                    : 'text-white/90 hover:bg-white/20 hover:text-white'
+                    ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:h-[2px] after:w-6 after:-translate-x-1/2 after:rounded-full after:bg-primary dark:text-white dark:after:bg-white'
+                    : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
                 )}
                 suppressHydrationWarning
               >
-                <Zap className="h-6 w-6 xl:h-8 xl:w-8" />
+                <Zap className="h-5 w-5 xl:h-6 xl:w-6" />
                 <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Sportsbites</span>
               </Link>
 
               <Link
                 href="/communities"
                 className={cn(
-                  'flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
+                  'relative flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
                   pathname === '/communities'
-                    ? 'bg-card text-primary shadow-md'
-                    : 'text-white/90 hover:bg-white/20 hover:text-white'
+                    ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:h-[2px] after:w-6 after:-translate-x-1/2 after:rounded-full after:bg-primary dark:text-white dark:after:bg-white'
+                    : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
                 )}
                 suppressHydrationWarning
               >
-                <Users className="h-6 w-6 xl:h-8 xl:w-8" />
+                <Users className="h-5 w-5 xl:h-6 xl:w-6" />
                 <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Communities</span>
               </Link>
 
@@ -241,9 +241,9 @@ export const TopNavigation: React.FC = () => {
                   ref={newsButtonRef}
                   variant="ghost"
                   onClick={() => setShowNews(!showNews)}
-                  className="flex h-auto flex-col items-center justify-center rounded-lg px-4 py-2 text-white/90 transition-all duration-200 hover:bg-white/20 hover:text-white xl:px-5 xl:py-3"
+                  className="flex h-auto flex-col items-center justify-center rounded-lg px-4 py-2 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white xl:px-5 xl:py-3"
                 >
-                  <Newspaper className="h-6 w-6 xl:h-8 xl:w-8" />
+                  <Newspaper className="h-5 w-5 xl:h-6 xl:w-6" />
                   <span className="mt-0.5 text-[10px] font-medium xl:text-xs">News</span>
                 </Button>
 
@@ -262,10 +262,10 @@ export const TopNavigation: React.FC = () => {
               variant="ghost"
               size="icon"
               onClick={() => setShowSearch(true)}
-              className="h-10 w-10 text-white/90 hover:bg-white/20 hover:text-white sm:h-12 sm:w-12 lg:h-16 lg:w-16"
+              className="h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white sm:h-11 sm:w-11 lg:h-11 lg:w-11"
               aria-label="Search"
             >
-              <Search className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
+              <Search className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
             </Button>
 
             {user ? (
@@ -276,10 +276,10 @@ export const TopNavigation: React.FC = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative h-10 w-10 text-white/90 hover:bg-white/20 hover:text-white sm:h-12 sm:w-12 lg:h-16 lg:w-16"
+                    className="relative h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white sm:h-11 sm:w-11 lg:h-11 lg:w-11"
                     aria-label="Notifications"
                   >
-                    <Bell className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
+                    <Bell className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
                     {unreadCount > 0 && (
                       <span className="absolute -right-1 -top-1 flex h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-xs text-white sm:h-5 sm:min-w-5 sm:text-xs">
                         {unreadCount > 99 ? '99+' : unreadCount}
@@ -298,10 +298,10 @@ export const TopNavigation: React.FC = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 text-white/90 hover:bg-white/20 hover:text-white sm:h-12 sm:w-12 lg:h-16 lg:w-16"
+                    className="h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white sm:h-11 sm:w-11 lg:h-11 lg:w-11"
                     aria-label="Create new post"
                   >
-                    <Plus className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
+                    <Plus className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
                   </Button>
                 </Link>
 
@@ -311,10 +311,10 @@ export const TopNavigation: React.FC = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowSettings(!showSettings)}
-                    className="h-12 w-12 text-white/90 hover:bg-white/20 hover:text-white xl:h-16 xl:w-16"
+                    className="h-11 w-11 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white xl:h-11 xl:w-11"
                     aria-label="Settings"
                   >
-                    <Settings className="h-6 w-6 xl:h-8 xl:w-8" />
+                    <Settings className="h-5 w-5 xl:h-6 xl:w-6" />
                   </Button>
 
                   <LazySettingsDropdown
@@ -337,10 +337,10 @@ export const TopNavigation: React.FC = () => {
                     className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
                   />
                   <div className="hidden flex-col xl:flex">
-                    <div className="text-base font-semibold text-white lg:text-lg">
+                    <div className="text-base font-semibold text-foreground lg:text-lg">
                       {user.displayName || user.username}
                     </div>
-                    <div className="text-xs text-white/70 lg:text-sm">@{user.username}</div>
+                    <div className="text-xs text-muted-foreground lg:text-sm">@{user.username}</div>
                   </div>
                 </Link>
               </>
@@ -350,14 +350,14 @@ export const TopNavigation: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => router.push('/auth')}
-                  className="hidden border-white bg-white text-xs font-medium text-primary hover:bg-white/90 hover:text-primary/80 sm:flex sm:text-sm"
+                  className="hidden border-border bg-transparent text-xs font-medium text-foreground hover:bg-foreground/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10 sm:flex sm:text-sm"
                 >
                   Sign In
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => router.push('/auth')}
-                  className="bg-white text-xs font-medium text-primary hover:bg-white/90 sm:text-sm"
+                  className="bg-primary text-xs font-medium text-primary-foreground hover:bg-primary/90 sm:text-sm"
                 >
                   Sign Up
                 </Button>
@@ -369,7 +369,7 @@ export const TopNavigation: React.FC = () => {
 
       {/* Mobile Navigation Menu */}
       {showMobileMenu && (
-        <div className="border-t border-white/20 bg-gradient-to-r from-primary to-bright-cobalt lg:hidden">
+        <div className="border-t border-border/50 bg-white/80 backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.85)] lg:hidden">
           <nav className="flex flex-col space-y-2 p-4">
             <Link
               href="/new"
@@ -377,8 +377,8 @@ export const TopNavigation: React.FC = () => {
               className={cn(
                 'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
                 pathname === '/' || pathname === '/new'
-                  ? 'bg-card text-primary'
-                  : 'text-white/90 hover:bg-white/20'
+                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
+                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
               )}
             >
               <Home className="h-5 w-5" />
@@ -391,8 +391,8 @@ export const TopNavigation: React.FC = () => {
               className={cn(
                 'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
                 pathname === '/sportsbites'
-                  ? 'bg-card text-primary'
-                  : 'text-white/90 hover:bg-white/20'
+                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
+                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
               )}
             >
               <Zap className="h-5 w-5" />
@@ -405,8 +405,8 @@ export const TopNavigation: React.FC = () => {
               className={cn(
                 'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
                 pathname === '/communities'
-                  ? 'bg-card text-primary'
-                  : 'text-white/90 hover:bg-white/20'
+                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
+                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
               )}
             >
               <Users className="h-5 w-5" />
@@ -419,8 +419,8 @@ export const TopNavigation: React.FC = () => {
               className={cn(
                 'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
                 pathname === '/match-threads'
-                  ? 'bg-card text-primary'
-                  : 'text-white/90 hover:bg-white/20'
+                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
+                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
               )}
             >
               <Swords className="h-5 w-5" />
@@ -432,7 +432,7 @@ export const TopNavigation: React.FC = () => {
                 setShowMobileMenu(false);
                 setShowNews(true);
               }}
-              className="flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-left text-white/90 transition-all duration-200 hover:bg-white/20"
+              className="flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-left text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
             >
               <Newspaper className="h-5 w-5" />
               <span>Latest News</span>
@@ -443,7 +443,9 @@ export const TopNavigation: React.FC = () => {
               onClick={() => setShowMobileMenu(false)}
               className={cn(
                 'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
-                pathname === '/feed' ? 'bg-card text-primary' : 'text-white/90 hover:bg-white/20'
+                pathname === '/feed'
+                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
+                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
               )}
             >
               <Newspaper className="h-5 w-5" />
@@ -455,7 +457,7 @@ export const TopNavigation: React.FC = () => {
                 <Link
                   href="/publish"
                   onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center space-x-3 rounded-lg px-4 py-3 text-white/90 transition-all duration-200 hover:bg-white/20"
+                  className="flex items-center space-x-3 rounded-lg px-4 py-3 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
                 >
                   <Plus className="h-5 w-5" />
                   <span>Create Post</span>
@@ -464,7 +466,7 @@ export const TopNavigation: React.FC = () => {
                 <Link
                   href="/profile"
                   onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center space-x-3 rounded-lg px-4 py-3 text-white/90 transition-all duration-200 hover:bg-white/20"
+                  className="flex items-center space-x-3 rounded-lg px-4 py-3 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
                 >
                   <Settings className="h-5 w-5" />
                   <span>Settings</span>
@@ -490,7 +492,7 @@ export const TopNavigation: React.FC = () => {
 
       {/* Upgrade Prompt for soft users */}
       {user && !user.isHiveAuth && showUpgradePrompt && (
-        <div className="fixed right-4 top-20 z-40 max-w-sm">
+        <div className="fixed right-4 top-16 z-40 max-w-sm">
           <UpgradePrompt
             user={user}
             onUpgrade={() => {
@@ -504,7 +506,7 @@ export const TopNavigation: React.FC = () => {
 
       {/* Search Modal */}
       {showSearch && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16">
           <div className="fixed inset-0 bg-black/50" onClick={() => setShowSearch(false)} />
           <div className="relative z-10 mx-4 w-full max-w-2xl">
             <div className="overflow-hidden rounded-lg border bg-card shadow-2xl">
