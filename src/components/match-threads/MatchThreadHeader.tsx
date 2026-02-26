@@ -52,11 +52,41 @@ export function MatchThreadHeader({ event, isLive, isOpen }: MatchThreadHeaderPr
         )}
       </div>
 
-      {/* Teams */}
+      {/* Teams + Score */}
       {event.teams ? (
-        <h1 className="mb-4 text-2xl font-bold sm:text-3xl">
-          {event.teams.home} <span className="text-muted-foreground">vs</span> {event.teams.away}
-        </h1>
+        <div className="mb-4">
+          {event.score ? (
+            <>
+              <h1 className="text-2xl font-bold sm:text-3xl">
+                {event.teams.home}{' '}
+                <span
+                  className={cn(
+                    'tabular-nums',
+                    isLive ? 'text-green-600 dark:text-green-400' : 'text-foreground'
+                  )}
+                >
+                  {event.score.home} - {event.score.away}
+                </span>{' '}
+                {event.teams.away}
+              </h1>
+              {event.statusDetail && (
+                <p
+                  className={cn(
+                    'mt-1 text-sm font-medium',
+                    isLive ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
+                  )}
+                >
+                  {event.statusDetail}
+                </p>
+              )}
+            </>
+          ) : (
+            <h1 className="text-2xl font-bold sm:text-3xl">
+              {event.teams.home} <span className="text-muted-foreground">vs</span>{' '}
+              {event.teams.away}
+            </h1>
+          )}
+        </div>
       ) : (
         <h1 className="mb-4 text-2xl font-bold sm:text-3xl">{event.name}</h1>
       )}

@@ -364,6 +364,12 @@ export interface SportsEvent {
   };
   venue?: string;
   status: 'upcoming' | 'live' | 'finished';
+  score?: {
+    home: string;
+    away: string;
+  };
+  /** Human-readable status detail (e.g. "45'", "Halftime", "FT", "2nd Quarter") */
+  statusDetail?: string;
 }
 
 export interface EventsApiResponse {

@@ -63,13 +63,33 @@ export function MatchThreadCard({ thread }: MatchThreadCardProps) {
             )}
           </div>
 
-          {/* Teams */}
+          {/* Teams + Score */}
           {event.teams ? (
             <div className="mb-2">
-              <h3 className="text-lg font-semibold leading-tight">
-                {event.teams.home} <span className="text-muted-foreground">vs</span>{' '}
-                {event.teams.away}
-              </h3>
+              {event.score ? (
+                <h3 className="text-lg font-semibold leading-tight">
+                  {event.teams.home}{' '}
+                  <span
+                    className={cn(
+                      'font-bold tabular-nums',
+                      isLive ? 'text-green-600 dark:text-green-400' : 'text-foreground'
+                    )}
+                  >
+                    {event.score.home} - {event.score.away}
+                  </span>{' '}
+                  {event.teams.away}
+                  {event.statusDetail && (
+                    <span className="ml-2 text-sm font-medium text-muted-foreground">
+                      {event.statusDetail}
+                    </span>
+                  )}
+                </h3>
+              ) : (
+                <h3 className="text-lg font-semibold leading-tight">
+                  {event.teams.home} <span className="text-muted-foreground">vs</span>{' '}
+                  {event.teams.away}
+                </h3>
+              )}
             </div>
           ) : (
             <h3 className="mb-2 text-lg font-semibold leading-tight">{event.name}</h3>

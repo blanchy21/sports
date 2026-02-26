@@ -54,6 +54,7 @@ interface ESPNCompetitor {
   team: {
     displayName: string;
   };
+  score?: string;
 }
 
 interface ESPNEvent {
@@ -68,14 +69,18 @@ interface ESPNEvent {
     status: {
       type: {
         state: 'pre' | 'in' | 'post';
+        shortDetail?: string;
       };
+      displayClock?: string;
     };
   }[];
   // Tournament-level status (used when competitions is absent)
   status?: {
     type: {
       state: 'pre' | 'in' | 'post';
+      shortDetail?: string;
     };
+    displayClock?: string;
   };
 }
 
@@ -147,6 +152,20 @@ function convertESPNEvent(
   const stateRaw = comp?.status?.type?.state ?? event.status?.type?.state ?? 'pre';
   const status = espnStateToStatus(stateRaw);
 
+  // Extract scores for live / finished events
+  const hasScore =
+    (stateRaw === 'in' || stateRaw === 'post') && home?.score != null && away?.score != null;
+  const score = hasScore ? { home: home!.score!, away: away!.score! } : undefined;
+
+  // Status detail: clock for live (e.g. "45'"), shortDetail for finished (e.g. "FT")
+  const compStatus = comp?.status;
+  let statusDetail: string | undefined;
+  if (stateRaw === 'in' && compStatus?.displayClock) {
+    statusDetail = compStatus.displayClock;
+  } else if (stateRaw === 'post') {
+    statusDetail = compStatus?.type?.shortDetail ?? 'FT';
+  }
+
   return {
     id: event.id,
     name: event.name,
@@ -158,6 +177,8 @@ function convertESPNEvent(
     teams: home && away ? { home: home.team.displayName, away: away.team.displayName } : undefined,
     venue: comp?.venue?.fullName,
     status,
+    score,
+    statusDetail,
   };
 }
 
