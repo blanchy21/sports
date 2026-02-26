@@ -116,7 +116,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
       {/* Popup */}
       <div
         ref={popupRef}
-        className="fixed z-50 min-w-[320px] rounded-xl border border-border bg-card shadow-2xl"
+        className="fixed z-50 min-w-[320px] rounded-xl border border-border/50 bg-white/80 shadow-xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.85)]"
         style={{
           left: triggerRef.current?.getBoundingClientRect().left || 0,
           bottom: window.innerHeight - (triggerRef.current?.getBoundingClientRect().top || 0) + 10,
@@ -193,7 +193,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
             {/* Add Account */}
             <button
               onClick={handleAddAccount}
-              className="flex w-full items-center space-x-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/10"
+              className="flex w-full items-center space-x-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-foreground/5 dark:hover:bg-white/[0.08]"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
                 <UserPlus className="h-4 w-4 text-muted-foreground" />
@@ -202,7 +202,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
             </button>
 
             {/* Divider */}
-            <div className="my-2 border-t border-border" />
+            <div className="my-2 border-t border-border/50 dark:border-white/[0.08]" />
 
             {/* Logout */}
             <button
