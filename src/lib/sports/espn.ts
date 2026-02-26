@@ -235,6 +235,26 @@ export async function fetchAllEvents(): Promise<{
   return { events: allEvents, liveEventIds };
 }
 
+/**
+ * Fetch ESPN events and return a map keyed by event ID.
+ * Used by the auto-settlement cron to look up match results.
+ */
+export async function fetchEventsByIds(eventIds: string[]): Promise<Map<string, SportsEvent>> {
+  if (eventIds.length === 0) return new Map();
+
+  const { events } = await fetchAllEvents();
+  const map = new Map<string, SportsEvent>();
+
+  const idSet = new Set(eventIds);
+  for (const event of events) {
+    if (idSet.has(event.id)) {
+      map.set(event.id, event);
+    }
+  }
+
+  return map;
+}
+
 export function filterEvents(events: SportsEvent[]): SportsEvent[] {
   const now = new Date();
   const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);

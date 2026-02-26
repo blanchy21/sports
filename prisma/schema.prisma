@@ -521,6 +521,7 @@ model Prediction {
   @@index([creatorUsername])
   @@index([sportCategory])
   @@index([locksAt])
+  @@index([matchReference])
   @@index([createdAt])
   @@map("predictions")
 }
