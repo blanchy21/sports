@@ -11,7 +11,6 @@ import {
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { Prisma } from '@/generated/prisma/client';
-import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -175,16 +174,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Increment member count if immediately active
     if (initialStatus === 'active') {
-      prisma.community
-        .update({
-          where: { id: communityId },
-          data: { memberCount: { increment: 1 } },
-        })
-        .catch((err) => {
-          logger.error('Failed to update memberCount', 'community-members', {
-            error: err instanceof Error ? err.message : String(err),
-          });
-        });
+      await prisma.community.update({
+        where: { id: communityId },
+        data: { memberCount: { increment: 1 } },
+      });
     }
 
     const statusMessage =
@@ -275,16 +268,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             data: { status: 'active' },
           });
           // Increment member count
-          prisma.community
-            .update({
-              where: { id: communityId },
-              data: { memberCount: { increment: 1 } },
-            })
-            .catch((err) => {
-              logger.error('Failed to update memberCount', 'community-members', {
-                error: err instanceof Error ? err.message : String(err),
-              });
-            });
+          await prisma.community.update({
+            where: { id: communityId },
+            data: { memberCount: { increment: 1 } },
+          });
           return NextResponse.json({ success: true, member, message: 'Member approved' });
         } else {
           // For reject, remove the pending membership
@@ -321,16 +308,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           data: { status: 'banned' },
         });
         // Decrement member count (clamped to 0 via gt guard)
-        prisma.community
-          .updateMany({
-            where: { id: communityId, memberCount: { gt: 0 } },
-            data: { memberCount: { decrement: 1 } },
-          })
-          .catch((err) => {
-            logger.error('Failed to update memberCount', 'community-members', {
-              error: err instanceof Error ? err.message : String(err),
-            });
-          });
+        await prisma.community.updateMany({
+          where: { id: communityId, memberCount: { gt: 0 } },
+          data: { memberCount: { decrement: 1 } },
+        });
         return NextResponse.json({ success: true, message: 'Member banned' });
 
       case 'unban':
@@ -399,16 +380,10 @@ export async function DELETE(
     });
 
     // Decrement member count (clamped to 0 via gt guard)
-    prisma.community
-      .updateMany({
-        where: { id: communityId, memberCount: { gt: 0 } },
-        data: { memberCount: { decrement: 1 } },
-      })
-      .catch((err) => {
-        logger.error('Failed to update memberCount', 'community-members', {
-          error: err instanceof Error ? err.message : String(err),
-        });
-      });
+    await prisma.community.updateMany({
+      where: { id: communityId, memberCount: { gt: 0 } },
+      data: { memberCount: { decrement: 1 } },
+    });
 
     return NextResponse.json({
       success: true,

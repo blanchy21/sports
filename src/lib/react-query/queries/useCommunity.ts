@@ -20,6 +20,7 @@ async function fetchCommunitiesAPI(filters: CommunityFilters = {}): Promise<Comm
   if (filters.sort) params.set('sort', filters.sort);
   if (filters.limit) params.set('limit', String(filters.limit));
   if (filters.offset) params.set('offset', String(filters.offset));
+  if (filters.memberUserId) params.set('memberUserId', filters.memberUserId);
 
   const response = await fetch(`/api/communities?${params.toString()}`);
   if (!response.ok) {
@@ -63,7 +64,9 @@ async function checkMembershipAPI(
   userId: string
 ): Promise<CommunityMember | null> {
   try {
-    const response = await fetch(`/api/communities/${communityId}/members?userId=${encodeURIComponent(userId)}`);
+    const response = await fetch(
+      `/api/communities/${communityId}/members?userId=${encodeURIComponent(userId)}`
+    );
     if (!response.ok) {
       return null;
     }
@@ -234,12 +237,13 @@ export function useJoinCommunity() {
       const data = await response.json();
       return data.member as CommunityMember;
     },
-    onSuccess: (_, { communityId, userId }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.communities.detail(communityId) });
-      queryClient.invalidateQueries({
-        queryKey: [...queryKeys.communities.detail(communityId), 'membership', userId],
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.communities.members(communityId) });
+    onSuccess: (_, { userId }) => {
+      // Invalidate all community queries — the URL might use a slug while
+      // communityId here is the real DB id, so targeted invalidation by id
+      // misses slug-keyed queries. Broad invalidation is fine since
+      // join/leave is an infrequent user action.
+      queryClient.invalidateQueries({ queryKey: queryKeys.communities.all });
+      queryClient.invalidateQueries({ queryKey: ['userCommunities', userId] });
     },
   });
 }
@@ -248,13 +252,7 @@ export function useLeaveCommunity() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      communityId,
-      userId,
-    }: {
-      communityId: string;
-      userId: string;
-    }) => {
+    mutationFn: async ({ communityId, userId }: { communityId: string; userId: string }) => {
       const response = await fetch(`/api/communities/${communityId}/members`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -266,12 +264,9 @@ export function useLeaveCommunity() {
         throw new Error(error.error || 'Failed to leave community');
       }
     },
-    onSuccess: (_, { communityId, userId }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.communities.detail(communityId) });
-      queryClient.invalidateQueries({
-        queryKey: [...queryKeys.communities.detail(communityId), 'membership', userId],
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.communities.members(communityId) });
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.communities.all });
+      queryClient.invalidateQueries({ queryKey: ['userCommunities', userId] });
     },
   });
 }
@@ -323,26 +318,13 @@ export function useCommunityPosts(
   });
 }
 
-// User's communities hook
+// User's communities hook — single server query via memberUserId filter
 export function useUserCommunities(userId: string) {
   return useQuery({
     queryKey: ['userCommunities', userId],
     queryFn: async () => {
-      // Fetch all communities and filter by membership
-      // This is a client-side approach; could be optimized with a dedicated endpoint
-      const communitiesResponse = await fetchCommunitiesAPI({ limit: 100 });
-      const communities = communitiesResponse.communities || [];
-
-      // For each community, check if user is a member
-      const userCommunities: Community[] = [];
-      for (const community of communities) {
-        const membership = await checkMembershipAPI(community.id, userId);
-        if (membership && membership.status === 'active') {
-          userCommunities.push(community);
-        }
-      }
-
-      return userCommunities;
+      const result = await fetchCommunitiesAPI({ memberUserId: userId, limit: 100 });
+      return result.communities || [];
     },
     enabled: !!userId,
     staleTime: STALE_TIMES.STANDARD,

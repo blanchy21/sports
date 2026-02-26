@@ -232,7 +232,7 @@ export const TopNavigation: React.FC = () => {
                 suppressHydrationWarning
               >
                 <Users className="h-6 w-6 xl:h-8 xl:w-8" />
-                <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Community</span>
+                <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Communities</span>
               </Link>
 
               {/* Latest News Button */}

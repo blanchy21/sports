@@ -83,6 +83,7 @@ export interface CommunityFilters {
   sort?: 'memberCount' | 'postCount' | 'createdAt' | 'name';
   limit?: number;
   offset?: number;
+  memberUserId?: string;
 }
 
 export interface CommunityListResult {

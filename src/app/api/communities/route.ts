@@ -29,6 +29,7 @@ const listQuerySchema = z.object({
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 0)),
+  memberUserId: z.string().optional(),
 });
 
 const createCommunitySchema = z.object({
@@ -72,9 +73,16 @@ export async function GET(request: NextRequest) {
       return validationError(parseResult.error, ctx.requestId);
     }
 
-    const { search, sportCategory, type, sort, limit, offset } = parseResult.data;
+    const { search, sportCategory, type, sort, limit, offset, memberUserId } = parseResult.data;
 
-    ctx.log.debug('Listing communities', { search, sportCategory, type, sort, limit });
+    ctx.log.debug('Listing communities', {
+      search,
+      sportCategory,
+      type,
+      sort,
+      limit,
+      memberUserId,
+    });
 
     // Build where clause
     const where: Prisma.CommunityWhereInput = {};
@@ -86,6 +94,11 @@ export async function GET(request: NextRequest) {
         { about: { contains: search, mode: 'insensitive' } },
         { slug: { contains: search, mode: 'insensitive' } },
       ];
+    }
+    if (memberUserId) {
+      where.members = {
+        some: { userId: memberUserId, status: 'active' },
+      };
     }
 
     // Build orderBy
