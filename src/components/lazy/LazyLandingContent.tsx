@@ -48,6 +48,24 @@ function LandingSectionSkeleton() {
   );
 }
 
+// Lazy load the hero section (defers framer-motion ~45KB from initial bundle)
+export const LazyLandingHero = dynamic(() => import('@/components/landing/LandingHero'), {
+  ssr: false,
+  loading: () => (
+    <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
+      <div className="absolute inset-0 bg-[#080C14]" />
+      <div className="relative z-10 mx-auto max-w-6xl px-6 text-center">
+        <div className="mb-8 flex animate-pulse items-center justify-center gap-3">
+          <div className="h-14 w-14 rounded-full bg-white/10" />
+          <div className="h-10 w-48 rounded bg-white/10" />
+        </div>
+        <div className="mx-auto mb-4 h-16 w-3/4 rounded bg-white/5" />
+        <div className="mx-auto mb-10 h-8 w-1/2 rounded bg-white/5" />
+      </div>
+    </section>
+  ),
+});
+
 // Lazy load the heavy landing page sections (framer-motion animations)
 export const LazyLandingSections = dynamic(() => import('@/components/landing/LandingSections'), {
   ssr: false,

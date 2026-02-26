@@ -1,7 +1,7 @@
-'use client';
-
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+
+export const revalidate = 86400;
 
 export default function CommunityGuidelinesPage() {
   return (

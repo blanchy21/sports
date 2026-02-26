@@ -1,7 +1,7 @@
-'use client';
-
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+
+export const revalidate = 86400; // Revalidate once per day
 
 export default function TermsOfServicePage() {
   return (
