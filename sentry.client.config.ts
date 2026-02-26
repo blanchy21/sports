@@ -51,6 +51,8 @@ Sentry.init({
     // Resize observer (benign)
     'ResizeObserver loop limit exceeded',
     'ResizeObserver loop completed with undelivered notifications',
+    // Browser extension / injected script noise (not from our code)
+    /Error invoking.*Method not found/,
   ],
 
   // Only send errors from our domain
