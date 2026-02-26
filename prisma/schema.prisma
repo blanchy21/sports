@@ -499,7 +499,7 @@ model Prediction {
   locksAt           DateTime         @map("locks_at")
   status            PredictionStatus @default(OPEN)
   winningOutcomeId  String?          @map("winning_outcome_id")
-  totalPool         Decimal          @default(0) @db.Decimal(12, 3)
+  totalPool         Decimal          @default(0) @map("total_pool") @db.Decimal(12, 3)
   platformCut       Decimal          @default(0) @map("platform_cut") @db.Decimal(12, 3)
   burnedAmount      Decimal          @default(0) @map("burned_amount") @db.Decimal(12, 3)
   rewardPoolAmount  Decimal          @default(0) @map("reward_pool_amount") @db.Decimal(12, 3)
