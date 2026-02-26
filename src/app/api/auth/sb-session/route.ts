@@ -179,11 +179,9 @@ export async function POST(request: NextRequest) {
       }
 
       if (isSessionRefresh) {
-        // Preserve the original loginAt from the existing session
-        const existingSession = decryptSession(existingCookie!.value);
-        if (existingSession?.loginAt) {
-          sessionData.loginAt = existingSession.loginAt;
-        }
+        // Allow activity tracking to update loginAt in the cookie.
+        // The client sends a fresh loginAt on each activity touch;
+        // accept it so the inactivity timer resets properly.
       } else if (hivesignerToken) {
         // HiveSigner OAuth: verify access token server-side
         // HiveSigner doesn't support message signing, so we verify the OAuth token instead.
