@@ -73,9 +73,12 @@ export async function executeSettlement(
   const totalPool = prediction.totalPool.toNumber();
   const settlement = calculateSettlement(stakes, winningOutcomeId, totalPool);
 
-  // No-market refund: if all stakes are on the same outcome, no opposing bets exist — refund everyone
+  // Refund everyone if no real contest occurred:
+  // 1. All stakes on the same outcome (no opposing bets)
+  // 2. Winning outcome has 0 backers (nobody predicted correctly)
   const uniqueOutcomes = new Set(stakes.map((s) => s.outcomeId));
-  if (uniqueOutcomes.size === 1) {
+  const winningOutcomeHasBackers = stakes.some((s) => s.outcomeId === winningOutcomeId);
+  if (uniqueOutcomes.size === 1 || !winningOutcomeHasBackers) {
     const refundOps = buildRefundOps(
       stakes.map((s) => ({ username: s.username, amount: s.amount, predictionId }))
     );
@@ -105,7 +108,9 @@ export async function executeSettlement(
       });
     });
 
-    logger.info(`No-market prediction refunded: ${predictionId}`, 'Settlement');
+    const reason =
+      uniqueOutcomes.size === 1 ? 'no opposing stakes' : 'no backers on winning outcome';
+    logger.info(`Prediction refunded (${reason}): ${predictionId}`, 'Settlement');
     return { ...settlement, platformFee: 0, burnAmount: 0, rewardAmount: 0, totalPaid: 0 };
   }
 
