@@ -68,6 +68,42 @@ export async function executeSettlement(
   const totalPool = prediction.totalPool.toNumber();
   const settlement = calculateSettlement(stakes, winningOutcomeId, totalPool);
 
+  // Solo-staker refund: if no winners and only one unique staker, refund instead of settling
+  const uniqueStakers = new Set(stakes.map((s) => s.username));
+  if (settlement.payouts.length === 0 && uniqueStakers.size === 1) {
+    const refundOps = buildRefundOps(
+      stakes.map((s) => ({ username: s.username, amount: s.amount, predictionId }))
+    );
+    const refundTxId = await broadcastHiveEngineOps(refundOps);
+    logger.info(`Solo-staker refund broadcast: ${refundTxId}`, 'Settlement', { predictionId });
+
+    await prisma.$transaction(async (tx) => {
+      await tx.predictionStake.updateMany({
+        where: { predictionId },
+        data: { refunded: true },
+      });
+      await tx.predictionOutcome.update({
+        where: { id: winningOutcomeId },
+        data: { isWinner: true },
+      });
+      await tx.prediction.update({
+        where: { id: predictionId },
+        data: {
+          status: PredictionStatus.REFUNDED,
+          winningOutcomeId,
+          platformCut: 0,
+          burnedAmount: 0,
+          rewardPoolAmount: 0,
+          settledAt: new Date(),
+          settledBy,
+        },
+      });
+    });
+
+    logger.info(`Solo-staker prediction refunded: ${predictionId}`, 'Settlement');
+    return { ...settlement, platformFee: 0, burnAmount: 0, rewardAmount: 0, totalPaid: 0 };
+  }
+
   // Mark as settling
   await prisma.prediction.update({
     where: { id: predictionId },
