@@ -68,14 +68,14 @@ export async function executeSettlement(
   const totalPool = prediction.totalPool.toNumber();
   const settlement = calculateSettlement(stakes, winningOutcomeId, totalPool);
 
-  // Solo-staker refund: if no winners and only one unique staker, refund instead of settling
-  const uniqueStakers = new Set(stakes.map((s) => s.username));
-  if (settlement.payouts.length === 0 && uniqueStakers.size === 1) {
+  // No-market refund: if all stakes are on the same outcome, no opposing bets exist — refund everyone
+  const uniqueOutcomes = new Set(stakes.map((s) => s.outcomeId));
+  if (uniqueOutcomes.size === 1) {
     const refundOps = buildRefundOps(
       stakes.map((s) => ({ username: s.username, amount: s.amount, predictionId }))
     );
     const refundTxId = await broadcastHiveEngineOps(refundOps);
-    logger.info(`Solo-staker refund broadcast: ${refundTxId}`, 'Settlement', { predictionId });
+    logger.info(`No-market refund broadcast: ${refundTxId}`, 'Settlement', { predictionId });
 
     await prisma.$transaction(async (tx) => {
       await tx.predictionStake.updateMany({
@@ -100,7 +100,7 @@ export async function executeSettlement(
       });
     });
 
-    logger.info(`Solo-staker prediction refunded: ${predictionId}`, 'Settlement');
+    logger.info(`No-market prediction refunded: ${predictionId}`, 'Settlement');
     return { ...settlement, platformFee: 0, burnAmount: 0, rewardAmount: 0, totalPaid: 0 };
   }
 
