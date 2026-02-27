@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   MessageCircle,
@@ -63,6 +64,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   initialPollResults,
   initialPollUserVote,
 }: SportsbiteCardProps) {
+  const router = useRouter();
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -152,7 +154,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
 
   const handleUserProfile = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.location.href = `/user/${sportsbite.author}`;
+    router.push(`/user/${sportsbite.author}`);
   };
 
   const pendingPayout = React.useMemo(() => {

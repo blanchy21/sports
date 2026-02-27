@@ -40,7 +40,7 @@ function isAllowedDomain(url: string): boolean {
 /**
  * Check if an IPv4 address belongs to a private/reserved range.
  */
-function isPrivateIP(ip: string): boolean {
+function isPrivateIPv4(ip: string): boolean {
   const parts = ip.split('.').map(Number);
   if (parts.length !== 4) return true; // invalid = blocked
   const [a, b] = parts;
@@ -55,14 +55,47 @@ function isPrivateIP(ip: string): boolean {
 }
 
 /**
- * Resolve hostname and verify none of its IPs are private/reserved.
+ * Check if an IPv6 address belongs to a private/reserved range.
+ */
+function isPrivateIPv6(ip: string): boolean {
+  const normalized = ip.toLowerCase();
+  if (
+    normalized === '::1' || // loopback
+    normalized === '::' || // unspecified
+    normalized.startsWith('fc') || // fc00::/7 (unique local)
+    normalized.startsWith('fd') || // fc00::/7 (unique local)
+    normalized.startsWith('fe80') // fe80::/10 (link-local)
+  ) {
+    return true;
+  }
+  // IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1) — check the embedded IPv4
+  if (normalized.startsWith('::ffff:')) {
+    return isPrivateIPv4(normalized.slice(7));
+  }
+  return false;
+}
+
+/**
+ * Resolve hostname and verify none of its IPs (IPv4 + IPv6) are private/reserved.
  * Returns an error message string if blocked, or null if safe.
  */
 async function validateHostnameIPs(hostname: string): Promise<string | null> {
   try {
-    const addresses = await dns.resolve4(hostname);
-    for (const ip of addresses) {
-      if (isPrivateIP(ip)) {
+    const [ipv4Result, ipv6Result] = await Promise.allSettled([
+      dns.resolve4(hostname),
+      dns.resolve6(hostname),
+    ]);
+
+    const allAddresses: string[] = [];
+    if (ipv4Result.status === 'fulfilled') allAddresses.push(...ipv4Result.value);
+    if (ipv6Result.status === 'fulfilled') allAddresses.push(...ipv6Result.value);
+
+    if (allAddresses.length === 0) {
+      return `Could not resolve hostname: ${hostname}`;
+    }
+
+    for (const ip of allAddresses) {
+      if (ip.includes(':') ? isPrivateIPv6(ip) : isPrivateIPv4(ip)) {
         return `Hostname resolves to private IP`;
       }
     }

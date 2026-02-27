@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
 import { Users } from 'lucide-react';
@@ -18,6 +19,7 @@ export const FollowersListModal: React.FC<FollowersListModalProps> = ({
   onClose,
   data,
 }) => {
+  const router = useRouter();
   const username = data?.username as string;
   const type = data?.type as 'followers' | 'following';
 
@@ -34,7 +36,7 @@ export const FollowersListModal: React.FC<FollowersListModalProps> = ({
     type === 'followers' ? followersData?.relationships || [] : followingData?.relationships || [];
 
   const handleUserClick = (targetUsername: string) => {
-    window.location.href = `/user/${targetUsername}`;
+    router.push(`/user/${targetUsername}`);
   };
 
   return (

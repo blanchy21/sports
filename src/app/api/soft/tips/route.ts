@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
-import { createRequestContext, validationError } from '@/lib/api/response';
+import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { logger } from '@/lib/logger';
@@ -12,7 +12,6 @@ export const dynamic = 'force-dynamic';
 const ROUTE = '/api/soft/tips';
 
 const tipSchema = z.object({
-  senderUsername: z.string().min(1).max(50),
   recipientUsername: z.string().min(1).max(50),
   amount: z.number().positive(),
   author: z.string().min(1).max(50),
@@ -32,14 +31,15 @@ export async function POST(request: NextRequest) {
         return validationError(parseResult.error, ctx.requestId);
       }
 
-      const { senderUsername, recipientUsername, amount, author, permlink, txId } =
-        parseResult.data;
+      const { recipientUsername, amount, author, permlink, txId } = parseResult.data;
 
-      // Use session if available, otherwise trust the sender from the request body.
-      // The tip is already authenticated by the blockchain transfer (Keychain-signed).
+      // Require authentication to prevent sender spoofing
       const user = await getAuthenticatedUserFromSession(request);
-      const username = user?.username || senderUsername;
-      const userId = user?.userId;
+      if (!user) {
+        return unauthorizedError('Authentication required', ctx.requestId);
+      }
+      const username = user.username;
+      const userId = user.userId;
 
       // Record the tip
       await prisma.tip.create({

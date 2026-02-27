@@ -80,7 +80,7 @@ export const POST = createApiHandler('/api/hive/sign', async (request: Request, 
   }
 
   // 6. Look up CustodialUser
-  const custodialUser = await prisma.custodialUser.findFirst({
+  const custodialUser = await prisma.custodialUser.findUnique({
     where: { hiveUsername: user.hiveUsername },
     select: { id: true },
   });

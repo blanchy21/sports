@@ -128,13 +128,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Fetch existing like and current count in parallel
-      const [existingLike, currentCount] = await Promise.all([
-        prisma.like.findUnique({
-          where: { userId_targetType_targetId: { userId: user.userId, targetType, targetId } },
-        }),
-        prisma.like.count({ where: { targetType, targetId } }),
-      ]);
+      // Check if user already liked this target
+      const existingLike = await prisma.like.findUnique({
+        where: { userId_targetType_targetId: { userId: user.userId, targetType, targetId } },
+      });
 
       let liked: boolean;
       const now = new Date();
@@ -179,8 +176,8 @@ export async function POST(request: NextRequest) {
           })
       );
 
-      // Compute new count from pre-toggle count instead of re-querying
-      const newLikeCount = currentCount + (liked ? 1 : -1);
+      // Read the actual count AFTER the atomic increment to avoid TOCTOU drift
+      const newLikeCount = await prisma.like.count({ where: { targetType, targetId } });
 
       // Check if post just crossed the popularity threshold (fire-and-forget)
       if (liked && targetType === 'post' && newLikeCount === POPULAR_POST_THRESHOLD) {

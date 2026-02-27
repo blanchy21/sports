@@ -4,9 +4,14 @@ import { PREDICTION_CONFIG } from './constants';
 const DEV_FALLBACK_SECRET = 'dev-only-prediction-stake-token-secret-do-not-use-in-prod';
 
 function getStakeTokenSecret(): string {
-  return (
-    process.env.STAKE_TOKEN_SECRET || process.env.SESSION_ENCRYPTION_KEY || DEV_FALLBACK_SECRET
-  );
+  const secret = process.env.STAKE_TOKEN_SECRET || process.env.SESSION_ENCRYPTION_KEY;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+      throw new Error('STAKE_TOKEN_SECRET or SESSION_ENCRYPTION_KEY is required in production');
+    }
+    return DEV_FALLBACK_SECRET;
+  }
+  return secret;
 }
 
 interface StakeTokenData {

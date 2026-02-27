@@ -156,7 +156,7 @@ export const TopNavigation: React.FC = () => {
   }, [searchQuery]);
 
   const handleUserClick = (username: string) => {
-    window.location.href = `/user/${username}`;
+    router.push(`/user/${username}`);
     setShowSearch(false);
     setSearchQuery('');
   };

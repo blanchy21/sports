@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { MessageCircle, Bookmark, MapPin, Repeat2, Users } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
@@ -190,8 +191,9 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
     }
   };
 
+  const router = useRouter();
   const handleUserProfile = (username: string) => {
-    window.location.href = `/user/${username}`;
+    router.push(`/user/${username}`);
   };
 
   return (
@@ -223,7 +225,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
                 className="shrink-0 cursor-pointer text-sm font-medium hover:underline"
                 onClick={(e) => {
                   e.stopPropagation();
-                  window.location.href = `/user/${getAuthorName()}`;
+                  router.push(`/user/${getAuthorName()}`);
                 }}
               >
                 @{getAuthorName()}
@@ -262,7 +264,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
       <div
         className="cursor-pointer space-y-3 p-3 sm:p-4"
         onClick={() => {
-          window.location.href = postUrl;
+          router.push(postUrl);
         }}
       >
         {(() => {
