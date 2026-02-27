@@ -10,12 +10,9 @@ import { NotificationProvider } from '@/contexts/NotificationContext';
 import { ToastProvider } from '@/components/core/Toast';
 import { QueryClientProvider } from '@/lib/react-query/QueryClientProvider';
 import { ModalProvider } from '@/components/modals/ModalProvider';
-import { ServiceWorkerInitializer } from '@/components/initializers/ServiceWorkerInitializer';
-import { NodeHealthInitializer } from '@/components/initializers/NodeHealthInitializer';
-import { MatchThreadLiveNotifier } from '@/components/initializers/MatchThreadLiveNotifier';
+import { LazyInitializers } from '@/components/initializers/LazyInitializers';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { NavigationProgress } from '@/components/feedback/NavigationProgress';
-import { GlobalErrorHandlerInitializer } from '@/components/feedback/GlobalErrorHandlerInitializer';
 import { AdSenseScript } from '@/components/ads/AdSenseScript';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -104,11 +101,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <PriceProvider>
                       <ToastProvider>
                         <ModalProvider>
-                          <GlobalErrorHandlerInitializer />
                           <NavigationProgress />
-                          <ServiceWorkerInitializer />
-                          <NodeHealthInitializer />
-                          <MatchThreadLiveNotifier />
+                          <LazyInitializers />
                           {children}
                         </ModalProvider>
                       </ToastProvider>

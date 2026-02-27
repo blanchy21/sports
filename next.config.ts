@@ -193,6 +193,9 @@ const nextConfig: NextConfig = {
       'framer-motion',
       'date-fns',
       'zod',
+      'zustand',
+      'next-auth',
+      '@sentry/nextjs',
     ],
   },
   // Bundle optimization
