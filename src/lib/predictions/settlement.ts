@@ -79,17 +79,26 @@ export async function executeSettlement(
   const uniqueOutcomes = new Set(stakes.map((s) => s.outcomeId));
   const winningOutcomeHasBackers = stakes.some((s) => s.outcomeId === winningOutcomeId);
   if (uniqueOutcomes.size === 1 || !winningOutcomeHasBackers) {
-    const refundOps = buildRefundOps(
-      stakes.map((s) => ({ username: s.username, amount: s.amount, predictionId }))
-    );
-    const refundTxId = await broadcastHiveEngineOps(refundOps);
-    logger.info(`No-market refund broadcast: ${refundTxId}`, 'Settlement', { predictionId });
-
-    await prisma.$transaction(async (tx) => {
-      await tx.predictionStake.updateMany({
-        where: { predictionId },
+    // Broadcast refunds per-stake for idempotency
+    for (const stake of prediction.stakes) {
+      if (stake.refunded) {
+        logger.info(`Refund already sent for stake ${stake.id}, skipping`, 'Settlement', {
+          predictionId,
+        });
+        continue;
+      }
+      const [op] = buildRefundOps([
+        { username: stake.username, amount: stake.amount.toNumber(), predictionId },
+      ]);
+      const txId = await broadcastHiveEngineOps([op]);
+      await prisma.predictionStake.update({
+        where: { id: stake.id },
         data: { refunded: true },
       });
+      logger.info(`Refund sent to ${stake.username}: ${txId}`, 'Settlement', { predictionId });
+    }
+
+    await prisma.$transaction(async (tx) => {
       await tx.predictionOutcome.update({
         where: { id: winningOutcomeId },
         data: { isWinner: true },
@@ -138,17 +147,24 @@ export async function executeSettlement(
       });
     }
 
-    // Broadcast payout ops to winners
-    if (settlement.payouts.length > 0) {
-      const payoutOps = buildPayoutOps(
-        settlement.payouts.map((p) => ({
-          username: p.username,
-          amount: p.payoutAmount,
+    // Broadcast payout ops to winners — per-stake for idempotency
+    for (const payout of settlement.payouts) {
+      const existingStake = prediction.stakes.find((s) => s.id === payout.stakeId);
+      if (existingStake?.payoutTxId) {
+        logger.info(`Payout already sent for stake ${payout.stakeId}, skipping`, 'Settlement', {
           predictionId,
-        }))
-      );
-      const payoutTxId = await broadcastHiveEngineOps(payoutOps);
-      logger.info(`Payout ops broadcast: ${payoutTxId}`, 'Settlement', { predictionId });
+        });
+        continue;
+      }
+      const [op] = buildPayoutOps([
+        { username: payout.username, amount: payout.payoutAmount, predictionId },
+      ]);
+      const txId = await broadcastHiveEngineOps([op]);
+      await prisma.predictionStake.update({
+        where: { id: payout.stakeId },
+        data: { payoutTxId: txId },
+      });
+      logger.info(`Payout sent to ${payout.username}: ${txId}`, 'Settlement', { predictionId });
     }
 
     // Update DB atomically
@@ -215,42 +231,45 @@ export async function executeVoidRefund(
     throw new Error(`Prediction not found: ${predictionId}`);
   }
 
+  // Allow VOID status for retries (partial refund broadcast may have failed)
   if (
     prediction.status !== PredictionStatus.OPEN &&
-    prediction.status !== PredictionStatus.LOCKED
+    prediction.status !== PredictionStatus.LOCKED &&
+    prediction.status !== PredictionStatus.VOID
   ) {
     throw new Error(`Cannot void prediction in ${prediction.status} status`);
   }
 
-  // Mark as VOID immediately
-  await prisma.prediction.update({
-    where: { id: predictionId },
-    data: { status: PredictionStatus.VOID, isVoid: true, voidReason: reason },
-  });
+  // Mark as VOID immediately (idempotent — may already be VOID on retry)
+  if (prediction.status !== PredictionStatus.VOID) {
+    await prisma.prediction.update({
+      where: { id: predictionId },
+      data: { status: PredictionStatus.VOID, isVoid: true, voidReason: reason },
+    });
+  }
 
   try {
-    // Build and broadcast refund ops
-    if (prediction.stakes.length > 0) {
-      const refundOps = buildRefundOps(
-        prediction.stakes.map((s) => ({
-          username: s.username,
-          amount: s.amount.toNumber(),
+    // Broadcast refunds per-stake for idempotency
+    for (const stake of prediction.stakes) {
+      if (stake.refunded) {
+        logger.info(`Refund already sent for stake ${stake.id}, skipping`, 'Settlement', {
           predictionId,
-        }))
-      );
-      const refundTxId = await broadcastHiveEngineOps(refundOps);
-      logger.info(`Refund ops broadcast: ${refundTxId}`, 'Settlement', { predictionId });
+        });
+        continue;
+      }
+      const [op] = buildRefundOps([
+        { username: stake.username, amount: stake.amount.toNumber(), predictionId },
+      ]);
+      const txId = await broadcastHiveEngineOps([op]);
+      await prisma.predictionStake.update({
+        where: { id: stake.id },
+        data: { refunded: true },
+      });
+      logger.info(`Refund sent to ${stake.username}: ${txId}`, 'Settlement', { predictionId });
     }
 
-    // Mark all stakes as refunded and set final status
+    // Set final status
     await prisma.$transaction(async (tx) => {
-      if (prediction.stakes.length > 0) {
-        await tx.predictionStake.updateMany({
-          where: { predictionId },
-          data: { refunded: true },
-        });
-      }
-
       await tx.prediction.update({
         where: { id: predictionId },
         data: {
