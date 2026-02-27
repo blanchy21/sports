@@ -1,6 +1,11 @@
 import type { Prediction, PredictionOutcome, PredictionStake } from '@/generated/prisma/client';
 import type { Prisma } from '@/generated/prisma/client';
-import type { PredictionBite, PredictionOutcomeResponse, UserStakeInfo } from './types';
+import type {
+  PredictionBite,
+  PredictionOutcomeResponse,
+  UserStakeInfo,
+  OutcomeStaker,
+} from './types';
 import { calculateOdds } from './odds';
 
 export function decimalToNumber(d: Prisma.Decimal | null | undefined): number {
@@ -18,6 +23,20 @@ export function serializePrediction(
     const outcomeStaked = decimalToNumber(outcome.totalStaked);
     const odds = calculateOdds(totalPool, outcomeStaked);
 
+    // Aggregate stakers per outcome (combine multiple stakes by same user)
+    let stakers: OutcomeStaker[] | undefined;
+    if (prediction.stakes) {
+      const outcomeStakes = prediction.stakes.filter((s) => s.outcomeId === outcome.id);
+      const byUser = new Map<string, number>();
+      for (const s of outcomeStakes) {
+        byUser.set(s.username, (byUser.get(s.username) ?? 0) + decimalToNumber(s.amount));
+      }
+      stakers = [...byUser.entries()]
+        .map(([username, amount]) => ({ username, amount }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 5);
+    }
+
     return {
       id: outcome.id,
       label: outcome.label,
@@ -26,6 +45,7 @@ export function serializePrediction(
       isWinner: outcome.isWinner,
       odds: odds.multiplier,
       percentage: odds.percentage,
+      stakers,
     };
   });
 

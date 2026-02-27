@@ -47,12 +47,15 @@ interface ComposeSportsbiteProps {
   onSuccess?: (bite: Sportsbite) => void;
   onError?: (error: string) => void;
   matchThreadEventId?: string;
+  /** When true, default to prediction mode and hide the take/prediction toggle */
+  predictionOnly?: boolean;
 }
 
 export function ComposeSportsbite({
   onSuccess,
   onError,
   matchThreadEventId,
+  predictionOnly = false,
 }: ComposeSportsbiteProps) {
   const { user, authType, hiveUser, touchSession, logout } = useAuth();
   const { broadcast } = useBroadcast();
@@ -78,7 +81,9 @@ export function ComposeSportsbite({
   const [poll, setPoll] = useState<PollDefinition | null>(null);
 
   // Prediction compose state
-  const [composeMode, setComposeMode] = useState<'take' | 'prediction'>('take');
+  const [composeMode, setComposeMode] = useState<'take' | 'prediction'>(
+    predictionOnly ? 'prediction' : 'take'
+  );
   const [predictionTitle, setPredictionTitle] = useState('');
   const [predictionOutcomes, setPredictionOutcomes] = useState<string[]>(['', '']);
   const [predictionLocksAt, setPredictionLocksAt] = useState('');
@@ -531,8 +536,8 @@ export function ComposeSportsbite({
 
   return (
     <div className="rounded-xl border bg-card">
-      {/* Mode toggle — only show prediction tab for Hive-authenticated users */}
-      {isHiveAuth && (
+      {/* Mode toggle — only show for Hive-authenticated users, hidden in predictionOnly mode */}
+      {isHiveAuth && !predictionOnly && (
         <div className="flex border-b">
           <button
             onClick={() => setComposeMode('take')}

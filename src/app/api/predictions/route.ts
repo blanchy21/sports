@@ -47,7 +47,7 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
     where,
     include: {
       outcomes: true,
-      stakes: !!user,
+      stakes: true,
     },
     orderBy: { createdAt: 'desc' },
     take: params.limit + 1,

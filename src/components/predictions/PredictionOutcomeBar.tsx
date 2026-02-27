@@ -83,9 +83,20 @@ export function PredictionOutcomeBar({
         </div>
       </div>
 
-      {/* Percentage label */}
-      <div className="relative mt-1 text-right">
-        <span className="text-xs text-muted-foreground">{percentage.toFixed(0)}%</span>
+      {/* Stakers + percentage */}
+      <div className="relative mt-1 flex items-center justify-between">
+        {outcome.stakers && outcome.stakers.length > 0 ? (
+          <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+            {outcome.stakers.map((s) => (
+              <span key={s.username} className="text-[11px] text-muted-foreground">
+                @{s.username} <span className="font-medium text-foreground/70">{s.amount}</span>
+              </span>
+            ))}
+          </div>
+        ) : (
+          <div />
+        )}
+        <span className="shrink-0 text-xs text-muted-foreground">{percentage.toFixed(0)}%</span>
       </div>
     </button>
   );

@@ -4,7 +4,18 @@ import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Bell, Plus, Settings, Zap, Users, Search, Menu, Newspaper } from 'lucide-react';
+import {
+  Home,
+  Bell,
+  Plus,
+  Settings,
+  Zap,
+  Target,
+  Users,
+  Search,
+  Menu,
+  Newspaper,
+} from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
 import {
@@ -103,6 +114,15 @@ export const TopNavigation: React.FC = () => {
               >
                 <Zap className="h-5 w-5 xl:h-6 xl:w-6" />
                 <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Sportsbites</span>
+              </Link>
+
+              <Link
+                href="/predictions"
+                className={navItemClass(pathname === '/predictions')}
+                suppressHydrationWarning
+              >
+                <Target className="h-5 w-5 xl:h-6 xl:w-6" />
+                <span className="mt-0.5 text-[10px] font-medium xl:text-xs">Predictions</span>
               </Link>
 
               <Link

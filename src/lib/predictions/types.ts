@@ -10,6 +10,12 @@ import type { PredictionStatus } from '@/generated/prisma/client';
 // API Response Types
 // ============================================================================
 
+/** A single staker on an outcome */
+export interface OutcomeStaker {
+  username: string;
+  amount: number;
+}
+
 /** Serialized outcome for API responses */
 export interface PredictionOutcomeResponse {
   id: string;
@@ -21,6 +27,8 @@ export interface PredictionOutcomeResponse {
   odds: number;
   /** Percentage of total pool */
   percentage: number;
+  /** Top stakers on this outcome (up to 5) */
+  stakers?: OutcomeStaker[];
 }
 
 /** Serialized prediction for API responses (a "PredictionBite") */

@@ -7,6 +7,7 @@ import {
   Home,
   Plus,
   Zap,
+  Target,
   Users,
   Swords,
   Moon,
@@ -56,6 +57,15 @@ export function MobileNavMenu({ onClose }: MobileNavMenuProps) {
         >
           <Zap className="h-5 w-5" />
           <span>Sportsbites</span>
+        </Link>
+
+        <Link
+          href="/predictions"
+          onClick={onClose}
+          className={navLinkClass(pathname === '/predictions')}
+        >
+          <Target className="h-5 w-5" />
+          <span>Predictions</span>
         </Link>
 
         <Link

@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { SportsbiteCard } from './SportsbiteCard';
-import { PredictionBiteCard } from '@/components/predictions/PredictionBiteCard';
 import type {
   Sportsbite,
   SportsbiteApiResponse,
@@ -10,8 +9,7 @@ import type {
   ReactionCounts,
   PollResults,
 } from '@/lib/hive-workerbee/shared';
-import type { PredictionBite } from '@/lib/predictions/types';
-import { Loader2, RefreshCw, AlertCircle, Zap, ArrowUp, Sparkles, Target } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle, Zap, ArrowUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -19,8 +17,6 @@ import { logger } from '@/lib/logger';
 import { interleaveAds } from '@/lib/utils/interleave-ads';
 
 const REALTIME_POLL_INTERVAL = 15000;
-
-type ContentFilter = 'all' | 'takes' | 'predictions';
 
 interface SportsbitesFeedProps {
   author?: string;
@@ -39,15 +35,11 @@ export function SportsbitesFeed({
   className,
   optimisticBite = null,
 }: SportsbitesFeedProps) {
-  const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
   const [bites, setBites] = useState<Sportsbite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
-
-  const [predictions, setPredictions] = useState<PredictionBite[]>([]);
-  const [predictionsLoading, setPredictionsLoading] = useState(false);
 
   const [pendingBites, setPendingBites] = useState<Sportsbite[]>([]);
   const [newBiteIds, setNewBiteIds] = useState<Set<string>>(new Set());
@@ -178,14 +170,6 @@ export function SportsbitesFeed({
     setBites((prev) => prev.filter((b) => b.id !== id));
   }, []);
 
-  const handlePredictionDeleted = useCallback((id: string) => {
-    setPredictions((prev) => prev.filter((p) => p.id !== id));
-  }, []);
-
-  const handlePredictionUpdated = useCallback((updated: PredictionBite) => {
-    setPredictions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-  }, []);
-
   const showNewBites = useCallback(() => {
     if (pendingBites.length === 0) return;
 
@@ -312,59 +296,7 @@ export function SportsbitesFeed({
     };
   }, []);
 
-  // Fetch predictions when content filter includes them
-  useEffect(() => {
-    if (contentFilter === 'takes') {
-      setPredictions([]);
-      return;
-    }
-
-    setPredictionsLoading(true);
-    const controller = new AbortController();
-    const params = new URLSearchParams({ limit: '20' });
-    if (author) params.append('creator', author);
-
-    fetch(`/api/predictions?${params.toString()}`, { signal: controller.signal })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.data?.predictions) {
-          setPredictions(data.data.predictions);
-        }
-      })
-      .catch((err) => {
-        if (err instanceof Error && err.name === 'AbortError') return;
-        logger.error('Error loading predictions', 'SportsbitesFeed', err);
-      })
-      .finally(() => setPredictionsLoading(false));
-
-    return () => controller.abort();
-  }, [contentFilter, author]);
-
-  // Merge bites and predictions for 'all' view, sorted by createdAt
-  const mergedFeedItems = useMemo(() => {
-    if (contentFilter === 'takes') {
-      return bites.map((b) => ({ type: 'bite' as const, item: b, createdAt: b.created }));
-    }
-    if (contentFilter === 'predictions') {
-      return predictions.map((p) => ({
-        type: 'prediction' as const,
-        item: p,
-        createdAt: p.createdAt,
-      }));
-    }
-    // 'all' — merge by date
-    const biteItems = bites.map((b) => ({ type: 'bite' as const, item: b, createdAt: b.created }));
-    const predItems = predictions.map((p) => ({
-      type: 'prediction' as const,
-      item: p,
-      createdAt: p.createdAt,
-    }));
-    return [...biteItems, ...predItems].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-  }, [bites, predictions, contentFilter]);
-
-  if (isLoading && (contentFilter !== 'predictions' || predictionsLoading)) {
+  if (isLoading) {
     return (
       <div className={cn('space-y-4', className)}>
         {Array.from({ length: 3 }).map((_, i) => (
@@ -406,7 +338,7 @@ export function SportsbitesFeed({
     );
   }
 
-  if (mergedFeedItems.length === 0) {
+  if (bites.length === 0) {
     if (filterMode === 'following') {
       return (
         <div className={cn('rounded-xl border bg-card p-8 text-center', className)}>
@@ -428,26 +360,16 @@ export function SportsbitesFeed({
       <div className={cn('rounded-xl border bg-card p-12 text-center', className)}>
         <div className="mb-4 flex justify-center">
           <div className="rounded-full bg-primary/10 p-4">
-            {contentFilter === 'predictions' ? (
-              <Target className="h-12 w-12 text-warning" />
-            ) : (
-              <Zap className="h-12 w-12 text-primary" />
-            )}
+            <Zap className="h-12 w-12 text-primary" />
           </div>
         </div>
         <h3 className="mb-2 text-xl font-semibold">
-          {contentFilter === 'predictions'
-            ? 'No predictions yet'
-            : author
-              ? `No sportsbites from @${author}`
-              : 'No sportsbites yet'}
+          {author ? `No sportsbites from @${author}` : 'No sportsbites yet'}
         </h3>
         <p className="mx-auto max-w-sm text-muted-foreground">
-          {contentFilter === 'predictions'
-            ? 'Be the first to create a prediction! Stake MEDALS on sports outcomes.'
-            : author
-              ? "This user hasn't posted any sportsbites yet."
-              : 'Be the first to share a quick sports take! Sportsbites are perfect for live match reactions and quick thoughts.'}
+          {author
+            ? "This user hasn't posted any sportsbites yet."
+            : 'Be the first to share a quick sports take! Sportsbites are perfect for live match reactions and quick thoughts.'}
         </p>
       </div>
     );
@@ -455,27 +377,7 @@ export function SportsbitesFeed({
 
   return (
     <div className={cn('space-y-4', className)}>
-      {/* Content filter tabs */}
-      <div className="flex gap-2">
-        {(['all', 'takes', 'predictions'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setContentFilter(tab)}
-            className={cn(
-              'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
-              contentFilter === tab
-                ? tab === 'predictions'
-                  ? 'bg-amber-500 text-white'
-                  : 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            )}
-          >
-            {tab === 'all' ? 'All' : tab === 'takes' ? 'Takes' : 'Predictions'}
-          </button>
-        ))}
-      </div>
-
-      {pendingBites.length > 0 && contentFilter !== 'predictions' && (
+      {pendingBites.length > 0 && (
         <button
           onClick={showNewBites}
           className={cn(
@@ -501,32 +403,18 @@ export function SportsbitesFeed({
       )}
 
       {interleaveAds(
-        mergedFeedItems.map((feedItem) => {
-          if (feedItem.type === 'prediction') {
-            const prediction = feedItem.item as PredictionBite;
-            return (
-              <PredictionBiteCard
-                key={`pred-${prediction.id}`}
-                prediction={prediction}
-                onDeleted={handlePredictionDeleted}
-                onUpdated={handlePredictionUpdated}
-              />
-            );
-          }
-          const bite = feedItem.item as Sportsbite;
-          return (
-            <SportsbiteCard
-              key={bite.id}
-              sportsbite={bite}
-              isNew={newBiteIds.has(bite.id)}
-              onDelete={handleDelete}
-              initialReactionCounts={reactionData[bite.id]?.counts}
-              initialUserReaction={reactionData[bite.id]?.userReaction}
-              initialPollResults={pollData[bite.id]?.results}
-              initialPollUserVote={pollData[bite.id]?.userVote}
-            />
-          );
-        })
+        bites.map((bite) => (
+          <SportsbiteCard
+            key={bite.id}
+            sportsbite={bite}
+            isNew={newBiteIds.has(bite.id)}
+            onDelete={handleDelete}
+            initialReactionCounts={reactionData[bite.id]?.counts}
+            initialUserReaction={reactionData[bite.id]?.userReaction}
+            initialPollResults={pollData[bite.id]?.results}
+            initialPollUserVote={pollData[bite.id]?.userVote}
+          />
+        ))
       )}
 
       {isLoadingMore && (
@@ -538,7 +426,7 @@ export function SportsbitesFeed({
         </div>
       )}
 
-      {!hasMore && bites.length > 0 && contentFilter !== 'predictions' && (
+      {!hasMore && bites.length > 0 && (
         <div className="flex justify-center py-6">
           <p className="text-sm text-muted-foreground">You&apos;ve reached the end of the feed</p>
         </div>
