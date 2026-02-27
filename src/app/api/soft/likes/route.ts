@@ -6,6 +6,7 @@ import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { touchLastActive } from '@/lib/api/activity';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -135,12 +136,15 @@ export async function POST(request: NextRequest) {
       let liked: boolean;
       const now = new Date();
 
+      let countFromUpdate: number | null = null;
+
       if (existingLike) {
-        // Unlike - remove the like and update count in parallel
-        await Promise.all([
+        // Unlike - delete and update count in parallel
+        const [, updatedCount] = await Promise.all([
           prisma.like.delete({ where: { id: existingLike.id } }),
           updateTargetLikeCount(targetType, targetId, -1),
         ]);
+        countFromUpdate = updatedCount;
         liked = false;
       } else {
         // Like - add the like
@@ -155,16 +159,18 @@ export async function POST(request: NextRequest) {
         liked = true;
 
         // Run count update and notification in parallel
-        await Promise.all([
+        const [updatedCount] = await Promise.all([
           updateTargetLikeCount(targetType, targetId, 1),
           createLikeNotification(user, targetType, targetId, now),
         ]);
+        countFromUpdate = updatedCount;
       }
 
       touchLastActive(user.userId, ROUTE);
 
-      // Read the actual count AFTER the atomic increment to avoid TOCTOU drift
-      const newLikeCount = await prisma.like.count({ where: { targetType, targetId } });
+      // Use count from atomic increment; fall back to count query if update failed
+      const newLikeCount =
+        countFromUpdate ?? (await prisma.like.count({ where: { targetType, targetId } }));
 
       // Check if post just crossed the popularity threshold (fire-and-forget)
       if (liked && targetType === 'post' && newLikeCount === POPULAR_POST_THRESHOLD) {
@@ -268,23 +274,28 @@ async function updateTargetLikeCount(
   targetType: 'post' | 'comment',
   targetId: string,
   delta: number
-) {
+): Promise<number | null> {
   try {
     const actualId = targetId.replace('soft-', '');
     if (targetType === 'post') {
-      await prisma.post.update({
+      const updated = await prisma.post.update({
         where: { id: actualId },
         data: { likeCount: { increment: delta } },
+        select: { likeCount: true },
       });
+      return updated.likeCount;
     } else {
-      await prisma.comment.update({
+      const updated = await prisma.comment.update({
         where: { id: actualId },
         data: { likeCount: { increment: delta } },
+        select: { likeCount: true },
       });
+      return updated.likeCount;
     }
   } catch (error) {
     // Log but don't fail the like operation
-    console.error('Failed to update like count:', error);
+    logger.error('Failed to update like count', 'likes', error);
+    return null;
   }
 }
 

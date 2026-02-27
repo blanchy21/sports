@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { X, Users, Loader2 } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
@@ -31,6 +32,7 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
   username,
   type,
 }) => {
+  const router = useRouter();
   const { user: currentUser, authType } = useAuth();
   const [users, setUsers] = useState<FollowUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,7 +92,7 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
 
   const handleUserClick = (username: string) => {
     onClose();
-    window.location.href = `/user/${username}`;
+    router.push(`/user/${username}`);
   };
 
   if (!isOpen) return null;
