@@ -235,7 +235,9 @@ export async function GET(request: NextRequest) {
 
     // If redirect, validate the target domain is still allowed
     if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get('location');
+      const rawLocation = response.headers.get('location');
+      // Resolve relative redirects (e.g. /p/...) against the original URL
+      const location = rawLocation ? new URL(rawLocation, imageUrl).toString() : null;
       if (!location || !isAllowedDomain(location)) {
         ctx.log.warn('Image proxy blocked redirect to disallowed domain', {
           imageUrl,

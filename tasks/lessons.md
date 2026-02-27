@@ -220,3 +220,22 @@ Replace the HTTP self-fetch with a direct call to `fetchSportsblockPosts()`. Ser
 ### Rule
 **Never make HTTP requests from an API route to another API route on the same server.** Import the function directly instead. Self-referencing fetches fail in serverless environments (Vercel, Lambda) where `localhost` doesn't work.
 
+---
+
+## Blockchain broadcasts must be per-op idempotent
+
+**Date:** 2026-02-27
+**Severity:** Critical — caused double-payments on partial broadcast failure
+
+### Problem
+`broadcastHiveEngineOps` sends each transfer one at a time in a loop. When broadcasting multiple payouts/refunds in a single call, if op 2 of 3 fails, op 1 is already on-chain. On retry, all ops are re-sent — **double-paying** op 1's recipient. This was fixed for fees (via `feeTxId`) but payouts and refunds had no per-stake idempotency.
+
+### Fix
+Broadcast one op per stake, immediately record success in DB (`payoutTxId` for payouts, `refunded = true` for refunds) before moving to the next. On retry, skip stakes that already have their success marker set. Applied to all three broadcast sites:
+1. Payout broadcast in `executeSettlement` (normal path)
+2. Refund broadcast in `executeSettlement` (no-market path)
+3. Refund broadcast in `executeVoidRefund` (also made retry-safe by accepting VOID status)
+
+### Rule
+**Never broadcast multiple blockchain transfers in a single batch call.** Broadcast one op at a time, persist the result to DB immediately, and check for prior success before each op. This makes any multi-transfer flow safely resumable on partial failure.
+
