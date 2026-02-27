@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils/client';
 import { TrendingUp, DollarSign, Zap, ArrowRight, Info, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/core/Button';
-import { usePriceContext } from '@/contexts/PriceContext';
+import { usePrices } from '@/lib/react-query/queries/usePrices';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
@@ -27,7 +27,7 @@ const WEEKLY_POST_MULTIPLIER = 0.3; // Assume 30% of posts are "this week" for w
 
 export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = ({ className }) => {
   const { user, authType } = useAuth();
-  const { hivePrice, isLoading: isPriceLoading } = usePriceContext();
+  const { hivePrice, isLoading: isPriceLoading } = usePrices();
   const [stats, setStats] = useState<UserStats>({
     postCount: 0,
     totalLikes: 0,

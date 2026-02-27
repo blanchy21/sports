@@ -80,4 +80,7 @@ export const queryKeys = {
     history: (account: string) => [...queryKeys.medals.all, 'history', account] as const,
     market: () => [...queryKeys.medals.all, 'market'] as const,
   },
+  prices: {
+    all: ['prices'] as const,
+  },
 } as const;

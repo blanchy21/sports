@@ -4,24 +4,7 @@ import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  Home,
-  Bell,
-  Plus,
-  Settings,
-  Zap,
-  Users,
-  Search,
-  X,
-  Menu,
-  Newspaper,
-  Swords,
-  Moon,
-  Sun,
-  Compass,
-  DollarSign,
-  LayoutDashboard,
-} from 'lucide-react';
+import { Home, Bell, Plus, Settings, Zap, Users, Search, Menu, Newspaper } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
 import {
@@ -34,35 +17,20 @@ import {
 import { UpgradePrompt } from '@/components/user/AccountBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils/client';
-import { logger } from '@/lib/logger';
-import { fetchUserAccount } from '@/lib/hive-workerbee/account';
-
-type SearchResult = {
-  username: string;
-  displayName: string;
-  avatar?: string;
-  reputation?: string;
-  followers: number;
-  following: number;
-  isHiveUser?: boolean;
-};
+import { SearchModal } from './SearchModal';
+import { MobileNavMenu } from './MobileNavMenu';
 
 export const TopNavigation: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
-  const { theme, toggleTheme } = useTheme();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUpgradeFlow, setShowUpgradeFlow] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showNews, setShowNews] = useState(false);
@@ -70,96 +38,16 @@ export const TopNavigation: React.FC = () => {
   const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
   const newsButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  // Search functionality - searches both Hive and soft users
-  React.useEffect(() => {
-    const controller = new AbortController();
+  const navItemClass = (isActive: boolean) =>
+    cn(
+      'relative flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
+      isActive
+        ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:h-[2px] after:w-6 after:-translate-x-1/2 after:rounded-full after:bg-primary dark:text-white dark:after:bg-white'
+        : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
+    );
 
-    const timer = setTimeout(async () => {
-      if (searchQuery && searchQuery.length >= 3) {
-        setIsSearching(true);
-        try {
-          const results: SearchResult[] = [];
-
-          // Search Hive and soft users in parallel
-          // Note: fetchUserAccount is server-side and doesn't accept AbortSignal
-          const [hiveResult, softResult] = await Promise.allSettled([
-            // Hive user search
-            fetchUserAccount(searchQuery).catch(() => null),
-            // Soft user search via API (supports abort)
-            fetch(`/api/soft/users?search=${encodeURIComponent(searchQuery)}`, {
-              signal: controller.signal,
-            })
-              .then((r) => (r.ok ? r.json() : { users: [] }))
-              .catch(() => ({ users: [] })),
-          ]);
-
-          // If aborted while waiting, don't update state
-          if (controller.signal.aborted) return;
-
-          // Add Hive user if found
-          if (hiveResult.status === 'fulfilled' && hiveResult.value) {
-            const accountData = hiveResult.value;
-            results.push({
-              username: searchQuery,
-              displayName: accountData.profile?.name || searchQuery,
-              avatar: accountData.profile?.profileImage,
-              reputation: accountData.reputationFormatted,
-              followers: accountData.stats?.followers || 0,
-              following: accountData.stats?.following || 0,
-              isHiveUser: true,
-            });
-          }
-
-          // Add soft users if found
-          if (softResult.status === 'fulfilled' && softResult.value?.users?.length > 0) {
-            softResult.value.users.forEach(
-              (user: { username: string; displayName: string; avatarUrl?: string }) => {
-                // Don't add if we already have this user from Hive
-                if (
-                  !results.some((r) => r.username.toLowerCase() === user.username.toLowerCase())
-                ) {
-                  results.push({
-                    username: user.username,
-                    displayName: user.displayName || user.username,
-                    avatar: user.avatarUrl,
-                    followers: 0,
-                    following: 0,
-                    isHiveUser: false,
-                  });
-                }
-              }
-            );
-          }
-
-          if (!controller.signal.aborted) {
-            setSearchResults(results);
-          }
-        } catch (error) {
-          if (!controller.signal.aborted) {
-            logger.error('Search error', 'TopNavigation', error);
-            setSearchResults([]);
-          }
-        } finally {
-          if (!controller.signal.aborted) {
-            setIsSearching(false);
-          }
-        }
-      } else {
-        setSearchResults([]);
-      }
-    }, 500);
-
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [searchQuery]);
-
-  const handleUserClick = (username: string) => {
-    router.push(`/user/${username}`);
-    setShowSearch(false);
-    setSearchQuery('');
-  };
+  const iconBtnClass =
+    'h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white sm:h-11 sm:w-11 lg:h-11 lg:w-11';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.75)] dark:shadow-none">
@@ -202,12 +90,7 @@ export const TopNavigation: React.FC = () => {
             <nav className="flex items-center space-x-4 xl:space-x-6">
               <Link
                 href="/new"
-                className={cn(
-                  'relative flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
-                  pathname === '/' || pathname === '/new'
-                    ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:h-[2px] after:w-6 after:-translate-x-1/2 after:rounded-full after:bg-primary dark:text-white dark:after:bg-white'
-                    : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
-                )}
+                className={navItemClass(pathname === '/' || pathname === '/new')}
                 suppressHydrationWarning
               >
                 <Home className="h-5 w-5 xl:h-6 xl:w-6" />
@@ -216,12 +99,7 @@ export const TopNavigation: React.FC = () => {
 
               <Link
                 href="/sportsbites"
-                className={cn(
-                  'relative flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
-                  pathname === '/sportsbites'
-                    ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:h-[2px] after:w-6 after:-translate-x-1/2 after:rounded-full after:bg-primary dark:text-white dark:after:bg-white'
-                    : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
-                )}
+                className={navItemClass(pathname === '/sportsbites')}
                 suppressHydrationWarning
               >
                 <Zap className="h-5 w-5 xl:h-6 xl:w-6" />
@@ -230,12 +108,7 @@ export const TopNavigation: React.FC = () => {
 
               <Link
                 href="/communities"
-                className={cn(
-                  'relative flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
-                  pathname === '/communities'
-                    ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:h-[2px] after:w-6 after:-translate-x-1/2 after:rounded-full after:bg-primary dark:text-white dark:after:bg-white'
-                    : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
-                )}
+                className={navItemClass(pathname === '/communities')}
                 suppressHydrationWarning
               >
                 <Users className="h-5 w-5 xl:h-6 xl:w-6" />
@@ -269,7 +142,7 @@ export const TopNavigation: React.FC = () => {
               variant="ghost"
               size="icon"
               onClick={() => setShowSearch(true)}
-              className="h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white sm:h-11 sm:w-11 lg:h-11 lg:w-11"
+              className={iconBtnClass}
               aria-label="Search"
             >
               <Search className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
@@ -283,7 +156,7 @@ export const TopNavigation: React.FC = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white sm:h-11 sm:w-11 lg:h-11 lg:w-11"
+                    className={cn('relative', iconBtnClass)}
                     aria-label="Notifications"
                   >
                     <Bell className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
@@ -305,7 +178,7 @@ export const TopNavigation: React.FC = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white sm:h-11 sm:w-11 lg:h-11 lg:w-11"
+                    className={iconBtnClass}
                     aria-label="Create new post"
                   >
                     <Plus className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
@@ -375,166 +248,12 @@ export const TopNavigation: React.FC = () => {
       </div>
 
       {/* Mobile Navigation Menu */}
-      {showMobileMenu && (
-        <div className="border-t border-border/50 bg-white/80 backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.85)] lg:hidden">
-          <nav className="flex flex-col space-y-2 p-4">
-            <Link
-              href="/new"
-              onClick={() => setShowMobileMenu(false)}
-              className={cn(
-                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
-                pathname === '/' || pathname === '/new'
-                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
-                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
-              )}
-            >
-              <Home className="h-5 w-5" />
-              <span>Home</span>
-            </Link>
-
-            <Link
-              href="/sportsbites"
-              onClick={() => setShowMobileMenu(false)}
-              className={cn(
-                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
-                pathname === '/sportsbites'
-                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
-                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
-              )}
-            >
-              <Zap className="h-5 w-5" />
-              <span>Sportsbites</span>
-            </Link>
-
-            <Link
-              href="/communities"
-              onClick={() => setShowMobileMenu(false)}
-              className={cn(
-                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
-                pathname === '/communities'
-                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
-                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
-              )}
-            >
-              <Users className="h-5 w-5" />
-              <span>Communities</span>
-            </Link>
-
-            <Link
-              href="/match-threads"
-              onClick={() => setShowMobileMenu(false)}
-              className={cn(
-                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
-                pathname === '/match-threads'
-                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
-                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
-              )}
-            >
-              <Swords className="h-5 w-5" />
-              <span>Match Threads</span>
-            </Link>
-
-            <Link
-              href="/discover"
-              onClick={() => setShowMobileMenu(false)}
-              className={cn(
-                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
-                pathname === '/discover'
-                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
-                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
-              )}
-            >
-              <Compass className="h-5 w-5" />
-              <span>Discover</span>
-            </Link>
-
-            <Link
-              href="/feed"
-              onClick={() => setShowMobileMenu(false)}
-              className={cn(
-                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
-                pathname === '/feed'
-                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
-                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
-              )}
-            >
-              <Newspaper className="h-5 w-5" />
-              <span>Feed</span>
-            </Link>
-
-            {user && (
-              <>
-                <Link
-                  href="/publish"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center space-x-3 rounded-lg px-4 py-3 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
-                >
-                  <Plus className="h-5 w-5" />
-                  <span>Create Post</span>
-                </Link>
-
-                <Link
-                  href="/wallet"
-                  onClick={() => setShowMobileMenu(false)}
-                  className={cn(
-                    'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
-                    pathname === '/wallet'
-                      ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
-                      : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
-                  )}
-                >
-                  <DollarSign className="h-5 w-5" />
-                  <span>Wallet</span>
-                </Link>
-
-                <Link
-                  href="/dashboard"
-                  onClick={() => setShowMobileMenu(false)}
-                  className={cn(
-                    'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
-                    pathname === '/dashboard'
-                      ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
-                      : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
-                  )}
-                >
-                  <LayoutDashboard className="h-5 w-5" />
-                  <span>Dashboard</span>
-                </Link>
-              </>
-            )}
-
-            {/* Dark mode toggle — available to all users */}
-            <button
-              onClick={toggleTheme}
-              className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
-            >
-              <div className="flex items-center space-x-3">
-                {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
-              </div>
-              <div
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  theme === 'dark' ? 'bg-primary' : 'bg-muted-foreground/30'
-                }`}
-                role="switch"
-                aria-checked={theme === 'dark'}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    theme === 'dark' ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </div>
-            </button>
-          </nav>
-        </div>
-      )}
+      {showMobileMenu && <MobileNavMenu onClose={() => setShowMobileMenu(false)} />}
 
       <LazyAuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-
       <LazyUpgradeFlow isOpen={showUpgradeFlow} onClose={() => setShowUpgradeFlow(false)} />
 
-      {/* Mobile News Dropdown - rendered as modal on mobile */}
+      {/* Mobile News Dropdown */}
       <div className="lg:hidden">
         <LazyLatestNewsDropdown
           isOpen={showNews}
@@ -558,88 +277,7 @@ export const TopNavigation: React.FC = () => {
       )}
 
       {/* Search Modal */}
-      {showSearch && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setShowSearch(false)} />
-          <div className="relative z-10 mx-4 w-full max-w-2xl">
-            <div className="overflow-hidden rounded-lg border bg-card shadow-2xl">
-              {/* Search Input */}
-              <div className="flex items-center space-x-4 border-b p-4">
-                <Search className="h-6 w-6 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 border-none bg-transparent text-lg outline-none"
-                  autoFocus
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowSearch(false)}
-                  className="hover:bg-muted"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-
-              {/* Search Results */}
-              <div className="max-h-96 overflow-y-auto p-4">
-                {isSearching ? (
-                  <div className="py-8 text-center text-muted-foreground">Searching...</div>
-                ) : searchQuery.length < 3 ? (
-                  <div className="py-8 text-center text-muted-foreground">
-                    Start typing to search for users...
-                  </div>
-                ) : searchResults.length > 0 ? (
-                  <div className="space-y-2">
-                    {searchResults.map((result) => (
-                      <button
-                        key={result.username}
-                        onClick={() => handleUserClick(result.username)}
-                        className="flex w-full items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-muted"
-                      >
-                        <Avatar
-                          src={result.avatar}
-                          fallback={result.username}
-                          alt={result.displayName}
-                          size="md"
-                        />
-                        <div className="flex-1 text-left">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-foreground">
-                              {result.displayName || result.username}
-                            </span>
-                            {result.isHiveUser ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-red-500 to-red-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                                <Zap className="h-2.5 w-2.5" />
-                                Hive
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                                Sportsblock
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground">@{result.username}</div>
-                        </div>
-                        <div className="text-right text-sm text-muted-foreground">
-                          {result.isHiveUser ? `${result.followers || 0} followers` : ''}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-8 text-center text-muted-foreground">
-                    No user found with that username
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {showSearch && <SearchModal onClose={() => setShowSearch(false)} />}
     </header>
   );
 };

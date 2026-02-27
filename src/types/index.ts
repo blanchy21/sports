@@ -43,7 +43,7 @@ export type {
 } from './community';
 
 // Crypto types
-export type { CryptoPriceData, PriceContextType } from './crypto';
+export type { CryptoPriceData } from './crypto';
 
 // UI types
 export type { AuthType, AuthState, ThemeState, NotificationItem, ModalState } from './ui';

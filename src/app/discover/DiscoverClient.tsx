@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PostCard } from '@/components/posts/PostCard';
 import { Button } from '@/components/core/Button';
@@ -20,44 +20,72 @@ export default function DiscoverClient({ initialPosts }: DiscoverClientProps) {
   const [showAllSports, setShowAllSports] = useState(false);
   const [posts, setPosts] = useState<SportsblockPost[]>(initialPosts ?? []);
   const [isLoading, setIsLoading] = useState(!initialPosts?.length);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const nextCursorRef = useRef<string | undefined>(undefined);
 
-  const loadPosts = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({
-        limit: '20',
-        sort: 'trending',
-      });
-      if (selectedSport !== 'all') params.append('sportCategory', selectedSport);
-
-      const response = await fetch(`/api/hive/posts?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch posts: ${response.status}`);
+  const loadPosts = useCallback(
+    async (cursor?: string) => {
+      const isAppending = !!cursor;
+      if (isAppending) {
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
       }
-      const result = (await response.json()) as {
-        success: boolean;
-        posts: SportsblockPost[];
-        hasMore: boolean;
-        nextCursor?: string;
-      };
+      setError(null);
 
-      setPosts(result.success ? result.posts : []);
-    } catch (err) {
-      logger.error('Error loading posts', 'DiscoverPage', err);
-      setError('Failed to load posts. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedSport]);
+      try {
+        const params = new URLSearchParams({
+          limit: '20',
+          sort: 'trending',
+        });
+        if (selectedSport !== 'all') params.append('sportCategory', selectedSport);
+        if (cursor) params.append('before', cursor);
 
-  // Fetch when sport filter changes (skip initial "all" if we have server data)
+        const response = await fetch(`/api/hive/posts?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch posts: ${response.status}`);
+        }
+        const result = (await response.json()) as {
+          success: boolean;
+          posts: SportsblockPost[];
+          hasMore: boolean;
+          nextCursor?: string;
+        };
+
+        if (result.success) {
+          setPosts((prev) => (isAppending ? [...prev, ...result.posts] : result.posts));
+          setHasMore(result.hasMore);
+          nextCursorRef.current = result.nextCursor;
+        } else {
+          setPosts((prev) => (isAppending ? prev : []));
+          setHasMore(false);
+        }
+      } catch (err) {
+        logger.error('Error loading posts', 'DiscoverPage', err);
+        setError('Failed to load posts. Please try again.');
+      } finally {
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [selectedSport]
+  );
+
+  // Reset and fetch when sport filter changes
   useEffect(() => {
     if (selectedSport === 'all' && initialPosts?.length) return;
+    nextCursorRef.current = undefined;
+    setHasMore(true);
     loadPosts();
   }, [selectedSport, loadPosts, initialPosts]);
+
+  const handleLoadMore = () => {
+    if (nextCursorRef.current && !isLoadingMore) {
+      loadPosts(nextCursorRef.current);
+    }
+  };
 
   return (
     <MainLayout>
@@ -122,7 +150,7 @@ export default function DiscoverClient({ initialPosts }: DiscoverClientProps) {
           ) : error ? (
             <div className="py-12 text-center">
               <p className="mb-4 text-red-500">{error}</p>
-              <Button onClick={loadPosts}>Try Again</Button>
+              <Button onClick={() => loadPosts()}>Try Again</Button>
             </div>
           ) : posts.length > 0 ? (
             <div className="space-y-6">
@@ -146,10 +174,17 @@ export default function DiscoverClient({ initialPosts }: DiscoverClientProps) {
         </div>
 
         {/* Load More */}
-        {posts.length > 0 && (
+        {posts.length > 0 && hasMore && (
           <div className="text-center">
-            <Button variant="outline" size="lg" onClick={loadPosts}>
-              Load More Posts
+            <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoadingMore}>
+              {isLoadingMore ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                'Load More Posts'
+              )}
             </Button>
           </div>
         )}

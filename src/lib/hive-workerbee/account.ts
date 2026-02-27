@@ -1013,11 +1013,13 @@ async function convertVestsToHive(vestingShares: string): Promise<number> {
  * Get recent operations for an account using WorkerBee/Wax
  * @param username - Hive username
  * @param limit - Number of recent operations to fetch (default: 500)
+ * @param start - Starting operation ID for pagination (optional, -1 = latest)
  * @returns Array of recent account operations
  */
 export async function getRecentOperations(
   username: string,
-  limit: number = 500
+  limit: number = 500,
+  start?: number
 ): Promise<Array<{
   id: number;
   timestamp: string;
@@ -1030,7 +1032,7 @@ export async function getRecentOperations(
   try {
     debugLog(`[WorkerBee getRecentOperations] Fetching recent operations for: ${username}`);
 
-    const operations = await getAccountHistory(username, limit);
+    const operations = await getAccountHistory(username, limit, start);
     if (!operations) return null;
 
     // Define monetary operation types (transactions that involve actual money/assets changes)

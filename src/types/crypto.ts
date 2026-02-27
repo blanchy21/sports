@@ -22,14 +22,3 @@ export interface CryptoPriceData {
     usd_24h_change?: number;
   };
 }
-
-export interface PriceContextType {
-  bitcoinPrice: number | null;
-  ethereumPrice: number | null;
-  hivePrice: number | null;
-  hbdPrice: number | null;
-  isLoading: boolean;
-  error: string | null;
-  lastUpdated: Date | null;
-  refreshPrices: () => Promise<void>;
-}

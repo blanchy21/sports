@@ -48,7 +48,7 @@ describe('GET /api/hive/account/history', () => {
       .get('/api/hive/account/history')
       .query({ username: 'gtg' });
 
-    expect(getRecentOperations).toHaveBeenCalledWith('gtg', 500);
+    expect(getRecentOperations).toHaveBeenCalledWith('gtg', 500, undefined);
     expect(response.status).toBe(500);
     expect(response.body.success).toBe(false);
     expect(response.body.code).toBe('INTERNAL_ERROR');
@@ -78,12 +78,14 @@ describe('GET /api/hive/account/history', () => {
       .get('/api/hive/account/history')
       .query({ username: 'gtg', limit: 25 });
 
-    expect(getRecentOperations).toHaveBeenCalledWith('gtg', 25);
+    expect(getRecentOperations).toHaveBeenCalledWith('gtg', 25, undefined);
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       success: true,
       operations,
       count: 1,
+      hasMore: false,
+      nextStart: undefined,
       username: 'gtg',
     });
   });

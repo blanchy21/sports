@@ -128,6 +128,11 @@ export type AccountSummaryQueryParams = z.infer<typeof accountSummaryQuerySchema
 export const accountHistoryQuerySchema = z.object({
   username: hiveUsernameSchema,
   limit: historyLimitSchema,
+  start: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : undefined))
+    .pipe(z.number().int().min(0).optional()),
 });
 
 export type AccountHistoryQueryParams = z.infer<typeof accountHistoryQuerySchema>;
