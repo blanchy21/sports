@@ -7,6 +7,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useBroadcast } from '@/hooks/useBroadcast';
+import { STALE_TIMES } from '@/lib/constants/cache';
 
 // Types for power data
 export interface PowerInfo {
@@ -64,7 +65,7 @@ export function useHivePowerInfo(account: string | undefined) {
     queryKey: powerKeys.info(account || ''),
     queryFn: () => fetchPowerInfo(account!),
     enabled: !!account,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: STALE_TIMES.STANDARD,
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes (HP changes infrequently)
   });
 }

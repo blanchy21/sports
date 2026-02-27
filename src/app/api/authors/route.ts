@@ -5,7 +5,7 @@ import { retryWithBackoff } from '@/lib/utils/api-retry';
 import type { ApiResponse } from '@/types/api';
 
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const revalidate = 120;
 
 const ROUTE = '/api/authors';
 
