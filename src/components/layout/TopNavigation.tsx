@@ -77,7 +77,6 @@ export const TopNavigation: React.FC = () => {
                 width={72}
                 height={72}
                 className="lg:w-18 lg:h-18 h-10 w-10 sm:h-14 sm:w-14"
-                unoptimized
               />
               <div className="hidden text-xl font-bold text-foreground sm:block sm:text-2xl lg:text-3xl">
                 Sportsblock
