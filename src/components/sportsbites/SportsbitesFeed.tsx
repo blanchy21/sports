@@ -178,6 +178,14 @@ export function SportsbitesFeed({
     setBites((prev) => prev.filter((b) => b.id !== id));
   }, []);
 
+  const handlePredictionDeleted = useCallback((id: string) => {
+    setPredictions((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
+  const handlePredictionUpdated = useCallback((updated: PredictionBite) => {
+    setPredictions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  }, []);
+
   const showNewBites = useCallback(() => {
     if (pendingBites.length === 0) return;
 
@@ -496,7 +504,14 @@ export function SportsbitesFeed({
         mergedFeedItems.map((feedItem) => {
           if (feedItem.type === 'prediction') {
             const prediction = feedItem.item as PredictionBite;
-            return <PredictionBiteCard key={`pred-${prediction.id}`} prediction={prediction} />;
+            return (
+              <PredictionBiteCard
+                key={`pred-${prediction.id}`}
+                prediction={prediction}
+                onDeleted={handlePredictionDeleted}
+                onUpdated={handlePredictionUpdated}
+              />
+            );
           }
           const bite = feedItem.item as Sportsbite;
           return (

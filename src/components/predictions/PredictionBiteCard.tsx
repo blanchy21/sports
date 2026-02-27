@@ -1,18 +1,28 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils/client';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
 import { PredictionOutcomeBar } from './PredictionOutcomeBar';
 import { PredictionStakeModal } from './PredictionStakeModal';
+import { PredictionEditModal } from './PredictionEditModal';
 import { PredictionSettlementPanel } from './PredictionSettlementPanel';
 import { usePredictionStore } from '@/stores/predictionStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { SPORT_CATEGORIES } from '@/types';
-import { Trophy, Clock, Loader2, Target, AlertCircle } from 'lucide-react';
+import {
+  Trophy,
+  Clock,
+  Loader2,
+  Target,
+  AlertCircle,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
 import type { PredictionBite } from '@/lib/predictions/types';
 
 function timeAgo(dateString: string): string {
@@ -47,13 +57,25 @@ function formatCountdown(locksAt: string): string {
 interface PredictionBiteCardProps {
   prediction: PredictionBite;
   isNew?: boolean;
+  onDeleted?: (id: string) => void;
+  onUpdated?: (updated: PredictionBite) => void;
 }
 
-export function PredictionBiteCard({ prediction, isNew }: PredictionBiteCardProps) {
+export function PredictionBiteCard({
+  prediction,
+  isNew,
+  onDeleted,
+  onUpdated,
+}: PredictionBiteCardProps) {
   const { user, authType, hiveUser } = useAuth();
   const { openStakeModal, stakeModalOpen, stakeOutcomeId, closeStakeModal } = usePredictionStore();
 
   const [countdown, setCountdown] = useState(() => formatCountdown(prediction.locksAt));
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const hiveUsername =
     hiveUser?.username || user?.hiveUsername || (authType === 'hive' ? user?.username : undefined);
@@ -92,6 +114,35 @@ export function PredictionBiteCard({ prediction, isNew }: PredictionBiteCardProp
     }, 1000);
     return () => clearInterval(interval);
   }, [prediction.status, prediction.locksAt]);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
+
+  const handleDelete = useCallback(async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/predictions/${prediction.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error?.message || data.error || 'Failed to delete');
+      }
+      onDeleted?.(prediction.id);
+    } catch {
+      // Reset state so user can retry
+      setDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
+    }
+  }, [prediction.id, onDeleted]);
 
   const winningOutcome = prediction.outcomes.find((o) => o.id === prediction.winningOutcomeId);
 
@@ -135,6 +186,43 @@ export function PredictionBiteCard({ prediction, isNew }: PredictionBiteCardProp
               <StatusBadge status={prediction.status} />
             </div>
           </div>
+
+          {/* Three-dot menu for edit/delete */}
+          {prediction.canModify && (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((prev) => !prev)}
+                className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Prediction options"
+              >
+                <MoreHorizontal className="h-5 w-5" />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-lg border bg-card shadow-lg">
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setEditOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setDeleteConfirm(true);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Title */}
@@ -243,6 +331,59 @@ export function PredictionBiteCard({ prediction, isNew }: PredictionBiteCardProp
           outcomeId={activeStakeOutcome.id}
           isOpen={stakeModalOpen}
           onClose={closeStakeModal}
+        />
+      )}
+
+      {/* Delete confirmation dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => !deleting && setDeleteConfirm(false)}
+            aria-hidden="true"
+          />
+          <div className="relative mx-4 w-full max-w-sm rounded-lg border bg-card p-6 shadow-lg">
+            <h3 className="text-lg font-semibold">Delete Prediction</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Are you sure you want to delete this prediction? This action cannot be undone.
+              {prediction.totalPool > 0 && ' Your staked MEDALS will be refunded.'}
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDeleteConfirm(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="bg-destructive text-white hover:bg-destructive/90"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {editOpen && (
+        <PredictionEditModal
+          prediction={prediction}
+          isOpen={editOpen}
+          onClose={() => setEditOpen(false)}
+          onSaved={(updated) => onUpdated?.(updated)}
         />
       )}
     </>

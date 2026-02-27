@@ -43,13 +43,11 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
     where.createdAt = { lt: new Date(params.cursor) };
   }
 
-  const includeStakes = user ? { stakes: { where: { username: user.username } } } : {};
-
   const predictions = await prisma.prediction.findMany({
     where,
     include: {
       outcomes: true,
-      ...includeStakes,
+      stakes: !!user,
     },
     orderBy: { createdAt: 'desc' },
     take: params.limit + 1,

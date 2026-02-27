@@ -42,6 +42,8 @@ export interface PredictionBite {
   settledAt: string | null;
   settledBy: string | null;
   createdAt: string;
+  /** Whether the current user can edit/delete this prediction */
+  canModify: boolean;
   /** Current user's stakes (if authenticated) */
   userStakes?: UserStakeInfo[];
   /** Settlement summary (only on settled predictions) */

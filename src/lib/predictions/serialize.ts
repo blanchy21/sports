@@ -42,6 +42,12 @@ export function serializePrediction(
     }
   }
 
+  // canModify: creator can edit/delete only while OPEN and no other users have staked
+  const isCreator = !!currentUsername && currentUsername === prediction.creatorUsername;
+  const hasNonCreatorStakes =
+    prediction.stakes?.some((s) => s.username !== prediction.creatorUsername) ?? false;
+  const canModify = isCreator && prediction.status === 'OPEN' && !hasNonCreatorStakes;
+
   const bite: PredictionBite = {
     id: prediction.id,
     creatorUsername: prediction.creatorUsername,
@@ -60,6 +66,7 @@ export function serializePrediction(
     settledAt: prediction.settledAt?.toISOString() ?? null,
     settledBy: prediction.settledBy,
     createdAt: prediction.createdAt.toISOString(),
+    canModify,
   };
 
   if (userStakes) {
