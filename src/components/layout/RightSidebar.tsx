@@ -115,12 +115,6 @@ export const RightSidebar: React.FC = () => {
   return (
     <aside className="hidden bg-background xl:fixed xl:right-0 xl:top-16 xl:flex xl:h-[calc(100vh-4rem)] xl:w-80 xl:flex-col xl:overflow-y-auto xl:border-l xl:p-4 2xl:top-[4.5rem] 2xl:h-[calc(100vh-4.5rem)] 2xl:w-[28rem] 2xl:p-6">
       <div className="space-y-6">
-        {/* My Communities */}
-        <MyCommunitiesWidget maxItems={5} className="rounded-lg border bg-card p-4" />
-
-        {/* Top MEDALS Stakers */}
-        <TopStakersWidget />
-
         {/* Trending Topics */}
         <div className="rounded-lg border bg-card p-4">
           <div className="mb-4 flex items-center space-x-2">
@@ -161,48 +155,6 @@ export const RightSidebar: React.FC = () => {
             </>
           ) : (
             <div className="text-sm text-muted-foreground">No trending topics found</div>
-          )}
-        </div>
-
-        {/* Trending Sports */}
-        <div className="rounded-lg border bg-card p-4">
-          <div className="mb-4 flex items-center space-x-2">
-            <Star className="h-5 w-5 text-primary" />
-            <h3 className="text-base font-semibold">Trending Sports</h3>
-          </div>
-          {isLoading ? (
-            <LoadingSkeleton />
-          ) : error ? (
-            <div className="flex items-center space-x-2 text-muted-foreground">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-sm">Unable to load sports</span>
-            </div>
-          ) : trendingSports.length > 0 ? (
-            <div className="space-y-3">
-              {trendingSports.map((item) => (
-                <Link
-                  key={item.sport.id}
-                  href={`/discover?sportCategory=${item.sport.id}`}
-                  className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-accent"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-lg">{item.sport.icon}</span>
-                    <div>
-                      <div className="text-sm font-medium">{item.sport.name}</div>
-                      <div className="text-xs text-muted-foreground">{item.posts} posts</div>
-                    </div>
-                  </div>
-                  {item.trending && (
-                    <div className="flex items-center space-x-1">
-                      <TrendingUp className="h-3 w-3 text-accent" />
-                      <span className="text-xs text-accent">Hot</span>
-                    </div>
-                  )}
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">No sports data found</div>
           )}
         </div>
 
@@ -362,6 +314,54 @@ export const RightSidebar: React.FC = () => {
             <div className="text-sm text-muted-foreground">No upcoming events found</div>
           )}
         </div>
+
+        {/* Top MEDALS Stakers */}
+        <TopStakersWidget />
+
+        {/* Trending Sports */}
+        <div className="rounded-lg border bg-card p-4">
+          <div className="mb-4 flex items-center space-x-2">
+            <Star className="h-5 w-5 text-primary" />
+            <h3 className="text-base font-semibold">Trending Sports</h3>
+          </div>
+          {isLoading ? (
+            <LoadingSkeleton />
+          ) : error ? (
+            <div className="flex items-center space-x-2 text-muted-foreground">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">Unable to load sports</span>
+            </div>
+          ) : trendingSports.length > 0 ? (
+            <div className="space-y-3">
+              {trendingSports.slice(0, 5).map((item) => (
+                <Link
+                  key={item.sport.id}
+                  href={`/discover?sportCategory=${item.sport.id}`}
+                  className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-accent"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-lg">{item.sport.icon}</span>
+                    <div>
+                      <div className="text-sm font-medium">{item.sport.name}</div>
+                      <div className="text-xs text-muted-foreground">{item.posts} posts</div>
+                    </div>
+                  </div>
+                  {item.trending && (
+                    <div className="flex items-center space-x-1">
+                      <TrendingUp className="h-3 w-3 text-accent" />
+                      <span className="text-xs text-accent">Hot</span>
+                    </div>
+                  )}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">No sports data found</div>
+          )}
+        </div>
+
+        {/* My Communities */}
+        <MyCommunitiesWidget maxItems={5} className="rounded-lg border bg-card p-4" />
 
         {/* Stats Card */}
         <div className="rounded-lg bg-gradient-to-r from-primary via-bright-cobalt to-accent p-4 text-white">
