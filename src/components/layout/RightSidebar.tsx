@@ -280,7 +280,7 @@ export const RightSidebar: React.FC = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           {event.status === 'live' && (
-                            <span className="inline-flex animate-pulse items-center gap-1 rounded bg-red-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                            <span className="inline-flex animate-pulse items-center gap-1 rounded bg-destructive px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                               <span className="h-1.5 w-1.5 animate-ping rounded-full bg-white" />
                               Live
                             </span>

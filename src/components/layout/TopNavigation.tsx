@@ -180,7 +180,7 @@ export const TopNavigation: React.FC = () => {
                   >
                     <Bell className="h-5 w-5 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
                     {unreadCount > 0 && (
-                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-xs text-white sm:h-5 sm:min-w-5 sm:text-xs">
+                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-destructive px-1 text-[10px] text-xs text-white sm:h-5 sm:min-w-5 sm:text-xs">
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
