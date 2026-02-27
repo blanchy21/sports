@@ -12,25 +12,25 @@ export const ProviderButtons: React.FC<ProviderButtonsProps> = ({
       name: 'Hive Keychain',
       description: 'Browser Extension',
       icon: '🔑',
-      color: 'bg-yellow-500',
+      color: 'bg-warning',
     },
     hiveauth: {
       name: 'HiveAuth',
       description: 'Mobile App',
       icon: '📱',
-      color: 'bg-blue-500',
+      color: 'bg-info',
     },
     hivesigner: {
       name: 'HiveSigner',
       description: 'Web Wallet',
       icon: '🌐',
-      color: 'bg-green-500',
+      color: 'bg-success',
     },
     peakvault: {
       name: 'Peak Vault',
       description: 'Advanced Wallet',
       icon: '⛰️',
-      color: 'bg-yellow-500',
+      color: 'bg-warning',
     },
   };
 
@@ -45,7 +45,7 @@ export const ProviderButtons: React.FC<ProviderButtonsProps> = ({
             key={provider}
             onClick={() => onProviderSelect(provider)}
             disabled={isConnecting}
-            className="flex w-full items-center justify-start space-x-3 border border-gray-300 bg-white py-2 text-gray-700 hover:bg-gray-50"
+            className="flex w-full items-center justify-start space-x-3 border border-border bg-card py-2 text-foreground/80 hover:bg-muted/50"
           >
             <div
               className={`flex h-8 w-8 items-center justify-center ${config.color} rounded text-sm font-bold text-white`}
@@ -54,7 +54,7 @@ export const ProviderButtons: React.FC<ProviderButtonsProps> = ({
             </div>
             <div className="text-left">
               <div className="font-medium">{config.name}</div>
-              <div className="text-xs text-gray-500">{config.description}</div>
+              <div className="text-xs text-muted-foreground">{config.description}</div>
             </div>
           </Button>
         );
@@ -62,13 +62,13 @@ export const ProviderButtons: React.FC<ProviderButtonsProps> = ({
 
       {/* No providers available message */}
       {availableProviders.length === 0 && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+        <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
           <div className="text-center">
-            <div className="mb-2 text-sm font-medium text-yellow-800">No Hive Wallets Detected</div>
-            <div className="mb-3 text-xs text-yellow-600">
+            <div className="mb-2 text-sm font-medium text-warning">No Hive Wallets Detected</div>
+            <div className="mb-3 text-xs text-warning/80">
               Install a Hive wallet to connect to the blockchain
             </div>
-            <div className="space-y-1 text-xs text-yellow-600">
+            <div className="space-y-1 text-xs text-warning/80">
               <div>• Install Hive Keychain browser extension</div>
               <div>• Use HiveSigner web wallet</div>
               <div>• Download HiveAuth mobile app</div>

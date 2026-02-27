@@ -83,8 +83,8 @@ export default function MatchThreadsPage() {
           <p className="text-sm text-muted-foreground">
             Live game discussions
             {liveCount > 0 && (
-              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
+              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
                 {liveCount} live
               </span>
             )}
@@ -150,8 +150,8 @@ export default function MatchThreadsPage() {
       ) : error ? (
         <div className="rounded-xl border bg-card p-8 text-center">
           <div className="mb-4 flex justify-center">
-            <div className="rounded-full bg-red-100 p-3 dark:bg-red-950">
-              <AlertCircle className="h-8 w-8 text-red-500" />
+            <div className="rounded-full bg-destructive/15 p-3">
+              <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
           </div>
           <h3 className="mb-2 text-lg font-semibold">Failed to Load</h3>

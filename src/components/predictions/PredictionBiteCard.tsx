@@ -160,7 +160,7 @@ export function PredictionBiteCard({ prediction, isNew }: PredictionBiteCardProp
 
         {/* Pool display */}
         <div className="flex items-center gap-2 px-4 pt-3 text-sm text-muted-foreground">
-          <Trophy className="h-4 w-4 text-amber-500" />
+          <Trophy className="h-4 w-4 text-warning" />
           <span>
             Total Pool:{' '}
             <span className="font-semibold text-foreground">{prediction.totalPool} MEDALS</span>
@@ -169,8 +169,8 @@ export function PredictionBiteCard({ prediction, isNew }: PredictionBiteCardProp
 
         {/* User stake summary */}
         {totalUserStake > 0 && (
-          <div className="mx-4 mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-sm">
-            <span className="text-amber-700 dark:text-amber-400">
+          <div className="mx-4 mt-2 rounded-lg bg-warning/10 px-3 py-2 text-sm">
+            <span className="text-warning">
               Your stake: {totalUserStake} MEDALS
               {prediction.status === 'SETTLED' && userPayout > 0 && (
                 <> — Won {userPayout.toFixed(2)} MEDALS</>
@@ -192,7 +192,7 @@ export function PredictionBiteCard({ prediction, isNew }: PredictionBiteCardProp
               </div>
               <Button
                 size="sm"
-                className="bg-amber-500 text-white hover:bg-amber-600"
+                className="bg-warning text-white hover:bg-warning/90"
                 onClick={() => {
                   const firstOutcome = prediction.outcomes[0];
                   if (firstOutcome) openStakeModal(prediction.id, firstOutcome.id);
@@ -205,7 +205,7 @@ export function PredictionBiteCard({ prediction, isNew }: PredictionBiteCardProp
           )}
 
           {prediction.status === 'LOCKED' && (
-            <div className="flex items-center gap-2 rounded-lg bg-blue-500/10 px-3 py-2 text-sm text-blue-700 dark:text-blue-400">
+            <div className="flex items-center gap-2 rounded-lg bg-info/10 px-3 py-2 text-sm text-info">
               <Clock className="h-4 w-4" />
               Predictions Locked - In Progress
             </div>
@@ -219,13 +219,13 @@ export function PredictionBiteCard({ prediction, isNew }: PredictionBiteCardProp
           )}
 
           {prediction.status === 'SETTLED' && winningOutcome && (
-            <div className="rounded-lg bg-green-500/10 px-3 py-2 text-sm text-green-700 dark:text-green-400">
+            <div className="rounded-lg bg-success/10 px-3 py-2 text-sm text-success">
               Winner: <span className="font-semibold">{winningOutcome.label}</span>
             </div>
           )}
 
           {(prediction.status === 'VOID' || prediction.status === 'REFUNDED') && (
-            <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <AlertCircle className="h-4 w-4" />
               <span>Voided{prediction.voidReason ? `: ${prediction.voidReason}` : ''}</span>
             </div>
@@ -251,15 +251,15 @@ export function PredictionBiteCard({ prediction, isNew }: PredictionBiteCardProp
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string }> = {
-    OPEN: { label: 'Open', className: 'bg-green-500/15 text-green-700 dark:text-green-400' },
-    LOCKED: { label: 'Locked', className: 'bg-blue-500/15 text-blue-700 dark:text-blue-400' },
+    OPEN: { label: 'Open', className: 'bg-success/15 text-success' },
+    LOCKED: { label: 'Locked', className: 'bg-info/15 text-info' },
     SETTLING: {
       label: 'Settling',
       className: 'bg-purple-500/15 text-purple-700 dark:text-purple-400',
     },
-    SETTLED: { label: 'Settled', className: 'bg-gray-500/15 text-gray-700 dark:text-gray-400' },
-    VOID: { label: 'Void', className: 'bg-red-500/15 text-red-700 dark:text-red-400' },
-    REFUNDED: { label: 'Refunded', className: 'bg-red-500/15 text-red-700 dark:text-red-400' },
+    SETTLED: { label: 'Settled', className: 'bg-muted text-muted-foreground' },
+    VOID: { label: 'Void', className: 'bg-destructive/15 text-destructive' },
+    REFUNDED: { label: 'Refunded', className: 'bg-destructive/15 text-destructive' },
   };
 
   const c = config[status] ?? { label: status, className: 'bg-muted text-muted-foreground' };

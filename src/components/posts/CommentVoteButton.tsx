@@ -89,7 +89,7 @@ export const CommentVoteButton: React.FC<CommentVoteButtonProps> = ({
       </Button>
 
       {/* Error Display */}
-      {voteState.error && <div className="ml-1 text-xs text-red-600">{voteState.error}</div>}
+      {voteState.error && <div className="ml-1 text-xs text-destructive">{voteState.error}</div>}
     </div>
   );
 };

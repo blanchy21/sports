@@ -143,7 +143,7 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
       disabled={isDisabled}
       className={cn(
         'transition-all',
-        isFollowing && 'hover:border-red-200 hover:bg-red-50 hover:text-red-600',
+        isFollowing && 'hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive',
         className
       )}
     >

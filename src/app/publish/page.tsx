@@ -801,7 +801,7 @@ function PublishPageContent() {
                   ))}
                 </select>
                 {!selectedSport && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                  <p className="text-xs text-warning">
                     Sport category is required to publish your post
                   </p>
                 )}
@@ -848,7 +848,7 @@ function PublishPageContent() {
                   className={cn(
                     'rounded-lg p-3',
                     rcStatus.canPost
-                      ? 'border border-green-500/20 bg-green-500/10'
+                      ? 'border border-success/20 bg-success/10'
                       : 'border border-destructive/20 bg-destructive/10'
                   )}
                 >
@@ -856,7 +856,7 @@ function PublishPageContent() {
                     <div
                       className={cn(
                         'h-2 w-2 rounded-full',
-                        rcStatus.canPost ? 'bg-green-500' : 'bg-destructive'
+                        rcStatus.canPost ? 'bg-success' : 'bg-destructive'
                       )}
                     />
                     <span className="text-sm">
@@ -882,9 +882,9 @@ function PublishPageContent() {
                   )}
 
                   {/* General soft user notice */}
-                  <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-3">
+                  <div className="rounded-lg border border-info/20 bg-info/10 p-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm text-blue-600 dark:text-blue-400">
+                      <p className="text-sm text-info">
                         Your post will be visible to everyone. Connect with Hive to earn rewards!
                       </p>
                       {postLimitInfo && !postLimitInfo.isNearLimit && (

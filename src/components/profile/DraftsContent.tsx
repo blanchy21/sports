@@ -153,7 +153,7 @@ export function DraftsContent() {
         </div>
       ) : error ? (
         <div className="py-12 text-center">
-          <p className="mb-4 text-red-500">{error}</p>
+          <p className="mb-4 text-destructive">{error}</p>
           <Button onClick={loadDrafts}>Try Again</Button>
         </div>
       ) : drafts.length > 0 ? (
@@ -204,7 +204,7 @@ export function DraftsContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive/80"
                     onClick={() => handleDeleteDraft(draft.id)}
                     disabled={deletingDraftId === draft.id}
                   >

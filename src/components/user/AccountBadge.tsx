@@ -46,12 +46,12 @@ export const AccountBadge: React.FC<AccountBadgeProps> = ({
         </div>
         <div>
           <div
-            className={`font-medium text-slate-900 ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-lg' : 'text-sm'}`}
+            className={`font-medium text-foreground ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-lg' : 'text-sm'}`}
           >
             {user.displayName || user.username}
           </div>
           {size !== 'sm' && (
-            <div className={`text-slate-500 ${size === 'lg' ? 'text-sm' : 'text-xs'}`}>
+            <div className={`text-muted-foreground ${size === 'lg' ? 'text-sm' : 'text-xs'}`}>
               @{user.username}
             </div>
           )}
@@ -83,16 +83,16 @@ export const AccountBadge: React.FC<AccountBadgeProps> = ({
       <div className="min-w-0 flex-1">
         <div className="flex items-center space-x-2">
           <div
-            className={`truncate font-medium text-slate-900 ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-lg' : 'text-sm'}`}
+            className={`truncate font-medium text-foreground ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-lg' : 'text-sm'}`}
           >
             {user.displayName || user.username}
           </div>
-          {isHiveUser && <Crown className={`${iconSizes[size]} text-yellow-500`} />}
+          {isHiveUser && <Crown className={`${iconSizes[size]} text-warning`} />}
         </div>
 
         <div className="flex items-center space-x-2">
           <div
-            className={`truncate text-slate-500 ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-sm' : 'text-xs'}`}
+            className={`truncate text-muted-foreground ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-sm' : 'text-xs'}`}
           >
             @{user.username}
           </div>
@@ -119,7 +119,7 @@ export const AccountBadge: React.FC<AccountBadgeProps> = ({
         {/* Earnings indicator for Hive users */}
         {showEarnings && isHiveUser && user.hiveBalance !== undefined && (
           <div
-            className={`font-medium text-green-600 ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-sm' : 'text-xs'}`}
+            className={`font-medium text-success ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-sm' : 'text-xs'}`}
           >
             {user.hiveBalance.toFixed(3)} HIVE
           </div>
@@ -139,8 +139,8 @@ export const AccountTypeIndicator: React.FC<{ user: User; className?: string }> 
     <div className={`flex items-center space-x-2 ${className}`}>
       {isHiveUser ? (
         <>
-          <div className="h-2 w-2 rounded-full bg-green-500"></div>
-          <span className="text-sm text-slate-600">Hive Account</span>
+          <div className="h-2 w-2 rounded-full bg-success"></div>
+          <span className="text-sm text-foreground/70">Hive Account</span>
           <Badge variant="default" className="text-xs">
             <Zap className="mr-1 h-3 w-3" />
             Can Earn
@@ -148,8 +148,8 @@ export const AccountTypeIndicator: React.FC<{ user: User; className?: string }> 
         </>
       ) : (
         <>
-          <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-          <span className="text-sm text-slate-600">Email Account</span>
+          <div className="h-2 w-2 rounded-full bg-info"></div>
+          <span className="text-sm text-foreground/70">Email Account</span>
           <Badge variant="secondary" className="text-xs">
             <UserIcon className="mr-1 h-3 w-3" />
             View Only
@@ -170,28 +170,28 @@ export const UpgradePrompt: React.FC<{
 
   return (
     <div
-      className={`rounded-lg border border-yellow-200 bg-gradient-to-r from-yellow-50 to-orange-50 p-4 ${className}`}
+      className={`rounded-lg border border-warning/30 bg-gradient-to-r from-warning/10 to-orange-500/10 p-4 ${className}`}
     >
       <div className="flex items-start space-x-3">
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100">
-          <Star className="h-4 w-4 text-yellow-600" />
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-warning/15">
+          <Star className="h-4 w-4 text-warning" />
         </div>
         <div className="min-w-0 flex-1">
-          <h4 className="mb-1 font-medium text-yellow-900">Unlock Earning Potential</h4>
-          <p className="mb-3 text-sm text-yellow-700">
+          <h4 className="mb-1 font-medium text-foreground">Unlock Earning Potential</h4>
+          <p className="mb-3 text-sm text-warning">
             Upgrade to a Hive account to start earning crypto rewards for your sports content and
             engagement.
           </p>
           <div className="flex space-x-2">
             <button
               onClick={onUpgrade}
-              className="rounded-md bg-yellow-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-yellow-700"
+              className="rounded-md bg-warning px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-warning/90"
             >
               Upgrade Now
             </button>
             <button
               onClick={onDismiss}
-              className="px-3 py-1.5 text-sm font-medium text-yellow-700 transition-colors hover:text-yellow-800"
+              className="px-3 py-1.5 text-sm font-medium text-warning transition-colors hover:text-warning/80"
             >
               Maybe Later
             </button>
@@ -199,7 +199,7 @@ export const UpgradePrompt: React.FC<{
         </div>
         <button
           onClick={onDismiss}
-          className="text-yellow-400 transition-colors hover:text-yellow-600"
+          className="text-warning/60 transition-colors hover:text-warning"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path

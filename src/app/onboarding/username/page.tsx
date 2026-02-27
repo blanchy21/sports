@@ -214,7 +214,7 @@ export default function OnboardingUsernamePage() {
               )}
               {validationState === 'valid' && <CheckCircle className="h-5 w-5 text-emerald-500" />}
               {(validationState === 'invalid' || validationState === 'taken') && (
-                <XCircle className="h-5 w-5 text-red-500" />
+                <XCircle className="h-5 w-5 text-destructive" />
               )}
             </div>
           </div>
@@ -227,7 +227,7 @@ export default function OnboardingUsernamePage() {
               className={`mt-2 text-sm ${
                 validationState === 'valid'
                   ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-red-600 dark:text-red-400'
+                  : 'text-destructive'
               }`}
             >
               {reason}
@@ -255,7 +255,7 @@ export default function OnboardingUsernamePage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/50 dark:text-red-200"
+            className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
           >
             {error}
           </motion.div>

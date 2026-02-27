@@ -148,10 +148,10 @@ export function TransactionHistory({ username }: TransactionHistoryProps) {
             <p className="text-sm">Fetching your transaction history</p>
           </div>
         ) : error ? (
-          <div className="py-12 text-center text-red-500">
+          <div className="py-12 text-center text-destructive">
             <Activity className="mx-auto mb-4 h-8 w-8 opacity-50" />
-            <p className="text-lg font-medium">Error loading transactions</p>
-            <p className="text-sm">{error}</p>
+            <p className="text-lg font-medium text-destructive">Error loading transactions</p>
+            <p className="text-sm text-destructive">{error}</p>
             <Button
               variant="outline"
               size="sm"

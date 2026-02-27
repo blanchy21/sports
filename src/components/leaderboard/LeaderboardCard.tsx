@@ -33,7 +33,7 @@ const CATEGORY_CONFIG: Record<
   MOST_EXTERNAL_VIEWS: {
     title: 'Most External Views',
     icon: TrendingUp,
-    color: 'text-blue-500',
+    color: 'text-info',
     metric: 'external views',
   },
   MOST_VIEWED_POST: {
@@ -45,7 +45,7 @@ const CATEGORY_CONFIG: Record<
   MOST_COMMENTS: {
     title: 'Top Commenter',
     icon: MessageCircle,
-    color: 'text-green-500',
+    color: 'text-success',
     metric: 'comments',
   },
   MOST_ENGAGED_POST: {
@@ -57,7 +57,7 @@ const CATEGORY_CONFIG: Record<
   POST_OF_THE_WEEK: {
     title: 'Post of the Week',
     icon: Star,
-    color: 'text-yellow-500',
+    color: 'text-warning',
     metric: 'curator pick',
   },
   BEST_NEWCOMER: {
@@ -71,9 +71,9 @@ const CATEGORY_CONFIG: Record<
 function getRankBadgeClass(rank: number): string {
   switch (rank) {
     case 1:
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+      return 'bg-warning/15 text-warning';
     case 2:
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-700/30 dark:text-gray-300';
+      return 'bg-muted text-foreground/80';
     case 3:
       return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
     default:

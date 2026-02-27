@@ -216,9 +216,7 @@ export default function OnboardingGuidePage() {
             </div>
 
             {/* Title */}
-            <h2 className="mb-4 text-center text-xl font-bold text-foreground">
-              {step.title}
-            </h2>
+            <h2 className="mb-4 text-center text-xl font-bold text-foreground">{step.title}</h2>
 
             {/* Body */}
             <p className="mb-6 text-center text-sm leading-relaxed text-muted-foreground">
@@ -257,7 +255,7 @@ export default function OnboardingGuidePage() {
                       )}
                     </Button>
                     {downloadError && (
-                      <p className="text-center text-xs text-red-400">{downloadError}</p>
+                      <p className="text-center text-xs text-destructive">{downloadError}</p>
                     )}
                     <p className="text-center text-xs text-muted-foreground">
                       You must download your keys to continue

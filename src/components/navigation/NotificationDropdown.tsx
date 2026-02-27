@@ -155,17 +155,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return <AtSign className="h-4 w-4 text-accent" />;
       // Soft notification types
       case 'like':
-        return <Heart className="h-4 w-4 text-red-500" />;
+        return <Heart className="h-4 w-4 text-destructive" />;
       case 'reply':
-        return <MessageSquare className="h-4 w-4 text-blue-500" />;
+        return <MessageSquare className="h-4 w-4 text-info" />;
       case 'follow':
-        return <UserPlus className="h-4 w-4 text-green-500" />;
+        return <UserPlus className="h-4 w-4 text-success" />;
       case 'tip':
-        return <Coins className="h-4 w-4 text-amber-500" />;
+        return <Coins className="h-4 w-4 text-warning" />;
       case 'system':
-        return <Info className="h-4 w-4 text-gray-500" />;
+        return <Info className="h-4 w-4 text-muted-foreground" />;
       default:
-        return <Bell className="h-4 w-4 text-gray-500" />;
+        return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -183,17 +183,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return 'bg-accent/10 border-accent/20';
       // Soft notification types
       case 'like':
-        return 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800';
+        return 'bg-destructive/10 border-destructive/30';
       case 'reply':
-        return 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800';
+        return 'bg-info/10 border-info/30';
       case 'follow':
-        return 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800';
+        return 'bg-success/10 border-success/30';
       case 'tip':
-        return 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800';
+        return 'bg-warning/10 border-warning/30';
       case 'system':
-        return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
+        return 'bg-muted border-border';
       default:
-        return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
+        return 'bg-muted border-border';
     }
   };
 
@@ -244,7 +244,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={clearNotifications}
-                className="text-xs text-muted-foreground hover:text-red-500"
+                className="text-xs text-muted-foreground hover:text-destructive"
               >
                 <Trash2 className="mr-1 h-3 w-3" />
                 Clear

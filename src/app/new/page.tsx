@@ -76,7 +76,7 @@ export default function NewPostsPage() {
           </div>
         ) : error ? (
           <div className="py-12 text-center">
-            <p className="mb-4 text-red-500">{error}</p>
+            <p className="mb-4 text-destructive">{error}</p>
             <Button onClick={loadPosts}>Try Again</Button>
           </div>
         ) : posts.length > 0 ? (

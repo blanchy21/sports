@@ -230,9 +230,9 @@ export default function FeedPage() {
                   <div>
                     <div className="text-2xl font-bold">
                       {statsLoading ? (
-                        <div className="h-8 w-16 animate-pulse rounded bg-gray-300 dark:bg-gray-600"></div>
+                        <div className="h-8 w-16 animate-pulse rounded bg-muted"></div>
                       ) : statsError ? (
-                        <span className="text-lg text-red-500">Error</span>
+                        <span className="text-lg text-destructive">Error</span>
                       ) : (
                         stat.value
                       )}
@@ -260,24 +260,22 @@ export default function FeedPage() {
               Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="animate-pulse rounded-lg border bg-card p-6">
                   <div className="mb-4 flex items-center space-x-3">
-                    <div className="h-10 w-10 rounded-full bg-gray-300"></div>
+                    <div className="h-10 w-10 rounded-full bg-muted"></div>
                     <div className="flex-1">
-                      <div className="mb-2 h-4 w-1/4 rounded bg-gray-300"></div>
-                      <div className="h-3 w-1/3 rounded bg-gray-300"></div>
+                      <div className="mb-2 h-4 w-1/4 rounded bg-muted"></div>
+                      <div className="h-3 w-1/3 rounded bg-muted"></div>
                     </div>
                   </div>
-                  <div className="mb-3 h-6 w-3/4 rounded bg-gray-300"></div>
-                  <div className="mb-2 h-4 w-full rounded bg-gray-300"></div>
-                  <div className="h-4 w-2/3 rounded bg-gray-300"></div>
+                  <div className="mb-3 h-6 w-3/4 rounded bg-muted"></div>
+                  <div className="mb-2 h-4 w-full rounded bg-muted"></div>
+                  <div className="h-4 w-2/3 rounded bg-muted"></div>
                 </div>
               ))
             ) : errorMessage ? (
               <div className="py-12 text-center">
                 <div className="mb-4 text-6xl">⚠️</div>
-                <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-                  Error Loading Posts
-                </h3>
-                <p className="mb-6 text-gray-500 dark:text-gray-400">{errorMessage}</p>
+                <h3 className="mb-2 text-xl font-semibold text-foreground">Error Loading Posts</h3>
+                <p className="mb-6 text-muted-foreground">{errorMessage}</p>
                 <Button onClick={() => refetch()}>Try Again</Button>
               </div>
             ) : posts.length > 0 ? (
@@ -289,12 +287,8 @@ export default function FeedPage() {
             ) : (
               <div className="py-12 text-center">
                 <div className="mb-4 text-6xl">🏆</div>
-                <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-                  No posts available
-                </h3>
-                <p className="mb-6 text-gray-500 dark:text-gray-400">
-                  Check back later for new content.
-                </p>
+                <h3 className="mb-2 text-xl font-semibold text-foreground">No posts available</h3>
+                <p className="mb-6 text-muted-foreground">Check back later for new content.</p>
                 <Button onClick={() => router.push('/publish')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Post

@@ -51,11 +51,11 @@ function getActivityStatus(date: Date): { color: string; status: string } {
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffMinutes < 5) {
-    return { color: 'text-green-500', status: 'online' };
+    return { color: 'text-success', status: 'online' };
   } else if (diffMinutes < 60) {
-    return { color: 'text-green-400', status: 'recently active' };
+    return { color: 'text-success', status: 'recently active' };
   } else if (diffHours < 24) {
-    return { color: 'text-yellow-500', status: 'active today' };
+    return { color: 'text-warning', status: 'active today' };
   } else if (diffDays < 7) {
     return { color: 'text-orange-400', status: 'active this week' };
   } else if (diffDays < 30) {

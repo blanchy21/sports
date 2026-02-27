@@ -161,7 +161,7 @@ export function SearchModal({ onClose }: SearchModalProps) {
                             Hive
                           </span>
                         ) : (
-                          <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                          <span className="inline-flex items-center rounded-full bg-info/15 px-1.5 py-0.5 text-[10px] font-medium text-info">
                             Sportsblock
                           </span>
                         )}

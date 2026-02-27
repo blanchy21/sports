@@ -111,12 +111,12 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
     return (
       <div
         className={cn(
-          'rounded-lg border bg-gradient-to-br from-green-500/5 to-emerald-500/5 p-4',
+          'rounded-lg border bg-gradient-to-br from-success/5 to-emerald-500/5 p-4',
           className
         )}
       >
         <div className="flex animate-pulse items-center gap-2">
-          <RefreshCw className="h-5 w-5 animate-spin text-green-500" />
+          <RefreshCw className="h-5 w-5 animate-spin text-success" />
           <span className="text-sm text-muted-foreground">Calculating potential earnings...</span>
         </div>
       </div>
@@ -126,15 +126,15 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
   return (
     <div
       className={cn(
-        'rounded-lg border bg-gradient-to-br from-green-500/5 to-emerald-500/5 p-4',
+        'rounded-lg border bg-gradient-to-br from-success/5 to-emerald-500/5 p-4',
         className
       )}
     >
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="rounded-full bg-green-500/10 p-1.5">
-            <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <div className="rounded-full bg-success/10 p-1.5">
+            <DollarSign className="h-4 w-4 text-success" />
           </div>
           <h3 className="font-semibold text-foreground">Potential Earnings</h3>
         </div>
@@ -165,9 +165,7 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total potential:</span>
               <div className="text-right">
-                <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                  ${earnings.totalUsd}
-                </span>
+                <span className="text-lg font-bold text-success">${earnings.totalUsd}</span>
                 {earnings.totalHive && (
                   <span className="ml-1 text-xs text-muted-foreground">
                     ({earnings.totalHive} HIVE)
@@ -253,7 +251,7 @@ export const PotentialEarningsBadge: React.FC<{
       href="/settings?tab=wallet"
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1',
-        'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+        'bg-success/15 text-success',
         'text-xs font-medium transition-opacity hover:opacity-80',
         className
       )}

@@ -266,7 +266,7 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
       <MainLayout>
         <div className="mx-auto max-w-4xl p-6">
           <div className="text-center">
-            <h1 className="mb-4 text-2xl font-bold text-red-600">Post Not Found</h1>
+            <h1 className="mb-4 text-2xl font-bold text-destructive">Post Not Found</h1>
             <p className="mb-6 text-muted-foreground">
               {error || "The post you're looking for doesn't exist."}
             </p>
@@ -398,7 +398,7 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
                 variant="ghost"
                 onClick={handleBookmark}
                 className={`flex items-center space-x-2 ${
-                  post && isBookmarked(post) ? 'text-yellow-500' : ''
+                  post && isBookmarked(post) ? 'text-warning' : ''
                 }`}
               >
                 <Bookmark
@@ -412,7 +412,7 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
                   variant="ghost"
                   onClick={handleReblog}
                   disabled={isReblogging}
-                  className="flex items-center space-x-2 hover:text-green-500"
+                  className="flex items-center space-x-2 hover:text-success"
                 >
                   <Repeat2 className={`h-4 w-4 ${isReblogging ? 'animate-spin' : ''}`} />
                   <span>{isReblogging ? 'Reposting...' : 'Repost'}</span>

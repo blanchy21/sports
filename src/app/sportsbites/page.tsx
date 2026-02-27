@@ -117,12 +117,12 @@ export default function SportsBitesPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5">
+            <div className="flex items-center gap-2 rounded-full border border-success/20 bg-success/10 px-3 py-1.5">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-success"></span>
               </span>
-              <span className="text-xs font-medium text-green-600 dark:text-green-400">Live</span>
+              <span className="text-xs font-medium text-success">Live</span>
             </div>
           </div>
 

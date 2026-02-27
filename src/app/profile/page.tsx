@@ -266,13 +266,13 @@ export default function ProfilePage() {
 
             {/* Error Display */}
             {refreshError && (
-              <div className="mt-3 flex items-start space-x-2 rounded-lg border border-red-200 bg-red-50 p-3">
-                <AlertCircle className="mt-0.5 h-4 w-4 text-red-500" />
+              <div className="mt-3 flex items-start space-x-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+                <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
                 <div>
-                  <p className="text-sm text-red-800">{refreshError}</p>
+                  <p className="text-sm text-destructive">{refreshError}</p>
                   <button
                     onClick={() => setRefreshError(null)}
-                    className="mt-1 text-xs text-red-600 underline hover:text-red-800"
+                    className="mt-1 text-xs text-destructive underline hover:text-destructive/80"
                   >
                     Dismiss
                   </button>
@@ -411,7 +411,7 @@ export default function ProfilePage() {
                   </div>
                 ) : postsError ? (
                   <div className="py-12 text-center">
-                    <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
+                    <AlertCircle className="mx-auto mb-4 h-16 w-16 text-destructive" />
                     <h3 className="mb-2 text-lg font-semibold">Error loading posts</h3>
                     <p className="mb-4 text-muted-foreground">{postsError}</p>
                     <Button onClick={loadUserPosts}>Try Again</Button>
@@ -425,10 +425,8 @@ export default function ProfilePage() {
                 ) : (
                   <div className="py-12 text-center">
                     <div className="mb-4 text-6xl">📝</div>
-                    <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-                      No posts yet
-                    </h3>
-                    <p className="mb-6 text-gray-500 dark:text-gray-400">
+                    <h3 className="mb-2 text-xl font-semibold text-foreground">No posts yet</h3>
+                    <p className="mb-6 text-muted-foreground">
                       Start sharing your sports insights and connect with the community!
                     </p>
                     <Button onClick={() => router.push('/publish')}>

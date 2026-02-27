@@ -93,28 +93,28 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
   const getIcon = () => {
     switch (toast.type) {
       case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />;
+        return <CheckCircle className="h-5 w-5 text-success" />;
       case 'error':
-        return <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
+        return <AlertCircle className="h-5 w-5 text-destructive" />;
       case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />;
+        return <AlertTriangle className="h-5 w-5 text-warning" />;
       case 'info':
       default:
-        return <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
+        return <Info className="h-5 w-5 text-info" />;
     }
   };
 
   const getBackgroundColor = () => {
     switch (toast.type) {
       case 'success':
-        return 'bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-700';
+        return 'bg-success/10 border-success/30';
       case 'error':
-        return 'bg-red-50 border-red-300 dark:bg-red-950 dark:border-red-700';
+        return 'bg-destructive/10 border-destructive/30';
       case 'warning':
-        return 'bg-yellow-50 border-yellow-300 dark:bg-yellow-950 dark:border-yellow-700';
+        return 'bg-warning/10 border-warning/30';
       case 'info':
       default:
-        return 'bg-blue-50 border-blue-300 dark:bg-blue-950 dark:border-blue-700';
+        return 'bg-info/10 border-info/30';
     }
   };
 
@@ -138,11 +138,9 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
     >
       {getIcon()}
       <div className="min-w-0 flex-1">
-        {toast.title && (
-          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{toast.title}</div>
-        )}
+        {toast.title && <div className="text-sm font-medium text-foreground">{toast.title}</div>}
         {toast.description && (
-          <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">{toast.description}</div>
+          <div className="mt-1 text-sm text-foreground/70">{toast.description}</div>
         )}
       </div>
       <button
@@ -150,7 +148,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
           e.stopPropagation();
           onRemove();
         }}
-        className="flex-shrink-0 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+        className="flex-shrink-0 text-muted-foreground/70 transition-colors hover:text-foreground/70"
       >
         <X className="h-4 w-4" />
       </button>

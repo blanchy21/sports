@@ -271,7 +271,9 @@ export const RightSidebar: React.FC = () => {
                     <div
                       key={event.id}
                       className={`flex cursor-pointer items-start space-x-3 rounded-md p-2 transition-colors hover:bg-accent ${
-                        event.status === 'live' ? 'border border-red-500/20 bg-red-500/5' : ''
+                        event.status === 'live'
+                          ? 'border border-destructive/20 bg-destructive/5'
+                          : ''
                       }`}
                     >
                       <div className="text-2xl">{event.icon}</div>

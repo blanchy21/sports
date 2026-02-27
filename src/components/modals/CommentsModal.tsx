@@ -155,11 +155,11 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="flex animate-pulse space-x-3">
-                <div className="h-8 w-8 rounded-full bg-gray-300"></div>
+                <div className="h-8 w-8 rounded-full bg-muted"></div>
                 <div className="flex-1">
-                  <div className="mb-2 h-4 w-1/4 rounded bg-gray-300"></div>
-                  <div className="mb-1 h-4 w-full rounded bg-gray-300"></div>
-                  <div className="h-4 w-3/4 rounded bg-gray-300"></div>
+                  <div className="mb-2 h-4 w-1/4 rounded bg-muted"></div>
+                  <div className="mb-1 h-4 w-full rounded bg-muted"></div>
+                  <div className="h-4 w-3/4 rounded bg-muted"></div>
                 </div>
               </div>
             ))}
@@ -167,10 +167,8 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         ) : error ? (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">⚠️</div>
-            <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-              Error Loading Comments
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
+            <h3 className="mb-2 text-xl font-semibold text-foreground">Error Loading Comments</h3>
+            <p className="text-muted-foreground">
               Failed to load comments. Please try again later.
             </p>
           </div>
@@ -181,7 +179,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
               return (
                 <div
                   key={`${comment.author}-${comment.permlink}`}
-                  className={`flex space-x-3 ${isNestedReply ? 'ml-8 border-l-2 border-gray-200 pl-4' : ''}`}
+                  className={`flex space-x-3 ${isNestedReply ? 'ml-8 border-l-2 border-border pl-4' : ''}`}
                 >
                   <Avatar
                     src={getHiveAvatarUrl(comment.author)}
@@ -244,12 +242,8 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         ) : (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">💬</div>
-            <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-              No Comments Yet
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              Be the first to comment on this post!
-            </p>
+            <h3 className="mb-2 text-xl font-semibold text-foreground">No Comments Yet</h3>
+            <p className="text-muted-foreground">Be the first to comment on this post!</p>
           </div>
         )}
       </div>

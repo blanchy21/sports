@@ -81,8 +81,8 @@ export function WalletCTAView({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-lg border bg-card p-5">
           <div className="mb-3 flex items-center gap-3">
-            <div className="rounded-lg bg-green-500/10 p-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
+            <div className="rounded-lg bg-success/10 p-2">
+              <DollarSign className="h-5 w-5 text-success" />
             </div>
             <h4 className="font-semibold">Earn HIVE & HBD</h4>
           </div>
@@ -94,8 +94,8 @@ export function WalletCTAView({
 
         <div className="rounded-lg border bg-card p-5">
           <div className="mb-3 flex items-center gap-3">
-            <div className="rounded-lg bg-amber-500/10 p-2">
-              <Star className="h-5 w-5 text-amber-500" />
+            <div className="rounded-lg bg-warning/10 p-2">
+              <Star className="h-5 w-5 text-warning" />
             </div>
             <h4 className="font-semibold">Curation Rewards</h4>
           </div>
@@ -107,8 +107,8 @@ export function WalletCTAView({
 
         <div className="rounded-lg border bg-card p-5">
           <div className="mb-3 flex items-center gap-3">
-            <div className="rounded-lg bg-blue-500/10 p-2">
-              <Activity className="h-5 w-5 text-blue-500" />
+            <div className="rounded-lg bg-info/10 p-2">
+              <Activity className="h-5 w-5 text-info" />
             </div>
             <h4 className="font-semibold">Unlimited Posts</h4>
           </div>
@@ -144,8 +144,8 @@ export function WalletCTAView({
 
         <div className="rounded-lg border bg-card p-5">
           <div className="mb-3 flex items-center gap-3">
-            <div className="rounded-lg bg-amber-500/10 p-2">
-              <Medal className="h-5 w-5 text-amber-500" />
+            <div className="rounded-lg bg-warning/10 p-2">
+              <Medal className="h-5 w-5 text-warning" />
             </div>
             <h4 className="font-semibold">MEDALS Token</h4>
           </div>
@@ -221,14 +221,14 @@ export function WalletCTAView({
           )}
           {bitcoinPrice && (
             <div className="rounded-lg bg-muted/50 p-4 text-center">
-              <Bitcoin className="mx-auto mb-2 h-6 w-6 text-amber-500" />
+              <Bitcoin className="mx-auto mb-2 h-6 w-6 text-warning" />
               <p className="text-sm text-muted-foreground">Bitcoin</p>
               <p className="text-lg font-bold">{formatUSD(bitcoinPrice)}</p>
             </div>
           )}
           {ethereumPrice && (
             <div className="rounded-lg bg-muted/50 p-4 text-center">
-              <Coins className="mx-auto mb-2 h-6 w-6 text-blue-500" />
+              <Coins className="mx-auto mb-2 h-6 w-6 text-info" />
               <p className="text-sm text-muted-foreground">Ethereum</p>
               <p className="text-lg font-bold">{formatUSD(ethereumPrice)}</p>
             </div>

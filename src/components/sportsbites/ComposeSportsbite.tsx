@@ -99,8 +99,8 @@ export function ComposeSportsbite({
   const charPercentage = (charCount / maxChars) * 100;
 
   const getCharCountColor = () => {
-    if (remainingChars < 0) return 'text-red-500';
-    if (remainingChars <= 20) return 'text-yellow-500';
+    if (remainingChars < 0) return 'text-destructive';
+    if (remainingChars <= 20) return 'text-warning';
     return 'text-muted-foreground';
   };
 
@@ -550,7 +550,7 @@ export function ComposeSportsbite({
             className={cn(
               'flex-1 border-b-2 py-2 text-sm font-medium transition-colors',
               composeMode === 'prediction'
-                ? 'border-amber-500 text-amber-600 dark:text-amber-400'
+                ? 'border-amber-500 text-warning'
                 : 'border-transparent text-muted-foreground'
             )}
           >
@@ -602,7 +602,7 @@ export function ComposeSportsbite({
                     <button
                       type="button"
                       onClick={() => removeOutcome(i)}
-                      className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
+                      className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
@@ -614,7 +614,7 @@ export function ComposeSportsbite({
               <button
                 type="button"
                 onClick={addOutcome}
-                className="mt-2 flex items-center gap-1.5 text-xs font-medium text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400"
+                className="mt-2 flex items-center gap-1.5 text-xs font-medium text-warning transition-colors hover:text-warning/80"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add outcome
@@ -1071,9 +1071,9 @@ export function ComposeSportsbite({
                         strokeLinecap="round"
                         className={cn(
                           remainingChars < 0
-                            ? 'text-red-500'
+                            ? 'text-destructive'
                             : remainingChars <= 20
-                              ? 'text-yellow-500'
+                              ? 'text-warning'
                               : 'text-primary'
                         )}
                       />
@@ -1113,10 +1113,10 @@ export function ComposeSportsbite({
           {authType === 'soft' && user && !user.keysDownloaded && (
             <a
               href="/api/hive/download-keys"
-              className="flex items-center gap-2 border-t border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2.5 transition-colors hover:from-amber-100 hover:to-orange-100 dark:border-amber-800/50 dark:from-amber-950/20 dark:to-orange-950/20 dark:hover:from-amber-950/30 dark:hover:to-orange-950/30"
+              className="flex items-center gap-2 border-t border-warning/30 bg-warning/10 px-4 py-2.5 transition-colors hover:bg-warning/15"
             >
-              <Download className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-              <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+              <Download className="h-3.5 w-3.5 shrink-0 text-warning" />
+              <p className="text-xs font-medium text-warning">
                 Download your Hive keys for full self-custody of your account
               </p>
             </a>

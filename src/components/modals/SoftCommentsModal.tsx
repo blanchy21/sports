@@ -196,10 +196,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
     const replies = repliesByParent[comment.id] || [];
 
     return (
-      <div
-        key={comment.id}
-        className={`${isReply ? 'ml-8 border-l-2 border-gray-200 pl-4 dark:border-gray-700' : ''}`}
-      >
+      <div key={comment.id} className={`${isReply ? 'ml-8 border-l-2 border-border pl-4' : ''}`}>
         <div className="flex space-x-3 py-3">
           <Avatar
             src={
@@ -252,7 +249,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-xs text-red-500 hover:text-red-600"
+                    className="h-6 px-2 text-xs text-destructive hover:text-destructive/80"
                     onClick={() => handleDeleteComment(comment.id)}
                   >
                     Delete
@@ -294,27 +291,21 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
         ) : error ? (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">⚠️</div>
-            <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-              Error Loading Comments
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">{error}</p>
+            <h3 className="mb-2 text-xl font-semibold text-foreground">Error Loading Comments</h3>
+            <p className="text-muted-foreground">{error}</p>
             <Button className="mt-4" onClick={fetchComments}>
               Try Again
             </Button>
           </div>
         ) : comments.length > 0 ? (
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="divide-y divide-border">
             {topLevelComments.map((comment) => renderComment(comment))}
           </div>
         ) : (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">💬</div>
-            <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-              No Comments Yet
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              Be the first to comment on this post!
-            </p>
+            <h3 className="mb-2 text-xl font-semibold text-foreground">No Comments Yet</h3>
+            <p className="text-muted-foreground">Be the first to comment on this post!</p>
           </div>
         )}
       </div>

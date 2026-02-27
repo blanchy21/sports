@@ -18,11 +18,11 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
     return (
       <div className={`space-y-6 ${className}`}>
         <Card className="animate-pulse p-6">
-          <div className="mb-4 h-6 w-1/3 rounded bg-gray-300"></div>
+          <div className="mb-4 h-6 w-1/3 rounded bg-muted"></div>
           <div className="space-y-2">
-            <div className="h-4 w-full rounded bg-gray-300"></div>
-            <div className="h-4 w-3/4 rounded bg-gray-300"></div>
-            <div className="h-4 w-1/2 rounded bg-gray-300"></div>
+            <div className="h-4 w-full rounded bg-muted"></div>
+            <div className="h-4 w-3/4 rounded bg-muted"></div>
+            <div className="h-4 w-1/2 rounded bg-muted"></div>
           </div>
         </Card>
       </div>
@@ -33,10 +33,8 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
     return (
       <div className={`py-12 text-center ${className}`}>
         <div className="mb-4 text-6xl">⚠️</div>
-        <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-          Community Not Found
-        </h3>
-        <p className="text-gray-500 dark:text-gray-400">
+        <h3 className="mb-2 text-xl font-semibold text-foreground">Community Not Found</h3>
+        <p className="text-muted-foreground">
           The community you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
       </div>
@@ -114,10 +112,10 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
                     <span
                       className={`rounded-full px-2 py-1 text-xs font-medium ${
                         member.role === 'admin'
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          ? 'bg-warning/15 text-warning'
                           : member.role === 'moderator'
-                            ? 'bg-accent/20 text-accent dark:bg-accent/20 dark:text-accent'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                            ? 'bg-accent/20 text-accent'
+                            : 'bg-muted text-foreground'
                       }`}
                     >
                       {member.role.charAt(0).toUpperCase() + member.role.slice(1)}

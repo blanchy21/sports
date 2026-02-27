@@ -182,26 +182,26 @@ export default function MonitoringPage() {
   const getHealthStatusColor = (status: string) => {
     switch (status) {
       case 'healthy':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-success/15 text-success border-success/30';
       case 'degraded':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-warning/15 text-warning border-warning/30';
       case 'unhealthy':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-destructive/15 text-destructive border-destructive/30';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-foreground border-border';
     }
   };
 
   const getHealthStatusIcon = (status: string) => {
     switch (status) {
       case 'healthy':
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
+        return <CheckCircle className="h-5 w-5 text-success" />;
       case 'degraded':
-        return <AlertTriangle className="h-5 w-5 text-yellow-600" />;
+        return <AlertTriangle className="h-5 w-5 text-warning" />;
       case 'unhealthy':
-        return <XCircle className="h-5 w-5 text-red-600" />;
+        return <XCircle className="h-5 w-5 text-destructive" />;
       default:
-        return <Activity className="h-5 w-5 text-gray-600" />;
+        return <Activity className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -244,7 +244,7 @@ export default function MonitoringPage() {
               onClick={handleClearData}
               variant="outline"
               size="sm"
-              className="text-red-600 hover:text-red-700"
+              className="text-destructive hover:text-destructive/80"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Clear Data
@@ -275,10 +275,10 @@ export default function MonitoringPage() {
 
             {monitoringData.health.issues.length > 0 && (
               <div className="mb-4">
-                <h3 className="mb-2 font-medium text-red-600">Issues:</h3>
+                <h3 className="mb-2 font-medium text-destructive">Issues:</h3>
                 <ul className="list-inside list-disc space-y-1">
                   {monitoringData.health.issues.map((issue, index) => (
-                    <li key={index} className="text-sm text-red-600">
+                    <li key={index} className="text-sm text-destructive">
                       {issue}
                     </li>
                   ))}
@@ -288,10 +288,10 @@ export default function MonitoringPage() {
 
             {monitoringData.health.recommendations.length > 0 && (
               <div>
-                <h3 className="mb-2 font-medium text-blue-600">Recommendations:</h3>
+                <h3 className="mb-2 font-medium text-info">Recommendations:</h3>
                 <ul className="list-inside list-disc space-y-1">
                   {monitoringData.health.recommendations.map((rec, index) => (
-                    <li key={index} className="text-sm text-blue-600">
+                    <li key={index} className="text-sm text-info">
                       {rec}
                     </li>
                   ))}
@@ -311,15 +311,17 @@ export default function MonitoringPage() {
               </h2>
               <div className="flex items-center space-x-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-green-600">{nodeHealthData.healthyNodes}</p>
+                  <p className="text-2xl font-bold text-success">{nodeHealthData.healthyNodes}</p>
                   <p className="text-xs text-muted-foreground">Healthy</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-red-600">{nodeHealthData.unhealthyNodes}</p>
+                  <p className="text-2xl font-bold text-destructive">
+                    {nodeHealthData.unhealthyNodes}
+                  </p>
                   <p className="text-xs text-muted-foreground">Unhealthy</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-2xl font-bold text-info">
                     {nodeHealthData.averageLatency.toFixed(0)}ms
                   </p>
                   <p className="text-xs text-muted-foreground">Avg Latency</p>
@@ -332,11 +334,11 @@ export default function MonitoringPage() {
               {nodeHealthData.nodeStatuses.map((node) => (
                 <div
                   key={node.url}
-                  className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
+                  className="flex items-center justify-between rounded-lg bg-muted/50 p-3"
                 >
                   <div className="flex items-center space-x-3">
                     <div
-                      className={`h-3 w-3 rounded-full ${node.isHealthy ? 'bg-green-500' : 'bg-red-500'}`}
+                      className={`h-3 w-3 rounded-full ${node.isHealthy ? 'bg-success' : 'bg-destructive'}`}
                     />
                     <div>
                       <p className="text-sm font-medium">{node.url}</p>
@@ -351,7 +353,7 @@ export default function MonitoringPage() {
                       {node.isHealthy ? 'Healthy' : 'Unhealthy'}
                     </Badge>
                     {node.lastError && (
-                      <p className="mt-1 max-w-48 truncate text-xs text-red-600">
+                      <p className="mt-1 max-w-48 truncate text-xs text-destructive">
                         {node.lastError}
                       </p>
                     )}
@@ -362,13 +364,13 @@ export default function MonitoringPage() {
 
             {/* Best/Worst Node Info */}
             <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="rounded-lg bg-green-50 p-3">
-                <h4 className="mb-1 font-medium text-green-800">Best Node</h4>
-                <p className="truncate text-sm text-green-700">{nodeHealthData.bestNode}</p>
+              <div className="rounded-lg bg-success/10 p-3">
+                <h4 className="mb-1 font-medium text-success">Best Node</h4>
+                <p className="truncate text-sm text-success">{nodeHealthData.bestNode}</p>
               </div>
-              <div className="rounded-lg bg-red-50 p-3">
-                <h4 className="mb-1 font-medium text-red-800">Worst Node</h4>
-                <p className="truncate text-sm text-red-700">{nodeHealthData.worstNode}</p>
+              <div className="rounded-lg bg-destructive/10 p-3">
+                <h4 className="mb-1 font-medium text-destructive">Worst Node</h4>
+                <p className="truncate text-sm text-destructive">{nodeHealthData.worstNode}</p>
               </div>
             </div>
           </Card>
@@ -411,7 +413,7 @@ export default function MonitoringPage() {
                   {monitoringData?.performance.successRate.toFixed(1) || '0'}%
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <TrendingUp className="h-8 w-8 text-success" />
             </div>
           </Card>
 
@@ -422,7 +424,7 @@ export default function MonitoringPage() {
                 <p className="text-sm font-medium text-muted-foreground">Cache Hit Rate</p>
                 <p className="text-2xl font-bold">{cacheStats?.hitRate || '0%'}</p>
               </div>
-              <Database className="h-8 w-8 text-blue-600" />
+              <Database className="h-8 w-8 text-info" />
             </div>
           </Card>
         </div>
@@ -437,7 +439,7 @@ export default function MonitoringPage() {
 
             <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="text-center">
-                <p className="text-3xl font-bold text-red-600">{monitoringData.errors.total}</p>
+                <p className="text-3xl font-bold text-destructive">{monitoringData.errors.total}</p>
                 <p className="text-sm text-muted-foreground">Total Errors</p>
               </div>
               <div className="text-center">
@@ -447,7 +449,7 @@ export default function MonitoringPage() {
                 <p className="text-sm text-muted-foreground">Unresolved</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-green-600">
+                <p className="text-3xl font-bold text-success">
                   {monitoringData.errors.total - monitoringData.errors.unresolved}
                 </p>
                 <p className="text-sm text-muted-foreground">Resolved</p>
@@ -462,7 +464,7 @@ export default function MonitoringPage() {
                   {monitoringData.errors.recentErrors.slice(0, 5).map((error) => (
                     <div
                       key={error.id}
-                      className="flex items-center justify-between rounded-lg bg-red-50 p-3"
+                      className="flex items-center justify-between rounded-lg bg-destructive/10 p-3"
                     >
                       <div className="flex items-center space-x-3">
                         <Badge
@@ -494,7 +496,7 @@ export default function MonitoringPage() {
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="text-center">
-                <p className="text-3xl font-bold text-blue-600">{cacheStats.size}</p>
+                <p className="text-3xl font-bold text-info">{cacheStats.size}</p>
                 <p className="text-sm text-muted-foreground">Cache Size</p>
               </div>
               <div className="text-center">
@@ -502,7 +504,7 @@ export default function MonitoringPage() {
                 <p className="text-sm text-muted-foreground">Max Size</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-green-600">{cacheStats.hitRate}</p>
+                <p className="text-3xl font-bold text-success">{cacheStats.hitRate}</p>
                 <p className="text-sm text-muted-foreground">Hit Rate</p>
               </div>
             </div>
@@ -521,7 +523,7 @@ export default function MonitoringPage() {
               {monitoringData.performance.slowOperations.slice(0, 10).map((op) => (
                 <div
                   key={op.id}
-                  className="flex items-center justify-between rounded-lg bg-yellow-50 p-3"
+                  className="flex items-center justify-between rounded-lg bg-warning/10 p-3"
                 >
                   <div className="flex items-center space-x-3">
                     <Badge variant={op.success ? 'default' : 'destructive'}>

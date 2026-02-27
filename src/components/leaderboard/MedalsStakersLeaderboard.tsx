@@ -41,11 +41,11 @@ const TIER_STYLES: Record<string, { label: string; className: string }> = {
   },
   SILVER: {
     label: 'Silver',
-    className: 'bg-gray-100 text-gray-700 dark:bg-gray-700/30 dark:text-gray-300',
+    className: 'bg-muted text-foreground/80',
   },
   GOLD: {
     label: 'Gold',
-    className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    className: 'bg-warning/15 text-warning',
   },
   PLATINUM: {
     label: 'Platinum',
@@ -56,9 +56,9 @@ const TIER_STYLES: Record<string, { label: string; className: string }> = {
 function getRankBadgeClass(rank: number): string {
   switch (rank) {
     case 1:
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+      return 'bg-warning/15 text-warning';
     case 2:
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-700/30 dark:text-gray-300';
+      return 'bg-muted text-foreground/80';
     case 3:
       return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
     default:
@@ -78,7 +78,9 @@ function PremiumBadge({ tier }: { tier: PremiumTier }) {
   const style = TIER_STYLES[tier];
   if (!style) return null;
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${style.className}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${style.className}`}
+    >
       {style.label}
     </span>
   );
@@ -144,7 +146,8 @@ export function MedalsStakersLeaderboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {data.totalHolders} holder{data.totalHolders !== 1 ? 's' : ''} (excl. treasury &amp; founders)
+          {data.totalHolders} holder{data.totalHolders !== 1 ? 's' : ''} (excl. treasury &amp;
+          founders)
         </p>
         <Button variant="outline" size="sm" onClick={fetchLeaderboard} aria-label="Refresh">
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -159,11 +162,11 @@ export function MedalsStakersLeaderboard() {
           Bronze {PREMIUM_TIERS.BRONZE.toLocaleString()}+
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-gray-400" />
+          <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground" />
           Silver {PREMIUM_TIERS.SILVER.toLocaleString()}+
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-yellow-400" />
+          <span className="inline-block h-2 w-2 rounded-full bg-warning" />
           Gold {PREMIUM_TIERS.GOLD.toLocaleString()}+
         </span>
         <span className="flex items-center gap-1">
@@ -189,7 +192,7 @@ export function MedalsStakersLeaderboard() {
             {data.holders.map((holder) => (
               <tr
                 key={holder.account}
-                className={`border-b last:border-0 transition-colors hover:bg-accent/5 ${
+                className={`border-b transition-colors last:border-0 hover:bg-accent/5 ${
                   holder.rank <= 3 ? 'bg-accent/5' : ''
                 }`}
               >

@@ -210,7 +210,7 @@ export function TipModal({ isOpen, onClose, author, permlink, senderAccount }: T
               <span className="text-sm font-medium text-muted-foreground">MEDALS</span>
             </div>
             {amountNum > liquidBalance && (
-              <p className="flex items-center gap-1 text-sm text-red-500">
+              <p className="flex items-center gap-1 text-sm text-destructive">
                 <AlertCircle className="h-3 w-3" />
                 Insufficient balance
               </p>
@@ -248,7 +248,7 @@ export function TipModal({ isOpen, onClose, author, permlink, senderAccount }: T
 
           {/* Error */}
           {transferMutation.error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-500">
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
                 <span className="font-medium">Tip failed</span>
@@ -287,8 +287,8 @@ export function TipModal({ isOpen, onClose, author, permlink, senderAccount }: T
 
       {step === 'success' && (
         <div className="space-y-4 py-4 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10">
-            <CheckCircle className="h-7 w-7 text-green-500" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success/10">
+            <CheckCircle className="h-7 w-7 text-success" />
           </div>
           <div>
             <h3 className="text-base font-semibold text-foreground">Tip Sent!</h3>

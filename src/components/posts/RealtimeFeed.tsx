@@ -91,11 +91,11 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
       case 'new_post':
         return <Activity className="h-4 w-4 text-accent" />;
       case 'new_vote':
-        return <Heart className="h-4 w-4 text-red-500" />;
+        return <Heart className="h-4 w-4 text-destructive" />;
       case 'new_comment':
         return <MessageCircle className="h-4 w-4 text-accent" />;
       default:
-        return <Zap className="h-4 w-4 text-yellow-500" />;
+        return <Zap className="h-4 w-4 text-warning" />;
     }
   };
 

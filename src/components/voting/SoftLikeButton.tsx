@@ -148,8 +148,8 @@ export const SoftLikeButton: React.FC<SoftLikeButtonProps> = ({
         onClick={handleLike}
         disabled={isDisabled}
         className={cn(
-          'flex h-8 items-center space-x-1 px-2 text-muted-foreground hover:text-red-500',
-          hasLiked && 'text-red-500',
+          'flex h-8 items-center space-x-1 px-2 text-muted-foreground hover:text-destructive',
+          hasLiked && 'text-destructive',
           isDisabled && 'cursor-not-allowed opacity-50'
         )}
         title={
@@ -165,7 +165,7 @@ export const SoftLikeButton: React.FC<SoftLikeButtonProps> = ({
       </Button>
 
       {/* Error Display */}
-      {error && <div className="ml-2 text-xs text-red-600">{error}</div>}
+      {error && <div className="ml-2 text-xs text-destructive">{error}</div>}
     </div>
   );
 };

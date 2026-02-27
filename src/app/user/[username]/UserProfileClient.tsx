@@ -163,12 +163,12 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
       <MainLayout>
         <div className="mx-auto max-w-4xl p-4 sm:p-6">
           <div className="animate-pulse space-y-6">
-            <div className="h-32 rounded-lg bg-gray-200 sm:h-48"></div>
+            <div className="h-32 rounded-lg bg-muted sm:h-48"></div>
             <div className="flex items-center space-x-4">
-              <div className="h-24 w-24 rounded-full bg-gray-200 sm:h-32 sm:w-32"></div>
+              <div className="h-24 w-24 rounded-full bg-muted sm:h-32 sm:w-32"></div>
               <div className="flex-1 space-y-2">
-                <div className="h-8 w-1/3 rounded bg-gray-200"></div>
-                <div className="h-4 w-1/4 rounded bg-gray-200"></div>
+                <div className="h-8 w-1/3 rounded bg-muted"></div>
+                <div className="h-4 w-1/4 rounded bg-muted"></div>
               </div>
             </div>
           </div>
@@ -261,10 +261,8 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                       </div>
                     )}
                   {isSoftUser && (
-                    <div className="rounded-full bg-blue-100 px-2 py-1 dark:bg-blue-900/30">
-                      <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                        Sportsblock User
-                      </span>
+                    <div className="rounded-full bg-info/15 px-2 py-1">
+                      <span className="text-xs font-medium text-info">Sportsblock User</span>
                     </div>
                   )}
                   {/* Follow Button for soft users */}
@@ -425,7 +423,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
               </div>
             ) : postsError ? (
               <div className="py-12 text-center">
-                <p className="mb-4 text-red-500">{postsError}</p>
+                <p className="mb-4 text-destructive">{postsError}</p>
                 <Button onClick={retryLoadPosts} variant="outline">
                   Try Again
                 </Button>

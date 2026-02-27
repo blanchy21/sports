@@ -110,10 +110,10 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-card shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b p-6">
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2 className="text-2xl font-bold text-foreground">
             {step === 'intro' && 'Upgrade to Hive Account'}
             {step === 'wallet' && 'Connect Your Hive Wallet'}
             {step === 'connecting' && 'Connecting...'}
@@ -132,10 +132,10 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-orange-500">
                   <Crown className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="mb-2 text-xl font-semibold text-slate-900">
+                <h3 className="mb-2 text-xl font-semibold text-foreground">
                   Unlock Your Earning Potential
                 </h3>
-                <p className="text-slate-600">
+                <p className="text-foreground/70">
                   Connect your Hive wallet to start earning crypto rewards for your sports content
                   and engagement.
                 </p>
@@ -143,24 +143,24 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
 
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-green-100">
-                    <Zap className="h-4 w-4 text-green-600" />
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-success/15">
+                    <Zap className="h-4 w-4 text-success" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-slate-900">Earn Crypto Rewards</h4>
-                    <p className="text-sm text-slate-600">
+                    <h4 className="font-medium text-foreground">Earn Crypto Rewards</h4>
+                    <p className="text-sm text-foreground/70">
                       Get paid in HIVE and HBD for quality content and engagement
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-3">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100">
-                    <Shield className="h-4 w-4 text-blue-600" />
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-info/15">
+                    <Shield className="h-4 w-4 text-info" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-slate-900">Full Blockchain Access</h4>
-                    <p className="text-sm text-slate-600">
+                    <h4 className="font-medium text-foreground">Full Blockchain Access</h4>
+                    <p className="text-sm text-foreground/70">
                       Vote, comment, and participate in Hive governance
                     </p>
                   </div>
@@ -171,20 +171,20 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                     <Star className="h-4 w-4 text-purple-600" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-slate-900">Keep Your Content</h4>
-                    <p className="text-sm text-slate-600">
+                    <h4 className="font-medium text-foreground">Keep Your Content</h4>
+                    <p className="text-sm text-foreground/70">
                       Your existing posts will be preserved and can earn rewards
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <div className="rounded-lg border border-info/30 bg-info/10 p-4">
                 <div className="flex items-start space-x-2">
-                  <div className="mt-0.5 h-4 w-4 text-sm text-blue-600">ℹ️</div>
+                  <div className="mt-0.5 h-4 w-4 text-sm text-info">ℹ️</div>
                   <div>
-                    <h4 className="text-sm font-medium text-blue-900">What happens next?</h4>
-                    <p className="mt-1 text-xs text-blue-700">
+                    <h4 className="text-sm font-medium text-foreground">What happens next?</h4>
+                    <p className="mt-1 text-xs text-info">
                       You&apos;ll connect your Hive wallet, and your account will be upgraded to a
                       full Hive account. All your existing content will be preserved and can start
                       earning rewards.
@@ -207,24 +207,24 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
           {step === 'wallet' && (
             <div className="space-y-6">
               <div className="text-center">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                  <Wallet className="h-6 w-6 text-blue-600" />
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-info/15">
+                  <Wallet className="h-6 w-6 text-info" />
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900">
+                <h3 className="mb-2 text-lg font-semibold text-foreground">
                   Choose Your Hive Wallet
                 </h3>
-                <p className="text-slate-600">
+                <p className="text-foreground/70">
                   Select your preferred wallet to connect to the Hive blockchain
                 </p>
               </div>
 
               {/* Error Message */}
               {errorMessage && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-                  <p className="text-sm text-red-800">{errorMessage}</p>
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+                  <p className="text-sm text-destructive">{errorMessage}</p>
                   <button
                     onClick={() => setErrorMessage(null)}
-                    className="mt-1 text-xs text-red-600 underline hover:text-red-800"
+                    className="mt-1 text-xs text-destructive underline hover:text-destructive/80"
                   >
                     Dismiss
                   </button>
@@ -233,8 +233,8 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
 
               {/* Hive Username Input */}
               {showHiveUsernameInput && (
-                <Card className="border-yellow-200 bg-yellow-50 p-4">
-                  <h4 className="mb-2 text-sm font-medium text-yellow-800">
+                <Card className="border-warning/30 bg-warning/10 p-4">
+                  <h4 className="mb-2 text-sm font-medium text-warning">
                     Enter your Hive username for Hive Keychain
                   </h4>
                   <div className="flex space-x-2">
@@ -243,7 +243,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                       value={hiveUsername}
                       onChange={(e) => setHiveUsername(e.target.value)}
                       placeholder="Enter your Hive username (e.g., blanchy)"
-                      className="flex-1 rounded-md border border-yellow-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      className="flex-1 rounded-md border border-warning/30 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-warning"
                       onKeyDown={(e) =>
                         e.key === 'Enter' &&
                         selectedProvider &&
@@ -259,7 +259,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                       {isConnecting ? 'Connecting...' : 'Connect'}
                     </Button>
                   </div>
-                  <p className="mt-1 text-xs text-yellow-700">
+                  <p className="mt-1 text-xs text-warning">
                     This will open Hive Keychain to sign in as @{hiveUsername || 'your-username'}
                   </p>
                   <button
@@ -269,7 +269,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                       setShowHiveUsernameInput(false);
                       setErrorMessage(null);
                     }}
-                    className="mt-1 text-xs text-yellow-700 underline hover:text-yellow-800"
+                    className="mt-1 text-xs text-warning underline hover:text-warning/80"
                   >
                     Cancel
                   </button>
@@ -283,18 +283,18 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                     key={provider}
                     onClick={() => handleWalletSelection(provider)}
                     disabled={isConnecting}
-                    className="flex h-16 w-full items-center justify-start space-x-4 border-2 border-slate-200 bg-white text-slate-700 transition-all duration-200 hover:border-blue-300 hover:bg-blue-50 disabled:opacity-50"
+                    className="flex h-16 w-full items-center justify-start space-x-4 border-2 border-border bg-card text-foreground/80 transition-all duration-200 hover:border-info/30 hover:bg-info/10 disabled:opacity-50"
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-2xl">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-info/15 text-2xl">
                       {getProviderIcon(provider)}
                     </div>
                     <div className="flex-1 text-left">
                       <div className="text-base font-semibold">{getProviderName(provider)}</div>
-                      <div className="text-sm text-slate-500">
+                      <div className="text-sm text-muted-foreground">
                         {getProviderDescription(provider)}
                       </div>
                     </div>
-                    <div className="text-slate-400">
+                    <div className="text-muted-foreground/70">
                       <Wallet className="h-5 w-5" />
                     </div>
                   </Button>
@@ -302,13 +302,13 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
 
                 {/* No providers available message */}
                 {wallet.availableProviders.length === 0 && (
-                  <Card className="border-yellow-200 bg-yellow-50 p-6 text-center">
-                    <div className="mb-3 text-yellow-800">
+                  <Card className="border-warning/30 bg-warning/10 p-6 text-center">
+                    <div className="mb-3 text-warning">
                       <div className="mb-2 text-sm font-medium">No Hive Wallets Detected</div>
-                      <div className="mb-3 text-xs text-yellow-600">
+                      <div className="mb-3 text-xs text-warning/80">
                         Install a Hive wallet to connect to the blockchain
                       </div>
-                      <div className="space-y-1 text-xs text-yellow-600">
+                      <div className="space-y-1 text-xs text-warning/80">
                         <div>• Install Hive Keychain browser extension</div>
                         <div>• Use HiveSigner web wallet</div>
                       </div>
@@ -316,7 +316,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-yellow-300 bg-white text-xs text-yellow-700 hover:bg-yellow-100"
+                      className="border-warning/30 bg-card text-xs text-warning hover:bg-warning/15"
                       onClick={() =>
                         window.open(
                           'https://chrome.google.com/webstore/detail/hive-keychain/poipeahgbjcobddaglhciijbnfkmemoh',
@@ -339,12 +339,14 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
           {/* Connecting Step */}
           {step === 'connecting' && (
             <div className="space-y-6 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-info/15">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-info border-t-transparent"></div>
               </div>
               <div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900">Connecting to Hive...</h3>
-                <p className="text-slate-600">Please approve the connection in your wallet</p>
+                <h3 className="mb-2 text-lg font-semibold text-foreground">
+                  Connecting to Hive...
+                </h3>
+                <p className="text-foreground/70">Please approve the connection in your wallet</p>
               </div>
             </div>
           )}
@@ -352,23 +354,23 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
           {/* Success Step */}
           {step === 'success' && (
             <div className="space-y-6 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/15">
+                <CheckCircle className="h-8 w-8 text-success" />
               </div>
               <div>
-                <h3 className="mb-2 text-xl font-semibold text-slate-900">Upgrade Complete!</h3>
-                <p className="text-slate-600">
+                <h3 className="mb-2 text-xl font-semibold text-foreground">Upgrade Complete!</h3>
+                <p className="text-foreground/70">
                   Your account has been successfully upgraded to a Hive account. You can now earn
                   crypto rewards!
                 </p>
               </div>
 
-              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+              <div className="rounded-lg border border-success/30 bg-success/10 p-4">
                 <div className="flex items-start space-x-2">
-                  <CheckCircle className="mt-0.5 h-4 w-4 text-green-600" />
+                  <CheckCircle className="mt-0.5 h-4 w-4 text-success" />
                   <div>
-                    <h4 className="text-sm font-medium text-green-900">What&apos;s next?</h4>
-                    <ul className="mt-1 space-y-1 text-xs text-green-700">
+                    <h4 className="text-sm font-medium text-foreground">What&apos;s next?</h4>
+                    <ul className="mt-1 space-y-1 text-xs text-success">
                       <li>• Your existing content is preserved</li>
                       <li>• Start earning rewards for new content</li>
                       <li>• Vote and participate in governance</li>
@@ -380,7 +382,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
 
               <Button
                 onClick={onClose}
-                className="h-12 w-full bg-green-600 text-base font-semibold text-white hover:bg-green-700"
+                className="h-12 w-full bg-success text-base font-semibold text-white hover:bg-success/90"
               >
                 Continue to Sportsblock
               </Button>

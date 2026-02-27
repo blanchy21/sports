@@ -88,16 +88,16 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
   );
 
   return (
-    <div className="bg-gray-50/50 p-6">
+    <div className="bg-muted/50 p-6">
       <h3 className="mb-4 text-lg font-semibold">Or connect with Hive Blockchain</h3>
 
       {/* Error Message */}
       {errorMessage && (
-        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2">
-          <p className="text-sm text-red-800">{errorMessage}</p>
+        <div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 p-2">
+          <p className="text-sm text-destructive">{errorMessage}</p>
           <button
             onClick={() => onError('')}
-            className="mt-1 text-xs text-red-600 underline hover:text-red-800"
+            className="mt-1 text-xs text-destructive underline hover:text-destructive/80"
           >
             Dismiss
           </button>
@@ -106,10 +106,10 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
 
       <div className="space-y-3">
         <div className="text-center">
-          <h4 className="mb-1 text-base font-semibold text-gray-800">
+          <h4 className="mb-1 text-base font-semibold text-foreground">
             Connect with Hive Blockchain
           </h4>
-          <p className="mb-3 text-xs text-gray-600">
+          <p className="mb-3 text-xs text-foreground/70">
             Choose your preferred wallet to access the Hive ecosystem
           </p>
         </div>
@@ -118,14 +118,14 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
         {!wallet.isReady && (
           <div className="flex items-center justify-center p-4">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="ml-2 text-sm text-gray-600">Loading wallets...</span>
+            <span className="ml-2 text-sm text-foreground/70">Loading wallets...</span>
           </div>
         )}
 
         {/* Username input for Keychain */}
         {showUsernameInput && (
-          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
-            <label className="mb-1 block text-sm font-medium text-yellow-800">
+          <div className="rounded-lg border border-warning/30 bg-warning/10 p-3">
+            <label className="mb-1 block text-sm font-medium text-warning">
               Enter your Hive username for Keychain
             </label>
             <div className="flex gap-2">
@@ -134,7 +134,7 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
                 value={hiveUsername}
                 onChange={(e) => setHiveUsername(e.target.value)}
                 placeholder="e.g., blanchy"
-                className="flex-1 rounded-md border border-yellow-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                className="flex-1 rounded-md border border-warning/30 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-warning"
                 onKeyDown={(e) => e.key === 'Enter' && handleWalletLogin('keychain')}
                 autoFocus
               />
@@ -151,7 +151,7 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
                 setShowUsernameInput(false);
                 setHiveUsername('');
               }}
-              className="mt-1 text-xs text-yellow-700 underline hover:text-yellow-800"
+              className="mt-1 text-xs text-warning underline hover:text-warning/80"
             >
               Cancel
             </button>
@@ -190,15 +190,15 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
 
         {/* No providers message */}
         {wallet.isReady && wallet.availableProviders.length === 0 && (
-          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+          <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
             <div className="text-center">
-              <div className="mb-2 text-sm font-medium text-yellow-800">
+              <div className="mb-2 text-sm font-medium text-warning">
                 Hive Wallet Connection Unavailable
               </div>
-              <div className="mb-3 text-xs text-yellow-600">
+              <div className="mb-3 text-xs text-warning/80">
                 Unable to initialize wallet connection. Please try:
               </div>
-              <div className="space-y-1 text-xs text-yellow-600">
+              <div className="space-y-1 text-xs text-warning/80">
                 <div>• Refreshing the page</div>
                 <div>• Installing Hive Keychain browser extension</div>
                 <div>• Using HiveSigner web wallet</div>
@@ -210,8 +210,8 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
 
       {/* Benefits */}
       <div className="mt-4 rounded-lg border border-border bg-card p-3">
-        <h5 className="mb-2 text-sm font-medium text-gray-700">Why connect with Hive?</h5>
-        <ul className="space-y-1 text-xs text-gray-600">
+        <h5 className="mb-2 text-sm font-medium text-foreground/80">Why connect with Hive?</h5>
+        <ul className="space-y-1 text-xs text-foreground/70">
           <li>• Earn rewards for your content</li>
           <li>• Vote on posts and comments</li>
           <li>• Access exclusive features</li>

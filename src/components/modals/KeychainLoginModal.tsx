@@ -108,7 +108,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, 
         <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2.5 text-sm">
           {isKeychainAvailable ? (
             <>
-              <CheckCircle className="h-4 w-4 flex-shrink-0 text-green-600 dark:text-green-400" />
+              <CheckCircle className="h-4 w-4 flex-shrink-0 text-success" />
               <span className="text-foreground/80">Hive Keychain extension detected</span>
             </>
           ) : (

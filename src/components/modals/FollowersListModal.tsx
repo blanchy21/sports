@@ -57,10 +57,10 @@ export const FollowersListModal: React.FC<FollowersListModalProps> = ({
           <div className="animate-pulse space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="flex items-center space-x-4">
-                <div className="h-12 w-12 rounded-full bg-gray-300"></div>
+                <div className="h-12 w-12 rounded-full bg-muted"></div>
                 <div className="flex-1">
-                  <div className="mb-2 h-4 w-1/3 rounded bg-gray-300"></div>
-                  <div className="h-3 w-1/2 rounded bg-gray-300"></div>
+                  <div className="mb-2 h-4 w-1/3 rounded bg-muted"></div>
+                  <div className="h-3 w-1/2 rounded bg-muted"></div>
                 </div>
               </div>
             ))}
@@ -86,10 +86,10 @@ export const FollowersListModal: React.FC<FollowersListModalProps> = ({
         ) : (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">{type === 'followers' ? '👥' : '👤'}</div>
-            <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+            <h3 className="mb-2 text-xl font-semibold text-foreground">
               {type === 'followers' ? 'No Followers Yet' : 'Not Following Anyone'}
             </h3>
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-muted-foreground">
               {type === 'followers'
                 ? "This user hasn't gained any followers yet."
                 : "This user isn't following anyone yet."}

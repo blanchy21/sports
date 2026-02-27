@@ -8,17 +8,19 @@
 
 import React from 'react';
 import { Trophy, Calendar, Coins, Users } from 'lucide-react';
-import { CONTENT_REWARDS, getWeeklyStakingPool, getPlatformYear, CURATOR_REWARDS } from '@/lib/rewards/config';
+import {
+  CONTENT_REWARDS,
+  getWeeklyStakingPool,
+  getPlatformYear,
+  CURATOR_REWARDS,
+} from '@/lib/rewards/config';
 
 interface WeeklyRewardsSummaryProps {
   weekId?: string;
   compact?: boolean;
 }
 
-export function WeeklyRewardsSummary({
-  weekId,
-  compact = false,
-}: WeeklyRewardsSummaryProps) {
+export function WeeklyRewardsSummary({ weekId, compact = false }: WeeklyRewardsSummaryProps) {
   const platformYear = getPlatformYear();
   const stakingPool = getWeeklyStakingPool();
 
@@ -43,10 +45,10 @@ export function WeeklyRewardsSummary({
 
   if (compact) {
     return (
-      <div className="bg-gradient-to-r from-primary/10 to-accent/10 border rounded-lg p-4">
+      <div className="rounded-lg border bg-gradient-to-r from-primary/10 to-accent/10 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-yellow-500" />
+            <Trophy className="h-5 w-5 text-warning" />
             <span className="font-semibold">Weekly Rewards Pool</span>
           </div>
           <div className="text-lg font-bold text-primary">
@@ -58,15 +60,15 @@ export function WeeklyRewardsSummary({
   }
 
   return (
-    <div className="bg-card border rounded-lg p-6">
+    <div className="rounded-lg border bg-card p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-yellow-500" />
+          <h2 className="flex items-center gap-2 text-xl font-bold">
+            <Trophy className="h-6 w-6 text-warning" />
             Weekly Rewards
           </h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="mt-1 text-sm text-muted-foreground">
             Year {platformYear} of the MEDALS economy
           </p>
         </div>
@@ -79,45 +81,39 @@ export function WeeklyRewardsSummary({
       </div>
 
       {/* Reward Categories */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         {/* Staking Rewards */}
-        <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Coins className="h-5 w-5 text-blue-500" />
+        <div className="rounded-lg bg-info/10 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <Coins className="h-5 w-5 text-info" />
             <span className="font-medium">Staking Rewards</span>
           </div>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            {stakingPool.toLocaleString()}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Distributed to all stakers
-          </p>
+          <p className="text-2xl font-bold text-info">{stakingPool.toLocaleString()}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Distributed to all stakers</p>
         </div>
 
         {/* Content Rewards */}
-        <div className="bg-purple-50 dark:bg-purple-950/30 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="rounded-lg bg-purple-50 p-4 dark:bg-purple-950/30">
+          <div className="mb-2 flex items-center gap-2">
             <Trophy className="h-5 w-5 text-purple-500" />
             <span className="font-medium">Content Rewards</span>
           </div>
           <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
             {contentRewardsTotal.toLocaleString()}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Leaderboard winners
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">Leaderboard winners</p>
         </div>
 
         {/* Curator Rewards */}
-        <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="h-5 w-5 text-green-500" />
+        <div className="rounded-lg bg-success/10 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <Users className="h-5 w-5 text-success" />
             <span className="font-medium">Curator Rewards</span>
           </div>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+          <p className="text-2xl font-bold text-success">
             up to {curatorPotential.toLocaleString()}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="mt-1 text-xs text-muted-foreground">
             {CURATOR_REWARDS.CURATOR_COUNT} curators × {CURATOR_REWARDS.MAX_VOTES_PER_DAY} votes/day
           </p>
         </div>
@@ -125,8 +121,8 @@ export function WeeklyRewardsSummary({
 
       {/* Content Rewards Breakdown */}
       <div className="border-t pt-4">
-        <h3 className="font-medium mb-3">Content Rewards Breakdown</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        <h3 className="mb-3 font-medium">Content Rewards Breakdown</h3>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           {Object.entries(CONTENT_REWARDS).map(([key, config]) => {
             // Skip if not available this year
             if ('minPlatformYear' in config && config.minPlatformYear > platformYear) {
@@ -137,12 +133,10 @@ export function WeeklyRewardsSummary({
             return (
               <div
                 key={key}
-                className="flex justify-between items-center bg-muted/50 rounded px-3 py-2 text-sm"
+                className="flex items-center justify-between rounded bg-muted/50 px-3 py-2 text-sm"
               >
-                <span className="truncate mr-2">{config.name}</span>
-                <span className="font-medium whitespace-nowrap">
-                  {amount.toLocaleString()}
-                </span>
+                <span className="mr-2 truncate">{config.name}</span>
+                <span className="whitespace-nowrap font-medium">{amount.toLocaleString()}</span>
               </div>
             );
           })}
@@ -150,7 +144,7 @@ export function WeeklyRewardsSummary({
       </div>
 
       {/* Total */}
-      <div className="border-t mt-4 pt-4 flex justify-between items-center">
+      <div className="mt-4 flex items-center justify-between border-t pt-4">
         <span className="text-lg font-medium">Total Weekly Distribution</span>
         <span className="text-2xl font-bold text-primary">
           ~{totalWeekly.toLocaleString()} MEDALS

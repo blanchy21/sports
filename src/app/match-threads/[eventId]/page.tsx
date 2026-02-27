@@ -71,8 +71,8 @@ export default function MatchThreadDetailPage({ params }: MatchThreadDetailPageP
 
         <div className="rounded-xl border bg-card p-8 text-center">
           <div className="mb-4 flex justify-center">
-            <div className="rounded-full bg-red-100 p-3 dark:bg-red-950">
-              <AlertCircle className="h-8 w-8 text-red-500" />
+            <div className="rounded-full bg-destructive/15 p-3">
+              <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
           </div>
           <h3 className="mb-2 text-lg font-semibold">{error || 'Match thread not found'}</h3>

@@ -75,7 +75,7 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
       onClose={onClose}
       title={
         <div className="flex items-center space-x-2">
-          <Heart className="h-5 w-5 text-red-500" />
+          <Heart className="h-5 w-5 text-destructive" />
           <span>Upvotes</span>
           <span className="text-sm text-muted-foreground">({totalVotes})</span>
         </div>
@@ -87,7 +87,7 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
       <div className="border-b bg-muted/30 p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div className="text-center">
-            <div className="text-xl font-bold text-red-500 sm:text-2xl">{totalVotes}</div>
+            <div className="text-xl font-bold text-destructive sm:text-2xl">{totalVotes}</div>
             <div className="text-sm text-muted-foreground">Total Votes</div>
           </div>
           <div className="text-center">
@@ -107,7 +107,7 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
           </div>
         ) : error ? (
           <div className="py-12 text-center">
-            <p className="text-sm text-red-500">{error}</p>
+            <p className="text-sm text-destructive">{error}</p>
           </div>
         ) : votes.length > 0 ? (
           <div className="space-y-4">
@@ -138,7 +138,7 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
                 </div>
 
                 <div className="text-right">
-                  <div className="text-sm font-medium text-red-500">
+                  <div className="text-sm font-medium text-destructive">
                     {(vote.percent / 100).toFixed(0)}%
                   </div>
                 </div>
@@ -148,12 +148,8 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
         ) : (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">💔</div>
-            <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-              No Upvotes Yet
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              This post hasn&apos;t received any upvotes yet.
-            </p>
+            <h3 className="mb-2 text-xl font-semibold text-foreground">No Upvotes Yet</h3>
+            <p className="text-muted-foreground">This post hasn&apos;t received any upvotes yet.</p>
           </div>
         )}
       </div>

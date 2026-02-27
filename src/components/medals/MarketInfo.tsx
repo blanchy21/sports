@@ -92,22 +92,22 @@ interface StatProps {
 
 const Stat: React.FC<StatProps> = ({ label, value, icon, suffix, trend, className }) => (
   <div className={cn('space-y-1', className)}>
-    <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+    <span className="flex items-center gap-1 text-xs text-muted-foreground">
       {icon}
       {label}
     </span>
     <div className="flex items-baseline gap-1">
-      <span className="text-lg font-semibold text-slate-900 dark:text-white">{value}</span>
-      {suffix && <span className="text-sm text-slate-500 dark:text-slate-400">{suffix}</span>}
+      <span className="text-lg font-semibold text-foreground">{value}</span>
+      {suffix && <span className="text-sm text-muted-foreground">{suffix}</span>}
       {trend && (
         <span
           className={cn(
             'ml-1 text-xs font-medium',
             trend.isZero
-              ? 'text-slate-400 dark:text-slate-500'
+              ? 'text-muted-foreground/70'
               : trend.isPositive
-                ? 'text-green-600'
-                : 'text-red-600'
+                ? 'text-success'
+                : 'text-destructive'
           )}
         >
           {trend.isPositive && !trend.isZero && <TrendingUp className="mr-0.5 inline h-3 w-3" />}
@@ -126,15 +126,15 @@ const MarketInfoSkeleton: React.FC<{ compact?: boolean }> = ({ compact }) => (
   <Card className={cn('w-full', compact ? 'p-3' : '')}>
     {!compact && (
       <CardHeader>
-        <div className="h-6 w-32 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+        <div className="h-6 w-32 animate-pulse rounded bg-muted" />
       </CardHeader>
     )}
     <CardContent className={compact ? 'p-0' : ''}>
       <div className={cn('grid gap-4', compact ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4')}>
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="space-y-2">
-            <div className="h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
-            <div className="h-6 w-24 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+            <div className="h-3 w-16 animate-pulse rounded bg-muted" />
+            <div className="h-6 w-24 animate-pulse rounded bg-muted" />
           </div>
         ))}
       </div>
@@ -149,10 +149,10 @@ const MarketInfoError: React.FC<{ error: Error; onRetry: () => void }> = ({ erro
   <Card className="w-full">
     <CardContent className="py-8">
       <div className="flex flex-col items-center space-y-3 text-center">
-        <AlertCircle className="h-10 w-10 text-red-400" />
+        <AlertCircle className="h-10 w-10 text-destructive" />
         <div>
-          <p className="font-medium text-slate-900 dark:text-white">Failed to load market data</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{error.message}</p>
+          <p className="font-medium text-foreground">Failed to load market data</p>
+          <p className="text-sm text-muted-foreground">{error.message}</p>
         </div>
         <Button variant="outline" size="sm" onClick={onRetry}>
           <RefreshCw className="mr-2 h-4 w-4" />
@@ -187,10 +187,10 @@ const PriceDisplay: React.FC<{ market: MedalsMarket }> = ({ market }) => {
         className={cn(
           'rounded-full px-3 py-1.5 text-sm font-semibold',
           priceChange.isZero
-            ? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+            ? 'bg-muted text-muted-foreground'
             : priceChange.isPositive
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-              : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+              ? 'bg-success/15 text-success'
+              : 'bg-destructive/15 text-destructive'
         )}
       >
         {priceChange.isPositive && !priceChange.isZero && (
@@ -214,24 +214,24 @@ const SpreadDisplay: React.FC<{ market: MedalsMarket }> = ({ market }) => {
   const spread = ask > 0 && bid > 0 ? ((ask - bid) / ask) * 100 : 0;
 
   return (
-    <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
+    <div className="rounded-lg bg-muted/50 p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
           <ArrowUpDown className="h-3 w-3" />
           Order Book
         </span>
-        <span className="text-xs text-slate-400 dark:text-slate-500">
+        <span className="text-xs text-muted-foreground/70">
           {spread > 0 ? `${spread.toFixed(2)}% spread` : '—'}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <span className="text-xs text-green-600">Highest Bid</span>
-          <div className="font-semibold text-green-700">{formatPrice(market.highestBid)} HIVE</div>
+          <span className="text-xs text-success">Highest Bid</span>
+          <div className="font-semibold text-success">{formatPrice(market.highestBid)} HIVE</div>
         </div>
         <div className="text-right">
-          <span className="text-xs text-red-600">Lowest Ask</span>
-          <div className="font-semibold text-red-700">{formatPrice(market.lowestAsk)} HIVE</div>
+          <span className="text-xs text-destructive">Lowest Ask</span>
+          <div className="font-semibold text-destructive">{formatPrice(market.lowestAsk)} HIVE</div>
         </div>
       </div>
     </div>
@@ -268,9 +268,7 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
       <Card className={cn('w-full', className)}>
         <CardContent className="p-4">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              MEDALS Market
-            </span>
+            <span className="text-sm font-medium text-foreground/80">MEDALS Market</span>
             <Button variant="ghost" size="sm" onClick={() => refetch()} className="h-7 w-7 p-0">
               <RefreshCw className="h-3 w-3" />
             </Button>
@@ -278,19 +276,19 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-slate-500 dark:text-slate-400">Price</span>
+              <span className="text-muted-foreground">Price</span>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-900 dark:text-white">
+                <span className="font-semibold text-foreground">
                   {formatPrice(market.price)} HIVE
                 </span>
                 <span
                   className={cn(
                     'text-xs font-medium',
                     priceChange.isZero
-                      ? 'text-slate-400 dark:text-slate-500'
+                      ? 'text-muted-foreground/70'
                       : priceChange.isPositive
-                        ? 'text-green-600'
-                        : 'text-red-600'
+                        ? 'text-success'
+                        : 'text-destructive'
                   )}
                 >
                   {priceChange.text}
@@ -298,16 +296,12 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-500 dark:text-slate-400">24h Volume</span>
-              <span className="text-slate-700 dark:text-slate-300">
-                {formatVolume(market.volume24h)} HIVE
-              </span>
+              <span className="text-muted-foreground">24h Volume</span>
+              <span className="text-foreground/80">{formatVolume(market.volume24h)} HIVE</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-500 dark:text-slate-400">Last Trade</span>
-              <span className="text-slate-700 dark:text-slate-300">
-                {formatPrice(market.lastPrice)} HIVE
-              </span>
+              <span className="text-muted-foreground">Last Trade</span>
+              <span className="text-foreground/80">{formatPrice(market.lastPrice)} HIVE</span>
             </div>
           </div>
 
@@ -316,7 +310,7 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
               href={`https://tribaldex.com/trade/MEDALS`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-amber-50 py-2 text-sm text-amber-600 transition-colors hover:text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:text-amber-300"
+              className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-warning/10 py-2 text-sm text-warning transition-colors hover:text-amber-700 dark:hover:text-amber-300"
             >
               Trade on Tribaldex
               <ExternalLink className="h-3 w-3" />
@@ -399,7 +393,7 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
 
         {/* Notice if market data is stale */}
         {market.message && (
-          <div className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+          <div className="flex items-center gap-2 rounded-lg bg-warning/10 p-3 text-sm text-warning">
             <AlertCircle className="h-4 w-4" />
             {market.message}
           </div>
@@ -407,7 +401,7 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
 
         {/* Last Updated */}
         {market.timestamp && (
-          <div className="text-center text-xs text-slate-400 dark:text-slate-500">
+          <div className="text-center text-xs text-muted-foreground/70">
             Last updated: {new Date(market.timestamp).toLocaleString()}
           </div>
         )}

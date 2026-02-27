@@ -338,7 +338,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
               placeholder={replyingTo ? `Reply to @${replyingTo.author}...` : 'Write a reply...'}
               className={cn(
                 'flex-1 resize-none rounded-lg border bg-background p-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary',
-                isOverLimit && 'border-red-500 focus:ring-red-500'
+                isOverLimit && 'border-destructive focus:ring-destructive'
               )}
               rows={1}
               value={replyText}
@@ -380,9 +380,9 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
                 className={cn(
                   'text-xs tabular-nums',
                   remaining <= 0
-                    ? 'font-medium text-red-500'
+                    ? 'font-medium text-destructive'
                     : remaining <= 20
-                      ? 'text-yellow-500'
+                      ? 'text-warning'
                       : 'text-muted-foreground'
                 )}
               >

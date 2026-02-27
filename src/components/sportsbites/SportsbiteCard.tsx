@@ -431,7 +431,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                     ) : (
                       <button
                         onClick={() => setConfirmingDelete(true)}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-500 transition-colors hover:bg-muted"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive transition-colors hover:bg-muted"
                       >
                         <Trash2 className="h-4 w-4" />
                         Delete
@@ -538,7 +538,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               ${pendingPayout.toFixed(2)} pending
             </span>
             {(sportsbite.tipTotal ?? 0) > 0 && (
-              <span className="flex items-center gap-1 text-xs font-medium text-amber-500">
+              <span className="flex items-center gap-1 text-xs font-medium text-warning">
                 <Coins className="h-3 w-3" />
                 {sportsbite.tipTotal} MEDALS tipped
               </span>
@@ -547,7 +547,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
         )}
         {sportsbite.source !== 'soft' && !pendingPayout && (sportsbite.tipTotal ?? 0) > 0 && (
           <div className="mt-2">
-            <span className="flex items-center gap-1 text-xs font-medium text-amber-500">
+            <span className="flex items-center gap-1 text-xs font-medium text-warning">
               <Coins className="h-3 w-3" />
               {sportsbite.tipTotal} MEDALS tipped
             </span>
@@ -606,7 +606,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               variant="ghost"
               size="sm"
               onClick={() => setShowShareMenu(!showShareMenu)}
-              className="flex h-8 items-center gap-1.5 px-2 text-muted-foreground transition-all hover:bg-green-500/10 hover:text-green-500"
+              className="flex h-8 items-center gap-1.5 px-2 text-muted-foreground transition-all hover:bg-success/10 hover:text-success"
             >
               <Share2 className="h-4 w-4" />
             </Button>
@@ -653,9 +653,9 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           size="sm"
           onClick={handleBookmark}
           className={cn(
-            'h-8 w-8 p-0 text-muted-foreground transition-all hover:bg-yellow-500/10 hover:text-yellow-500',
+            'h-8 w-8 p-0 text-muted-foreground transition-all hover:bg-warning/10 hover:text-warning',
             isBookmarked(bookmarkObj as unknown as Parameters<typeof isBookmarked>[0]) &&
-              'text-yellow-500'
+              'text-warning'
           )}
         >
           <Bookmark

@@ -46,7 +46,7 @@ export function MatchThreadCard({ thread }: MatchThreadCardProps) {
       href={`/match-threads/${thread.eventId}`}
       className={cn(
         'block rounded-xl border bg-card p-4 transition-all hover:shadow-md',
-        isLive && 'border-green-500/50 shadow-sm shadow-green-500/10'
+        isLive && 'border-success/50 shadow-sm shadow-success/10'
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -72,7 +72,7 @@ export function MatchThreadCard({ thread }: MatchThreadCardProps) {
                   <span
                     className={cn(
                       'font-bold tabular-nums',
-                      isLive ? 'text-green-600 dark:text-green-400' : 'text-foreground'
+                      isLive ? 'text-success' : 'text-foreground'
                     )}
                   >
                     {event.score.home} - {event.score.away}
@@ -108,8 +108,8 @@ export function MatchThreadCard({ thread }: MatchThreadCardProps) {
         {/* Status indicators */}
         <div className="flex flex-col items-end gap-2">
           {isLive && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-semibold text-green-600 dark:text-green-400">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-success" />
               LIVE
             </span>
           )}

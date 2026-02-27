@@ -24,10 +24,10 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="animate-pulse rounded-lg border bg-card p-4">
             <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 rounded-full bg-gray-300"></div>
+              <div className="h-10 w-10 rounded-full bg-muted"></div>
               <div className="flex-1">
-                <div className="mb-2 h-4 w-1/4 rounded bg-gray-300"></div>
-                <div className="h-3 w-1/3 rounded bg-gray-300"></div>
+                <div className="mb-2 h-4 w-1/4 rounded bg-muted"></div>
+                <div className="h-3 w-1/3 rounded bg-muted"></div>
               </div>
             </div>
           </div>
@@ -40,10 +40,8 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
     return (
       <div className={`py-12 text-center ${className}`}>
         <div className="mb-4 text-6xl">⚠️</div>
-        <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-          Error Loading Members
-        </h3>
-        <p className="mb-6 text-gray-500 dark:text-gray-400">
+        <h3 className="mb-2 text-xl font-semibold text-foreground">Error Loading Members</h3>
+        <p className="mb-6 text-muted-foreground">
           Failed to load community members. Please try again later.
         </p>
         <Button onClick={() => window.location.reload()}>Try Again</Button>
@@ -71,12 +69,8 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
       ) : (
         <div className="py-12 text-center">
           <div className="mb-4 text-6xl">👥</div>
-          <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-            No Members Yet
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            This community doesn&apos;t have any members yet.
-          </p>
+          <h3 className="mb-2 text-xl font-semibold text-foreground">No Members Yet</h3>
+          <p className="text-muted-foreground">This community doesn&apos;t have any members yet.</p>
         </div>
       )}
     </div>
@@ -130,10 +124,10 @@ const getRoleIcon = (role: string) => {
 const getRoleColor = (role: string) => {
   switch (role) {
     case 'admin':
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      return 'bg-warning/15 text-warning';
     case 'moderator':
-      return 'bg-accent/20 text-accent dark:bg-accent/20 dark:text-accent';
+      return 'bg-accent/20 text-accent';
     default:
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      return 'bg-muted text-foreground';
   }
 };

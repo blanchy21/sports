@@ -117,12 +117,12 @@ export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
                   className={cn(
                     'h-4 w-4 transition-all duration-150',
                     starState === 'filled' && [
-                      'fill-yellow-400 text-yellow-400',
-                      'hover:fill-yellow-500 hover:text-yellow-500',
+                      'fill-warning text-warning',
+                      'hover:fill-warning/80 hover:text-warning/80',
                     ],
                     starState === 'empty' && [
                       'text-muted-foreground',
-                      'hover:fill-yellow-300 hover:text-yellow-300',
+                      'hover:fill-warning/60 hover:text-warning/60',
                     ],
                     starState === 'disabled' && 'text-muted-foreground/50'
                   )}
@@ -134,7 +134,7 @@ export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
       </div>
 
       {/* Error Display */}
-      {voteState.error && <div className="ml-2 text-xs text-red-600">{voteState.error}</div>}
+      {voteState.error && <div className="ml-2 text-xs text-destructive">{voteState.error}</div>}
     </div>
   );
 };

@@ -64,7 +64,7 @@ export default function CommunityGuidelinesPage() {
             <h2 className="mb-3 text-xl font-semibold">Content Guidelines</h2>
 
             <h3 className="mb-3 mt-4 flex items-center gap-2 text-lg font-medium">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-5 w-5 text-success" />
               Encouraged Content
             </h3>
             <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
@@ -79,7 +79,7 @@ export default function CommunityGuidelinesPage() {
             </ul>
 
             <h3 className="mb-3 mt-6 flex items-center gap-2 text-lg font-medium">
-              <XCircle className="h-5 w-5 text-red-500" />
+              <XCircle className="h-5 w-5 text-destructive" />
               Prohibited Content
             </h3>
             <ul className="list-disc space-y-2 pl-6 text-muted-foreground">

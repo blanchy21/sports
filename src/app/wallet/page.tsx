@@ -210,10 +210,10 @@ export default function WalletPage() {
 
         {/* Price Error Alert */}
         {priceError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
             <div className="flex items-center space-x-2">
-              <div className="h-2 w-2 rounded-full bg-red-500"></div>
-              <p className="text-sm text-red-700 dark:text-red-400">
+              <div className="h-2 w-2 rounded-full bg-destructive"></div>
+              <p className="text-sm text-destructive">
                 Error loading cryptocurrency prices: {priceError}
               </p>
             </div>
@@ -359,8 +359,8 @@ export default function WalletPage() {
         <div className="rounded-lg border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="rounded-lg bg-amber-500/10 p-3">
-                <Medal className="h-6 w-6 text-amber-500" />
+              <div className="rounded-lg bg-warning/10 p-3">
+                <Medal className="h-6 w-6 text-warning" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">MEDALS Token</h3>
@@ -369,9 +369,7 @@ export default function WalletPage() {
                 </p>
               </div>
             </div>
-            <div className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
-              Preview
-            </div>
+            <div className="rounded bg-warning/10 px-2 py-1 text-xs text-warning">Preview</div>
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -389,7 +387,7 @@ export default function WalletPage() {
                 >
                   <Button
                     variant="outline"
-                    className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                    className="w-full border-warning/30 text-warning hover:bg-warning/10"
                   >
                     <ExternalLink className="mr-2 h-4 w-4" />
                     Buy MEDALS

@@ -57,8 +57,8 @@ const incentiveConfigs: Record<
       return `With ${props.likeCount || 10}+ likes, this post could have earned you ${earnings} on Hive. Connect a wallet to start earning!`;
     },
     ctaText: 'See Potential Earnings',
-    bgClass: 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20',
-    iconBgClass: 'bg-green-500/20 text-green-600 dark:text-green-400',
+    bgClass: 'bg-gradient-to-r from-success/10 to-emerald-500/10 border-success/20',
+    iconBgClass: 'bg-success/20 text-success',
   },
   'storage-warning': {
     icon: <Wallet className="h-5 w-5" />,
@@ -66,8 +66,8 @@ const incentiveConfigs: Record<
     getMessage: (props) =>
       `You have ${props.postsRemaining || 10} posts remaining out of ${props.totalPosts || 50}. Upgrade to Hive for unlimited posts!`,
     ctaText: 'Upgrade Now',
-    bgClass: 'bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/20',
-    iconBgClass: 'bg-amber-500/20 text-amber-600 dark:text-amber-400',
+    bgClass: 'bg-gradient-to-r from-warning/10 to-orange-500/10 border-warning/20',
+    iconBgClass: 'bg-warning/20 text-warning',
   },
   'storage-critical': {
     icon: <Wallet className="h-5 w-5" />,
@@ -75,8 +75,8 @@ const incentiveConfigs: Record<
     getMessage: (props) =>
       `Only ${props.postsRemaining || 5} posts left! Connect a Hive wallet now to get unlimited storage and earn rewards.`,
     ctaText: 'Connect Hive Wallet',
-    bgClass: 'bg-gradient-to-r from-red-500/10 to-rose-500/10 border-red-500/20',
-    iconBgClass: 'bg-red-500/20 text-red-600 dark:text-red-400',
+    bgClass: 'bg-gradient-to-r from-destructive/10 to-rose-500/10 border-destructive/20',
+    iconBgClass: 'bg-destructive/20 text-destructive',
   },
   milestone: {
     icon: <Award className="h-5 w-5" />,
@@ -93,8 +93,8 @@ const incentiveConfigs: Record<
     getMessage: () =>
       'Connect a Hive wallet to earn rewards, vote on content, and unlock unlimited storage.',
     ctaText: 'Connect Wallet',
-    bgClass: 'bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-500/20',
-    iconBgClass: 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
+    bgClass: 'bg-gradient-to-r from-info/10 to-indigo-500/10 border-info/20',
+    iconBgClass: 'bg-info/20 text-info',
   },
 };
 
@@ -164,9 +164,7 @@ export const UpgradeIncentiveBanner: React.FC<
     <div
       className={cn(
         'flex items-center justify-between gap-4 rounded-lg px-4 py-2 text-sm',
-        isCritical
-          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
-          : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200',
+        isCritical ? 'bg-destructive/15 text-destructive' : 'bg-warning/15 text-warning',
         className
       )}
     >
@@ -210,9 +208,7 @@ export const UpgradeIncentiveToast: React.FC<{
       <div
         className={cn(
           'rounded-full p-2',
-          isPopular
-            ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-            : 'bg-primary/10 text-primary'
+          isPopular ? 'bg-success/15 text-success' : 'bg-primary/10 text-primary'
         )}
       >
         {isPopular ? <TrendingUp className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}

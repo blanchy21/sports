@@ -69,26 +69,24 @@ const TextInput: React.FC<TextInputProps> = ({
   <div className="space-y-1">
     <div
       className={cn(
-        'flex items-center gap-2 rounded-lg border bg-white px-3 py-2 dark:bg-slate-800',
-        error
-          ? 'border-red-500'
-          : 'border-slate-200 focus-within:border-amber-500 dark:border-slate-700',
-        disabled && 'bg-slate-50 opacity-50 dark:bg-slate-900'
+        'flex items-center gap-2 rounded-lg border bg-background px-3 py-2',
+        error ? 'border-destructive' : 'border-border focus-within:border-amber-500',
+        disabled && 'bg-muted/50 opacity-50'
       )}
     >
-      {icon && <span className="text-slate-400 dark:text-slate-500">{icon}</span>}
-      {prefix && <span className="text-slate-500 dark:text-slate-400">{prefix}</span>}
+      {icon && <span className="text-muted-foreground/70">{icon}</span>}
+      {prefix && <span className="text-muted-foreground">{prefix}</span>}
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="flex-1 bg-transparent text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+        className="flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/70"
       />
     </div>
     {error && (
-      <p className="flex items-center gap-1 text-sm text-red-500">
+      <p className="flex items-center gap-1 text-sm text-destructive">
         <AlertCircle className="h-3 w-3" />
         {error}
       </p>
@@ -119,14 +117,12 @@ const AmountInput: React.FC<AmountInputProps> = ({ value, onChange, max, disable
     <div className="space-y-1">
       <div
         className={cn(
-          'flex items-center gap-2 rounded-lg border bg-white px-3 py-2 dark:bg-slate-800',
-          error
-            ? 'border-red-500'
-            : 'border-slate-200 focus-within:border-amber-500 dark:border-slate-700',
-          disabled && 'bg-slate-50 opacity-50 dark:bg-slate-900'
+          'flex items-center gap-2 rounded-lg border bg-background px-3 py-2',
+          error ? 'border-destructive' : 'border-border focus-within:border-amber-500',
+          disabled && 'bg-muted/50 opacity-50'
         )}
       >
-        <Coins className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+        <Coins className="h-4 w-4 text-muted-foreground/70" />
         <input
           type="text"
           inputMode="decimal"
@@ -134,9 +130,9 @@ const AmountInput: React.FC<AmountInputProps> = ({ value, onChange, max, disable
           onChange={handleChange}
           placeholder="0.000"
           disabled={disabled}
-          className="flex-1 bg-transparent font-mono text-lg text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+          className="flex-1 bg-transparent font-mono text-lg text-foreground outline-none placeholder:text-muted-foreground/70"
         />
-        <span className="font-medium text-slate-500 dark:text-slate-400">MEDALS</span>
+        <span className="font-medium text-muted-foreground">MEDALS</span>
         {max !== undefined && (
           <Button
             type="button"
@@ -144,14 +140,14 @@ const AmountInput: React.FC<AmountInputProps> = ({ value, onChange, max, disable
             size="sm"
             onClick={() => onChange(formatAmount(max))}
             disabled={disabled}
-            className="h-7 px-2 text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+            className="h-7 px-2 text-warning hover:text-amber-700 dark:hover:text-amber-300"
           >
             MAX
           </Button>
         )}
       </div>
       {error && (
-        <p className="flex items-center gap-1 text-sm text-red-500">
+        <p className="flex items-center gap-1 text-sm text-destructive">
           <AlertCircle className="h-3 w-3" />
           {error}
         </p>
@@ -241,18 +237,16 @@ export const TransferModal: React.FC<TransferModalProps> = ({
     <>
       <div className="space-y-5">
         {/* Balance Display */}
-        <div className="flex items-center justify-between rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
-          <span className="text-sm text-slate-500 dark:text-slate-400">Available Balance</span>
-          <span className="font-semibold text-slate-900 dark:text-white">
+        <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+          <span className="text-sm text-muted-foreground">Available Balance</span>
+          <span className="font-semibold text-foreground">
             {formatAmount(liquidBalance)} MEDALS
           </span>
         </div>
 
         {/* Recipient Input */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Recipient
-          </label>
+          <label className="text-sm font-medium text-foreground/80">Recipient</label>
           <TextInput
             value={recipient}
             onChange={setRecipient}
@@ -261,14 +255,12 @@ export const TransferModal: React.FC<TransferModalProps> = ({
             icon={<User className="h-4 w-4" />}
             error={step === 'form' && recipient ? validation.errors.recipient : undefined}
           />
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Enter the Hive username of the recipient
-          </p>
+          <p className="text-xs text-muted-foreground">Enter the Hive username of the recipient</p>
         </div>
 
         {/* Amount Input */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Amount</label>
+          <label className="text-sm font-medium text-foreground/80">Amount</label>
           <AmountInput
             value={amount}
             onChange={setAmount}
@@ -279,8 +271,8 @@ export const TransferModal: React.FC<TransferModalProps> = ({
 
         {/* Memo Input */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Memo <span className="font-normal text-slate-400 dark:text-slate-500">(optional)</span>
+          <label className="text-sm font-medium text-foreground/80">
+            Memo <span className="font-normal text-muted-foreground/70">(optional)</span>
           </label>
           <TextInput
             value={memo}
@@ -288,7 +280,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
             placeholder="Add a message..."
             icon={<MessageSquare className="h-4 w-4" />}
           />
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-muted-foreground">
             The memo will be visible on the blockchain
           </p>
         </div>
@@ -318,13 +310,13 @@ export const TransferModal: React.FC<TransferModalProps> = ({
 
           <div className="flex items-center justify-between py-2">
             <div className="text-center">
-              <span className="block text-xs text-slate-500 dark:text-slate-400">From</span>
-              <span className="font-medium text-slate-900 dark:text-white">@{account}</span>
+              <span className="block text-xs text-muted-foreground">From</span>
+              <span className="font-medium text-foreground">@{account}</span>
             </div>
             <ArrowUpRight className="mx-3 h-5 w-5 text-amber-500" />
             <div className="text-center">
-              <span className="block text-xs text-slate-500 dark:text-slate-400">To</span>
-              <span className="font-medium text-slate-900 dark:text-white">@{recipient}</span>
+              <span className="block text-xs text-muted-foreground">To</span>
+              <span className="font-medium text-foreground">@{recipient}</span>
             </div>
           </div>
 
@@ -348,8 +340,8 @@ export const TransferModal: React.FC<TransferModalProps> = ({
         </div>
 
         {/* Warning */}
-        <div className="flex items-start gap-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400 dark:text-slate-500" />
+        <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground/70" />
           <p>
             This action cannot be undone. Please verify the recipient address and amount before
             confirming.
@@ -358,7 +350,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
 
         {/* Error Display */}
         {transferMutation.error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />
               <span className="font-medium">Transfer failed</span>
@@ -401,33 +393,29 @@ export const TransferModal: React.FC<TransferModalProps> = ({
   const renderSuccessStep = () => (
     <>
       <div className="space-y-4 py-6 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-          <CheckCircle className="h-8 w-8 text-green-600" />
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/15">
+          <CheckCircle className="h-8 w-8 text-success" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Transfer Successful!
-          </h3>
-          <p className="mt-1 text-slate-500 dark:text-slate-400">
+          <h3 className="text-lg font-semibold text-foreground">Transfer Successful!</h3>
+          <p className="mt-1 text-muted-foreground">
             You sent {formatAmount(amountNum)} MEDALS to @{recipient}
           </p>
         </div>
 
-        <div className="rounded-lg bg-slate-50 p-4 text-sm dark:bg-slate-800">
-          <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
+        <div className="rounded-lg bg-muted/50 p-4 text-sm">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span>Amount</span>
-            <span className="font-medium text-slate-900 dark:text-white">
-              {formatAmount(amountNum)} MEDALS
-            </span>
+            <span className="font-medium text-foreground">{formatAmount(amountNum)} MEDALS</span>
           </div>
-          <div className="mt-2 flex items-center justify-between text-slate-600 dark:text-slate-400">
+          <div className="mt-2 flex items-center justify-between text-muted-foreground">
             <span>Recipient</span>
-            <span className="font-medium text-slate-900 dark:text-white">@{recipient}</span>
+            <span className="font-medium text-foreground">@{recipient}</span>
           </div>
           {memo && (
-            <div className="mt-2 flex items-start justify-between text-slate-600 dark:text-slate-400">
+            <div className="mt-2 flex items-start justify-between text-muted-foreground">
               <span>Memo</span>
-              <span className="max-w-[200px] truncate text-right font-medium text-slate-900 dark:text-white">
+              <span className="max-w-[200px] truncate text-right font-medium text-foreground">
                 {memo}
               </span>
             </div>

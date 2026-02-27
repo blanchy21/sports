@@ -100,12 +100,10 @@ export function PredictionStakeModal({
     <BaseModal isOpen={isOpen} onClose={onClose} title="Place Your Stake" size="sm">
       <div className="space-y-5">
         {/* Selected outcome */}
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+        <div className="rounded-lg border border-warning/30 bg-warning/5 p-3">
           <div className="text-xs text-muted-foreground">You are backing</div>
           <div className="mt-1 flex items-center justify-between">
-            <span className="text-base font-semibold text-amber-700 dark:text-amber-400">
-              {selectedOutcome.label}
-            </span>
+            <span className="text-base font-semibold text-warning">{selectedOutcome.label}</span>
             <span className="text-sm font-medium">{selectedOutcome.odds.toFixed(2)}x odds</span>
           </div>
         </div>
@@ -113,12 +111,10 @@ export function PredictionStakeModal({
         {/* Success state */}
         {stakeState === 'success' && (
           <div className="flex flex-col items-center gap-3 py-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20">
-              <Check className="h-6 w-6 text-green-500" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success/20">
+              <Check className="h-6 w-6 text-success" />
             </div>
-            <p className="text-center font-semibold text-green-700 dark:text-green-400">
-              Stake placed successfully!
-            </p>
+            <p className="text-center font-semibold text-success">Stake placed successfully!</p>
             <p className="text-center text-sm text-muted-foreground">
               {amount} MEDALS on &quot;{selectedOutcome.label}&quot;
             </p>
@@ -131,7 +127,7 @@ export function PredictionStakeModal({
         {/* Error state */}
         {stakeState === 'error' && (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
@@ -144,7 +140,7 @@ export function PredictionStakeModal({
                   setStakeState('idle');
                   setErrorMessage(null);
                 }}
-                className="flex-1 bg-amber-500 text-white hover:bg-amber-600"
+                className="flex-1 bg-warning text-white hover:bg-warning/90"
               >
                 Try Again
               </Button>
@@ -169,7 +165,7 @@ export function PredictionStakeModal({
                     className={cn(
                       'flex-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                       amount === qa
-                        ? 'bg-amber-500 text-white'
+                        ? 'bg-warning text-white'
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     )}
                   >
@@ -192,23 +188,23 @@ export function PredictionStakeModal({
                 onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
                 className={cn(
                   'w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none',
-                  'focus:ring-2 focus:ring-amber-500/50',
-                  !isValidAmount && amount > 0 && 'border-red-500'
+                  'focus:ring-2 focus:ring-warning/50',
+                  !isValidAmount && amount > 0 && 'border-destructive'
                 )}
                 disabled={stakeState === 'confirming'}
               />
               {amount > 0 && amount < PREDICTION_CONFIG.MIN_STAKE && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-destructive">
                   Minimum stake is {PREDICTION_CONFIG.MIN_STAKE} MEDALS
                 </p>
               )}
               {amount > PREDICTION_CONFIG.MAX_STAKE && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-destructive">
                   Maximum stake is {PREDICTION_CONFIG.MAX_STAKE} MEDALS
                 </p>
               )}
               {balance !== null && amount > balance && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-destructive">
                   Insufficient balance ({balance.toFixed(2)} MEDALS available)
                 </p>
               )}
@@ -224,11 +220,11 @@ export function PredictionStakeModal({
 
             {/* Payout preview */}
             {isValidAmount && amount > 0 && (
-              <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2">
-                <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/5 px-3 py-2">
+                <TrendingUp className="h-4 w-4 text-success" />
                 <span className="text-sm">
                   If <span className="font-medium">{selectedOutcome.label}</span> wins:{' '}
-                  <span className="font-semibold text-green-700 dark:text-green-400">
+                  <span className="font-semibold text-success">
                     ~{estimatedPayout.toFixed(2)} MEDALS
                   </span>
                 </span>
@@ -239,7 +235,7 @@ export function PredictionStakeModal({
             <Button
               onClick={handleConfirm}
               disabled={!isValidAmount || amount <= 0 || stakeState === 'confirming'}
-              className="w-full bg-amber-500 text-white hover:bg-amber-600"
+              className="w-full bg-warning text-white hover:bg-warning/90"
             >
               {stakeState === 'confirming' ? (
                 <>

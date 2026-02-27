@@ -91,7 +91,7 @@ export function RepliesContent() {
           <p className="mt-2 text-muted-foreground">
             Your conversations and interactions
             {realtimeError && (
-              <span className="ml-2 text-red-500">&bull; Real-time updates unavailable</span>
+              <span className="ml-2 text-destructive">&bull; Real-time updates unavailable</span>
             )}
           </p>
         </div>

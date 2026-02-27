@@ -95,24 +95,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         {isLoading ? (
           <div className="animate-pulse space-y-4">
             <div className="flex items-center space-x-4">
-              <div className="h-12 w-12 rounded-full bg-gray-300 sm:h-16 sm:w-16"></div>
+              <div className="h-12 w-12 rounded-full bg-muted sm:h-16 sm:w-16"></div>
               <div className="flex-1">
-                <div className="mb-2 h-6 w-1/3 rounded bg-gray-300"></div>
-                <div className="h-4 w-1/2 rounded bg-gray-300"></div>
+                <div className="mb-2 h-6 w-1/3 rounded bg-muted"></div>
+                <div className="h-4 w-1/2 rounded bg-muted"></div>
               </div>
             </div>
             <div className="space-y-2">
-              <div className="h-4 w-full rounded bg-gray-300"></div>
-              <div className="h-4 w-3/4 rounded bg-gray-300"></div>
+              <div className="h-4 w-full rounded bg-muted"></div>
+              <div className="h-4 w-3/4 rounded bg-muted"></div>
             </div>
           </div>
         ) : error || !profile ? (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">⚠️</div>
-            <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-              Profile Not Found
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">Unable to load user profile.</p>
+            <h3 className="mb-2 text-xl font-semibold text-foreground">Profile Not Found</h3>
+            <p className="text-muted-foreground">Unable to load user profile.</p>
           </div>
         ) : (
           <div className="space-y-6">

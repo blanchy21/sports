@@ -24,7 +24,7 @@ interface MatchThreadHeaderProps {
 
 export function MatchThreadHeader({ event, isLive, isOpen }: MatchThreadHeaderProps) {
   return (
-    <div className={cn('rounded-xl border bg-card p-6', isLive && 'border-green-500/50')}>
+    <div className={cn('rounded-xl border bg-card p-6', isLive && 'border-success/50')}>
       {/* Sport + League */}
       <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
         <span className="text-lg">{event.icon}</span>
@@ -39,8 +39,8 @@ export function MatchThreadHeader({ event, isLive, isOpen }: MatchThreadHeaderPr
         <div className="flex-1" />
 
         {isLive && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 text-sm font-semibold text-green-600 dark:text-green-400">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-sm font-semibold text-success">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-success" />
             LIVE
           </span>
         )}
@@ -59,12 +59,7 @@ export function MatchThreadHeader({ event, isLive, isOpen }: MatchThreadHeaderPr
             <>
               <h1 className="text-2xl font-bold sm:text-3xl">
                 {event.teams.home}{' '}
-                <span
-                  className={cn(
-                    'tabular-nums',
-                    isLive ? 'text-green-600 dark:text-green-400' : 'text-foreground'
-                  )}
-                >
+                <span className={cn('tabular-nums', isLive ? 'text-success' : 'text-foreground')}>
                   {event.score.home} - {event.score.away}
                 </span>{' '}
                 {event.teams.away}
@@ -73,7 +68,7 @@ export function MatchThreadHeader({ event, isLive, isOpen }: MatchThreadHeaderPr
                 <p
                   className={cn(
                     'mt-1 text-sm font-medium',
-                    isLive ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
+                    isLive ? 'text-success' : 'text-muted-foreground'
                   )}
                 >
                   {event.statusDetail}

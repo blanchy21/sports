@@ -57,12 +57,12 @@ interface StatProps {
 
 const Stat: React.FC<StatProps> = ({ label, value, icon, subValue, className }) => (
   <div className={cn('flex flex-col', className)}>
-    <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+    <span className="flex items-center gap-1 text-xs text-muted-foreground">
       {icon}
       {label}
     </span>
-    <span className="text-lg font-semibold text-slate-900 dark:text-white">{value}</span>
-    {subValue && <span className="text-xs text-slate-400 dark:text-slate-500">{subValue}</span>}
+    <span className="text-lg font-semibold text-foreground">{value}</span>
+    {subValue && <span className="text-xs text-muted-foreground/70">{subValue}</span>}
   </div>
 );
 
@@ -73,24 +73,24 @@ const WalletCardSkeleton: React.FC<{ compact?: boolean }> = ({ compact }) => (
   <Card className={cn('w-full', compact ? 'p-3' : '')}>
     <CardHeader className={compact ? 'p-0 pb-3' : ''}>
       <div className="flex items-center justify-between">
-        <div className="h-6 w-32 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
-        <div className="h-6 w-20 animate-pulse rounded-full bg-slate-200 dark:bg-slate-700" />
+        <div className="h-6 w-32 animate-pulse rounded bg-muted" />
+        <div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
       </div>
     </CardHeader>
     <CardContent className={compact ? 'p-0' : ''}>
       <div className="grid grid-cols-2 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="space-y-2">
-            <div className="h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
-            <div className="h-6 w-24 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+            <div className="h-3 w-16 animate-pulse rounded bg-muted" />
+            <div className="h-6 w-24 animate-pulse rounded bg-muted" />
           </div>
         ))}
       </div>
     </CardContent>
     {!compact && (
       <CardFooter className="gap-2">
-        <div className="h-9 flex-1 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
-        <div className="h-9 flex-1 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+        <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+        <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
       </CardFooter>
     )}
   </Card>
@@ -103,10 +103,10 @@ const WalletCardError: React.FC<{ error: Error; onRetry: () => void }> = ({ erro
   <Card className="w-full">
     <CardContent className="py-8">
       <div className="flex flex-col items-center space-y-3 text-center">
-        <AlertCircle className="h-10 w-10 text-red-400" />
+        <AlertCircle className="h-10 w-10 text-destructive" />
         <div>
-          <p className="font-medium text-slate-900 dark:text-white">Failed to load wallet</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{error.message}</p>
+          <p className="font-medium text-foreground">Failed to load wallet</p>
+          <p className="text-sm text-muted-foreground">{error.message}</p>
         </div>
         <Button variant="outline" size="sm" onClick={onRetry}>
           <RefreshCw className="mr-2 h-4 w-4" />
@@ -163,27 +163,27 @@ export const WalletCard: React.FC<WalletCardProps> = ({
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-amber-500" />
-              <span className="font-semibold text-slate-900 dark:text-white">MEDALS</span>
+              <span className="font-semibold text-foreground">MEDALS</span>
             </div>
             <PremiumBadge tier={premiumTier} size="sm" />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500 dark:text-slate-400">Total</span>
-              <span className="font-semibold text-slate-900 dark:text-white">{total}</span>
+              <span className="text-sm text-muted-foreground">Total</span>
+              <span className="font-semibold text-foreground">{total}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500 dark:text-slate-400">Liquid</span>
-              <span className="text-slate-700 dark:text-slate-300">{liquid}</span>
+              <span className="text-sm text-muted-foreground">Liquid</span>
+              <span className="text-foreground/80">{liquid}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500 dark:text-slate-400">Staked</span>
-              <span className="text-slate-700 dark:text-slate-300">{staked}</span>
+              <span className="text-sm text-muted-foreground">Staked</span>
+              <span className="text-foreground/80">{staked}</span>
             </div>
-            <div className="flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-700">
-              <span className="text-sm text-slate-500 dark:text-slate-400">Value</span>
-              <span className="font-medium text-green-600">{hiveValue} HIVE</span>
+            <div className="flex items-center justify-between border-t border-border pt-2">
+              <span className="text-sm text-muted-foreground">Value</span>
+              <span className="font-medium text-success">{hiveValue} HIVE</span>
             </div>
           </div>
 
@@ -205,7 +205,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                className="w-full border-warning/30 text-warning hover:bg-warning/10"
               >
                 <ExternalLink className="mr-1 h-3 w-3" />
                 Buy
@@ -249,7 +249,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
             value={`${hiveValue}`}
             icon={<TrendingUp className="h-3 w-3" />}
             subValue={market?.price ? `@${parseFloat(market.price).toFixed(4)}/MEDALS` : undefined}
-            className="text-green-600"
+            className="text-success"
           />
           <Stat
             label="Est. APY"
@@ -282,16 +282,16 @@ export const WalletCard: React.FC<WalletCardProps> = ({
         {/* Delegations if present */}
         {(parseFloat(balance?.delegatedIn || '0') > 0 ||
           parseFloat(balance?.delegatedOut || '0') > 0) && (
-          <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800">
+          <div className="mt-4 rounded-lg bg-muted/50 p-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">Delegated In:</span>
-              <span className="font-medium text-green-600">
+              <span className="text-muted-foreground">Delegated In:</span>
+              <span className="font-medium text-success">
                 +{formatAmount(balance?.delegatedIn)}
               </span>
             </div>
             <div className="mt-1 flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">Delegated Out:</span>
-              <span className="font-medium text-red-600">
+              <span className="text-muted-foreground">Delegated Out:</span>
+              <span className="font-medium text-destructive">
                 -{formatAmount(balance?.delegatedOut)}
               </span>
             </div>
@@ -316,7 +316,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
         >
           <Button
             variant="outline"
-            className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
+            className="w-full border-warning/30 text-warning hover:bg-warning/10"
           >
             <ExternalLink className="mr-2 h-4 w-4" />
             Buy MEDALS

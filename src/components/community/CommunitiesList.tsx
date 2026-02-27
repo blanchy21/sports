@@ -81,11 +81,11 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="animate-pulse rounded-lg border bg-card p-4 sm:p-6">
             <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="h-12 w-12 rounded-full bg-gray-300 dark:bg-gray-700 sm:h-16 sm:w-16"></div>
+              <div className="h-12 w-12 rounded-full bg-muted sm:h-16 sm:w-16"></div>
               <div className="flex-1">
-                <div className="mb-2 h-6 w-1/3 rounded bg-gray-300 dark:bg-gray-700"></div>
-                <div className="mb-2 h-4 w-2/3 rounded bg-gray-300 dark:bg-gray-700"></div>
-                <div className="h-4 w-1/2 rounded bg-gray-300 dark:bg-gray-700"></div>
+                <div className="mb-2 h-6 w-1/3 rounded bg-muted"></div>
+                <div className="mb-2 h-4 w-2/3 rounded bg-muted"></div>
+                <div className="h-4 w-1/2 rounded bg-muted"></div>
               </div>
             </div>
           </div>
@@ -98,10 +98,8 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
     return (
       <div className={`py-12 text-center ${className}`}>
         <div className="mb-4 text-6xl">⚠️</div>
-        <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-          Error Loading Communities
-        </h3>
-        <p className="mb-6 text-gray-500 dark:text-gray-400">
+        <h3 className="mb-2 text-xl font-semibold text-foreground">Error Loading Communities</h3>
+        <p className="mb-6 text-muted-foreground">
           {error instanceof Error
             ? error.message
             : 'Failed to load communities. Please try again later.'}
@@ -225,10 +223,8 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
         ) : (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">🏘️</div>
-            <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-              No Communities Found
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
+            <h3 className="mb-2 text-xl font-semibold text-foreground">No Communities Found</h3>
+            <p className="text-muted-foreground">
               {filters.search
                 ? `No communities match "${filters.search}"`
                 : hasActiveFilters
@@ -295,14 +291,14 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
               <span
                 className={cn(
                   'text-muted-foreground',
-                  community.type === 'private' && 'text-yellow-600',
+                  community.type === 'private' && 'text-warning',
                   community.type === 'invite-only' && 'text-purple-600'
                 )}
               >
                 {typeIcon}
               </span>
               {community.isVerified && (
-                <span className="text-blue-500" title="Verified Community">
+                <span className="text-info" title="Verified Community">
                   ✓
                 </span>
               )}

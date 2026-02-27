@@ -93,7 +93,7 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
       <Button
         variant="outline"
         size={size}
-        className={cn('border-red-500 text-red-500', className)}
+        className={cn('border-destructive text-destructive', className)}
         disabled
       >
         {showIcon && <Ban className="mr-2 h-4 w-4" />}
@@ -108,7 +108,7 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
       <Button
         variant="outline"
         size={size}
-        className={cn('border-yellow-600 text-yellow-600', className)}
+        className={cn('border-warning text-warning', className)}
         disabled
       >
         {showIcon && <Clock className="mr-2 h-4 w-4" />}
@@ -132,7 +132,7 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
           {showIcon && <Users className="mr-2 h-4 w-4 group-hover:hidden" />}
           {showIcon && <UserMinus className="mr-2 hidden h-4 w-4 group-hover:block" />}
           <span className="group-hover:hidden">{roleLabel}</span>
-          <span className="hidden text-red-500 group-hover:block">Leave</span>
+          <span className="hidden text-destructive group-hover:block">Leave</span>
         </Button>
       </div>
     );

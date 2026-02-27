@@ -102,7 +102,7 @@ export function BookmarksContent() {
               variant="outline"
               size="sm"
               onClick={() => setShowClearConfirm(true)}
-              className="text-red-500 hover:bg-red-50 hover:text-red-700"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive/80"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Clear All
@@ -119,7 +119,7 @@ export function BookmarksContent() {
         </div>
       ) : error ? (
         <div className="py-12 text-center">
-          <p className="mb-4 text-red-500">{error}</p>
+          <p className="mb-4 text-destructive">{error}</p>
           <Button onClick={loadBookmarks}>Try Again</Button>
         </div>
       ) : filteredAndSortedBookmarks.length > 0 ? (
@@ -167,7 +167,7 @@ export function BookmarksContent() {
               </Button>
               <Button
                 onClick={handleClearAll}
-                className="flex-1 bg-red-500 text-white hover:bg-red-600"
+                className="flex-1 bg-destructive text-white hover:bg-destructive/90"
               >
                 Clear All
               </Button>

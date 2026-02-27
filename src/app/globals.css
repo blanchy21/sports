@@ -24,6 +24,12 @@
     --input: 30 20% 90%;
     --ring: 220 70% 20%;
     --radius: 0.5rem;
+    --success: 142 71% 45%;
+    --success-foreground: 30 100% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 30 100% 98%;
+    --info: 217 91% 60%;
+    --info-foreground: 30 100% 98%;
   }
 
   .dark {
@@ -46,6 +52,12 @@
     --border: 220 15% 20%;
     --input: 220 15% 20%;
     --ring: 220 60% 55%;
+    --success: 142 69% 58%;
+    --success-foreground: 30 100% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 30 100% 98%;
+    --info: 217 91% 65%;
+    --info-foreground: 30 100% 98%;
   }
 
   .landing-dark {
@@ -70,6 +82,12 @@
     --border: 220 15% 18%;
     --input: 220 15% 18%;
     --ring: 216 60% 56%;
+    --success: 142 69% 58%;
+    --success-foreground: 30 20% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 30 20% 98%;
+    --info: 217 91% 65%;
+    --info-foreground: 30 20% 98%;
   }
 }
 

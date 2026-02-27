@@ -9,10 +9,10 @@ export const AccountDiscovery: React.FC<AccountDiscoveryProps> = ({
   onDiscover,
 }) => {
   return (
-    <div className="mt-4 border-t border-gray-200 pt-3">
+    <div className="mt-4 border-t border-border pt-3">
       <div className="mb-3 text-center">
-        <h5 className="mb-1 text-sm font-medium text-gray-700">Multi-Account Discovery</h5>
-        <p className="mb-2 text-xs text-gray-500">
+        <h5 className="mb-1 text-sm font-medium text-foreground/80">Multi-Account Discovery</h5>
+        <p className="mb-2 text-xs text-muted-foreground">
           Discover and connect multiple Hive accounts from your wallets
         </p>
         <Button
@@ -29,14 +29,14 @@ export const AccountDiscovery: React.FC<AccountDiscoveryProps> = ({
       {/* Discovered Accounts List */}
       {discoveredAccounts.length > 0 && (
         <div className="max-h-40 space-y-2 overflow-y-auto">
-          <h6 className="mb-2 text-xs font-medium text-gray-600">
+          <h6 className="mb-2 text-xs font-medium text-foreground/70">
             Found {discoveredAccounts.length} account(s):
           </h6>
           {discoveredAccounts.map((account) => (
             <div
               key={`${account.username}-${account.provider}`}
               onClick={() => onAccountSelect(account)}
-              className="cursor-pointer rounded border border-gray-200 bg-gray-50 p-2 hover:bg-gray-100"
+              className="cursor-pointer rounded border border-border bg-muted/50 p-2 hover:bg-muted"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -47,10 +47,12 @@ export const AccountDiscovery: React.FC<AccountDiscoveryProps> = ({
                   </div>
                   <div>
                     <div className="text-sm font-medium">@{account.username}</div>
-                    <div className="text-xs capitalize text-gray-500">{account.provider}</div>
+                    <div className="text-xs capitalize text-muted-foreground">
+                      {account.provider}
+                    </div>
                   </div>
                 </div>
-                <div className="text-xs text-gray-400">
+                <div className="text-xs text-muted-foreground/70">
                   {account.balance ? `${account.balance} HIVE` : 'Connect'}
                 </div>
               </div>

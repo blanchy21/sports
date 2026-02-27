@@ -49,20 +49,20 @@ const TX_TYPE_CONFIG: Record<
   transfer: {
     label: 'Transfer',
     icon: ArrowUpRight,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
+    color: 'text-info',
+    bgColor: 'bg-info/10',
   },
   transfer_in: {
     label: 'Received',
     icon: ArrowDownLeft,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
+    color: 'text-success',
+    bgColor: 'bg-success/10',
   },
   stake: {
     label: 'Stake',
     icon: Lock,
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50',
+    color: 'text-warning',
+    bgColor: 'bg-warning/10',
   },
   unstake_start: {
     label: 'Unstake',
@@ -73,14 +73,14 @@ const TX_TYPE_CONFIG: Record<
   unstake_complete: {
     label: 'Unstake Complete',
     icon: Unlock,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
+    color: 'text-success',
+    bgColor: 'bg-success/10',
   },
   cancel_unstake: {
     label: 'Cancel Unstake',
     icon: RefreshCw,
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-50',
+    color: 'text-foreground/70',
+    bgColor: 'bg-muted/50',
   },
   delegate: {
     label: 'Delegate',
@@ -203,22 +203,19 @@ const TransactionRow: React.FC<TransactionRowProps> = ({
 
   if (compact) {
     return (
-      <div className="flex items-center justify-between border-b border-slate-100 py-2 last:border-0">
+      <div className="flex items-center justify-between border-b border-border py-2 last:border-0">
         <div className="flex items-center gap-2">
           <div className={cn('rounded-full p-1.5', config.bgColor)}>
             <Icon className={cn('h-3 w-3', config.color)} />
           </div>
           <div>
-            <span className="text-sm font-medium text-slate-900">{config.label}</span>
-            <span className="ml-2 text-xs text-slate-500">@{counterparty}</span>
+            <span className="text-sm font-medium text-foreground">{config.label}</span>
+            <span className="ml-2 text-xs text-muted-foreground">@{counterparty}</span>
           </div>
         </div>
         <div className="text-right">
           <span
-            className={cn(
-              'text-sm font-semibold',
-              isIncoming ? 'text-green-600' : 'text-slate-900'
-            )}
+            className={cn('text-sm font-semibold', isIncoming ? 'text-success' : 'text-foreground')}
           >
             {isIncoming ? '+' : '-'}
             {formatAmount(transaction.quantity)}
@@ -229,7 +226,7 @@ const TransactionRow: React.FC<TransactionRowProps> = ({
   }
 
   return (
-    <div className="flex items-center gap-4 rounded-lg p-3 transition-colors hover:bg-slate-50">
+    <div className="flex items-center gap-4 rounded-lg p-3 transition-colors hover:bg-muted/50">
       {/* Icon */}
       <div className={cn('rounded-full p-2.5', config.bgColor)}>
         <Icon className={cn('h-4 w-4', config.color)} />
@@ -238,18 +235,18 @@ const TransactionRow: React.FC<TransactionRowProps> = ({
       {/* Details */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-slate-900">{config.label}</span>
-          <span className="text-xs text-slate-400">to/from</span>
-          <span className="truncate text-sm text-slate-600">@{counterparty}</span>
+          <span className="font-medium text-foreground">{config.label}</span>
+          <span className="text-xs text-muted-foreground/70">to/from</span>
+          <span className="truncate text-sm text-foreground/70">@{counterparty}</span>
         </div>
         <div className="mt-1 flex items-center gap-3">
-          <span className="flex items-center gap-1 text-xs text-slate-500">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
             <span title={time.absolute}>{time.relative}</span>
           </span>
           {transaction.memo && (
             <span
-              className="max-w-[200px] truncate text-xs text-slate-400"
+              className="max-w-[200px] truncate text-xs text-muted-foreground/70"
               title={transaction.memo}
             >
               &ldquo;{transaction.memo}&rdquo;
@@ -261,12 +258,12 @@ const TransactionRow: React.FC<TransactionRowProps> = ({
       {/* Amount */}
       <div className="text-right">
         <span
-          className={cn('text-lg font-semibold', isIncoming ? 'text-green-600' : 'text-slate-900')}
+          className={cn('text-lg font-semibold', isIncoming ? 'text-success' : 'text-foreground')}
         >
           {isIncoming ? '+' : '-'}
           {formatAmount(transaction.quantity)}
         </span>
-        <span className="ml-1 text-xs text-slate-500">MEDALS</span>
+        <span className="ml-1 text-xs text-muted-foreground">MEDALS</span>
       </div>
 
       {/* External Link */}
@@ -275,7 +272,7 @@ const TransactionRow: React.FC<TransactionRowProps> = ({
           href={`https://he.dtools.dev/tx/${transaction.txId}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="p-2 text-slate-400 transition-colors hover:text-slate-600"
+          className="p-2 text-muted-foreground/70 transition-colors hover:text-foreground/70"
           title="View on Hive Engine Explorer"
         >
           <ExternalLink className="h-4 w-4" />
@@ -290,9 +287,11 @@ const TransactionRow: React.FC<TransactionRowProps> = ({
  */
 const EmptyState: React.FC = () => (
   <div className="py-12 text-center">
-    <History className="mx-auto mb-3 h-12 w-12 text-slate-300" />
-    <h3 className="text-lg font-medium text-slate-900">No transactions yet</h3>
-    <p className="mt-1 text-sm text-slate-500">Your MEDALS transaction history will appear here</p>
+    <History className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
+    <h3 className="text-lg font-medium text-foreground">No transactions yet</h3>
+    <p className="mt-1 text-sm text-muted-foreground">
+      Your MEDALS transaction history will appear here
+    </p>
   </div>
 );
 
@@ -302,7 +301,7 @@ const EmptyState: React.FC = () => (
 const LoadingState: React.FC = () => (
   <div className="flex flex-col items-center justify-center gap-3 py-12">
     <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
-    <span className="text-slate-500">Loading transactions...</span>
+    <span className="text-muted-foreground">Loading transactions...</span>
   </div>
 );
 
@@ -311,9 +310,9 @@ const LoadingState: React.FC = () => (
  */
 const ErrorState: React.FC<{ error: Error; onRetry: () => void }> = ({ error, onRetry }) => (
   <div className="py-8 text-center">
-    <AlertCircle className="mx-auto mb-3 h-10 w-10 text-red-400" />
-    <h3 className="text-lg font-medium text-slate-900">Failed to load history</h3>
-    <p className="mt-1 text-sm text-slate-500">{error.message}</p>
+    <AlertCircle className="mx-auto mb-3 h-10 w-10 text-destructive" />
+    <h3 className="text-lg font-medium text-foreground">Failed to load history</h3>
+    <p className="mt-1 text-sm text-muted-foreground">{error.message}</p>
     <Button variant="outline" size="sm" onClick={onRetry} className="mt-4">
       <RefreshCw className="mr-2 h-4 w-4" />
       Retry
@@ -390,9 +389,9 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
               <Loader2 className="mx-auto h-5 w-5 animate-spin text-amber-500" />
             </div>
           ) : error ? (
-            <div className="py-6 text-center text-sm text-red-500">Failed to load</div>
+            <div className="py-6 text-center text-sm text-destructive">Failed to load</div>
           ) : transactions.length === 0 ? (
-            <div className="py-6 text-center text-sm text-slate-500">No transactions</div>
+            <div className="py-6 text-center text-sm text-muted-foreground">No transactions</div>
           ) : (
             <div>
               {transactions.slice(0, 5).map((tx) => (
@@ -421,14 +420,14 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
           {showFilter && (
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-slate-400" />
+              <Filter className="h-4 w-4 text-muted-foreground/70" />
               <select
                 value={filterType}
                 onChange={(e) => {
                   setFilterType(e.target.value);
                   setOffset(0);
                 }}
-                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="rounded-md border border-border bg-white px-2 py-1 text-sm text-foreground/80 focus:outline-none focus:ring-2 focus:ring-amber-500"
               >
                 {FILTER_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -463,8 +462,8 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
-                <span className="text-sm text-slate-500">
+              <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                <span className="text-sm text-muted-foreground">
                   Page {currentPage} of {totalPages} ({total} total)
                 </span>
                 <div className="flex items-center gap-2">

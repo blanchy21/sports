@@ -55,15 +55,15 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
       <div className={`space-y-6 ${className}`}>
         <div className="animate-pulse rounded-lg border bg-card p-6">
           <div className="mb-6 flex items-center space-x-4">
-            <div className="h-20 w-20 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+            <div className="h-20 w-20 rounded-full bg-muted"></div>
             <div className="flex-1">
-              <div className="mb-2 h-8 w-1/3 rounded bg-gray-300 dark:bg-gray-700"></div>
-              <div className="mb-2 h-4 w-1/4 rounded bg-gray-300 dark:bg-gray-700"></div>
-              <div className="h-4 w-1/2 rounded bg-gray-300 dark:bg-gray-700"></div>
+              <div className="mb-2 h-8 w-1/3 rounded bg-muted"></div>
+              <div className="mb-2 h-4 w-1/4 rounded bg-muted"></div>
+              <div className="h-4 w-1/2 rounded bg-muted"></div>
             </div>
           </div>
-          <div className="mb-2 h-4 w-full rounded bg-gray-300 dark:bg-gray-700"></div>
-          <div className="h-4 w-3/4 rounded bg-gray-300 dark:bg-gray-700"></div>
+          <div className="mb-2 h-4 w-full rounded bg-muted"></div>
+          <div className="h-4 w-3/4 rounded bg-muted"></div>
         </div>
       </div>
     );
@@ -73,10 +73,8 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
     return (
       <div className={`py-12 text-center ${className}`}>
         <div className="mb-4 text-6xl">⚠️</div>
-        <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-          Community Not Found
-        </h3>
-        <p className="mb-6 text-gray-500 dark:text-gray-400">
+        <h3 className="mb-2 text-xl font-semibold text-foreground">Community Not Found</h3>
+        <p className="mb-6 text-muted-foreground">
           The community you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
         <Link href="/communities">
@@ -136,14 +134,14 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
                 <span
                   className={cn(
                     'text-muted-foreground',
-                    community.type === 'private' && 'text-yellow-600',
+                    community.type === 'private' && 'text-warning',
                     community.type === 'invite-only' && 'text-purple-600'
                   )}
                 >
                   {typeIcon}
                 </span>
                 {community.isVerified && (
-                  <span className="text-lg text-blue-500" title="Verified Community">
+                  <span className="text-lg text-info" title="Verified Community">
                     ✓
                   </span>
                 )}
@@ -269,7 +267,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
                       >
                         @{admin.hiveUsername || admin.username}
                       </Link>
-                      <div className="flex items-center gap-1 text-xs text-yellow-600">
+                      <div className="flex items-center gap-1 text-xs text-warning">
                         <Crown className="h-3 w-3" />
                         Admin
                       </div>
@@ -286,7 +284,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
                       >
                         @{mod.hiveUsername || mod.username}
                       </Link>
-                      <div className="flex items-center gap-1 text-xs text-blue-600">
+                      <div className="flex items-center gap-1 text-xs text-info">
                         <Shield className="h-3 w-3" />
                         Moderator
                       </div>
@@ -329,12 +327,12 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
                   </Link>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     {member.role === 'admin' && (
-                      <span className="flex items-center gap-1 text-yellow-600">
+                      <span className="flex items-center gap-1 text-warning">
                         <Crown className="h-3 w-3" /> Admin
                       </span>
                     )}
                     {member.role === 'moderator' && (
-                      <span className="flex items-center gap-1 text-blue-600">
+                      <span className="flex items-center gap-1 text-info">
                         <Shield className="h-3 w-3" /> Mod
                       </span>
                     )}

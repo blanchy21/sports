@@ -190,7 +190,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
           {/* Community Name */}
           <div>
             <label className="mb-2 block text-sm font-medium">
-              Community Name <span className="text-red-500">*</span>
+              Community Name <span className="text-destructive">*</span>
             </label>
             <input
               type="text"
@@ -200,16 +200,16 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               placeholder="e.g., Tottenham Supporters Club"
               className={cn(
                 'w-full rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary',
-                errors.name && 'border-red-500'
+                errors.name && 'border-destructive'
               )}
             />
-            {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+            {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
           </div>
 
           {/* Short Description */}
           <div>
             <label className="mb-2 block text-sm font-medium">
-              Short Description <span className="text-red-500">*</span>
+              Short Description <span className="text-destructive">*</span>
             </label>
             <textarea
               name="about"
@@ -219,11 +219,11 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               rows={2}
               className={cn(
                 'w-full resize-none rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary',
-                errors.about && 'border-red-500'
+                errors.about && 'border-destructive'
               )}
             />
             <div className="mt-1 flex justify-between">
-              {errors.about ? <p className="text-sm text-red-500">{errors.about}</p> : <span />}
+              {errors.about ? <p className="text-sm text-destructive">{errors.about}</p> : <span />}
               <span className="text-xs text-muted-foreground">{formData.about.length}/500</span>
             </div>
           </div>
@@ -244,7 +244,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
           {/* Sport Category */}
           <div>
             <label className="mb-2 block text-sm font-medium">
-              Sport Category <span className="text-red-500">*</span>
+              Sport Category <span className="text-destructive">*</span>
             </label>
             <select
               name="sportCategory"
@@ -252,7 +252,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               onChange={handleInputChange}
               className={cn(
                 'w-full rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary',
-                errors.sportCategory && 'border-red-500'
+                errors.sportCategory && 'border-destructive'
               )}
             >
               <option value="">Select a sport</option>
@@ -263,14 +263,14 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
               ))}
             </select>
             {errors.sportCategory && (
-              <p className="mt-1 text-sm text-red-500">{errors.sportCategory}</p>
+              <p className="mt-1 text-sm text-destructive">{errors.sportCategory}</p>
             )}
           </div>
 
           {/* Community Type */}
           <div>
             <label className="mb-2 block text-sm font-medium">
-              Community Type <span className="text-red-500">*</span>
+              Community Type <span className="text-destructive">*</span>
             </label>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {COMMUNITY_TYPES.map((type) => (
@@ -316,10 +316,10 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
                 placeholder="https://example.com/avatar.jpg"
                 className={cn(
                   'w-full rounded-lg border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary',
-                  errors.avatar && 'border-red-500'
+                  errors.avatar && 'border-destructive'
                 )}
               />
-              {errors.avatar && <p className="mt-1 text-sm text-red-500">{errors.avatar}</p>}
+              {errors.avatar && <p className="mt-1 text-sm text-destructive">{errors.avatar}</p>}
             </div>
 
             <div>
@@ -335,19 +335,19 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
                 placeholder="https://example.com/cover.jpg"
                 className={cn(
                   'w-full rounded-lg border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary',
-                  errors.coverImage && 'border-red-500'
+                  errors.coverImage && 'border-destructive'
                 )}
               />
               {errors.coverImage && (
-                <p className="mt-1 text-sm text-red-500">{errors.coverImage}</p>
+                <p className="mt-1 text-sm text-destructive">{errors.coverImage}</p>
               )}
             </div>
           </div>
 
           {/* Submit Error */}
           {errors.submit && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
-              <p className="text-sm text-red-600 dark:text-red-400">{errors.submit}</p>
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+              <p className="text-sm text-destructive">{errors.submit}</p>
             </div>
           )}
 

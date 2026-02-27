@@ -96,8 +96,8 @@ export const VoteButton: React.FC<VoteButtonProps> = ({
         className={cn(
           'flex h-8 items-center space-x-1 px-2',
           isUpvoted
-            ? 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700'
-            : 'text-muted-foreground hover:text-green-600',
+            ? 'bg-success/10 text-success hover:bg-success/15'
+            : 'text-muted-foreground hover:text-success',
           isDisabled && 'cursor-not-allowed opacity-50'
         )}
         title={
@@ -125,8 +125,8 @@ export const VoteButton: React.FC<VoteButtonProps> = ({
         className={cn(
           'flex h-8 items-center space-x-1 px-2',
           isDownvoted
-            ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'
-            : 'text-muted-foreground hover:text-red-600',
+            ? 'bg-destructive/10 text-destructive hover:bg-destructive/15'
+            : 'text-muted-foreground hover:text-destructive',
           isDisabled && 'cursor-not-allowed opacity-50'
         )}
         title={
@@ -151,7 +151,7 @@ export const VoteButton: React.FC<VoteButtonProps> = ({
       )}
 
       {/* Error Display */}
-      {voteState.error && <div className="ml-2 text-xs text-red-600">{voteState.error}</div>}
+      {voteState.error && <div className="ml-2 text-xs text-destructive">{voteState.error}</div>}
     </div>
   );
 };
@@ -192,8 +192,8 @@ export const SimpleVoteButton: React.FC<VoteButtonProps> = ({
       onClick={handleVote}
       disabled={isDisabled}
       className={cn(
-        'flex items-center space-x-1 text-muted-foreground hover:text-red-500',
-        isUpvoted && 'text-red-500',
+        'flex items-center space-x-1 text-muted-foreground hover:text-destructive',
+        isUpvoted && 'text-destructive',
         className
       )}
       title={

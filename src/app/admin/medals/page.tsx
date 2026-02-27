@@ -217,7 +217,7 @@ export default function MedalsAdminDashboard() {
     return (
       <MainLayout>
         <div className="py-12 text-center">
-          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
           <h1 className="mb-2 text-2xl font-bold">Access Denied</h1>
           <p className="text-muted-foreground">
             You don&apos;t have permission to access the admin dashboard.
@@ -254,11 +254,11 @@ export default function MedalsAdminDashboard() {
 
         {/* Error Display */}
         {error && (
-          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
-            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+          <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
             <div>
-              <p className="font-medium text-red-800 dark:text-red-200">Error fetching metrics</p>
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <p className="font-medium text-destructive">Error fetching metrics</p>
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           </div>
         )}
@@ -268,8 +268,8 @@ export default function MedalsAdminDashboard() {
           <div
             className={`rounded-lg border p-3 text-sm ${
               cronStatus.includes('error')
-                ? 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200'
-                : 'border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200'
+                ? 'border-destructive/30 bg-destructive/10 text-destructive'
+                : 'border-success/30 bg-success/10 text-success'
             }`}
           >
             {cronStatus}
@@ -328,7 +328,7 @@ export default function MedalsAdminDashboard() {
               <div className="mb-3 flex items-center gap-2 text-sm">
                 {metrics?.stakingRewards.lastDistribution ? (
                   <>
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <CheckCircle2 className="h-4 w-4 text-success" />
                     <span>
                       Last run:{' '}
                       {new Date(metrics.stakingRewards.lastDistribution).toLocaleDateString()}
@@ -336,7 +336,7 @@ export default function MedalsAdminDashboard() {
                   </>
                 ) : (
                   <>
-                    <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    <AlertCircle className="h-4 w-4 text-warning" />
                     <span>No distribution yet</span>
                   </>
                 )}
@@ -360,7 +360,7 @@ export default function MedalsAdminDashboard() {
                 Processes curator votes and queues rewards
               </p>
               <div className="mb-3 flex items-center gap-2 text-sm">
-                <BarChart3 className="h-4 w-4 text-blue-500" />
+                <BarChart3 className="h-4 w-4 text-info" />
                 <span>Today: {metrics?.curatorRewards.todayVotes || 0} votes processed</span>
               </div>
               <Button
@@ -384,12 +384,12 @@ export default function MedalsAdminDashboard() {
               <div className="mb-3 flex items-center gap-2 text-sm">
                 {metrics?.contentRewards.pendingDistributions ? (
                   <>
-                    <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    <AlertCircle className="h-4 w-4 text-warning" />
                     <span>{metrics.contentRewards.pendingDistributions} pending</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <CheckCircle2 className="h-4 w-4 text-success" />
                     <span>All distributed</span>
                   </>
                 )}
@@ -432,7 +432,7 @@ export default function MedalsAdminDashboard() {
                     variant="ghost"
                     onClick={() => handleRemoveCurator(curator)}
                     disabled={curatorLoading}
-                    className="text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive/80"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

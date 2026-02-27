@@ -31,9 +31,9 @@ function formatCompact(amount: number): string {
 function getRankBadgeClass(rank: number): string {
   switch (rank) {
     case 1:
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+      return 'bg-warning/15 text-warning';
     case 2:
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-700/30 dark:text-gray-300';
+      return 'bg-muted text-foreground/80';
     case 3:
       return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
     default:

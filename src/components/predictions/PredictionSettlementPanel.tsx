@@ -76,7 +76,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-500/5 dark:text-amber-400"
+        className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-warning transition-colors hover:bg-warning/5"
       >
         <span>Settlement Panel</span>
         {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -85,14 +85,14 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
       {isExpanded && (
         <div className="space-y-4 px-4 pb-4">
           {/* Warning */}
-          <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+          <div className="flex items-center gap-2 rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             This action is irreversible
           </div>
 
           {/* Error display */}
           {(settleMutation.isError || voidMutation.isError) && (
-            <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>
                 {settleMutation.error?.message || voidMutation.error?.message || 'Operation failed'}
@@ -118,8 +118,8 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                   className={cn(
                     'flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors',
                     selectedWinner === outcome.id
-                      ? 'border-green-500 bg-green-500/10 text-green-700 dark:text-green-400'
-                      : 'border-border hover:border-green-400 hover:bg-green-500/5'
+                      ? 'border-success bg-success/10 text-success'
+                      : 'border-border hover:border-success/60 hover:bg-success/5'
                   )}
                 >
                   <span>{outcome.label}</span>
@@ -131,7 +131,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                 <Button
                   onClick={() => setConfirmingSettle(true)}
                   disabled={isProcessing}
-                  className="w-full bg-green-600 text-white hover:bg-green-700"
+                  className="w-full bg-success text-white hover:bg-success/90"
                 >
                   Settle Prediction
                 </Button>
@@ -139,7 +139,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
 
               {selectedWinner && confirmingSettle && (
                 <div className="space-y-2">
-                  <p className="text-center text-sm font-medium text-red-600 dark:text-red-400">
+                  <p className="text-center text-sm font-medium text-destructive">
                     Are you sure? This cannot be undone.
                   </p>
                   <div className="flex gap-2">
@@ -154,7 +154,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                     <Button
                       onClick={handleSettle}
                       disabled={isProcessing}
-                      className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                      className="flex-1 bg-success text-white hover:bg-success/90"
                     >
                       {settleMutation.isPending ? (
                         <>
@@ -179,7 +179,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                 size="sm"
                 onClick={() => setShowVoidForm(true)}
                 disabled={isProcessing}
-                className="w-full text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-400"
+                className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
                 <X className="mr-1.5 h-3.5 w-3.5" />
                 Void Prediction
@@ -193,7 +193,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                   value={voidReason}
                   onChange={(e) => setVoidReason(e.target.value)}
                   placeholder="e.g. Match was cancelled..."
-                  className="w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500/50"
+                  className="w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-destructive/50"
                   rows={2}
                   disabled={isProcessing}
                 />
@@ -216,14 +216,14 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                       size="sm"
                       onClick={() => setConfirmingVoid(true)}
                       disabled={!voidReason.trim() || isProcessing}
-                      className="flex-1 bg-red-600 text-white hover:bg-red-700"
+                      className="flex-1 bg-destructive text-white hover:bg-destructive/90"
                     >
                       Void
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-center text-sm font-medium text-red-600 dark:text-red-400">
+                    <p className="text-center text-sm font-medium text-destructive">
                       Are you sure? All stakes will be refunded.
                     </p>
                     <div className="flex gap-2">
@@ -240,7 +240,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                         size="sm"
                         onClick={handleVoid}
                         disabled={isProcessing}
-                        className="flex-1 bg-red-600 text-white hover:bg-red-700"
+                        className="flex-1 bg-destructive text-white hover:bg-destructive/90"
                       >
                         {voidMutation.isPending ? (
                           <>

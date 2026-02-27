@@ -72,12 +72,12 @@ export default function AuthorsClient({ initialAuthors }: AuthorsClientProps) {
             <div className="animate-pulse space-y-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center space-x-4">
-                  <div className="h-12 w-12 rounded-full bg-gray-300"></div>
+                  <div className="h-12 w-12 rounded-full bg-muted"></div>
                   <div className="flex-1">
-                    <div className="mb-2 h-4 w-1/3 rounded bg-gray-300"></div>
-                    <div className="h-3 w-1/2 rounded bg-gray-300"></div>
+                    <div className="mb-2 h-4 w-1/3 rounded bg-muted"></div>
+                    <div className="h-3 w-1/2 rounded bg-muted"></div>
                   </div>
-                  <div className="h-8 w-20 rounded bg-gray-300"></div>
+                  <div className="h-8 w-20 rounded bg-muted"></div>
                 </div>
               ))}
             </div>

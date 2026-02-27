@@ -121,7 +121,7 @@ export const LatestNewsDropdown: React.FC<LatestNewsDropdownProps> = ({
             <p className="text-sm text-muted-foreground">Loading latest news...</p>
           </div>
         ) : error ? (
-          <div className="p-8 text-center text-red-500">
+          <div className="p-8 text-center text-destructive">
             <AlertCircle className="mx-auto mb-3 h-8 w-8" />
             <p className="text-sm">{error}</p>
             <Button variant="outline" size="sm" onClick={() => refreshNews()} className="mt-3">

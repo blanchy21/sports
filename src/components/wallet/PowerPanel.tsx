@@ -86,11 +86,9 @@ const AmountInput: React.FC<AmountInputProps> = ({
     <div className="space-y-1">
       <div
         className={cn(
-          'flex items-center gap-2 rounded-lg border bg-white px-3 py-2 dark:bg-slate-800',
-          error
-            ? 'border-red-500'
-            : 'border-slate-200 focus-within:border-accent dark:border-slate-700',
-          disabled && 'bg-slate-50 opacity-50 dark:bg-slate-900'
+          'flex items-center gap-2 rounded-lg border bg-card px-3 py-2',
+          error ? 'border-destructive' : 'border-border focus-within:border-accent',
+          disabled && 'bg-muted/50 opacity-50'
         )}
       >
         <input
@@ -100,9 +98,9 @@ const AmountInput: React.FC<AmountInputProps> = ({
           onChange={handleChange}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 bg-transparent font-mono text-lg text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100"
+          className="flex-1 bg-transparent font-mono text-lg text-foreground outline-none placeholder:text-muted-foreground/70"
         />
-        <span className="font-medium text-slate-500">{symbol}</span>
+        <span className="font-medium text-muted-foreground">{symbol}</span>
         {max !== undefined && (
           <Button
             type="button"
@@ -117,7 +115,7 @@ const AmountInput: React.FC<AmountInputProps> = ({
         )}
       </div>
       {error && (
-        <p className="flex items-center gap-1 text-sm text-red-500">
+        <p className="flex items-center gap-1 text-sm text-destructive">
           <AlertCircle className="h-3 w-3" />
           {error}
         </p>
@@ -226,7 +224,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
         <CardContent className="py-12">
           <div className="flex flex-col items-center justify-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-accent" />
-            <span className="text-slate-500">Loading power info...</span>
+            <span className="text-muted-foreground">Loading power info...</span>
           </div>
         </CardContent>
       </Card>
@@ -245,11 +243,9 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
       <CardContent className="space-y-6">
         {/* Current Balance Display */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
-            <span className="text-xs text-slate-500">Liquid HIVE</span>
-            <div className="font-semibold text-slate-900 dark:text-slate-100">
-              {formatAmount(liquidBalance)} HIVE
-            </div>
+          <div className="rounded-lg bg-muted p-3">
+            <span className="text-xs text-muted-foreground">Liquid HIVE</span>
+            <div className="font-semibold text-foreground">{formatAmount(liquidBalance)} HIVE</div>
           </div>
           <div className="rounded-lg bg-accent/10 p-3">
             <span className="text-xs text-accent">HIVE Power</span>
@@ -259,23 +255,23 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
 
         {/* Effective HP with Delegations */}
         {(delegatedIn > 0 || delegatedOut > 0) && (
-          <div className="rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800">
+          <div className="rounded-lg bg-muted p-3 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-slate-500">Effective HP</span>
-              <span className="font-medium text-slate-900 dark:text-slate-100">
+              <span className="text-muted-foreground">Effective HP</span>
+              <span className="font-medium text-foreground">
                 {formatAmount(effectiveHivePower)} HP
               </span>
             </div>
             {delegatedIn > 0 && (
               <div className="mt-1 flex items-center justify-between text-xs">
-                <span className="text-green-600">+ Received</span>
-                <span className="text-green-600">+{formatAmount(delegatedIn)} HP</span>
+                <span className="text-success">+ Received</span>
+                <span className="text-success">+{formatAmount(delegatedIn)} HP</span>
               </div>
             )}
             {delegatedOut > 0 && (
               <div className="mt-1 flex items-center justify-between text-xs">
-                <span className="text-red-500">- Delegated</span>
-                <span className="text-red-500">-{formatAmount(delegatedOut)} HP</span>
+                <span className="text-destructive">- Delegated</span>
+                <span className="text-destructive">-{formatAmount(delegatedOut)} HP</span>
               </div>
             )}
           </div>
@@ -283,14 +279,12 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
 
         {/* Active Power Down Warning */}
         {isPoweringDown && powerInfo?.powerDown && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+          <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
             <div className="flex items-start gap-3">
-              <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+              <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-warning" />
               <div className="flex-1">
-                <h4 className="font-medium text-amber-800 dark:text-amber-200">
-                  Power Down Active
-                </h4>
-                <div className="mt-2 space-y-1 text-sm text-amber-700 dark:text-amber-300">
+                <h4 className="font-medium text-warning">Power Down Active</h4>
+                <div className="mt-2 space-y-1 text-sm text-warning">
                   <p>
                     Weekly: {powerInfo.powerDown.weeklyAmount} HIVE (
                     {powerInfo.powerDown.weeksRemaining} weeks left)
@@ -303,7 +297,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
                   size="sm"
                   onClick={handleCancelPowerDown}
                   disabled={powerMutation.isPending}
-                  className="mt-3 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300"
+                  className="mt-3 border-warning/30 text-warning hover:bg-warning/15"
                 >
                   {powerMutation.isPending ? (
                     <Loader2 className="mr-2 h-3 w-3 animate-spin" />
@@ -318,14 +312,12 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
         )}
 
         {/* Action Tabs */}
-        <div className="flex rounded-lg border border-slate-200 p-1 dark:border-slate-700">
+        <div className="flex rounded-lg border border-border p-1">
           <button
             onClick={() => setAction('powerUp')}
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
-              action === 'powerUp'
-                ? 'bg-accent text-white'
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+              action === 'powerUp' ? 'bg-accent text-white' : 'text-muted-foreground hover:bg-muted'
             )}
           >
             <Zap className="h-4 w-4" />
@@ -337,7 +329,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               action === 'powerDown'
                 ? 'bg-accent text-white'
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                : 'text-muted-foreground hover:bg-muted'
             )}
           >
             <TrendingDown className="h-4 w-4" />
@@ -347,7 +339,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
 
         {/* Amount Input */}
         <div className="space-y-3">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label className="text-sm font-medium text-foreground/80">
             Amount to {action === 'powerUp' ? 'power up' : 'power down'}
           </label>
           <AmountInput
@@ -378,7 +370,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
 
         {/* Power Up Info */}
         {action === 'powerUp' && (
-          <div className="flex items-start gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-300">
+          <div className="flex items-start gap-2 rounded-lg bg-success/10 p-3 text-sm text-success">
             <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div>
               <span className="font-medium">Benefits of HIVE Power:</span>
@@ -394,7 +386,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
 
         {/* Power Down Warning */}
         {action === 'powerDown' && (
-          <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+          <div className="flex items-start gap-2 rounded-lg bg-warning/10 p-3 text-sm text-warning">
             <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div>
               <span className="font-medium">Power Down takes 13 weeks</span>
@@ -433,7 +425,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
 
         {/* Mutation Error */}
         {powerMutation.error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />
               <span className="font-medium">Operation failed</span>
@@ -449,7 +441,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
         {/* Advanced Info Toggle */}
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="flex w-full items-center justify-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          className="flex w-full items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground/80"
         >
           {showAdvanced ? (
             <>
@@ -466,7 +458,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
 
         {/* Advanced Info */}
         {showAdvanced && powerInfo?.conversionRate && (
-          <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+          <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
             <p>1 HIVE = {parseFloat(powerInfo.conversionRate.vestsPerHive).toFixed(6)} VESTS</p>
             <p>1 VESTS = {parseFloat(powerInfo.conversionRate.hivePerVest).toFixed(6)} HIVE</p>
           </div>

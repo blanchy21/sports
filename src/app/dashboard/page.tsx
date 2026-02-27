@@ -265,9 +265,9 @@ export default function DashboardPage() {
 
         {/* Error Message */}
         {refreshError && (
-          <div className="flex items-center space-x-2 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <span className="text-red-800 dark:text-red-200">{refreshError}</span>
+          <div className="flex items-center space-x-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <span className="text-destructive">{refreshError}</span>
           </div>
         )}
 
@@ -286,7 +286,7 @@ export default function DashboardPage() {
                         stat.changeType === 'positive'
                           ? 'text-accent'
                           : stat.changeType === 'negative'
-                            ? 'text-red-600'
+                            ? 'text-destructive'
                             : 'text-muted-foreground'
                       }`}
                     >
@@ -396,9 +396,9 @@ export default function DashboardPage() {
             </div>
 
             {postsError && (
-              <div className="mb-4 flex items-center space-x-2 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="text-sm text-red-800 dark:text-red-200">{postsError}</span>
+              <div className="mb-4 flex items-center space-x-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                <span className="text-sm text-destructive">{postsError}</span>
               </div>
             )}
 
