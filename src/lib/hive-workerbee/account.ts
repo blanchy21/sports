@@ -41,15 +41,6 @@ interface VestingDelegation {
   [key: string]: unknown;
 }
 
-interface HivePost {
-  author?: string;
-  permlink?: string;
-  created?: string;
-  children?: number;
-  net_votes?: number;
-  [key: string]: unknown;
-}
-
 interface HiveOperation {
   type?: string;
   [key: string]: unknown;

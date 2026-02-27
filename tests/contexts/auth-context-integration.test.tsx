@@ -53,7 +53,7 @@ jest.mock('@/lib/utils/api-retry', () => ({
   fetchWithRetry: jest.fn().mockRejectedValue(new Error('not mocked')),
 }));
 
-import { setAuthInfo, clearAuthInfo } from '@/lib/api/authenticated-fetch';
+import { setAuthInfo } from '@/lib/api/authenticated-fetch';
 
 // ---------------------------------------------------------------------------
 // Helpers
