@@ -49,8 +49,13 @@ export async function executeSettlement(
     throw new Error(`Prediction not found: ${predictionId}`);
   }
 
-  if (prediction.status !== PredictionStatus.LOCKED) {
-    throw new Error(`Prediction is not LOCKED (current: ${prediction.status})`);
+  if (
+    prediction.status !== PredictionStatus.LOCKED &&
+    prediction.status !== PredictionStatus.SETTLING
+  ) {
+    throw new Error(
+      `Prediction must be LOCKED or SETTLING for settlement (current: ${prediction.status})`
+    );
   }
 
   const validOutcome = prediction.outcomes.find((o) => o.id === winningOutcomeId);
@@ -111,11 +116,21 @@ export async function executeSettlement(
   });
 
   try {
-    // Broadcast fee ops (burn + reward)
-    const feeOps = buildFeeOps(settlement.platformFee, predictionId);
-    if (feeOps.length > 0) {
-      const feeTxId = await broadcastHiveEngineOps(feeOps);
-      logger.info(`Fee ops broadcast: ${feeTxId}`, 'Settlement', { predictionId });
+    // Broadcast fee ops (burn + reward) — skip if already done on a prior attempt
+    if (!prediction.feeTxId) {
+      const feeOps = buildFeeOps(settlement.platformFee, predictionId);
+      if (feeOps.length > 0) {
+        const feeTxId = await broadcastHiveEngineOps(feeOps);
+        await prisma.prediction.update({
+          where: { id: predictionId },
+          data: { feeTxId },
+        });
+        logger.info(`Fee ops broadcast: ${feeTxId}`, 'Settlement', { predictionId });
+      }
+    } else {
+      logger.info(`Fee ops already broadcast (${prediction.feeTxId}), skipping`, 'Settlement', {
+        predictionId,
+      });
     }
 
     // Broadcast payout ops to winners
@@ -172,10 +187,9 @@ export async function executeSettlement(
   } catch (error) {
     logger.error(`Settlement failed for ${predictionId}`, 'Settlement', error);
 
-    // Reset to LOCKED so settlement can be retried
-    await prisma.prediction.update({
-      where: { id: predictionId },
-      data: { status: PredictionStatus.LOCKED },
+    // Stay in SETTLING so retry skips already-completed steps (e.g. fee broadcast)
+    logger.warn(`Settlement incomplete, status remains SETTLING for retry`, 'Settlement', {
+      predictionId,
     });
 
     throw error;
