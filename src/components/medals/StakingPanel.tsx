@@ -99,9 +99,11 @@ const AmountInput: React.FC<AmountInputProps> = ({
     <div className="space-y-1">
       <div
         className={cn(
-          'flex items-center gap-2 rounded-lg border bg-white px-3 py-2',
-          error ? 'border-red-500' : 'border-slate-200 focus-within:border-amber-500',
-          disabled && 'bg-slate-50 opacity-50'
+          'flex items-center gap-2 rounded-lg border bg-white px-3 py-2 dark:bg-slate-800',
+          error
+            ? 'border-red-500'
+            : 'border-slate-200 focus-within:border-amber-500 dark:border-slate-700',
+          disabled && 'bg-slate-50 opacity-50 dark:bg-slate-900'
         )}
       >
         <input
@@ -111,9 +113,9 @@ const AmountInput: React.FC<AmountInputProps> = ({
           onChange={handleChange}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 bg-transparent font-mono text-lg text-slate-900 outline-none placeholder:text-slate-400"
+          className="flex-1 bg-transparent font-mono text-lg text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
         />
-        <span className="font-medium text-slate-500">MEDALS</span>
+        <span className="font-medium text-slate-500 dark:text-slate-400">MEDALS</span>
         {max !== undefined && (
           <Button
             type="button"
@@ -121,7 +123,7 @@ const AmountInput: React.FC<AmountInputProps> = ({
             size="sm"
             onClick={handleMaxClick}
             disabled={disabled}
-            className="h-7 px-2 text-amber-600 hover:text-amber-700"
+            className="h-7 px-2 text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
           >
             MAX
           </Button>
@@ -160,14 +162,18 @@ const PendingUnstakeItem: React.FC<PendingUnstakeItemProps> = ({
     <div
       className={cn(
         'flex items-center justify-between rounded-lg border p-3',
-        isComplete ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'
+        isComplete
+          ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
+          : 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20'
       )}
     >
       <div className="flex items-center gap-3">
         <Clock className={cn('h-4 w-4', isComplete ? 'text-green-600' : 'text-amber-600')} />
         <div>
-          <span className="font-medium text-slate-900">{formatAmount(quantity)}</span>
-          <span className="ml-1 text-slate-500">MEDALS</span>
+          <span className="font-medium text-slate-900 dark:text-white">
+            {formatAmount(quantity)}
+          </span>
+          <span className="ml-1 text-slate-500 dark:text-slate-400">MEDALS</span>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -182,7 +188,7 @@ const PendingUnstakeItem: React.FC<PendingUnstakeItemProps> = ({
             size="sm"
             onClick={onCancel}
             disabled={isCancelling}
-            className="h-7 text-red-500 hover:bg-red-50 hover:text-red-600"
+            className="h-7 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
           >
             {isCancelling ? (
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -300,7 +306,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
         <CardContent className="py-12">
           <div className="flex flex-col items-center justify-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
-            <span className="text-slate-500">Loading staking info...</span>
+            <span className="text-slate-500 dark:text-slate-400">Loading staking info...</span>
           </div>
         </CardContent>
       </Card>
@@ -319,28 +325,34 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
       <CardContent className="space-y-6">
         {/* Current Balance Display */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg bg-slate-50 p-3">
-            <span className="text-xs text-slate-500">Liquid Balance</span>
-            <div className="font-semibold text-slate-900">{formatAmount(liquidBalance)} MEDALS</div>
+          <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
+            <span className="text-xs text-slate-500 dark:text-slate-400">Liquid Balance</span>
+            <div className="font-semibold text-slate-900 dark:text-white">
+              {formatAmount(liquidBalance)} MEDALS
+            </div>
           </div>
-          <div className="rounded-lg bg-amber-50 p-3">
-            <span className="text-xs text-amber-600">Staked Balance</span>
-            <div className="font-semibold text-amber-900">{formatAmount(stakedBalance)} MEDALS</div>
+          <div className="rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
+            <span className="text-xs text-amber-600 dark:text-amber-400">Staked Balance</span>
+            <div className="font-semibold text-amber-900 dark:text-amber-200">
+              {formatAmount(stakedBalance)} MEDALS
+            </div>
           </div>
         </div>
 
         {/* Premium Tier Progress */}
-        <div className="rounded-lg bg-gradient-to-r from-slate-50 to-amber-50 p-4">
+        <div className="rounded-lg bg-gradient-to-r from-slate-50 to-amber-50 p-4 dark:from-slate-800 dark:to-amber-900/20">
           <PremiumTierProgress currentStaked={stakedBalance} />
         </div>
 
         {/* Action Tabs */}
-        <div className="flex rounded-lg border border-slate-200 p-1">
+        <div className="flex rounded-lg border border-slate-200 p-1 dark:border-slate-700">
           <button
             onClick={() => setAction('stake')}
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
-              action === 'stake' ? 'bg-amber-500 text-white' : 'text-slate-600 hover:bg-slate-100'
+              action === 'stake'
+                ? 'bg-amber-500 text-white'
+                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
             )}
           >
             <Lock className="h-4 w-4" />
@@ -350,7 +362,9 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
             onClick={() => setAction('unstake')}
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
-              action === 'unstake' ? 'bg-amber-500 text-white' : 'text-slate-600 hover:bg-slate-100'
+              action === 'unstake'
+                ? 'bg-amber-500 text-white'
+                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
             )}
           >
             <Unlock className="h-4 w-4" />
@@ -360,7 +374,9 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
 
         {/* Amount Input */}
         <div className="space-y-3">
-          <label className="text-sm font-medium text-slate-700">Amount to {action}</label>
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Amount to {action}
+          </label>
           <AmountInput
             value={amount}
             onChange={setAmount}
@@ -388,8 +404,8 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
 
         {/* Tier Change Preview */}
         {amountNum > 0 && validation.valid && (
-          <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
-            <div className="flex items-center gap-2 text-sm text-blue-700">
+          <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+            <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
               <Info className="h-4 w-4" />
               <span>After {action}:</span>
             </div>
@@ -397,15 +413,15 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
               {currentTier ? (
                 <PremiumBadge tier={currentTier} size="sm" />
               ) : (
-                <span className="text-sm text-slate-500">No tier</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">No tier</span>
               )}
-              <ArrowRight className="h-4 w-4 text-slate-400" />
+              <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
               {projectedTier ? (
                 <PremiumBadge tier={projectedTier} size="sm" />
               ) : (
-                <span className="text-sm text-slate-500">No tier</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">No tier</span>
               )}
-              <span className="ml-auto text-sm text-slate-600">
+              <span className="ml-auto text-sm text-slate-600 dark:text-slate-400">
                 {formatAmount(projectedStaked)} staked
               </span>
             </div>
@@ -414,7 +430,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
 
         {/* APY Info */}
         {action === 'stake' && (
-          <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-600">
+          <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/20 dark:text-green-400">
             <TrendingUp className="h-4 w-4" />
             <span>Estimated APY: {balance?.estimatedAPY || '~10'}%</span>
           </div>
@@ -422,7 +438,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
 
         {/* Unstaking Warning */}
         {action === 'unstake' && (
-          <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+          <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
             <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div>
               <span className="font-medium">Unstaking period:</span>
@@ -431,7 +447,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
                   ? `${Math.ceil(stakeInfo.unstakingCooldown / (24 * 60 * 60 * 1000))} days`
                   : '7 days'}
               </span>
-              <p className="mt-1 text-xs text-amber-600">
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
                 Unstaked tokens will be locked and gradually released.
               </p>
             </div>
@@ -463,7 +479,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
 
         {/* Mutation Error */}
         {stakeMutation.error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />
               <span className="font-medium">Operation failed</span>
@@ -481,8 +497,10 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
           stakeInfo.pendingUnstakeTransactions.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-slate-700">Pending Unstakes</h4>
-                <span className="text-xs text-slate-500">
+                <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Pending Unstakes
+                </h4>
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   {stakeInfo.pendingUnstakeTransactions.length} pending
                 </span>
               </div>
@@ -505,11 +523,11 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
         {stakeInfo?.delegations &&
           ((stakeInfo.delegations.incoming?.length ?? 0) > 0 ||
             (stakeInfo.delegations.outgoing?.length ?? 0) > 0) && (
-            <div className="space-y-2 rounded-lg bg-slate-50 p-3 text-sm">
-              <h4 className="font-medium text-slate-700">Delegations</h4>
+            <div className="space-y-2 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800">
+              <h4 className="font-medium text-slate-700 dark:text-slate-300">Delegations</h4>
               {(stakeInfo.delegations.incoming?.length ?? 0) > 0 && (
                 <div>
-                  <span className="text-slate-500">Received:</span>
+                  <span className="text-slate-500 dark:text-slate-400">Received:</span>
                   {stakeInfo.delegations.incoming?.map((d, i) => (
                     <span key={i} className="ml-2 text-green-600">
                       +{formatAmount(d.quantity)} from @{d.from}
@@ -519,7 +537,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
               )}
               {(stakeInfo.delegations.outgoing?.length ?? 0) > 0 && (
                 <div>
-                  <span className="text-slate-500">Delegated:</span>
+                  <span className="text-slate-500 dark:text-slate-400">Delegated:</span>
                   {stakeInfo.delegations.outgoing?.map((d, i) => (
                     <span key={i} className="ml-2 text-red-600">
                       -{formatAmount(d.quantity)} to @{d.to}

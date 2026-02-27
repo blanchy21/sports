@@ -57,12 +57,12 @@ interface StatProps {
 
 const Stat: React.FC<StatProps> = ({ label, value, icon, subValue, className }) => (
   <div className={cn('flex flex-col', className)}>
-    <span className="flex items-center gap-1 text-xs text-slate-500">
+    <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
       {icon}
       {label}
     </span>
-    <span className="text-lg font-semibold text-slate-900">{value}</span>
-    {subValue && <span className="text-xs text-slate-400">{subValue}</span>}
+    <span className="text-lg font-semibold text-slate-900 dark:text-white">{value}</span>
+    {subValue && <span className="text-xs text-slate-400 dark:text-slate-500">{subValue}</span>}
   </div>
 );
 
@@ -73,24 +73,24 @@ const WalletCardSkeleton: React.FC<{ compact?: boolean }> = ({ compact }) => (
   <Card className={cn('w-full', compact ? 'p-3' : '')}>
     <CardHeader className={compact ? 'p-0 pb-3' : ''}>
       <div className="flex items-center justify-between">
-        <div className="h-6 w-32 animate-pulse rounded bg-slate-200" />
-        <div className="h-6 w-20 animate-pulse rounded-full bg-slate-200" />
+        <div className="h-6 w-32 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+        <div className="h-6 w-20 animate-pulse rounded-full bg-slate-200 dark:bg-slate-700" />
       </div>
     </CardHeader>
     <CardContent className={compact ? 'p-0' : ''}>
       <div className="grid grid-cols-2 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="space-y-2">
-            <div className="h-3 w-16 animate-pulse rounded bg-slate-200" />
-            <div className="h-6 w-24 animate-pulse rounded bg-slate-200" />
+            <div className="h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+            <div className="h-6 w-24 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
           </div>
         ))}
       </div>
     </CardContent>
     {!compact && (
       <CardFooter className="gap-2">
-        <div className="h-9 flex-1 animate-pulse rounded bg-slate-200" />
-        <div className="h-9 flex-1 animate-pulse rounded bg-slate-200" />
+        <div className="h-9 flex-1 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+        <div className="h-9 flex-1 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
       </CardFooter>
     )}
   </Card>
@@ -105,8 +105,8 @@ const WalletCardError: React.FC<{ error: Error; onRetry: () => void }> = ({ erro
       <div className="flex flex-col items-center space-y-3 text-center">
         <AlertCircle className="h-10 w-10 text-red-400" />
         <div>
-          <p className="font-medium text-slate-900">Failed to load wallet</p>
-          <p className="text-sm text-slate-500">{error.message}</p>
+          <p className="font-medium text-slate-900 dark:text-white">Failed to load wallet</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{error.message}</p>
         </div>
         <Button variant="outline" size="sm" onClick={onRetry}>
           <RefreshCw className="mr-2 h-4 w-4" />
@@ -163,26 +163,26 @@ export const WalletCard: React.FC<WalletCardProps> = ({
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-amber-500" />
-              <span className="font-semibold text-slate-900">MEDALS</span>
+              <span className="font-semibold text-slate-900 dark:text-white">MEDALS</span>
             </div>
             <PremiumBadge tier={premiumTier} size="sm" />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">Total</span>
-              <span className="font-semibold text-slate-900">{total}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">Total</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{total}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">Liquid</span>
-              <span className="text-slate-700">{liquid}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">Liquid</span>
+              <span className="text-slate-700 dark:text-slate-300">{liquid}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">Staked</span>
-              <span className="text-slate-700">{staked}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">Staked</span>
+              <span className="text-slate-700 dark:text-slate-300">{staked}</span>
             </div>
-            <div className="flex items-center justify-between border-t border-slate-100 pt-2">
-              <span className="text-sm text-slate-500">Value</span>
+            <div className="flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-700">
+              <span className="text-sm text-slate-500 dark:text-slate-400">Value</span>
               <span className="font-medium text-green-600">{hiveValue} HIVE</span>
             </div>
           </div>
@@ -205,7 +205,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
+                className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
               >
                 <ExternalLink className="mr-1 h-3 w-3" />
                 Buy
@@ -260,15 +260,17 @@ export const WalletCard: React.FC<WalletCardProps> = ({
         </div>
 
         {/* Total Balance Highlight */}
-        <div className="mt-6 rounded-lg border border-amber-100 bg-gradient-to-r from-amber-50 to-yellow-50 p-4">
+        <div className="mt-6 rounded-lg border border-amber-100 bg-gradient-to-r from-amber-50 to-yellow-50 p-4 dark:border-amber-800 dark:from-amber-900/20 dark:to-yellow-900/20">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-sm text-amber-700">Total Balance</span>
-              <div className="text-2xl font-bold text-amber-900">{total} MEDALS</div>
+              <span className="text-sm text-amber-700 dark:text-amber-400">Total Balance</span>
+              <div className="text-2xl font-bold text-amber-900 dark:text-amber-200">
+                {total} MEDALS
+              </div>
             </div>
             {premiumTier && (
               <div className="text-right">
-                <span className="text-sm text-amber-700">Tier Status</span>
+                <span className="text-sm text-amber-700 dark:text-amber-400">Tier Status</span>
                 <div className="mt-1">
                   <PremiumBadge tier={premiumTier} size="lg" showThreshold />
                 </div>
@@ -280,15 +282,15 @@ export const WalletCard: React.FC<WalletCardProps> = ({
         {/* Delegations if present */}
         {(parseFloat(balance?.delegatedIn || '0') > 0 ||
           parseFloat(balance?.delegatedOut || '0') > 0) && (
-          <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm">
+          <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800">
             <div className="flex justify-between">
-              <span className="text-slate-500">Delegated In:</span>
+              <span className="text-slate-500 dark:text-slate-400">Delegated In:</span>
               <span className="font-medium text-green-600">
                 +{formatAmount(balance?.delegatedIn)}
               </span>
             </div>
             <div className="mt-1 flex justify-between">
-              <span className="text-slate-500">Delegated Out:</span>
+              <span className="text-slate-500 dark:text-slate-400">Delegated Out:</span>
               <span className="font-medium text-red-600">
                 -{formatAmount(balance?.delegatedOut)}
               </span>
@@ -314,7 +316,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
         >
           <Button
             variant="outline"
-            className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
+            className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
           >
             <ExternalLink className="mr-2 h-4 w-4" />
             Buy MEDALS

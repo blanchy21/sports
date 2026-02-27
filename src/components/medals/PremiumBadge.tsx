@@ -187,7 +187,7 @@ export const PremiumBadgeOutline: React.FC<PremiumBadgeProps> = ({
     return (
       <div
         className={cn(
-          'inline-flex items-center justify-center rounded-full border-2 bg-white',
+          'inline-flex items-center justify-center rounded-full border-2 bg-white dark:bg-slate-800',
           config.borderColor,
           sizeConfig.iconOnly,
           className
@@ -202,7 +202,7 @@ export const PremiumBadgeOutline: React.FC<PremiumBadgeProps> = ({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border-2 bg-white font-semibold',
+        'inline-flex items-center gap-1.5 rounded-full border-2 bg-white font-semibold dark:bg-slate-800',
         config.borderColor,
         config.textColor,
         sizeConfig.badge,
@@ -270,16 +270,16 @@ export const PremiumTierProgress: React.FC<PremiumTierProgressProps> = ({
           {currentTier ? (
             <PremiumBadge tier={currentTier} size="sm" />
           ) : (
-            <span className="text-slate-500">No tier</span>
+            <span className="text-slate-500 dark:text-slate-400">No tier</span>
           )}
         </div>
-        <div className="flex items-center gap-2 text-slate-600">
+        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
           <span>Next:</span>
           <PremiumBadgeOutline tier={nextTierName} size="sm" />
         </div>
       </div>
 
-      <div className="relative h-3 overflow-hidden rounded-full bg-slate-200">
+      <div className="relative h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
         <div
           className={cn(
             'absolute h-full rounded-full transition-all duration-500',
@@ -289,7 +289,7 @@ export const PremiumTierProgress: React.FC<PremiumTierProgressProps> = ({
         />
       </div>
 
-      <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
         <span>{formatThreshold(currentStaked)} MEDALS staked</span>
         <span>
           {formatThreshold(remaining)} more to {nextConfig.label}
