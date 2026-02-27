@@ -205,7 +205,7 @@ const nextConfig: NextConfig = {
   // Image optimization
   images: {
     formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 86400,
     // Allow local static images and API proxy images with query strings
     localPatterns: [
       {

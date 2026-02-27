@@ -508,7 +508,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                       fill
                       sizes="(max-width: 768px) 100vw, 400px"
                       className="object-cover transition-transform duration-200 hover:scale-105"
-                      unoptimized={shouldProxyImage(img)}
+                      unoptimized={!shouldProxyImage(img)}
                       onError={() => handleImageError(img)}
                     />
                   ) : (

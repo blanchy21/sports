@@ -264,9 +264,8 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
             const imageUrl = extractFirstImageUrl(post.body, post.json_metadata);
             if (imageUrl) {
               // Use proxy URL if needed to avoid CORS issues
-              const finalImageUrl = shouldProxyImage(imageUrl)
-                ? getProxyImageUrl(imageUrl)
-                : imageUrl;
+              const isProxied = shouldProxyImage(imageUrl);
+              const finalImageUrl = isProxied ? getProxyImageUrl(imageUrl) : imageUrl;
               return (
                 <div className="relative aspect-video w-full overflow-hidden rounded-md">
                   <Image
@@ -277,7 +276,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
                     className="object-cover transition-transform duration-200 hover:scale-105"
                     loading={priority ? 'eager' : 'lazy'}
                     priority={priority}
-                    unoptimized // User-generated images can reference any domain
+                    unoptimized={!isProxied}
                   />
                 </div>
               );
@@ -295,7 +294,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
                   className="object-cover transition-transform duration-200 hover:scale-105"
                   loading={priority ? 'eager' : 'lazy'}
                   priority={priority}
-                  unoptimized
+                  unoptimized={!needsProxy}
                 />
               </div>
             );

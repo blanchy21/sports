@@ -428,7 +428,7 @@ export default function DashboardPage() {
                             width={64}
                             height={64}
                             className="h-16 w-16 rounded-lg object-cover"
-                            unoptimized={shouldProxyImage(thumbnail)}
+                            unoptimized={!shouldProxyImage(thumbnail)}
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}

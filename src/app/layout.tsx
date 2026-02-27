@@ -5,7 +5,6 @@ import './globals.css';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { WalletProvider } from '@/contexts/WalletProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { PriceProvider } from '@/contexts/PriceContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { ToastProvider } from '@/components/core/Toast';
 import { QueryClientProvider } from '@/lib/react-query/QueryClientProvider';
@@ -73,6 +72,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`,
           }}
         />
+        <link
+          rel="preconnect"
+          href="https://pagead2.googlesyndication.com"
+          crossOrigin="anonymous"
+        />
+        <link rel="dns-prefetch" href="https://files.peakd.com" />
+        <link rel="dns-prefetch" href="https://images.hive.blog" />
+        <link rel="dns-prefetch" href="https://cdn.steemitimages.com" />
         <AdSenseScript />
         <script
           type="application/ld+json"
@@ -105,15 +112,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <WalletProvider>
                 <AuthProvider>
                   <NotificationProvider>
-                    <PriceProvider>
-                      <ToastProvider>
-                        <ModalProvider>
-                          <NavigationProgress />
-                          <LazyInitializers />
-                          {children}
-                        </ModalProvider>
-                      </ToastProvider>
-                    </PriceProvider>
+                    <ToastProvider>
+                      <ModalProvider>
+                        <NavigationProgress />
+                        <LazyInitializers />
+                        {children}
+                      </ModalProvider>
+                    </ToastProvider>
                   </NotificationProvider>
                 </AuthProvider>
               </WalletProvider>
