@@ -238,7 +238,7 @@ export function PredictionBiteCard({
               outcome={outcome}
               totalPool={prediction.totalPool}
               isSelected={userStakeMap.has(outcome.id)}
-              isWinner={outcome.isWinner}
+              isWinner={prediction.status !== 'REFUNDED' && outcome.isWinner}
               isClickable={prediction.status === 'OPEN'}
               onClick={() => openStakeModal(prediction.id, outcome.id)}
               userStake={userStakeMap.get(outcome.id)}
@@ -266,6 +266,7 @@ export function PredictionBiteCard({
               {prediction.status === 'SETTLED' && userPayout === 0 && totalUserStake > 0 && (
                 <> — No payout</>
               )}
+              {prediction.status === 'REFUNDED' && <> — Refunded</>}
             </span>
           </div>
         )}
@@ -312,10 +313,17 @@ export function PredictionBiteCard({
             </div>
           )}
 
-          {(prediction.status === 'VOID' || prediction.status === 'REFUNDED') && (
+          {prediction.status === 'VOID' && (
             <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <AlertCircle className="h-4 w-4" />
               <span>Voided{prediction.voidReason ? `: ${prediction.voidReason}` : ''}</span>
+            </div>
+          )}
+
+          {prediction.status === 'REFUNDED' && (
+            <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+              <AlertCircle className="h-4 w-4" />
+              <span>Refunded — no opposing stakes</span>
             </div>
           )}
         </div>
