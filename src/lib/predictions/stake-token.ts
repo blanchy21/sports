@@ -4,10 +4,15 @@ import { PREDICTION_CONFIG } from './constants';
 const DEV_FALLBACK_SECRET = 'dev-only-prediction-stake-token-secret-do-not-use-in-prod';
 
 function getStakeTokenSecret(): string {
-  const secret = process.env.STAKE_TOKEN_SECRET || process.env.SESSION_ENCRYPTION_KEY;
+  const secret =
+    process.env.STAKE_TOKEN_SECRET ||
+    process.env.SESSION_ENCRYPTION_KEY ||
+    process.env.SESSION_SECRET;
   if (!secret) {
     if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
-      throw new Error('STAKE_TOKEN_SECRET or SESSION_ENCRYPTION_KEY is required in production');
+      throw new Error(
+        'STAKE_TOKEN_SECRET, SESSION_ENCRYPTION_KEY, or SESSION_SECRET is required in production'
+      );
     }
     return DEV_FALLBACK_SECRET;
   }
