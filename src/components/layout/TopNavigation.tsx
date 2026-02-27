@@ -16,6 +16,11 @@ import {
   Menu,
   Newspaper,
   Swords,
+  Moon,
+  Sun,
+  Compass,
+  DollarSign,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
@@ -29,6 +34,7 @@ import {
 import { UpgradePrompt } from '@/components/user/AccountBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils/client';
 import { logger } from '@/lib/logger';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
@@ -48,6 +54,7 @@ export const TopNavigation: React.FC = () => {
   const router = useRouter();
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
+  const { theme, toggleTheme } = useTheme();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUpgradeFlow, setShowUpgradeFlow] = useState(false);
@@ -427,16 +434,19 @@ export const TopNavigation: React.FC = () => {
               <span>Match Threads</span>
             </Link>
 
-            <button
-              onClick={() => {
-                setShowMobileMenu(false);
-                setShowNews(true);
-              }}
-              className="flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-left text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
+            <Link
+              href="/discover"
+              onClick={() => setShowMobileMenu(false)}
+              className={cn(
+                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
+                pathname === '/discover'
+                  ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
+                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
+              )}
             >
-              <Newspaper className="h-5 w-5" />
-              <span>Latest News</span>
-            </button>
+              <Compass className="h-5 w-5" />
+              <span>Discover</span>
+            </Link>
 
             <Link
               href="/feed"
@@ -464,15 +474,58 @@ export const TopNavigation: React.FC = () => {
                 </Link>
 
                 <Link
-                  href="/profile"
+                  href="/wallet"
                   onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center space-x-3 rounded-lg px-4 py-3 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                  className={cn(
+                    'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
+                    pathname === '/wallet'
+                      ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
+                      : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
+                  )}
                 >
-                  <Settings className="h-5 w-5" />
-                  <span>Settings</span>
+                  <DollarSign className="h-5 w-5" />
+                  <span>Wallet</span>
+                </Link>
+
+                <Link
+                  href="/dashboard"
+                  onClick={() => setShowMobileMenu(false)}
+                  className={cn(
+                    'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
+                    pathname === '/dashboard'
+                      ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
+                      : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
+                  )}
+                >
+                  <LayoutDashboard className="h-5 w-5" />
+                  <span>Dashboard</span>
                 </Link>
               </>
             )}
+
+            {/* Dark mode toggle — available to all users */}
+            <button
+              onClick={toggleTheme}
+              className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
+            >
+              <div className="flex items-center space-x-3">
+                {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+              </div>
+              <div
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  theme === 'dark' ? 'bg-primary' : 'bg-muted-foreground/30'
+                }`}
+                role="switch"
+                aria-checked={theme === 'dark'}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    theme === 'dark' ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </div>
+            </button>
           </nav>
         </div>
       )}

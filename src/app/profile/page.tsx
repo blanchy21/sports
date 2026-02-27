@@ -154,11 +154,11 @@ export default function ProfilePage() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-4xl space-y-4 sm:space-y-6">
         {/* Profile Header */}
         <div className="overflow-hidden rounded-lg border bg-card">
           {/* Cover Photo */}
-          <div className="relative h-48 bg-gradient-to-r from-primary via-bright-cobalt to-accent">
+          <div className="relative h-32 bg-gradient-to-r from-primary via-bright-cobalt to-accent sm:h-48">
             {user.hiveProfile?.coverImage && (
               <Image
                 src={user.hiveProfile.coverImage}
@@ -171,23 +171,23 @@ export default function ProfilePage() {
           </div>
 
           {/* Profile Info */}
-          <div className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-4">
-                {/* Avatar */}
-                <div className="relative -mt-16">
-                  <Avatar
-                    src={user.avatar}
-                    alt={user.displayName || user.username}
-                    fallback={user.username}
-                    size="lg"
-                    className="h-32 w-32 border-4 border-background"
-                  />
-                </div>
+          <div className="px-4 py-4 sm:p-6">
+            {/* Avatar + Name row */}
+            <div className="flex items-start space-x-3 sm:space-x-4">
+              <div className="relative -mt-12 flex-shrink-0 sm:-mt-16">
+                <Avatar
+                  src={user.avatar}
+                  alt={user.displayName || user.username}
+                  fallback={user.username}
+                  size="lg"
+                  className="h-20 w-20 border-4 border-background sm:h-32 sm:w-32"
+                />
+              </div>
 
-                <div className="mt-4 flex-1">
-                  <div className="mb-2 flex items-center space-x-3">
-                    <h1 className="text-3xl font-bold text-foreground">
+              <div className="min-w-0 flex-1 pt-1 sm:pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2 sm:mb-2">
+                    <h1 className="truncate text-xl font-bold text-foreground sm:text-2xl lg:text-3xl">
                       {user.displayName || user.username}
                     </h1>
                     <RoleBadge username={user.username} size="md" />
@@ -200,160 +200,188 @@ export default function ProfilePage() {
                       </div>
                     )}
                   </div>
-                  <p className="mb-2 text-lg text-muted-foreground">@{user.username}</p>
 
-                  {/* Error Display */}
-                  {refreshError && (
-                    <div className="mt-3 flex items-start space-x-2 rounded-lg border border-red-200 bg-red-50 p-3">
-                      <AlertCircle className="mt-0.5 h-4 w-4 text-red-500" />
-                      <div>
-                        <p className="text-sm text-red-800">{refreshError}</p>
-                        <button
-                          onClick={() => setRefreshError(null)}
-                          className="mt-1 text-xs text-red-600 underline hover:text-red-800"
-                        >
-                          Dismiss
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Profile Details */}
-                  <div className="mt-4 space-y-3">
-                    {user.hiveProfile?.location && (
-                      <div className="flex items-center space-x-3 text-sm">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-foreground">{user.hiveProfile.location}</span>
-                      </div>
+                  {/* Action buttons — desktop only */}
+                  <div className="hidden flex-shrink-0 items-center space-x-2 sm:flex">
+                    {authType === 'hive' && (
+                      <Button
+                        variant="outline"
+                        onClick={handleRefreshProfile}
+                        disabled={isRefreshing}
+                        className="flex items-center space-x-2"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+                      </Button>
                     )}
-
-                    <div className="flex items-center space-x-3 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-foreground">
-                        Joined{' '}
-                        {user.createdAt instanceof Date
-                          ? user.createdAt.toLocaleDateString('en-US', {
-                              month: 'long',
-                              year: 'numeric',
-                            })
-                          : 'Unknown'}
-                      </span>
-                    </div>
-
-                    {user.hiveProfile?.website && (
-                      <div className="flex items-center space-x-3 text-sm">
-                        <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                        <a
-                          href={user.hiveProfile.website}
-                          className="text-primary transition-colors hover:underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {user.hiveProfile.website.replace(/^https?:\/\//, '')}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Bio Section */}
-                  <div className="mt-6">
-                    <p className="max-w-2xl text-base leading-relaxed text-foreground">
-                      {user.bio || user.hiveProfile?.about || 'No bio available.'}
-                    </p>
-                  </div>
-
-                  {/* Stats Section */}
-                  <div className="mt-6 flex items-center space-x-6 border-t border-border pt-4">
-                    {authType === 'hive' ? (
-                      <>
-                        <button
-                          onClick={() => setActiveTab('following')}
-                          className="cursor-pointer text-center transition-opacity hover:opacity-70"
-                        >
-                          <div className="text-2xl font-bold text-foreground">
-                            {isRefreshing
-                              ? '...'
-                              : (user.hiveStats?.following || 0).toLocaleString()}
-                          </div>
-                          <div className="text-sm text-muted-foreground">Following</div>
-                        </button>
-                        <button
-                          onClick={() => setActiveTab('followers')}
-                          className="cursor-pointer text-center transition-opacity hover:opacity-70"
-                        >
-                          <div className="text-2xl font-bold text-foreground">
-                            {isRefreshing
-                              ? '...'
-                              : (user.hiveStats?.followers || 0).toLocaleString()}
-                          </div>
-                          <div className="text-sm text-muted-foreground">Followers</div>
-                        </button>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">
-                            {isRefreshing
-                              ? '...'
-                              : (user.hiveStats?.postCount || 0).toLocaleString()}
-                          </div>
-                          <div className="text-sm text-muted-foreground">Posts</div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">
-                            {userPosts.length}
-                          </div>
-                          <div className="text-sm text-muted-foreground">Posts</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">
-                            {userPosts.reduce((sum, p) => sum + getPostLikeCount(p), 0)}
-                          </div>
-                          <div className="text-sm text-muted-foreground">Likes</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">
-                            {userPosts.reduce((sum, p) => sum + getPostViewCount(p), 0)}
-                          </div>
-                          <div className="text-sm text-muted-foreground">Views</div>
-                        </div>
-                      </>
-                    )}
+                    <Button
+                      variant="outline"
+                      className="flex items-center space-x-2"
+                      onClick={() => openModal('editProfile')}
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span>Edit Profile</span>
+                    </Button>
+                    <Button variant="outline" size="icon" aria-label="Profile settings">
+                      <Settings className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
+                <p className="mb-2 text-sm text-muted-foreground sm:text-lg">@{user.username}</p>
               </div>
+            </div>
 
-              <div className="flex items-center space-x-2">
-                {authType === 'hive' && (
-                  <Button
-                    variant="outline"
-                    onClick={handleRefreshProfile}
-                    disabled={isRefreshing}
-                    className="flex items-center space-x-2"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
-                  </Button>
-                )}
+            {/* Action buttons — mobile only */}
+            <div className="mt-3 flex items-center space-x-2 sm:hidden">
+              {authType === 'hive' && (
                 <Button
                   variant="outline"
-                  className="flex items-center space-x-2"
-                  onClick={() => openModal('editProfile')}
+                  size="sm"
+                  onClick={handleRefreshProfile}
+                  disabled={isRefreshing}
+                  className="flex items-center space-x-1.5"
                 >
-                  <Edit className="h-4 w-4" />
-                  <span>Edit Profile</span>
+                  <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="text-xs">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
                 </Button>
-                <Button variant="outline" size="icon" aria-label="Profile settings">
-                  <Settings className="h-4 w-4" />
-                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-1.5"
+                onClick={() => openModal('editProfile')}
+              >
+                <Edit className="h-3.5 w-3.5" />
+                <span className="text-xs">Edit Profile</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Profile settings"
+              >
+                <Settings className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+
+            {/* Error Display */}
+            {refreshError && (
+              <div className="mt-3 flex items-start space-x-2 rounded-lg border border-red-200 bg-red-50 p-3">
+                <AlertCircle className="mt-0.5 h-4 w-4 text-red-500" />
+                <div>
+                  <p className="text-sm text-red-800">{refreshError}</p>
+                  <button
+                    onClick={() => setRefreshError(null)}
+                    className="mt-1 text-xs text-red-600 underline hover:text-red-800"
+                  >
+                    Dismiss
+                  </button>
+                </div>
               </div>
+            )}
+
+            {/* Profile Details */}
+            <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-3">
+              {user.hiveProfile?.location && (
+                <div className="flex items-center space-x-3 text-sm">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-foreground">{user.hiveProfile.location}</span>
+                </div>
+              )}
+
+              <div className="flex items-center space-x-3 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-foreground">
+                  Joined{' '}
+                  {user.createdAt instanceof Date
+                    ? user.createdAt.toLocaleDateString('en-US', {
+                        month: 'long',
+                        year: 'numeric',
+                      })
+                    : 'Unknown'}
+                </span>
+              </div>
+
+              {user.hiveProfile?.website && (
+                <div className="flex items-center space-x-3 text-sm">
+                  <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                  <a
+                    href={user.hiveProfile.website}
+                    className="text-primary transition-colors hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {user.hiveProfile.website.replace(/^https?:\/\//, '')}
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Bio Section */}
+            <div className="mt-4 sm:mt-6">
+              <p className="max-w-2xl text-sm leading-relaxed text-foreground sm:text-base">
+                {user.bio || user.hiveProfile?.about || 'No bio available.'}
+              </p>
+            </div>
+
+            {/* Stats Section */}
+            <div className="mt-4 flex items-center space-x-4 border-t border-border pt-3 sm:mt-6 sm:space-x-6 sm:pt-4">
+              {authType === 'hive' ? (
+                <>
+                  <button
+                    onClick={() => setActiveTab('following')}
+                    className="cursor-pointer text-center transition-opacity hover:opacity-70"
+                  >
+                    <div className="text-lg font-bold text-foreground sm:text-2xl">
+                      {isRefreshing ? '...' : (user.hiveStats?.following || 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-muted-foreground sm:text-sm">Following</div>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('followers')}
+                    className="cursor-pointer text-center transition-opacity hover:opacity-70"
+                  >
+                    <div className="text-lg font-bold text-foreground sm:text-2xl">
+                      {isRefreshing ? '...' : (user.hiveStats?.followers || 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-muted-foreground sm:text-sm">Followers</div>
+                  </button>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-foreground sm:text-2xl">
+                      {isRefreshing ? '...' : (user.hiveStats?.postCount || 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-muted-foreground sm:text-sm">Posts</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-foreground sm:text-2xl">
+                      {userPosts.length}
+                    </div>
+                    <div className="text-xs text-muted-foreground sm:text-sm">Posts</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-foreground sm:text-2xl">
+                      {userPosts.reduce((sum, p) => sum + getPostLikeCount(p), 0)}
+                    </div>
+                    <div className="text-xs text-muted-foreground sm:text-sm">Likes</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-foreground sm:text-2xl">
+                      {userPosts.reduce((sum, p) => sum + getPostViewCount(p), 0)}
+                    </div>
+                    <div className="text-xs text-muted-foreground sm:text-sm">Views</div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
 
         {/* Tabs */}
         <div className="rounded-lg border bg-card">
-          <div className="flex items-center overflow-x-auto border-b border-border px-6">
+          <div className="flex items-center overflow-x-auto border-b border-border px-3 sm:px-6">
             {(authType === 'hive'
               ? (['posts', 'drafts', 'replies', 'bookmarks', 'following', 'followers'] as const)
               : (['posts', 'drafts', 'replies', 'bookmarks'] as const)
@@ -363,8 +391,8 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab(tab)}
                 className={
                   activeTab === tab
-                    ? 'whitespace-nowrap border-b-2 border-primary px-4 py-3 font-medium text-primary transition-colors'
-                    : 'whitespace-nowrap border-b-2 border-transparent px-4 py-3 text-muted-foreground transition-colors hover:text-foreground'
+                    ? 'whitespace-nowrap border-b-2 border-primary px-3 py-2 text-sm font-medium text-primary transition-colors sm:px-4 sm:py-3 sm:text-base'
+                    : 'whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:px-4 sm:py-3 sm:text-base'
                 }
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -373,7 +401,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Tab Content */}
-          <div className="p-6">
+          <div className="p-3 sm:p-6">
             {activeTab === 'posts' && (
               <>
                 {isLoadingPosts ? (

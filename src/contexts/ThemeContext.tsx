@@ -25,14 +25,15 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   useEffect(() => {
     setMounted(true);
-    // Check for saved theme preference or default to light mode
+    // Check for saved theme preference
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     if (savedTheme) {
       setThemeState(savedTheme);
     } else {
-      // Check system preference
+      // Default to dark on mobile devices, follow system preference on desktop
+      const isMobile = window.innerWidth < 1024;
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setThemeState(prefersDark ? 'dark' : 'light');
+      setThemeState(isMobile || prefersDark ? 'dark' : 'light');
     }
   }, []);
 
