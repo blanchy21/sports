@@ -126,8 +126,12 @@ export default function DiscoverClient({ initialPosts }: DiscoverClientProps) {
             </div>
           ) : posts.length > 0 ? (
             <div className="space-y-6">
-              {posts.map((post) => (
-                <PostCard key={`${post.author}-${post.permlink}`} post={post} />
+              {posts.map((post, index) => (
+                <PostCard
+                  key={`${post.author}-${post.permlink}`}
+                  post={post}
+                  priority={index < 2}
+                />
               ))}
             </div>
           ) : (

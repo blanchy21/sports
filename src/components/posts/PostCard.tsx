@@ -41,6 +41,8 @@ import {
 interface PostCardProps {
   post: AnyPost;
   className?: string;
+  /** Mark images as priority (eager) loading for above-the-fold cards */
+  priority?: boolean;
 }
 
 // Extract the first image URL from post body (markdown or HTML img tags)
@@ -68,7 +70,7 @@ const extractFirstImageUrl = (body: string, jsonMetadata?: string): string | nul
   return null;
 };
 
-const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
+const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority = false }) => {
   const [isReblogging, setIsReblogging] = React.useState(false);
   const { addToast } = useToast();
   const { openModal } = useModal();
@@ -216,9 +218,9 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
             />
           </button>
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <div className="flex items-center gap-x-2 overflow-hidden">
               <span
-                className="cursor-pointer text-sm font-medium hover:underline"
+                className="shrink-0 cursor-pointer text-sm font-medium hover:underline"
                 onClick={(e) => {
                   e.stopPropagation();
                   window.location.href = `/user/${getAuthorName()}`;
@@ -230,10 +232,14 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
               {authorPremiumTier && (
                 <PremiumBadge tier={authorPremiumTier} size="sm" showLabel={false} />
               )}
-              <span className="text-muted-foreground">•</span>
-              <span className="text-sm text-muted-foreground">{formatDate(createdAt)}</span>
-              <span className="text-muted-foreground">•</span>
-              <span className="text-sm text-muted-foreground">{formatReadTime(readTime)}</span>
+              <span className="shrink-0 text-muted-foreground">•</span>
+              <span className="shrink-0 text-sm text-muted-foreground">
+                {formatDate(createdAt)}
+              </span>
+              <span className="shrink-0 text-muted-foreground">•</span>
+              <span className="truncate text-sm text-muted-foreground">
+                {formatReadTime(readTime)}
+              </span>
             </div>
             {sportCategory && (
               <div className="mt-1 flex items-center space-x-1">
@@ -276,7 +282,8 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover transition-transform duration-200 hover:scale-105"
-                    loading="lazy"
+                    loading={priority ? 'eager' : 'lazy'}
+                    priority={priority}
                     unoptimized // User-generated images can reference any domain
                   />
                 </div>
@@ -293,7 +300,8 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className }) => {
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="object-cover transition-transform duration-200 hover:scale-105"
-                  loading="lazy"
+                  loading={priority ? 'eager' : 'lazy'}
+                  priority={priority}
                   unoptimized
                 />
               </div>
