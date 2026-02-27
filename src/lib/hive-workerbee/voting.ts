@@ -42,13 +42,16 @@ export async function castVote(voteData: VoteData, broadcastFn: BroadcastFn): Pr
 
     const transactionId = result.transactionId || 'unknown';
 
-    // Confirm transaction was included in a block
-    const confirmation = await waitForTransaction(transactionId);
+    // Fire-and-forget: confirm transaction in the background.
+    // Don't block the UI — the vote was already broadcast successfully.
+    waitForTransaction(transactionId).catch(() => {
+      // Non-critical: confirmation polling failure doesn't affect the vote
+    });
 
     return {
       success: true,
       transactionId,
-      confirmed: confirmation.confirmed,
+      confirmed: false, // will be confirmed asynchronously
     };
   } catch (error) {
     logError('Error casting vote with Wax', 'castVote', error instanceof Error ? error : undefined);
