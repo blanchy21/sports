@@ -193,6 +193,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
 
   return (
     <article
+      aria-label={`Post: ${post.title}`}
       className={cn(
         'overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-md',
         className
@@ -221,6 +222,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
             <div className="flex items-center gap-x-2 overflow-hidden">
               <Link
                 href={`/user/${getAuthorName()}`}
+                aria-label={`View @${getAuthorName()}'s profile`}
                 className="shrink-0 text-sm font-medium hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -257,7 +259,11 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
       </div>
 
       {/* Content */}
-      <Link href={postUrl} className="block cursor-pointer space-y-3 p-3 sm:p-4">
+      <Link
+        href={postUrl}
+        aria-label={post.title}
+        className="block cursor-pointer space-y-3 p-3 sm:p-4"
+      >
         {(() => {
           // For Hive posts, extract image from body or metadata
           if (isHivePost) {

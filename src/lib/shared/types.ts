@@ -400,17 +400,6 @@ export function isHiveAccount(value: unknown): value is HiveAccount {
   );
 }
 
-/**
- * Type guard to check if a value is a valid SportsblockPost
- */
-export function isSportsblockPost(value: unknown): value is SportsblockPost {
-  if (!isHivePost(value)) return false;
-  // After isHivePost check, we know value has the HivePost shape
-  // Check for SportsblockPost-specific fields
-  const maybePost = value as { postType?: string; isSportsblockPost?: boolean };
-  return maybePost.postType === 'sportsblock' || maybePost.isSportsblockPost === true;
-}
-
 // ============================================================================
 // Type-Safe Transformation Functions
 // ============================================================================
