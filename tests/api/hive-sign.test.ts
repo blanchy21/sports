@@ -31,7 +31,7 @@ jest.mock('@/lib/utils/rate-limit', () => ({
 }));
 
 jest.mock('@/lib/db/prisma', () => ({
-  prisma: { custodialUser: { findFirst: jest.fn() } },
+  prisma: { custodialUser: { findUnique: jest.fn() } },
 }));
 
 import { POST } from '@/app/api/hive/sign/route';
@@ -39,7 +39,7 @@ import { prisma } from '@/lib/db/prisma';
 import { OperationValidationError } from '@/lib/hive/signing-relay';
 
 const mockPrisma = prisma as unknown as {
-  custodialUser: { findFirst: jest.Mock };
+  custodialUser: { findUnique: jest.Mock };
 };
 
 const validOperations = [
@@ -65,7 +65,7 @@ describe('POST /api/hive/sign', () => {
       reset: Date.now() + 60000,
     });
 
-    mockPrisma.custodialUser.findFirst.mockResolvedValue({ id: 'custodial-456' });
+    mockPrisma.custodialUser.findUnique.mockResolvedValue({ id: 'custodial-456' });
 
     mockValidateOperations.mockImplementation(() => undefined);
     mockSignAndBroadcast.mockResolvedValue({ transactionId: 'tx-abc' });
@@ -213,7 +213,7 @@ describe('POST /api/hive/sign', () => {
   // =========================================================================
 
   it('returns 404 when custodial account not found in DB', async () => {
-    mockPrisma.custodialUser.findFirst.mockResolvedValue(null);
+    mockPrisma.custodialUser.findUnique.mockResolvedValue(null);
 
     const response = await request(server)
       .post('/api/hive/sign')
@@ -291,7 +291,7 @@ describe('POST /api/hive/sign', () => {
   it('looks up custodialUser by hiveUsername', async () => {
     await request(server).post('/api/hive/sign').send({ operations: validOperations });
 
-    expect(mockPrisma.custodialUser.findFirst).toHaveBeenCalledWith({
+    expect(mockPrisma.custodialUser.findUnique).toHaveBeenCalledWith({
       where: { hiveUsername: 'sb-testuser' },
       select: { id: true },
     });

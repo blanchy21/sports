@@ -63,6 +63,18 @@ jest.mock('next/image', () => ({
   ),
 }));
 
+// Mock next/navigation (PostCard uses useRouter for profile navigation)
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    back: jest.fn(),
+  }),
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 // Mock react-markdown to avoid parsing issues
 jest.mock('react-markdown', () => ({
   __esModule: true,
