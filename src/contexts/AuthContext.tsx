@@ -7,6 +7,7 @@ import React, {
   useReducer,
   useCallback,
   useRef,
+  useMemo,
 } from 'react';
 import { logger } from '@/lib/logger';
 import { User } from '@/types';
@@ -295,25 +296,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Context Value
   // ============================================================================
 
-  const value: AuthContextValue = {
-    user,
-    authType,
-    isAuthenticated: !!user,
-    isLoading,
-    login,
-    loginWithHiveUser,
-    loginWithWallet,
-    logout,
-    updateUser,
-    upgradeToHive,
-    hiveUser,
-    setHiveUser,
-    refreshHiveAccount,
-    touchSession,
-    isClient,
-    hasMounted,
-    profileLoadFailed,
-  };
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      authType,
+      isAuthenticated: !!user,
+      isLoading,
+      login,
+      loginWithHiveUser,
+      loginWithWallet,
+      logout,
+      updateUser,
+      upgradeToHive,
+      hiveUser,
+      setHiveUser,
+      refreshHiveAccount,
+      touchSession,
+      isClient,
+      hasMounted,
+      profileLoadFailed,
+    }),
+    [
+      user,
+      authType,
+      isLoading,
+      login,
+      loginWithHiveUser,
+      loginWithWallet,
+      logout,
+      updateUser,
+      upgradeToHive,
+      hiveUser,
+      setHiveUser,
+      refreshHiveAccount,
+      touchSession,
+      isClient,
+      hasMounted,
+      profileLoadFailed,
+    ]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

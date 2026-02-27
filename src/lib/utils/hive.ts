@@ -197,11 +197,10 @@ export function parseJsonMetadata(json: string): Record<string, unknown> {
 }
 
 /**
- * Check if post is from Sportsblock
- * @param post - Hive post object
- * @returns True if post is from Sportsblock
+ * Check if a raw Hive post originated from the Sportsblock app.
+ * Inspects json_metadata and category — NOT a TypeScript type guard.
  */
-export function isSportsblockPost(post: { json_metadata?: string; category?: string }): boolean {
+export function isFromSportsblockApp(post: { json_metadata?: string; category?: string }): boolean {
   const metadata = parseJsonMetadata(post.json_metadata || '');
 
   // Check for Sportsblock app tag

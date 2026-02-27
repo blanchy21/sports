@@ -19,12 +19,14 @@ const ROUTE = '/api/unified/posts';
 async function getSoftPostsByUsername(
   username: string,
   postsLimit: number,
-  before?: string
+  before?: string,
+  excludePublishedToHive = false
 ): Promise<SoftPost[]> {
   const posts = await prisma.post.findMany({
     where: {
       authorUsername: username,
       ...(before && { createdAt: { lt: new Date(before) } }),
+      ...(excludePublishedToHive && { isPublishedToHive: false }),
     },
     orderBy: { createdAt: 'desc' },
     take: postsLimit,
@@ -36,12 +38,14 @@ async function getSoftPostsByUsername(
 async function getSoftPostsByAuthorId(
   authorId: string,
   postsLimit: number,
-  before?: string
+  before?: string,
+  excludePublishedToHive = false
 ): Promise<SoftPost[]> {
   const posts = await prisma.post.findMany({
     where: {
       authorId,
       ...(before && { createdAt: { lt: new Date(before) } }),
+      ...(excludePublishedToHive && { isPublishedToHive: false }),
     },
     orderBy: { createdAt: 'desc' },
     take: postsLimit,
@@ -50,9 +54,17 @@ async function getSoftPostsByAuthorId(
   return posts.map(postToSoftPost);
 }
 
-async function getAllSoftPosts(postsLimit: number, before?: string): Promise<SoftPost[]> {
+async function getAllSoftPosts(
+  postsLimit: number,
+  before?: string,
+  excludePublishedToHive = false
+): Promise<SoftPost[]> {
+  const where: Record<string, unknown> = {};
+  if (before) where.createdAt = { lt: new Date(before) };
+  if (excludePublishedToHive) where.isPublishedToHive = false;
+
   const posts = await prisma.post.findMany({
-    where: before ? { createdAt: { lt: new Date(before) } } : undefined,
+    where: Object.keys(where).length > 0 ? where : undefined,
     orderBy: { createdAt: 'desc' },
     take: postsLimit,
   });
@@ -306,7 +318,7 @@ export async function GET(request: NextRequest) {
     // If authorId is provided, only fetch soft posts
     if (authorId) {
       if (includeSoft) {
-        const softPosts = await getSoftPostsByAuthorId(authorId, limit + 1, before);
+        const softPosts = await getSoftPostsByAuthorId(authorId, limit + 1, before, includeHive);
         allPosts.push(...softPosts.map(softPostToUnified));
       }
 
@@ -336,7 +348,7 @@ export async function GET(request: NextRequest) {
       // Soft posts don't depend on profile -- start immediately
       if (includeSoft) {
         fetchPromises.push(
-          getSoftPostsByUsername(username, limit + 1, before)
+          getSoftPostsByUsername(username, limit + 1, before, includeHive)
             .then((posts) => {
               allPosts.push(...posts.map(softPostToUnified));
             })
@@ -421,7 +433,7 @@ export async function GET(request: NextRequest) {
     // Fetch soft posts
     if (includeSoft) {
       fetchPromises.push(
-        getAllSoftPosts(limit + 1, before)
+        getAllSoftPosts(limit + 1, before, includeHive)
           .then((posts) => {
             let filtered = posts;
             if (sportCategory) {

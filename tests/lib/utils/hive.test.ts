@@ -7,7 +7,7 @@ import {
   parseAsset,
   formatAsset,
   vestingSharesToHive,
-  isSportsblockPost,
+  isFromSportsblockApp,
   parseJsonMetadata,
   HiveError,
   handleHiveError,
@@ -114,23 +114,23 @@ describe('vestingSharesToHive', () => {
   });
 });
 
-describe('isSportsblockPost', () => {
+describe('isFromSportsblockApp', () => {
   it('returns true for post with app=sportsblock in json_metadata', () => {
-    expect(isSportsblockPost({ json_metadata: '{"app":"sportsblock"}' })).toBe(true);
+    expect(isFromSportsblockApp({ json_metadata: '{"app":"sportsblock"}' })).toBe(true);
   });
 
   it('returns true for post with category hive-115814', () => {
-    expect(isSportsblockPost({ category: 'hive-115814' })).toBe(true);
+    expect(isFromSportsblockApp({ category: 'hive-115814' })).toBe(true);
   });
 
   it('returns true for post with sportsblock tag', () => {
-    expect(isSportsblockPost({ json_metadata: '{"tags":["sportsblock"]}' })).toBe(true);
+    expect(isFromSportsblockApp({ json_metadata: '{"tags":["sportsblock"]}' })).toBe(true);
   });
 
   it('returns false for unrelated post', () => {
-    expect(isSportsblockPost({ json_metadata: '{"app":"peakd"}', category: 'photography' })).toBe(
-      false
-    );
+    expect(
+      isFromSportsblockApp({ json_metadata: '{"app":"peakd"}', category: 'photography' })
+    ).toBe(false);
   });
 });
 

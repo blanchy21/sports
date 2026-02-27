@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { after } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { logger } from '@/lib/logger';
+import { touchLastActive } from '@/lib/api/activity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -162,19 +161,7 @@ export async function POST(request: NextRequest) {
         ]);
       }
 
-      // Keep function alive for lastActiveAt update via after()
-      after(
-        prisma.profile
-          .update({
-            where: { id: user.userId },
-            data: { lastActiveAt: new Date() },
-          })
-          .catch((err) => {
-            logger.warn('Failed to update lastActiveAt', 'soft-likes', {
-              error: err instanceof Error ? err.message : String(err),
-            });
-          })
-      );
+      touchLastActive(user.userId, ROUTE);
 
       // Read the actual count AFTER the atomic increment to avoid TOCTOU drift
       const newLikeCount = await prisma.like.count({ where: { targetType, targetId } });
@@ -225,28 +212,44 @@ export async function PUT(request: NextRequest) {
     const { targets } = parseResult.data;
     const user = await getAuthenticatedUserFromSession(request);
 
+    // Build OR conditions for batch query
+    const orConditions = targets.map(({ targetType, targetId }) => ({ targetType, targetId }));
+
+    // Run count aggregation and user like check in parallel (2 queries instead of 2N)
+    const [countGroups, userLikes] = await Promise.all([
+      prisma.like.groupBy({
+        by: ['targetType', 'targetId'],
+        where: { OR: orConditions },
+        _count: true,
+      }),
+      user
+        ? prisma.like.findMany({
+            where: { userId: user.userId, OR: orConditions },
+            select: { targetType: true, targetId: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    // Build lookup maps
+    const countMap = new Map<string, number>();
+    for (const group of countGroups) {
+      countMap.set(`${group.targetType}:${group.targetId}`, group._count);
+    }
+
+    const likedSet = new Set<string>();
+    for (const like of userLikes) {
+      likedSet.add(`${like.targetType}:${like.targetId}`);
+    }
+
+    // Assemble results
     const results: Record<string, { likeCount: number; hasLiked: boolean }> = {};
-
-    // Process in parallel for better performance
-    await Promise.all(
-      targets.map(async ({ targetType, targetId }) => {
-        const key = `${targetType}:${targetId}`;
-
-        // Get like count
-        const likeCount = await prisma.like.count({ where: { targetType, targetId } });
-
-        // Check if user has liked
-        let hasLiked = false;
-        if (user) {
-          const existing = await prisma.like.findUnique({
-            where: { userId_targetType_targetId: { userId: user.userId, targetType, targetId } },
-          });
-          hasLiked = !!existing;
-        }
-
-        results[key] = { likeCount, hasLiked };
-      })
-    );
+    for (const { targetType, targetId } of targets) {
+      const key = `${targetType}:${targetId}`;
+      results[key] = {
+        likeCount: countMap.get(key) || 0,
+        hasLiked: likedSet.has(key),
+      };
+    }
 
     return NextResponse.json({
       success: true,

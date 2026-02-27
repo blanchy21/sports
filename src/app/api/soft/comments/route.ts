@@ -7,6 +7,7 @@ import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { logger } from '@/lib/logger';
+import { touchLastActive } from '@/lib/api/activity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -246,19 +247,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Keep function alive for background updates via after()
-      after(
-        prisma.profile
-          .update({
-            where: { id: user.userId },
-            data: { lastActiveAt: new Date() },
-          })
-          .catch((err) => {
-            logger.warn('Failed to update lastActiveAt', 'soft-comments', {
-              error: err instanceof Error ? err.message : String(err),
-            });
-          })
-      );
+      touchLastActive(user.userId, ROUTE);
 
       // Update comment count on the parent entity
       if (postId.startsWith('soft-') || !postId.includes('-')) {

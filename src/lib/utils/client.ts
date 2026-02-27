@@ -33,7 +33,7 @@ export {
   calculateVoteWeight,
   getUserVote,
   parseJsonMetadata,
-  isSportsblockPost,
+  isFromSportsblockApp,
   getSportCategory,
   calculateRCPercentage,
   formatResourceCredits,

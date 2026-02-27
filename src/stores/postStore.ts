@@ -9,10 +9,6 @@ export function isSportsblockPost(post: Post | SportsblockPost): post is Sportsb
   return post.postType === 'sportsblock';
 }
 
-export function isStandardPost(post: Post | SportsblockPost): post is Post {
-  return post.postType === 'standard';
-}
-
 // Helper to get post ID from either type
 export function getPostId(post: Post | SportsblockPost): string {
   return isSportsblockPost(post) ? `${post.author}/${post.permlink}` : post.id;

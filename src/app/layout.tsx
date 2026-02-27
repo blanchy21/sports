@@ -66,6 +66,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        {/* Inline script to prevent dark mode FOUC — reads localStorage before first paint.
+            Content is a static string literal (no user input), safe for dangerouslySetInnerHTML. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`,
+          }}
+        />
         <AdSenseScript />
         <script
           type="application/ld+json"

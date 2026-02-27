@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { after } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, unauthorizedError } from '@/lib/api/response';
@@ -10,8 +9,8 @@ import {
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { touchLastActive } from '@/lib/api/activity';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -297,19 +296,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Update user's lastActiveAt timestamp (kept alive via after())
-      after(
-        prisma.profile
-          .update({
-            where: { id: user.userId },
-            data: { lastActiveAt: new Date() },
-          })
-          .catch((err) => {
-            logger.warn('Failed to update lastActiveAt', 'soft-follows', {
-              error: err instanceof Error ? err.message : String(err),
-            });
-          })
-      );
+      touchLastActive(user.userId, ROUTE);
 
       // Get updated follower count for target user
       const followerCount = await prisma.follow.count({

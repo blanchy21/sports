@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { MessageCircle, Bookmark, MapPin, Repeat2, Users } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
@@ -191,11 +191,6 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
     }
   };
 
-  const router = useRouter();
-  const handleUserProfile = (username: string) => {
-    router.push(`/user/${username}`);
-  };
-
   return (
     <article
       className={cn(
@@ -206,7 +201,10 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
       {/* Header */}
       <div className="border-b p-3 sm:p-4">
         <div className="flex items-center space-x-3">
-          <button onClick={() => handleUserProfile(getAuthorName())}>
+          <Link
+            href={`/user/${getAuthorName()}`}
+            aria-label={`View ${getAuthorDisplayName()}'s profile`}
+          >
             <Avatar
               src={getAuthorAvatar()}
               fallback={getAuthorName()}
@@ -218,18 +216,16 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
                   : 'cursor-pointer transition-opacity hover:opacity-80'
               }
             />
-          </button>
+          </Link>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-x-2 overflow-hidden">
-              <span
-                className="shrink-0 cursor-pointer text-sm font-medium hover:underline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push(`/user/${getAuthorName()}`);
-                }}
+              <Link
+                href={`/user/${getAuthorName()}`}
+                className="shrink-0 text-sm font-medium hover:underline"
+                onClick={(e) => e.stopPropagation()}
               >
                 @{getAuthorName()}
-              </span>
+              </Link>
               <RoleBadge username={getAuthorName()} />
               {authorPremiumTier && (
                 <PremiumBadge tier={authorPremiumTier} size="sm" showLabel={false} />
@@ -261,12 +257,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
       </div>
 
       {/* Content */}
-      <div
-        className="cursor-pointer space-y-3 p-3 sm:p-4"
-        onClick={() => {
-          router.push(postUrl);
-        }}
-      >
+      <Link href={postUrl} className="block cursor-pointer space-y-3 p-3 sm:p-4">
         {(() => {
           // For Hive posts, extract image from body or metadata
           if (isHivePost) {
@@ -336,7 +327,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
             )}
           </div>
         )}
-      </div>
+      </Link>
 
       {/* Footer */}
       <div className="border-t bg-muted/30 px-3 py-2 sm:px-4 sm:py-3">
@@ -372,6 +363,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
                   onClick={handleUpvoteList}
                   className="flex items-center space-x-1 text-muted-foreground transition-colors hover:text-primary"
                   title="View voters"
+                  aria-label={`${voteCount} votes, view voters`}
                 >
                   <Users className="h-3.5 w-3.5" />
                   <span className="text-xs font-medium">{voteCount}</span>
@@ -394,6 +386,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
               size="sm"
               onClick={handleComment}
               className="flex items-center space-x-1 text-muted-foreground hover:text-accent"
+              aria-label={`${commentCount} comments`}
             >
               <MessageCircle className="h-4 w-4" />
               <span>{commentCount}</span>
@@ -406,6 +399,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
                 onClick={handleReblog}
                 disabled={isReblogging}
                 className="flex items-center space-x-1 text-muted-foreground hover:text-green-500"
+                aria-label="Reblog post"
               >
                 <Repeat2 className={cn('h-4 w-4', isReblogging && 'animate-spin')} />
               </Button>
@@ -419,6 +413,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
             className={`text-muted-foreground hover:text-yellow-500 ${
               isBookmarked(post) ? 'text-yellow-500' : ''
             }`}
+            aria-label={isBookmarked(post) ? 'Remove bookmark' : 'Bookmark post'}
           >
             <Bookmark className={`h-4 w-4 ${isBookmarked(post) ? 'fill-current' : ''}`} />
           </Button>
