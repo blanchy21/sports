@@ -536,35 +536,7 @@ export function ComposeSportsbite({
 
   return (
     <div className="rounded-xl border bg-card">
-      {/* Mode toggle — only show for Hive-authenticated users, hidden in predictionOnly mode */}
-      {isHiveAuth && !predictionOnly && (
-        <div className="flex border-b">
-          <button
-            onClick={() => setComposeMode('take')}
-            className={cn(
-              'flex-1 border-b-2 py-2 text-sm font-medium transition-colors',
-              composeMode === 'take'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground'
-            )}
-          >
-            Take
-          </button>
-          <button
-            onClick={() => setComposeMode('prediction')}
-            className={cn(
-              'flex-1 border-b-2 py-2 text-sm font-medium transition-colors',
-              composeMode === 'prediction'
-                ? 'border-amber-500 text-warning'
-                : 'border-transparent text-muted-foreground'
-            )}
-          >
-            Prediction
-          </button>
-        </div>
-      )}
-
-      {/* Prediction compose mode */}
+      {/* Prediction compose mode (only when predictionOnly prop is set) */}
       {composeMode === 'prediction' && isHiveAuth ? (
         <div className="space-y-4 p-4">
           {/* Title */}
