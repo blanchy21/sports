@@ -29,34 +29,43 @@ jest.mock('@/lib/hive-workerbee/client', () => ({
   MUTED_AUTHORS: [],
 }));
 
+// posting.ts imports these from './shared' (pure, no WASM)
+jest.mock('@/lib/hive-workerbee/shared', () => {
+  const actual = jest.requireActual('@/lib/hive-workerbee/shared');
+  return {
+    ...actual,
+    createPostOperation: jest.fn((data: Record<string, unknown>) => ({
+      parent_author: data.parentAuthor || '',
+      parent_permlink: data.parentPermlink || 'sportsblock',
+      author: data.author,
+      permlink: `${String(data.title).toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+      title: data.title,
+      body: data.body,
+      json_metadata: JSON.stringify({ app: 'sportsblock/1.0.0', tags: data.tags || [] }),
+    })),
+    createCommentOperation: jest.fn((data: Record<string, unknown>) => ({
+      parent_author: data.parentAuthor,
+      parent_permlink: data.parentPermlink,
+      author: data.author,
+      permlink: `re-${data.parentPermlink}-${Date.now()}`,
+      title: '',
+      body: data.body,
+      json_metadata: JSON.stringify({ app: 'sportsblock/1.0.0' }),
+    })),
+    createCommentOptionsOperation: jest.fn((data: Record<string, unknown>) => ({
+      author: data.author,
+      permlink: data.permlink,
+      max_accepted_payout: '1000000.000 HBD',
+      percent_hbd: 10000,
+      allow_votes: true,
+      allow_curation_rewards: true,
+      extensions: [[0, { beneficiaries: [{ account: 'sportsblock', weight: 500 }] }]],
+    })),
+  };
+});
+
+// posting.ts imports checkResourceCreditsWax from './wax-helpers'
 jest.mock('@/lib/hive-workerbee/wax-helpers', () => ({
-  createPostOperation: jest.fn((data) => ({
-    parent_author: data.parentAuthor || '',
-    parent_permlink: data.parentPermlink || 'sportsblock',
-    author: data.author,
-    permlink: `${data.title.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
-    title: data.title,
-    body: data.body,
-    json_metadata: JSON.stringify({ app: 'sportsblock/1.0.0', tags: data.tags || [] }),
-  })),
-  createCommentOperation: jest.fn((data) => ({
-    parent_author: data.parentAuthor,
-    parent_permlink: data.parentPermlink,
-    author: data.author,
-    permlink: `re-${data.parentPermlink}-${Date.now()}`,
-    title: '',
-    body: data.body,
-    json_metadata: JSON.stringify({ app: 'sportsblock/1.0.0' }),
-  })),
-  createCommentOptionsOperation: jest.fn((data) => ({
-    author: data.author,
-    permlink: data.permlink,
-    max_accepted_payout: '1000000.000 HBD',
-    percent_hbd: 10000,
-    allow_votes: true,
-    allow_curation_rewards: true,
-    extensions: [[0, { beneficiaries: [{ account: 'sportsblock', weight: 500 }] }]],
-  })),
   checkResourceCreditsWax: jest.fn(),
 }));
 

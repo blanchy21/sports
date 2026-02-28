@@ -109,6 +109,7 @@ export const syncSessionCookie = async (sessionData: {
   loginAt?: number;
   challengeData?: ChallengeData;
   hivesignerToken?: string;
+  displayName?: string;
 }): Promise<boolean> => {
   try {
     const { challengeData, hivesignerToken, ...coreData } = sessionData;
@@ -242,6 +243,7 @@ let pendingPersistState: {
   loginAt?: number;
   challengeData?: ChallengeData;
   hivesignerToken?: string;
+  displayName?: string;
 } | null = null;
 
 let persistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -261,6 +263,7 @@ const executePersist = async (): Promise<void> => {
     loginAt: loginAtToPersist,
     challengeData: challengeDataToPersist,
     hivesignerToken: hivesignerTokenToPersist,
+    displayName: displayNameToPersist,
   } = pendingPersistState;
   pendingPersistState = null;
 
@@ -280,6 +283,7 @@ const executePersist = async (): Promise<void> => {
       loginAt: loginAtToPersist ?? Date.now(),
       challengeData: challengeDataToPersist,
       hivesignerToken: hivesignerTokenToPersist,
+      displayName: displayNameToPersist,
     });
     if (!synced) {
       console.warn('Failed to sync session cookie for user:', userToPersist.username);
@@ -313,6 +317,7 @@ export const persistAuthState = ({
   loginAt: loginAtToPersist,
   challengeData: challengeDataToPersist,
   hivesignerToken: hivesignerTokenToPersist,
+  displayName: displayNameToPersist,
 }: {
   user: User | null;
   authType: AuthType;
@@ -320,6 +325,7 @@ export const persistAuthState = ({
   loginAt?: number;
   challengeData?: ChallengeData;
   hivesignerToken?: string;
+  displayName?: string;
 }): void => {
   // Only persist on client-side
   if (typeof window === 'undefined') {
@@ -337,6 +343,7 @@ export const persistAuthState = ({
     loginAt: loginAtToPersist,
     challengeData: challengeDataToPersist ?? pendingPersistState?.challengeData,
     hivesignerToken: hivesignerTokenToPersist ?? pendingPersistState?.hivesignerToken,
+    displayName: displayNameToPersist ?? pendingPersistState?.displayName,
   };
 
   // Clear any existing timer

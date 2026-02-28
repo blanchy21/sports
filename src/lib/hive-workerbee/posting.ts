@@ -4,8 +4,8 @@ import {
   createPostOperation,
   createCommentOperation,
   createCommentOptionsOperation,
-  checkResourceCreditsWax,
-} from './wax-helpers';
+} from './shared';
+import { checkResourceCreditsWax } from './wax-helpers';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 import { waitForTransaction } from './transaction-confirmation';
 import type { BroadcastFn, HiveOperation } from '@/lib/hive/broadcast-client';

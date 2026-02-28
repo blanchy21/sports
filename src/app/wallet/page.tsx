@@ -163,14 +163,14 @@ export default function WalletPage() {
               Manage your Hive assets and track cryptocurrency prices
             </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               onClick={() => setShowBalances(!showBalances)}
               className="flex items-center space-x-2"
             >
               {showBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              <span>{showBalances ? 'Hide' : 'Show'} Balances</span>
+              <span className="hidden sm:inline">{showBalances ? 'Hide' : 'Show'} Balances</span>
             </Button>
             <Button
               variant="outline"
@@ -179,7 +179,9 @@ export default function WalletPage() {
               className="flex items-center space-x-2"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshingAccount ? 'animate-spin' : ''}`} />
-              <span>{isRefreshingAccount ? 'Refreshing' : 'Refresh Balances'}</span>
+              <span className="hidden sm:inline">
+                {isRefreshingAccount ? 'Refreshing' : 'Refresh Balances'}
+              </span>
             </Button>
             <Button
               variant="outline"
@@ -188,7 +190,7 @@ export default function WalletPage() {
               className="flex items-center space-x-2"
             >
               <RefreshCw className={`h-4 w-4 ${pricesLoading ? 'animate-spin' : ''}`} />
-              <span>Refresh Prices</span>
+              <span className="hidden sm:inline">Refresh Prices</span>
             </Button>
           </div>
         </div>

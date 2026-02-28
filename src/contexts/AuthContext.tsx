@@ -250,7 +250,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           type: 'REFRESH_ACCOUNT',
           payload: { user: updatedUser, hiveUser: updatedHiveUser, loginAt: now },
         });
-        persistAuthState({ user: updatedUser, authType, hiveUser: updatedHiveUser, loginAt: now });
+        persistAuthState({
+          user: updatedUser,
+          authType,
+          hiveUser: updatedHiveUser,
+          loginAt: now,
+          displayName: updatedUser.displayName,
+        });
       } else {
         dispatch({ type: 'UPDATE_HIVE_USER', payload: updatedHiveUser });
       }
