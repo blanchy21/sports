@@ -35,12 +35,19 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
 
   const user = await getAuthenticatedUserFromSession(request as NextRequest).catch(() => null);
 
+  // Sort by locksAt ASC for open/all (soonest fixture first), createdAt DESC for settled
+  const sortByLocksAt = params.status !== 'SETTLED';
+
   const where: Record<string, unknown> = {};
   if (params.status) where.status = params.status;
   if (params.sport) where.sportCategory = params.sport;
   if (params.creator) where.creatorUsername = params.creator;
   if (params.cursor) {
-    where.createdAt = { lt: new Date(params.cursor) };
+    if (sortByLocksAt) {
+      where.locksAt = { gt: new Date(params.cursor) };
+    } else {
+      where.createdAt = { lt: new Date(params.cursor) };
+    }
   }
 
   const predictions = await prisma.prediction.findMany({
@@ -49,13 +56,17 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
       outcomes: true,
       stakes: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: sortByLocksAt ? { locksAt: 'asc' } : { createdAt: 'desc' },
     take: params.limit + 1,
   });
 
   const hasMore = predictions.length > params.limit;
   const items = hasMore ? predictions.slice(0, params.limit) : predictions;
-  const nextCursor = hasMore ? items[items.length - 1].createdAt.toISOString() : null;
+  const lastItem = items[items.length - 1];
+  const nextCursor =
+    hasMore && lastItem
+      ? (sortByLocksAt ? lastItem.locksAt : lastItem.createdAt).toISOString()
+      : null;
 
   const serialized = items.map((p) => serializePrediction(p, user?.username));
 

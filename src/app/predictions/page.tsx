@@ -1,16 +1,18 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ComposeSportsbite } from '@/components/sportsbites';
 import { PredictionsFeed } from '@/components/predictions';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Target } from 'lucide-react';
+import { Target, ChevronDown, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils/client';
 
 export default function PredictionsPage() {
   const { user, isLoading: isAuthLoading, authType } = useAuth();
   const router = useRouter();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -47,9 +49,40 @@ export default function PredictionsPage() {
           </div>
         </div>
 
-        {/* Compose box — prediction mode only */}
+        {/* Collapsible create prediction section */}
         <div className="mb-6">
-          <ComposeSportsbite predictionOnly />
+          <button
+            onClick={() => setIsCreateOpen(!isCreateOpen)}
+            className="flex w-full items-center justify-between rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted/50"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <Plus
+                className={cn(
+                  'h-4 w-4 text-amber-500 transition-transform duration-200',
+                  isCreateOpen && 'rotate-45'
+                )}
+              />
+              Create a Prediction
+            </span>
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 text-muted-foreground transition-transform duration-200',
+                isCreateOpen && 'rotate-180'
+              )}
+            />
+          </button>
+          <div
+            className={cn(
+              'grid transition-[grid-template-rows] duration-200 ease-in-out',
+              isCreateOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+            )}
+          >
+            <div className="overflow-hidden">
+              <div className="pt-2">
+                <ComposeSportsbite predictionOnly />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Feed */}
