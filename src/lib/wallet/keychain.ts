@@ -44,9 +44,12 @@ export function keychainLogin(username: string, message: string): Promise<Wallet
   const raw = new Promise<WalletLoginOutcome>((resolve) => {
     keychain.requestSignBuffer!(username, message, 'Posting', (response: KeychainResponse) => {
       if (response.success) {
+        // When an empty username is passed, Keychain shows its account picker.
+        // The selected account comes back in response.data.username.
+        const resolvedUsername = (response.data?.username as string) || username;
         resolve({
           success: true,
-          username,
+          username: resolvedUsername,
           provider: 'keychain',
           signature: response.result || undefined,
         });

@@ -2,6 +2,17 @@ import { screen, fireEvent } from '@testing-library/react';
 import { Avatar } from '@/components/core/Avatar';
 import { renderWithProviders } from '../test-utils';
 
+/** Hive avatar URLs are proxied via /api/image-proxy and then wrapped by Next.js Image,
+ *  so the final src attribute is something like:
+ *    /_next/image?url=%2Fapi%2Fimage-proxy%3Furl%3Dhttps%253A…images.hive.blog…
+ *  We check for the key parts rather than exact URLs. */
+function expectHiveAvatarSrc(element: HTMLElement, username: string) {
+  const src = element.getAttribute('src') ?? '';
+  expect(src).toContain('images.hive.blog');
+  // Username appears somewhere in the (possibly encoded) URL
+  expect(src.toLowerCase()).toContain(username.toLowerCase());
+}
+
 describe('Avatar', () => {
   it('renders image when src is provided', () => {
     renderWithProviders(
@@ -18,14 +29,14 @@ describe('Avatar', () => {
 
     const image = screen.getByAltText('User avatar');
     expect(image).toBeInTheDocument();
-    expect(image.getAttribute('src')).toBe('https://images.hive.blog/u/John Doe/avatar');
+    expectHiveAvatarSrc(image, 'John');
   });
 
   it('falls back to DiceBear when Hive avatar fails (no src)', () => {
     renderWithProviders(<Avatar fallback="John Doe" alt="User avatar" />);
 
     const image = screen.getByAltText('User avatar');
-    expect(image.getAttribute('src')).toBe('https://images.hive.blog/u/John Doe/avatar');
+    expectHiveAvatarSrc(image, 'John');
 
     // Simulate Hive avatar failing → should fall back to DiceBear
     fireEvent.error(image);
@@ -37,7 +48,7 @@ describe('Avatar', () => {
 
     const image = screen.getByAltText('User avatar');
     expect(image).toBeInTheDocument();
-    expect(image.getAttribute('src')).toBe('https://images.hive.blog/u/John/avatar');
+    expectHiveAvatarSrc(image, 'John');
   });
 
   it('applies size classes correctly', () => {
@@ -80,7 +91,7 @@ describe('Avatar', () => {
     const image = screen.getByAltText('Test');
     expect(image).toBeInTheDocument();
     // Empty string is falsy, so the cascade starts with Hive avatar
-    expect(image.getAttribute('src')).toBe('https://images.hive.blog/u/Test User/avatar');
+    expectHiveAvatarSrc(image, 'Test');
 
     // Simulate Hive avatar failing → should fall back to DiceBear
     fireEvent.error(image);
@@ -97,7 +108,7 @@ describe('Avatar', () => {
 
     // Simulate image load error → should try Hive avatar
     fireEvent.error(image);
-    expect(image.getAttribute('src')).toBe('https://images.hive.blog/u/testuser/avatar');
+    expectHiveAvatarSrc(image, 'testuser');
 
     // Simulate Hive avatar also failing → should fall back to DiceBear
     fireEvent.error(image);
@@ -110,7 +121,7 @@ describe('Avatar', () => {
     );
 
     const image = screen.getByAltText('Test');
-    expect(image).toHaveAttribute('src', 'https://images.hive.blog/u/testuser/avatar');
+    expectHiveAvatarSrc(image, 'testuser');
 
     // Simulate error → should go straight to DiceBear (not retry same URL)
     fireEvent.error(image);

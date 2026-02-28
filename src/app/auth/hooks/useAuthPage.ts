@@ -48,6 +48,13 @@ export const useAuthPage = (): UseAuthPageResult => {
     typeof window !== 'undefined' ? (localStorage.getItem(REMEMBERED_HIVE_USERNAME_KEY) ?? '') : ''
   );
 
+  // Clear pre-filled username on addAccount flow so the user can type a different account
+  useEffect(() => {
+    if (isAddAccountFlow) {
+      setHiveUsername('');
+    }
+  }, [isAddAccountFlow]);
+
   const isWalletReady = wallet.isReady;
   const availableProviders = useMemo(() => wallet.availableProviders, [wallet.availableProviders]);
 
@@ -191,9 +198,12 @@ export const useAuthPage = (): UseAuthPageResult => {
 
         if (result.success) {
           await loginWithWallet(result);
-          if (usernameToUse) {
+          // Remember the username that was actually authenticated (may come from
+          // Keychain's account picker rather than manual input).
+          const authenticatedUsername = result.username;
+          if (authenticatedUsername) {
             try {
-              localStorage.setItem(REMEMBERED_HIVE_USERNAME_KEY, usernameToUse);
+              localStorage.setItem(REMEMBERED_HIVE_USERNAME_KEY, authenticatedUsername);
             } catch {
               // localStorage may be unavailable
             }
