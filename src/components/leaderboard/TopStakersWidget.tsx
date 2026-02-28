@@ -10,6 +10,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Avatar } from '@/components/core/Avatar';
 import { getHiveAvatarUrl } from '@/lib/utils/avatar';
+import { SwapModal } from '@/components/medals';
+import { useAuth } from '@/contexts/AuthContext';
 import { Medal, AlertCircle, ArrowDownUp } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
@@ -42,9 +44,13 @@ function getRankBadgeClass(rank: number): string {
 }
 
 export function TopStakersWidget({ className }: { className?: string }) {
+  const { user, hiveUser } = useAuth();
   const [holders, setHolders] = useState<StakerEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [swapOpen, setSwapOpen] = useState(false);
+
+  const walletUsername = hiveUser?.username || user?.hiveUsername || user?.username || '';
 
   useEffect(() => {
     const fetchTopStakers = async () => {
@@ -121,16 +127,25 @@ export function TopStakersWidget({ className }: { className?: string }) {
           >
             View full leaderboard
           </Link>
-          <Link
-            href="/wallet"
-            className="mt-2 flex items-center justify-center gap-1 text-sm text-amber-600 hover:text-amber-700 hover:underline dark:text-amber-400 dark:hover:text-amber-300"
+          <button
+            onClick={() => setSwapOpen(true)}
+            className="mt-2 flex w-full items-center justify-center gap-1 text-sm text-amber-600 hover:text-amber-700 hover:underline dark:text-amber-400 dark:hover:text-amber-300"
           >
             <ArrowDownUp className="h-3 w-3" />
             Buy MEDALS
-          </Link>
+          </button>
         </>
       ) : (
         <div className="text-sm text-muted-foreground">No stakers found</div>
+      )}
+
+      {walletUsername && (
+        <SwapModal
+          isOpen={swapOpen}
+          onClose={() => setSwapOpen(false)}
+          account={walletUsername}
+          liquidHiveBalance={user?.liquidHiveBalance || 0}
+        />
       )}
     </div>
   );
