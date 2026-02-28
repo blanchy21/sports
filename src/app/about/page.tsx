@@ -132,6 +132,9 @@ export default function AboutPage() {
 
         <div className="mt-12 border-t pt-8">
           <div className="flex flex-wrap gap-4">
+            <Link href="/getting-started" className="text-sm text-primary hover:underline">
+              Getting Started
+            </Link>
             <Link href="/legal/terms" className="text-sm text-primary hover:underline">
               Terms of Service
             </Link>

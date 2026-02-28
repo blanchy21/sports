@@ -15,6 +15,7 @@ import {
   Compass,
   DollarSign,
   Newspaper,
+  BookOpen,
   LayoutDashboard,
   LogOut,
 } from 'lucide-react';
@@ -102,6 +103,15 @@ export function MobileNavMenu({ onClose }: MobileNavMenuProps) {
         <Link href="/feed" onClick={onClose} className={navLinkClass(pathname === '/feed')}>
           <Newspaper className="h-5 w-5" />
           <span>Feed</span>
+        </Link>
+
+        <Link
+          href="/getting-started"
+          onClick={onClose}
+          className={navLinkClass(pathname === '/getting-started')}
+        >
+          <BookOpen className="h-5 w-5" />
+          <span>Getting Started</span>
         </Link>
 
         {user && (

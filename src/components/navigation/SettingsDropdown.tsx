@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { Settings, Moon, Sun } from 'lucide-react';
+import Link from 'next/link';
+import { Settings, Moon, Sun, BookOpen } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface SettingsDropdownProps {
@@ -55,6 +56,16 @@ export const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
 
       {/* Settings Options */}
       <div className="p-2">
+        {/* Getting Started Link */}
+        <Link
+          href="/getting-started"
+          onClick={onClose}
+          className="flex items-center space-x-3 rounded-lg p-3 text-sm text-foreground transition-colors hover:bg-muted/50"
+        >
+          <BookOpen className="h-5 w-5 text-muted-foreground" />
+          <span>Getting Started</span>
+        </Link>
+
         {/* Theme Toggle */}
         <div className="rounded-lg p-3 transition-colors hover:bg-muted/50">
           <div className="flex items-center justify-between">
