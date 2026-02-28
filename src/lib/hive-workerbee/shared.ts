@@ -338,11 +338,20 @@ export function createPostOperation(postData: {
     ...(postData.subCommunity ? [postData.subCommunity.slug] : []),
   ];
 
+  // Auto-generate plain-text description for SEO / social previews
+  const plainText = stripMarkdown(postData.body);
+  const description = plainText.length > 160 ? plainText.slice(0, 157) + '...' : plainText;
+
+  // Extract @-mentioned users for cross-platform notifications
+  const users = extractMentions(postData.body, postData.author);
+
   const metadata: Record<string, unknown> = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
     format: 'markdown',
     tags,
     community: SPORTS_ARENA_CONFIG.COMMUNITY_ID,
+    description,
+    users: users.length > 0 ? users : undefined,
     sport_category: postData.sportCategory,
     image: postData.featuredImage ? [postData.featuredImage] : undefined,
     ...(postData.jsonMetadata ? JSON.parse(postData.jsonMetadata) : {}),
@@ -752,11 +761,17 @@ export function formatContainerDate(date: Date): string {
 }
 
 function buildSportsbiteMetadata(data: PublishSportsbiteData): string {
+  const plainText = stripMarkdown(data.body);
+  const description = plainText.length > 160 ? plainText.slice(0, 157) + '...' : plainText;
+  const users = extractMentions(data.body, data.author);
+
   const metadata: Record<string, unknown> = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
     format: 'markdown',
     tags: [...SPORTSBITES_CONFIG.DEFAULT_TAGS, ...(data.sportCategory ? [data.sportCategory] : [])],
     content_type: SPORTSBITES_CONFIG.CONTENT_TYPE,
+    description,
+    users: users.length > 0 ? users : undefined,
     sport_category: data.sportCategory,
     images: data.images,
     gifs: data.gifs,
@@ -852,6 +867,53 @@ export function extractSportsbiteText(body: string): string {
  * Returns lowercase tag names without the leading '#'.
  * Filters out system tags, sport category IDs, and single-char tags.
  */
+/**
+ * Strip markdown syntax to produce plain text for descriptions.
+ * Removes images, links, headers, bold/italic, code blocks, blockquotes, and HR rules.
+ */
+export function stripMarkdown(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, '') // fenced code blocks
+    .replace(/`[^`]+`/g, '') // inline code
+    .replace(/!\[.*?\]\(.*?\)/g, '') // images
+    .replace(/\[([^\]]*)\]\(.*?\)/g, '$1') // links → keep text
+    .replace(/^#{1,6}\s+/gm, '') // headers
+    .replace(/(\*\*|__)(.*?)\1/g, '$2') // bold
+    .replace(/(\*|_)(.*?)\1/g, '$2') // italic
+    .replace(/~~(.*?)~~/g, '$1') // strikethrough
+    .replace(/^>\s+/gm, '') // blockquotes
+    .replace(/^[-*]{3,}$/gm, '') // horizontal rules
+    .replace(/\n{2,}/g, ' ') // collapse multiple newlines
+    .replace(/\n/g, ' ') // remaining newlines
+    .replace(/\s+/g, ' ') // collapse whitespace
+    .trim();
+}
+
+/**
+ * Extract @-mentioned Hive usernames from post/comment body.
+ * Returns lowercase, deduplicated usernames without the leading '@'.
+ * Filters out the post author to avoid self-mentions.
+ */
+export function extractMentions(body: string, author?: string): string[] {
+  // Hive account names: 3-16 chars, starts with letter, lowercase alphanumeric + dots/hyphens
+  const matches = body.match(/(?:^|[^a-zA-Z0-9])@([a-z][a-z0-9.-]{2,15})/g);
+  if (!matches) return [];
+
+  const seen = new Set<string>();
+  const users: string[] = [];
+
+  for (const match of matches) {
+    const atIndex = match.indexOf('@');
+    const username = match.slice(atIndex + 1).toLowerCase();
+    if (author && username === author.toLowerCase()) continue;
+    if (seen.has(username)) continue;
+    seen.add(username);
+    users.push(username);
+  }
+
+  return users;
+}
+
 export function extractHashtags(body: string): string[] {
   const SYSTEM_TAGS = new Set([
     'sportsblock',

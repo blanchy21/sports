@@ -9,6 +9,48 @@ import {
   info as logInfo,
 } from './logger';
 
+// ---------------------------------------------------------------------------
+// Community subscribe/unsubscribe operation builders (pure — no WASM)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a custom_json operation for subscribing to a Hive community.
+ * Returns a tuple compatible with broadcastFn.
+ */
+export function createCommunitySubscribeOperation(
+  username: string,
+  community: string
+): [string, Record<string, unknown>] {
+  return [
+    'custom_json',
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: 'community',
+      json: JSON.stringify(['subscribe', { community }]),
+    },
+  ];
+}
+
+/**
+ * Build a custom_json operation for unsubscribing from a Hive community.
+ * Returns a tuple compatible with broadcastFn.
+ */
+export function createCommunityUnsubscribeOperation(
+  username: string,
+  community: string
+): [string, Record<string, unknown>] {
+  return [
+    'custom_json',
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: 'community',
+      json: JSON.stringify(['unsubscribe', { community }]),
+    },
+  ];
+}
+
 export interface SocialFilters {
   limit?: number;
   before?: string; // For pagination

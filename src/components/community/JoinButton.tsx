@@ -12,6 +12,12 @@ import {
 import { Community } from '@/types';
 import { cn } from '@/lib/utils/client';
 import { useToast, toast } from '@/components/core/Toast';
+import { useBroadcast } from '@/hooks/useBroadcast';
+import {
+  createCommunitySubscribeOperation,
+  createCommunityUnsubscribeOperation,
+} from '@/lib/hive-workerbee/social';
+import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/shared';
 
 interface JoinButtonProps {
   community: Community;
@@ -28,6 +34,7 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
 }) => {
   const { user, hiveUser, isLoading: isAuthLoading } = useAuth();
   const { addToast } = useToast();
+  const { broadcast } = useBroadcast();
   const userId = user?.id || '';
 
   const { data: membership, isLoading: isMembershipLoading } = useMembership(community.id, userId);
@@ -46,6 +53,15 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
       username: user.username,
       hiveUsername: hiveUser?.username,
     });
+
+    // Fire-and-forget on-chain subscribe so user appears on PeakD/Ecency
+    const hiveUsername = hiveUser?.username || user.username;
+    if (hiveUsername) {
+      broadcast(
+        [createCommunitySubscribeOperation(hiveUsername, SPORTS_ARENA_CONFIG.COMMUNITY_ID)],
+        'posting'
+      ).catch(() => {}); // best-effort, don't block UI
+    }
   };
 
   const handleLeave = async () => {
@@ -65,6 +81,15 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
       communityId: community.id,
       userId: user.id,
     });
+
+    // Fire-and-forget on-chain unsubscribe
+    const hiveUsername = hiveUser?.username || user.username;
+    if (hiveUsername) {
+      broadcast(
+        [createCommunityUnsubscribeOperation(hiveUsername, SPORTS_ARENA_CONFIG.COMMUNITY_ID)],
+        'posting'
+      ).catch(() => {}); // best-effort, don't block UI
+    }
   };
 
   // Not authenticated
