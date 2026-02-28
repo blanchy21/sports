@@ -1,16 +1,18 @@
 import React from 'react';
-import { Medal, ExternalLink, ArrowRightLeft } from 'lucide-react';
+import { Medal, ArrowDownUp, ArrowRightLeft } from 'lucide-react';
 import { StakingPanel, MarketInfo } from '@/components/medals';
 import { Button } from '@/components/core/Button';
 
 interface MedalsTokenSectionProps {
   walletUsername: string;
   onTransferClick: () => void;
+  onSwapClick: () => void;
 }
 
 export const MedalsTokenSection: React.FC<MedalsTokenSectionProps> = ({
   walletUsername,
   onTransferClick,
+  onSwapClick,
 }) => (
   <div className="rounded-lg border bg-card p-6">
     <div className="mb-4 flex items-center justify-between">
@@ -33,20 +35,14 @@ export const MedalsTokenSection: React.FC<MedalsTokenSectionProps> = ({
         <MarketInfo showTradeLinks={true} />
 
         <div className="flex gap-3">
-          <a
-            href="https://tribaldex.com/trade/MEDALS"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1"
+          <Button
+            variant="outline"
+            onClick={onSwapClick}
+            className="flex-1 border-warning/30 text-warning hover:bg-warning/10"
           >
-            <Button
-              variant="outline"
-              className="w-full border-warning/30 text-warning hover:bg-warning/10"
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Buy MEDALS
-            </Button>
-          </a>
+            <ArrowDownUp className="mr-2 h-4 w-4" />
+            Buy MEDALS
+          </Button>
           <Button variant="outline" onClick={onTransferClick} className="flex-1">
             <ArrowRightLeft className="mr-2 h-4 w-4" />
             Transfer MEDALS

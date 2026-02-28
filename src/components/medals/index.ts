@@ -9,10 +9,11 @@ export {
   PremiumBadgeOutline,
   PremiumTierProgress,
   getPremiumTier,
-} from "./PremiumBadge";
+} from './PremiumBadge';
 
-export { WalletCard } from "./WalletCard";
-export { StakingPanel } from "./StakingPanel";
-export { TransferModal } from "./TransferModal";
-export { TransactionHistory } from "./TransactionHistory";
-export { MarketInfo } from "./MarketInfo";
+export { WalletCard } from './WalletCard';
+export { StakingPanel } from './StakingPanel';
+export { TransferModal } from './TransferModal';
+export { SwapModal } from './SwapModal';
+export { TransactionHistory } from './TransactionHistory';
+export { MarketInfo } from './MarketInfo';

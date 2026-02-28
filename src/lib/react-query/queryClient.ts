@@ -79,6 +79,7 @@ export const queryKeys = {
     stake: (account: string) => [...queryKeys.medals.all, 'stake', account] as const,
     history: (account: string) => [...queryKeys.medals.all, 'history', account] as const,
     market: () => [...queryKeys.medals.all, 'market'] as const,
+    swap: (amount: number) => [...queryKeys.medals.all, 'swap', amount] as const,
   },
   prices: {
     all: ['prices'] as const,

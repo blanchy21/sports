@@ -406,6 +406,19 @@ export interface CancelUnstakePayload {
 }
 
 /**
+ * Market buy order payload
+ */
+export interface MarketBuyPayload {
+  contractName: 'market';
+  contractAction: 'buy';
+  contractPayload: {
+    symbol: string;
+    quantity: string;
+    price: string;
+  };
+}
+
+/**
  * Union type for all operation payloads
  */
 export type OperationPayload =
@@ -414,7 +427,36 @@ export type OperationPayload =
   | UnstakePayload
   | DelegatePayload
   | UndelegatePayload
-  | CancelUnstakePayload;
+  | CancelUnstakePayload
+  | MarketBuyPayload;
+
+// ============================================================================
+// Swap Types
+// ============================================================================
+
+/**
+ * Quote for swapping HIVE → MEDALS via market buy
+ */
+export interface SwapQuote {
+  /** Gross HIVE amount entered by user */
+  hiveAmount: number;
+  /** Platform fee in HIVE (1%) */
+  fee: number;
+  /** HIVE amount after fee, deposited to Hive Engine */
+  netHive: number;
+  /** Estimated MEDALS received */
+  estimatedMedals: number;
+  /** Average fill price (SWAP.HIVE per MEDALS) */
+  averagePrice: number;
+  /** Worst fill price across matched orders */
+  worstPrice: number;
+  /** Price impact percentage */
+  priceImpact: number;
+  /** Whether the order book has sufficient liquidity */
+  sufficient: boolean;
+  /** Number of sell orders matched */
+  ordersMatched: number;
+}
 
 // ============================================================================
 // Client Types

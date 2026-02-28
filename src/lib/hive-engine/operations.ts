@@ -15,6 +15,7 @@ import type {
   DelegatePayload,
   UndelegatePayload,
   CancelUnstakePayload,
+  MarketBuyPayload,
   OperationPayload,
 } from './types';
 
@@ -311,6 +312,42 @@ export function buildUndelegateOpFromAmount(
 ): CustomJsonOp {
   const quantity = formatQuantity(amount, MEDALS_CONFIG.PRECISION);
   return buildUndelegateOp(account, from, quantity, symbol);
+}
+
+// ============================================================================
+// Market Operations
+// ============================================================================
+
+/**
+ * Build a market buy order operation
+ *
+ * @param account - Account placing the buy order
+ * @param symbol - Token symbol to buy
+ * @param quantity - Amount of tokens to buy
+ * @param price - Max price per token (SWAP.HIVE)
+ * @returns CustomJsonOp ready for signing
+ */
+export function buildMarketBuyOp(
+  account: string,
+  symbol: string,
+  quantity: string,
+  price: string
+): CustomJsonOp {
+  if (!account || !isValidAccountName(account)) {
+    throw new Error(`Invalid account name: ${account}`);
+  }
+
+  const payload: MarketBuyPayload = {
+    contractName: CONTRACTS.MARKET,
+    contractAction: CONTRACT_ACTIONS.BUY,
+    contractPayload: {
+      symbol,
+      quantity,
+      price,
+    },
+  };
+
+  return buildCustomJsonOp(account, payload);
 }
 
 // ============================================================================
