@@ -20,6 +20,7 @@ const ALLOWED_OP_TYPES = new Set([
   'custom_json',
   'delete_comment',
   'account_update2',
+  'claim_reward_balance',
 ]);
 
 // ---------------------------------------------------------------------------
@@ -98,6 +99,14 @@ export function validateOperations(operations: HiveOperation[], hiveUsername: st
         if (opBody.author !== hiveUsername) {
           throw new OperationValidationError(
             `Delete comment author "${opBody.author}" does not match authenticated user "${hiveUsername}"`
+          );
+        }
+        break;
+
+      case 'claim_reward_balance':
+        if (opBody.account !== hiveUsername) {
+          throw new OperationValidationError(
+            `Claim rewards account "${opBody.account}" does not match authenticated user "${hiveUsername}"`
           );
         }
         break;

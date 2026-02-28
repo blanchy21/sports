@@ -12,9 +12,10 @@ interface ImageDialogProps {
   username?: string;
   onInsert: (markdown: string) => void;
   onClose: () => void;
+  onAiImageGenerated?: (url: string) => void;
 }
 
-export function ImageDialog({ username, onInsert, onClose }: ImageDialogProps) {
+export function ImageDialog({ username, onInsert, onClose, onAiImageGenerated }: ImageDialogProps) {
   const [imageUrl, setImageUrl] = useState('');
   const [imageAlt, setImageAlt] = useState('');
   const [imageTab, setImageTab] = useState<'url' | 'upload' | 'generate'>('upload');
@@ -106,6 +107,7 @@ export function ImageDialog({ username, onInsert, onClose }: ImageDialogProps) {
       if (url) {
         setImageUrl(url);
         setImageAlt('');
+        onAiImageGenerated?.(url);
       } else {
         throw new Error('No image URL in response');
       }

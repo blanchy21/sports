@@ -89,6 +89,8 @@ const mockCheckResourceCreditsWax = checkResourceCreditsWax as jest.Mock;
 describe('Posting Module', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default: RC check passes (publishPost now enforces RC server-side)
+    mockCheckResourceCreditsWax.mockResolvedValue({ canPost: true, rcPercentage: 80 });
   });
 
   // ==========================================================================

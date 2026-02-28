@@ -382,6 +382,21 @@ export function truncateText(text: string, length: number): string {
   return text.substring(0, length - 3) + '...';
 }
 
+/**
+ * Parse a Hive frontend URL (PeakD, HiveBlog, Ecency, etc.) into author + permlink.
+ * Supports any frontend with the `/@author/permlink` pattern.
+ */
+export function parseHiveUrl(input: string): { author: string; permlink: string } | null {
+  try {
+    const url = new URL(input);
+    const match = url.pathname.match(/\/@([a-z0-9._-]+)\/([a-z0-9-]+)/);
+    if (match) return { author: match[1], permlink: match[2] };
+  } catch {
+    // Not a valid URL
+  }
+  return null;
+}
+
 // Error handling utilities
 export class HiveError extends Error {
   constructor(

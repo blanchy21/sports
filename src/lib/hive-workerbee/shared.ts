@@ -213,9 +213,14 @@ export function createCancelPowerDownOperation(account: string): WaxWithdrawVest
 }
 
 /**
- * Generate a unique permlink for posts/comments
+ * Generate a unique permlink for posts/comments.
+ * When parentAuthor is provided, uses the Hive reply convention: `re-{author}-{timestamp}-{random}`
  */
-export function generatePermlink(title: string): string {
+export function generatePermlink(title: string, parentAuthor?: string): string {
+  if (parentAuthor) {
+    return `re-${parentAuthor}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
   const basePermlink = title
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
@@ -266,7 +271,9 @@ export function createCommentOperation(commentData: {
   allowCurationRewards?: boolean;
   extensions?: unknown[];
 }): WaxCommentOperation {
-  const permlink = commentData.permlink || generatePermlink(commentData.title || 'comment');
+  const permlink =
+    commentData.permlink ||
+    generatePermlink(commentData.title || 'comment', commentData.parentAuthor || undefined);
 
   const metadata = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
@@ -320,6 +327,7 @@ export function createPostOperation(postData: {
   allowCurationRewards?: boolean;
   extensions?: unknown[];
   subCommunity?: SubCommunityData;
+  aiGenerated?: { coverImage?: boolean };
 }): WaxPostOperation {
   const permlink = postData.permlink || generatePermlink(postData.title);
 
@@ -344,6 +352,18 @@ export function createPostOperation(postData: {
     metadata.sub_community = postData.subCommunity.slug;
     metadata.sub_community_id = postData.subCommunity.id;
     metadata.sub_community_name = postData.subCommunity.name;
+  }
+
+  // AI tools disclosure per Hive ecosystem convention
+  if (postData.aiGenerated) {
+    metadata.ai_tools = {
+      media_generation: postData.aiGenerated.coverImage || false,
+      writing_edit: false,
+      research: false,
+      translation: false,
+      post_draft: false,
+      other: false,
+    };
   }
 
   return {
@@ -391,6 +411,55 @@ export function createCommentOptionsOperation(optionsData: {
     allow_votes: optionsData.allowVotes !== false,
     allow_curation_rewards: optionsData.allowCurationRewards !== false,
     extensions: sortedBeneficiaries.length > 0 ? [[0, { beneficiaries: sortedBeneficiaries }]] : [],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Reward claiming & delegation operations
+// ---------------------------------------------------------------------------
+
+export interface WaxClaimRewardBalanceOperation {
+  account: string;
+  reward_hive: string;
+  reward_hbd: string;
+  reward_vesting: string;
+}
+
+export interface WaxDelegateVestingSharesOperation {
+  delegator: string;
+  delegatee: string;
+  vesting_shares: string;
+}
+
+/**
+ * Create a claim_reward_balance operation
+ */
+export function createClaimRewardsOperation(
+  account: string,
+  rewardHive: string,
+  rewardHbd: string,
+  rewardVests: string
+): WaxClaimRewardBalanceOperation {
+  return {
+    account,
+    reward_hive: rewardHive,
+    reward_hbd: rewardHbd,
+    reward_vesting: rewardVests,
+  };
+}
+
+/**
+ * Create a delegate_vesting_shares operation
+ */
+export function createDelegateVestsOperation(
+  delegator: string,
+  delegatee: string,
+  vestingShares: string
+): WaxDelegateVestingSharesOperation {
+  return {
+    delegator,
+    delegatee,
+    vesting_shares: vestingShares,
   };
 }
 

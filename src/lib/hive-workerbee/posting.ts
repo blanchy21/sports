@@ -4,6 +4,7 @@ import {
   createPostOperation,
   createCommentOperation,
   createCommentOptionsOperation,
+  type Beneficiary,
 } from './shared';
 import { checkResourceCreditsWax } from './wax-helpers';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
@@ -29,6 +30,9 @@ export interface PostData {
   parentPermlink?: string;
   jsonMetadata?: string;
   subCommunity?: SubCommunityData;
+  beneficiaries?: Beneficiary[];
+  rewardsOption?: '50_50' | 'power_up' | 'decline';
+  aiGenerated?: { coverImage?: boolean };
 }
 
 export interface PublishResult {
@@ -80,6 +84,12 @@ export async function publishPost(
       throw new Error(`Post validation failed: ${validation.errors.join(', ')}`);
     }
 
+    // Server-side RC enforcement (defense-in-depth — UI also checks)
+    const rcCheck = await canUserPost(postData.author);
+    if (!rcCheck.canPost) {
+      return { success: false, error: rcCheck.message || 'Insufficient Resource Credits' };
+    }
+
     // Create post operation using Wax helpers
     const operation = createPostOperation({
       author: postData.author,
@@ -92,14 +102,18 @@ export async function publishPost(
       tags: postData.tags,
       jsonMetadata: postData.jsonMetadata,
       subCommunity: postData.subCommunity,
+      aiGenerated: postData.aiGenerated,
     });
 
     workerBeeLog('publishPost operation created', undefined, operation);
 
-    // Create comment_options operation for beneficiaries (20% to @sportsblock)
+    // Create comment_options operation for beneficiaries and rewards settings
     const commentOptionsOp = createCommentOptionsOperation({
       author: postData.author,
       permlink: operation.permlink,
+      beneficiaries: postData.beneficiaries,
+      maxAcceptedPayout: postData.rewardsOption === 'decline' ? '0.000 HBD' : undefined,
+      percentHbd: postData.rewardsOption === 'power_up' ? 0 : undefined,
     });
 
     workerBeeLog('publishPost comment_options created', undefined, commentOptionsOp);

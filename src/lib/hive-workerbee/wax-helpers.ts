@@ -33,6 +33,10 @@ export {
   validateOperation,
   parseJsonMetadata,
   formatJsonMetadata,
+  type WaxClaimRewardBalanceOperation,
+  type WaxDelegateVestingSharesOperation,
+  createClaimRewardsOperation,
+  createDelegateVestsOperation,
 } from './shared';
 
 import { validateOperation } from './shared';

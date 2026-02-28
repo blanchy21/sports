@@ -60,6 +60,9 @@ function PublishPageContent() {
     message?: string;
   } | null>(null);
 
+  // Track AI-generated image URLs for metadata disclosure
+  const [aiGeneratedUrls, setAiGeneratedUrls] = useState<Set<string>>(new Set());
+
   // Soft user post limit tracking
   const [postLimitInfo, setPostLimitInfo] = useState<{
     currentCount: number;
@@ -482,6 +485,17 @@ function PublishPageContent() {
 
       if (authType === 'hive' && hiveUser?.username) {
         // HIVE USER: Publish to blockchain
+        // Convert UI percentage (5 = 5%) to Hive basis points (500 = 5%)
+        const hiveBeneficiaries = beneficiaries.map((b) => ({
+          account: b.account,
+          weight: b.weight * 100,
+        }));
+
+        // Check if cover image or any body image was AI-generated
+        const hasAiMedia =
+          (coverImage && aiGeneratedUrls.has(coverImage)) ||
+          Array.from(aiGeneratedUrls).some((url) => content.includes(url));
+
         const postData: PostData = {
           title: title.trim(),
           body: content.trim(),
@@ -496,6 +510,9 @@ function PublishPageContent() {
                 name: selectedCommunity.name,
               }
             : undefined,
+          beneficiaries: hiveBeneficiaries,
+          rewardsOption,
+          aiGenerated: hasAiMedia ? { coverImage: true } : undefined,
         };
 
         const validation = validatePostData(postData);
@@ -965,6 +982,7 @@ function PublishPageContent() {
           username={user?.username}
           onInsert={handleImageDialogInsert}
           onClose={() => setShowImageDialog(false)}
+          onAiImageGenerated={(url) => setAiGeneratedUrls((prev) => new Set(prev).add(url))}
         />
       )}
 

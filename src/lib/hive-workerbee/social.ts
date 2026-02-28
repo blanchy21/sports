@@ -101,6 +101,61 @@ export async function unfollowUser(
 }
 
 /**
+ * Mute a user (sets what: ['ignore'] in follow custom_json).
+ * Same protocol as follow/unfollow — uses the 'follow' custom_json id.
+ */
+export async function muteUser(
+  username: string,
+  muter: string,
+  broadcastFn: BroadcastFn
+): Promise<{ success: boolean; error?: string }> {
+  if (typeof window === 'undefined') {
+    return { success: false, error: 'Mute operation must be performed in browser environment' };
+  }
+
+  try {
+    workerBeeLog(`muteUser start ${muter} -> ${username}`);
+
+    const operations: [string, Record<string, unknown>][] = [
+      [
+        'custom_json',
+        {
+          required_auths: [],
+          required_posting_auths: [muter],
+          id: 'follow',
+          json: JSON.stringify([
+            'follow',
+            { follower: muter, following: username, what: ['ignore'] },
+          ]),
+        },
+      ],
+    ];
+
+    const result = await broadcastFn(operations, 'posting');
+    if (!result.success) {
+      throw new Error(result.error || 'Mute transaction failed');
+    }
+
+    workerBeeLog(`muteUser success ${muter} -> ${username}`);
+    return { success: true };
+  } catch (error) {
+    logError('Error muting user', undefined, error instanceof Error ? error : undefined);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/**
+ * Unmute a user (sets what: [] in follow custom_json, same as unfollow).
+ */
+export async function unmuteUser(
+  username: string,
+  muter: string,
+  broadcastFn: BroadcastFn
+): Promise<{ success: boolean; error?: string }> {
+  return toggleFollow(username, muter, 'unfollow', broadcastFn);
+}
+
+/**
  * Check if user is following another user
  * @param username - Username to check
  * @param follower - Username of the potential follower

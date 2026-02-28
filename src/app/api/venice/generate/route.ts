@@ -99,6 +99,7 @@ export const POST = createApiHandler('/api/venice/generate', async (request: Req
         height: 576,
         format: 'png',
         safe_mode: true,
+        hide_watermark: true,
       }),
       signal: AbortSignal.timeout(30_000),
     });
@@ -112,6 +113,24 @@ export const POST = createApiHandler('/api/venice/generate', async (request: Req
       return apiError('Image generation failed', 'UPSTREAM_ERROR', 502, {
         requestId: ctx.requestId,
       });
+    }
+
+    // Check Venice safety headers
+    const isBlurred = veniceResponse.headers.get('x-venice-is-blurred');
+    const isViolation = veniceResponse.headers.get('x-venice-is-content-violation');
+    if (isBlurred === 'true' || isViolation === 'true') {
+      return apiError(
+        'Image was flagged by content safety filter. Try a different prompt.',
+        'VALIDATION_ERROR',
+        422,
+        { requestId: ctx.requestId }
+      );
+    }
+
+    // Log balance for monitoring
+    const balance = veniceResponse.headers.get('x-venice-balance-usd');
+    if (balance) {
+      ctx.log.info('Venice balance', { balanceUsd: balance });
     }
 
     const veniceData = await veniceResponse.json();
