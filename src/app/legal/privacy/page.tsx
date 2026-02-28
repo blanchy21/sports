@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
         </Link>
 
         <h1 className="mb-2 text-3xl font-bold">Privacy Policy</h1>
-        <p className="mb-8 text-sm text-muted-foreground">Last updated: January 2025</p>
+        <p className="mb-8 text-sm text-muted-foreground">Last updated: February 2025</p>
 
         <div className="prose prose-sm max-w-none space-y-8 text-foreground">
           <section>
@@ -106,7 +106,7 @@ export default function PrivacyPolicyPage() {
                 <strong>Hive Blockchain:</strong> Decentralized network with public data visibility
               </li>
               <li>
-                <strong>Google:</strong> OAuth authentication services
+                <strong>Google:</strong> OAuth authentication and AdSense advertising services
               </li>
               <li>
                 <strong>Hive Keychain / HiveSigner / HiveAuth:</strong> Wallet authentication
@@ -163,10 +163,15 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="mb-3 text-xl font-semibold">9. Cookies</h2>
             <p className="leading-relaxed text-muted-foreground">
-              We use cookies and similar technologies for authentication, preferences, and
-              analytics. Essential cookies are required for Platform functionality. You can manage
-              cookie preferences through your browser settings, though this may affect Platform
-              functionality.
+              We use cookies and similar technologies for authentication, preferences, analytics,
+              and advertising. We use Google AdSense to display ads, which may set cookies for ad
+              personalization and performance measurement. Essential cookies are required for
+              Platform functionality. You can manage cookie preferences through your browser
+              settings, though this may affect Platform functionality. For full details, see our{' '}
+              <Link href="/legal/cookies" className="text-primary hover:underline">
+                Cookie Policy
+              </Link>
+              .
             </p>
           </section>
 

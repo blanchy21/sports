@@ -16,7 +16,7 @@ export default function CookiePolicyPage() {
         </Link>
 
         <h1 className="mb-2 text-3xl font-bold">Cookie Policy</h1>
-        <p className="mb-8 text-sm text-muted-foreground">Last updated: January 2025</p>
+        <p className="mb-8 text-sm text-muted-foreground">Last updated: February 2025</p>
 
         <div className="prose prose-sm max-w-none space-y-8 text-foreground">
           <section>
@@ -120,6 +120,54 @@ export default function CookiePolicyPage() {
                 </tbody>
               </table>
             </div>
+            <h3 className="mb-2 mt-4 text-lg font-medium">Advertising Cookies</h3>
+            <p className="mb-2 leading-relaxed text-muted-foreground">
+              We use Google AdSense to display advertisements. These cookies are used to serve ads
+              relevant to you and to measure ad performance.
+            </p>
+            <div className="mb-4 overflow-hidden rounded-lg border bg-card">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="p-3 text-left font-medium">Cookie</th>
+                    <th className="p-3 text-left font-medium">Purpose</th>
+                    <th className="p-3 text-left font-medium">Duration</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted-foreground">
+                  <tr className="border-t">
+                    <td className="p-3 font-mono text-xs">__gads</td>
+                    <td className="p-3">Google advertising — serves relevant ads</td>
+                    <td className="p-3">13 months</td>
+                  </tr>
+                  <tr className="border-t">
+                    <td className="p-3 font-mono text-xs">__gpi</td>
+                    <td className="p-3">Google Publisher Infrastructure — ad personalization</td>
+                    <td className="p-3">13 months</td>
+                  </tr>
+                  <tr className="border-t">
+                    <td className="p-3 font-mono text-xs">DSID</td>
+                    <td className="p-3">DoubleClick — tracks ad interactions</td>
+                    <td className="p-3">2 weeks</td>
+                  </tr>
+                  <tr className="border-t">
+                    <td className="p-3 font-mono text-xs">IDE</td>
+                    <td className="p-3">DoubleClick — ad targeting and measurement</td>
+                    <td className="p-3">13 months</td>
+                  </tr>
+                  <tr className="border-t">
+                    <td className="p-3 font-mono text-xs">NID</td>
+                    <td className="p-3">Google — stores preferences and ad information</td>
+                    <td className="p-3">6 months</td>
+                  </tr>
+                  <tr className="border-t">
+                    <td className="p-3 font-mono text-xs">test_cookie</td>
+                    <td className="p-3">DoubleClick — checks if browser accepts cookies</td>
+                    <td className="p-3">15 minutes</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section>
@@ -152,7 +200,7 @@ export default function CookiePolicyPage() {
             </p>
             <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
               <li>
-                <strong>Google:</strong> OAuth authentication services
+                <strong>Google:</strong> OAuth authentication and AdSense advertising services
               </li>
               <li>
                 <strong>Vercel:</strong> Hosting and performance analytics

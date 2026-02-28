@@ -398,6 +398,10 @@ export const RightSidebar: React.FC = () => {
 
         {/* Legal Links */}
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <Link href="/about" className="transition-colors hover:text-foreground">
+            About
+          </Link>
+          <span>·</span>
           <Link href="/legal/terms" className="transition-colors hover:text-foreground">
             Terms
           </Link>
