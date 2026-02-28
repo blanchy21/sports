@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrivateKey, cryptoUtils } from '@hiveio/dhive';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { checkRateLimit } from '@/lib/utils/rate-limit';
 import { createRequestContext } from '@/lib/api/response';
-import { logger } from '@/lib/logger';
+import { uploadBufferToHiveImageHost } from '@/lib/hive/hive-image-host';
 
 const ROUTE = '/api/hive/image-upload';
 
-const IMAGE_HOSTS = ['https://images.hive.blog', 'https://images.ecency.com'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
@@ -37,13 +35,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const account = process.env.HIVE_IMAGE_UPLOAD_ACCOUNT;
-  const key = process.env.HIVE_IMAGE_UPLOAD_KEY;
-
-  if (!account || !key) {
-    return NextResponse.json({ error: 'Image upload is not configured.' }, { status: 503 });
-  }
-
   const ctx = createRequestContext(ROUTE);
   try {
     const formData = await request.formData();
@@ -66,62 +57,18 @@ export async function POST(request: NextRequest) {
     // Read file as buffer
     const arrayBuffer = await file.arrayBuffer();
     const imageData = Buffer.from(arrayBuffer);
-
-    // Create the signing challenge: SHA-256("ImageSigningChallenge" + imageData)
-    const prefix = Buffer.from('ImageSigningChallenge');
-    const challengeBuffer = Buffer.concat([prefix, imageData]);
-    const hash = cryptoUtils.sha256(challengeBuffer);
-
-    // Sign the hash with the service account's posting key
-    const privateKey = PrivateKey.fromString(key);
-    const signature = privateKey.sign(hash).toString();
-
-    // Try each image host until one succeeds
     const fileName = (file as File).name || 'image.png';
     const mimeType = (file as File).type || 'image/png';
-    let lastStatus = 0;
-    let lastError = '';
 
-    for (const host of IMAGE_HOSTS) {
-      try {
-        const uploadFormData = new FormData();
-        const blob = new Blob([imageData], { type: mimeType });
-        uploadFormData.append('file', blob, fileName);
+    const result = await uploadBufferToHiveImageHost(imageData, fileName, mimeType);
 
-        const uploadUrl = `${host}/${account}/${signature}`;
-        const response = await fetch(uploadUrl, {
-          method: 'POST',
-          body: uploadFormData,
-          signal: AbortSignal.timeout(15_000),
-        });
-
-        if (!response.ok) {
-          lastStatus = response.status;
-          lastError = await response.text().catch(() => '');
-          logger.error(
-            `Image upload to ${host} failed: ${response.status} ${lastError}`,
-            'image-upload'
-          );
-          continue;
-        }
-
-        const result = await response.json();
-        if (result.url) {
-          return NextResponse.json({ url: result.url });
-        }
-
-        lastError = 'No URL in response';
-        continue;
-      } catch (err) {
-        logger.error(`Image upload to ${host} error`, 'image-upload', err);
-        lastError = err instanceof Error ? err.message : 'Unknown error';
-        continue;
-      }
+    if (result.success && result.url) {
+      return NextResponse.json({ url: result.url });
     }
 
     return NextResponse.json(
-      { error: `All image hosts failed (last: ${lastStatus || lastError})` },
-      { status: 502 }
+      { error: result.error || 'Upload failed' },
+      { status: result.error?.includes('not configured') ? 503 : 502 }
     );
   } catch (error) {
     return ctx.handleError(error);

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Link as LinkIcon, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
+import { X, Link as LinkIcon, Upload, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
 import { validateImageUrl } from '@/lib/utils/sanitize';
@@ -17,9 +17,11 @@ interface ImageDialogProps {
 export function ImageDialog({ username, onInsert, onClose }: ImageDialogProps) {
   const [imageUrl, setImageUrl] = useState('');
   const [imageAlt, setImageAlt] = useState('');
-  const [imageTab, setImageTab] = useState<'url' | 'upload'>('upload');
+  const [imageTab, setImageTab] = useState<'url' | 'upload' | 'generate'>('upload');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [generatePrompt, setGeneratePrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleClose = () => {
     onClose();
@@ -78,6 +80,47 @@ export function ImageDialog({ username, onInsert, onClose }: ImageDialogProps) {
     }
   };
 
+  const handleGenerate = async () => {
+    if (generatePrompt.length < 3) {
+      setUploadError('Prompt must be at least 3 characters');
+      return;
+    }
+
+    setIsGenerating(true);
+    setUploadError(null);
+
+    try {
+      const response = await fetch('/api/venice/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: generatePrompt }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error?.message || data?.error || 'Image generation failed');
+      }
+
+      const url = data?.data?.url || data?.url;
+      if (url) {
+        setImageUrl(url);
+        setImageAlt('');
+      } else {
+        throw new Error('No image URL in response');
+      }
+    } catch (error) {
+      logger.error('Image generation error', 'ImageDialog', error);
+      setUploadError(
+        error instanceof Error ? error.message : 'Failed to generate image. Please try again.'
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const isBusy = isUploading || isGenerating;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="mx-4 w-full max-w-md rounded-lg border bg-card p-6 shadow-xl">
@@ -100,7 +143,7 @@ export function ImageDialog({ username, onInsert, onClose }: ImageDialogProps) {
             )}
           >
             <LinkIcon className="mr-2 inline h-4 w-4" />
-            From URL
+            URL
           </button>
           <button
             onClick={() => setImageTab('upload')}
@@ -112,12 +155,24 @@ export function ImageDialog({ username, onInsert, onClose }: ImageDialogProps) {
             )}
           >
             <Upload className="mr-2 inline h-4 w-4" />
-            Upload File
+            Upload
+          </button>
+          <button
+            onClick={() => setImageTab('generate')}
+            className={cn(
+              'flex-1 border-b-2 py-2 text-sm font-medium transition-colors',
+              imageTab === 'generate'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Sparkles className="mr-2 inline h-4 w-4" />
+            Generate
           </button>
         </div>
 
         <div className="space-y-4">
-          {imageTab === 'url' ? (
+          {imageTab === 'url' && (
             <div>
               <label className="mb-2 block text-sm font-medium">Image URL</label>
               <input
@@ -129,7 +184,9 @@ export function ImageDialog({ username, onInsert, onClose }: ImageDialogProps) {
                 autoFocus
               />
             </div>
-          ) : (
+          )}
+
+          {imageTab === 'upload' && (
             <div>
               <label className="mb-2 block text-sm font-medium">Upload Image</label>
               <div
@@ -184,9 +241,47 @@ export function ImageDialog({ username, onInsert, onClose }: ImageDialogProps) {
                   </>
                 )}
               </div>
-              {uploadError && <p className="mt-2 text-sm text-destructive">{uploadError}</p>}
             </div>
           )}
+
+          {imageTab === 'generate' && (
+            <div>
+              <label className="mb-2 block text-sm font-medium">Describe your image</label>
+              <textarea
+                value={generatePrompt}
+                onChange={(e) => setGeneratePrompt(e.target.value)}
+                placeholder="e.g. A dramatic soccer goal celebration under stadium lights"
+                maxLength={500}
+                rows={3}
+                className="w-full resize-none rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                autoFocus
+                disabled={isGenerating}
+              />
+              <div className="mt-1 flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">{generatePrompt.length}/500</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleGenerate}
+                  disabled={isGenerating || generatePrompt.length < 3}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {uploadError && <p className="text-sm text-destructive">{uploadError}</p>}
 
           <div>
             <label className="mb-2 block text-sm font-medium">Caption</label>
@@ -218,7 +313,7 @@ export function ImageDialog({ username, onInsert, onClose }: ImageDialogProps) {
             <Button variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button onClick={handleInsert} disabled={!imageUrl || isUploading}>
+            <Button onClick={handleInsert} disabled={!imageUrl || isBusy}>
               <ImageIcon className="mr-2 h-4 w-4" />
               Insert
             </Button>
