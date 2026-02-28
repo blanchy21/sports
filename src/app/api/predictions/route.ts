@@ -43,7 +43,11 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
 
   const where: Record<string, unknown> = {};
   if (params.status) {
-    where.status = params.status;
+    // "Settled" tab should include all terminal resolved states
+    where.status =
+      params.status === 'SETTLED'
+        ? { in: ['SETTLED', 'REFUNDED'] as PredictionStatus[] }
+        : params.status;
   } else {
     // Default: only show active predictions (not settled/void/refunded)
     where.status = { in: ACTIVE_STATUSES };
