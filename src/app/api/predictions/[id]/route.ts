@@ -9,9 +9,8 @@ import {
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { prisma } from '@/lib/db/prisma';
-import { serializePrediction, decimalToNumber } from '@/lib/predictions/serialize';
-import { buildRefundOps } from '@/lib/predictions/escrow';
-import { broadcastHiveEngineOps } from '@/lib/predictions/settlement';
+import { serializePrediction } from '@/lib/predictions/serialize';
+import { executeVoidRefund } from '@/lib/predictions/settlement';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
@@ -67,21 +66,10 @@ export const DELETE = createApiHandler('/api/predictions/[id]', async (request, 
       throw new ForbiddenError('Cannot delete a prediction that other users have staked on');
     }
 
-    // If creator has stakes, refund them on-chain first
-    const creatorStakes = prediction.stakes.filter(
-      (s) => s.username === prediction.creatorUsername
-    );
-    if (creatorStakes.length > 0) {
-      const refunds = creatorStakes.map((s) => ({
-        username: s.username,
-        amount: decimalToNumber(s.amount),
-        predictionId: prediction.id,
-      }));
-      const refundOps = buildRefundOps(refunds);
-      if (refundOps.length > 0) {
-        await broadcastHiveEngineOps(refundOps);
-        ctx.log.info('Creator stakes refunded on-chain', { predictionId: id });
-      }
+    // Use executeVoidRefund for atomic void→refund with per-stake idempotency
+    if (prediction.stakes.length > 0) {
+      await executeVoidRefund(id, 'Deleted by creator', user.username);
+      ctx.log.info('Creator stakes void-refunded', { predictionId: id });
     }
 
     // Hard-delete — Prisma cascade handles outcomes, stakes, escrow ledger

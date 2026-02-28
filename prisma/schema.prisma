@@ -504,6 +504,8 @@ model Prediction {
   burnedAmount      Decimal          @default(0) @map("burned_amount") @db.Decimal(12, 3)
   rewardPoolAmount  Decimal          @default(0) @map("reward_pool_amount") @db.Decimal(12, 3)
   feeTxId           String?          @map("fee_tx_id")
+  feeBurnTxId       String?          @map("fee_burn_tx_id")
+  feeRewardTxId     String?          @map("fee_reward_tx_id")
   hiveAuthor        String?          @map("hive_author")
   hivePermlink      String?          @map("hive_permlink")
   isVoid            Boolean          @default(false) @map("is_void")
@@ -576,6 +578,7 @@ model PredictionEscrowLedger {
 
   prediction Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
 
+  @@unique([predictionId, txId])
   @@index([predictionId])
   @@map("prediction_escrow_ledger")
 }

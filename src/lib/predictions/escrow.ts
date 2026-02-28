@@ -39,37 +39,37 @@ export function buildPayoutOps(
   return buildBatchTransferOps(PREDICTION_CONFIG.ESCROW_ACCOUNT, transfers);
 }
 
-export function buildFeeOps(totalFee: number, predictionId: string): CustomJsonOp[] {
+export interface FeeOps {
+  burn: CustomJsonOp | null;
+  reward: CustomJsonOp | null;
+}
+
+export function buildFeeOps(totalFee: number, predictionId: string): FeeOps {
   const burnAmount = totalFee * PREDICTION_CONFIG.BURN_SPLIT;
   const rewardAmount = totalFee * PREDICTION_CONFIG.REWARD_SPLIT;
 
-  const ops: CustomJsonOp[] = [];
-
-  if (burnAmount > 0) {
-    ops.push(
-      buildTransferOpFromAmount(
-        PREDICTION_CONFIG.ESCROW_ACCOUNT,
-        PREDICTION_CONFIG.BURN_ACCOUNT,
-        burnAmount,
-        MEDALS_CONFIG.SYMBOL,
-        `prediction-fee-burn|${predictionId}`
-      )
-    );
-  }
-
-  if (rewardAmount > 0) {
-    ops.push(
-      buildTransferOpFromAmount(
-        PREDICTION_CONFIG.ESCROW_ACCOUNT,
-        PREDICTION_CONFIG.REWARDS_ACCOUNT,
-        rewardAmount,
-        MEDALS_CONFIG.SYMBOL,
-        `prediction-fee-reward|${predictionId}`
-      )
-    );
-  }
-
-  return ops;
+  return {
+    burn:
+      burnAmount > 0
+        ? buildTransferOpFromAmount(
+            PREDICTION_CONFIG.ESCROW_ACCOUNT,
+            PREDICTION_CONFIG.BURN_ACCOUNT,
+            burnAmount,
+            MEDALS_CONFIG.SYMBOL,
+            `prediction-fee-burn|${predictionId}`
+          )
+        : null,
+    reward:
+      rewardAmount > 0
+        ? buildTransferOpFromAmount(
+            PREDICTION_CONFIG.ESCROW_ACCOUNT,
+            PREDICTION_CONFIG.REWARDS_ACCOUNT,
+            rewardAmount,
+            MEDALS_CONFIG.SYMBOL,
+            `prediction-fee-reward|${predictionId}`
+          )
+        : null,
+  };
 }
 
 export function buildRefundOps(

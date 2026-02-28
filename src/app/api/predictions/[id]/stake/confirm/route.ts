@@ -8,6 +8,7 @@ import {
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@/generated/prisma/client';
 import { verifyStakeToken } from '@/lib/predictions/stake-token';
 import { verifyStakeTransaction } from '@/lib/predictions/verify-stake';
 import { serializePrediction } from '@/lib/predictions/serialize';
@@ -67,46 +68,54 @@ export const POST = createApiHandler(
         throw new ValidationError(`Transaction verification failed: ${verification.error}`);
       }
 
-      const prediction = await prisma.$transaction(async (tx) => {
-        await tx.predictionStake.create({
-          data: {
-            predictionId,
-            outcomeId: tokenData.outcomeId,
-            username: user.username,
-            amount: tokenData.amount,
-            stakeTxId: body.txId,
-          },
-        });
+      let prediction;
+      try {
+        prediction = await prisma.$transaction(async (tx) => {
+          await tx.predictionStake.create({
+            data: {
+              predictionId,
+              outcomeId: tokenData.outcomeId,
+              username: user.username,
+              amount: tokenData.amount,
+              stakeTxId: body.txId,
+            },
+          });
 
-        await tx.predictionEscrowLedger.create({
-          data: {
-            predictionId,
-            entryType: 'stake_in',
-            username: user.username,
-            amount: tokenData.amount,
-            txId: body.txId,
-          },
-        });
+          await tx.predictionEscrowLedger.create({
+            data: {
+              predictionId,
+              entryType: 'stake_in',
+              username: user.username,
+              amount: tokenData.amount,
+              txId: body.txId,
+            },
+          });
 
-        await tx.predictionOutcome.update({
-          where: { id: tokenData.outcomeId },
-          data: {
-            totalStaked: { increment: tokenData.amount },
-            backerCount: { increment: 1 },
-          },
-        });
+          await tx.predictionOutcome.update({
+            where: { id: tokenData.outcomeId },
+            data: {
+              totalStaked: { increment: tokenData.amount },
+              backerCount: { increment: 1 },
+            },
+          });
 
-        return tx.prediction.update({
-          where: { id: predictionId },
-          data: {
-            totalPool: { increment: tokenData.amount },
-          },
-          include: {
-            outcomes: true,
-            stakes: true,
-          },
+          return tx.prediction.update({
+            where: { id: predictionId },
+            data: {
+              totalPool: { increment: tokenData.amount },
+            },
+            include: {
+              outcomes: true,
+              stakes: true,
+            },
+          });
         });
-      });
+      } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+          throw new ValidationError('Stake already confirmed for this transaction');
+        }
+        throw e;
+      }
 
       return apiSuccess(serializePrediction(prediction, user.username));
     });

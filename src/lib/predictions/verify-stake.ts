@@ -9,8 +9,9 @@ import { Client } from '@hiveio/dhive';
 import { PREDICTION_CONFIG } from './constants';
 import { MEDALS_CONFIG } from '@/lib/hive-engine/constants';
 import { logger } from '@/lib/logger';
+import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
 
-const dhive = new Client(['https://api.hive.blog', 'https://api.deathwing.me', 'https://anyx.io']);
+const dhive = new Client(HIVE_NODES);
 
 interface VerifyStakeParams {
   txId: string;
