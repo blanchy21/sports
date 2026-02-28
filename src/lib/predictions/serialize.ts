@@ -14,9 +14,15 @@ export function decimalToNumber(d: Prisma.Decimal | null | undefined): number {
 }
 
 export function serializePrediction(
-  prediction: Prediction & { outcomes: PredictionOutcome[]; stakes?: PredictionStake[] },
-  currentUsername?: string
+  prediction: Prediction & {
+    outcomes: PredictionOutcome[];
+    stakes?: PredictionStake[];
+    _count?: { stakes: number };
+  },
+  currentUsername?: string,
+  options?: { includeStakers?: boolean }
 ): PredictionBite {
+  const includeStakers = options?.includeStakers ?? true;
   const totalPool = decimalToNumber(prediction.totalPool);
 
   const outcomes: PredictionOutcomeResponse[] = prediction.outcomes.map((outcome) => {
@@ -25,7 +31,7 @@ export function serializePrediction(
 
     // Aggregate stakers per outcome (combine multiple stakes by same user)
     let stakers: OutcomeStaker[] | undefined;
-    if (prediction.stakes) {
+    if (includeStakers && prediction.stakes) {
       const outcomeStakes = prediction.stakes.filter((s) => s.outcomeId === outcome.id);
       const byUser = new Map<string, { amount: number; payout: number }>();
       for (const s of outcomeStakes) {
@@ -71,8 +77,11 @@ export function serializePrediction(
 
   // canModify: creator can edit/delete only while OPEN and no other users have staked
   const isCreator = !!currentUsername && currentUsername === prediction.creatorUsername;
-  const hasNonCreatorStakes =
-    prediction.stakes?.some((s) => s.username !== prediction.creatorUsername) ?? false;
+  // When we have all stakes: check directly. When we only have partial (user-filtered)
+  // stakes + _count: compare total count vs user's stake count.
+  const hasNonCreatorStakes = prediction._count
+    ? prediction._count.stakes > (prediction.stakes?.length ?? 0)
+    : (prediction.stakes?.some((s) => s.username !== prediction.creatorUsername) ?? false);
   const canModify = isCreator && prediction.status === 'OPEN' && !hasNonCreatorStakes;
 
   const bite: PredictionBite = {

@@ -220,12 +220,14 @@ export class TieredCache {
         ? Math.floor(options.ttl / 1000) // Convert ms to seconds
         : this.config.redis?.defaultTTL;
 
-      this.redisCache.set(key, value, {
-        ttl: redisTTL,
-        tags: options.tags,
-      }).catch((err) => {
-        console.warn('[TieredCache] Redis write failed:', err);
-      });
+      this.redisCache
+        .set(key, value, {
+          ttl: redisTTL,
+          tags: options.tags,
+        })
+        .catch((err) => {
+          console.warn('[TieredCache] Redis write failed:', err);
+        });
     }
   }
 
@@ -378,16 +380,24 @@ export class TieredCache {
 
 // Global tiered cache instance
 let globalTieredCache: TieredCache | null = null;
+let globalTieredCachePromise: Promise<TieredCache> | null = null;
 
 /**
- * Get the global tiered cache instance
+ * Get the global tiered cache instance (deduplicates concurrent init calls)
  */
 export async function getTieredCache(): Promise<TieredCache> {
-  if (!globalTieredCache) {
-    globalTieredCache = new TieredCache();
-    await globalTieredCache.initialize();
+  if (globalTieredCache) return globalTieredCache;
+
+  if (!globalTieredCachePromise) {
+    globalTieredCachePromise = (async () => {
+      const cache = new TieredCache();
+      await cache.initialize();
+      globalTieredCache = cache;
+      return cache;
+    })();
   }
-  return globalTieredCache;
+
+  return globalTieredCachePromise;
 }
 
 /**

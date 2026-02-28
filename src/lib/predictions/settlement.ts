@@ -40,6 +40,28 @@ export async function executeSettlement(
   winningOutcomeId: string,
   settledBy: string
 ): Promise<SettlementResult> {
+  // Atomic lock: transition LOCKED → SETTLING in a single conditional update.
+  // If count === 0, either already SETTLING (retry) or invalid state.
+  const lockResult = await prisma.prediction.updateMany({
+    where: { id: predictionId, status: PredictionStatus.LOCKED },
+    data: { status: PredictionStatus.SETTLING },
+  });
+
+  if (lockResult.count === 0) {
+    // Check if it's a valid retry (already SETTLING) or an invalid state
+    const current = await prisma.prediction.findUnique({
+      where: { id: predictionId },
+      select: { status: true },
+    });
+    if (!current) {
+      throw new Error(`Prediction not found: ${predictionId}`);
+    }
+    if (current.status !== PredictionStatus.SETTLING) {
+      throw new Error(`Prediction must be LOCKED for settlement (current: ${current.status})`);
+    }
+    // SETTLING = retry path, continue
+  }
+
   const prediction = await prisma.prediction.findUnique({
     where: { id: predictionId },
     include: { outcomes: true, stakes: true },
@@ -49,29 +71,20 @@ export async function executeSettlement(
     throw new Error(`Prediction not found: ${predictionId}`);
   }
 
-  if (
-    prediction.status !== PredictionStatus.LOCKED &&
-    prediction.status !== PredictionStatus.SETTLING
-  ) {
-    throw new Error(
-      `Prediction must be LOCKED or SETTLING for settlement (current: ${prediction.status})`
-    );
-  }
-
   const validOutcome = prediction.outcomes.find((o) => o.id === winningOutcomeId);
   if (!validOutcome) {
     throw new Error(`Invalid winning outcome: ${winningOutcomeId}`);
   }
 
+  // Pass Decimal values directly — calculateSettlement uses Decimal arithmetic internally
   const stakes = prediction.stakes.map((s) => ({
     id: s.id,
     username: s.username,
     outcomeId: s.outcomeId,
-    amount: s.amount.toNumber(),
+    amount: s.amount,
   }));
 
-  const totalPool = prediction.totalPool.toNumber();
-  const settlement = calculateSettlement(stakes, winningOutcomeId, totalPool);
+  const settlement = calculateSettlement(stakes, winningOutcomeId, prediction.totalPool);
 
   // Refund everyone if no real contest occurred:
   // 1. All stakes on the same outcome (no opposing bets)
@@ -88,7 +101,7 @@ export async function executeSettlement(
         continue;
       }
       const [op] = buildRefundOps([
-        { username: stake.username, amount: stake.amount.toNumber(), predictionId },
+        { username: stake.username, amount: stake.amount, predictionId },
       ]);
       const txId = await broadcastHiveEngineOps([op]);
       await prisma.predictionStake.update({
@@ -122,12 +135,6 @@ export async function executeSettlement(
     logger.info(`Prediction refunded (${reason}): ${predictionId}`, 'Settlement');
     return { ...settlement, platformFee: 0, burnAmount: 0, rewardAmount: 0, totalPaid: 0 };
   }
-
-  // Mark as settling
-  await prisma.prediction.update({
-    where: { id: predictionId },
-    data: { status: PredictionStatus.SETTLING },
-  });
 
   try {
     // Broadcast fee ops (burn + reward) — skip if already done on a prior attempt
@@ -200,7 +207,7 @@ export async function executeSettlement(
 
     logger.info(`Prediction settled: ${predictionId}`, 'Settlement', {
       winningOutcomeId,
-      totalPool,
+      totalPool: settlement.totalPool,
       payoutCount: settlement.payouts.length,
     });
 
@@ -231,21 +238,21 @@ export async function executeVoidRefund(
     throw new Error(`Prediction not found: ${predictionId}`);
   }
 
-  // Allow VOID status for retries (partial refund broadcast may have failed)
-  if (
-    prediction.status !== PredictionStatus.OPEN &&
-    prediction.status !== PredictionStatus.LOCKED &&
-    prediction.status !== PredictionStatus.VOID
-  ) {
-    throw new Error(`Cannot void prediction in ${prediction.status} status`);
-  }
+  // Atomic lock: transition OPEN or LOCKED → VOID in a single conditional update.
+  // If count === 0, either already VOID (retry) or invalid state.
+  const lockResult = await prisma.prediction.updateMany({
+    where: {
+      id: predictionId,
+      status: { in: [PredictionStatus.OPEN, PredictionStatus.LOCKED] },
+    },
+    data: { status: PredictionStatus.VOID, isVoid: true, voidReason: reason },
+  });
 
-  // Mark as VOID immediately (idempotent — may already be VOID on retry)
-  if (prediction.status !== PredictionStatus.VOID) {
-    await prisma.prediction.update({
-      where: { id: predictionId },
-      data: { status: PredictionStatus.VOID, isVoid: true, voidReason: reason },
-    });
+  if (lockResult.count === 0) {
+    if (prediction.status !== PredictionStatus.VOID) {
+      throw new Error(`Cannot void prediction in ${prediction.status} status`);
+    }
+    // VOID = retry path, continue with refund broadcasts
   }
 
   try {
@@ -258,7 +265,7 @@ export async function executeVoidRefund(
         continue;
       }
       const [op] = buildRefundOps([
-        { username: stake.username, amount: stake.amount.toNumber(), predictionId },
+        { username: stake.username, amount: stake.amount, predictionId },
       ]);
       const txId = await broadcastHiveEngineOps([op]);
       await prisma.predictionStake.update({

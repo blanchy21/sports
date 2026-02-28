@@ -7,6 +7,7 @@ import {
   SportsbiteApiResponse,
 } from '@/lib/hive-workerbee/sportsbites';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
+import { boundedCacheSet, cleanupExpired } from '@/lib/cache/bounded-map';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -30,23 +31,10 @@ const MAX_FEED_CACHE_SIZE = 500;
 const MAX_SINGLE_CACHE_SIZE = 300;
 let sportsbiteRequestCount = 0;
 
-/** Evict oldest entry when cache exceeds max size */
-function boundedCacheSet<K, V>(map: Map<K, V>, key: K, value: V, maxSize: number) {
-  if (map.size >= maxSize) {
-    const oldest = map.keys().next().value;
-    if (oldest !== undefined) map.delete(oldest);
-  }
-  map.set(key, value);
-}
-
 function cleanupCache() {
   const now = Date.now();
-  for (const [key, entry] of feedCache.entries()) {
-    if (now > entry.expiresAt) feedCache.delete(key);
-  }
-  for (const [key, entry] of singleCache.entries()) {
-    if (now > entry.expiresAt) singleCache.delete(key);
-  }
+  cleanupExpired(feedCache, (entry) => now > entry.expiresAt);
+  cleanupExpired(singleCache, (entry) => now > entry.expiresAt);
 }
 
 const querySchema = z.object({

@@ -57,7 +57,7 @@ export const GET = createApiHandler('/api/hive/download-keys', async (request: R
   }
 
   // 2. Look up encrypted keys
-  const custodialUser = await prisma.custodialUser.findFirst({
+  const custodialUser = await prisma.custodialUser.findUnique({
     where: { hiveUsername: user.hiveUsername },
     select: { id: true, encryptedKeys: true, encryptionIv: true, encryptionSalt: true },
   });

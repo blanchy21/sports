@@ -3,6 +3,11 @@ import { PREDICTION_CONFIG } from './constants';
 import { MEDALS_CONFIG } from '@/lib/hive-engine/constants';
 import type { CustomJsonOp } from '@/lib/hive-engine/types';
 
+/** Coerce Decimal | number to number for the transfer operation builder */
+function toNum(v: { toNumber(): number } | number): number {
+  return typeof v === 'number' ? v : v.toNumber();
+}
+
 export function buildStakeEscrowOp(
   username: string,
   amount: number,
@@ -19,11 +24,15 @@ export function buildStakeEscrowOp(
 }
 
 export function buildPayoutOps(
-  payouts: Array<{ username: string; amount: number; predictionId: string }>
+  payouts: Array<{
+    username: string;
+    amount: { toNumber(): number } | number;
+    predictionId: string;
+  }>
 ): CustomJsonOp[] {
   const transfers = payouts.map((p) => ({
     to: p.username,
-    amount: p.amount,
+    amount: toNum(p.amount),
     memo: `prediction-payout|${p.predictionId}`,
   }));
 
@@ -64,11 +73,15 @@ export function buildFeeOps(totalFee: number, predictionId: string): CustomJsonO
 }
 
 export function buildRefundOps(
-  refunds: Array<{ username: string; amount: number; predictionId: string }>
+  refunds: Array<{
+    username: string;
+    amount: { toNumber(): number } | number;
+    predictionId: string;
+  }>
 ): CustomJsonOp[] {
   const transfers = refunds.map((r) => ({
     to: r.username,
-    amount: r.amount,
+    amount: toNum(r.amount),
     memo: `prediction-refund|${r.predictionId}`,
   }));
 

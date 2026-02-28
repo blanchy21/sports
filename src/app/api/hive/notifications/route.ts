@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRequestContext } from '@/lib/api/response';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
+import { boundedCacheSet, cleanupExpired } from '@/lib/cache/bounded-map';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -22,24 +23,8 @@ const notificationCache = new Map<string, NotificationCache>();
 const MAX_NOTIFICATION_CACHE_SIZE = 200;
 let notificationRequestCount = 0;
 
-/** Evict oldest entry when cache exceeds max size */
-function boundedCacheSet<K, V>(map: Map<K, V>, key: K, value: V, maxSize: number) {
-  if (map.size >= maxSize) {
-    const oldest = map.keys().next().value;
-    if (oldest !== undefined) map.delete(oldest);
-  }
-  map.set(key, value);
-}
-
-// Cleanup old cache entries periodically
 function cleanupCache() {
-  const now = Date.now();
-  for (const [key, entry] of notificationCache.entries()) {
-    // Remove entries that are more than 5 minutes old
-    if (now - entry.timestamp > 5 * 60 * 1000) {
-      notificationCache.delete(key);
-    }
-  }
+  cleanupExpired(notificationCache, (entry) => Date.now() - entry.timestamp > 5 * 60 * 1000);
 }
 
 const querySchema = z.object({

@@ -47,6 +47,7 @@ export function PredictionEditModal({
     try {
       const res = await fetch(`/api/predictions/${prediction.id}`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,

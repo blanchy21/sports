@@ -29,7 +29,7 @@ export const GET = createApiHandler('/api/hive/account-status', async (request: 
     });
   }
 
-  const custodialUser = await prisma.custodialUser.findFirst({
+  const custodialUser = await prisma.custodialUser.findUnique({
     where: { hiveUsername: user.hiveUsername },
     select: { hiveUsername: true, keysDownloaded: true, isGraduated: true },
   });

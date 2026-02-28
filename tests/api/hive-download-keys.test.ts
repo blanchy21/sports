@@ -27,7 +27,7 @@ jest.mock('@/lib/utils/rate-limit', () => ({
 
 jest.mock('@/lib/db/prisma', () => ({
   prisma: {
-    custodialUser: { findFirst: jest.fn(), update: jest.fn() },
+    custodialUser: { findUnique: jest.fn(), update: jest.fn() },
   },
 }));
 
@@ -66,7 +66,7 @@ describe('GET /api/hive/download-keys', () => {
       user: { id: 'user-123', hiveUsername: 'sb-testuser' },
     });
 
-    mockPrisma.custodialUser.findFirst.mockResolvedValue({
+    mockPrisma.custodialUser.findUnique.mockResolvedValue({
       id: 'cust-123',
       encryptedKeys: 'enc-data',
       encryptionIv: 'iv-data',
@@ -176,7 +176,7 @@ describe('GET /api/hive/download-keys', () => {
   });
 
   it('returns 404 when custodialUser not found', async () => {
-    mockPrisma.custodialUser.findFirst.mockResolvedValue(null as never);
+    mockPrisma.custodialUser.findUnique.mockResolvedValue(null as never);
 
     const response = await request(server).get('/api/hive/download-keys');
 
@@ -186,7 +186,7 @@ describe('GET /api/hive/download-keys', () => {
   });
 
   it('returns 404 when encryptedKeys is null', async () => {
-    mockPrisma.custodialUser.findFirst.mockResolvedValue({
+    mockPrisma.custodialUser.findUnique.mockResolvedValue({
       id: 'cust-123',
       encryptedKeys: null,
       encryptionIv: 'iv-data',

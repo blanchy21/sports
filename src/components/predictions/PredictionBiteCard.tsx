@@ -56,13 +56,16 @@ function formatCountdown(locksAt: string): string {
 
 interface PredictionBiteCardProps {
   prediction: PredictionBite;
+  /** Shared epoch-second tick from parent for countdown display */
+  tick?: number;
   isNew?: boolean;
   onDeleted?: (id: string) => void;
   onUpdated?: (updated: PredictionBite) => void;
 }
 
-export function PredictionBiteCard({
+export const PredictionBiteCard = React.memo(function PredictionBiteCard({
   prediction,
+  tick,
   isNew,
   onDeleted,
   onUpdated,
@@ -70,7 +73,11 @@ export function PredictionBiteCard({
   const { user, authType, hiveUser } = useAuth();
   const { openStakeModal, stakeModalOpen, stakeOutcomeId, closeStakeModal } = usePredictionStore();
 
-  const [countdown, setCountdown] = useState(() => formatCountdown(prediction.locksAt));
+  const countdown = useMemo(
+    () => (prediction.status === 'OPEN' ? formatCountdown(prediction.locksAt) : ''),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tick drives the update
+    [prediction.locksAt, prediction.status, tick]
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -106,15 +113,6 @@ export function PredictionBiteCard({
   const sportCategory = SPORT_CATEGORIES.find((s) => s.id === prediction.sportCategory);
   const avatarUrl = getHiveAvatarUrl(prediction.creatorUsername);
 
-  // Countdown timer for OPEN predictions
-  useEffect(() => {
-    if (prediction.status !== 'OPEN') return;
-    const interval = setInterval(() => {
-      setCountdown(formatCountdown(prediction.locksAt));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [prediction.status, prediction.locksAt]);
-
   // Close menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
@@ -130,7 +128,10 @@ export function PredictionBiteCard({
   const handleDelete = useCallback(async () => {
     setDeleting(true);
     try {
-      const res = await fetch(`/api/predictions/${prediction.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/predictions/${prediction.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error?.message || data.error || 'Failed to delete');
@@ -411,7 +412,7 @@ export function PredictionBiteCard({
       )}
     </>
   );
-}
+});
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string }> = {

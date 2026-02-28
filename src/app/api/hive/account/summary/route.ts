@@ -3,6 +3,7 @@ import { fetchUserAccount } from '@/lib/hive-workerbee/account';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import { accountSummaryQuerySchema, parseSearchParams } from '@/lib/api/validation';
 import { createRequestContext, validationError, notFoundError } from '@/lib/api/response';
+import { boundedCacheSet, cleanupExpired } from '@/lib/cache/bounded-map';
 
 // Cache configuration - 60 seconds for account data (good balance for profile info)
 const CACHE_DURATION = 60 * 1000;
@@ -18,24 +19,8 @@ const accountCache = new Map<string, AccountCache>();
 const MAX_ACCOUNT_CACHE_SIZE = 200;
 let accountRequestCount = 0;
 
-/** Evict oldest entry when cache exceeds max size */
-function boundedCacheSet<K, V>(map: Map<K, V>, key: K, value: V, maxSize: number) {
-  if (map.size >= maxSize) {
-    const oldest = map.keys().next().value;
-    if (oldest !== undefined) map.delete(oldest);
-  }
-  map.set(key, value);
-}
-
-// Cleanup old cache entries periodically
 function cleanupCache() {
-  const now = Date.now();
-  for (const [key, entry] of accountCache.entries()) {
-    // Remove entries that are more than 10 minutes old
-    if (now - entry.timestamp > 10 * 60 * 1000) {
-      accountCache.delete(key);
-    }
-  }
+  cleanupExpired(accountCache, (entry) => Date.now() - entry.timestamp > 10 * 60 * 1000);
 }
 
 function serializeAccount(account: unknown) {

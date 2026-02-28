@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { PredictionBiteCard } from './PredictionBiteCard';
 import type { PredictionBite } from '@/lib/predictions/types';
 import { Loader2, RefreshCw, AlertCircle, Target } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useCountdownTick } from '@/hooks/useCountdownTick';
 import { logger } from '@/lib/logger';
 
 type StatusFilter = 'all' | 'OPEN' | 'SETTLED';
@@ -30,6 +31,13 @@ export function PredictionsFeed({ className }: PredictionsFeedProps) {
   const [hasMore, setHasMore] = useState(false);
 
   const nextCursorRef = useRef<string | null>(null);
+
+  // Single shared timer for all countdown displays
+  const hasOpenPredictions = useMemo(
+    () => predictions.some((p) => p.status === 'OPEN'),
+    [predictions]
+  );
+  const tick = useCountdownTick(hasOpenPredictions);
 
   const loadPredictions = useCallback(
     async (loadMore = false) => {
@@ -192,6 +200,7 @@ export function PredictionsFeed({ className }: PredictionsFeedProps) {
         <PredictionBiteCard
           key={prediction.id}
           prediction={prediction}
+          tick={tick}
           onDeleted={handleDeleted}
           onUpdated={handleUpdated}
         />

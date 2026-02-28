@@ -361,7 +361,7 @@ export async function GET() {
     let keysDownloaded: boolean | undefined;
     if (session.authType === 'soft' && session.hiveUsername) {
       try {
-        const custodialUser = await prisma.custodialUser.findFirst({
+        const custodialUser = await prisma.custodialUser.findUnique({
           where: { hiveUsername: session.hiveUsername },
           select: { keysDownloaded: true },
         });

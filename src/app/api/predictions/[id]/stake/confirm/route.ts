@@ -9,6 +9,7 @@ import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { prisma } from '@/lib/db/prisma';
 import { verifyStakeToken } from '@/lib/predictions/stake-token';
+import { verifyStakeTransaction } from '@/lib/predictions/verify-stake';
 import { serializePrediction } from '@/lib/predictions/serialize';
 import { logger } from '@/lib/logger';
 import { NextRequest } from 'next/server';
@@ -47,6 +48,24 @@ export const POST = createApiHandler(
         amount: tokenData.amount,
         txId: body.txId,
       });
+
+      // Verify the transaction exists on-chain with correct parameters
+      const verification = await verifyStakeTransaction({
+        txId: body.txId,
+        expectedUsername: user.username,
+        expectedAmount: tokenData.amount,
+        expectedPredictionId: predictionId,
+        expectedOutcomeId: tokenData.outcomeId,
+      });
+
+      if (!verification.valid) {
+        logger.warn('Stake verification failed', 'predictions', {
+          predictionId,
+          txId: body.txId,
+          error: verification.error,
+        });
+        throw new ValidationError(`Transaction verification failed: ${verification.error}`);
+      }
 
       const prediction = await prisma.$transaction(async (tx) => {
         await tx.predictionStake.create({

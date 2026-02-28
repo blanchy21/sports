@@ -1,5 +1,11 @@
+import { Prisma } from '@/generated/prisma/client';
 import { PREDICTION_CONFIG } from './constants';
 import type { PredictionOdds, SettlementResult, SettlementPayout } from './types';
+
+type Decimal = Prisma.Decimal;
+const D = (v: Prisma.Decimal | number | string) => new Prisma.Decimal(v);
+const ZERO = D(0);
+const PLACES = 3; // DB precision: Decimal(12,3)
 
 export function calculateOdds(
   totalPool: number,
@@ -25,64 +31,79 @@ export function calculatePayout(
 ): number {
   if (winningPool <= 0) return 0;
 
-  const payout = (stakeAmount / winningPool) * totalPool * (1 - feePct);
-  return Math.round(payout * 1000) / 1000;
+  const payout = D(stakeAmount)
+    .div(D(winningPool))
+    .mul(D(totalPool))
+    .mul(D(1 - feePct))
+    .toDecimalPlaces(PLACES);
+  return payout.toNumber();
 }
 
+/**
+ * Calculate settlement payouts using Decimal arithmetic throughout.
+ * Accepts Decimal amounts from Prisma and only converts to number in the final result.
+ */
 export function calculateSettlement(
-  stakes: Array<{ id: string; username: string; outcomeId: string; amount: number }>,
+  stakes: Array<{ id: string; username: string; outcomeId: string; amount: Decimal | number }>,
   winningOutcomeId: string,
-  totalPool: number
+  totalPool: Decimal | number
 ): SettlementResult {
-  const feePct = PREDICTION_CONFIG.PLATFORM_FEE_PCT;
-  const platformFee = Math.round(totalPool * feePct * 1000) / 1000;
-  const burnAmount = Math.round(platformFee * PREDICTION_CONFIG.BURN_SPLIT * 1000) / 1000;
-  const rewardAmount = Math.round(platformFee * PREDICTION_CONFIG.REWARD_SPLIT * 1000) / 1000;
+  const pool = D(totalPool);
+  const feePct = D(PREDICTION_CONFIG.PLATFORM_FEE_PCT);
+
+  const platformFee = pool.mul(feePct).toDecimalPlaces(PLACES);
+  const burnAmount = platformFee.mul(D(PREDICTION_CONFIG.BURN_SPLIT)).toDecimalPlaces(PLACES);
+  const rewardAmount = platformFee.mul(D(PREDICTION_CONFIG.REWARD_SPLIT)).toDecimalPlaces(PLACES);
 
   const winningStakes = stakes.filter((s) => s.outcomeId === winningOutcomeId);
-  const winningPool = winningStakes.reduce((sum, s) => sum + s.amount, 0);
+  const winningPool = winningStakes.reduce((sum, s) => sum.add(D(s.amount)), ZERO);
 
-  const distributablePool = totalPool - platformFee;
+  const distributablePool = pool.minus(platformFee);
 
-  const payouts: SettlementPayout[] = winningStakes.map((s) => {
-    const payoutAmount =
-      winningPool > 0 ? Math.round((s.amount / winningPool) * distributablePool * 1000) / 1000 : 0;
+  const payouts: (SettlementPayout & { _payout: Decimal })[] = winningStakes.map((s) => {
+    const amt = D(s.amount);
+    const payoutAmount = winningPool.gt(ZERO)
+      ? amt.div(winningPool).mul(distributablePool).toDecimalPlaces(PLACES)
+      : ZERO;
 
     return {
       username: s.username,
       stakeId: s.id,
-      amount: s.amount,
-      payoutAmount,
+      amount: amt.toNumber(),
+      payoutAmount: payoutAmount.toNumber(),
+      _payout: payoutAmount,
     };
   });
 
-  // Adjust rounding on largest payout so total_paid + fees = totalPool
-  const totalPaid = payouts.reduce((sum, p) => sum + p.payoutAmount, 0);
-  const expectedPaid = Math.round((totalPool - platformFee) * 1000) / 1000;
-  const rounding = Math.round((expectedPaid - totalPaid) * 1000) / 1000;
+  // Adjust rounding on largest payout so total_paid + fees = totalPool exactly
+  const totalPaid = payouts.reduce((sum, p) => sum.add(p._payout), ZERO);
+  const remainder = distributablePool.minus(totalPaid);
 
-  if (rounding !== 0 && payouts.length > 0) {
-    // Find the largest payout to absorb rounding
+  if (!remainder.isZero() && payouts.length > 0) {
     let largestIdx = 0;
     for (let i = 1; i < payouts.length; i++) {
-      if (payouts[i].payoutAmount > payouts[largestIdx].payoutAmount) {
+      if (payouts[i]._payout.gt(payouts[largestIdx]._payout)) {
         largestIdx = i;
       }
     }
-    payouts[largestIdx].payoutAmount =
-      Math.round((payouts[largestIdx].payoutAmount + rounding) * 1000) / 1000;
+    const adjusted = payouts[largestIdx]._payout.add(remainder).toDecimalPlaces(PLACES);
+    payouts[largestIdx]._payout = adjusted;
+    payouts[largestIdx].payoutAmount = adjusted.toNumber();
   }
 
-  const adjustedTotalPaid = payouts.reduce((sum, p) => sum + p.payoutAmount, 0);
+  const adjustedTotalPaid = payouts.reduce((sum, p) => sum.add(p._payout), ZERO);
+
+  // Strip internal _payout field from result
+  const cleanPayouts: SettlementPayout[] = payouts.map(({ _payout, ...rest }) => rest);
 
   return {
     winningOutcomeId,
-    totalPool,
-    winningPool,
-    platformFee,
-    burnAmount,
-    rewardAmount,
-    payouts,
-    totalPaid: Math.round(adjustedTotalPaid * 1000) / 1000,
+    totalPool: pool.toNumber(),
+    winningPool: winningPool.toNumber(),
+    platformFee: platformFee.toNumber(),
+    burnAmount: burnAmount.toNumber(),
+    rewardAmount: rewardAmount.toNumber(),
+    payouts: cleanPayouts,
+    totalPaid: adjustedTotalPaid.toDecimalPlaces(PLACES).toNumber(),
   };
 }

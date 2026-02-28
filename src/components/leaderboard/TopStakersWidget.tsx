@@ -139,7 +139,7 @@ export function TopStakersWidget({ className }: { className?: string }) {
         <div className="text-sm text-muted-foreground">No stakers found</div>
       )}
 
-      {walletUsername && (
+      {swapOpen && walletUsername && (
         <SwapModal
           isOpen={swapOpen}
           onClose={() => setSwapOpen(false)}

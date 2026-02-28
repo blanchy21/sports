@@ -66,7 +66,10 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
     where,
     include: {
       outcomes: true,
-      stakes: true,
+      // Only fetch the current user's stakes (not all stakes) for the list view
+      stakes: user?.username ? { where: { username: user.username } } : false,
+      // Include total stake count so we can compute canModify without loading all stakes
+      _count: { select: { stakes: true } },
     },
     orderBy: sortByLocksAt ? { locksAt: 'asc' } : { createdAt: 'desc' },
     take: params.limit + 1,
@@ -80,7 +83,9 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
       ? (sortByLocksAt ? lastItem.locksAt : lastItem.createdAt).toISOString()
       : null;
 
-  const serialized = items.map((p) => serializePrediction(p, user?.username));
+  const serialized = items.map((p) =>
+    serializePrediction(p, user?.username, { includeStakers: false })
+  );
 
   return apiSuccess({ predictions: serialized, nextCursor });
 });
