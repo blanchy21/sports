@@ -18,7 +18,7 @@ export default function DMCAPolicyPage() {
         <h1 className="mb-2 text-3xl font-bold">DMCA & Copyright Policy</h1>
         <p className="mb-8 text-sm text-muted-foreground">Last updated: January 2025</p>
 
-        <div className="prose prose-sm max-w-none space-y-8 text-foreground">
+        <div className="prose prose-sm max-w-none space-y-8 text-foreground dark:prose-invert">
           <section>
             <h2 className="mb-3 text-xl font-semibold">1. Overview</h2>
             <p className="leading-relaxed text-muted-foreground">

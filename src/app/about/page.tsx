@@ -18,7 +18,7 @@ export default function AboutPage() {
         <h1 className="mb-2 text-3xl font-bold">About SPORTSBLOCK</h1>
         <p className="mb-8 text-sm text-muted-foreground">Where Sports Meets Blockchain</p>
 
-        <div className="prose prose-sm max-w-none space-y-8 text-foreground">
+        <div className="prose prose-sm max-w-none space-y-8 text-foreground dark:prose-invert">
           <section>
             <h2 className="mb-3 text-xl font-semibold">What is SPORTSBLOCK?</h2>
             <p className="leading-relaxed text-muted-foreground">

@@ -18,7 +18,7 @@ export default function CommunityGuidelinesPage() {
         <h1 className="mb-2 text-3xl font-bold">Community Guidelines</h1>
         <p className="mb-8 text-sm text-muted-foreground">Last updated: January 2025</p>
 
-        <div className="prose prose-sm max-w-none space-y-8 text-foreground">
+        <div className="prose prose-sm max-w-none space-y-8 text-foreground dark:prose-invert">
           <section>
             <p className="text-base leading-relaxed text-muted-foreground">
               SPORTSBLOCK is a community of sports enthusiasts sharing content on the Hive
