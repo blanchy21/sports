@@ -35,6 +35,8 @@ export const GET = createApiHandler('/api/predictions/leaderboard', async (reque
     periodFilter = Prisma.sql`AND ps.created_at > NOW() - INTERVAL '30 days'`;
   }
 
+  // Safe: params.sort is Zod-validated to the enum ['profit','winrate','streak'],
+  // so this switch cannot produce arbitrary SQL.
   let orderBy: Prisma.Sql;
   switch (params.sort) {
     case 'winrate':

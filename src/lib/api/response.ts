@@ -69,6 +69,9 @@ export class NotFoundError extends ApiError {
 
 /**
  * Authentication error (401)
+ *
+ * Preferred class for new routes using `createApiHandler` + `throw`.
+ * Returns error code `AUTH_ERROR`.
  */
 export class AuthError extends ApiError {
   constructor(message = 'Authentication required') {
@@ -78,7 +81,11 @@ export class AuthError extends ApiError {
 }
 
 /**
- * Unauthorized error (401) - alias for backward compatibility
+ * Unauthorized error (401)
+ *
+ * Returns error code `UNAUTHORIZED`. Kept as a distinct class because
+ * the legacy `unauthorizedError()` helper and some clients check for
+ * the `UNAUTHORIZED` code. Prefer `AuthError` for new code.
  */
 export class UnauthorizedError extends ApiError {
   constructor(message = 'Authentication required') {

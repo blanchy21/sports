@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import DiscoverClient from './DiscoverClient';
 import { fetchTrendingPosts } from '@/lib/hive-workerbee/content';
 import type { SportsblockPost } from '@/lib/shared/types';
+import { logger } from '@/lib/logger';
 
 export const metadata: Metadata = {
   title: 'Discover Sports | Sportsblock',
@@ -11,7 +12,8 @@ export const metadata: Metadata = {
 async function getTrendingPosts(): Promise<SportsblockPost[]> {
   try {
     return await fetchTrendingPosts(20);
-  } catch {
+  } catch (error) {
+    logger.error('Failed to fetch trending posts for discover page', 'DiscoverPage', error);
     return [];
   }
 }

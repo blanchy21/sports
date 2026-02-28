@@ -7,6 +7,7 @@ import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { touchLastActive } from '@/lib/api/activity';
 import { logger } from '@/lib/logger';
+import { stripSoftPrefix } from '@/lib/utils/soft-post';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -276,7 +277,7 @@ async function updateTargetLikeCount(
   delta: number
 ): Promise<number | null> {
   try {
-    const actualId = targetId.replace('soft-', '');
+    const actualId = stripSoftPrefix(targetId);
     if (targetType === 'post') {
       const updated = await prisma.post.update({
         where: { id: actualId },
@@ -310,7 +311,7 @@ async function createLikeNotification(
   now: Date
 ) {
   try {
-    const actualId = targetId.replace('soft-', '');
+    const actualId = stripSoftPrefix(targetId);
     let authorId: string | null = null;
     let postId: string | undefined;
     let postPermlink: string | undefined;
@@ -355,7 +356,7 @@ async function createLikeNotification(
     });
   } catch (error) {
     // Log but don't fail the like operation
-    console.error('Failed to create like notification:', error);
+    logger.error('Failed to create like notification', 'soft-likes', error);
   }
 }
 
@@ -370,7 +371,7 @@ async function createPopularPostNotification(
   now: Date
 ) {
   try {
-    const actualId = targetId.replace('soft-', '');
+    const actualId = stripSoftPrefix(targetId);
     const post =
       targetType === 'post' ? await prisma.post.findUnique({ where: { id: actualId } }) : null;
 
@@ -419,6 +420,6 @@ async function createPopularPostNotification(
     });
   } catch (error) {
     // Log but don't fail the like operation
-    console.error('Failed to create popular post notification:', error);
+    logger.error('Failed to create popular post notification', 'soft-likes', error);
   }
 }

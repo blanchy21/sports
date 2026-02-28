@@ -4,6 +4,7 @@ import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { checkRateLimit } from '@/lib/utils/rate-limit';
 import { createRequestContext } from '@/lib/api/response';
+import { logger } from '@/lib/logger';
 
 const ROUTE = '/api/hive/image-upload';
 
@@ -97,7 +98,10 @@ export async function POST(request: NextRequest) {
         if (!response.ok) {
           lastStatus = response.status;
           lastError = await response.text().catch(() => '');
-          console.error(`Image upload to ${host} failed:`, response.status, lastError);
+          logger.error(
+            `Image upload to ${host} failed: ${response.status} ${lastError}`,
+            'image-upload'
+          );
           continue;
         }
 
@@ -109,7 +113,7 @@ export async function POST(request: NextRequest) {
         lastError = 'No URL in response';
         continue;
       } catch (err) {
-        console.error(`Image upload to ${host} error:`, err);
+        logger.error(`Image upload to ${host} error`, 'image-upload', err);
         lastError = err instanceof Error ? err.message : 'Unknown error';
         continue;
       }

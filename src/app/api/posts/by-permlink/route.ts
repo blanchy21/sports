@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { createRequestContext } from '@/lib/api/response';
+import { logger } from '@/lib/logger';
 
 const ROUTE = '/api/posts/by-permlink';
 
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
         data: { viewCount: { increment: 1 } },
       })
       .catch((err: unknown) => {
-        console.error('Failed to increment view count:', err instanceof Error ? err.message : err);
+        logger.error('Failed to increment view count', 'posts-by-permlink', err);
       });
 
     return NextResponse.json(

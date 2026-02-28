@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Wallet, RefreshCw, BarChart3, Eye, EyeOff } from 'lucide-react';
-import { TransferModal } from '@/components/medals';
+import { TransferModal, SwapModal } from '@/components/medals';
 import {
   WalletCTAView,
   TransactionHistory,
@@ -43,6 +43,7 @@ export default function WalletPage() {
   const [isRefreshingAccount, setIsRefreshingAccount] = useState(false);
   const [lastAccountRefresh, setLastAccountRefresh] = useState<Date | null>(null);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [swapModalOpen, setSwapModalOpen] = useState(false);
   const hasRefreshedBalances = useRef(false);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const refreshAccountDataRef = useRef<(() => Promise<void>) | undefined>(undefined);
@@ -94,7 +95,7 @@ export default function WalletPage() {
 
     if (!refreshIntervalRef.current) {
       refreshIntervalRef.current = setInterval(() => {
-        if (refreshAccountDataRef.current) {
+        if (document.visibilityState === 'visible' && refreshAccountDataRef.current) {
           void refreshAccountDataRef.current();
         }
       }, 45 * 1000);
@@ -252,6 +253,7 @@ export default function WalletPage() {
         <MedalsTokenSection
           walletUsername={walletUsername || user.username}
           onTransferClick={() => setTransferModalOpen(true)}
+          onSwapClick={() => setSwapModalOpen(true)}
         />
 
         <CryptoPricesGrid bitcoinPrice={bitcoinPrice} ethereumPrice={ethereumPrice} />
@@ -262,6 +264,14 @@ export default function WalletPage() {
           isOpen={transferModalOpen}
           onClose={() => setTransferModalOpen(false)}
           account={walletUsername || user.username}
+        />
+
+        <SwapModal
+          isOpen={swapModalOpen}
+          onClose={() => setSwapModalOpen(false)}
+          account={walletUsername || user.username}
+          liquidHiveBalance={user.liquidHiveBalance || 0}
+          onSwapComplete={() => refreshAccountData()}
         />
       </div>
     </MainLayout>

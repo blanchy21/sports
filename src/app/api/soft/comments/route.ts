@@ -8,6 +8,7 @@ import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { logger } from '@/lib/logger';
 import { touchLastActive } from '@/lib/api/activity';
+import { stripSoftPrefix } from '@/lib/utils/soft-post';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -252,21 +253,23 @@ export async function POST(request: NextRequest) {
       // Update comment count on the parent entity
       if (postId.startsWith('soft-') || !postId.includes('-')) {
         // Soft post — increment Post.commentCount
-        const actualPostId = postId.replace('soft-', '');
+        const actualPostId = stripSoftPrefix(postId);
         after(
           prisma.post
             .update({
               where: { id: actualPostId },
               data: { commentCount: { increment: 1 } },
             })
-            .catch((err: unknown) => console.error('Failed to increment comment count:', err))
+            .catch((err: unknown) =>
+              logger.error('Failed to increment comment count', 'soft-comments', err)
+            )
         );
       }
 
       // Increment Sportsbite.commentCount for soft sportsbite replies
       // postPermlink is the sportsbite's permlink; for soft sportsbites it's "soft-{uuid}"
       if (postPermlink.startsWith('soft-')) {
-        const sportsbiteId = postPermlink.replace('soft-', '');
+        const sportsbiteId = stripSoftPrefix(postPermlink);
         after(
           prisma.sportsbite
             .update({
@@ -274,7 +277,7 @@ export async function POST(request: NextRequest) {
               data: { commentCount: { increment: 1 } },
             })
             .catch((err: unknown) =>
-              console.error('Failed to increment sportsbite comment count:', err)
+              logger.error('Failed to increment sportsbite comment count', 'soft-comments', err)
             )
         );
       }
@@ -284,7 +287,7 @@ export async function POST(request: NextRequest) {
       try {
         // Fetch post doc and parent comment doc in parallel for notifications
         const [postDoc, parentDoc] = await Promise.all([
-          prisma.post.findUnique({ where: { id: postId.replace('soft-', '') } }),
+          prisma.post.findUnique({ where: { id: stripSoftPrefix(postId) } }),
           parentCommentId
             ? prisma.comment.findUnique({ where: { id: parentCommentId } })
             : Promise.resolve(null),
@@ -497,13 +500,17 @@ export async function DELETE(request: NextRequest) {
       // Decrement comment count on the post (clamped to 0 via gt guard)
       const postId = commentDoc.postId;
       if (postId && (postId.startsWith('soft-') || !postId.includes('-'))) {
-        const actualPostId = postId.replace('soft-', '');
-        prisma.post
-          .updateMany({
-            where: { id: actualPostId, commentCount: { gt: 0 } },
-            data: { commentCount: { decrement: 1 } },
-          })
-          .catch((err: unknown) => console.error('Failed to decrement comment count:', err));
+        const actualPostId = stripSoftPrefix(postId);
+        after(
+          prisma.post
+            .updateMany({
+              where: { id: actualPostId, commentCount: { gt: 0 } },
+              data: { commentCount: { decrement: 1 } },
+            })
+            .catch((err: unknown) =>
+              logger.error('Failed to decrement comment count', 'soft-comments', err)
+            )
+        );
       }
 
       return NextResponse.json({

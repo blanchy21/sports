@@ -14,6 +14,51 @@ import { TopStakersWidget } from '@/components/leaderboard';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { logger } from '@/lib/logger';
 
+const FollowButton: React.FC<{ username: string; isFollowing: boolean }> = ({
+  username,
+  isFollowing,
+}) => {
+  const { user } = useAuth();
+  const followMutation = useFollowUser();
+  const unfollowMutation = useUnfollowUser();
+
+  const handleFollowToggle = async () => {
+    if (!user?.username) return;
+
+    try {
+      if (isFollowing) {
+        await unfollowMutation.mutateAsync({
+          username,
+          follower: user.username,
+        });
+      } else {
+        await followMutation.mutateAsync({
+          username,
+          follower: user.username,
+        });
+      }
+    } catch (error) {
+      logger.error('Error toggling follow status', 'FollowButton', error);
+    }
+  };
+
+  const isMutating = followMutation.isPending || unfollowMutation.isPending;
+
+  return (
+    <button
+      onClick={handleFollowToggle}
+      disabled={isMutating}
+      className={`rounded-md px-3 py-1 text-xs transition-colors disabled:opacity-50 ${
+        isFollowing
+          ? 'bg-muted text-muted-foreground hover:bg-muted/80'
+          : 'bg-primary text-primary-foreground hover:bg-primary/90'
+      }`}
+    >
+      {isMutating ? '...' : isFollowing ? 'Following' : 'Follow'}
+    </button>
+  );
+};
+
 export const RightSidebar: React.FC = () => {
   const { user } = useAuth();
 
@@ -34,10 +79,6 @@ export const RightSidebar: React.FC = () => {
   // Convert error to string for display
   const error = analyticsError ? 'Failed to load sidebar data' : null;
 
-  // Follow/unfollow mutations
-  const followMutation = useFollowUser();
-  const unfollowMutation = useUnfollowUser();
-
   // Batch follow status query for all top authors
   const hiveFollower = user?.isHiveAuth ? user.hiveUsername || user.username : '';
   const authorUsernames = topAuthors.map((a) => a.username);
@@ -47,48 +88,6 @@ export const RightSidebar: React.FC = () => {
   const displayedAuthors = topAuthors.filter(
     (a) => a.username !== user?.username && a.username !== user?.hiveUsername
   );
-
-  // Follow button component - receives follow state as prop from batch query
-  const FollowButton: React.FC<{ username: string; isFollowing: boolean }> = ({
-    username,
-    isFollowing,
-  }) => {
-    const handleFollowToggle = async () => {
-      if (!user?.username) return;
-
-      try {
-        if (isFollowing) {
-          await unfollowMutation.mutateAsync({
-            username,
-            follower: user.username,
-          });
-        } else {
-          await followMutation.mutateAsync({
-            username,
-            follower: user.username,
-          });
-        }
-      } catch (error) {
-        logger.error('Error toggling follow status', 'RightSidebar', error);
-      }
-    };
-
-    const isMutating = followMutation.isPending || unfollowMutation.isPending;
-
-    return (
-      <button
-        onClick={handleFollowToggle}
-        disabled={isMutating}
-        className={`rounded-md px-3 py-1 text-xs transition-colors disabled:opacity-50 ${
-          isFollowing
-            ? 'bg-muted text-muted-foreground hover:bg-muted/80'
-            : 'bg-primary text-primary-foreground hover:bg-primary/90'
-        }`}
-      >
-        {isMutating ? '...' : isFollowing ? 'Following' : 'Follow'}
-      </button>
-    );
-  };
 
   // Real-time events data
   const {

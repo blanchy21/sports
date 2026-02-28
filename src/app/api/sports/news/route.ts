@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRequestContext } from '@/lib/api/response';
+import { logger } from '@/lib/logger';
 
 interface ESPNArticle {
   id: string;
@@ -84,14 +85,14 @@ async function fetchESPNNews(sport: string, league: string): Promise<ESPNArticle
     });
 
     if (!response.ok) {
-      console.error(`ESPN API error for ${sport}/${league}: ${response.status}`);
+      logger.error(`ESPN API error for ${sport}/${league}: ${response.status}`, 'sports-news');
       return [];
     }
 
     const data: ESPNResponse = await response.json();
     return data.articles || [];
   } catch (error) {
-    console.error(`Error fetching ESPN news for ${sport}/${league}:`, error);
+    logger.error(`Error fetching ESPN news for ${sport}/${league}`, 'sports-news', error);
     return [];
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { createRequestContext, validationError, notFoundError } from '@/lib/api/response';
+import { logger } from '@/lib/logger';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import { SoftPost } from '@/types/auth';
 
@@ -74,7 +75,7 @@ async function getSoftPostsByCommunity(
         }) as SoftPost
     );
   } catch (error) {
-    console.error('[community/posts] Error fetching soft posts by community:', error);
+    logger.error('Error fetching soft posts by community', 'community-posts', error);
     return [];
   }
 }

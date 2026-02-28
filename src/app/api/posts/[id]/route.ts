@@ -11,6 +11,7 @@ import {
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
 import { createRequestContext } from '@/lib/api/response';
+import { logger } from '@/lib/logger';
 
 const ROUTE = '/api/posts/[id]';
 
@@ -74,10 +75,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
           }
         })
         .catch((err: unknown) => {
-          console.error(
-            'Failed to increment view count:',
-            err instanceof Error ? err.message : err
-          );
+          logger.error('Failed to increment view count', 'posts-by-id', err);
         });
     } else {
       // Redis unavailable — increment anyway (graceful fallback)
@@ -87,10 +85,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
           data: { viewCount: { increment: 1 } },
         })
         .catch((err: unknown) => {
-          console.error(
-            'Failed to increment view count:',
-            err instanceof Error ? err.message : err
-          );
+          logger.error('Failed to increment view count', 'posts-by-id', err);
         });
     }
 

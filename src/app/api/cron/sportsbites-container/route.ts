@@ -8,6 +8,7 @@ import {
 } from '@/lib/hive-workerbee/sportsbites';
 import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -123,7 +124,7 @@ export async function GET() {
       blockNum: result.blockNum,
     });
   } catch (error) {
-    console.error('[Cron] Sportsbites container creation failed:', error);
+    logger.error('Sportsbites container creation failed', 'cron-sportsbites', error);
     return NextResponse.json(
       {
         success: false,
