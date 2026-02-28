@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   Plus,
@@ -16,6 +16,7 @@ import {
   DollarSign,
   Newspaper,
   LayoutDashboard,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -35,8 +36,15 @@ const navLinkClass = (isActive: boolean) =>
 
 export function MobileNavMenu({ onClose }: MobileNavMenuProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  const handleLogout = async () => {
+    onClose();
+    await logout();
+    router.push('/auth');
+  };
 
   return (
     <div className="border-t border-border/50 bg-white/80 backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.85)] lg:hidden">
@@ -145,6 +153,16 @@ export function MobileNavMenu({ onClose }: MobileNavMenuProps) {
             />
           </div>
         </button>
+
+        {user && (
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-destructive transition-all duration-200 hover:bg-destructive/10"
+          >
+            <LogOut className="h-5 w-5" />
+            <span>Logout @{user.username}</span>
+          </button>
+        )}
       </nav>
     </div>
   );
