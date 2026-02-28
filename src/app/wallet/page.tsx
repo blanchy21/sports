@@ -228,6 +228,12 @@ export default function WalletPage() {
           </div>
         </div>
 
+        <MedalsTokenSection
+          walletUsername={walletUsername || user.username}
+          onTransferClick={() => setTransferModalOpen(true)}
+          onSwapClick={() => setSwapModalOpen(true)}
+        />
+
         <HiveBalanceCard
           showBalances={showBalances}
           hivePrice={hivePrice}
@@ -248,12 +254,6 @@ export default function WalletPage() {
           liquidHbdBalance={user.liquidHbdBalance || 0}
           savingsHbdBalance={user.savingsHbdBalance || 0}
           savingsApr={user.savingsApr ?? null}
-        />
-
-        <MedalsTokenSection
-          walletUsername={walletUsername || user.username}
-          onTransferClick={() => setTransferModalOpen(true)}
-          onSwapClick={() => setSwapModalOpen(true)}
         />
 
         <CryptoPricesGrid bitcoinPrice={bitcoinPrice} ethereumPrice={ethereumPrice} />

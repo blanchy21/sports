@@ -18,7 +18,7 @@ import {
   RefreshCw,
   AlertCircle,
   Coins,
-  ExternalLink,
+  ArrowDownUp,
 } from 'lucide-react';
 
 interface WalletCardProps {
@@ -28,6 +28,8 @@ interface WalletCardProps {
   onStakeClick?: () => void;
   /** Callback when send/transfer button is clicked */
   onSendClick?: () => void;
+  /** Callback when buy button is clicked */
+  onBuyClick?: () => void;
   /** Additional className */
   className?: string;
   /** Compact mode for sidebar/smaller spaces */
@@ -124,6 +126,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
   account,
   onStakeClick,
   onSendClick,
+  onBuyClick,
   className,
   compact = false,
 }) => {
@@ -196,21 +199,15 @@ export const WalletCard: React.FC<WalletCardProps> = ({
               <ArrowUpRight className="mr-1 h-3 w-3" />
               Send
             </Button>
-            <a
-              href="https://tribaldex.com/trade/MEDALS"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1"
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 border-warning/30 text-warning hover:bg-warning/10"
+              onClick={onBuyClick}
             >
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full border-warning/30 text-warning hover:bg-warning/10"
-              >
-                <ExternalLink className="mr-1 h-3 w-3" />
-                Buy
-              </Button>
-            </a>
+              <ArrowDownUp className="mr-1 h-3 w-3" />
+              Buy
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -308,20 +305,14 @@ export const WalletCard: React.FC<WalletCardProps> = ({
           <ArrowUpRight className="mr-2 h-4 w-4" />
           Send MEDALS
         </Button>
-        <a
-          href="https://tribaldex.com/trade/MEDALS"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1"
+        <Button
+          variant="outline"
+          className="flex-1 border-warning/30 text-warning hover:bg-warning/10"
+          onClick={onBuyClick}
         >
-          <Button
-            variant="outline"
-            className="w-full border-warning/30 text-warning hover:bg-warning/10"
-          >
-            <ExternalLink className="mr-2 h-4 w-4" />
-            Buy MEDALS
-          </Button>
-        </a>
+          <ArrowDownUp className="mr-2 h-4 w-4" />
+          Buy MEDALS
+        </Button>
       </CardFooter>
     </Card>
   );

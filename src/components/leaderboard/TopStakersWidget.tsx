@@ -10,7 +10,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Avatar } from '@/components/core/Avatar';
 import { getHiveAvatarUrl } from '@/lib/utils/avatar';
-import { Medal, AlertCircle, ExternalLink } from 'lucide-react';
+import { Medal, AlertCircle, ArrowDownUp } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface StakerEntry {
@@ -121,15 +121,13 @@ export function TopStakersWidget({ className }: { className?: string }) {
           >
             View full leaderboard
           </Link>
-          <a
-            href="https://tribaldex.com/trade/MEDALS"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-2 flex items-center justify-center gap-1 text-sm text-amber-600 hover:text-amber-700 hover:underline"
+          <Link
+            href="/wallet"
+            className="mt-2 flex items-center justify-center gap-1 text-sm text-amber-600 hover:text-amber-700 hover:underline dark:text-amber-400 dark:hover:text-amber-300"
           >
-            Buy MEDALS on Tribaldex
-            <ExternalLink className="h-3 w-3" />
-          </a>
+            <ArrowDownUp className="h-3 w-3" />
+            Buy MEDALS
+          </Link>
         </>
       ) : (
         <div className="text-sm text-muted-foreground">No stakers found</div>
