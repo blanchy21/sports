@@ -308,8 +308,23 @@ export function PredictionBiteCard({
           )}
 
           {prediction.status === 'SETTLED' && winningOutcome && (
-            <div className="rounded-lg bg-success/10 px-3 py-2 text-sm text-success">
-              Winner: <span className="font-semibold">{winningOutcome.label}</span>
+            <div className="space-y-2 rounded-lg bg-success/10 px-3 py-2 text-sm text-success">
+              <div>
+                Winner: <span className="font-semibold">{winningOutcome.label}</span>
+              </div>
+              {winningOutcome.stakers && winningOutcome.stakers.length > 0 && (
+                <div className="space-y-1 border-t border-success/20 pt-2">
+                  <p className="text-xs font-medium text-success/80">Payouts</p>
+                  {winningOutcome.stakers.map((s) => (
+                    <div key={s.username} className="flex items-center justify-between text-xs">
+                      <span>@{s.username}</span>
+                      <span className="font-semibold">
+                        {s.payout ? `${s.payout.toFixed(3)} MEDALS` : `${s.amount} staked`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

@@ -27,12 +27,19 @@ export function serializePrediction(
     let stakers: OutcomeStaker[] | undefined;
     if (prediction.stakes) {
       const outcomeStakes = prediction.stakes.filter((s) => s.outcomeId === outcome.id);
-      const byUser = new Map<string, number>();
+      const byUser = new Map<string, { amount: number; payout: number }>();
       for (const s of outcomeStakes) {
-        byUser.set(s.username, (byUser.get(s.username) ?? 0) + decimalToNumber(s.amount));
+        const prev = byUser.get(s.username) ?? { amount: 0, payout: 0 };
+        prev.amount += decimalToNumber(s.amount);
+        if (s.payout) prev.payout += decimalToNumber(s.payout);
+        byUser.set(s.username, prev);
       }
       stakers = [...byUser.entries()]
-        .map(([username, amount]) => ({ username, amount }))
+        .map(([username, { amount, payout }]) => ({
+          username,
+          amount,
+          ...(payout > 0 ? { payout } : {}),
+        }))
         .sort((a, b) => b.amount - a.amount)
         .slice(0, 5);
     }

@@ -14,6 +14,8 @@ import type { PredictionStatus } from '@/generated/prisma/client';
 export interface OutcomeStaker {
   username: string;
   amount: number;
+  /** Payout amount (only present on settled predictions for winning outcome) */
+  payout?: number;
 }
 
 /** Serialized outcome for API responses */
