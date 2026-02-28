@@ -157,6 +157,9 @@ export const RightSidebar: React.FC = () => {
           )}
         </div>
 
+        {/* Top MEDALS Stakers */}
+        <TopStakersWidget />
+
         {/* Top Authors */}
         <div className="rounded-lg border bg-card p-4">
           <div className="mb-4 flex items-center space-x-2">
@@ -315,9 +318,6 @@ export const RightSidebar: React.FC = () => {
             <div className="text-sm text-muted-foreground">No upcoming events found</div>
           )}
         </div>
-
-        {/* Top MEDALS Stakers */}
-        <TopStakersWidget />
 
         {/* Trending Sports */}
         <div className="rounded-lg border bg-card p-4">
