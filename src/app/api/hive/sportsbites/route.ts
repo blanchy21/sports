@@ -26,6 +26,18 @@ interface FeedCache {
 
 const feedCache = new Map<string, FeedCache>();
 const singleCache = new Map<string, { data: unknown; expiresAt: number }>();
+const MAX_FEED_CACHE_SIZE = 500;
+const MAX_SINGLE_CACHE_SIZE = 300;
+let sportsbiteRequestCount = 0;
+
+/** Evict oldest entry when cache exceeds max size */
+function boundedCacheSet<K, V>(map: Map<K, V>, key: K, value: V, maxSize: number) {
+  if (map.size >= maxSize) {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) map.delete(oldest);
+  }
+  map.set(key, value);
+}
 
 function cleanupCache() {
   const now = Date.now();
@@ -68,7 +80,8 @@ export async function GET(request: NextRequest) {
   const { limit, before, author, permlink } = parseResult.data;
   const now = Date.now();
 
-  if (Math.random() < 0.1) cleanupCache();
+  // Deterministic cleanup every 20 requests
+  if (++sportsbiteRequestCount % 20 === 0) cleanupCache();
 
   const ctx = createRequestContext(ROUTE);
   try {
@@ -93,10 +106,15 @@ export async function GET(request: NextRequest) {
       });
 
       if (sportsbite) {
-        singleCache.set(cacheKey, {
-          data: sportsbite,
-          expiresAt: now + SINGLE_CACHE_DURATION,
-        });
+        boundedCacheSet(
+          singleCache,
+          cacheKey,
+          {
+            data: sportsbite,
+            expiresAt: now + SINGLE_CACHE_DURATION,
+          },
+          MAX_SINGLE_CACHE_SIZE
+        );
       }
 
       return NextResponse.json({
@@ -133,11 +151,16 @@ export async function GET(request: NextRequest) {
       backoffMultiplier: 2,
     });
 
-    feedCache.set(feedCacheKey, {
-      data: result,
-      timestamp: now,
-      expiresAt: now + CACHE_DURATION,
-    });
+    boundedCacheSet(
+      feedCache,
+      feedCacheKey,
+      {
+        data: result,
+        timestamp: now,
+        expiresAt: now + CACHE_DURATION,
+      },
+      MAX_FEED_CACHE_SIZE
+    );
 
     return NextResponse.json({
       success: result.success,

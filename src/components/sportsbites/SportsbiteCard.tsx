@@ -25,6 +25,7 @@ import { useUserProfileCard } from '@/lib/react-query/queries/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { cn, formatDate } from '@/lib/utils/client';
+import { sportsbiteToBookmarkable } from '@/lib/utils/bookmark-helpers';
 import { extractMediaFromBody } from '@/lib/hive-workerbee/shared';
 import type {
   Sportsbite,
@@ -91,6 +92,11 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
     [biteText]
   );
 
+  const bookmarkPost = React.useMemo(
+    () => sportsbiteToBookmarkable(sportsbite, biteText),
+    [sportsbite, biteText]
+  );
+
   const allImages = React.useMemo(() => {
     const metadataImages = sportsbite.images || [];
     const gifs = sportsbite.gifs || [];
@@ -115,33 +121,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const postLike = {
-      postType: 'sportsblock' as const,
-      id: 0,
-      author: sportsbite.author,
-      permlink: sportsbite.permlink,
-      title: biteText.substring(0, 50) + (biteText.length > 50 ? '...' : ''),
-      body: sportsbite.body,
-      created: sportsbite.created,
-      last_update: sportsbite.created,
-      depth: 1,
-      children: sportsbite.children,
-      net_votes: sportsbite.net_votes,
-      active_votes: sportsbite.active_votes,
-      pending_payout_value: sportsbite.pending_payout_value,
-      total_pending_payout_value: sportsbite.pending_payout_value,
-      curator_payout_value: '0 HBD',
-      author_payout_value: '0 HBD',
-      max_accepted_payout: '1000000.000 HBD',
-      percent_hbd: 10000,
-      allow_votes: true,
-      allow_curation_rewards: true,
-      json_metadata: '{}',
-      parent_author: '',
-      parent_permlink: '',
-      isSportsblockPost: true as const,
-    };
-    toggleBookmark(postLike as unknown as Parameters<typeof toggleBookmark>[0]);
+    toggleBookmark(bookmarkPost);
   };
 
   const handleUpvoteList = () => {
@@ -166,33 +146,6 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const sportInfo = sportsbite.sportCategory
     ? SPORT_CATEGORIES.find((s) => s.id === sportsbite.sportCategory)
     : null;
-
-  const bookmarkObj = {
-    postType: 'sportsblock' as const,
-    id: 0,
-    author: sportsbite.author,
-    permlink: sportsbite.permlink,
-    title: biteText.substring(0, 50),
-    body: sportsbite.body,
-    created: sportsbite.created,
-    last_update: sportsbite.created,
-    depth: 1,
-    children: sportsbite.children,
-    net_votes: sportsbite.net_votes,
-    active_votes: sportsbite.active_votes,
-    pending_payout_value: sportsbite.pending_payout_value,
-    total_pending_payout_value: sportsbite.pending_payout_value,
-    curator_payout_value: '0 HBD',
-    author_payout_value: '0 HBD',
-    max_accepted_payout: '1000000.000 HBD',
-    percent_hbd: 10000,
-    allow_votes: true,
-    allow_curation_rewards: true,
-    json_metadata: '{}',
-    parent_author: '',
-    parent_permlink: '',
-    isSportsblockPost: true as const,
-  };
 
   const isOwner =
     (authType === 'hive' && hiveUser?.username === sportsbite.author) ||
@@ -654,15 +607,13 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           onClick={handleBookmark}
           className={cn(
             'h-8 w-8 p-0 text-muted-foreground transition-all hover:bg-warning/10 hover:text-warning',
-            isBookmarked(bookmarkObj as unknown as Parameters<typeof isBookmarked>[0]) &&
-              'text-warning'
+            isBookmarked(bookmarkPost) && 'text-warning'
           )}
         >
           <Bookmark
             className={cn(
               'h-4 w-4 transition-transform',
-              isBookmarked(bookmarkObj as unknown as Parameters<typeof isBookmarked>[0]) &&
-                'scale-110 fill-current'
+              isBookmarked(bookmarkPost) && 'scale-110 fill-current'
             )}
           />
         </Button>

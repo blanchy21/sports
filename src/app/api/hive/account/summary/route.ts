@@ -15,6 +15,17 @@ interface AccountCache {
 }
 
 const accountCache = new Map<string, AccountCache>();
+const MAX_ACCOUNT_CACHE_SIZE = 200;
+let accountRequestCount = 0;
+
+/** Evict oldest entry when cache exceeds max size */
+function boundedCacheSet<K, V>(map: Map<K, V>, key: K, value: V, maxSize: number) {
+  if (map.size >= maxSize) {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) map.delete(oldest);
+  }
+  map.set(key, value);
+}
 
 // Cleanup old cache entries periodically
 function cleanupCache() {
@@ -73,8 +84,8 @@ export async function GET(request: NextRequest) {
   const { username } = parseResult.data;
   const now = Date.now();
 
-  // Periodically cleanup cache
-  if (Math.random() < 0.1) cleanupCache();
+  // Deterministic cleanup every 20 requests
+  if (++accountRequestCount % 20 === 0) cleanupCache();
 
   // Check cache first
   const cached = accountCache.get(username);
@@ -106,12 +117,17 @@ export async function GET(request: NextRequest) {
 
     const serializedAccount = serializeAccount(account);
 
-    // Cache the result
-    accountCache.set(username, {
-      account: serializedAccount,
-      timestamp: now,
-      expiresAt: now + CACHE_DURATION,
-    });
+    // Cache the result (bounded to prevent unbounded growth)
+    boundedCacheSet(
+      accountCache,
+      username,
+      {
+        account: serializedAccount,
+        timestamp: now,
+        expiresAt: now + CACHE_DURATION,
+      },
+      MAX_ACCOUNT_CACHE_SIZE
+    );
 
     return NextResponse.json(
       {
@@ -126,7 +142,7 @@ export async function GET(request: NextRequest) {
     // Try to return stale cache data on error (graceful degradation)
     const staleCache = accountCache.get(username);
     if (staleCache) {
-      console.log('[Account Summary API] Returning stale cache due to error');
+      ctx.log.info('Returning stale cache due to error');
       return NextResponse.json({
         success: true,
         account: staleCache.account,

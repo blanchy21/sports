@@ -44,7 +44,7 @@ import { useBroadcast } from '@/hooks/useBroadcast';
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 interface ComposeSportsbiteProps {
-  onSuccess?: (bite: Sportsbite) => void;
+  onSuccess?: (bite: Sportsbite | null) => void;
   onError?: (error: string) => void;
   matchThreadEventId?: string;
   /** When true, default to prediction mode and hide the take/prediction toggle */
@@ -441,7 +441,7 @@ export function ComposeSportsbite({
       setComposeMode('take');
 
       // No optimistic bite for predictions — they'll appear via feed refetch
-      onSuccess?.(null as unknown as Sportsbite);
+      onSuccess?.(null);
     } catch (error) {
       logger.error('Error creating prediction', 'ComposeSportsbite', error);
       onError?.(error instanceof Error ? error.message : 'Failed to create prediction');

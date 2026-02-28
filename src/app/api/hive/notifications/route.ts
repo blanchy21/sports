@@ -19,6 +19,17 @@ interface NotificationCache {
 }
 
 const notificationCache = new Map<string, NotificationCache>();
+const MAX_NOTIFICATION_CACHE_SIZE = 200;
+let notificationRequestCount = 0;
+
+/** Evict oldest entry when cache exceeds max size */
+function boundedCacheSet<K, V>(map: Map<K, V>, key: K, value: V, maxSize: number) {
+  if (map.size >= maxSize) {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) map.delete(oldest);
+  }
+  map.set(key, value);
+}
 
 // Cleanup old cache entries periodically
 function cleanupCache() {
@@ -86,8 +97,8 @@ export async function GET(request: NextRequest) {
   const sinceDate = parsedSince && !Number.isNaN(parsedSince.getTime()) ? parsedSince : null;
   const now = Date.now();
 
-  // Periodically cleanup cache
-  if (Math.random() < 0.1) cleanupCache();
+  // Deterministic cleanup every 20 requests
+  if (++notificationRequestCount % 20 === 0) cleanupCache();
 
   // Generate cache key based on username and since parameter
   const cacheKey = `${username}:${since || 'all'}:${limit}`;
@@ -149,13 +160,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Cache the results
-    notificationCache.set(cacheKey, {
-      notifications,
-      count: notifications.length,
-      timestamp: now,
-      expiresAt: now + CACHE_DURATION,
-    });
+    // Cache the results (bounded to prevent unbounded growth)
+    boundedCacheSet(
+      notificationCache,
+      cacheKey,
+      {
+        notifications,
+        count: notifications.length,
+        timestamp: now,
+        expiresAt: now + CACHE_DURATION,
+      },
+      MAX_NOTIFICATION_CACHE_SIZE
+    );
 
     return NextResponse.json({
       success: true,

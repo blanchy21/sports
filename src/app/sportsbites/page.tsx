@@ -57,7 +57,7 @@ export default function SportsBitesPage() {
   }, [followingData]);
 
   const handlePostSuccess = useCallback(
-    (bite: Sportsbite) => {
+    (bite: Sportsbite | null) => {
       addToast(toast.success('Posted!', 'Your sportsbite is live.'));
       setOptimisticBite(bite);
     },
