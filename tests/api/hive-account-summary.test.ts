@@ -95,6 +95,6 @@ describe('GET /api/hive/account/summary', () => {
     expect(response.status).toBe(502);
     expect(response.body.success).toBe(false);
     expect(response.body.code).toBe('UPSTREAM_ERROR');
-    expect(response.body.error).toBe('Hive RPC down');
+    expect(response.body.error).toBe('Blockchain service temporarily unavailable');
   });
 });

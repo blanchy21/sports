@@ -2,11 +2,12 @@ import { Client, PrivateKey } from '@hiveio/dhive';
 import { prisma } from '@/lib/db/prisma';
 import { PredictionStatus } from '@/generated/prisma/client';
 import { calculateSettlement } from './odds';
-import { buildPayoutOps, buildFeeOps, buildRefundOps } from './escrow';
+import { buildPayoutOps, buildFeeOps, type FeeOps, buildRefundOps } from './escrow';
 import type { SettlementResult } from './types';
 import { logger } from '@/lib/logger';
+import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
 
-const dhive = new Client(['https://api.hive.blog', 'https://api.deathwing.me', 'https://anyx.io']);
+const dhive = new Client(HIVE_NODES);
 
 function getEscrowActiveKey(): PrivateKey {
   const activeKey = process.env.SP_PREDICTIONS_ACTIVE_KEY;
@@ -137,21 +138,25 @@ export async function executeSettlement(
   }
 
   try {
-    // Broadcast fee ops (burn + reward) — skip if already done on a prior attempt
-    if (!prediction.feeTxId) {
-      const feeOps = buildFeeOps(settlement.platformFee, predictionId);
-      if (feeOps.length > 0) {
-        const feeTxId = await broadcastHiveEngineOps(feeOps);
-        await prisma.prediction.update({
-          where: { id: predictionId },
-          data: { feeTxId },
-        });
-        logger.info(`Fee ops broadcast: ${feeTxId}`, 'Settlement', { predictionId });
-      }
-    } else {
-      logger.info(`Fee ops already broadcast (${prediction.feeTxId}), skipping`, 'Settlement', {
-        predictionId,
+    // Broadcast fee ops (burn + reward) separately for independent idempotency
+    const feeOps: FeeOps = buildFeeOps(settlement.platformFee, predictionId);
+
+    if (feeOps.burn && !prediction.feeBurnTxId) {
+      const txId = await broadcastHiveEngineOps([feeOps.burn]);
+      await prisma.prediction.update({
+        where: { id: predictionId },
+        data: { feeBurnTxId: txId },
       });
+      logger.info(`Fee burn broadcast: ${txId}`, 'Settlement', { predictionId });
+    }
+
+    if (feeOps.reward && !prediction.feeRewardTxId) {
+      const txId = await broadcastHiveEngineOps([feeOps.reward]);
+      await prisma.prediction.update({
+        where: { id: predictionId },
+        data: { feeRewardTxId: txId },
+      });
+      logger.info(`Fee reward broadcast: ${txId}`, 'Settlement', { predictionId });
     }
 
     // Broadcast payout ops to winners — per-stake for idempotency

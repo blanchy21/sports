@@ -16,6 +16,30 @@ const ROUTE = '/api/unified/posts';
 // Prisma helpers for querying soft posts
 // ============================================
 
+// Select all columns except `content` for list queries (content is 10-50KB per post).
+const LIST_SELECT = {
+  id: true,
+  authorId: true,
+  authorUsername: true,
+  authorDisplayName: true,
+  authorAvatar: true,
+  title: true,
+  excerpt: true,
+  permlink: true,
+  tags: true,
+  sportCategory: true,
+  featuredImage: true,
+  communityId: true,
+  communitySlug: true,
+  communityName: true,
+  createdAt: true,
+  updatedAt: true,
+  isPublishedToHive: true,
+  hivePermlink: true,
+  viewCount: true,
+  likeCount: true,
+} as const;
+
 async function getSoftPostsByUsername(
   username: string,
   postsLimit: number,
@@ -23,6 +47,7 @@ async function getSoftPostsByUsername(
   excludePublishedToHive = false
 ): Promise<SoftPost[]> {
   const posts = await prisma.post.findMany({
+    select: LIST_SELECT,
     where: {
       authorUsername: username,
       ...(before && { createdAt: { lt: new Date(before) } }),
@@ -42,6 +67,7 @@ async function getSoftPostsByAuthorId(
   excludePublishedToHive = false
 ): Promise<SoftPost[]> {
   const posts = await prisma.post.findMany({
+    select: LIST_SELECT,
     where: {
       authorId,
       ...(before && { createdAt: { lt: new Date(before) } }),
@@ -64,6 +90,7 @@ async function getAllSoftPosts(
   if (excludePublishedToHive) where.isPublishedToHive = false;
 
   const posts = await prisma.post.findMany({
+    select: LIST_SELECT,
     where: Object.keys(where).length > 0 ? where : undefined,
     orderBy: { createdAt: 'desc' },
     take: postsLimit,
@@ -79,7 +106,6 @@ function postToSoftPost(post: {
   authorDisplayName: string | null;
   authorAvatar: string | null;
   title: string;
-  content: string;
   excerpt: string | null;
   permlink: string;
   tags: string[];
@@ -102,7 +128,7 @@ function postToSoftPost(post: {
     authorDisplayName: post.authorDisplayName ?? undefined,
     authorAvatar: post.authorAvatar ?? undefined,
     title: post.title,
-    content: post.content,
+    content: post.excerpt || '',
     excerpt: post.excerpt ?? undefined,
     permlink: post.permlink,
     tags: post.tags || [],
@@ -202,7 +228,7 @@ function softPostToUnified(post: SoftPost): UnifiedPost {
     author: post.authorUsername || 'unknown',
     permlink: post.permlink,
     title: post.title,
-    body: post.content,
+    body: post.excerpt || '',
     excerpt: post.excerpt,
     created:
       post.createdAt instanceof Date

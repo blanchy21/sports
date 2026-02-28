@@ -62,6 +62,37 @@ export const formatDateTime = (date: Date | string): string => {
   });
 };
 
+/**
+ * Relative time string (e.g. "5m ago", "3d ago")
+ * Finer granularity than formatDate — includes minutes and months.
+ */
+export function timeAgo(dateString: string): string {
+  const now = Date.now();
+  const then = new Date(dateString).getTime();
+  const seconds = Math.floor((now - then) / 1000);
+
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
+
+/**
+ * Compact number format for token amounts (e.g. "1.2K", "3.5M").
+ * Shows "0" for zero, locale-formatted integer for small values.
+ */
+export function formatCompact(amount: number): string {
+  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M`;
+  if (amount >= 1_000) return `${(amount / 1_000).toFixed(1)}K`;
+  if (amount === 0) return '0';
+  return amount.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
 export const formatReadTime = (wordCount: number): string => {
   const wordsPerMinute = 200;
   const minutes = Math.ceil(wordCount / wordsPerMinute);

@@ -164,34 +164,22 @@ export async function POST(request: NextRequest) {
       const existing = await prisma.reaction.findUnique({
         where: { userId_sportsbiteId: { userId: user.userId, sportsbiteId } },
       });
-      const existingEmoji: ReactionEmoji | null = existing
-        ? (existing.emoji as ReactionEmoji)
-        : null;
 
       let action: 'added' | 'removed' | 'swapped';
 
-      if (existingEmoji === emoji) {
-        // Same emoji — remove reaction
-        await prisma.reaction.delete({ where: { id: existing!.id } });
+      if (existing?.emoji === emoji) {
+        // Same emoji — remove reaction (toggle off)
+        await prisma.reaction.delete({ where: { id: existing.id } });
         action = 'removed';
-      } else if (existingEmoji) {
-        // Different emoji — swap reaction
-        await prisma.reaction.update({
-          where: { id: existing!.id },
-          data: { emoji, createdAt: new Date() },
-        });
-        action = 'swapped';
       } else {
-        // No existing — add reaction
-        await prisma.reaction.create({
-          data: {
-            userId: user.userId,
-            sportsbiteId,
-            emoji,
-            createdAt: new Date(),
-          },
+        // Upsert handles both "no existing" (create) and "different emoji" (update) atomically,
+        // preventing P2002 unique constraint violations from concurrent requests.
+        await prisma.reaction.upsert({
+          where: { userId_sportsbiteId: { userId: user.userId, sportsbiteId } },
+          create: { userId: user.userId, sportsbiteId, emoji, createdAt: new Date() },
+          update: { emoji, createdAt: new Date() },
         });
-        action = 'added';
+        action = existing ? 'swapped' : 'added';
       }
 
       // Fetch updated counts via aggregation
@@ -214,63 +202,67 @@ export async function POST(request: NextRequest) {
 // ============================================
 
 export async function PATCH(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    const body = await request.json();
-    const parseResult = batchCheckSchema.safeParse(body);
+    try {
+      const body = await request.json();
+      const parseResult = batchCheckSchema.safeParse(body);
 
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
-
-    const { sportsbiteIds } = parseResult.data;
-    const user = await getAuthenticatedUserFromSession(request);
-
-    // Batch query: all reaction counts grouped by sportsbiteId + emoji
-    const allCounts = await prisma.reaction.groupBy({
-      by: ['sportsbiteId', 'emoji'],
-      where: { sportsbiteId: { in: sportsbiteIds } },
-      _count: true,
-    });
-
-    // Batch query: user's reactions for all requested IDs
-    const userReactions: Array<{ sportsbiteId: string; emoji: string }> = user
-      ? await prisma.reaction.findMany({
-          where: { userId: user.userId, sportsbiteId: { in: sportsbiteIds } },
-          select: { sportsbiteId: true, emoji: true },
-        })
-      : [];
-
-    // Build lookup maps
-    const userReactionMap = new Map(userReactions.map((r) => [r.sportsbiteId, r.emoji]));
-
-    // Aggregate into response shape
-    const results: Record<string, { counts: ReactionCounts; userReaction: ReactionEmoji | null }> =
-      {};
-
-    for (const id of sportsbiteIds) {
-      results[id] = {
-        counts: { ...DEFAULT_COUNTS },
-        userReaction: (userReactionMap.get(id) as ReactionEmoji) ?? null,
-      };
-    }
-
-    for (const row of allCounts) {
-      const entry = results[row.sportsbiteId];
-      if (entry && row.emoji in entry.counts && row.emoji !== 'total') {
-        entry.counts[row.emoji as keyof Omit<ReactionCounts, 'total'>] = row._count;
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
       }
-      if (entry) {
-        entry.counts.total += row._count;
-      }
-    }
 
-    return NextResponse.json({
-      success: true,
-      results,
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+      const { sportsbiteIds } = parseResult.data;
+      const user = await getAuthenticatedUserFromSession(request);
+
+      // Batch query: all reaction counts grouped by sportsbiteId + emoji
+      const allCounts = await prisma.reaction.groupBy({
+        by: ['sportsbiteId', 'emoji'],
+        where: { sportsbiteId: { in: sportsbiteIds } },
+        _count: true,
+      });
+
+      // Batch query: user's reactions for all requested IDs
+      const userReactions: Array<{ sportsbiteId: string; emoji: string }> = user
+        ? await prisma.reaction.findMany({
+            where: { userId: user.userId, sportsbiteId: { in: sportsbiteIds } },
+            select: { sportsbiteId: true, emoji: true },
+          })
+        : [];
+
+      // Build lookup maps
+      const userReactionMap = new Map(userReactions.map((r) => [r.sportsbiteId, r.emoji]));
+
+      // Aggregate into response shape
+      const results: Record<
+        string,
+        { counts: ReactionCounts; userReaction: ReactionEmoji | null }
+      > = {};
+
+      for (const id of sportsbiteIds) {
+        results[id] = {
+          counts: { ...DEFAULT_COUNTS },
+          userReaction: (userReactionMap.get(id) as ReactionEmoji) ?? null,
+        };
+      }
+
+      for (const row of allCounts) {
+        const entry = results[row.sportsbiteId];
+        if (entry && row.emoji in entry.counts && row.emoji !== 'total') {
+          entry.counts[row.emoji as keyof Omit<ReactionCounts, 'total'>] = row._count;
+        }
+        if (entry) {
+          entry.counts.total += row._count;
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        results,
+      });
+    } catch (error) {
+      return ctx.handleError(error);
+    }
+  });
 }

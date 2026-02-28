@@ -319,58 +319,62 @@ export async function POST(request: NextRequest) {
 // ============================================
 
 export async function PATCH(request: NextRequest) {
-  // Rate limiting
-  const clientId = getClientIdentifier(request);
-  const rateLimit = await checkRateLimit(clientId, RATE_LIMITS.read, 'followsRead');
-  if (!rateLimit.success) {
-    return NextResponse.json(
-      { success: false, error: 'Rate limit exceeded' },
-      {
-        status: 429,
-        headers: createRateLimitHeaders(0, rateLimit.reset, RATE_LIMITS.read.limit),
-      }
-    );
-  }
-
-  const ctx = createRequestContext(ROUTE);
-
-  try {
-    const user = await getAuthenticatedUserFromSession(request);
-
-    const body = await request.json();
-    const parseResult = checkFollowSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
+  return withCsrfProtection(request, async () => {
+    // Rate limiting
+    const clientId = getClientIdentifier(request);
+    const rateLimit = await checkRateLimit(clientId, RATE_LIMITS.read, 'followsRead');
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { success: false, error: 'Rate limit exceeded' },
+        {
+          status: 429,
+          headers: createRateLimitHeaders(0, rateLimit.reset, RATE_LIMITS.read.limit),
+        }
+      );
     }
 
-    const { targetUserId } = parseResult.data;
+    const ctx = createRequestContext(ROUTE);
 
-    // Run follow-check and both count queries in parallel
-    const followCheckPromise =
-      user && user.userId !== targetUserId
-        ? prisma.follow.findUnique({
-            where: { followerId_followedId: { followerId: user.userId, followedId: targetUserId } },
-          })
-        : Promise.resolve(null);
+    try {
+      const user = await getAuthenticatedUserFromSession(request);
 
-    const [followDoc, followerCount, followingCount] = await Promise.all([
-      followCheckPromise,
-      prisma.follow.count({ where: { followedId: targetUserId } }),
-      prisma.follow.count({ where: { followerId: targetUserId } }),
-    ]);
+      const body = await request.json();
+      const parseResult = checkFollowSchema.safeParse(body);
 
-    const isFollowing = !!followDoc;
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
+      }
 
-    return NextResponse.json({
-      success: true,
-      isFollowing,
-      stats: {
-        followerCount,
-        followingCount,
-      },
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+      const { targetUserId } = parseResult.data;
+
+      // Run follow-check and both count queries in parallel
+      const followCheckPromise =
+        user && user.userId !== targetUserId
+          ? prisma.follow.findUnique({
+              where: {
+                followerId_followedId: { followerId: user.userId, followedId: targetUserId },
+              },
+            })
+          : Promise.resolve(null);
+
+      const [followDoc, followerCount, followingCount] = await Promise.all([
+        followCheckPromise,
+        prisma.follow.count({ where: { followedId: targetUserId } }),
+        prisma.follow.count({ where: { followerId: targetUserId } }),
+      ]);
+
+      const isFollowing = !!followDoc;
+
+      return NextResponse.json({
+        success: true,
+        isFollowing,
+        stats: {
+          followerCount,
+          followingCount,
+        },
+      });
+    } catch (error) {
+      return ctx.handleError(error);
+    }
+  });
 }

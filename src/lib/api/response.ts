@@ -681,7 +681,7 @@ export function handleApiError(
 
     // Upstream/blockchain errors
     if (message.includes('hive') || message.includes('blockchain') || message.includes('node')) {
-      return upstreamError(error.message, requestId);
+      return upstreamError('Blockchain service temporarily unavailable', requestId);
     }
   }
 

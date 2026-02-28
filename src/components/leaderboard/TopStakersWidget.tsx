@@ -14,6 +14,7 @@ import { SwapModal } from '@/components/medals';
 import { useAuth } from '@/contexts/AuthContext';
 import { Medal, AlertCircle, ArrowDownUp } from 'lucide-react';
 import { logger } from '@/lib/logger';
+import { formatCompact } from '@/lib/utils/formatting';
 
 interface StakerEntry {
   rank: number;
@@ -21,13 +22,6 @@ interface StakerEntry {
   staked: number;
   total: number;
   premiumTier: string | null;
-}
-
-function formatCompact(amount: number): string {
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(1)}K`;
-  if (amount === 0) return '0';
-  return amount.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
 function getRankBadgeClass(rank: number): string {

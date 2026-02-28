@@ -23,23 +23,8 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
+import { timeAgo } from '@/lib/utils/formatting';
 import type { PredictionBite } from '@/lib/predictions/types';
-
-function timeAgo(dateString: string): string {
-  const now = Date.now();
-  const then = new Date(dateString).getTime();
-  const seconds = Math.floor((now - then) / 1000);
-
-  if (seconds < 60) return 'just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
-}
 
 function formatCountdown(locksAt: string): string {
   const remaining = new Date(locksAt).getTime() - Date.now();

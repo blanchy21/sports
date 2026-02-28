@@ -21,6 +21,7 @@ import {
   Check,
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatCompact } from '@/lib/utils/formatting';
 
 interface StakingRankCardProps {
   account: string;
@@ -63,13 +64,6 @@ const TIER_ORDER: {
     bgColor: 'bg-purple-50 dark:bg-purple-900/20',
   },
 ];
-
-function formatCompact(amount: number): string {
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(1)}K`;
-  if (amount === 0) return '0';
-  return amount.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
 
 export const StakingRankCard: React.FC<StakingRankCardProps> = ({ account, className }) => {
   const { data: stakeInfo, isLoading: stakeLoading } = useMedalsStake(account);

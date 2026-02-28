@@ -194,71 +194,73 @@ export async function POST(request: NextRequest) {
 // ============================================
 
 export async function PATCH(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+  return withCsrfProtection(request, async () => {
+    const ctx = createRequestContext(ROUTE);
 
-  try {
-    const body = await request.json();
-    const parseResult = batchCheckSchema.safeParse(body);
+    try {
+      const body = await request.json();
+      const parseResult = batchCheckSchema.safeParse(body);
 
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
-
-    const { sportsbiteIds } = parseResult.data;
-    const user = await getAuthenticatedUserFromSession(request);
-
-    // Batch query: all vote counts grouped by sportsbiteId + option
-    const allCounts = await prisma.pollVote.groupBy({
-      by: ['sportsbiteId', 'option'],
-      where: { sportsbiteId: { in: sportsbiteIds } },
-      _count: true,
-    });
-
-    // Batch query: user's votes for all requested IDs
-    const userVotes: Array<{ sportsbiteId: string; option: number }> = user
-      ? await prisma.pollVote.findMany({
-          where: { userId: user.userId, sportsbiteId: { in: sportsbiteIds } },
-          select: { sportsbiteId: true, option: true },
-        })
-      : [];
-
-    // Build lookup map
-    const userVoteMap = new Map(
-      userVotes.map((v: { sportsbiteId: string; option: number }) => [
-        v.sportsbiteId,
-        v.option as 0 | 1,
-      ])
-    );
-
-    // Aggregate into response shape
-    const results: Record<
-      string,
-      { results: PollResults; userVote: 0 | 1 | null; hasVoted: boolean }
-    > = {};
-
-    for (const id of sportsbiteIds) {
-      const vote = userVoteMap.get(id);
-      results[id] = {
-        results: { option0Count: 0, option1Count: 0, totalVotes: 0 },
-        userVote: vote ?? null,
-        hasVoted: vote !== undefined,
-      };
-    }
-
-    for (const row of allCounts) {
-      const entry = results[row.sportsbiteId];
-      if (entry) {
-        if (row.option === 0) entry.results.option0Count = row._count;
-        else entry.results.option1Count = row._count;
-        entry.results.totalVotes += row._count;
+      if (!parseResult.success) {
+        return validationError(parseResult.error, ctx.requestId);
       }
-    }
 
-    return NextResponse.json({
-      success: true,
-      results,
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
+      const { sportsbiteIds } = parseResult.data;
+      const user = await getAuthenticatedUserFromSession(request);
+
+      // Batch query: all vote counts grouped by sportsbiteId + option
+      const allCounts = await prisma.pollVote.groupBy({
+        by: ['sportsbiteId', 'option'],
+        where: { sportsbiteId: { in: sportsbiteIds } },
+        _count: true,
+      });
+
+      // Batch query: user's votes for all requested IDs
+      const userVotes: Array<{ sportsbiteId: string; option: number }> = user
+        ? await prisma.pollVote.findMany({
+            where: { userId: user.userId, sportsbiteId: { in: sportsbiteIds } },
+            select: { sportsbiteId: true, option: true },
+          })
+        : [];
+
+      // Build lookup map
+      const userVoteMap = new Map(
+        userVotes.map((v: { sportsbiteId: string; option: number }) => [
+          v.sportsbiteId,
+          v.option as 0 | 1,
+        ])
+      );
+
+      // Aggregate into response shape
+      const results: Record<
+        string,
+        { results: PollResults; userVote: 0 | 1 | null; hasVoted: boolean }
+      > = {};
+
+      for (const id of sportsbiteIds) {
+        const vote = userVoteMap.get(id);
+        results[id] = {
+          results: { option0Count: 0, option1Count: 0, totalVotes: 0 },
+          userVote: vote ?? null,
+          hasVoted: vote !== undefined,
+        };
+      }
+
+      for (const row of allCounts) {
+        const entry = results[row.sportsbiteId];
+        if (entry) {
+          if (row.option === 0) entry.results.option0Count = row._count;
+          else entry.results.option1Count = row._count;
+          entry.results.totalVotes += row._count;
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        results,
+      });
+    } catch (error) {
+      return ctx.handleError(error);
+    }
+  });
 }
