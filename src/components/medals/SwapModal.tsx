@@ -252,7 +252,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
               <span>1 MEDALS = {quote.averagePrice.toFixed(6)} HIVE</span>
             </div>
             <div className="flex items-center justify-between text-muted-foreground">
-              <span>Fee (1%)</span>
+              <span>Fee (0.5%)</span>
               <span>{formatHive(quote.fee)} HIVE</span>
             </div>
             <div className="flex items-center justify-between text-muted-foreground">
@@ -329,7 +329,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-amber-700 dark:text-amber-400">Fee (1%)</span>
+              <span className="text-amber-700 dark:text-amber-400">Fee (0.5%)</span>
               <span className="text-amber-900 dark:text-amber-200">
                 {quote ? formatHive(quote.fee) : '–'} HIVE
               </span>
@@ -359,7 +359,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
         <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
           <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground/70" />
           <p>
-            This will send a 1% fee, deposit HIVE to Hive Engine, and place a market buy order for
+            This will send a 0.5% fee, deposit HIVE to Hive Engine, and place a market buy order for
             MEDALS. Keychain will prompt you to sign three operations in one transaction.
           </p>
         </div>
@@ -422,7 +422,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
             <span className="font-medium text-foreground">{formatHive(amountNum)} HIVE</span>
           </div>
           <div className="mt-2 flex items-center justify-between text-muted-foreground">
-            <span>Fee (1%)</span>
+            <span>Fee (0.5%)</span>
             <span className="font-medium text-foreground">
               {quote ? formatHive(quote.fee) : '–'} HIVE
             </span>

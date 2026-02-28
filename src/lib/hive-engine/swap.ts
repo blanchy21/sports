@@ -15,8 +15,8 @@ import type { HiveOperation } from '@/types/hive-operations';
 const DEPOSIT_ACCOUNT = 'honey-swap';
 const DEPOSIT_MEMO = 'SWAP.HIVE';
 
-/** Platform swap fee: 1% sent to the main sportsblock account */
-export const SWAP_FEE_PERCENT = 0.01;
+/** Platform swap fee: 0.5% sent to the main sportsblock account */
+export const SWAP_FEE_PERCENT = 0.005;
 const FEE_RECIPIENT = MEDALS_CONFIG.ACCOUNTS.MAIN;
 
 /** Slippage buffer added on top of worst fill price (0.5%) */
