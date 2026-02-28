@@ -59,6 +59,9 @@ next-env.d.ts
 /playwright-report/
 /playwright/.cache/
 
+# Lighthouse
+/lighthouse-reports/
+
 # Code review notes (local only)
 /code-review/
 .env*.local
