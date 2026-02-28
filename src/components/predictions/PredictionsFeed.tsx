@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger';
 type StatusFilter = 'all' | 'OPEN' | 'SETTLED';
 
 const STATUS_TABS: { value: StatusFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
+  { value: 'all', label: 'Upcoming' },
   { value: 'OPEN', label: 'Open' },
   { value: 'SETTLED', label: 'Settled' },
 ];

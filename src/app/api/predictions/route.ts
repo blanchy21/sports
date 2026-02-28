@@ -38,8 +38,16 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
   // Sort by locksAt ASC for open/all (soonest fixture first), createdAt DESC for settled
   const sortByLocksAt = params.status !== 'SETTLED';
 
+  // Active statuses for the default feed — exclude terminal states
+  const ACTIVE_STATUSES: PredictionStatus[] = ['OPEN', 'LOCKED', 'SETTLING'];
+
   const where: Record<string, unknown> = {};
-  if (params.status) where.status = params.status;
+  if (params.status) {
+    where.status = params.status;
+  } else {
+    // Default: only show active predictions (not settled/void/refunded)
+    where.status = { in: ACTIVE_STATUSES };
+  }
   if (params.sport) where.sportCategory = params.sport;
   if (params.creator) where.creatorUsername = params.creator;
   if (params.cursor) {
