@@ -1,6 +1,6 @@
 import React from 'react';
 import { Medal, ArrowDownUp, ArrowRightLeft } from 'lucide-react';
-import { StakingPanel, MarketInfo } from '@/components/medals';
+import { StakingPanel, StakingRankCard, MarketInfo } from '@/components/medals';
 import { Button } from '@/components/core/Button';
 
 interface MedalsTokenSectionProps {
@@ -50,5 +50,7 @@ export const MedalsTokenSection: React.FC<MedalsTokenSectionProps> = ({
         </div>
       </div>
     </div>
+
+    <StakingRankCard account={walletUsername} className="mt-6" />
   </div>
 );

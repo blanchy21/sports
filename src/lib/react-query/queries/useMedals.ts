@@ -38,11 +38,17 @@ export interface MedalsStakeInfo {
   }>;
   delegatedIn: string;
   delegatedOut: string;
+  effectiveStake: string;
   delegations: {
     incoming: Array<{ from: string; quantity: string }>;
     outgoing: Array<{ to: string; quantity: string }>;
   };
   estimatedAPY: string;
+  estimatedWeeklyReward: string;
+  premiumTier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | null;
+  stakeShare: string;
+  totalStakedNetwork: string;
+  weeklyRewardPool: string;
   stakingEnabled: boolean;
   unstakingCooldown: number;
   timestamp: string;
@@ -86,6 +92,23 @@ export interface MedalsHistory {
   timestamp: string;
 }
 
+export interface LeaderboardHolder {
+  rank: number;
+  account: string;
+  staked: number;
+  liquid: number;
+  delegatedIn: number;
+  delegatedOut: number;
+  total: number;
+  premiumTier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | null;
+}
+
+export interface LeaderboardData {
+  holders: LeaderboardHolder[];
+  totalHolders: number;
+  timestamp: string;
+}
+
 // API fetch functions
 async function fetchMedalsBalance(account: string): Promise<MedalsBalance> {
   const response = await fetch(`/api/hive-engine/balance?account=${encodeURIComponent(account)}`);
@@ -107,6 +130,14 @@ async function fetchMedalsMarket(): Promise<MedalsMarket> {
   const response = await fetch('/api/hive-engine/market');
   if (!response.ok) {
     throw new Error('Failed to fetch market data');
+  }
+  return response.json();
+}
+
+async function fetchMedalsLeaderboard(): Promise<LeaderboardData> {
+  const response = await fetch('/api/hive-engine/leaderboard');
+  if (!response.ok) {
+    throw new Error('Failed to fetch leaderboard');
   }
   return response.json();
 }
@@ -147,6 +178,14 @@ export function useMedalsStake(account: string | undefined) {
     queryFn: () => fetchMedalsStake(account!),
     enabled: !!account,
     staleTime: STALE_TIMES.REALTIME,
+  });
+}
+
+export function useMedalsLeaderboard() {
+  return useQuery({
+    queryKey: queryKeys.medals.leaderboard(),
+    queryFn: fetchMedalsLeaderboard,
+    staleTime: STALE_TIMES.STANDARD,
   });
 }
 

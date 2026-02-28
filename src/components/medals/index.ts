@@ -13,6 +13,7 @@ export {
 
 export { WalletCard } from './WalletCard';
 export { StakingPanel } from './StakingPanel';
+export { StakingRankCard } from './StakingRankCard';
 export { TransferModal } from './TransferModal';
 export { SwapModal } from './SwapModal';
 export { TransactionHistory } from './TransactionHistory';

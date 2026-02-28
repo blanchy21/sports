@@ -181,66 +181,58 @@ export function sanitizeHtml(dirty: string, strict = false): string {
 }
 
 /**
- * Check if a line looks like a markdown table row (has pipes)
+ * Check if a line looks like a markdown table row (has pipes).
+ * Leading/trailing pipes are optional (common in Hive posts).
  */
 function isTableRow(line: string): boolean {
   const trimmed = line.trim();
-  return trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 1;
+  return trimmed.includes('|') && trimmed.length > 1;
 }
 
 /**
- * Check if a line is a table separator (e.g. |---|---|)
+ * Check if a line is a table separator (e.g. |---|---| or |-|-|-|-|)
+ * Leading/trailing pipes are optional.
  */
 function isTableSeparator(line: string): boolean {
   const trimmed = line.trim();
-  if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) return false;
-  // All cells should be dashes with optional colons for alignment
-  const cells = trimmed.slice(1, -1).split('|');
-  return cells.every((cell) => /^\s*:?-{1,}:?\s*$/.test(cell));
+  if (!trimmed.includes('|')) return false;
+  // Strip optional leading/trailing pipes, then split
+  const stripped = trimmed.replace(/^\|/, '').replace(/\|$/, '');
+  const cells = stripped.split('|');
+  return cells.length >= 1 && cells.every((cell) => /^\s*:?-{1,}:?\s*$/.test(cell));
 }
 
 /**
- * Parse cells from a table row
+ * Parse cells from a table row.
+ * Handles rows with or without leading/trailing pipes.
  */
 function parseTableRow(line: string): string[] {
-  const trimmed = line.trim();
-  // Remove leading/trailing pipes and split
-  return trimmed
-    .slice(1, -1)
-    .split('|')
-    .map((cell) => cell.trim());
+  let trimmed = line.trim();
+  // Remove optional leading/trailing pipes
+  if (trimmed.startsWith('|')) trimmed = trimmed.slice(1);
+  if (trimmed.endsWith('|')) trimmed = trimmed.slice(0, -1);
+  return trimmed.split('|').map((cell) => cell.trim());
 }
 
 /**
- * Parse column alignments from a separator row
+ * Parse column alignments from a separator row.
+ * Returns Tailwind class names for text alignment.
  */
 function parseAlignments(line: string): string[] {
-  const trimmed = line.trim();
-  return trimmed
-    .slice(1, -1)
-    .split('|')
-    .map((cell) => {
-      const c = cell.trim();
-      if (c.startsWith(':') && c.endsWith(':')) return 'center';
-      if (c.endsWith(':')) return 'right';
-      return 'left';
-    });
+  let trimmed = line.trim();
+  if (trimmed.startsWith('|')) trimmed = trimmed.slice(1);
+  if (trimmed.endsWith('|')) trimmed = trimmed.slice(0, -1);
+  return trimmed.split('|').map((cell) => {
+    const c = cell.trim();
+    if (c.startsWith(':') && c.endsWith(':')) return 'text-center';
+    if (c.endsWith(':')) return 'text-right';
+    return 'text-left';
+  });
 }
 
 /**
- * Escape HTML special characters to prevent XSS when building HTML strings
- */
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-/**
- * Convert markdown table syntax to HTML tables
+ * Convert markdown table syntax to HTML tables.
+ * Handles tables with or without leading/trailing pipes (common on Hive).
  */
 function convertMarkdownTables(content: string): string {
   const lines = content.split('\n');
@@ -250,24 +242,29 @@ function convertMarkdownTables(content: string): string {
   while (i < lines.length) {
     if (i + 1 < lines.length && isTableRow(lines[i]) && isTableSeparator(lines[i + 1])) {
       const headerCells = parseTableRow(lines[i]);
+      const columnCount = headerCells.length;
       const alignments = parseAlignments(lines[i + 1]);
 
       let html = '<table><thead><tr>';
       headerCells.forEach((cell, j) => {
-        const align = alignments[j] || 'left';
-        html += `<th style="text-align:${align}">${escapeHtml(cell)}</th>`;
+        const align = alignments[j] || 'text-left';
+        html += `<th class="${align}">${cell}</th>`;
       });
       html += '</tr></thead><tbody>';
 
       i += 2; // Skip header and separator
 
+      // Data rows: must contain pipes and produce a similar column count
       while (i < lines.length && isTableRow(lines[i])) {
         const cells = parseTableRow(lines[i]);
+        // Stop if column count diverges significantly (not a table row)
+        if (cells.length < columnCount - 1 || cells.length > columnCount + 1) break;
         html += '<tr>';
-        cells.forEach((cell, j) => {
-          const align = alignments[j] || 'left';
-          html += `<td style="text-align:${align}">${escapeHtml(cell)}</td>`;
-        });
+        for (let j = 0; j < columnCount; j++) {
+          const align = alignments[j] || 'text-left';
+          const cellContent = j < cells.length ? cells[j] : '';
+          html += `<td class="${align}">${cellContent}</td>`;
+        }
         html += '</tr>';
         i++;
       }
@@ -308,10 +305,19 @@ export function sanitizePostContent(content: string): string {
     // Convert <center> to div (non-standard but common in Hive)
     .replace(/<center>/gi, '<div class="text-center my-4">')
     .replace(/<\/center>/gi, '</div>')
-    // Convert markdown images to HTML (must be before links to avoid collision)
+    // Convert Hive/Steemit pull-left/pull-right classes to Tailwind float equivalents
+    .replace(/class="pull-right"/gi, 'class="float-right ml-4 mb-2 max-w-[200px]"')
+    .replace(/class="pull-left"/gi, 'class="float-left mr-4 mb-2 max-w-[200px]"')
+    // Convert markdown images to HTML first (before bare URL detection)
     .replace(
       /!\[([^\]]*)\]\(([^)]+)\)/g,
       '<img src="$2" alt="$1" class="max-w-full h-auto rounded-lg shadow-md my-4" loading="lazy" />'
+    )
+    // Convert bare image URLs to img tags (common in Hive posts).
+    // Matches URLs ending in image extensions that are NOT already inside an attribute
+    .replace(
+      /(?<!=["'])(https?:\/\/[^\s<>"]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s<>"]*)?)/gi,
+      '<img src="$1" class="max-w-full h-auto rounded-lg shadow-md my-4" loading="lazy" />'
     )
     // Convert markdown links to HTML [text](url)
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
