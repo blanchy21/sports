@@ -28,6 +28,22 @@ function getKeychain() {
   return window.hive_keychain;
 }
 
+/** Keychain sometimes returns objects instead of strings for errors. */
+function stringifyError(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object') {
+    const msg =
+      (value as Record<string, unknown>).message ?? (value as Record<string, unknown>).error;
+    if (typeof msg === 'string') return msg;
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return value ? String(value) : '';
+}
+
 // ---------------------------------------------------------------------------
 // Login — sign a message to prove key ownership
 // ---------------------------------------------------------------------------
@@ -54,10 +70,12 @@ export function keychainLogin(username: string, message: string): Promise<Wallet
           signature: (response.result as string) || undefined,
         });
       } else {
-        const msg = response.error || response.message || 'Keychain login failed';
+        const msg =
+          stringifyError(response.error) ||
+          stringifyError(response.message) ||
+          'Keychain login failed';
         const cancelled =
-          typeof msg === 'string' &&
-          (msg.toLowerCase().includes('cancel') || msg.toLowerCase().includes('denied'));
+          msg.toLowerCase().includes('cancel') || msg.toLowerCase().includes('denied');
         resolve({ success: false, error: msg, cancelled });
       }
     });
@@ -90,7 +108,10 @@ export function keychainSignMessage(username: string, message: string): Promise<
       } else {
         resolve({
           success: false,
-          error: response.error || response.message || 'Failed to sign message',
+          error:
+            stringifyError(response.error) ||
+            stringifyError(response.message) ||
+            'Failed to sign message',
         });
       }
     });
@@ -139,7 +160,10 @@ export function keychainBroadcast(
         } else {
           resolve({
             success: false,
-            error: response.error || response.message || 'Broadcast failed',
+            error:
+              stringifyError(response.error) ||
+              stringifyError(response.message) ||
+              'Broadcast failed',
           });
         }
       }
