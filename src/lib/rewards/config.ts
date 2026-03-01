@@ -161,3 +161,4 @@ export const TOKEN_CONFIG = {
   PRECISION: 3,
   CONTRACT_ID: 'ssc-mainnet-hive',
 } as const;
+// branch protection test - 1772402864
