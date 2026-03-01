@@ -10,7 +10,7 @@ import React from 'react';
 import { Trophy, Calendar, Coins, Users } from 'lucide-react';
 import {
   CONTENT_REWARDS,
-  getWeeklyStakingPool,
+  STAKING_APR,
   getPlatformYear,
   CURATOR_REWARDS,
 } from '@/lib/rewards/config';
@@ -22,7 +22,7 @@ interface WeeklyRewardsSummaryProps {
 
 export function WeeklyRewardsSummary({ weekId, compact = false }: WeeklyRewardsSummaryProps) {
   const platformYear = getPlatformYear();
-  const stakingPool = getWeeklyStakingPool();
+  const stakingAprPercent = STAKING_APR * 100;
 
   // Calculate content rewards total
   const contentRewardsTotal = Object.values(CONTENT_REWARDS).reduce((sum, reward) => {
@@ -41,7 +41,7 @@ export function WeeklyRewardsSummary({ weekId, compact = false }: WeeklyRewardsS
     7 *
     (platformYear >= 4 ? CURATOR_REWARDS.AMOUNT_Y4_PLUS : CURATOR_REWARDS.AMOUNT_Y1_3);
 
-  const totalWeekly = stakingPool + contentRewardsTotal + curatorPotential;
+  const contentAndCuratorTotal = contentRewardsTotal + curatorPotential;
 
   if (compact) {
     return (
@@ -49,10 +49,10 @@ export function WeeklyRewardsSummary({ weekId, compact = false }: WeeklyRewardsS
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-warning" />
-            <span className="font-semibold">Weekly Rewards Pool</span>
+            <span className="font-semibold">Weekly Rewards</span>
           </div>
           <div className="text-lg font-bold text-primary">
-            {totalWeekly.toLocaleString()} MEDALS
+            {stakingAprPercent}% APR + {contentAndCuratorTotal.toLocaleString()} MEDALS
           </div>
         </div>
       </div>
@@ -88,8 +88,8 @@ export function WeeklyRewardsSummary({ weekId, compact = false }: WeeklyRewardsS
             <Coins className="h-5 w-5 text-info" />
             <span className="font-medium">Staking Rewards</span>
           </div>
-          <p className="text-2xl font-bold text-info">{stakingPool.toLocaleString()}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Distributed to all stakers</p>
+          <p className="text-2xl font-bold text-info">{stakingAprPercent}% APR</p>
+          <p className="mt-1 text-xs text-muted-foreground">Distributed weekly to all stakers</p>
         </div>
 
         {/* Content Rewards */}
@@ -147,7 +147,7 @@ export function WeeklyRewardsSummary({ weekId, compact = false }: WeeklyRewardsS
       <div className="mt-4 flex items-center justify-between border-t pt-4">
         <span className="text-lg font-medium">Total Weekly Distribution</span>
         <span className="text-2xl font-bold text-primary">
-          ~{totalWeekly.toLocaleString()} MEDALS
+          {stakingAprPercent}% APR + ~{contentAndCuratorTotal.toLocaleString()} MEDALS
         </span>
       </div>
     </div>

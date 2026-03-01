@@ -13,7 +13,7 @@ import { getWeekId } from '@/lib/rewards/staking-distribution';
 import { getDailyKey } from '@/lib/rewards/curator-rewards';
 import {
   getPlatformYear,
-  getWeeklyStakingPool,
+  STAKING_APR,
   getCuratorRewardAmount,
   CURATOR_REWARDS,
 } from '@/lib/rewards/config';
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     const metrics = {
       stakingRewards: {
         lastDistribution: null as string | null,
-        weeklyPool: getWeeklyStakingPool(),
+        stakingApr: STAKING_APR * 100,
         totalStakers: stakingMetrics.status === 'fulfilled' ? stakingMetrics.value : 0,
         totalStaked: 0,
         weekId,
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
 
     const config = {
       platformYear: getPlatformYear(),
-      weeklyPool: getWeeklyStakingPool(),
+      stakingApr: STAKING_APR * 100,
       curatorRewardAmount: getCuratorRewardAmount(),
       curatorCount: CURATOR_REWARDS.CURATOR_COUNT,
     };

@@ -165,8 +165,8 @@ describe('Hive Engine Operations', () => {
     it('should build curator reward operation', () => {
       const op = buildCuratorRewardOp('curator1', 'author1', 'my-post');
 
-      // MEDALS_CONFIG.ACCOUNTS.REWARDS = 'sb.rewards'
-      expect(op.required_auths).toEqual(['sb.rewards']);
+      // MEDALS_CONFIG.ACCOUNTS.REWARDS = 'sportsblock'
+      expect(op.required_auths).toEqual(['sportsblock']);
 
       const payload = JSON.parse(op.json);
       expect(payload.contractPayload.to).toBe('author1');

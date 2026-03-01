@@ -367,53 +367,31 @@ export async function getAccountPremiumTier(account: string): Promise<PremiumTie
 // ============================================================================
 
 /**
- * Get current staking pool based on year
+ * @deprecated Under the 10% APR model, the pool is totalStaked * 0.10 / 52.
+ * Kept for backward compatibility.
  */
 export function getCurrentStakingPool(): number {
-  const startYear = 2025; // Project start year
-  const currentYear = new Date().getFullYear();
-  const yearsActive = currentYear - startYear + 1;
-
-  if (yearsActive <= 1) return MEDALS_CONFIG.STAKING_POOLS.YEAR_1;
-  if (yearsActive === 2) return MEDALS_CONFIG.STAKING_POOLS.YEAR_2;
-  if (yearsActive === 3) return MEDALS_CONFIG.STAKING_POOLS.YEAR_3;
-  return MEDALS_CONFIG.STAKING_POOLS.YEAR_4_PLUS;
+  return 0; // No fixed pool — use STAKING_APR instead
 }
 
 /**
- * Calculate estimated APY for staking
+ * Returns the fixed staking APR (10%).
+ * Under the APR model every staker earns the same rate regardless of total staked.
  */
-export async function calculateEstimatedAPY(
-  userStake: number,
-  symbol: string = MEDALS_CONFIG.SYMBOL
-): Promise<number> {
+export async function calculateEstimatedAPY(userStake: number, _symbol?: string): Promise<number> {
   if (userStake <= 0) return 0;
-
-  const totalStaked = await getTotalStaked(symbol);
-  if (totalStaked <= 0) return 0;
-
-  const weeklyPool = getCurrentStakingPool();
-  const weeklyReward = (userStake / totalStaked) * weeklyPool;
-  const annualReward = weeklyReward * 52;
-  const apy = (annualReward / userStake) * 100;
-
-  return Math.round(apy * 100) / 100; // Round to 2 decimal places
+  return 10; // Fixed 10% APR
 }
 
 /**
- * Calculate estimated weekly reward for a stake amount
+ * Calculate estimated weekly reward for a stake amount (10% APR / 52 weeks).
  */
 export async function calculateWeeklyReward(
   stakeAmount: number,
-  symbol: string = MEDALS_CONFIG.SYMBOL
+  _symbol?: string
 ): Promise<number> {
   if (stakeAmount <= 0) return 0;
-
-  const totalStaked = await getTotalStaked(symbol);
-  if (totalStaked <= 0) return 0;
-
-  const weeklyPool = getCurrentStakingPool();
-  return (stakeAmount / totalStaked) * weeklyPool;
+  return (stakeAmount * 0.1) / 52;
 }
 
 // ============================================================================

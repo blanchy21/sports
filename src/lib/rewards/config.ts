@@ -9,13 +9,19 @@
  * Platform accounts for MEDALS token operations
  */
 export const MEDALS_ACCOUNTS = {
-  /** Main platform account */
+  /** Main platform account (also the rewards source — 5.25M MEDALS liquid) */
   MAIN: 'sportsblock',
-  /** Account holding reward pool for distribution */
-  REWARDS: 'sp-blockrewards',
+  /** Account used for reward distribution transfers */
+  REWARDS: 'sportsblock',
   /** Burn account for deflationary mechanics */
   BURN: 'medals-burn',
 } as const;
+
+/**
+ * Fixed annual percentage rate for staking rewards.
+ * Each staker earns (staked * STAKING_APR / 52) MEDALS per week.
+ */
+export const STAKING_APR = 0.1;
 
 /**
  * Get the current platform year (1-indexed)
@@ -42,13 +48,14 @@ export const WEEKLY_STAKING_REWARDS: Record<number, number> = {
 };
 
 /**
- * Get the weekly staking reward pool for the current year
+ * Get the weekly staking reward pool for a given total staked amount.
+ * Under the 10% APR model, the pool = totalStaked * STAKING_APR / 52.
+ *
+ * @deprecated Prefer calculating per-staker rewards directly via STAKING_APR.
+ *             Kept for backward compatibility — returns 0 without totalStaked.
  */
-export function getWeeklyStakingPool(): number {
-  const year = getPlatformYear();
-  // Year 4+ all get the same amount
-  if (year >= 4) return WEEKLY_STAKING_REWARDS[4];
-  return WEEKLY_STAKING_REWARDS[year] || WEEKLY_STAKING_REWARDS[1];
+export function getWeeklyStakingPool(totalStaked: number = 0): number {
+  return (totalStaked * STAKING_APR) / 52;
 }
 
 /**

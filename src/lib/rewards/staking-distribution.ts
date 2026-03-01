@@ -5,7 +5,8 @@
  * to all MEDALS token stakers.
  */
 
-import { getWeeklyStakingPool, MEDALS_ACCOUNTS, MINIMUMS } from './config';
+import { STAKING_APR, MEDALS_ACCOUNTS, MINIMUMS } from './config';
+import { MEDALS_CONFIG } from '@/lib/hive-engine/constants';
 
 /**
  * Represents a staker's information for reward calculation
@@ -35,6 +36,8 @@ export interface DistributionResult {
   distributions: RewardDistribution[];
   timestamp: Date;
   weekId: string;
+  /** Annual percentage rate used for this distribution (e.g. 10) */
+  apr: number;
 }
 
 /**
@@ -50,54 +53,55 @@ export function getWeekId(date: Date = new Date()): string {
   // Get first day of year
   const yearStart = new Date(d.getFullYear(), 0, 1);
   // Calculate full weeks to nearest Thursday
-  const weekNo = Math.ceil(
-    ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
-  );
+  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   return `${d.getFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
 }
 
 /**
- * Calculate staking rewards for all eligible stakers
+ * Calculate staking rewards for all eligible stakers using a fixed 10% APR.
+ *
+ * Each staker earns: staked * STAKING_APR / 52 per week.
+ * Founder accounts are excluded from rewards.
  *
  * @param stakers - Array of all staker accounts with their staked amounts
  * @returns Distribution result with calculated rewards
  */
-export function calculateStakingRewards(
-  stakers: StakerInfo[]
-): DistributionResult {
-  const weeklyPool = getWeeklyStakingPool();
+export function calculateStakingRewards(stakers: StakerInfo[]): DistributionResult {
   const timestamp = new Date();
   const weekId = getWeekId(timestamp);
+  const founders = new Set(MEDALS_CONFIG.ACCOUNTS.FOUNDERS);
 
-  // Filter out accounts below minimum threshold
+  // Filter: above minimum threshold AND not a founder
   const eligibleStakers = stakers.filter(
-    (s) => s.staked >= MINIMUMS.STAKING_REWARD_THRESHOLD
+    (s) => s.staked >= MINIMUMS.STAKING_REWARD_THRESHOLD && !founders.has(s.account)
   );
 
-  // Calculate total staked among eligible stakers
+  // Total staked among eligible stakers (for record-keeping)
   const totalStaked = eligibleStakers.reduce((sum, s) => sum + s.staked, 0);
+  const weeklyPool = Number(((totalStaked * STAKING_APR) / 52).toFixed(3));
 
   // If no one is staking, return empty distribution
   if (totalStaked === 0) {
     return {
-      weeklyPool,
+      weeklyPool: 0,
       totalStaked: 0,
       stakerCount: stakers.length,
       eligibleStakerCount: 0,
       distributions: [],
       timestamp,
       weekId,
+      apr: STAKING_APR * 100,
     };
   }
 
-  // Calculate proportional rewards
+  // Each staker earns their individual APR-based reward
   const distributions: RewardDistribution[] = eligibleStakers.map((staker) => {
     const percentage = (staker.staked / totalStaked) * 100;
-    const amount = (staker.staked / totalStaked) * weeklyPool;
+    const amount = (staker.staked * STAKING_APR) / 52;
 
     return {
       account: staker.account,
-      amount: Number(amount.toFixed(3)), // MEDALS has 3 decimal precision
+      amount: Number(amount.toFixed(3)),
       percentage: Number(percentage.toFixed(4)),
     };
   });
@@ -113,6 +117,7 @@ export function calculateStakingRewards(
     distributions,
     timestamp,
     weekId,
+    apr: STAKING_APR * 100,
   };
 }
 
@@ -151,24 +156,15 @@ export function buildRewardTransferOperations(
 }
 
 /**
- * Estimate APY based on current staking data
+ * Returns the fixed staking APR (10%).
+ * Under the APR model every staker earns the same rate regardless of total staked.
  *
- * @param stakedAmount - Amount staked by the user
- * @param totalStaked - Total amount staked platform-wide
- * @returns Estimated annual percentage yield
+ * @param _stakedAmount - unused, kept for backward compat
+ * @param _totalStaked - unused, kept for backward compat
+ * @returns Annual percentage rate (10)
  */
-export function estimateStakingAPY(
-  stakedAmount: number,
-  totalStaked: number
-): number {
-  if (totalStaked === 0 || stakedAmount === 0) return 0;
-
-  const weeklyPool = getWeeklyStakingPool();
-  const weeklyReward = (stakedAmount / totalStaked) * weeklyPool;
-  const annualReward = weeklyReward * 52;
-  const apy = (annualReward / stakedAmount) * 100;
-
-  return Number(apy.toFixed(2));
+export function estimateStakingAPY(_stakedAmount?: number, _totalStaked?: number): number {
+  return STAKING_APR * 100;
 }
 
 /**

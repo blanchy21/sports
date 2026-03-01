@@ -6,16 +6,19 @@
  *
  * This endpoint:
  * 1. Fetches all MEDALS stakers from Hive Engine
- * 2. Calculates proportional rewards
- * 3. Stores distribution record for manual execution or auto-broadcast
+ * 2. Calculates 10% APR rewards (excluding founders)
+ * 3. Stores distribution record
+ * 4. Auto-broadcasts transfers from @sportsblock when SPORTSBLOCK_ACTIVE_KEY is set
  */
 
 import { NextResponse } from 'next/server';
+import { Client, PrivateKey } from '@hiveio/dhive';
 import {
   calculateStakingRewards,
   getWeekId,
   getRewardsAccount,
   validateRewardsBalance,
+  buildRewardTransferOperations,
   type StakerInfo,
   type DistributionResult,
 } from '@/lib/rewards/staking-distribution';
@@ -24,10 +27,16 @@ import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
 import { logger } from '@/lib/logger';
+import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 120;
+
+/** Max custom_json ops per Hive transaction (conservative limit) */
+const BATCH_SIZE = 40;
+
+const dhive = new Client(HIVE_NODES);
 
 /**
  * Check if rewards have already been processed for this week
@@ -60,6 +69,7 @@ async function storeDistributionRecord(
         metadata: {
           type: 'staking',
           weekId: result.weekId,
+          apr: result.apr,
           weeklyPool: result.weeklyPool,
           totalStaked: result.totalStaked,
           stakerCount: result.stakerCount,
@@ -78,6 +88,37 @@ async function storeDistributionRecord(
   } catch (dbError) {
     logger.error('Error storing distribution record', 'cron:staking-rewards', dbError);
     throw dbError;
+  }
+}
+
+/**
+ * Update existing distribution record status
+ */
+async function updateDistributionStatus(
+  weekId: string,
+  status: 'completed' | 'failed',
+  error?: string
+): Promise<void> {
+  try {
+    const record = await prisma.analyticsEvent.findFirst({
+      where: { eventType: `staking-${weekId}` },
+    });
+    if (record) {
+      const metadata = (record.metadata as Record<string, unknown>) || {};
+      await prisma.analyticsEvent.update({
+        where: { id: record.id },
+        data: {
+          metadata: {
+            ...metadata,
+            status,
+            error: error || null,
+            updatedAt: new Date().toISOString(),
+          } as unknown as Prisma.InputJsonValue,
+        },
+      });
+    }
+  } catch (dbError) {
+    logger.error('Error updating distribution status', 'cron:staking-rewards', dbError);
   }
 }
 
@@ -133,6 +174,52 @@ async function fetchAllStakers(): Promise<StakerInfo[]> {
 }
 
 /**
+ * Broadcast reward transfers in batches via Hive custom_json.
+ * Each batch contains up to BATCH_SIZE transfer ops in a single transaction.
+ */
+async function broadcastRewards(
+  distributionResult: DistributionResult,
+  activeKey: PrivateKey
+): Promise<{ batchesSent: number; totalTransfers: number }> {
+  const rewardsAccount = getRewardsAccount();
+  const transferPayloads = buildRewardTransferOperations(
+    distributionResult.distributions,
+    `Staking reward ${distributionResult.weekId} (10% APR)`
+  );
+
+  if (transferPayloads.length === 0) {
+    return { batchesSent: 0, totalTransfers: 0 };
+  }
+
+  let batchesSent = 0;
+
+  for (let i = 0; i < transferPayloads.length; i += BATCH_SIZE) {
+    const batch = transferPayloads.slice(i, i + BATCH_SIZE);
+
+    // Each transfer is a separate custom_json op in the Hive transaction
+    const ops = batch.map((payload) => [
+      'custom_json',
+      {
+        id: 'ssc-mainnet-hive',
+        required_auths: [rewardsAccount],
+        required_posting_auths: [] as string[],
+        json: JSON.stringify(payload),
+      },
+    ]);
+
+    logger.info(
+      `Broadcasting batch ${batchesSent + 1} (${batch.length} transfers, offset ${i})`,
+      'cron:staking-rewards'
+    );
+
+    await dhive.broadcast.sendOperations(ops as never[], activeKey);
+    batchesSent++;
+  }
+
+  return { batchesSent, totalTransfers: transferPayloads.length };
+}
+
+/**
  * Core staking rewards processing logic.
  * Fetches stakers, calculates rewards, validates balance, and stores the result.
  */
@@ -155,10 +242,11 @@ async function processStakingRewards(options: { forceRecalculate?: boolean }): P
   const stakers = await fetchAllStakers();
   logger.info(`Found ${stakers.length} stakers`, 'cron:staking-rewards');
 
-  // Calculate rewards
+  // Calculate rewards (APR-based, founders excluded)
   const distributionResult = calculateStakingRewards(stakers);
   logger.info(
-    `Calculated rewards: ${distributionResult.eligibleStakerCount} eligible, ${distributionResult.weeklyPool} MEDALS pool`,
+    `Calculated rewards: ${distributionResult.eligibleStakerCount} eligible, ` +
+      `${distributionResult.weeklyPool} MEDALS pool (${distributionResult.apr}% APR)`,
     'cron:staking-rewards'
   );
 
@@ -183,7 +271,9 @@ async function processStakingRewards(options: { forceRecalculate?: boolean }): P
 }
 
 /**
- * GET handler for staking rewards cron
+ * GET handler for staking rewards cron (auto-run by Vercel Cron)
+ *
+ * Calculates rewards and auto-broadcasts if SPORTSBLOCK_ACTIVE_KEY is set.
  */
 export async function GET() {
   const startTime = Date.now();
@@ -213,6 +303,7 @@ export async function GET() {
         message: 'Distribution calculated but insufficient balance for auto-execution',
         weekId,
         result: {
+          apr: distributionResult!.apr,
           weeklyPool: distributionResult!.weeklyPool,
           totalStaked: distributionResult!.totalStaked,
           eligibleStakers: distributionResult!.eligibleStakerCount,
@@ -224,11 +315,61 @@ export async function GET() {
       });
     }
 
+    // Auto-broadcast if key is available
+    const activeKeyStr = process.env.SPORTSBLOCK_ACTIVE_KEY;
+    if (activeKeyStr && distributionResult) {
+      try {
+        const activeKey = PrivateKey.fromString(activeKeyStr);
+        const broadcastResult = await broadcastRewards(distributionResult, activeKey);
+        await updateDistributionStatus(weekId, 'completed');
+
+        logger.info(
+          `Broadcast complete: ${broadcastResult.totalTransfers} transfers in ${broadcastResult.batchesSent} batches`,
+          'cron:staking-rewards'
+        );
+
+        return NextResponse.json({
+          success: true,
+          message: `Staking rewards distributed for ${weekId}`,
+          weekId,
+          result: {
+            apr: distributionResult.apr,
+            weeklyPool: distributionResult.weeklyPool,
+            totalStaked: distributionResult.totalStaked,
+            stakerCount: distributionResult.stakerCount,
+            eligibleStakers: distributionResult.eligibleStakerCount,
+            totalToDistribute,
+            broadcast: broadcastResult,
+          },
+          status: 'completed',
+          duration: Date.now() - startTime,
+        });
+      } catch (broadcastError) {
+        const errMsg =
+          broadcastError instanceof Error ? broadcastError.message : 'Broadcast failed';
+        logger.error('Broadcast failed', 'cron:staking-rewards', broadcastError);
+        await updateDistributionStatus(weekId, 'failed', errMsg);
+
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Rewards calculated but broadcast failed',
+            weekId,
+            error: errMsg,
+            status: 'failed',
+            duration: Date.now() - startTime,
+          },
+          { status: 500 }
+        );
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: `Staking rewards calculated for ${weekId}`,
+      message: `Staking rewards calculated for ${weekId} (no active key — pending manual broadcast)`,
       weekId,
       result: {
+        apr: distributionResult!.apr,
         weeklyPool: distributionResult!.weeklyPool,
         totalStaked: distributionResult!.totalStaked,
         stakerCount: distributionResult!.stakerCount,
@@ -263,7 +404,11 @@ export async function GET() {
 }
 
 /**
- * POST handler for manual trigger with options
+ * POST handler for manual trigger with options.
+ *
+ * Body: { dryRun?: boolean (default true), forceRecalculate?: boolean }
+ *
+ * When dryRun=false and SPORTSBLOCK_ACTIVE_KEY is set, broadcasts transfers.
  */
 export async function POST(request: Request) {
   const startTime = Date.now();
@@ -290,22 +435,84 @@ export async function POST(request: Request) {
 
     const { distributionResult, totalToDistribute, weekId } = result;
 
+    // Broadcast if not dry run and key is available
+    if (!dryRun && distributionResult) {
+      const activeKeyStr = process.env.SPORTSBLOCK_ACTIVE_KEY;
+      if (!activeKeyStr) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'SPORTSBLOCK_ACTIVE_KEY not configured — cannot broadcast',
+            weekId,
+            status: 'pending',
+            duration: Date.now() - startTime,
+          },
+          { status: 400 }
+        );
+      }
+
+      try {
+        const activeKey = PrivateKey.fromString(activeKeyStr);
+        const broadcastResult = await broadcastRewards(distributionResult, activeKey);
+        await updateDistributionStatus(weekId, 'completed');
+
+        return NextResponse.json({
+          success: true,
+          message: `Staking rewards distributed for ${weekId}`,
+          weekId,
+          result: {
+            apr: distributionResult.apr,
+            weeklyPool: distributionResult.weeklyPool,
+            totalStaked: distributionResult.totalStaked,
+            stakerCount: distributionResult.stakerCount,
+            eligibleStakers: distributionResult.eligibleStakerCount,
+            totalToDistribute,
+            broadcast: broadcastResult,
+          },
+          status: 'completed',
+          dryRun: false,
+          duration: Date.now() - startTime,
+        });
+      } catch (broadcastError) {
+        const errMsg =
+          broadcastError instanceof Error ? broadcastError.message : 'Broadcast failed';
+        logger.error('Broadcast failed', 'cron:staking-rewards', broadcastError);
+        await updateDistributionStatus(weekId, 'failed', errMsg);
+
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Rewards calculated but broadcast failed',
+            weekId,
+            error: errMsg,
+            status: 'failed',
+            duration: Date.now() - startTime,
+          },
+          { status: 500 }
+        );
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: `Staking rewards calculated for ${weekId}`,
       weekId,
       result: {
+        apr: distributionResult!.apr,
         weeklyPool: distributionResult!.weeklyPool,
         totalStaked: distributionResult!.totalStaked,
         stakerCount: distributionResult!.stakerCount,
         eligibleStakers: distributionResult!.eligibleStakerCount,
         totalToDistribute,
+        topRecipients: distributionResult!.distributions.slice(0, 10).map((d) => ({
+          account: d.account,
+          amount: d.amount,
+          percentage: d.percentage,
+        })),
       },
       status: 'pending',
       dryRun,
-      note: dryRun
-        ? 'Dry run - no tokens transferred. Set dryRun: false to execute.'
-        : 'Tokens would be transferred (not implemented yet - requires hot wallet)',
+      note: 'Dry run — no tokens transferred. Set dryRun: false to execute.',
       duration: Date.now() - startTime,
     });
   } catch (error) {
