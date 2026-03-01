@@ -36,7 +36,10 @@ function stringifyError(value: unknown): string {
       (value as Record<string, unknown>).message ?? (value as Record<string, unknown>).error;
     if (typeof msg === 'string') return msg;
     try {
-      return JSON.stringify(value);
+      const json = JSON.stringify(value);
+      // Empty objects/arrays are not useful error messages
+      if (json === '{}' || json === '[]') return '';
+      return json;
     } catch {
       return String(value);
     }
