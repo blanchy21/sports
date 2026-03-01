@@ -1,5 +1,6 @@
 import React from 'react';
-import { Coins } from 'lucide-react';
+import { Coins, ArrowUpRight } from 'lucide-react';
+import { Button } from '@/components/core/Button';
 import { PowerPanel } from './PowerPanel';
 import { formatUSD, formatCrypto, formatLargeNumber } from '@/lib/utils/client';
 
@@ -13,6 +14,7 @@ interface HiveBalanceCardProps {
   votingPower: number;
   walletUsername: string;
   onPowerOperationComplete: () => void;
+  onSendClick?: () => void;
 }
 
 export const HiveBalanceCard: React.FC<HiveBalanceCardProps> = ({
@@ -25,6 +27,7 @@ export const HiveBalanceCard: React.FC<HiveBalanceCardProps> = ({
   votingPower,
   walletUsername,
   onPowerOperationComplete,
+  onSendClick,
 }) => (
   <div className="rounded-lg border bg-card p-6">
     <div className="mb-4 flex items-center justify-between">
@@ -54,6 +57,12 @@ export const HiveBalanceCard: React.FC<HiveBalanceCardProps> = ({
         </p>
         {hivePrice && showBalances && (
           <p className="text-sm text-muted-foreground">{formatUSD(hiveUSDValue)}</p>
+        )}
+        {onSendClick && (
+          <Button variant="outline" size="sm" onClick={onSendClick} className="mt-2">
+            <ArrowUpRight className="mr-1.5 h-3.5 w-3.5" />
+            Send
+          </Button>
         )}
       </div>
 

@@ -26,7 +26,7 @@ export interface ContentFilters {
   author?: string;
   tag?: string;
   limit?: number;
-  sort?: 'trending' | 'created' | 'payout' | 'votes';
+  sort?: 'trending' | 'hot' | 'created' | 'payout' | 'votes';
   before?: string; // For pagination
 }
 
@@ -233,13 +233,55 @@ async function fetchTrendingPaginated(
 }
 
 /**
+ * Paginated fetcher for hot posts using get_discussions_by_hot.
+ * Same pattern as fetchTrendingPaginated.
+ */
+async function fetchHotPaginated(
+  tag: string,
+  totalLimit: number,
+  startAuthor: string = '',
+  startPermlink: string = ''
+): Promise<HivePost[]> {
+  const allPosts: HivePost[] = [];
+  let cursorAuthor = startAuthor;
+  let cursorPermlink = startPermlink;
+
+  while (allPosts.length < totalLimit) {
+    const remaining = totalLimit - allPosts.length;
+    const batchLimit = Math.min(HIVE_API_MAX_LIMIT, remaining);
+
+    const result = await getContentOptimized('get_discussions_by_hot', [
+      {
+        tag,
+        limit: batchLimit,
+        start_author: cursorAuthor,
+        start_permlink: cursorPermlink,
+      },
+    ]);
+
+    const batch = toTypedHivePosts(result);
+    if (batch.length === 0) break;
+
+    allPosts.push(...batch);
+
+    const lastPost = batch[batch.length - 1];
+    cursorAuthor = lastPost.author;
+    cursorPermlink = lastPost.permlink;
+
+    if (batch.length < batchLimit) break;
+  }
+
+  return allPosts.slice(0, totalLimit);
+}
+
+/**
  * Fetch posts from Sportsblock community using WorkerBee/Wax
  * @param filters - Content filters
  * @returns Filtered posts
  */
 export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promise<ContentResult> {
   const limit = Math.min(filters.limit || 20, 500); // Max 500 posts per request
-  let fetchedAsTrending = false; // Track if we fetched trending posts from API
+  let fetchedAsSorted = false; // Track if we fetched pre-sorted posts from API
 
   try {
     let posts: HivePost[] = [];
@@ -270,18 +312,16 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
         if (batch.length < batchLimit) break;
       }
       posts = allAuthorPosts.slice(0, limit);
-    } else if (filters.sort === 'trending') {
+    } else if (filters.sort === 'trending' || filters.sort === 'hot') {
+      const paginateFn = filters.sort === 'trending' ? fetchTrendingPaginated : fetchHotPaginated;
       if (filters.sportCategory) {
-        // Sport filter active — paginate to collect enough matching posts
-        // Fetch up to 100 raw posts so client-side filtering has enough to work with
         const rawLimit = Math.max(limit, 100);
-        posts = await fetchTrendingPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_ID, rawLimit);
+        posts = await paginateFn(SPORTS_ARENA_CONFIG.COMMUNITY_ID, rawLimit);
       } else {
-        // No sport filter — over-fetch to compensate for container posts/muted authors
         const rawLimit = Math.max(limit * 3, 30);
-        posts = await fetchTrendingPaginated(SPORTS_ARENA_CONFIG.COMMUNITY_ID, rawLimit);
+        posts = await paginateFn(SPORTS_ARENA_CONFIG.COMMUNITY_ID, rawLimit);
       }
-      fetchedAsTrending = true;
+      fetchedAsSorted = true;
     } else {
       // Chronological fetch with automatic pagination
       // Over-fetch to compensate for posts removed by filters (container posts, muted authors)
@@ -325,7 +365,7 @@ export async function fetchSportsblockPosts(filters: ContentFilters = {}): Promi
     }
 
     // Sort posts (skip if already fetched as trending from API, since API returns them sorted)
-    if (!fetchedAsTrending) {
+    if (!fetchedAsSorted) {
       filteredPosts = sortPosts(filteredPosts, filters.sort || 'created') as SportsblockPost[];
     }
 
@@ -816,6 +856,55 @@ export async function getRelatedPosts(
       error instanceof Error ? error : undefined
     );
     return [];
+  }
+}
+
+/**
+ * Fetch posts from accounts a user follows (their personalised feed).
+ * Uses `get_discussions_by_feed` — Hive does the heavy lifting.
+ *
+ * @param username - The user whose feed to fetch
+ * @param limit - Number of posts to return (max 20 per Hive API)
+ * @param startAuthor - Cursor: author of the last post from previous page
+ * @param startPermlink - Cursor: permlink of the last post from previous page
+ */
+export async function fetchFollowingFeed(
+  username: string,
+  limit: number = 20,
+  startAuthor: string = '',
+  startPermlink: string = ''
+): Promise<ContentResult> {
+  try {
+    const fetchLimit = Math.min(limit + 1, HIVE_API_MAX_LIMIT); // over-fetch by 1 to detect hasMore
+
+    const params: Record<string, unknown> = {
+      tag: username,
+      limit: fetchLimit,
+    };
+    if (startAuthor && startPermlink) {
+      params.start_author = startAuthor;
+      params.start_permlink = startPermlink;
+    }
+
+    const result = await getContentOptimized('get_discussions_by_feed', [params]);
+
+    const rawPosts = toTypedHivePosts(result);
+    const sportsblockPosts = toTypedSportsblockPosts(rawPosts);
+
+    const hasMore = sportsblockPosts.length > limit;
+    const resultPosts = sportsblockPosts.slice(0, limit);
+
+    const lastPost = resultPosts[resultPosts.length - 1];
+    const nextCursor = hasMore && lastPost ? `${lastPost.author}/${lastPost.permlink}` : undefined;
+
+    return { posts: resultPosts, hasMore, nextCursor };
+  } catch (error) {
+    logError(
+      `Error fetching following feed for ${username}`,
+      'fetchFollowingFeed',
+      error instanceof Error ? error : undefined
+    );
+    throw error;
   }
 }
 

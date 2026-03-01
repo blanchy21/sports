@@ -6,3 +6,4 @@ export { CryptoPricesGrid } from './CryptoPricesGrid';
 export { HiveBalanceCard } from './HiveBalanceCard';
 export { HBDBalanceCard } from './HBDBalanceCard';
 export { MedalsTokenSection } from './MedalsTokenSection';
+export { NativeTransferModal } from './NativeTransferModal';

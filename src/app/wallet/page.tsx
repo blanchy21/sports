@@ -12,6 +12,7 @@ import {
   HiveBalanceCard,
   HBDBalanceCard,
   MedalsTokenSection,
+  NativeTransferModal,
 } from '@/components/wallet';
 import { Button } from '@/components/core/Button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,6 +46,8 @@ export default function WalletPage() {
   const [lastAccountRefresh, setLastAccountRefresh] = useState<Date | null>(null);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [swapModalOpen, setSwapModalOpen] = useState(false);
+  const [nativeTransferOpen, setNativeTransferOpen] = useState(false);
+  const [nativeTransferCurrency, setNativeTransferCurrency] = useState<'HIVE' | 'HBD'>('HIVE');
   const hasRefreshedBalances = useRef(false);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const refreshAccountDataRef = useRef<(() => Promise<void>) | undefined>(undefined);
@@ -255,6 +258,10 @@ export default function WalletPage() {
           votingPower={user.votingPower || 0}
           walletUsername={walletUsername || user.username}
           onPowerOperationComplete={() => refreshAccountData()}
+          onSendClick={() => {
+            setNativeTransferCurrency('HIVE');
+            setNativeTransferOpen(true);
+          }}
         />
 
         <HBDBalanceCard
@@ -265,6 +272,10 @@ export default function WalletPage() {
           liquidHbdBalance={user.liquidHbdBalance || 0}
           savingsHbdBalance={user.savingsHbdBalance || 0}
           savingsApr={user.savingsApr ?? null}
+          onSendClick={() => {
+            setNativeTransferCurrency('HBD');
+            setNativeTransferOpen(true);
+          }}
         />
 
         <CryptoPricesGrid bitcoinPrice={bitcoinPrice} ethereumPrice={ethereumPrice} />
@@ -283,6 +294,20 @@ export default function WalletPage() {
           account={walletUsername || user.username}
           liquidHiveBalance={user.liquidHiveBalance || 0}
           onSwapComplete={() => refreshAccountData()}
+        />
+
+        <NativeTransferModal
+          isOpen={nativeTransferOpen}
+          onClose={() => setNativeTransferOpen(false)}
+          account={walletUsername || user.username}
+          currency={nativeTransferCurrency}
+          balance={
+            nativeTransferCurrency === 'HIVE'
+              ? user.liquidHiveBalance || 0
+              : user.liquidHbdBalance || 0
+          }
+          isCustodial={authType === 'soft'}
+          onTransferComplete={() => refreshAccountData()}
         />
       </div>
     </MainLayout>

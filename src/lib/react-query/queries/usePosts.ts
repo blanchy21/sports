@@ -1,14 +1,18 @@
 import { useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
-import {
-  fetchSportsblockPosts,
-  fetchTrendingPosts,
-  fetchHotPosts,
-  fetchPost,
-} from '@/lib/hive-workerbee/content';
-import { ContentFilters } from '@/lib/hive-workerbee/content';
 import { STALE_TIMES, getPostStaleTime } from '@/lib/constants/cache';
 import { SportsblockPost } from '@/lib/shared/types';
+
+// Locally defined — matches the server-side ContentFilters interface
+// without importing the WASM-dependent content module.
+interface ContentFilters {
+  sportCategory?: string;
+  author?: string;
+  tag?: string;
+  limit?: number;
+  sort?: 'trending' | 'hot' | 'created' | 'payout' | 'votes';
+  before?: string;
+}
 
 // API response type for feed posts
 interface FeedPostsResponse {
@@ -152,10 +156,39 @@ async function fetchFeedPosts(params: {
   };
 }
 
+async function fetchPostsViaApi(filters: ContentFilters): Promise<SportsblockPost[]> {
+  const params = new URLSearchParams();
+  if (filters.sort) params.set('sort', filters.sort);
+  if (filters.sportCategory) params.set('sportCategory', filters.sportCategory);
+  if (filters.tag) params.set('tag', filters.tag);
+  if (filters.limit) params.set('limit', filters.limit.toString());
+  if (filters.before) params.set('before', filters.before);
+
+  const response = await fetch(`/api/hive/posts?${params}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch posts: ${response.status}`);
+  }
+  const data = await response.json();
+  return data.posts ?? [];
+}
+
+async function fetchSinglePostViaApi(
+  author: string,
+  permlink: string
+): Promise<SportsblockPost | null> {
+  const params = new URLSearchParams({ author, permlink });
+  const response = await fetch(`/api/hive/posts?${params}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch post: ${response.status}`);
+  }
+  const data = await response.json();
+  return data.post ?? null;
+}
+
 export function usePosts(filters: ContentFilters = {}) {
   return useQuery({
     queryKey: queryKeys.posts.list(filters as Record<string, unknown>),
-    queryFn: () => fetchSportsblockPosts(filters),
+    queryFn: () => fetchPostsViaApi(filters),
     staleTime: STALE_TIMES.REALTIME,
   });
 }
@@ -163,7 +196,7 @@ export function usePosts(filters: ContentFilters = {}) {
 export function useTrendingPosts(limit: number = 20) {
   return useQuery({
     queryKey: queryKeys.posts.list({ sort: 'trending', limit }),
-    queryFn: () => fetchTrendingPosts(limit),
+    queryFn: () => fetchPostsViaApi({ sort: 'trending', limit }),
     staleTime: STALE_TIMES.STANDARD,
   });
 }
@@ -171,7 +204,7 @@ export function useTrendingPosts(limit: number = 20) {
 export function useHotPosts(limit: number = 20) {
   return useQuery({
     queryKey: queryKeys.posts.list({ sort: 'hot', limit }),
-    queryFn: () => fetchHotPosts(limit),
+    queryFn: () => fetchPostsViaApi({ sort: 'hot', limit }),
     staleTime: STALE_TIMES.STANDARD,
   });
 }
@@ -197,7 +230,7 @@ export function usePost(
 
   return useQuery({
     queryKey: queryKeys.posts.detail(`${author}/${permlink}`),
-    queryFn: () => fetchPost(author, permlink),
+    queryFn: () => fetchSinglePostViaApi(author, permlink),
     enabled: !!author && !!permlink,
     staleTime,
   });
@@ -213,6 +246,71 @@ export function useInvalidatePosts() {
     invalidatePost: (author: string, permlink: string) =>
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(`${author}/${permlink}`) }),
   };
+}
+
+// Fetch following feed from /api/hive/feed
+async function fetchFollowingFeedPosts(params: {
+  username: string;
+  limit?: number;
+  startAuthor?: string;
+  startPermlink?: string;
+}): Promise<FeedPostsResponse> {
+  const searchParams = new URLSearchParams();
+  searchParams.set('username', params.username);
+  if (params.limit) searchParams.set('limit', params.limit.toString());
+  if (params.startAuthor) searchParams.set('start_author', params.startAuthor);
+  if (params.startPermlink) searchParams.set('start_permlink', params.startPermlink);
+
+  const response = await fetch(`/api/hive/feed?${searchParams.toString()}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch following feed: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  return {
+    success: data.success,
+    posts: data.posts || [],
+    hasMore: data.hasMore || false,
+    nextCursor: data.nextCursor,
+  };
+}
+
+// Infinite query hook for following feed (posts from followed accounts)
+export function useFollowingFeedPosts(
+  options: {
+    username?: string;
+    limit?: number;
+    enabled?: boolean;
+  } = {}
+) {
+  const { username, limit = 10, enabled = true } = options;
+
+  return useInfiniteQuery({
+    queryKey: queryKeys.posts.list({ type: 'following', username }),
+    queryFn: ({ pageParam }) => {
+      const cursor = pageParam as string | undefined;
+      let startAuthor: string | undefined;
+      let startPermlink: string | undefined;
+
+      if (cursor) {
+        const separatorIndex = cursor.indexOf('/');
+        startAuthor = cursor.slice(0, separatorIndex);
+        startPermlink = cursor.slice(separatorIndex + 1);
+      }
+
+      return fetchFollowingFeedPosts({
+        username: username!,
+        limit,
+        startAuthor,
+        startPermlink,
+      });
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextCursor : undefined),
+    staleTime: STALE_TIMES.REALTIME,
+    enabled: enabled && !!username,
+  });
 }
 
 // Infinite query hook for feed with pagination

@@ -156,6 +156,13 @@ export function formatHiveAmount(amount: number): string {
 }
 
 /**
+ * Format HBD amount with proper precision (3 decimals)
+ */
+export function formatHBDAmount(amount: number): string {
+  return `${amount.toFixed(3)} HBD`;
+}
+
+/**
  * Format VESTS amount with proper precision (6 decimals)
  */
 export function formatVestsAmount(amount: number): string {
@@ -199,6 +206,55 @@ export function createPowerDownOperation(powerDownData: {
   return {
     account: powerDownData.account,
     vesting_shares: formatVestsAmount(powerDownData.vestingShares),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Native transfer operation
+// ---------------------------------------------------------------------------
+
+export interface WaxTransferOperation {
+  from: string;
+  to: string;
+  amount: string; // e.g. "10.000 HIVE" or "5.000 HBD"
+  memo: string;
+}
+
+/**
+ * Create a native HIVE/HBD transfer operation.
+ * Pure function — no WASM imports, safe for client bundling.
+ */
+export function createTransferOperation(data: {
+  from: string;
+  to: string;
+  amount: number;
+  currency: 'HIVE' | 'HBD';
+  memo?: string;
+}): WaxTransferOperation {
+  if (data.amount <= 0) {
+    throw new Error('Transfer amount must be greater than 0');
+  }
+  if (data.amount < 0.001) {
+    throw new Error('Minimum transfer amount is 0.001');
+  }
+  if (!data.from || !/^[a-z][a-z0-9.-]{2,15}$/.test(data.from)) {
+    throw new Error('Invalid sender username');
+  }
+  if (!data.to || !/^[a-z][a-z0-9.-]{2,15}$/.test(data.to)) {
+    throw new Error('Invalid recipient username');
+  }
+  if (data.from === data.to) {
+    throw new Error('Cannot transfer to yourself');
+  }
+
+  const formattedAmount =
+    data.currency === 'HIVE' ? formatHiveAmount(data.amount) : formatHBDAmount(data.amount);
+
+  return {
+    from: data.from,
+    to: data.to,
+    amount: formattedAmount,
+    memo: data.memo || '',
   };
 }
 

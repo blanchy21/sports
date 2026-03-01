@@ -1,5 +1,6 @@
 import React from 'react';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, ArrowUpRight } from 'lucide-react';
+import { Button } from '@/components/core/Button';
 import { formatUSD, formatCrypto, formatPercentage } from '@/lib/utils/client';
 
 interface HBDBalanceCardProps {
@@ -10,6 +11,7 @@ interface HBDBalanceCardProps {
   liquidHbdBalance: number;
   savingsHbdBalance: number;
   savingsApr: number | null;
+  onSendClick?: () => void;
 }
 
 export const HBDBalanceCard: React.FC<HBDBalanceCardProps> = ({
@@ -20,6 +22,7 @@ export const HBDBalanceCard: React.FC<HBDBalanceCardProps> = ({
   liquidHbdBalance,
   savingsHbdBalance,
   savingsApr,
+  onSendClick,
 }) => (
   <div className="rounded-lg border bg-card p-6">
     <div className="mb-4 flex items-center justify-between">
@@ -51,6 +54,12 @@ export const HBDBalanceCard: React.FC<HBDBalanceCardProps> = ({
         </p>
         {hbdPrice && showBalances && (
           <p className="text-sm text-muted-foreground">{formatUSD(hbdUSDValue)}</p>
+        )}
+        {onSendClick && (
+          <Button variant="outline" size="sm" onClick={onSendClick} className="mt-2">
+            <ArrowUpRight className="mr-1.5 h-3.5 w-3.5" />
+            Send
+          </Button>
         )}
       </div>
 
