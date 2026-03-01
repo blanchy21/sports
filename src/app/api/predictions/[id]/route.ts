@@ -55,19 +55,22 @@ export const DELETE = createApiHandler('/api/predictions/[id]', async (request, 
       throw new ForbiddenError('Only the creator can delete this prediction');
     }
 
-    if (prediction.status !== 'OPEN') {
-      throw new ValidationError('Can only delete OPEN predictions');
+    const retryableStatuses = ['OPEN', 'VOID', 'REFUNDED'];
+    if (!retryableStatuses.includes(prediction.status)) {
+      throw new ValidationError('Can only delete OPEN predictions (or retry VOID/REFUNDED)');
     }
 
-    const nonCreatorStakes = prediction.stakes.filter(
-      (s) => s.username !== prediction.creatorUsername
-    );
-    if (nonCreatorStakes.length > 0) {
-      throw new ForbiddenError('Cannot delete a prediction that other users have staked on');
+    if (prediction.status === 'OPEN') {
+      const nonCreatorStakes = prediction.stakes.filter(
+        (s) => s.username !== prediction.creatorUsername
+      );
+      if (nonCreatorStakes.length > 0) {
+        throw new ForbiddenError('Cannot delete a prediction that other users have staked on');
+      }
     }
 
-    // Use executeVoidRefund for atomic void→refund with per-stake idempotency
-    if (prediction.stakes.length > 0) {
+    // Void + refund if not already completed
+    if (prediction.status !== 'REFUNDED' && prediction.stakes.length > 0) {
       await executeVoidRefund(id, 'Deleted by creator', user.username);
       ctx.log.info('Creator stakes void-refunded', { predictionId: id });
     }
