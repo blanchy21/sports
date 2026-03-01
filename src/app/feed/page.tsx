@@ -76,7 +76,13 @@ export default function FeedPage() {
   React.useEffect(() => {
     if (posts.length === 0) return;
 
-    const authors = [...new Set(posts.map((post) => post.author).filter(Boolean))];
+    const authors = [
+      ...new Set(
+        posts
+          .map((post) => (typeof post.author === 'string' ? post.author : post.author?.username))
+          .filter((a): a is string => !!a)
+      ),
+    ];
 
     if (authors.length > 0) {
       Promise.all([
