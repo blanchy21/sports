@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, Users, Loader2 } from 'lucide-react';
+import { Users, Loader2 } from 'lucide-react';
 import { Button } from '@/components/core/Button';
+import { BaseModal } from '@/components/core/BaseModal';
 import { Avatar } from '@/components/core/Avatar';
 import { FollowButtonCompact } from '@/components/user/FollowButton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -90,77 +91,64 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
     }
   };
 
-  const handleUserClick = (username: string) => {
+  const handleUserClick = (clickedUsername: string) => {
     onClose();
-    router.push(`/user/${username}`);
+    router.push(`/user/${clickedUsername}`);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-
-      {/* Modal */}
-      <div className="relative mx-2 max-h-[80vh] w-full max-w-md overflow-hidden rounded-lg border border-border bg-card shadow-xl sm:mx-4">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border p-4">
-          <div className="flex items-center space-x-2">
-            <Users className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">
-              {type === 'followers' ? 'Followers' : 'Following'}
-            </h2>
-            <span className="text-sm text-muted-foreground">@{username}</span>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <span className="flex items-center space-x-2">
+          <Users className="h-5 w-5 text-muted-foreground" />
+          <span>{type === 'followers' ? 'Followers' : 'Following'}</span>
+          <span className="text-sm font-normal text-muted-foreground">@{username}</span>
+        </span>
+      }
+      size="sm"
+    >
+      <div className="-m-4 sm:-m-6">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Content */}
-        <div className="max-h-[60vh] overflow-y-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : users.length === 0 ? (
-            <div className="py-12 text-center">
-              <Users className="mx-auto mb-3 h-12 w-12 text-muted-foreground/50" />
-              <p className="text-muted-foreground">
-                {type === 'followers' ? 'No followers yet' : 'Not following anyone yet'}
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {users.map((user) => (
+        ) : users.length === 0 ? (
+          <div className="py-12 text-center">
+            <Users className="mx-auto mb-3 h-12 w-12 text-muted-foreground/50" />
+            <p className="text-muted-foreground">
+              {type === 'followers' ? 'No followers yet' : 'Not following anyone yet'}
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {users.map((user) => (
+              <div
+                key={user.id}
+                className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
+              >
                 <div
-                  key={user.id}
-                  className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
+                  className="flex flex-1 cursor-pointer items-center space-x-3"
+                  onClick={() => handleUserClick(user.username)}
                 >
-                  <div
-                    className="flex flex-1 cursor-pointer items-center space-x-3"
-                    onClick={() => handleUserClick(user.username)}
-                  >
-                    <Avatar fallback={user.username} size="sm" />
-                    <div>
-                      <p className="font-medium text-foreground">@{user.username}</p>
-                    </div>
+                  <Avatar fallback={user.username} size="sm" />
+                  <div>
+                    <p className="font-medium text-foreground">@{user.username}</p>
                   </div>
-                  {currentUser?.id !== user.userId && (
-                    <FollowButtonCompact
-                      targetUserId={user.userId}
-                      targetUsername={user.username}
-                      initialIsFollowing={user.isFollowing}
-                    />
-                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                {currentUser?.id !== user.userId && (
+                  <FollowButtonCompact
+                    targetUserId={user.userId}
+                    targetUsername={user.username}
+                    initialIsFollowing={user.isFollowing}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
-        {/* Load More */}
         {hasMore && !isLoading && (
           <div className="border-t border-border p-4">
             <Button variant="outline" className="w-full" onClick={loadMore}>
@@ -169,6 +157,6 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </BaseModal>
   );
 };

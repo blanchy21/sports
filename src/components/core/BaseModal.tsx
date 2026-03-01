@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from './Button';
 import { cn } from '@/lib/utils/client';
@@ -40,18 +40,59 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   size = 'md',
   showHeader = true,
 }) => {
-  // Handle escape key
-  useEffect(() => {
-    if (!closeOnEscape || !isOpen) return;
+  // Focus trap, escape key, and focus restoration
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<Element | null>(null);
 
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    previousActiveElement.current = document.activeElement;
+    modalRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && closeOnEscape) {
         onClose();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const modal = modalRef.current;
+        if (!modal) return;
+
+        const focusable = modal.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+
+        if (focusable.length === 0) {
+          event.preventDefault();
+          return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey) {
+          if (document.activeElement === first || document.activeElement === modal) {
+            event.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last || document.activeElement === modal) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
 
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previousActiveElement.current instanceof HTMLElement) {
+        previousActiveElement.current.focus();
+      }
+    };
   }, [isOpen, onClose, closeOnEscape]);
 
   // Prevent body scroll when modal is open
@@ -86,8 +127,10 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 
       {/* Modal */}
       <div
+        ref={modalRef}
+        tabIndex={-1}
         className={cn(
-          'relative mx-2 my-4 flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-lg border bg-card shadow-lg sm:mx-4 sm:my-8 sm:max-h-[calc(100vh-4rem)]',
+          'relative mx-2 my-4 flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-lg border bg-card shadow-lg outline-none sm:mx-4 sm:my-8 sm:max-h-[calc(100vh-4rem)]',
           sizeClasses[size],
           className
         )}
