@@ -54,21 +54,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
     setIsFollowLoading(true);
     try {
       if (isFollowing) {
-        const result = await unfollowMutation.mutateAsync({
+        await unfollowMutation.mutateAsync({
           username,
           follower: currentUser.username,
         });
-        if (!result.success) {
-          addToast(toast.error('Error', `Failed to unfollow: ${result.error || 'Unknown error'}`));
-        }
       } else {
-        const result = await followMutation.mutateAsync({
+        await followMutation.mutateAsync({
           username,
           follower: currentUser.username,
         });
-        if (!result.success) {
-          addToast(toast.error('Error', `Failed to follow: ${result.error || 'Unknown error'}`));
-        }
       }
 
       // Manually refetch the follow status to update the UI immediately

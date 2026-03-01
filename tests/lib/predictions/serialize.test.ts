@@ -1,33 +1,4 @@
-// FakeDecimal must be created inside the mock factory (jest.mock is hoisted).
-// We capture a reference for use in test data.
-let FakeDecimal: new (v: number | string) => { toNumber(): number };
-
-jest.mock('@/generated/prisma/client', () => {
-  class _FakeDecimal {
-    private value: number;
-    constructor(v: number | string) {
-      this.value = Number(v);
-    }
-    toNumber() {
-      return this.value;
-    }
-  }
-
-  FakeDecimal = _FakeDecimal as never;
-
-  return {
-    Prisma: { Decimal: _FakeDecimal },
-    PredictionStatus: {
-      OPEN: 'OPEN',
-      LOCKED: 'LOCKED',
-      SETTLING: 'SETTLING',
-      SETTLED: 'SETTLED',
-      REFUNDED: 'REFUNDED',
-      VOID: 'VOID',
-    },
-  };
-});
-
+import { FakeDecimal } from '../../__mocks__/prisma-client';
 import { decimalToNumber, serializePrediction } from '@/lib/predictions/serialize';
 
 function makePrediction(overrides: Record<string, unknown> = {}) {

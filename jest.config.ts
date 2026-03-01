@@ -4,6 +4,7 @@ const config = {
   setupFiles: ['<rootDir>/jest.polyfills.ts'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
+    '^@/generated/prisma/client$': '<rootDir>/tests/__mocks__/prisma-client.ts',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@jest/(.*)$': '<rootDir>/node_modules/@jest/$1',
     '@hiveio/workerbee$': '<rootDir>/node_modules/@hiveio/workerbee/dist/bundle/index.js',

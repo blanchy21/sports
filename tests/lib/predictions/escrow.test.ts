@@ -7,18 +7,6 @@ import {
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { MEDALS_CONFIG } from '@/lib/hive-engine/constants';
 
-jest.mock('@/generated/prisma/client', () => ({
-  Prisma: { Decimal: class {} },
-  PredictionStatus: {
-    OPEN: 'OPEN',
-    LOCKED: 'LOCKED',
-    SETTLING: 'SETTLING',
-    SETTLED: 'SETTLED',
-    REFUNDED: 'REFUNDED',
-    VOID: 'VOID',
-  },
-}));
-
 function parsePayload(op: { json: string }) {
   return JSON.parse(op.json);
 }
