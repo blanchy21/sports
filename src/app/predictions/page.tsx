@@ -5,12 +5,16 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { ComposeSportsbite } from '@/components/sportsbites';
 import { PredictionsFeed } from '@/components/predictions';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMedalsBalance } from '@/lib/react-query/queries/useMedals';
 import { useRouter } from 'next/navigation';
-import { Target, ChevronDown, Plus } from 'lucide-react';
+import Link from 'next/link';
+import { Target, ChevronDown, Plus, Medal } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 
 export default function PredictionsPage() {
-  const { user, isLoading: isAuthLoading, authType } = useAuth();
+  const { user, hiveUser, isLoading: isAuthLoading, authType } = useAuth();
+  const walletUsername = hiveUser?.username || user?.hiveUsername;
+  const { data: medalsBalance } = useMedalsBalance(walletUsername);
   const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -46,6 +50,15 @@ export default function PredictionsPage() {
                 <p className="text-sm text-muted-foreground">Stake MEDALS on sports outcomes</p>
               </div>
             </div>
+            {medalsBalance && (
+              <Link
+                href="/wallet"
+                className="flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
+              >
+                <Medal className="h-3.5 w-3.5" />
+                <span>{parseFloat(medalsBalance.liquid).toFixed(0)}</span>
+              </Link>
+            )}
           </div>
         </div>
 
