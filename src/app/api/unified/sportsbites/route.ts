@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
       const permlinks = hiveBitesOnPage.map((s) => s.permlink);
       const authors = hiveBitesOnPage.map((s) => s.author);
 
-      const [tipTotals, softCommentCounts] = await Promise.all([
+      const [tipTotals, tipDetails, softCommentCounts] = await Promise.all([
         prisma.$queryRaw<Array<{ author: string; permlink: string; total: string; count: number }>>`
           SELECT author, permlink,
                  COALESCE(SUM(amount), 0)::text as total,
@@ -119,6 +119,25 @@ export async function GET(request: NextRequest) {
           GROUP BY author, permlink
         `.catch(
           () => [] as Array<{ author: string; permlink: string; total: string; count: number }>
+        ),
+        prisma.$queryRaw<
+          Array<{ author: string; permlink: string; sender_username: string; total: string }>
+        >`
+          SELECT author, permlink, sender_username,
+                 SUM(amount)::text as total
+          FROM tips
+          WHERE author = ANY(${authors}::text[])
+            AND permlink = ANY(${permlinks}::text[])
+          GROUP BY author, permlink, sender_username
+          ORDER BY SUM(amount) DESC
+        `.catch(
+          () =>
+            [] as Array<{
+              author: string;
+              permlink: string;
+              sender_username: string;
+              total: string;
+            }>
         ),
         // Count soft (database) comments on Hive sportsbites
         prisma.$queryRaw<Array<{ post_permlink: string; count: number }>>`
@@ -134,6 +153,15 @@ export async function GET(request: NextRequest) {
         const tip = tipTotals.find((t) => t.author === bite.author && t.permlink === bite.permlink);
         bite.tipTotal = tip ? parseFloat(tip.total) : 0;
         bite.tipCount = tip ? tip.count : 0;
+        const details = tipDetails.filter(
+          (t) => t.author === bite.author && t.permlink === bite.permlink
+        );
+        if (details.length > 0) {
+          bite.tipDetails = details.map((d) => ({
+            sender: d.sender_username,
+            amount: parseFloat(d.total),
+          }));
+        }
 
         const softCount = softCommentCounts.find((c) => c.post_permlink === bite.permlink);
         if (softCount) {

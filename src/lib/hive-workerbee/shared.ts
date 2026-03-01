@@ -732,6 +732,7 @@ export interface Sportsbite {
   poll?: PollDefinition;
   tipTotal?: number;
   tipCount?: number;
+  tipDetails?: Array<{ sender: string; amount: number }>;
 }
 
 export interface SportsbiteApiResponse {

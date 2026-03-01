@@ -482,20 +482,19 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
               ${pendingPayout.toFixed(2)} pending
             </span>
-            {(sportsbite.tipTotal ?? 0) > 0 && (
-              <span className="flex items-center gap-1 text-xs font-medium text-warning">
-                <Coins className="h-3 w-3" />
-                {sportsbite.tipTotal} MEDALS tipped
-              </span>
-            )}
           </div>
         )}
-        {sportsbite.source !== 'soft' && !pendingPayout && (sportsbite.tipTotal ?? 0) > 0 && (
-          <div className="mt-2">
-            <span className="flex items-center gap-1 text-xs font-medium text-warning">
-              <Coins className="h-3 w-3" />
-              {sportsbite.tipTotal} MEDALS tipped
-            </span>
+        {sportsbite.source !== 'soft' && (sportsbite.tipDetails?.length ?? 0) > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+            {sportsbite.tipDetails!.map((tip) => (
+              <span
+                key={tip.sender}
+                className="flex items-center gap-1 text-xs font-medium text-warning"
+              >
+                <Coins className="h-3 w-3" />
+                <span className="font-semibold">@{tip.sender}</span> tipped {tip.amount} MEDALS
+              </span>
+            ))}
           </div>
         )}
       </div>
