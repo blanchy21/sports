@@ -1,7 +1,7 @@
 /**
  * Post Type Helpers
  *
- * Type-safe utilities for working with Post and SportsblockPost union types.
+ * Type-safe utilities for working with Post, SportsblockPost, and DisplayPost union types.
  * These helpers eliminate unsafe type assertions throughout the codebase.
  */
 
@@ -9,9 +9,44 @@ import type { Post } from '@/types';
 import type { SportsblockPost } from '@/lib/shared/types';
 
 /**
+ * Lightweight post type for rendering in feeds and lists.
+ * Contains only the ~20 fields that UI components actually use,
+ * avoiding the 50+ dummy fields previously faked via `as SportsblockPost` casts.
+ */
+export interface DisplayPost {
+  postType: 'display';
+  author: string;
+  permlink: string;
+  title: string;
+  body: string;
+  tags: string[];
+  featuredImage?: string;
+  sportCategory?: string;
+  created: string;
+  net_votes: number;
+  children: number;
+  pending_payout_value?: string;
+  active_votes?: Array<{
+    voter: string;
+    weight: number;
+    percent: number;
+    rshares?: string;
+    reputation?: string;
+    time?: string;
+  }>;
+  authorDisplayName?: string;
+  authorAvatar?: string;
+  source: 'hive' | 'soft';
+  _isSoftPost?: boolean;
+  _softPostId?: string;
+  _likeCount?: number;
+  _viewCount?: number;
+}
+
+/**
  * Union type for all post variants
  */
-export type AnyPost = Post | SportsblockPost;
+export type AnyPost = Post | SportsblockPost | DisplayPost;
 
 /**
  * Extended SportsblockPost with soft post metadata
@@ -30,9 +65,17 @@ export type ExtendedSportsblockPost = SportsblockPost & SoftPostExtension;
 // ============================================================================
 
 /**
- * Check if a post is a SportsblockPost (Hive blockchain post)
+ * Check if a post is a DisplayPost (lightweight feed post)
+ */
+export function isDisplayPost(post: AnyPost): post is DisplayPost {
+  return 'postType' in post && (post as DisplayPost).postType === 'display';
+}
+
+/**
+ * Check if a post is a SportsblockPost (full Hive blockchain post)
  */
 export function isSportsblockPost(post: AnyPost): post is SportsblockPost {
+  if (isDisplayPost(post)) return false;
   return (
     'isSportsblockPost' in post ||
     ('author' in post && 'permlink' in post && typeof post.author === 'string')
@@ -42,7 +85,8 @@ export function isSportsblockPost(post: AnyPost): post is SportsblockPost {
 /**
  * Check if a post is a soft post (converted from database)
  */
-export function isSoftPost(post: AnyPost): post is ExtendedSportsblockPost {
+export function isSoftPost(post: AnyPost): post is ExtendedSportsblockPost | DisplayPost {
+  if (isDisplayPost(post)) return post._isSoftPost === true;
   return isSportsblockPost(post) && (post as SoftPostExtension)._isSoftPost === true;
 }
 
@@ -57,7 +101,7 @@ export function isHivePost(post: AnyPost): post is SportsblockPost {
  * Check if a post is a legacy Post type
  */
 export function isLegacyPost(post: AnyPost): post is Post {
-  return 'id' in post && !isSportsblockPost(post);
+  return !isDisplayPost(post) && 'id' in post && !isSportsblockPost(post);
 }
 
 // ============================================================================
@@ -75,12 +119,11 @@ export function getPostAuthor(post: AnyPost): string {
 }
 
 /**
- * Get the post permlink (for Hive posts) or ID (for legacy posts)
+ * Get the post permlink (for Hive/display posts) or ID (for legacy posts)
  */
 export function getPostPermlink(post: AnyPost): string {
-  if (isSportsblockPost(post)) {
-    return post.permlink;
-  }
+  if (isSportsblockPost(post)) return post.permlink;
+  if (isDisplayPost(post)) return post.permlink;
   return post.id;
 }
 
@@ -88,9 +131,8 @@ export function getPostPermlink(post: AnyPost): string {
  * Get a unique identifier for the post
  */
 export function getPostId(post: AnyPost): string {
-  if (isSportsblockPost(post)) {
-    return `${post.author}/${post.permlink}`;
-  }
+  if (isSportsblockPost(post)) return `${post.author}/${post.permlink}`;
+  if (isDisplayPost(post)) return `${post.author}/${post.permlink}`;
   return post.id;
 }
 
@@ -98,9 +140,8 @@ export function getPostId(post: AnyPost): string {
  * Get the soft post ID if available
  */
 export function getSoftPostId(post: AnyPost): string | undefined {
-  if (isSoftPost(post)) {
-    return post._softPostId;
-  }
+  if (isDisplayPost(post)) return post._softPostId;
+  if (isSoftPost(post)) return post._softPostId;
   return undefined;
 }
 
@@ -115,9 +156,8 @@ export function getPostTitle(post: AnyPost): string {
  * Get the post body content
  */
 export function getPostBody(post: AnyPost): string {
-  if (isSportsblockPost(post)) {
-    return post.body;
-  }
+  if (isSportsblockPost(post)) return post.body;
+  if (isDisplayPost(post)) return post.body;
   return post.content;
 }
 
@@ -125,9 +165,8 @@ export function getPostBody(post: AnyPost): string {
  * Get the post creation date
  */
 export function getPostCreatedAt(post: AnyPost): Date {
-  if (isSportsblockPost(post)) {
-    return new Date(post.created);
-  }
+  if (isSportsblockPost(post)) return new Date(post.created);
+  if (isDisplayPost(post)) return new Date(post.created);
   return post.publishedAt || post.createdAt;
 }
 
@@ -137,12 +176,9 @@ export function getPostCreatedAt(post: AnyPost): Date {
  * net_votes (upvotes minus downvotes) which can be 0 even with many voters.
  */
 export function getPostVoteCount(post: AnyPost): number {
-  if (isSoftPost(post)) {
-    return post._likeCount || 0;
-  }
-  if (isSportsblockPost(post)) {
-    return post.active_votes?.length || post.net_votes || 0;
-  }
+  if (isDisplayPost(post)) return post._isSoftPost ? post._likeCount || 0 : post.net_votes || 0;
+  if (isSoftPost(post)) return post._likeCount || 0;
+  if (isSportsblockPost(post)) return post.active_votes?.length || post.net_votes || 0;
   return (post as Post).upvotes || 0;
 }
 
@@ -150,9 +186,8 @@ export function getPostVoteCount(post: AnyPost): number {
  * Get the post comment count
  */
 export function getPostCommentCount(post: AnyPost): number {
-  if (isSportsblockPost(post)) {
-    return post.children || 0;
-  }
+  if (isSportsblockPost(post)) return post.children || 0;
+  if (isDisplayPost(post)) return post.children || 0;
   return (post as Post).comments || 0;
 }
 
@@ -160,9 +195,8 @@ export function getPostCommentCount(post: AnyPost): number {
  * Get the sport category for the post
  */
 export function getPostSportCategory(post: AnyPost): string | undefined {
-  if (isSportsblockPost(post)) {
-    return post.sportCategory || post.sport_category;
-  }
+  if (isSportsblockPost(post)) return post.sportCategory || post.sport_category;
+  if (isDisplayPost(post)) return post.sportCategory;
   return post.sport?.name;
 }
 
@@ -177,9 +211,8 @@ export function getPostTags(post: AnyPost): string[] {
  * Get the post URL path
  */
 export function getPostUrl(post: AnyPost): string {
-  if (isSportsblockPost(post)) {
-    return `/post/${post.author}/${post.permlink}`;
-  }
+  if (isSportsblockPost(post)) return `/post/${post.author}/${post.permlink}`;
+  if (isDisplayPost(post)) return `/post/${post.author}/${post.permlink}`;
   return `/post/${post.id}`;
 }
 
@@ -194,7 +227,11 @@ export function getWordCount(text: string): number {
  * Get estimated read time in minutes (based on 200 words per minute)
  */
 export function getPostReadTime(post: AnyPost): number {
-  const text = isSportsblockPost(post) ? post.body : (post as Post).content;
+  const text = isSportsblockPost(post)
+    ? post.body
+    : isDisplayPost(post)
+      ? post.body
+      : (post as Post).content;
   if (!text) return 1;
   const wordCount = getWordCount(text);
   return Math.max(1, Math.ceil(wordCount / 200));
@@ -204,9 +241,8 @@ export function getPostReadTime(post: AnyPost): number {
  * Get the featured image URL if available
  */
 export function getPostFeaturedImage(post: AnyPost): string | undefined {
-  if (!isSportsblockPost(post) && post.featuredImage) {
-    return post.featuredImage;
-  }
+  if (isDisplayPost(post)) return post.featuredImage;
+  if (!isSportsblockPost(post) && post.featuredImage) return post.featuredImage;
   return undefined;
 }
 
@@ -215,9 +251,10 @@ export function getPostFeaturedImage(post: AnyPost): string | undefined {
 // ============================================================================
 
 /**
- * Get author avatar URL (for legacy posts with embedded author object)
+ * Get author avatar URL
  */
 export function getAuthorAvatar(post: AnyPost): string | undefined {
+  if (isDisplayPost(post)) return post.authorAvatar;
   if (!isSportsblockPost(post) && typeof post.author !== 'string') {
     return post.author.avatar;
   }
@@ -225,9 +262,10 @@ export function getAuthorAvatar(post: AnyPost): string | undefined {
 }
 
 /**
- * Get author display name (for legacy posts with embedded author object)
+ * Get author display name
  */
 export function getAuthorDisplayName(post: AnyPost): string {
+  if (isDisplayPost(post)) return post.authorDisplayName || post.author;
   if (!isSportsblockPost(post) && typeof post.author !== 'string') {
     return post.author.displayName || post.author.username;
   }

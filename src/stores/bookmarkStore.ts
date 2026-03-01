@@ -1,12 +1,11 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { Post } from '@/types';
-import { SportsblockPost } from '@/lib/shared/types';
+import { type AnyPost, getPostId } from '@/lib/utils/post-helpers';
 
 export interface BookmarkItem {
   id: string;
-  post: Post | SportsblockPost | Record<string, unknown>; // Allow flexible post types
+  post: AnyPost;
   bookmarkedAt: Date;
   userId: string;
 }
@@ -27,7 +26,7 @@ interface BookmarkState {
 }
 
 interface BookmarkActions {
-  addBookmark: (post: Post | SportsblockPost | Record<string, unknown>, userId: string) => void;
+  addBookmark: (post: AnyPost, userId: string) => void;
   removeBookmark: (postId: string, userId: string) => void;
   isBookmarked: (postId: string, userId: string) => boolean;
   getBookmarks: (userId: string) => BookmarkItem[];
@@ -48,8 +47,7 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
 
         // Actions - using immer for safe mutable-style updates
         addBookmark: (post, userId) => {
-          const postId =
-            'isSportsblockPost' in post ? `${post.author}/${post.permlink}` : (post as Post).id;
+          const postId = getPostId(post);
           const key = createBookmarkKey(postId, userId);
 
           // O(1) check if already bookmarked

@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { PostCard } from '@/components/posts/PostCard';
-import { Post } from '@/types';
 import { Button } from '@/components/core/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Bookmark, Search, Loader2, Trash2 } from 'lucide-react';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { BookmarkItem } from '@/stores/bookmarkStore';
+import { getPostTitle, getPostBody, getPostTags } from '@/lib/utils/post-helpers';
 
 export function BookmarksContent() {
   const { user } = useAuth();
@@ -26,18 +26,15 @@ export function BookmarksContent() {
 
   const filteredAndSortedBookmarks = bookmarks
     .filter((bookmark) => {
-      const post = bookmark.post;
-      const isHivePost = 'isSportsblockPost' in post;
-      const title = (post.title as string).toLowerCase();
-      const content = isHivePost
-        ? (post.body as string).toLowerCase()
-        : (post.excerpt as string).toLowerCase();
-      const tags = (post.tags as string[]) || [];
+      const title = getPostTitle(bookmark.post).toLowerCase();
+      const content = getPostBody(bookmark.post).toLowerCase();
+      const tags = getPostTags(bookmark.post);
+      const query = searchQuery.toLowerCase();
 
       return (
-        title.includes(searchQuery.toLowerCase()) ||
-        content.includes(searchQuery.toLowerCase()) ||
-        tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        title.includes(query) ||
+        content.includes(query) ||
+        tags.some((tag) => tag.toLowerCase().includes(query))
       );
     })
     .sort((a, b) => {
@@ -47,7 +44,7 @@ export function BookmarksContent() {
         case 'oldest':
           return new Date(a.bookmarkedAt).getTime() - new Date(b.bookmarkedAt).getTime();
         case 'title':
-          return (a.post.title as string).localeCompare(b.post.title as string);
+          return getPostTitle(a.post).localeCompare(getPostTitle(b.post));
         default:
           return 0;
       }
@@ -125,7 +122,7 @@ export function BookmarksContent() {
       ) : filteredAndSortedBookmarks.length > 0 ? (
         <div className="space-y-6">
           {filteredAndSortedBookmarks.map((bookmark) => (
-            <PostCard key={bookmark.id} post={bookmark.post as Post} />
+            <PostCard key={bookmark.id} post={bookmark.post} />
           ))}
         </div>
       ) : searchQuery ? (
