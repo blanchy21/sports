@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { SmilePlus } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModal } from '@/components/modals/ModalProvider';
@@ -44,6 +45,8 @@ export function EmojiReactions({
   const [counts, setCounts] = useState<ReactionCounts>(initialCounts || DEFAULT_COUNTS);
   const [userReaction, setUserReaction] = useState<ReactionEmoji | null>(initialUserReaction);
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync from batch-fetched props (arrive after mount)
   useEffect(() => {
@@ -53,6 +56,24 @@ export function EmojiReactions({
   useEffect(() => {
     if (initialUserReaction !== undefined) setUserReaction(initialUserReaction);
   }, [initialUserReaction]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setIsOpen(true);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    timeoutRef.current = setTimeout(() => setIsOpen(false), 150);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const handleReact = useCallback(
     async (emoji: ReactionEmoji) => {
@@ -84,6 +105,7 @@ export function EmojiReactions({
         setUserReaction(emoji);
       }
       setCounts(newCounts);
+      setIsOpen(false);
 
       setIsLoading(true);
       try {
@@ -113,38 +135,65 @@ export function EmojiReactions({
   );
 
   return (
-    <div className={cn('flex items-center gap-1', className)}>
-      {EMOJI_ORDER.map((emoji) => {
-        const count = counts[emoji];
-        const isActive = userReaction === emoji;
+    <div
+      className={cn('relative', className)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Trigger button */}
+      <button
+        className={cn(
+          'flex h-8 items-center gap-1.5 rounded-md px-2 text-sm transition-all',
+          'text-muted-foreground hover:bg-primary/10 hover:text-primary',
+          userReaction && 'text-primary',
+          isLoading && 'pointer-events-none opacity-70'
+        )}
+      >
+        {userReaction ? (
+          <span className="text-base leading-none">{REACTION_EMOJIS[userReaction]}</span>
+        ) : (
+          <SmilePlus className="h-4 w-4" />
+        )}
+        {counts.total > 0 && <span className="font-medium tabular-nums">{counts.total}</span>}
+      </button>
 
-        return (
-          <button
-            key={emoji}
-            onClick={() => handleReact(emoji)}
-            disabled={isLoading}
-            className={cn(
-              'flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-all',
-              'hover:bg-muted active:scale-95',
-              isActive ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-transparent',
-              isLoading && 'pointer-events-none opacity-70'
-            )}
-            title={emoji}
-          >
-            <span className="text-sm">{REACTION_EMOJIS[emoji]}</span>
-            {count > 0 && (
-              <span
-                className={cn(
-                  'font-medium tabular-nums',
-                  isActive ? 'text-primary' : 'text-muted-foreground'
-                )}
-              >
-                {count}
-              </span>
-            )}
-          </button>
-        );
-      })}
+      {/* Popup */}
+      {isOpen && (
+        <div className="absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 animate-fade-in">
+          <div className="flex items-center gap-0.5 rounded-full border bg-card px-2 py-1.5 shadow-lg">
+            {EMOJI_ORDER.map((emoji) => {
+              const isActive = userReaction === emoji;
+              const count = counts[emoji];
+
+              return (
+                <button
+                  key={emoji}
+                  onClick={() => handleReact(emoji)}
+                  disabled={isLoading}
+                  className={cn(
+                    'flex items-center gap-0.5 rounded-full px-1.5 py-0.5 transition-all',
+                    'hover:scale-125 active:scale-95',
+                    isActive && 'bg-primary/10'
+                  )}
+                  title={emoji}
+                >
+                  <span className="text-lg leading-none">{REACTION_EMOJIS[emoji]}</span>
+                  {count > 0 && (
+                    <span
+                      className={cn(
+                        'text-[10px] font-medium tabular-nums',
+                        isActive ? 'text-primary' : 'text-muted-foreground'
+                      )}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

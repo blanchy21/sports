@@ -285,10 +285,10 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   return (
     <article
       className={cn(
-        'overflow-hidden rounded-xl border bg-card',
-        'transition-all duration-300 hover:border-primary/20 hover:shadow-lg',
-        'group relative',
-        isNew && 'animate-slide-in-top ring-2 ring-primary/50 ring-offset-2 ring-offset-background',
+        'border-b border-border px-4 py-3',
+        'transition-colors hover:bg-muted/30',
+        'group relative cursor-pointer',
+        isNew && 'animate-slide-in-top border-l-2 border-l-primary',
         className
       )}
       onMouseLeave={() => {
@@ -297,16 +297,8 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
         setConfirmingDelete(false);
       }}
     >
-      {isNew && (
-        <div className="absolute -right-1 -top-1 z-10">
-          <span className="inline-flex animate-pulse items-center rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground shadow-lg">
-            NEW
-          </span>
-        </div>
-      )}
-
       {/* Header */}
-      <div className="flex items-start gap-2 p-3 pb-0 sm:gap-3 sm:p-4 sm:pb-0">
+      <div className="flex items-start gap-2 pb-0 sm:gap-3">
         <button onClick={handleUserProfile} className="flex-shrink-0">
           <Avatar
             src={authorProfile?.avatar}
@@ -408,7 +400,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       </div>
 
       {/* Content */}
-      <div className="px-3 py-3 sm:px-4 sm:pl-[60px]">
+      <div className="py-2 sm:pl-[60px]">
         <div
           className="prose prose-sm max-w-none break-words text-[15px] leading-relaxed dark:prose-invert [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
           dangerouslySetInnerHTML={{ __html: biteHtml }}
@@ -487,7 +479,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
 
         {pendingPayout > 0 && sportsbite.source !== 'soft' && (
           <div className="mt-2 flex items-center gap-3">
-            <span className="text-xs font-medium text-accent">
+            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
               ${pendingPayout.toFixed(2)} pending
             </span>
             {(sportsbite.tipTotal ?? 0) > 0 && (
@@ -509,8 +501,8 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between border-t bg-gradient-to-r from-muted/30 to-transparent px-3 py-2 sm:px-4 sm:pl-[60px]">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between py-1 sm:pl-[60px]">
+        <div className="flex items-center gap-6">
           <div className="group/vote flex items-center gap-1">
             {(authType === 'hive' || authType === 'soft') && sportsbite.source !== 'soft' ? (
               <StarVoteButton
@@ -546,8 +538,8 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             size="sm"
             onClick={() => setShowReplies(!showReplies)}
             className={cn(
-              'flex h-8 items-center gap-1.5 px-2 transition-all hover:bg-accent/10 hover:text-accent',
-              showReplies ? 'text-accent' : 'text-muted-foreground'
+              'flex h-8 items-center gap-1.5 px-2 transition-all hover:bg-primary/10 hover:text-primary',
+              showReplies ? 'text-primary' : 'text-muted-foreground'
             )}
           >
             <MessageCircle className={cn('h-4 w-4', showReplies && 'fill-current')} />
@@ -599,6 +591,12 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           {!isOwner && sportsbite.source !== 'soft' && (
             <TipButton author={sportsbite.author} permlink={sportsbite.permlink} />
           )}
+
+          <EmojiReactions
+            sportsbiteId={sportsbite.id}
+            initialCounts={initialReactionCounts}
+            initialUserReaction={initialUserReaction}
+          />
         </div>
 
         <Button
@@ -606,8 +604,8 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           size="sm"
           onClick={handleBookmark}
           className={cn(
-            'h-8 w-8 p-0 text-muted-foreground transition-all hover:bg-warning/10 hover:text-warning',
-            isBookmarked(bookmarkPost) && 'text-warning'
+            'h-8 w-8 p-0 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary',
+            isBookmarked(bookmarkPost) && 'text-primary'
           )}
         >
           <Bookmark
@@ -617,15 +615,6 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             )}
           />
         </Button>
-      </div>
-
-      {/* Emoji Reactions */}
-      <div className="border-t px-3 py-1.5 sm:px-4 sm:pl-[60px]">
-        <EmojiReactions
-          sportsbiteId={sportsbite.id}
-          initialCounts={initialReactionCounts}
-          initialUserReaction={initialUserReaction}
-        />
       </div>
 
       {showReplies && (
