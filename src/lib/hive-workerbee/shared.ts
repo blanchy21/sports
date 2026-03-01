@@ -487,7 +487,7 @@ export interface WaxClaimRewardBalanceOperation {
   account: string;
   reward_hive: string;
   reward_hbd: string;
-  reward_vesting: string;
+  reward_vests: string;
 }
 
 export interface WaxDelegateVestingSharesOperation {
@@ -509,7 +509,7 @@ export function createClaimRewardsOperation(
     account,
     reward_hive: rewardHive,
     reward_hbd: rewardHbd,
-    reward_vesting: rewardVests,
+    reward_vests: rewardVests,
   };
 }
 
