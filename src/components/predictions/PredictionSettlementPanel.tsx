@@ -147,7 +147,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
               )}
 
               {selectedWinner && confirmingSettle && (
-                <div className="space-y-2">
+                <div role="alertdialog" aria-label="Confirm settlement" className="space-y-2">
                   <p className="text-center text-sm font-medium text-destructive">
                     Are you sure? This cannot be undone.
                   </p>
@@ -231,7 +231,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div role="alertdialog" aria-label="Confirm void" className="space-y-2">
                     <p className="text-center text-sm font-medium text-destructive">
                       Are you sure? All stakes will be refunded.
                     </p>

@@ -59,6 +59,7 @@ export function MobileBottomNav() {
                 href={tab.href}
                 className={tabClass(active)}
                 onClick={() => setShowMenu(false)}
+                aria-current={active ? 'page' : undefined}
               >
                 <Icon className="h-5 w-5" />
                 <span>{tab.label}</span>
