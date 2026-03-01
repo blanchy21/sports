@@ -352,7 +352,26 @@ describe('Posting Module', () => {
   // ==========================================================================
 
   describe('deletePost', () => {
-    it('deletes post by setting body to empty', async () => {
+    it('hard-deletes post when delete_comment succeeds', async () => {
+      mockBroadcastFn.mockResolvedValueOnce({ success: true, transactionId: 'delete-tx' });
+
+      const result = await deletePost(
+        { author: 'testauthor', permlink: 'test-post' },
+        mockBroadcastFn
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.hardDeleted).toBe(true);
+      expect(mockBroadcastFn).toHaveBeenCalledWith(
+        [['delete_comment', { author: 'testauthor', permlink: 'test-post' }]],
+        'posting'
+      );
+    });
+
+    it('falls back to soft delete when hard delete fails', async () => {
+      // Hard delete fails (e.g. post has votes)
+      mockBroadcastFn.mockResolvedValueOnce({ success: false, error: 'Cannot delete' });
+      // Soft delete: updatePost needs get_content then broadcast
       const mockExistingPost = {
         created: new Date().toISOString(),
         parent_author: '',
@@ -360,40 +379,32 @@ describe('Posting Module', () => {
         title: 'Test',
         body: 'Test body',
         json_metadata: '{}',
-        max_accepted_payout: '1000000.000 HBD',
-        percent_hbd: 10000,
-        allow_votes: true,
-        allow_curation_rewards: true,
-        extensions: [],
       };
-
       mockMakeHiveApiCall.mockResolvedValueOnce(mockExistingPost);
-      mockBroadcastFn.mockResolvedValueOnce({ success: true, transactionId: 'delete-tx' });
+      mockBroadcastFn.mockResolvedValueOnce({ success: true, transactionId: 'soft-delete-tx' });
 
       const result = await deletePost(
-        {
-          author: 'testauthor',
-          permlink: 'test-post',
-        },
+        { author: 'testauthor', permlink: 'test-post' },
         mockBroadcastFn
       );
 
       expect(result.success).toBe(true);
+      expect(result.hardDeleted).toBe(false);
     });
 
-    it('returns error when post cannot be deleted', async () => {
+    it('returns error when post is past 7-day edit window', async () => {
       const eightDaysAgo = new Date();
       eightDaysAgo.setDate(eightDaysAgo.getDate() - 8);
 
+      // Hard delete fails
+      mockBroadcastFn.mockResolvedValueOnce({ success: false, error: 'Has votes' });
+      // Soft delete: updatePost sees old post → 7-day check fails
       mockMakeHiveApiCall.mockResolvedValueOnce({
         created: eightDaysAgo.toISOString(),
       });
 
       const result = await deletePost(
-        {
-          author: 'testauthor',
-          permlink: 'test-post',
-        },
+        { author: 'testauthor', permlink: 'test-post' },
         mockBroadcastFn
       );
 

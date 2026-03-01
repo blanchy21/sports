@@ -8,7 +8,7 @@ import {
 } from './shared';
 import { checkResourceCreditsWax } from './wax-helpers';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
-import { waitForTransaction } from './transaction-confirmation';
+
 import type { BroadcastFn, HiveOperation } from '@/lib/hive/broadcast-client';
 
 // Sub-community data for publishing to a specific community
@@ -43,6 +43,8 @@ export interface PublishResult {
   permlink?: string;
   url?: string;
   error?: string;
+  /** True if delete_comment succeeded; false if fell back to soft delete */
+  hardDeleted?: boolean;
 }
 
 // Removed unused function - now using Wax helpers
@@ -140,13 +142,9 @@ export async function publishPost(
 
     const transactionId = result.transactionId || 'unknown';
 
-    // Confirm transaction was included in a block
-    const confirmation = await waitForTransaction(transactionId);
-
     return {
       success: true,
       transactionId,
-      confirmed: confirmation.confirmed,
       author: postData.author,
       permlink: operation.permlink,
       url,
@@ -218,13 +216,9 @@ export async function publishComment(
 
     const transactionId = result.transactionId || 'unknown';
 
-    // Confirm transaction was included in a block
-    const confirmation = await waitForTransaction(transactionId);
-
     return {
       success: true,
       transactionId,
-      confirmed: confirmation.confirmed,
       author: commentData.author,
       permlink: operation.permlink,
       url,
@@ -323,10 +317,11 @@ export async function updatePost(
 }
 
 /**
- * Delete a post (only possible within 7 days, sets body to empty)
- * @param deleteData - Delete data
- * @param broadcastFn - Broadcast function (from useBroadcast)
- * @returns Delete result
+ * Delete a post. Tries the proper `delete_comment` operation first (fully
+ * removes the post on-chain). If that fails (e.g. post has votes or replies),
+ * falls back to soft-delete (overwrites body to empty + deleted tags).
+ *
+ * @returns PublishResult with `hardDeleted: true` if delete_comment succeeded.
  */
 export async function deletePost(
   deleteData: {
@@ -335,8 +330,36 @@ export async function deletePost(
   },
   broadcastFn: BroadcastFn
 ): Promise<PublishResult> {
+  // Try hard delete first
   try {
-    return await updatePost(
+    const hardResult = await broadcastFn(
+      [['delete_comment', { author: deleteData.author, permlink: deleteData.permlink }]],
+      'posting'
+    );
+
+    if (hardResult.success) {
+      workerBeeLog('deletePost: hard delete succeeded', undefined, deleteData);
+      return {
+        success: true,
+        transactionId: hardResult.transactionId,
+        hardDeleted: true,
+      };
+    }
+
+    // Broadcast returned failure — fall through to soft delete
+    workerBeeLog('deletePost: hard delete failed, falling back to soft delete', undefined, {
+      error: hardResult.error,
+    });
+  } catch (error) {
+    // Exception during hard delete — fall through to soft delete
+    workerBeeLog('deletePost: hard delete threw, falling back to soft delete', undefined, {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  // Soft delete fallback: overwrite body + mark as deleted
+  try {
+    const softResult = await updatePost(
       {
         author: deleteData.author,
         permlink: deleteData.permlink,
@@ -348,6 +371,8 @@ export async function deletePost(
       },
       broadcastFn
     );
+
+    return { ...softResult, hardDeleted: false };
   } catch (error) {
     logError('Error deleting post', undefined, error instanceof Error ? error : undefined);
 

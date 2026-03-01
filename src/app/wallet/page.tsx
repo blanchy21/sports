@@ -5,6 +5,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Wallet, RefreshCw, BarChart3, Eye, EyeOff } from 'lucide-react';
 import { TransferModal, SwapModal } from '@/components/medals';
 import {
+  ClaimRewardsBanner,
   WalletCTAView,
   TransactionHistory,
   CryptoPricesGrid,
@@ -229,6 +230,14 @@ export default function WalletPage() {
             </div>
           </div>
         </div>
+
+        {walletUsername && (
+          <ClaimRewardsBanner
+            account={walletUsername}
+            showBalances={showBalances}
+            onClaimed={refreshAccountData}
+          />
+        )}
 
         <MedalsTokenSection
           walletUsername={walletUsername || user.username}

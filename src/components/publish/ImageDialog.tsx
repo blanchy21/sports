@@ -6,6 +6,7 @@ import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
 import { validateImageUrl } from '@/lib/utils/sanitize';
 import { uploadImage } from '@/lib/hive/imageUpload';
+import { compressImage } from '@/lib/utils/image-compression';
 import { logger } from '@/lib/logger';
 
 interface ImageDialogProps {
@@ -61,7 +62,9 @@ export function ImageDialog({ username, onInsert, onClose, onAiImageGenerated }:
     setUploadError(null);
 
     try {
-      const result = await uploadImage(file, username);
+      // Compress before upload (no-op for GIFs and files <200KB)
+      const compressed = await compressImage(file);
+      const result = await uploadImage(compressed, username);
 
       if (result.success && result.url) {
         setImageUrl(result.url);

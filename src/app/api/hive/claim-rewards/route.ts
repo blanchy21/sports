@@ -62,8 +62,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Fetch account to get pending rewards
-      const accountResult = await makeHiveApiCall('condenser_api', 'get_accounts', [[account]]);
+      // Fetch account and global properties in parallel
+      const [accountResult, globalPropsResult] = await Promise.all([
+        makeHiveApiCall('condenser_api', 'get_accounts', [[account]]),
+        makeHiveApiCall('condenser_api', 'get_dynamic_global_properties', []),
+      ]);
       const accounts = accountResult as HiveAccount[];
 
       if (!accounts || accounts.length === 0) {
@@ -87,6 +90,20 @@ export async function POST(request: NextRequest) {
         accountData.reward_vesting_balance
       );
 
+      // Convert VESTS to HP for display
+      let hp: number | undefined;
+      if (rewardVesting.amount > 0 && globalPropsResult) {
+        const gp = globalPropsResult as {
+          total_vesting_shares?: string;
+          total_vesting_fund_hive?: string;
+        };
+        const totalShares = parseFloat(gp.total_vesting_shares || '0');
+        const totalFund = parseFloat(gp.total_vesting_fund_hive || '0');
+        if (totalShares > 0) {
+          hp = (rewardVesting.amount / totalShares) * totalFund;
+        }
+      }
+
       return NextResponse.json({
         success: true,
         operation,
@@ -95,6 +112,7 @@ export async function POST(request: NextRequest) {
           hive: accountData.reward_hive_balance,
           hbd: accountData.reward_hbd_balance,
           vesting: accountData.reward_vesting_balance,
+          ...(hp !== undefined && { hp }),
         },
         message: `Claim ${accountData.reward_hive_balance}, ${accountData.reward_hbd_balance}, ${accountData.reward_vesting_balance}`,
       });

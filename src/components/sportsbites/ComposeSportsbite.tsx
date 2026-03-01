@@ -40,6 +40,7 @@ import { GifPicker } from '@/components/gif/GifPicker';
 import dynamic from 'next/dynamic';
 import { logger } from '@/lib/logger';
 import { useBroadcast } from '@/hooks/useBroadcast';
+import { useTransactionConfirmation } from '@/hooks/useTransactionConfirmation';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
@@ -59,6 +60,7 @@ export function ComposeSportsbite({
 }: ComposeSportsbiteProps) {
   const { user, authType, hiveUser, touchSession, logout } = useAuth();
   const { broadcast } = useBroadcast();
+  const { confirm: confirmTx } = useTransactionConfirmation();
   const placeStakeMutation = usePlaceStake();
   const [content, setContent] = useState('');
 
@@ -245,6 +247,11 @@ export function ComposeSportsbite({
           throw new Error(result.error || 'Failed to broadcast');
         }
 
+        // Fire-and-forget: poll for block confirmation
+        if (result.transactionId) {
+          confirmTx(result.transactionId);
+        }
+
         // Build optimistic sportsbite for immediate display
         const optimisticBite: Sportsbite = {
           id: `${hiveUser.username}/${operation.permlink}`,
@@ -342,6 +349,7 @@ export function ComposeSportsbite({
     authType,
     hiveUser,
     broadcast,
+    confirmTx,
     touchSession,
     logout,
     matchThreadEventId,

@@ -15,6 +15,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { logger } from '@/lib/logger';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { useToast, toast } from '@/components/core/Toast';
+import { useTransactionConfirmation } from '@/hooks/useTransactionConfirmation';
 import { EditorToolbar, FormatType } from '@/components/publish/EditorToolbar';
 import { TagInput } from '@/components/publish/TagInput';
 import { AdvancedOptions, RewardsOption, Beneficiary } from '@/components/publish/AdvancedOptions';
@@ -30,6 +31,7 @@ function PublishPageContent() {
   const { user, authType, hiveUser, isLoading: isAuthLoading } = useAuth();
   const { broadcast } = useBroadcast();
   const { addToast } = useToast();
+  const { confirm: confirmTx } = useTransactionConfirmation();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -534,6 +536,10 @@ function PublishPageContent() {
             addRecentTags(tags);
           }
           addToast(toast.success('Success', `Post published to Hive! View: ${result.url}`));
+          // Fire-and-forget: poll for block confirmation and show toast
+          if (result.transactionId) {
+            confirmTx(result.transactionId);
+          }
           router.push('/feed');
         } else {
           setPublishError(result.error || 'Failed to publish post');

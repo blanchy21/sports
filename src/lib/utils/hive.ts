@@ -412,18 +412,49 @@ export class HiveError extends Error {
 export function handleHiveError(error: Error | unknown): HiveError {
   const errorMessage = error instanceof Error ? error.message : String(error);
 
+  // --- Resource Credits ---
   if (errorMessage?.includes('Insufficient Resource Credits')) {
     return new HiveError(
-      'Insufficient Resource Credits. You need more HIVE POWER or delegation to perform this action.',
+      'Insufficient Resource Credits. You need more HIVE POWER or delegation to perform this action. Try again in a few hours, or ask someone to delegate HP to your account.',
       'INSUFFICIENT_RC',
       error
     );
   }
 
+  // --- Authority / key errors ---
   if (errorMessage?.includes('missing required posting authority')) {
     return new HiveError(
       'Missing posting authority. Please ensure you have the correct posting key.',
       'MISSING_AUTHORITY',
+      error
+    );
+  }
+
+  if (errorMessage?.includes('missing required active authority')) {
+    return new HiveError(
+      'This action requires your active key. Please use Hive Keychain or enter your active key.',
+      'MISSING_ACTIVE_KEY',
+      error
+    );
+  }
+
+  // --- Bandwidth ---
+  if (
+    errorMessage?.includes('bandwidth limit exceeded') ||
+    errorMessage?.includes('not enough bandwidth')
+  ) {
+    return new HiveError(
+      'Network bandwidth limit exceeded. Wait a few minutes or power up more HIVE.',
+      'BANDWIDTH_EXCEEDED',
+      error
+    );
+  }
+
+  // --- Duplicate vote vs duplicate post ---
+  if (errorMessage?.includes('You have already voted')) {
+    return new HiveError(
+      "You've already voted on this post. Wait for the next voting window to change your vote.",
+      'ALREADY_VOTED',
       error
     );
   }
@@ -436,6 +467,64 @@ export function handleHiveError(error: Error | unknown): HiveError {
     );
   }
 
+  // --- Comment cooldown ---
+  if (
+    errorMessage?.includes('STEEM_MIN_REPLY_INTERVAL') ||
+    errorMessage?.includes('You may only comment once every')
+  ) {
+    return new HiveError(
+      'Comment cooldown active. Please wait 3 seconds before commenting again.',
+      'COMMENT_COOLDOWN',
+      error
+    );
+  }
+
+  // --- Signature errors ---
+  if (
+    errorMessage?.includes('Signature is not canonical') ||
+    errorMessage?.includes('Invalid signature')
+  ) {
+    return new HiveError(
+      'Invalid signature. Please reconnect your wallet and try again.',
+      'INVALID_SIGNATURE',
+      error
+    );
+  }
+
+  // --- Transaction expiration ---
+  if (
+    errorMessage?.includes('transaction expiration') ||
+    errorMessage?.includes('Transaction has expired')
+  ) {
+    return new HiveError(
+      'Transaction expired. Check your internet connection and try again.',
+      'TX_EXPIRED',
+      error
+    );
+  }
+
+  // --- Cashout window ---
+  if (
+    errorMessage?.includes('Comment is not in the cashout window') ||
+    errorMessage?.includes('Cannot edit')
+  ) {
+    return new HiveError(
+      'This post is past the 7-day edit window and can no longer be modified.',
+      'CASHOUT_WINDOW_CLOSED',
+      error
+    );
+  }
+
+  // --- Delete restrictions ---
+  if (errorMessage?.includes('Cannot delete a comment with net positive votes')) {
+    return new HiveError(
+      "This post has votes and can't be fully deleted. It will be replaced with '[deleted]' instead.",
+      'CANNOT_DELETE_VOTED',
+      error
+    );
+  }
+
+  // --- Account not found ---
   if (errorMessage?.includes('Account does not exist')) {
     return new HiveError(
       'Account does not exist on the Hive blockchain.',
@@ -445,4 +534,39 @@ export function handleHiveError(error: Error | unknown): HiveError {
   }
 
   return new HiveError(errorMessage || 'An unknown error occurred', 'UNKNOWN_ERROR', error);
+}
+
+/**
+ * Returns extended, actionable guidance for a given HiveError code.
+ * Components can show this in a "What can I do?" section.
+ */
+export function getActionableMessage(code: string): string | null {
+  const messages: Record<string, string> = {
+    INSUFFICIENT_RC:
+      'Resource Credits regenerate over time (full in ~5 days). You can also ask another user to delegate Hive Power to your account, or power up HIVE tokens.',
+    MISSING_AUTHORITY:
+      'Make sure you are signed in with the correct Hive account and your posting key is configured in your wallet.',
+    MISSING_ACTIVE_KEY:
+      'Active key operations include transfers, power-ups, and witness votes. Use Hive Keychain for the safest experience.',
+    BANDWIDTH_EXCEEDED:
+      'Bandwidth is tied to your Hive Power. Powering up more HIVE or receiving a delegation will increase your bandwidth allowance.',
+    ALREADY_VOTED:
+      'On Hive, you can change your vote after the next 3-second voting cooldown. To remove a vote, vote with 0% weight.',
+    DUPLICATE_POST:
+      'Each post needs a unique permlink. Try changing the title slightly, or wait a few seconds before resubmitting.',
+    COMMENT_COOLDOWN:
+      'Hive enforces a 3-second cooldown between comments to prevent spam. Just wait a moment and try again.',
+    INVALID_SIGNATURE:
+      'This usually means your wallet session has expired. Try disconnecting and reconnecting your Hive wallet.',
+    TX_EXPIRED:
+      'Transactions expire after ~60 seconds. A slow or unstable internet connection can cause this. Retry on a stable connection.',
+    CASHOUT_WINDOW_CLOSED:
+      'Posts can only be edited within 7 days of publishing. After that, the content is permanently recorded on the blockchain.',
+    CANNOT_DELETE_VOTED:
+      'Hive prevents full deletion of content that has received votes or replies. The post body will be cleared instead.',
+    ACCOUNT_NOT_FOUND:
+      'Double-check the username for typos. Hive usernames are lowercase, 3-16 characters, and may contain dots and hyphens.',
+  };
+
+  return messages[code] ?? null;
 }
