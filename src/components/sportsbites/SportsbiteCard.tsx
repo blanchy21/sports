@@ -501,8 +501,8 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between py-1 sm:pl-[60px]">
-        <div className="flex items-center gap-6">
+      <div className="flex items-center justify-between gap-1 py-1 sm:pl-[60px]">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-6">
           <div className="group/vote flex items-center gap-1">
             {(authType === 'hive' || authType === 'soft') && sportsbite.source !== 'soft' ? (
               <StarVoteButton
@@ -528,7 +528,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
               title="View voters"
             >
-              <Users className="h-3.5 w-3.5" />
+              <Users className="hidden h-3.5 w-3.5 sm:block" />
               {sportsbite.active_votes?.length || sportsbite.net_votes || 0}
             </button>
           </div>
@@ -538,7 +538,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             size="sm"
             onClick={() => setShowReplies(!showReplies)}
             className={cn(
-              'flex h-8 items-center gap-1.5 px-2 transition-all hover:bg-primary/10 hover:text-primary',
+              'flex h-8 items-center gap-1 px-1 transition-all hover:bg-primary/10 hover:text-primary sm:gap-1.5 sm:px-2',
               showReplies ? 'text-primary' : 'text-muted-foreground'
             )}
           >
@@ -551,7 +551,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               variant="ghost"
               size="sm"
               onClick={() => setShowShareMenu(!showShareMenu)}
-              className="flex h-8 items-center gap-1.5 px-2 text-muted-foreground transition-all hover:bg-success/10 hover:text-success"
+              className="flex h-8 items-center gap-1 px-1 text-muted-foreground transition-all hover:bg-success/10 hover:text-success sm:gap-1.5 sm:px-2"
             >
               <Share2 className="h-4 w-4" />
             </Button>

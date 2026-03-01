@@ -337,7 +337,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
       {/* Footer */}
       <div className="border-t bg-muted/30 px-3 py-2 sm:px-4 sm:py-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex min-w-0 items-center space-x-2 sm:space-x-4">
             {/* Voting/Like Section */}
             {isSoftPost ? (
               // Soft posts use the heart-based like system
