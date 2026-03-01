@@ -256,6 +256,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           hiveUser: updatedHiveUser,
           loginAt: now,
           displayName: updatedUser.displayName,
+          avatar: updatedUser.avatar,
         });
       } else {
         dispatch({ type: 'UPDATE_HIVE_USER', payload: updatedHiveUser });

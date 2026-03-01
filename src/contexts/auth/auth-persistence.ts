@@ -110,6 +110,7 @@ export const syncSessionCookie = async (sessionData: {
   challengeData?: ChallengeData;
   hivesignerToken?: string;
   displayName?: string;
+  avatar?: string;
 }): Promise<boolean> => {
   try {
     const { challengeData, hivesignerToken, ...coreData } = sessionData;
@@ -244,6 +245,7 @@ let pendingPersistState: {
   challengeData?: ChallengeData;
   hivesignerToken?: string;
   displayName?: string;
+  avatar?: string;
 } | null = null;
 
 let persistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -264,6 +266,7 @@ const executePersist = async (): Promise<void> => {
     challengeData: challengeDataToPersist,
     hivesignerToken: hivesignerTokenToPersist,
     displayName: displayNameToPersist,
+    avatar: avatarToPersist,
   } = pendingPersistState;
   pendingPersistState = null;
 
@@ -284,6 +287,7 @@ const executePersist = async (): Promise<void> => {
       challengeData: challengeDataToPersist,
       hivesignerToken: hivesignerTokenToPersist,
       displayName: displayNameToPersist,
+      avatar: avatarToPersist,
     });
     if (!synced) {
       console.warn('Failed to sync session cookie for user:', userToPersist.username);
@@ -318,6 +322,7 @@ export const persistAuthState = ({
   challengeData: challengeDataToPersist,
   hivesignerToken: hivesignerTokenToPersist,
   displayName: displayNameToPersist,
+  avatar: avatarToPersist,
 }: {
   user: User | null;
   authType: AuthType;
@@ -326,6 +331,7 @@ export const persistAuthState = ({
   challengeData?: ChallengeData;
   hivesignerToken?: string;
   displayName?: string;
+  avatar?: string;
 }): void => {
   // Only persist on client-side
   if (typeof window === 'undefined') {
@@ -344,6 +350,7 @@ export const persistAuthState = ({
     challengeData: challengeDataToPersist ?? pendingPersistState?.challengeData,
     hivesignerToken: hivesignerTokenToPersist ?? pendingPersistState?.hivesignerToken,
     displayName: displayNameToPersist ?? pendingPersistState?.displayName,
+    avatar: avatarToPersist ?? pendingPersistState?.avatar,
   };
 
   // Clear any existing timer

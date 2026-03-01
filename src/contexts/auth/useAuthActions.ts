@@ -92,6 +92,8 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
         authType,
         hiveUser: result.updatedHiveUser,
         loginAt: Date.now(),
+        displayName: result.updatedUser.displayName,
+        avatar: result.updatedUser.avatar,
       });
     },
     [dispatch, getState]
@@ -172,6 +174,8 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           hiveUsername: hiveUsername,
           loginAt: now,
           challengeData,
+          displayName: basicUser.displayName,
+          avatar: basicUser.avatar,
         });
 
         // Debounced persist for UI hint & activity updates
@@ -181,6 +185,8 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           hiveUser: newHiveUser,
           loginAt: now,
           challengeData,
+          displayName: basicUser.displayName,
+          avatar: basicUser.avatar,
         });
 
         fetchProfileInBackground(hiveUsername, basicUser, newHiveUser);
@@ -286,6 +292,8 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           loginAt: now,
           challengeData,
           hivesignerToken,
+          displayName: basicUser.displayName,
+          avatar: basicUser.avatar,
         });
         if (process.env.NODE_ENV === 'development' && !cookieSynced) {
           console.warn('[loginWithWallet] Direct cookie sync FAILED for user:', username);
@@ -299,6 +307,8 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           loginAt: now,
           challengeData,
           hivesignerToken,
+          displayName: basicUser.displayName,
+          avatar: basicUser.avatar,
         });
 
         fetchProfileInBackground(username, basicUser, newHiveUser);

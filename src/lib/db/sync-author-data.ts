@@ -1,24 +1,44 @@
 import { prisma } from './prisma';
 
 /**
- * Sync denormalized authorDisplayName across Post, Comment, and Sportsbite
- * when a user's Hive profile display name changes.
+ * Sync denormalized author data (display name and/or avatar) across
+ * Post, Comment, and Sportsbite tables when a user's profile changes.
  *
- * Only updates rows where the display name actually differs, so this is
+ * Only updates rows where the values actually differ, so this is
  * safe to call on every session refresh (no-op when nothing changed).
  *
- * Hive usernames are immutable, so only display names need syncing.
+ * Only provided fields are synced — omitted fields are left untouched.
  */
-export async function syncDisplayName(username: string, newDisplayName: string): Promise<void> {
+export async function syncAuthorData(
+  username: string,
+  data: { displayName?: string; avatar?: string }
+): Promise<void> {
+  // Build update payload from provided fields only
+  const updateData: Record<string, string> = {};
+  const notConditions: Record<string, string>[] = [];
+
+  if (data.displayName !== undefined) {
+    updateData.authorDisplayName = data.displayName;
+    notConditions.push({ authorDisplayName: data.displayName });
+  }
+
+  if (data.avatar !== undefined) {
+    updateData.authorAvatar = data.avatar;
+    notConditions.push({ authorAvatar: data.avatar });
+  }
+
+  // Nothing to sync
+  if (Object.keys(updateData).length === 0) return;
+
+  // Match rows where ANY provided field differs from the new value
   const where = {
     authorUsername: username,
-    NOT: { authorDisplayName: newDisplayName },
+    NOT: notConditions.length === 1 ? notConditions[0] : { AND: notConditions },
   };
-  const data = { authorDisplayName: newDisplayName };
 
   await Promise.all([
-    prisma.post.updateMany({ where, data }),
-    prisma.comment.updateMany({ where, data }),
-    prisma.sportsbite.updateMany({ where, data }),
+    prisma.post.updateMany({ where, data: updateData }),
+    prisma.comment.updateMany({ where, data: updateData }),
+    prisma.sportsbite.updateMany({ where, data: updateData }),
   ]);
 }

@@ -22,7 +22,7 @@ import { authOptions } from '@/lib/auth/next-auth-options';
 import { verifyChallenge, verifyHivePostingSignature } from '@/lib/auth/hive-challenge';
 import { prisma } from '@/lib/db/prisma';
 import { logger } from '@/lib/logger';
-import { syncDisplayName } from '@/lib/db/sync-author-data';
+import { syncAuthorData } from '@/lib/db/sync-author-data';
 
 const ROUTE = '/api/auth/sb-session';
 const SESSION_COOKIE_NAME = 'sb_session';
@@ -46,8 +46,9 @@ const sessionSchema = z.object({
   signature: z.string().optional(),
   // HiveSigner OAuth token for server-side verification (alternative to challenge-response)
   hivesignerToken: z.string().optional(),
-  // Optional display name for syncing denormalized author data
+  // Optional fields for syncing denormalized author data
   displayName: z.string().optional(),
+  avatar: z.string().optional(),
 });
 
 // Session data stored in cookie (without challenge artifacts)
@@ -158,8 +159,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid session data' }, { status: 400 });
     }
 
-    const { challenge, challengeMac, signature, hivesignerToken, displayName, ...sessionFields } =
-      parseResult.data;
+    const {
+      challenge,
+      challengeMac,
+      signature,
+      hivesignerToken,
+      displayName,
+      avatar,
+      ...sessionFields
+    } = parseResult.data;
     const sessionData: SessionData = sessionFields;
 
     // For Hive auth: verify wallet ownership via challenge-response
@@ -285,10 +293,10 @@ export async function POST(request: NextRequest) {
       sessionData.loginAt = Date.now();
     }
 
-    // Sync denormalized author display name if provided (fire-and-forget)
-    if (displayName && sessionData.username) {
-      syncDisplayName(sessionData.username, displayName).catch((err) => {
-        logger.warn('Display name sync failed (non-fatal)', 'sb-session', err);
+    // Sync denormalized author data if provided (fire-and-forget)
+    if ((displayName || avatar) && sessionData.username) {
+      syncAuthorData(sessionData.username, { displayName, avatar }).catch((err) => {
+        logger.warn('Author data sync failed (non-fatal)', 'sb-session', err);
       });
     }
 
