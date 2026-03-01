@@ -9,7 +9,11 @@ import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@/generated/prisma/client';
-import { verifyStakeToken } from '@/lib/predictions/stake-token';
+import {
+  verifyStakeToken,
+  isStakeTokenConsumed,
+  consumeStakeToken,
+} from '@/lib/predictions/stake-token';
 import { verifyStakeTransaction } from '@/lib/predictions/verify-stake';
 import { serializePrediction } from '@/lib/predictions/serialize';
 import { logger } from '@/lib/logger';
@@ -35,6 +39,14 @@ export const POST = createApiHandler(
 
       const tokenData = verifyStakeToken(body.stakeToken);
       if (!tokenData) throw new ValidationError('Invalid or expired stake token');
+
+      if (await isStakeTokenConsumed(body.stakeToken)) {
+        logger.warn('Stake token replay attempt', 'predictions', {
+          username: user.username,
+          predictionId: tokenData.predictionId,
+        });
+        throw new ValidationError('Stake token already used');
+      }
 
       if (tokenData.username !== user.username) {
         throw new ForbiddenError('Stake token does not match authenticated user');
@@ -116,6 +128,8 @@ export const POST = createApiHandler(
         }
         throw e;
       }
+
+      await consumeStakeToken(body.stakeToken, { txId: body.txId, username: user.username });
 
       return apiSuccess(serializePrediction(prediction, user.username));
     });

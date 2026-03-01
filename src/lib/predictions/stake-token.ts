@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import { PREDICTION_CONFIG } from './constants';
+import { getRedisCache } from '@/lib/cache/redis-cache';
+import { logger } from '@/lib/logger';
 
 const DEV_FALLBACK_SECRET = 'dev-only-prediction-stake-token-secret-do-not-use-in-prod';
 
@@ -43,6 +45,58 @@ export function signStakeToken(data: StakeTokenData): string {
   const signature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
 
   return `${payload}.${signature}`;
+}
+
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/**
+ * Check if a stake token has already been consumed (one-time use enforcement).
+ * Returns false if Redis is unavailable (falls through to DB constraints).
+ */
+export async function isStakeTokenConsumed(token: string): Promise<boolean> {
+  try {
+    const redis = await getRedisCache();
+    if (!redis.isAvailable()) return false;
+    return redis.has(`stake-token:consumed:${hashToken(token)}`);
+  } catch (error) {
+    logger.warn(
+      'Redis unavailable for stake token check, falling through to DB constraints',
+      'predictions',
+      {
+        error: error instanceof Error ? error.message : String(error),
+      }
+    );
+    return false;
+  }
+}
+
+/**
+ * Mark a stake token as consumed in Redis.
+ * TTL matches the token expiry — no need to track beyond that.
+ */
+export async function consumeStakeToken(
+  token: string,
+  meta: { txId: string; username: string }
+): Promise<void> {
+  try {
+    const redis = await getRedisCache();
+    if (!redis.isAvailable()) return;
+    await redis.set(
+      `stake-token:consumed:${hashToken(token)}`,
+      { ...meta, consumedAt: Date.now() },
+      { ttl: PREDICTION_CONFIG.STAKE_TOKEN_EXPIRY_SECONDS }
+    );
+  } catch (error) {
+    logger.warn(
+      'Redis unavailable for stake token consumption, DB constraints remain as safety net',
+      'predictions',
+      {
+        error: error instanceof Error ? error.message : String(error),
+      }
+    );
+  }
 }
 
 export function verifyStakeToken(token: string): StakeTokenData | null {
