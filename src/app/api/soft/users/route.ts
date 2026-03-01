@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
-import { createRequestContext, validationError, notFoundError } from '@/lib/api/response';
+import { createApiHandler, validationError, notFoundError } from '@/lib/api/response';
 import {
   checkRateLimit,
   getClientIdentifier,
@@ -83,9 +83,9 @@ function profileToResponse(profile: {
  * - userId: string (fetch by user ID)
  * - limit: number (default 10, max 50)
  */
-export async function GET(request: NextRequest) {
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
   // Rate limiting to prevent user enumeration
-  const clientId = getClientIdentifier(request);
+  const clientId = getClientIdentifier(request as NextRequest);
   const rateLimit = await checkRateLimit(clientId, RATE_LIMITS.read, 'softUsersRead');
   if (!rateLimit.success) {
     return NextResponse.json(
@@ -97,81 +97,72 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const ctx = createRequestContext(ROUTE);
+  const searchParams = Object.fromEntries((request as NextRequest).nextUrl.searchParams);
+  const parseResult = getUsersQuerySchema.safeParse(searchParams);
 
-  try {
-    const searchParams = Object.fromEntries(request.nextUrl.searchParams);
-    const parseResult = getUsersQuerySchema.safeParse(searchParams);
-
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
-
-    const { search, username, userId, limit } = parseResult.data;
-
-    ctx.log.debug('Fetching soft users', { search, username, userId, limit });
-
-    const cacheHeaders = {
-      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-    };
-
-    // Fetch by user ID
-    if (userId) {
-      const profile = await prisma.profile.findUnique({ where: { id: userId } });
-
-      if (!profile) {
-        return notFoundError(`User with ID '${userId}' not found`, ctx.requestId);
-      }
-
-      return NextResponse.json(
-        {
-          success: true,
-          user: profileToResponse(profile),
-        },
-        { headers: cacheHeaders }
-      );
-    }
-
-    // Fetch by exact username
-    if (username) {
-      const profile = await prisma.profile.findUnique({ where: { username } });
-
-      if (!profile) {
-        return notFoundError(`User '${username}' not found`, ctx.requestId);
-      }
-
-      return NextResponse.json(
-        {
-          success: true,
-          user: profileToResponse(profile),
-        },
-        { headers: cacheHeaders }
-      );
-    }
-
-    // Search by username prefix
-    if (search) {
-      const profiles = await prisma.profile.findMany({
-        where: { username: { startsWith: search.toLowerCase() } },
-        take: limit,
-      });
-
-      return NextResponse.json(
-        {
-          success: true,
-          users: profiles.map(profileToResponse),
-          count: profiles.length,
-        },
-        { headers: cacheHeaders }
-      );
-    }
-
-    // No valid query params provided
-    return validationError(
-      'Please provide one of: search, username, or userId query parameter',
-      ctx.requestId
-    );
-  } catch (error) {
-    return ctx.handleError(error);
+  if (!parseResult.success) {
+    return validationError(parseResult.error);
   }
-}
+
+  const { search, username, userId, limit } = parseResult.data;
+
+  ctx.log.debug('Fetching soft users', { search, username, userId, limit });
+
+  const cacheHeaders = {
+    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+  };
+
+  // Fetch by user ID
+  if (userId) {
+    const profile = await prisma.profile.findUnique({ where: { id: userId } });
+
+    if (!profile) {
+      return notFoundError(`User with ID '${userId}' not found`);
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        user: profileToResponse(profile),
+      },
+      { headers: cacheHeaders }
+    );
+  }
+
+  // Fetch by exact username
+  if (username) {
+    const profile = await prisma.profile.findUnique({ where: { username } });
+
+    if (!profile) {
+      return notFoundError(`User '${username}' not found`);
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        user: profileToResponse(profile),
+      },
+      { headers: cacheHeaders }
+    );
+  }
+
+  // Search by username prefix
+  if (search) {
+    const profiles = await prisma.profile.findMany({
+      where: { username: { startsWith: search.toLowerCase() } },
+      take: limit,
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        users: profiles.map(profileToResponse),
+        count: profiles.length,
+      },
+      { headers: cacheHeaders }
+    );
+  }
+
+  // No valid query params provided
+  return validationError('Please provide one of: search, username, or userId query parameter');
+});

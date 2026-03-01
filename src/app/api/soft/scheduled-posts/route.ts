@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { withCsrfProtection } from '@/lib/api/csrf';
-import { createRequestContext } from '@/lib/api/response';
+import { csrfProtected } from '@/lib/api/csrf';
+import { createApiHandler } from '@/lib/api/response';
 
 const ROUTE = '/api/soft/scheduled-posts';
 
@@ -30,68 +30,62 @@ const createScheduledPostSchema = z.object({
 /**
  * POST /api/soft/scheduled-posts - Create a scheduled post
  */
-export async function POST(request: NextRequest) {
-  return withCsrfProtection(request, async () => {
-    const ctx = createRequestContext(ROUTE);
-
-    try {
-      const sessionUser = await getAuthenticatedUserFromSession(request);
-      if (!sessionUser) {
-        return NextResponse.json(
-          { success: false, error: 'Authentication required' },
-          { status: 401 }
-        );
-      }
-
-      const body = await request.json();
-      const parseResult = createScheduledPostSchema.safeParse(body);
-
-      if (!parseResult.success) {
-        return NextResponse.json(
-          { success: false, error: 'Validation failed', details: parseResult.error.flatten() },
-          { status: 400 }
-        );
-      }
-
-      const { userId, postData, scheduledAt } = parseResult.data;
-
-      if (sessionUser.userId !== userId) {
-        return NextResponse.json(
-          { success: false, error: 'Cannot create scheduled posts as another user' },
-          { status: 403 }
-        );
-      }
-
-      // Server-side enforcement: use hiveUsername from session to prevent email leaks
-      if (sessionUser.hiveUsername) {
-        postData.authorUsername = sessionUser.hiveUsername;
-      }
-
-      const scheduledPost = await prisma.scheduledPost.create({
-        data: {
-          userId,
-          postData: postData as unknown as Prisma.InputJsonValue,
-          scheduledAt,
-          status: 'pending',
-        },
-      });
-
+export const POST = csrfProtected(
+  createApiHandler(ROUTE, async (request, ctx) => {
+    const sessionUser = await getAuthenticatedUserFromSession(request as NextRequest);
+    if (!sessionUser) {
       return NextResponse.json(
-        {
-          success: true,
-          scheduledPost: {
-            id: scheduledPost.id,
-            userId: scheduledPost.userId,
-            postData,
-            scheduledAt: scheduledPost.scheduledAt,
-            status: scheduledPost.status,
-            createdAt: scheduledPost.createdAt,
-          },
-        },
-        { status: 201 }
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
       );
-    } catch (error) {
-      return ctx.handleError(error);
     }
-  });
-}
+
+    const body = await (request as NextRequest).json();
+    const parseResult = createScheduledPostSchema.safeParse(body);
+
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { success: false, error: 'Validation failed', details: parseResult.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const { userId, postData, scheduledAt } = parseResult.data;
+
+    if (sessionUser.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Cannot create scheduled posts as another user' },
+        { status: 403 }
+      );
+    }
+
+    // Server-side enforcement: use hiveUsername from session to prevent email leaks
+    if (sessionUser.hiveUsername) {
+      postData.authorUsername = sessionUser.hiveUsername;
+    }
+
+    const scheduledPost = await prisma.scheduledPost.create({
+      data: {
+        userId,
+        postData: postData as unknown as Prisma.InputJsonValue,
+        scheduledAt,
+        status: 'pending',
+      },
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        scheduledPost: {
+          id: scheduledPost.id,
+          userId: scheduledPost.userId,
+          postData,
+          scheduledAt: scheduledPost.scheduledAt,
+          status: scheduledPost.status,
+          createdAt: scheduledPost.createdAt,
+        },
+      },
+      { status: 201 }
+    );
+  })
+);
