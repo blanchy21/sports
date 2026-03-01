@@ -13,6 +13,44 @@ export const dynamic = 'force-dynamic';
 const ROUTE = '/api/unified/posts';
 
 // ============================================
+// Composite cursor for dual-source pagination
+// ============================================
+
+interface UnifiedCursor {
+  soft?: string; // ISO datetime for soft post pagination
+  hive?: string; // "author/permlink" for Hive API pagination
+}
+
+function encodeCursor(cursor: UnifiedCursor): string {
+  return Buffer.from(JSON.stringify(cursor)).toString('base64url');
+}
+
+function decodeCursor(encoded: string): UnifiedCursor {
+  try {
+    return JSON.parse(Buffer.from(encoded, 'base64url').toString());
+  } catch {
+    // Backwards compat: treat raw ISO datetime strings as soft-only cursor
+    return { soft: encoded };
+  }
+}
+
+function buildNextCursor(
+  sliced: UnifiedPost[],
+  hasMore: boolean,
+  prevCursor?: UnifiedCursor
+): string | undefined {
+  if (!hasMore) return undefined;
+
+  const lastHive = sliced.findLast((p) => p.source === 'hive');
+  const lastSoft = sliced.findLast((p) => p.source === 'soft');
+
+  return encodeCursor({
+    soft: lastSoft?.created,
+    hive: lastHive ? `${lastHive.author}/${lastHive.permlink}` : prevCursor?.hive,
+  });
+}
+
+// ============================================
 // Prisma helpers for querying soft posts
 // ============================================
 
@@ -158,7 +196,7 @@ const unifiedPostsQuerySchema = z.object({
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 20))
     .pipe(z.number().int().min(1).max(100)),
-  before: z.string().datetime({ offset: true }).optional(),
+  before: z.string().min(1).optional(),
   includeHive: z
     .string()
     .optional()
@@ -341,17 +379,24 @@ export async function GET(request: NextRequest) {
       'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
     };
 
+    // Decode composite cursor once for all paths
+    const cursor = before ? decodeCursor(before) : undefined;
+
     // If authorId is provided, only fetch soft posts
     if (authorId) {
       if (includeSoft) {
-        const softPosts = await getSoftPostsByAuthorId(authorId, limit + 1, before, includeHive);
+        const softPosts = await getSoftPostsByAuthorId(
+          authorId,
+          limit + 1,
+          cursor?.soft,
+          includeHive
+        );
         allPosts.push(...softPosts.map(softPostToUnified));
       }
 
       const hasMore = allPosts.length > limit;
       const sliced = allPosts.slice(0, limit);
-      const nextCursor =
-        hasMore && sliced.length > 0 ? sliced[sliced.length - 1].created : undefined;
+      const nextCursor = buildNextCursor(sliced, hasMore, cursor);
 
       return NextResponse.json(
         {
@@ -374,7 +419,7 @@ export async function GET(request: NextRequest) {
       // Soft posts don't depend on profile -- start immediately
       if (includeSoft) {
         fetchPromises.push(
-          getSoftPostsByUsername(username, limit + 1, before, includeHive)
+          getSoftPostsByUsername(username, limit + 1, cursor?.soft, includeHive)
             .then((posts) => {
               allPosts.push(...posts.map(softPostToUnified));
             })
@@ -397,12 +442,15 @@ export async function GET(request: NextRequest) {
               if (isSoftUser) return;
 
               const { getUserPosts } = await import('@/lib/hive-workerbee/content');
-              const hivePosts = await retryWithBackoff(() => getUserPosts(username, limit), {
-                maxRetries: 1,
-                initialDelay: 500,
-                maxDelay: 2000,
-                backoffMultiplier: 2,
-              });
+              const hivePosts = await retryWithBackoff(
+                () => getUserPosts(username, limit, cursor?.hive),
+                {
+                  maxRetries: 1,
+                  initialDelay: 500,
+                  maxDelay: 2000,
+                  backoffMultiplier: 2,
+                }
+              );
               if (hivePosts && hivePosts.length > 0) {
                 allPosts.push(...hivePosts.map(hivePostToUnified));
               }
@@ -417,24 +465,12 @@ export async function GET(request: NextRequest) {
       const softProfile = await profilePromise;
       const isSoftUser = softProfile && !softProfile.isHiveUser;
 
-      // Filter by cursor date if paginating
-      if (before) {
-        const beforeDate = new Date(before).getTime();
-        // Hive posts aren't filtered at the API level, so filter here
-        const hiveBefore = allPosts.filter(
-          (p) => p.source !== 'hive' || new Date(p.created).getTime() < beforeDate
-        );
-        allPosts.length = 0;
-        allPosts.push(...hiveBefore);
-      }
-
       // Sort by created date (newest first)
       allPosts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
 
       const hasMore = allPosts.length > limit;
       const sliced = allPosts.slice(0, limit);
-      const nextCursor =
-        hasMore && sliced.length > 0 ? sliced[sliced.length - 1].created : undefined;
+      const nextCursor = buildNextCursor(sliced, hasMore, cursor);
 
       const hivePosts = sliced.filter((p) => p.source === 'hive');
       const softPosts = sliced.filter((p) => p.source === 'soft');
@@ -459,7 +495,7 @@ export async function GET(request: NextRequest) {
     // Fetch soft posts
     if (includeSoft) {
       fetchPromises.push(
-        getAllSoftPosts(limit + 1, before, includeHive)
+        getAllSoftPosts(limit + 1, cursor?.soft, includeHive)
           .then((posts) => {
             let filtered = posts;
             if (sportCategory) {
@@ -480,7 +516,7 @@ export async function GET(request: NextRequest) {
           try {
             const { fetchSportsblockPosts } = await import('@/lib/hive-workerbee/content');
             const result = await retryWithBackoff(
-              () => fetchSportsblockPosts({ limit, sportCategory }),
+              () => fetchSportsblockPosts({ limit, sportCategory, before: cursor?.hive }),
               { maxRetries: 1, initialDelay: 500, maxDelay: 2000, backoffMultiplier: 2 }
             );
             if (result.posts && result.posts.length > 0) {
@@ -495,22 +531,12 @@ export async function GET(request: NextRequest) {
 
     await Promise.all(fetchPromises);
 
-    // Filter Hive posts by cursor date if paginating
-    if (before) {
-      const beforeDate = new Date(before).getTime();
-      const filtered = allPosts.filter(
-        (p) => p.source !== 'hive' || new Date(p.created).getTime() < beforeDate
-      );
-      allPosts.length = 0;
-      allPosts.push(...filtered);
-    }
-
     // Sort by created date (newest first)
     allPosts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
 
     const hasMore = allPosts.length > limit;
     const sliced = allPosts.slice(0, limit);
-    const nextCursor = hasMore && sliced.length > 0 ? sliced[sliced.length - 1].created : undefined;
+    const nextCursor = buildNextCursor(sliced, hasMore, cursor);
 
     const hivePosts = sliced.filter((p) => p.source === 'hive');
     const softPosts = sliced.filter((p) => p.source === 'soft');

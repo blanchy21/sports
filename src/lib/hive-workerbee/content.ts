@@ -657,11 +657,11 @@ export async function getPostsBySport(
  */
 export async function getUserPosts(
   username: string,
-  limit: number = 20
+  limit: number = 20,
+  startPermlink: string = ''
 ): Promise<SportsblockPost[]> {
   try {
     const sportsblockPosts: SportsblockPost[] = [];
-    let startPermlink = '';
     const maxPages = 10; // Maximum pages to fetch (10 * 20 = 200 posts max)
     const postsPerPage = 20; // Hive API limit
 
@@ -681,8 +681,10 @@ export async function getUserPosts(
         break;
       }
 
-      // Skip the first post on subsequent pages (it's a duplicate from the previous page)
-      const newPosts = page === 0 ? posts : posts.slice(1);
+      // Skip the first post when resuming from a cursor (inclusive API — cursor post is a duplicate).
+      // This applies to subsequent internal pages AND the first page when called with an external cursor.
+      const hasCursor = page > 0 || (page === 0 && startPermlink !== '');
+      const newPosts = hasCursor ? posts.slice(1) : posts;
 
       if (newPosts.length === 0) {
         break;
