@@ -101,7 +101,7 @@ export interface KeychainResponse {
   success: boolean;
   error?: string;
   message?: string;
-  result?: string;
+  result?: string | Record<string, unknown>; // string for sign, object { id: txHash } for broadcast
   publicKey?: string;
   data?: {
     id?: string;

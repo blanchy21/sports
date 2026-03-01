@@ -51,7 +51,7 @@ export function keychainLogin(username: string, message: string): Promise<Wallet
           success: true,
           username: resolvedUsername,
           provider: 'keychain',
-          signature: response.result || undefined,
+          signature: (response.result as string) || undefined,
         });
       } else {
         const msg = response.error || response.message || 'Keychain login failed';
@@ -86,7 +86,7 @@ export function keychainSignMessage(username: string, message: string): Promise<
   const raw = new Promise<WalletSignOutcome>((resolve) => {
     keychain.requestSignBuffer!(username, message, 'Posting', (response: KeychainResponse) => {
       if (response.success && response.result) {
-        resolve({ success: true, signature: response.result });
+        resolve({ success: true, signature: response.result as string });
       } else {
         resolve({
           success: false,
@@ -125,7 +125,16 @@ export function keychainBroadcast(
       keychainKeyType,
       (response: KeychainResponse) => {
         if (response.success) {
-          const txId = response.result || response.data?.id || 'unknown';
+          // response.result is an object { id: "txhash" } for broadcasts,
+          // not a string — extract the tx ID from the correct field.
+          const result = response.result;
+          const txId =
+            (typeof result === 'object' &&
+              result !== null &&
+              (result as Record<string, unknown>).id) ||
+            (typeof result === 'string' && result) ||
+            response.data?.id ||
+            'unknown';
           resolve({ success: true, transactionId: String(txId) });
         } else {
           resolve({

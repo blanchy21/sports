@@ -39,11 +39,38 @@ export async function verifyStakeTransaction(params: VerifyStakeParams): Promise
     params;
 
   try {
-    // Fetch the transaction from Hive L1
-    const tx = await dhive.database.getTransaction(txId);
+    // Fetch the transaction from Hive L1.
+    // Hive blocks are produced every ~3s, so a just-broadcast tx may still be
+    // in the mempool. Retry with a linear backoff to wait for confirmation.
+    const MAX_RETRIES = 3;
+    const INITIAL_DELAY_MS = 4000; // just over 1 block
+    const BACKOFF_MS = 3000; // linear increase per retry
+
+    let tx: Awaited<ReturnType<typeof dhive.database.getTransaction>> | null = null;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        const delay = INITIAL_DELAY_MS + (attempt - 1) * BACKOFF_MS;
+        logger.info(
+          `Stake tx ${txId} not found, retry ${attempt}/${MAX_RETRIES} after ${delay}ms`,
+          'verify-stake'
+        );
+        await new Promise((r) => setTimeout(r, delay));
+      }
+
+      try {
+        tx = await dhive.database.getTransaction(txId);
+      } catch (fetchErr) {
+        // Node errors (timeouts, 404s) are retryable
+        if (attempt === MAX_RETRIES) throw fetchErr;
+        continue;
+      }
+
+      if (tx && tx.operations && tx.operations.length > 0) break;
+    }
 
     if (!tx || !tx.operations || tx.operations.length === 0) {
-      return { valid: false, error: 'Transaction not found on-chain' };
+      return { valid: false, error: 'Transaction not found on-chain after retries' };
     }
 
     // Look for a matching custom_json operation in the transaction
