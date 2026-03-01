@@ -32,7 +32,7 @@ import {
 } from '@/lib/hive-workerbee/shared';
 import type { Sportsbite, PollDefinition } from '@/lib/hive-workerbee/shared';
 import { PollComposer } from '@/components/sportsbites/PollComposer';
-import { createMatchThreadSportsbiteOperation } from '@/lib/hive-workerbee/match-threads';
+import { createMatchThreadSportsbiteOperation } from '@/lib/hive-workerbee/shared';
 import { uploadImage } from '@/lib/hive/imageUpload';
 import { validateImageUrl } from '@/lib/utils/sanitize';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';

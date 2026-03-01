@@ -4,11 +4,11 @@ import request from 'supertest';
 import { createRouteTestServer } from './test-server';
 import { GET as postingHandler } from '@/app/api/hive/posting/route';
 
-jest.mock('@/lib/hive-workerbee/posting', () => ({
+jest.mock('@/lib/hive-workerbee/posting-server', () => ({
   canUserPost: jest.fn(),
 }));
 
-const { canUserPost } = jest.requireMock('@/lib/hive-workerbee/posting');
+const { canUserPost } = jest.requireMock('@/lib/hive-workerbee/posting-server');
 
 describe('GET /api/hive/posting', () => {
   let server: ReturnType<typeof createRouteTestServer>;
@@ -42,9 +42,7 @@ describe('GET /api/hive/posting', () => {
   it('returns posting eligibility when available', async () => {
     canUserPost.mockResolvedValueOnce(true);
 
-    const response = await request(server)
-      .get('/api/hive/posting')
-      .query({ username: 'gtg' });
+    const response = await request(server).get('/api/hive/posting').query({ username: 'gtg' });
 
     expect(response.status).toBe(200);
     expect(canUserPost).toHaveBeenCalledWith('gtg');
@@ -58,9 +56,7 @@ describe('GET /api/hive/posting', () => {
   it('returns 502 when workerbee throws', async () => {
     canUserPost.mockRejectedValueOnce(new Error('RPC unavailable'));
 
-    const response = await request(server)
-      .get('/api/hive/posting')
-      .query({ username: 'gtg' });
+    const response = await request(server).get('/api/hive/posting').query({ username: 'gtg' });
 
     expect(response.status).toBe(500);
     expect(response.body.success).toBe(false);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { canUserPost } from '@/lib/hive-workerbee/posting';
+import { canUserPost } from '@/lib/hive-workerbee/posting-server';
 import { postingStatusQuerySchema, parseSearchParams } from '@/lib/api/validation';
 import { createRequestContext, validationError } from '@/lib/api/response';
 

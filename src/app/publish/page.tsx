@@ -8,8 +8,8 @@ import { Eye, EyeOff, Save, Send, AlertCircle, MoreVertical, Calendar } from 'lu
 import { Community, SPORT_CATEGORIES } from '@/types';
 import { cn } from '@/lib/utils/client';
 import { formatReadTime } from '@/lib/utils/formatting';
-import { publishPost, canUserPost, validatePostData } from '@/lib/hive-workerbee/posting';
-import { PostData } from '@/lib/hive-workerbee/posting';
+import { publishPost, validatePostData } from '@/lib/hive-workerbee/posting';
+import type { PostData } from '@/lib/hive-workerbee/posting';
 import { useCommunities, useUserCommunities } from '@/lib/react-query/queries/useCommunity';
 import { useUIStore } from '@/stores/uiStore';
 import { logger } from '@/lib/logger';
@@ -182,7 +182,15 @@ function PublishPageContent() {
     if (!hiveUser?.username) return;
 
     try {
-      const status = await canUserPost(hiveUser.username);
+      const res = await fetch(
+        `/api/hive/posting?username=${encodeURIComponent(hiveUser.username)}`
+      );
+      const data = await res.json();
+      const status = data.canPost ?? {
+        canPost: false,
+        rcPercentage: 0,
+        message: 'Failed to check RC',
+      };
       setRcStatus(status);
     } catch (error) {
       logger.error('Error checking RC status', 'PublishPage', error);

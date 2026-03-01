@@ -16,7 +16,7 @@ import { useBroadcast } from '@/hooks/useBroadcast';
 import {
   createCommunitySubscribeOperation,
   createCommunityUnsubscribeOperation,
-} from '@/lib/hive-workerbee/social';
+} from '@/lib/hive-workerbee/shared';
 import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/shared';
 
 interface JoinButtonProps {

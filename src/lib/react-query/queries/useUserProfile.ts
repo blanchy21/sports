@@ -1,11 +1,57 @@
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
-import { fetchUserAccount, parseJsonMetadata } from '@/lib/hive-workerbee/account';
-import { getAccountsBatch } from '@/lib/hive-workerbee/optimization';
-import { getFollowerCount, getFollowingCount, isFollowingUser } from '@/lib/hive-workerbee/social';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { STALE_TIMES } from '@/lib/constants/cache';
-import type { UserAccountData } from '@/lib/hive-workerbee/account';
+
+/**
+ * Local type matching the API response shape from /api/hive/account/summary.
+ * Defined here to avoid importing from the server-only account module.
+ */
+export interface UserAccountData {
+  username: string;
+  reputation: number;
+  reputationFormatted: string;
+  liquidHiveBalance: number;
+  liquidHbdBalance: number;
+  savingsHiveBalance: number;
+  savingsHbdBalance: number;
+  hiveBalance: number;
+  hbdBalance: number;
+  hivePower: number;
+  resourceCredits: number;
+  resourceCreditsFormatted: string;
+  hasEnoughRC: boolean;
+  savingsApr?: number;
+  pendingWithdrawals?: Array<{
+    id: string;
+    amount: string;
+    to: string;
+    memo: string;
+    requestId: number;
+    from: string;
+    timestamp: string;
+  }>;
+  profile: {
+    name?: string;
+    about?: string;
+    location?: string;
+    website?: string;
+    coverImage?: string;
+    profileImage?: string;
+  };
+  stats: {
+    postCount: number;
+    commentCount: number;
+    voteCount: number;
+    followers?: number;
+    following?: number;
+  };
+  createdAt: string;
+  lastPost?: string;
+  lastVote?: string;
+  canVote: boolean;
+  votingPower: number;
+}
 
 /**
  * Lightweight profile data for cards and avatars
@@ -18,6 +64,18 @@ export interface UserProfileCard {
   reputationFormatted?: string;
 }
 
+async function fetchAccountViaApi(username: string): Promise<UserAccountData | null> {
+  const response = await fetch(
+    `/api/hive/account/summary?username=${encodeURIComponent(username)}`
+  );
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    throw new Error(`Failed to fetch account: ${response.status}`);
+  }
+  const data = await response.json();
+  return data.success ? (data.account as UserAccountData) : null;
+}
+
 /**
  * Full user profile hook — returns complete UserAccountData.
  * Used by profile pages and modals that need balances, stats, etc.
@@ -25,7 +83,7 @@ export interface UserProfileCard {
 export function useUserProfile(username: string) {
   return useQuery({
     queryKey: queryKeys.users.detail(username),
-    queryFn: () => fetchUserAccount(username),
+    queryFn: () => fetchAccountViaApi(username),
     enabled: !!username,
     staleTime: STALE_TIMES.STANDARD,
   });
@@ -43,7 +101,7 @@ export function useUserProfileCard(username: string | null) {
     refetch,
   } = useQuery({
     queryKey: queryKeys.users.detail(username!),
-    queryFn: () => fetchUserAccount(username!),
+    queryFn: () => fetchAccountViaApi(username!),
     enabled: !!username,
     staleTime: STALE_TIMES.STANDARD,
     // Don't refetch on window focus for card profiles
@@ -70,7 +128,7 @@ export function useUserProfileCard(username: string | null) {
 }
 
 /**
- * Batch prefetch user profiles using a single API call.
+ * Batch prefetch user profiles using parallel API requests.
  * Populates the React Query cache so individual useUserProfile/useUserProfileCard
  * hooks get instant cache hits.
  */
@@ -90,41 +148,14 @@ export async function prefetchUserProfiles(
   if (uncachedUsernames.length === 0) return;
 
   try {
-    // Batch fetch all accounts in a single API call
-    const accountsMap = await getAccountsBatch(uncachedUsernames);
+    const results = await Promise.allSettled(
+      uncachedUsernames.map((username) => fetchAccountViaApi(username))
+    );
 
-    // Populate React Query cache for each account
-    for (const username of uncachedUsernames) {
-      const accountData = accountsMap.get(username);
-      if (!accountData) continue;
-
-      // Build a UserAccountData-compatible object for the cache.
-      // fetchUserAccount does more processing, but for prefetch we populate
-      // the fields that useUserProfileCard needs via select.
-      const metadata = parseJsonMetadata((accountData.json_metadata as string) || '{}');
-      const postingMetadata = parseJsonMetadata(
-        (accountData.posting_json_metadata as string) || '{}'
-      );
-      const profile = {
-        ...(metadata.profile || {}),
-        ...(postingMetadata.profile || {}),
-      } as Record<string, string>;
-
-      const prefetchData: Partial<UserAccountData> = {
-        username,
-        reputation: 0,
-        reputationFormatted: '0',
-        profile: {
-          name: profile.name,
-          about: profile.about,
-          location: profile.location,
-          website: profile.website,
-          coverImage: profile.cover_image,
-          profileImage: profile.profile_image,
-        },
-      };
-
-      queryClient.setQueryData(queryKeys.users.detail(username), prefetchData);
+    for (let i = 0; i < uncachedUsernames.length; i++) {
+      const result = results[i];
+      if (result.status !== 'fulfilled' || !result.value) continue;
+      queryClient.setQueryData(queryKeys.users.detail(uncachedUsernames[i]), result.value);
     }
   } catch (error) {
     // Silently fail — individual hooks will fetch on their own
@@ -135,7 +166,10 @@ export async function prefetchUserProfiles(
 export function useUserFollowerCount(username: string) {
   return useQuery({
     queryKey: [...queryKeys.users.followers(username), 'count'],
-    queryFn: () => getFollowerCount(username),
+    queryFn: async () => {
+      const account = await fetchAccountViaApi(username);
+      return account?.stats?.followers ?? 0;
+    },
     enabled: !!username,
     staleTime: STALE_TIMES.STABLE,
   });
@@ -144,7 +178,10 @@ export function useUserFollowerCount(username: string) {
 export function useUserFollowingCount(username: string) {
   return useQuery({
     queryKey: [...queryKeys.users.following(username), 'count'],
-    queryFn: () => getFollowingCount(username),
+    queryFn: async () => {
+      const account = await fetchAccountViaApi(username);
+      return account?.stats?.following ?? 0;
+    },
     enabled: !!username,
     staleTime: STALE_TIMES.STABLE,
   });
@@ -153,7 +190,15 @@ export function useUserFollowingCount(username: string) {
 export function useIsFollowingUser(username: string, follower: string) {
   return useQuery({
     queryKey: [...queryKeys.users.detail(username), 'following', follower],
-    queryFn: () => isFollowingUser(username, follower),
+    queryFn: async (): Promise<boolean> => {
+      const params = new URLSearchParams({ follower, targets: username });
+      const response = await fetch(`/api/hive/follows?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch follow status');
+      }
+      const data = await response.json();
+      return data.followStatus?.[username] ?? false;
+    },
     enabled: !!username && !!follower,
     staleTime: STALE_TIMES.REALTIME,
   });

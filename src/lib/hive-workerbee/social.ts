@@ -9,47 +9,13 @@ import {
   info as logInfo,
 } from './logger';
 
-// ---------------------------------------------------------------------------
-// Community subscribe/unsubscribe operation builders (pure — no WASM)
-// ---------------------------------------------------------------------------
-
-/**
- * Build a custom_json operation for subscribing to a Hive community.
- * Returns a tuple compatible with broadcastFn.
- */
-export function createCommunitySubscribeOperation(
-  username: string,
-  community: string
-): [string, Record<string, unknown>] {
-  return [
-    'custom_json',
-    {
-      required_auths: [],
-      required_posting_auths: [username],
-      id: 'community',
-      json: JSON.stringify(['subscribe', { community }]),
-    },
-  ];
-}
-
-/**
- * Build a custom_json operation for unsubscribing from a Hive community.
- * Returns a tuple compatible with broadcastFn.
- */
-export function createCommunityUnsubscribeOperation(
-  username: string,
-  community: string
-): [string, Record<string, unknown>] {
-  return [
-    'custom_json',
-    {
-      required_auths: [],
-      required_posting_auths: [username],
-      id: 'community',
-      json: JSON.stringify(['unsubscribe', { community }]),
-    },
-  ];
-}
+// Re-export pure operations from shared for backward compatibility
+export {
+  createCommunitySubscribeOperation,
+  createCommunityUnsubscribeOperation,
+  type ProfileUpdateData,
+  updateHiveProfile,
+} from './shared';
 
 export interface SocialFilters {
   limit?: number;
@@ -550,142 +516,6 @@ export async function reblogPost(
     logError('Error reblogging post', undefined, error instanceof Error ? error : undefined);
     const errorMessage = error instanceof Error ? error.message : String(error);
     workerBeeLog('reblogPost error details', undefined, {
-      message: errorMessage,
-      error,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    return {
-      success: false,
-      error: errorMessage,
-    };
-  }
-}
-
-export interface ProfileUpdateData {
-  name?: string;
-  about?: string;
-  location?: string;
-  website?: string;
-  profile_image?: string;
-  cover_image?: string;
-}
-
-/**
- * Update a Hive user's profile metadata using account_update2
- * This operation only requires posting authority (not active key)
- * @param username - Username to update profile for
- * @param profileData - Profile fields to update
- * @returns Update result with success status
- */
-export async function updateHiveProfile(
-  username: string,
-  profileData: ProfileUpdateData,
-  broadcastFn: BroadcastFn
-): Promise<{ success: boolean; transactionId?: string; error?: string }> {
-  // Only run in browser environment
-  if (typeof window === 'undefined') {
-    return {
-      success: false,
-      error: 'Profile update must be performed in browser environment',
-    };
-  }
-
-  try {
-    workerBeeLog(`updateHiveProfile start for ${username}`, undefined, profileData);
-
-    // Fetch current account to get existing metadata via direct API call
-    // (No WorkerBee initialization needed - this is a simple RPC call)
-    const response = await fetch('https://api.hive.blog', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'condenser_api.get_accounts',
-        params: [[username]],
-        id: 1,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch account: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const accounts = data.result as Array<Record<string, unknown>>;
-
-    if (!accounts || accounts.length === 0) {
-      throw new Error('Account not found');
-    }
-
-    const account = accounts[0];
-
-    // Parse existing posting_json_metadata (this is where profile data lives)
-    let existingMetadata: Record<string, unknown> = {};
-    try {
-      const postingMetadata = account.posting_json_metadata as string;
-      if (postingMetadata) {
-        existingMetadata = JSON.parse(postingMetadata);
-      }
-    } catch {
-      // If parsing fails, start with empty object
-      existingMetadata = {};
-    }
-
-    // Merge existing profile with new data
-    const existingProfile = (existingMetadata.profile as Record<string, unknown>) || {};
-    const updatedProfile: Record<string, unknown> = {
-      ...existingProfile,
-    };
-
-    // Only update fields that are provided (not undefined)
-    if (profileData.name !== undefined) updatedProfile.name = profileData.name;
-    if (profileData.about !== undefined) updatedProfile.about = profileData.about;
-    if (profileData.location !== undefined) updatedProfile.location = profileData.location;
-    if (profileData.website !== undefined) updatedProfile.website = profileData.website;
-    if (profileData.profile_image !== undefined)
-      updatedProfile.profile_image = profileData.profile_image;
-    if (profileData.cover_image !== undefined) updatedProfile.cover_image = profileData.cover_image;
-
-    const updatedMetadata = {
-      ...existingMetadata,
-      profile: updatedProfile,
-    };
-
-    workerBeeLog('updateHiveProfile metadata prepared', undefined, updatedMetadata);
-
-    // Create account_update2 operation
-    // This only requires posting authority when updating posting_json_metadata
-    const operations: [string, Record<string, unknown>][] = [
-      [
-        'account_update2',
-        {
-          account: username,
-          json_metadata: '', // Empty string means don't update
-          posting_json_metadata: JSON.stringify(updatedMetadata),
-          extensions: [],
-        },
-      ],
-    ];
-
-    workerBeeLog('updateHiveProfile broadcasting transaction', undefined, operations);
-    const result = await broadcastFn(operations, 'posting');
-
-    workerBeeLog('updateHiveProfile broadcast result', undefined, result);
-
-    if (!result.success) {
-      throw new Error(result.error || 'Profile update transaction failed');
-    }
-
-    workerBeeLog(`updateHiveProfile success for ${username}`);
-
-    return {
-      success: true,
-      transactionId: result.transactionId,
-    };
-  } catch (error) {
-    logError('Error updating profile', undefined, error instanceof Error ? error : undefined);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    workerBeeLog('updateHiveProfile error details', undefined, {
       message: errorMessage,
       error,
       stack: error instanceof Error ? error.stack : undefined,

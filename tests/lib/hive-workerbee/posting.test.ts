@@ -3,12 +3,10 @@
 import {
   publishPost,
   publishComment,
-  updatePost,
-  deletePost,
-  canUserPost,
   getEstimatedRCCost,
   validatePostData,
 } from '@/lib/hive-workerbee/posting';
+import { updatePost, deletePost, canUserPost } from '@/lib/hive-workerbee/posting-server';
 import type { PostData } from '@/lib/hive-workerbee/posting';
 import type { BroadcastFn } from '@/lib/hive/broadcast-client';
 
@@ -17,17 +15,8 @@ jest.mock('@/lib/hive-workerbee/api', () => ({
   makeHiveApiCall: jest.fn(),
 }));
 
-jest.mock('@/lib/hive-workerbee/client', () => ({
-  SPORTS_ARENA_CONFIG: {
-    APP_NAME: 'sportsblock',
-    APP_VERSION: '1.0.0',
-    COMMUNITY_ID: 'hive-115814',
-    COMMUNITY_NAME: 'sportsblock',
-    TAGS: ['sportsblock', 'hive-115814'],
-    DEFAULT_BENEFICIARIES: [{ account: 'sportsblock', weight: 500 }],
-  },
-  MUTED_AUTHORS: [],
-}));
+// posting-server.ts still needs api + wax-helpers mocks (below).
+// posting.ts now imports from ./shared (pure) and ./logger.
 
 // posting.ts imports these from './shared' (pure, no WASM)
 jest.mock('@/lib/hive-workerbee/shared', () => {
@@ -89,7 +78,7 @@ const mockCheckResourceCreditsWax = checkResourceCreditsWax as jest.Mock;
 describe('Posting Module', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Default: RC check passes (publishPost now enforces RC server-side)
+    // Default: RC check passes (used by canUserPost tests in posting-server)
     mockCheckResourceCreditsWax.mockResolvedValue({ canPost: true, rcPercentage: 80 });
   });
 

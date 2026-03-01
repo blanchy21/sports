@@ -1,10 +1,40 @@
 import { useQuery } from '@tanstack/react-query';
-import { 
-  TrendingSport, 
-  TrendingTopic, 
-  TopAuthor, 
-  CommunityStats 
-} from '@/lib/hive-workerbee/analytics';
+
+/**
+ * Local types matching the API response shape from /api/analytics.
+ * Defined here to avoid importing from the server-only analytics module.
+ */
+interface TrendingSport {
+  sport: {
+    id: string;
+    name: string;
+    icon: string;
+  };
+  posts: number;
+  trending: boolean;
+}
+
+interface TrendingTopic {
+  id: string;
+  name: string;
+  posts: number;
+}
+
+interface TopAuthor {
+  id: string;
+  username: string;
+  displayName: string;
+  posts: number;
+  engagement: number;
+  followers?: string;
+}
+
+interface CommunityStats {
+  totalPosts: number;
+  totalAuthors: number;
+  totalRewards: number;
+  activeToday: number;
+}
 
 /**
  * Sidebar analytics data structure
@@ -71,7 +101,7 @@ export const sidebarAnalyticsQueryKey = ['sidebar', 'analytics'] as const;
 
 /**
  * Hook to fetch and cache sidebar analytics data
- * 
+ *
  * Uses aggressive caching to prevent refetches during navigation:
  * - staleTime: 5 minutes (data considered fresh)
  * - gcTime: 30 minutes (data kept in cache)

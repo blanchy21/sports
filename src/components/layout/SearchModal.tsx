@@ -6,7 +6,14 @@ import { Search, X, Zap } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
 import { logger } from '@/lib/logger';
-import { fetchUserAccount } from '@/lib/hive-workerbee/account';
+
+/** Fetch a Hive account via the API route (avoids importing server-only module). */
+async function fetchUserAccountViaApi(username: string) {
+  const res = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(username)}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.success ? data.account : null;
+}
 
 type SearchResult = {
   username: string;
@@ -38,7 +45,7 @@ export function SearchModal({ onClose }: SearchModalProps) {
           const results: SearchResult[] = [];
 
           const [hiveResult, softResult] = await Promise.allSettled([
-            fetchUserAccount(searchQuery).catch(() => null),
+            fetchUserAccountViaApi(searchQuery).catch(() => null),
             fetch(`/api/soft/users?search=${encodeURIComponent(searchQuery)}`, {
               signal: controller.signal,
             })

@@ -8,38 +8,20 @@
  */
 
 import { SportsEvent, MatchThread } from '@/types/sports';
-import { SPORTS_ARENA_CONFIG, MUTED_AUTHORS } from './client';
-import { makeHiveApiCall } from './api';
-import { createCommentOperation, generatePermlink } from './wax-helpers';
 import {
-  transformToSportsbite,
-  Sportsbite,
-  PublishSportsbiteData,
+  SPORTS_ARENA_CONFIG,
+  MUTED_AUTHORS,
   SPORTSBITES_CONFIG,
-  validateSportsbiteContent,
-} from './sportsbites';
+  MATCH_THREAD_CONFIG,
+  getMatchThreadPermlink,
+  createMatchThreadSportsbiteOperation,
+} from './shared';
+import { makeHiveApiCall } from './api';
+import { transformToSportsbite, Sportsbite } from './sportsbites';
 import { error as logError } from './logger';
 
-// ---------------------------------------------------------------------------
-// Config
-// ---------------------------------------------------------------------------
-
-export const MATCH_THREAD_CONFIG = {
-  PARENT_AUTHOR: 'sportsbites',
-  CONTENT_TYPE: 'match-thread-container',
-  THREAD_OPEN_HOURS: 24,
-  PRE_CREATE_HOURS: 2,
-  DEFAULT_TAGS: ['sportsblock', 'match-thread', 'sportsbites', 'hive-115814'],
-};
-
-// ---------------------------------------------------------------------------
-// Permlink helpers
-// ---------------------------------------------------------------------------
-
-/** Deterministic permlink for a match thread: `match-thread-{eventId}` */
-export function getMatchThreadPermlink(eventId: string): string {
-  return `match-thread-${eventId}`;
-}
+// Re-export from shared for backward compatibility
+export { MATCH_THREAD_CONFIG, getMatchThreadPermlink, createMatchThreadSportsbiteOperation };
 
 // ---------------------------------------------------------------------------
 // Thread status
@@ -133,58 +115,6 @@ export function isHiveDuplicateError(error?: string): boolean {
     !!error &&
     (error.includes('already') || error.includes('duplicate') || error.includes('permlink'))
   );
-}
-
-// ---------------------------------------------------------------------------
-// Create sportsbite operation for match threads (client-side, signed via wallet)
-// ---------------------------------------------------------------------------
-
-export function createMatchThreadSportsbiteOperation(
-  data: PublishSportsbiteData & { eventId: string }
-) {
-  if (MUTED_AUTHORS.includes(data.author)) {
-    throw new Error('This account has been muted and cannot post sportsbites.');
-  }
-
-  const validation = validateSportsbiteContent(data.body);
-  if (!validation.isValid) {
-    throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
-  }
-
-  const permlink = generatePermlink('bite');
-  const threadPermlink = getMatchThreadPermlink(data.eventId);
-
-  let fullBody = data.body;
-  if (data.images && data.images.length > 0) {
-    fullBody += '\n\n' + data.images.map((img) => `![](${img})`).join('\n');
-  }
-  if (data.gifs && data.gifs.length > 0) {
-    fullBody += '\n\n' + data.gifs.map((gif) => `![](${gif})`).join('\n');
-  }
-
-  const metadata = {
-    app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
-    format: 'markdown',
-    tags: [
-      ...MATCH_THREAD_CONFIG.DEFAULT_TAGS,
-      ...(data.sportCategory ? [data.sportCategory] : []),
-    ],
-    content_type: SPORTSBITES_CONFIG.CONTENT_TYPE,
-    sport_category: data.sportCategory,
-    images: data.images,
-    gifs: data.gifs,
-    match_thread_id: data.eventId,
-  };
-
-  return createCommentOperation({
-    author: data.author,
-    body: fullBody,
-    parentAuthor: MATCH_THREAD_CONFIG.PARENT_AUTHOR,
-    parentPermlink: threadPermlink,
-    permlink,
-    title: '',
-    jsonMetadata: JSON.stringify(metadata),
-  });
 }
 
 // ---------------------------------------------------------------------------

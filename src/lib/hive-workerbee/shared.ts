@@ -1009,3 +1009,222 @@ export function extractMediaFromBody(body: string): {
   const text = body.replace(/!\[.*?\]\(.*?\)/g, '').trim();
   return { images, text };
 }
+
+// ---------------------------------------------------------------------------
+// Match thread config & helpers (pure — no WASM)
+// ---------------------------------------------------------------------------
+
+export const MATCH_THREAD_CONFIG = {
+  PARENT_AUTHOR: 'sportsbites',
+  CONTENT_TYPE: 'match-thread-container',
+  THREAD_OPEN_HOURS: 24,
+  PRE_CREATE_HOURS: 2,
+  DEFAULT_TAGS: ['sportsblock', 'match-thread', 'sportsbites', 'hive-115814'],
+};
+
+/** Deterministic permlink for a match thread: `match-thread-{eventId}` */
+export function getMatchThreadPermlink(eventId: string): string {
+  return `match-thread-${eventId}`;
+}
+
+/**
+ * Create a sportsbite operation for posting inside a match thread.
+ * Pure function — no WASM calls, safe for client bundling.
+ */
+export function createMatchThreadSportsbiteOperation(
+  data: PublishSportsbiteData & { eventId: string }
+) {
+  if (MUTED_AUTHORS.includes(data.author)) {
+    throw new Error('This account has been muted and cannot post sportsbites.');
+  }
+
+  const validation = validateSportsbiteContent(data.body);
+  if (!validation.isValid) {
+    throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+  }
+
+  const permlink = generatePermlink('bite');
+  const threadPermlink = getMatchThreadPermlink(data.eventId);
+
+  let fullBody = data.body;
+  if (data.images && data.images.length > 0) {
+    fullBody += '\n\n' + data.images.map((img) => `![](${img})`).join('\n');
+  }
+  if (data.gifs && data.gifs.length > 0) {
+    fullBody += '\n\n' + data.gifs.map((gif) => `![](${gif})`).join('\n');
+  }
+
+  const metadata = {
+    app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
+    format: 'markdown',
+    tags: [
+      ...MATCH_THREAD_CONFIG.DEFAULT_TAGS,
+      ...(data.sportCategory ? [data.sportCategory] : []),
+    ],
+    content_type: SPORTSBITES_CONFIG.CONTENT_TYPE,
+    sport_category: data.sportCategory,
+    images: data.images,
+    gifs: data.gifs,
+    match_thread_id: data.eventId,
+  };
+
+  return createCommentOperation({
+    author: data.author,
+    body: fullBody,
+    parentAuthor: MATCH_THREAD_CONFIG.PARENT_AUTHOR,
+    parentPermlink: threadPermlink,
+    permlink,
+    title: '',
+    jsonMetadata: JSON.stringify(metadata),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Community subscribe/unsubscribe operations (pure — no WASM)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a custom_json operation for subscribing to a Hive community.
+ * Returns a tuple compatible with broadcastFn.
+ */
+export function createCommunitySubscribeOperation(
+  username: string,
+  community: string
+): [string, Record<string, unknown>] {
+  return [
+    'custom_json',
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: 'community',
+      json: JSON.stringify(['subscribe', { community }]),
+    },
+  ];
+}
+
+/**
+ * Build a custom_json operation for unsubscribing from a Hive community.
+ * Returns a tuple compatible with broadcastFn.
+ */
+export function createCommunityUnsubscribeOperation(
+  username: string,
+  community: string
+): [string, Record<string, unknown>] {
+  return [
+    'custom_json',
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: 'community',
+      json: JSON.stringify(['unsubscribe', { community }]),
+    },
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Profile update (pure — no WASM, uses direct fetch + broadcastFn)
+// ---------------------------------------------------------------------------
+
+export interface ProfileUpdateData {
+  name?: string;
+  about?: string;
+  location?: string;
+  website?: string;
+  profile_image?: string;
+  cover_image?: string;
+}
+
+/**
+ * Update a Hive user's profile metadata using account_update2.
+ * This operation only requires posting authority (not active key).
+ * Safe for client bundling — uses direct fetch(), no WASM deps.
+ */
+export async function updateHiveProfile(
+  username: string,
+  profileData: ProfileUpdateData,
+  broadcastFn: (
+    ops: [string, Record<string, unknown>][],
+    keyType?: 'posting' | 'active'
+  ) => Promise<{ success: boolean; transactionId?: string; error?: string }>
+): Promise<{ success: boolean; transactionId?: string; error?: string }> {
+  if (typeof window === 'undefined') {
+    return { success: false, error: 'Profile update must be performed in browser environment' };
+  }
+
+  try {
+    // Fetch current account to get existing metadata via direct API call
+    const response = await fetch('https://api.hive.blog', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'condenser_api.get_accounts',
+        params: [[username]],
+        id: 1,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch account: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const accounts = data.result as Array<Record<string, unknown>>;
+
+    if (!accounts || accounts.length === 0) {
+      throw new Error('Account not found');
+    }
+
+    const account = accounts[0];
+
+    // Parse existing posting_json_metadata (this is where profile data lives)
+    let existingMetadata: Record<string, unknown> = {};
+    try {
+      const postingMetadata = account.posting_json_metadata as string;
+      if (postingMetadata) {
+        existingMetadata = JSON.parse(postingMetadata);
+      }
+    } catch {
+      existingMetadata = {};
+    }
+
+    // Merge existing profile with new data
+    const existingProfile = (existingMetadata.profile as Record<string, unknown>) || {};
+    const updatedProfile: Record<string, unknown> = { ...existingProfile };
+
+    if (profileData.name !== undefined) updatedProfile.name = profileData.name;
+    if (profileData.about !== undefined) updatedProfile.about = profileData.about;
+    if (profileData.location !== undefined) updatedProfile.location = profileData.location;
+    if (profileData.website !== undefined) updatedProfile.website = profileData.website;
+    if (profileData.profile_image !== undefined)
+      updatedProfile.profile_image = profileData.profile_image;
+    if (profileData.cover_image !== undefined) updatedProfile.cover_image = profileData.cover_image;
+
+    const updatedMetadata = { ...existingMetadata, profile: updatedProfile };
+
+    const operations: [string, Record<string, unknown>][] = [
+      [
+        'account_update2',
+        {
+          account: username,
+          json_metadata: '',
+          posting_json_metadata: JSON.stringify(updatedMetadata),
+          extensions: [],
+        },
+      ],
+    ];
+
+    const result = await broadcastFn(operations, 'posting');
+
+    if (!result.success) {
+      throw new Error(result.error || 'Profile update transaction failed');
+    }
+
+    return { success: true, transactionId: result.transactionId };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}

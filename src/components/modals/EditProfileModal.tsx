@@ -15,7 +15,7 @@ import {
   Image as ImageIcon,
   Camera,
 } from 'lucide-react';
-import { updateHiveProfile, ProfileUpdateData } from '@/lib/hive-workerbee/social';
+import { updateHiveProfile, type ProfileUpdateData } from '@/lib/hive-workerbee/shared';
 import { logger } from '@/lib/logger';
 import { useBroadcast } from '@/hooks/useBroadcast';
 

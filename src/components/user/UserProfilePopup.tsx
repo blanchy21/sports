@@ -5,7 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Avatar } from '@/components/core/Avatar';
 import { LogOut, UserPlus, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchUserAccount } from '@/lib/hive-workerbee/account';
+/** Fetch a Hive account via the API route (avoids importing server-only module). */
+async function fetchUserAccountViaApi(username: string) {
+  const res = await fetch(`/api/hive/account/summary?username=${encodeURIComponent(username)}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.success ? data.account : null;
+}
 import { useMedalsBalance } from '@/lib/react-query/queries/useMedals';
 
 interface UserProfilePopupProps {
@@ -59,7 +65,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
 
     setIsRefreshingRC(true);
     try {
-      const accountData = await fetchUserAccount(user.username);
+      const accountData = await fetchUserAccountViaApi(user.username);
       if (accountData) {
         updateUser({
           rcPercentage: accountData.resourceCredits,
