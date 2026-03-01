@@ -6,6 +6,7 @@ import { Button } from '@/components/core/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettlePrediction, useVoidPrediction } from '@/hooks/usePredictionSettlement';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
+import { useToast, toast } from '@/components/core/Toast';
 import { AlertCircle, Check, Loader2, ChevronDown, ChevronUp, X } from 'lucide-react';
 import type { PredictionBite } from '@/lib/predictions/types';
 
@@ -15,6 +16,7 @@ interface PredictionSettlementPanelProps {
 
 export function PredictionSettlementPanel({ prediction }: PredictionSettlementPanelProps) {
   const { user, hiveUser, authType } = useAuth();
+  const { addToast } = useToast();
   const settleMutation = useSettlePrediction();
   const voidMutation = useVoidPrediction();
 
@@ -46,6 +48,12 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
         predictionId: prediction.id,
         winningOutcomeId: selectedWinner,
       });
+      addToast(
+        toast.success(
+          'Prediction Settled',
+          'The winning outcome has been confirmed and payouts initiated.'
+        )
+      );
       setIsExpanded(false);
       setConfirmingSettle(false);
       setSelectedWinner(null);
@@ -62,6 +70,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
         predictionId: prediction.id,
         reason: voidReason.trim(),
       });
+      addToast(toast.success('Prediction Voided', 'All stakes will be refunded.'));
       setIsExpanded(false);
       setConfirmingVoid(false);
       setShowVoidForm(false);

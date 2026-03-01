@@ -59,7 +59,7 @@ export const GET = createApiHandler('/api/predictions/leaderboard', async (reque
       COALESCE(SUM(CASE WHEN ps.payout > 0 THEN ps.payout ELSE 0 END), 0) AS total_won,
       COALESCE(SUM(CASE WHEN ps.payout IS NOT NULL THEN ps.payout - ps.amount ELSE 0 END), 0) AS profit_loss
     FROM prediction_stakes ps
-    WHERE ps.refunded = false
+    WHERE ps.refund_tx_id IS NULL
     ${periodFilter}
     GROUP BY ps.username
     HAVING COUNT(DISTINCT ps.prediction_id) >= 3

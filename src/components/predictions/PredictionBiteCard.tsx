@@ -355,7 +355,13 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
             <h3 className="text-lg font-semibold">Delete Prediction</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Are you sure you want to delete this prediction? This action cannot be undone.
-              {prediction.totalPool > 0 && ' Your staked MEDALS will be refunded.'}
+              {prediction.totalPool > 0 && (
+                <>
+                  {' '}
+                  All staked MEDALS will be refunded. Note: deletion will fail if other users have
+                  placed stakes.
+                </>
+              )}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <Button

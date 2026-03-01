@@ -95,7 +95,7 @@ export async function executeSettlement(
   if (uniqueOutcomes.size === 1 || !winningOutcomeHasBackers) {
     // Broadcast refunds per-stake for idempotency
     for (const stake of prediction.stakes) {
-      if (stake.refunded) {
+      if (stake.refundTxId) {
         logger.info(`Refund already sent for stake ${stake.id}, skipping`, 'Settlement', {
           predictionId,
         });
@@ -107,21 +107,26 @@ export async function executeSettlement(
       const txId = await broadcastHiveEngineOps([op]);
       await prisma.predictionStake.update({
         where: { id: stake.id },
-        data: { refunded: true },
+        data: { refundTxId: txId },
       });
       logger.info(`Refund sent to ${stake.username}: ${txId}`, 'Settlement', { predictionId });
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.predictionOutcome.update({
-        where: { id: winningOutcomeId },
-        data: { isWinner: true },
-      });
+      // Reset outcome counters since all stakes are refunded
+      for (const outcome of prediction.outcomes) {
+        await tx.predictionOutcome.update({
+          where: { id: outcome.id },
+          data: { isWinner: outcome.id === winningOutcomeId, backerCount: 0, totalStaked: 0 },
+        });
+      }
+
       await tx.prediction.update({
         where: { id: predictionId },
         data: {
           status: PredictionStatus.REFUNDED,
           winningOutcomeId,
+          totalPool: 0,
           platformCut: 0,
           burnedAmount: 0,
           rewardPoolAmount: 0,
@@ -138,7 +143,10 @@ export async function executeSettlement(
   }
 
   try {
-    // Broadcast fee ops (burn + reward) separately for independent idempotency
+    // Fee broadcasts happen before the final SETTLED transaction. If a fee broadcast
+    // succeeds but the final transaction fails, fees are sent but prediction stays
+    // in SETTLING. The feeBurnTxId/feeRewardTxId guards prevent re-broadcast on retry;
+    // the SETTLING state is designed for exactly this (manual retry to complete).
     const feeOps: FeeOps = buildFeeOps(settlement.platformFee, predictionId);
 
     if (feeOps.burn && !prediction.feeBurnTxId) {
@@ -236,7 +244,7 @@ export async function executeVoidRefund(
 ): Promise<void> {
   const prediction = await prisma.prediction.findUnique({
     where: { id: predictionId },
-    include: { stakes: true },
+    include: { stakes: true, outcomes: true },
   });
 
   if (!prediction) {
@@ -263,7 +271,7 @@ export async function executeVoidRefund(
   try {
     // Broadcast refunds per-stake for idempotency
     for (const stake of prediction.stakes) {
-      if (stake.refunded) {
+      if (stake.refundTxId) {
         logger.info(`Refund already sent for stake ${stake.id}, skipping`, 'Settlement', {
           predictionId,
         });
@@ -275,17 +283,28 @@ export async function executeVoidRefund(
       const txId = await broadcastHiveEngineOps([op]);
       await prisma.predictionStake.update({
         where: { id: stake.id },
-        data: { refunded: true },
+        data: { refundTxId: txId },
       });
       logger.info(`Refund sent to ${stake.username}: ${txId}`, 'Settlement', { predictionId });
     }
 
-    // Set final status
+    // Set final status and reset denormalized counters
     await prisma.$transaction(async (tx) => {
+      // Reset outcome counters since all stakes are refunded
+      for (const outcome of prediction.outcomes) {
+        if (outcome.backerCount > 0 || outcome.totalStaked.toNumber() > 0) {
+          await tx.predictionOutcome.update({
+            where: { id: outcome.id },
+            data: { backerCount: 0, totalStaked: 0 },
+          });
+        }
+      }
+
       await tx.prediction.update({
         where: { id: predictionId },
         data: {
           status: PredictionStatus.REFUNDED,
+          totalPool: 0,
           settledBy: voidedBy,
           settledAt: new Date(),
         },

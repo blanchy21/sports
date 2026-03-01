@@ -70,7 +70,7 @@ export function serializePrediction(
         outcomeId: s.outcomeId,
         amount: decimalToNumber(s.amount),
         payout: s.payout ? decimalToNumber(s.payout) : null,
-        refunded: s.refunded,
+        refunded: s.refundTxId != null,
       }));
     }
   }

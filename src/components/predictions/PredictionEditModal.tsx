@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { BaseModal } from '@/components/core/BaseModal';
 import { Button } from '@/components/core/Button';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
@@ -32,6 +32,10 @@ export function PredictionEditModal({
     const d = new Date(prediction.locksAt);
     return d.toISOString().slice(0, 16);
   });
+  const minLockTime = useMemo(() => {
+    const d = new Date(Date.now() + PREDICTION_CONFIG.MIN_LOCK_TIME_MS);
+    return d.toISOString().slice(0, 16);
+  }, []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -157,10 +161,17 @@ export function PredictionEditModal({
             id="pred-lock"
             type="datetime-local"
             value={locksAt}
+            min={minLockTime}
             onChange={(e) => setLocksAt(e.target.value)}
             className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-warning"
             required
           />
+          {locksAt &&
+            new Date(locksAt).getTime() < Date.now() + PREDICTION_CONFIG.MIN_LOCK_TIME_MS && (
+              <p className="mt-1 text-xs text-destructive">
+                Lock time must be at least 15 minutes from now
+              </p>
+            )}
         </div>
 
         {error && (
@@ -176,7 +187,11 @@ export function PredictionEditModal({
             type="submit"
             size="sm"
             className="bg-warning text-white hover:bg-warning/90"
-            disabled={saving || !title.trim()}
+            disabled={
+              saving ||
+              !title.trim() ||
+              new Date(locksAt).getTime() < Date.now() + PREDICTION_CONFIG.MIN_LOCK_TIME_MS
+            }
           >
             {saving ? (
               <>

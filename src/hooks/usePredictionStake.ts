@@ -61,6 +61,8 @@ export function usePlaceStake() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: predictionKeys.detail(variables.predictionId) });
       queryClient.invalidateQueries({ queryKey: predictionKeys.lists() });
+      // Invalidate MEDALS balance since user spent tokens on the stake
+      queryClient.invalidateQueries({ queryKey: ['medals'] });
     },
   });
 }

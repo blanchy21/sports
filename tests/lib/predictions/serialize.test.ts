@@ -97,7 +97,7 @@ describe('serializePrediction', () => {
           outcomeId: 'out-1',
           amount: new FakeDecimal(25),
           payout: null,
-          refunded: false,
+          refundTxId: null,
         },
       ],
     });
@@ -118,7 +118,7 @@ describe('serializePrediction', () => {
           outcomeId: 'out-1',
           amount: new FakeDecimal(25),
           payout: null,
-          refunded: false,
+          refundTxId: null,
         },
       ],
     });
@@ -136,7 +136,7 @@ describe('serializePrediction', () => {
           outcomeId: 'out-1',
           amount: new FakeDecimal(25),
           payout: null,
-          refunded: false,
+          refundTxId: null,
         },
         {
           id: 's2',
@@ -144,7 +144,7 @@ describe('serializePrediction', () => {
           outcomeId: 'out-1',
           amount: new FakeDecimal(15),
           payout: null,
-          refunded: false,
+          refundTxId: null,
         },
       ],
     });
@@ -165,7 +165,7 @@ describe('serializePrediction', () => {
           outcomeId: 'out-1',
           amount: new FakeDecimal(25),
           payout: null,
-          refunded: false,
+          refundTxId: null,
         },
       ],
     });
@@ -183,7 +183,7 @@ describe('serializePrediction', () => {
           outcomeId: 'out-1',
           amount: new FakeDecimal(10),
           payout: null,
-          refunded: false,
+          refundTxId: null,
         },
         {
           id: 's2',
@@ -191,7 +191,7 @@ describe('serializePrediction', () => {
           outcomeId: 'out-1',
           amount: new FakeDecimal(15),
           payout: null,
-          refunded: false,
+          refundTxId: null,
         },
       ],
     });
@@ -211,7 +211,7 @@ describe('serializePrediction', () => {
             outcomeId: 'out-1',
             amount: new FakeDecimal(25),
             payout: null,
-            refunded: false,
+            refundTxId: null,
           },
         ],
       });
@@ -228,7 +228,7 @@ describe('serializePrediction', () => {
             outcomeId: 'out-1',
             amount: new FakeDecimal(25),
             payout: null,
-            refunded: false,
+            refundTxId: null,
           },
           {
             id: 's2',
@@ -236,7 +236,7 @@ describe('serializePrediction', () => {
             outcomeId: 'out-1',
             amount: new FakeDecimal(10),
             payout: null,
-            refunded: false,
+            refundTxId: null,
           },
         ],
       });

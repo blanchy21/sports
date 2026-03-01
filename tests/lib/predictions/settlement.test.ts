@@ -72,8 +72,8 @@ function makePrediction(overrides: Record<string, unknown> = {}) {
     feeBurnTxId: null,
     feeRewardTxId: null,
     outcomes: [
-      { id: 'out-a', label: 'Team A' },
-      { id: 'out-b', label: 'Team B' },
+      { id: 'out-a', label: 'Team A', totalStaked: new FakeDecimal(100), backerCount: 1 },
+      { id: 'out-b', label: 'Team B', totalStaked: new FakeDecimal(100), backerCount: 1 },
     ],
     stakes: [
       {
@@ -82,7 +82,7 @@ function makePrediction(overrides: Record<string, unknown> = {}) {
         outcomeId: 'out-a',
         amount: new FakeDecimal(100),
         payoutTxId: null,
-        refunded: false,
+        refundTxId: null,
       },
       {
         id: 'stake-2',
@@ -90,7 +90,7 @@ function makePrediction(overrides: Record<string, unknown> = {}) {
         outcomeId: 'out-b',
         amount: new FakeDecimal(100),
         payoutTxId: null,
-        refunded: false,
+        refundTxId: null,
       },
     ],
     ...overrides,
@@ -143,7 +143,7 @@ describe('executeSettlement', () => {
           outcomeId: 'out-a',
           amount: new FakeDecimal(100),
           payoutTxId: null,
-          refunded: false,
+          refundTxId: null,
         },
         {
           id: 'stake-2',
@@ -151,7 +151,7 @@ describe('executeSettlement', () => {
           outcomeId: 'out-a',
           amount: new FakeDecimal(100),
           payoutTxId: null,
-          refunded: false,
+          refundTxId: null,
         },
       ],
     });
@@ -166,7 +166,7 @@ describe('executeSettlement', () => {
     // Each stake should be marked refunded
     expect(mockPrisma.predictionStake.update).toHaveBeenCalledTimes(2);
     expect(mockPrisma.predictionStake.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'stake-1' }, data: { refunded: true } })
+      expect.objectContaining({ where: { id: 'stake-1' }, data: { refundTxId: 'mock-tx-id' } })
     );
 
     // Status should be REFUNDED
@@ -181,9 +181,9 @@ describe('executeSettlement', () => {
     // Add a third outcome that nobody staked on
     const pred = makePrediction({
       outcomes: [
-        { id: 'out-a', label: 'Team A' },
-        { id: 'out-b', label: 'Team B' },
-        { id: 'out-c', label: 'Draw' },
+        { id: 'out-a', label: 'Team A', totalStaked: new FakeDecimal(100), backerCount: 1 },
+        { id: 'out-b', label: 'Team B', totalStaked: new FakeDecimal(100), backerCount: 1 },
+        { id: 'out-c', label: 'Draw', totalStaked: new FakeDecimal(0), backerCount: 0 },
       ],
     });
     mockPrisma.prediction.findUnique.mockResolvedValue(pred);
@@ -204,7 +204,7 @@ describe('executeSettlement', () => {
           outcomeId: 'out-a',
           amount: new FakeDecimal(100),
           payoutTxId: 'already-paid-tx',
-          refunded: false,
+          refundTxId: null,
         },
         {
           id: 'stake-2',
@@ -212,7 +212,7 @@ describe('executeSettlement', () => {
           outcomeId: 'out-b',
           amount: new FakeDecimal(100),
           payoutTxId: null,
-          refunded: false,
+          refundTxId: null,
         },
       ],
     });
@@ -238,7 +238,7 @@ describe('executeSettlement', () => {
           outcomeId: 'out-a',
           amount: new FakeDecimal(100),
           payoutTxId: null,
-          refunded: true,
+          refundTxId: 'existing-refund-tx',
         },
         {
           id: 'stake-2',
@@ -246,7 +246,7 @@ describe('executeSettlement', () => {
           outcomeId: 'out-a',
           amount: new FakeDecimal(100),
           payoutTxId: null,
-          refunded: false,
+          refundTxId: null,
         },
       ],
     });
@@ -343,10 +343,10 @@ describe('executeVoidRefund', () => {
     // Both stakes should be refunded
     expect(mockPrisma.predictionStake.update).toHaveBeenCalledTimes(2);
     expect(mockPrisma.predictionStake.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'stake-1' }, data: { refunded: true } })
+      expect.objectContaining({ where: { id: 'stake-1' }, data: { refundTxId: 'mock-tx-id' } })
     );
     expect(mockPrisma.predictionStake.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'stake-2' }, data: { refunded: true } })
+      expect.objectContaining({ where: { id: 'stake-2' }, data: { refundTxId: 'mock-tx-id' } })
     );
 
     // Final status should be REFUNDED
@@ -366,7 +366,7 @@ describe('executeVoidRefund', () => {
           outcomeId: 'out-a',
           amount: new FakeDecimal(100),
           payoutTxId: null,
-          refunded: true,
+          refundTxId: 'existing-refund-tx',
         },
         {
           id: 'stake-2',
@@ -374,7 +374,7 @@ describe('executeVoidRefund', () => {
           outcomeId: 'out-b',
           amount: new FakeDecimal(100),
           payoutTxId: null,
-          refunded: false,
+          refundTxId: null,
         },
       ],
     });

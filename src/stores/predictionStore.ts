@@ -8,6 +8,7 @@ interface PredictionState {
   stakeModalOpen: boolean;
   stakeOutcomeId: string | null;
   settlementPanelOpen: boolean;
+  isStaking: boolean;
 }
 
 interface PredictionActions {
@@ -16,6 +17,7 @@ interface PredictionActions {
   openSettlementPanel: (prediction: PredictionBite) => void;
   closeSettlementPanel: () => void;
   setSelectedPrediction: (prediction: PredictionBite | null) => void;
+  setIsStaking: (staking: boolean) => void;
 }
 
 export const usePredictionStore = create<PredictionState & PredictionActions>()(
@@ -26,10 +28,12 @@ export const usePredictionStore = create<PredictionState & PredictionActions>()(
       stakeModalOpen: false,
       stakeOutcomeId: null,
       settlementPanelOpen: false,
+      isStaking: false,
 
       // Actions
       openStakeModal: (_predictionId, outcomeId) =>
         set((state) => {
+          if (state.isStaking) return; // Prevent opening while another stake is confirming
           state.stakeModalOpen = true;
           state.stakeOutcomeId = outcomeId;
         }),
@@ -55,6 +59,11 @@ export const usePredictionStore = create<PredictionState & PredictionActions>()(
         set((state) => {
           state.selectedPrediction = prediction;
         }),
+
+      setIsStaking: (staking) =>
+        set((state) => {
+          state.isStaking = staking;
+        }),
     })),
     { name: 'PredictionStore', enabled: process.env.NODE_ENV === 'development' }
   )
@@ -68,3 +77,4 @@ export const useStakeModalState = () =>
     outcomeId: s.stakeOutcomeId,
   }));
 export const useSettlementPanelOpen = () => usePredictionStore((s) => s.settlementPanelOpen);
+export const useIsStaking = () => usePredictionStore((s) => s.isStaking);

@@ -6,6 +6,8 @@ import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlaceStake } from '@/hooks/usePredictionStake';
+import { useMedalsBalance } from '@/lib/react-query/queries/useMedals';
+import { usePredictionStore } from '@/stores/predictionStore';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { Loader2, AlertCircle, Check, TrendingUp } from 'lucide-react';
 import type { PredictionBite } from '@/lib/predictions/types';
@@ -29,7 +31,6 @@ export function PredictionStakeModal({
   const placeMutation = usePlaceStake();
 
   const [amount, setAmount] = useState<number>(PREDICTION_CONFIG.MIN_STAKE);
-  const [balance, setBalance] = useState<number | null>(null);
   const [stakeState, setStakeState] = useState<'idle' | 'confirming' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -46,20 +47,14 @@ export function PredictionStakeModal({
     return amount * selectedOutcome.odds;
   }, [amount, selectedOutcome]);
 
-  // Fetch MEDALS balance
+  // MEDALS balance via React Query
+  const { data: balanceData } = useMedalsBalance(hiveUsername);
+  const balance = balanceData ? parseFloat(balanceData.liquid) : null;
+
+  // Track isStaking flag in store based on stakeState
   useEffect(() => {
-    if (!hiveUsername) return;
-    fetch(`/api/hive-engine/balance?account=${encodeURIComponent(hiveUsername)}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.liquid != null) {
-          setBalance(parseFloat(d.liquid));
-        } else if (d.data?.liquid != null) {
-          setBalance(parseFloat(d.data.liquid));
-        }
-      })
-      .catch(() => {});
-  }, [hiveUsername]);
+    usePredictionStore.getState().setIsStaking(stakeState === 'confirming');
+  }, [stakeState]);
 
   // Reset state on open
   useEffect(() => {

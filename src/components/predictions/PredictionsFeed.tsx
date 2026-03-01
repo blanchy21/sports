@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { PredictionBiteCard } from './PredictionBiteCard';
 import type { PredictionBite } from '@/lib/predictions/types';
 import { Loader2, RefreshCw, AlertCircle, Target } from 'lucide-react';
@@ -8,7 +9,7 @@ import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useCountdownTick } from '@/hooks/useCountdownTick';
-import { logger } from '@/lib/logger';
+import { usePredictions, predictionKeys } from '@/hooks/usePredictions';
 
 type StatusFilter = 'all' | 'OPEN' | 'SETTLED';
 
@@ -22,15 +23,55 @@ interface PredictionsFeedProps {
   className?: string;
 }
 
+class PredictionCardErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="rounded-xl border bg-card p-8 text-center">
+          <div className="mb-4 flex justify-center">
+            <div className="rounded-full bg-destructive/15 p-3">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+          </div>
+          <h3 className="mb-2 text-lg font-semibold">Something went wrong</h3>
+          <p className="mb-4 text-sm text-muted-foreground">A prediction card failed to render.</p>
+          <Button onClick={() => this.setState({ hasError: false })} variant="outline">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try Again
+          </Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function PredictionsFeed({ className }: PredictionsFeedProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [predictions, setPredictions] = useState<PredictionBite[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
+  const queryClient = useQueryClient();
 
-  const nextCursorRef = useRef<string | null>(null);
+  const filters = useMemo(
+    () => (statusFilter !== 'all' ? { status: statusFilter } : {}),
+    [statusFilter]
+  );
+
+  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    usePredictions(filters);
+
+  // Flatten all pages into a single predictions array
+  const predictions = useMemo(() => data?.pages.flatMap((page) => page.predictions) ?? [], [data]);
 
   // Single shared timer for all countdown displays
   const hasOpenPredictions = useMemo(
@@ -39,74 +80,26 @@ export function PredictionsFeed({ className }: PredictionsFeedProps) {
   );
   const tick = useCountdownTick(hasOpenPredictions);
 
-  const loadPredictions = useCallback(
-    async (loadMore = false) => {
-      if (loadMore && !nextCursorRef.current) return;
-
-      if (loadMore) {
-        setIsLoadingMore(true);
-      } else {
-        setIsLoading(true);
-        setError(null);
-      }
-
-      try {
-        const params = new URLSearchParams({ limit: '20' });
-        if (loadMore && nextCursorRef.current) {
-          params.append('cursor', nextCursorRef.current);
-        }
-        if (statusFilter !== 'all') {
-          params.append('status', statusFilter);
-        }
-
-        const response = await fetch(`/api/predictions?${params.toString()}`);
-        if (!response.ok) throw new Error(`Failed to fetch predictions: ${response.status}`);
-
-        const result = await response.json();
-        if (!result.success) throw new Error(result.error || 'Failed to fetch predictions');
-
-        const fetched: PredictionBite[] = result.data?.predictions || [];
-
-        setPredictions((prev) => {
-          if (!loadMore) return fetched;
-          const existingIds = new Set(prev.map((p) => p.id));
-          const unique = fetched.filter((p) => !existingIds.has(p.id));
-          return [...prev, ...unique];
-        });
-
-        nextCursorRef.current = result.data?.nextCursor ?? null;
-        setHasMore(!!result.data?.nextCursor);
-      } catch (err) {
-        logger.error('Error loading predictions', 'PredictionsFeed', err);
-        setError(err instanceof Error ? err.message : 'Failed to load predictions');
-        if (!loadMore) setPredictions([]);
-      } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
-      }
+  const handleDeleted = useCallback(
+    (id: string) => {
+      queryClient.invalidateQueries({ queryKey: predictionKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: predictionKeys.detail(id) });
     },
-    [statusFilter]
+    [queryClient]
   );
 
-  const handleDeleted = useCallback((id: string) => {
-    setPredictions((prev) => prev.filter((p) => p.id !== id));
-  }, []);
-
-  const handleUpdated = useCallback((updated: PredictionBite) => {
-    setPredictions((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-  }, []);
+  const handleUpdated = useCallback(
+    (_updated: PredictionBite) => {
+      queryClient.invalidateQueries({ queryKey: predictionKeys.lists() });
+    },
+    [queryClient]
+  );
 
   useInfiniteScroll({
-    hasMore,
-    isLoading: isLoadingMore,
-    onLoadMore: () => loadPredictions(true),
+    hasMore: !!hasNextPage,
+    isLoading: isFetchingNextPage,
+    onLoadMore: () => fetchNextPage(),
   });
-
-  // Reset and reload when status filter changes
-  useEffect(() => {
-    nextCursorRef.current = null;
-    loadPredictions();
-  }, [statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filterTabs = (
     <div className="flex gap-2">
@@ -163,8 +156,11 @@ export function PredictionsFeed({ className }: PredictionsFeedProps) {
             </div>
           </div>
           <h3 className="mb-2 text-lg font-semibold">Failed to Load Predictions</h3>
-          <p className="mb-4 text-sm text-muted-foreground">{error}</p>
-          <Button onClick={() => loadPredictions()} variant="outline">
+          <p className="mb-4 text-sm text-muted-foreground">{error.message}</p>
+          <Button
+            onClick={() => queryClient.invalidateQueries({ queryKey: predictionKeys.lists() })}
+            variant="outline"
+          >
             <RefreshCw className="mr-2 h-4 w-4" />
             Try Again
           </Button>
@@ -196,17 +192,19 @@ export function PredictionsFeed({ className }: PredictionsFeedProps) {
     <div className={cn('space-y-4', className)}>
       {filterTabs}
 
-      {predictions.map((prediction) => (
-        <PredictionBiteCard
-          key={prediction.id}
-          prediction={prediction}
-          tick={tick}
-          onDeleted={handleDeleted}
-          onUpdated={handleUpdated}
-        />
-      ))}
+      <PredictionCardErrorBoundary>
+        {predictions.map((prediction) => (
+          <PredictionBiteCard
+            key={prediction.id}
+            prediction={prediction}
+            tick={tick}
+            onDeleted={handleDeleted}
+            onUpdated={handleUpdated}
+          />
+        ))}
+      </PredictionCardErrorBoundary>
 
-      {isLoadingMore && (
+      {isFetchingNextPage && (
         <div className="flex justify-center py-6">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -215,7 +213,7 @@ export function PredictionsFeed({ className }: PredictionsFeedProps) {
         </div>
       )}
 
-      {!hasMore && predictions.length > 0 && (
+      {!hasNextPage && predictions.length > 0 && (
         <div className="flex justify-center py-6">
           <p className="text-sm text-muted-foreground">You&apos;ve reached the end</p>
         </div>

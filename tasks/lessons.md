@@ -231,11 +231,15 @@ Replace the HTTP self-fetch with a direct call to `fetchSportsblockPosts()`. Ser
 `broadcastHiveEngineOps` sends each transfer one at a time in a loop. When broadcasting multiple payouts/refunds in a single call, if op 2 of 3 fails, op 1 is already on-chain. On retry, all ops are re-sent — **double-paying** op 1's recipient. This was fixed for fees (via `feeTxId`) but payouts and refunds had no per-stake idempotency.
 
 ### Fix
-Broadcast one op per stake, immediately record success in DB (`payoutTxId` for payouts, `refunded = true` for refunds) before moving to the next. On retry, skip stakes that already have their success marker set. Applied to all three broadcast sites:
+Broadcast one op per stake, immediately record success in DB (`payoutTxId` for payouts, `refundTxId` for refunds) before moving to the next. On retry, skip stakes that already have their success marker set. Applied to all three broadcast sites:
 1. Payout broadcast in `executeSettlement` (normal path)
 2. Refund broadcast in `executeSettlement` (no-market path)
 3. Refund broadcast in `executeVoidRefund` (also made retry-safe by accepting VOID status)
 
+**Update (2026-03-01):** Replaced `refunded: Boolean` with `refundTxId: String?` on `PredictionStake`. This stores the actual blockchain transaction ID on refund (matching the `payoutTxId` pattern), providing both idempotency and an audit trail. The boolean was a crash-window risk — if broadcast succeeded but DB write failed, the boolean stayed `false` and the refund would be re-sent.
+
 ### Rule
 **Never broadcast multiple blockchain transfers in a single batch call.** Broadcast one op at a time, persist the result to DB immediately, and check for prior success before each op. This makes any multi-transfer flow safely resumable on partial failure.
+
+**Store transaction IDs, not booleans, for financial operations.** A `txId` field serves as both an idempotency guard and an audit trail. Derive the boolean status from `txId != null`.
 

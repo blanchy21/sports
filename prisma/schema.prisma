@@ -553,7 +553,7 @@ model PredictionStake {
   username      String
   amount        Decimal  @db.Decimal(12, 3)
   payout        Decimal? @db.Decimal(12, 3)
-  refunded      Boolean  @default(false)
+  refundTxId    String?  @map("refund_tx_id")
   stakeTxId     String?  @map("stake_tx_id")
   payoutTxId    String?  @map("payout_tx_id")
   createdAt     DateTime @default(now()) @map("created_at")
