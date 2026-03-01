@@ -9,6 +9,8 @@ interface PredictionComment {
   parentCommentId: string | null;
   body: string;
   createdAt: string;
+  tipTotal?: number;
+  tipCount?: number;
 }
 
 export function usePredictionComments(predictionId: string) {

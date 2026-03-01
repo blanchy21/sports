@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useMemo } from 'react';
-import { Send, Loader2, Reply, X, MessageCircle } from 'lucide-react';
+import { Send, Loader2, Reply, X, MessageCircle, Coins } from 'lucide-react';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
+import { TipButton } from '@/components/sportsbites/TipButton';
 import {
   usePredictionComments,
   useCreatePredictionComment,
@@ -29,6 +30,8 @@ interface CommentData {
   parentCommentId: string | null;
   body: string;
   createdAt: string;
+  tipTotal?: number;
+  tipCount?: number;
 }
 
 interface CommentNode {
@@ -170,8 +173,8 @@ export function PredictionComments({ predictionId }: PredictionCommentsProps) {
                   </span>
                 </div>
                 <p className="mt-0.5 whitespace-pre-wrap text-sm">{node.comment.body}</p>
-                {user && (
-                  <div className="mt-1">
+                <div className="mt-1 flex items-center gap-1">
+                  {user && (
                     <button
                       onClick={() => handleReplyTo(node.comment)}
                       className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
@@ -179,8 +182,21 @@ export function PredictionComments({ predictionId }: PredictionCommentsProps) {
                       <Reply className="h-3.5 w-3.5" />
                       Reply
                     </button>
-                  </div>
-                )}
+                  )}
+                  {user && user.username !== node.comment.username && (
+                    <TipButton
+                      author={node.comment.username}
+                      permlink={`pred-comment-${node.comment.id}`}
+                      className="h-6 px-1.5"
+                    />
+                  )}
+                  {(node.comment.tipTotal ?? 0) > 0 && (
+                    <span className="flex items-center gap-1 text-xs font-medium text-amber-500">
+                      <Coins className="h-3 w-3" />
+                      {node.comment.tipTotal} MEDALS
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           ))}

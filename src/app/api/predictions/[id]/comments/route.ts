@@ -59,16 +59,37 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'asc' },
     });
 
-    const comments = rows.map((row) => ({
-      id: row.id,
-      predictionId: row.predictionId,
-      username: row.username,
-      displayName: row.displayName,
-      avatar: row.avatar,
-      parentCommentId: row.parentCommentId,
-      body: row.body,
-      createdAt: row.createdAt.toISOString(),
-    }));
+    // Batch-query tip totals for all comments
+    const commentPermlinks = rows.map((r) => `pred-comment-${r.id}`);
+    const tipAggRows =
+      commentPermlinks.length > 0
+        ? await prisma.tip.groupBy({
+            by: ['permlink'],
+            where: { permlink: { in: commentPermlinks } },
+            _sum: { amount: true },
+            _count: true,
+          })
+        : [];
+
+    const tipsByPermlink = new Map(
+      tipAggRows.map((r) => [r.permlink, { total: Number(r._sum.amount ?? 0), count: r._count }])
+    );
+
+    const comments = rows.map((row) => {
+      const tips = tipsByPermlink.get(`pred-comment-${row.id}`);
+      return {
+        id: row.id,
+        predictionId: row.predictionId,
+        username: row.username,
+        displayName: row.displayName,
+        avatar: row.avatar,
+        parentCommentId: row.parentCommentId,
+        body: row.body,
+        createdAt: row.createdAt.toISOString(),
+        tipTotal: tips?.total ?? 0,
+        tipCount: tips?.count ?? 0,
+      };
+    });
 
     return NextResponse.json(
       { success: true, comments, count: comments.length },
