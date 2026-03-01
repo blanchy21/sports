@@ -47,19 +47,6 @@ export const POST = createApiHandler('/api/predictions/[id]/stake', async (reque
     const outcome = prediction.outcomes.find((o) => o.id === body.outcomeId);
     if (!outcome) throw new ValidationError('Invalid outcome ID');
 
-    const existingStake = await prisma.predictionStake.findUnique({
-      where: {
-        predictionId_username_outcomeId: {
-          predictionId: prediction.id,
-          username: user.username,
-          outcomeId: body.outcomeId,
-        },
-      },
-    });
-    if (existingStake) {
-      throw new ValidationError('You have already staked on this outcome');
-    }
-
     const operation = buildStakeEscrowOp(user.username, body.amount, prediction.id, body.outcomeId);
     const stakeToken = signStakeToken({
       predictionId: prediction.id,

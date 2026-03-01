@@ -42,10 +42,20 @@ export function PredictionStakeModal({
     [prediction.outcomes, outcomeId]
   );
 
+  const existingStake = useMemo(
+    () =>
+      prediction.userStakes
+        ?.filter((s) => s.outcomeId === outcomeId)
+        .reduce((sum, s) => sum + s.amount, 0) ?? 0,
+    [prediction.userStakes, outcomeId]
+  );
+
+  const isTopUp = existingStake > 0;
+
   const estimatedPayout = useMemo(() => {
     if (!selectedOutcome) return 0;
-    return amount * selectedOutcome.odds;
-  }, [amount, selectedOutcome]);
+    return (existingStake + amount) * selectedOutcome.odds;
+  }, [amount, existingStake, selectedOutcome]);
 
   // MEDALS balance via React Query
   const { data: balanceData } = useMedalsBalance(hiveUsername);
@@ -92,7 +102,12 @@ export function PredictionStakeModal({
   if (!selectedOutcome) return null;
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} title="Place Your Stake" size="sm">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isTopUp ? 'Add to Stake' : 'Place Your Stake'}
+      size="sm"
+    >
       <div className="space-y-5">
         {/* Selected outcome */}
         <div className="rounded-lg border border-warning/30 bg-warning/5 p-3">
@@ -102,6 +117,14 @@ export function PredictionStakeModal({
             <span className="text-sm font-medium">{selectedOutcome.odds.toFixed(2)}x odds</span>
           </div>
         </div>
+
+        {/* Existing stake banner */}
+        {isTopUp && stakeState !== 'success' && (
+          <div className="flex items-center gap-2 rounded-lg bg-info/10 px-3 py-2 text-sm text-info">
+            <TrendingUp className="h-4 w-4 shrink-0" />
+            Your current stake: {existingStake} MEDALS
+          </div>
+        )}
 
         {/* Success state */}
         {stakeState === 'success' && (
@@ -218,7 +241,14 @@ export function PredictionStakeModal({
               <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/5 px-3 py-2">
                 <TrendingUp className="h-4 w-4 text-success" />
                 <span className="text-sm">
-                  If <span className="font-medium">{selectedOutcome.label}</span> wins:{' '}
+                  {isTopUp ? (
+                    'New total payout'
+                  ) : (
+                    <>
+                      If <span className="font-medium">{selectedOutcome.label}</span> wins
+                    </>
+                  )}
+                  :{' '}
                   <span className="font-semibold text-success">
                     ~{estimatedPayout.toFixed(2)} MEDALS
                   </span>

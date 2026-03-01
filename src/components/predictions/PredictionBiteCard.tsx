@@ -22,8 +22,10 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
+  MessageCircle,
 } from 'lucide-react';
 import { timeAgo } from '@/lib/utils/formatting';
+import { PredictionComments } from './PredictionComments';
 import type { PredictionBite } from '@/lib/predictions/types';
 
 function formatCountdown(locksAt: string): string {
@@ -67,6 +69,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [commentsExpanded, setCommentsExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const hiveUsername =
@@ -78,7 +81,9 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
   // Map user stakes by outcomeId
   const userStakeMap = useMemo(() => {
     const map = new Map<string, number>();
-    prediction.userStakes?.forEach((s) => map.set(s.outcomeId, s.amount));
+    prediction.userStakes?.forEach((s) =>
+      map.set(s.outcomeId, (map.get(s.outcomeId) ?? 0) + s.amount)
+    );
     return map;
   }, [prediction.userStakes]);
 
@@ -257,6 +262,17 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
           </div>
         )}
 
+        {/* Comment toggle */}
+        <div className="px-4 pt-2">
+          <button
+            onClick={() => setCommentsExpanded((prev) => !prev)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <MessageCircle className="h-4 w-4" />
+            <span>{prediction.commentCount || 0}</span>
+          </button>
+        </div>
+
         {/* Status-dependent footer */}
         <div className="px-4 pb-4 pt-3">
           {prediction.status === 'OPEN' && (
@@ -331,6 +347,9 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
 
         {/* Settlement panel for creators/admins */}
         {canSettle && <PredictionSettlementPanel prediction={prediction} />}
+
+        {/* Expanded comments */}
+        {commentsExpanded && <PredictionComments predictionId={prediction.id} />}
       </div>
 
       {/* Stake modal - only render if an outcome from this prediction is selected */}

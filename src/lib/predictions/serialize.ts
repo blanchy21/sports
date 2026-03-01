@@ -103,6 +103,7 @@ export function serializePrediction(
     settledBy: prediction.settledBy,
     createdAt: prediction.createdAt.toISOString(),
     canModify,
+    commentCount: prediction.commentCount,
   };
 
   if (userStakes) {

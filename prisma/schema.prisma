@@ -515,9 +515,12 @@ model Prediction {
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
 
+  commentCount      Int              @default(0) @map("comment_count")
+
   outcomes       PredictionOutcome[]  @relation("PredictionOutcomes")
   stakes         PredictionStake[]
   escrowLedger   PredictionEscrowLedger[]
+  comments       PredictionComment[]
   winningOutcome PredictionOutcome?   @relation("WinningOutcome", fields: [winningOutcomeId], references: [id])
 
   @@index([status])
@@ -561,7 +564,7 @@ model PredictionStake {
   prediction Prediction        @relation(fields: [predictionId], references: [id], onDelete: Cascade)
   outcome    PredictionOutcome @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
 
-  @@unique([predictionId, username, outcomeId])
+  @@index([predictionId, username, outcomeId])
   @@index([predictionId])
   @@index([username])
   @@map("prediction_stakes")
@@ -581,4 +584,21 @@ model PredictionEscrowLedger {
   @@unique([predictionId, txId])
   @@index([predictionId])
   @@map("prediction_escrow_ledger")
+}
+
+model PredictionComment {
+  id              String    @id @default(uuid())
+  predictionId    String    @map("prediction_id")
+  username        String
+  displayName     String?   @map("display_name")
+  avatar          String?
+  parentCommentId String?   @map("parent_comment_id")
+  body            String
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  prediction Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+
+  @@index([predictionId, createdAt])
+  @@index([parentCommentId])
+  @@map("prediction_comments")
 }

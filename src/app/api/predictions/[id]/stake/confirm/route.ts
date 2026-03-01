@@ -83,7 +83,7 @@ export const POST = createApiHandler(
       let prediction;
       try {
         prediction = await prisma.$transaction(async (tx) => {
-          await tx.predictionStake.create({
+          const newStake = await tx.predictionStake.create({
             data: {
               predictionId,
               outcomeId: tokenData.outcomeId,
@@ -103,11 +103,21 @@ export const POST = createApiHandler(
             },
           });
 
+          // Only increment backerCount if this is the user's first stake on this outcome
+          const existingStake = await tx.predictionStake.findFirst({
+            where: {
+              predictionId,
+              outcomeId: tokenData.outcomeId,
+              username: user.username,
+              id: { not: newStake.id },
+            },
+          });
+
           await tx.predictionOutcome.update({
             where: { id: tokenData.outcomeId },
             data: {
               totalStaked: { increment: tokenData.amount },
-              backerCount: { increment: 1 },
+              ...(existingStake ? {} : { backerCount: { increment: 1 } }),
             },
           });
 
