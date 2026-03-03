@@ -53,6 +53,11 @@ Sentry.init({
     'ResizeObserver loop completed with undelivered notifications',
     // Browser extension / injected script noise (not from our code)
     /Error invoking.*Method not found/,
+    'Failed to connect to MetaMask',
+    // Webpack stale chunk errors after deployments (user just needs to refresh)
+    /Cannot read properties of undefined \(reading 'call'\)/,
+    'Loading chunk',
+    /ChunkLoadError/,
   ],
 
   // Only send errors from our domain
@@ -72,12 +77,14 @@ Sentry.init({
       return null;
     }
 
-    // Filter out specific error types if needed
+    // Filter out chunk load / stale deployment errors
     const error = hint.originalException;
     if (error instanceof Error) {
-      // Skip certain error patterns
-      if (error.message?.includes('Loading chunk')) {
-        // Chunk loading errors are usually network issues
+      if (
+        error.message?.includes('Loading chunk') ||
+        error.message?.includes("reading 'call'") ||
+        error.name === 'ChunkLoadError'
+      ) {
         return null;
       }
     }

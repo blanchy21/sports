@@ -44,6 +44,23 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Auto-reload on stale chunk errors (happens after deployments)
+    const isChunkError =
+      error.name === 'ChunkLoadError' ||
+      error.message?.includes('Loading chunk') ||
+      error.message?.includes("reading 'call'");
+
+    if (isChunkError && typeof window !== 'undefined') {
+      const reloadKey = 'chunk-error-reload';
+      const lastReload = sessionStorage.getItem(reloadKey);
+      // Only auto-reload once per session to avoid infinite loops
+      if (!lastReload) {
+        sessionStorage.setItem(reloadKey, Date.now().toString());
+        window.location.reload();
+        return;
+      }
+    }
+
     // Report error to error reporting service
     reportErrorBoundary(error, errorInfo);
 

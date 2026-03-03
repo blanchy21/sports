@@ -235,6 +235,22 @@ export function setupGlobalErrorHandlers(): void {
   window.addEventListener('unhandledrejection', (event) => {
     const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
 
+    // Auto-reload on stale chunk errors (happens after deployments)
+    const isChunkError =
+      error.name === 'ChunkLoadError' ||
+      error.message?.includes('Loading chunk') ||
+      error.message?.includes("reading 'call'");
+
+    if (isChunkError) {
+      const reloadKey = 'chunk-error-reload';
+      const lastReload = sessionStorage.getItem(reloadKey);
+      if (!lastReload) {
+        sessionStorage.setItem(reloadKey, Date.now().toString());
+        window.location.reload();
+        return;
+      }
+    }
+
     reportError(error, { action: 'Unhandled Promise Rejection' }, 'error');
   });
 
