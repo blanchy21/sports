@@ -61,9 +61,9 @@ export function SharePredictionModal({
     downloadBlob(result.blob, `sportsblock-prediction-${prediction.id}.png`);
   };
 
-  const handleShareX = () => {
+  const getShareText = () => {
     const profit = userPayout - totalUserStake;
-    const text = [
+    return [
       `Called it! ${prediction.title}`,
       `${profit >= 0 ? '+' : ''}${profit.toFixed(0)} MEDALS profit`,
       stats
@@ -71,7 +71,27 @@ export function SharePredictionModal({
         : 'on @sportsblockapp',
       'sportsblock.app/predictions',
     ].join(' \u2705 ');
+  };
 
+  const handleShareX = async () => {
+    if (!result) return;
+
+    const text = getShareText();
+    const file = new File([result.blob], 'sportsblock-prediction.png', { type: 'image/png' });
+
+    // Try Web Share API with image (works on mobile + some desktop browsers)
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ text, files: [file] });
+        return;
+      } catch (err) {
+        // User cancelled or share failed — fall through to fallback
+        if (err instanceof Error && err.name === 'AbortError') return;
+      }
+    }
+
+    // Fallback: download the image, then open tweet intent
+    downloadBlob(result.blob, `sportsblock-prediction-${prediction.id}.png`);
     window.open(
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
       '_blank',
