@@ -33,8 +33,11 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
-/** Max custom_json ops per Hive transaction (conservative limit) */
-const BATCH_SIZE = 40;
+/** Max custom_json ops per Hive transaction (Hive limits to 5 per block per account) */
+const BATCH_SIZE = 5;
+
+/** Delay between batches to land in separate blocks (ms) */
+const BATCH_DELAY_MS = 3500;
 
 const dhive = new Client(HIVE_NODES);
 
@@ -214,6 +217,11 @@ async function broadcastRewards(
 
     await dhive.broadcast.sendOperations(ops as never[], activeKey);
     batchesSent++;
+
+    // Wait between batches so they land in different blocks
+    if (i + BATCH_SIZE < transferPayloads.length) {
+      await new Promise((r) => setTimeout(r, BATCH_DELAY_MS));
+    }
   }
 
   return { batchesSent, totalTransfers: transferPayloads.length };
