@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast, toast } from '@/components/core/Toast';
 import type { Sportsbite } from '@/lib/hive-workerbee/shared';
-import Image from 'next/image';
 import { Zap, TrendingUp, Clock, Users, X, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { Button } from '@/components/core/Button';
@@ -99,65 +98,42 @@ export default function SportsBitesPage() {
     <MainLayout>
       <div className="mx-auto max-w-3xl">
         {/* Header */}
-        <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-border/50 bg-background/95 px-4 backdrop-blur-xl">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-3">
-              <Image
-                src="/sportsbites-logo.png"
-                alt="Sportsbites"
-                width={44}
-                height={44}
-                className="rounded-xl shadow-lg"
-              />
-              <div>
-                <h1 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-2xl font-bold">
-                  Sportsbites
-                </h1>
-                <p className="text-sm text-muted-foreground">Quick takes & live reactions</p>
-              </div>
-            </div>
+        <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-border bg-background/95 px-4 backdrop-blur-xl">
+          <div className="flex items-center justify-between py-3">
+            <h1 className="text-xl font-bold">Sportsbites</h1>
 
-            <div className="flex items-center gap-2 rounded-full border border-success/20 bg-success/10 px-3 py-1.5">
-              <span className="relative flex h-2 w-2">
+            <div className="flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1">
+              <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-success"></span>
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success"></span>
               </span>
-              <span className="text-xs font-medium text-success">Live</span>
+              <span className="text-[11px] font-medium text-success">Live</span>
             </div>
           </div>
 
-          <div className="flex gap-1.5 pb-3">
+          <div className="flex">
             {filters.map((filter) => {
               const Icon = filter.icon;
               const isActive = activeFilter === filter.id;
               return (
-                <Button
+                <button
                   key={filter.id}
-                  variant={isActive ? 'default' : 'ghost'}
-                  size="sm"
                   onClick={() => setActiveFilter(filter.id)}
                   className={cn(
-                    'flex-1 gap-2 transition-all duration-300',
+                    'flex flex-1 items-center justify-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors',
                     isActive
-                      ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-                      : 'hover:scale-[1.01] hover:bg-muted/80'
+                      ? 'border-primary font-semibold text-foreground'
+                      : 'border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                   )}
                 >
-                  <Icon className={cn('h-4 w-4', isActive && 'animate-pulse')} />
+                  <Icon className="h-4 w-4" />
                   {filter.label}
                   {filter.id === 'following' && followingList.length > 0 && (
-                    <span
-                      className={cn(
-                        'ml-1 rounded-full px-1.5 py-0.5 text-xs',
-                        isActive
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      )}
-                    >
+                    <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
                       {followingList.length}
                     </span>
                   )}
-                </Button>
+                </button>
               );
             })}
           </div>
@@ -185,7 +161,7 @@ export default function SportsBitesPage() {
         )}
 
         {/* Compose box */}
-        <div className="mb-6">
+        <div className="mb-4">
           <ComposeSportsbite onSuccess={handlePostSuccess} onError={handlePostError} />
         </div>
 

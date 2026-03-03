@@ -84,9 +84,9 @@ export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
   const isDisabled = voteState.isVoting || !voteState.canVote;
 
   return (
-    <div className={cn('flex items-center space-x-2', className)}>
+    <div className={cn('flex items-center gap-2', className)}>
       {/* Star Rating */}
-      <div className="flex items-center space-x-1" onMouseLeave={handleMouseLeave}>
+      <div className="flex items-center gap-0.5" onMouseLeave={handleMouseLeave}>
         {[1, 2, 3, 4, 5].map((starNumber) => {
           const starState = getStarState(starNumber);
 
@@ -111,17 +111,17 @@ export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
               }
             >
               {starState === 'loading' ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <Loader2 className="h-[18px] w-[18px] animate-spin text-muted-foreground" />
               ) : (
                 <Star
                   className={cn(
-                    'h-4 w-4 transition-all duration-150',
+                    'h-[18px] w-[18px] transition-all duration-150',
                     starState === 'filled' && [
                       'fill-warning text-warning',
                       'hover:fill-warning/80 hover:text-warning/80',
                     ],
                     starState === 'empty' && [
-                      'text-muted-foreground',
+                      'text-muted-foreground/60',
                       'hover:fill-warning/60 hover:text-warning/60',
                     ],
                     starState === 'disabled' && 'text-muted-foreground/50'
