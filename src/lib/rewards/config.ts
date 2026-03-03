@@ -89,43 +89,43 @@ export const CONTENT_REWARDS = {
   MOST_EXTERNAL_VIEWS: {
     name: 'Most External Views',
     description: 'Posts bringing the most traffic from external sources',
-    minReward: 5000,
-    maxReward: 6000,
+    minReward: 200,
+    maxReward: 200,
     winners: 1,
   },
   /** Most viewed post on platform */
   MOST_VIEWED_POST: {
     name: 'Most Viewed Post',
     description: 'The most viewed post on Sportsblock this week',
-    reward: 3000,
+    reward: 200,
     winners: 1,
   },
   /** Most comments made by user */
   MOST_COMMENTS: {
     name: 'Most Active Commenter',
     description: 'User who made the most quality comments',
-    reward: 3000,
+    reward: 200,
     winners: 1,
   },
   /** Most engaged post (votes + comments + shares) */
   MOST_ENGAGED_POST: {
     name: 'Most Engaged Post',
     description: 'Post with highest total engagement',
-    reward: 2000,
+    reward: 200,
     winners: 1,
   },
   /** Curator-selected post of the week */
   POST_OF_THE_WEEK: {
     name: 'Post of the Week',
     description: 'Selected by our curator team',
-    reward: 2000,
+    reward: 200,
     winners: 1,
   },
   /** Best newcomer (Year 4+) */
   BEST_NEWCOMER: {
     name: 'Best Newcomer',
     description: 'Outstanding new community member',
-    reward: 1000,
+    reward: 200,
     winners: 1,
     minPlatformYear: 4,
   },

@@ -6,6 +6,7 @@ import { buildPayoutOps, buildFeeOps, type FeeOps, buildRefundOps } from './escr
 import type { SettlementResult } from './types';
 import { logger } from '@/lib/logger';
 import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
+import { evaluateBadgesForAction } from '@/lib/badges/evaluator';
 
 const dhive = new Client(HIVE_NODES);
 
@@ -223,6 +224,12 @@ export async function executeSettlement(
       totalPool: settlement.totalPool,
       payoutCount: settlement.payouts.length,
     });
+
+    // Badge evaluation for all stakers (fire-and-forget)
+    const stakers = [...new Set(prediction.stakes.map((s) => s.username))];
+    for (const staker of stakers) {
+      evaluateBadgesForAction(staker, 'prediction_settled').catch(() => {});
+    }
 
     return settlement;
   } catch (error) {

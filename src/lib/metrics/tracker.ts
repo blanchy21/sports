@@ -9,6 +9,7 @@ import { prisma } from '@/lib/db/prisma';
 import { getWeekId } from '@/lib/rewards/staking-distribution';
 import type { EngagementEvent, EngagementType, PostMetrics, UserMetrics } from './types';
 import { incrementUserStat, updatePostingStreak, touchActivity } from './user-stats';
+import { evaluateBadgesForAction } from '@/lib/badges/evaluator';
 
 /**
  * Generate a post ID from author and permlink
@@ -261,6 +262,7 @@ export async function trackPostCreation(author: string): Promise<void> {
     // Lifetime stats
     incrementUserStat(author, 'totalPosts');
     updatePostingStreak(author);
+    evaluateBadgesForAction(author, 'streak_updated').catch(() => {});
   } catch (error) {
     console.error('Error tracking post creation:', error);
   }

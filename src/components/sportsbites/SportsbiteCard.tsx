@@ -41,6 +41,8 @@ import { InlineReplies } from '@/components/sportsbites/InlineReplies';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { EmojiReactions } from '@/components/sportsbites/EmojiReactions';
 import { RoleBadge } from '@/components/user/RoleBadge';
+import { RankBadge } from '@/components/badges/RankBadge';
+import { useUserRank } from '@/lib/react-query/queries/useUserBadges';
 import { QuickPoll } from '@/components/sportsbites/QuickPoll';
 import { TipButton } from '@/components/sportsbites/TipButton';
 
@@ -81,6 +83,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const { profile: authorProfile, isLoading: isProfileLoading } = useUserProfileCard(
     sportsbite.author
   );
+  const { rank: authorRank } = useUserRank(sportsbite.author);
 
   const { text: biteText, images: bodyImages } = React.useMemo(
     () => extractMediaFromBody(sportsbite.body),
@@ -323,6 +326,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               </button>
               <span className="text-muted-foreground">@{sportsbite.author}</span>
               <RoleBadge username={sportsbite.author} />
+              <RankBadge rank={authorRank} size="sm" />
               <span className="text-muted-foreground">·</span>
               <span className="text-sm text-muted-foreground">
                 {formatDate(

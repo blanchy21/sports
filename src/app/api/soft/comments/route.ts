@@ -9,6 +9,7 @@ import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { logger } from '@/lib/logger';
 import { touchLastActive } from '@/lib/api/activity';
 import { stripSoftPrefix } from '@/lib/utils/soft-post';
+import { evaluateBadgesForAction } from '@/lib/badges/evaluator';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -343,6 +344,9 @@ export const POST = csrfProtected(
     } catch (notifError) {
       logger.error('Failed to create notifications', 'soft-comments', notifError);
     }
+
+    // Badge evaluation (fire-and-forget)
+    evaluateBadgesForAction(user.username, 'comment_created').catch(() => {});
 
     const comment: SoftComment = {
       id: newComment.id,

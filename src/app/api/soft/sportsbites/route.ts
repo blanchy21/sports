@@ -7,6 +7,8 @@ import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils
 import { csrfProtected } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { logger } from '@/lib/logger';
+import { incrementUserStat } from '@/lib/metrics/user-stats';
+import { evaluateBadgesForAction } from '@/lib/badges/evaluator';
 import { SPORTSBITES_CONFIG } from '@/lib/hive-workerbee/sportsbites';
 import { SoftSportsbite } from '@/types/auth';
 
@@ -236,6 +238,10 @@ export const POST = csrfProtected(
         isDeleted: false,
       },
     });
+
+    // Lifetime stats + badge evaluation (fire-and-forget)
+    incrementUserStat(user.username, 'totalSportsbites');
+    evaluateBadgesForAction(user.username, 'sportsbite_created').catch(() => {});
 
     // Keep function alive for lastActiveAt update via after()
     after(

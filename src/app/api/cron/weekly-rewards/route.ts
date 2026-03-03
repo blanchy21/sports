@@ -21,6 +21,7 @@ import { getPlatformYear } from '@/lib/rewards/config';
 import { prisma } from '@/lib/db/prisma';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
 import { logger } from '@/lib/logger';
+import { evaluateAllBadges, calculateAllMedalsScores, calculatePerSportScores } from '@/lib/badges';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -136,6 +137,15 @@ export async function GET() {
       })),
     };
 
+    // Badge sweep for all active users
+    logger.info('Running badge sweep', 'cron:weekly-rewards');
+    const badgeResults = await evaluateAllBadges();
+
+    // MEDALS Score recalculation (global + per-sport)
+    logger.info('Recalculating MEDALS scores', 'cron:weekly-rewards');
+    const scoreResults = await calculateAllMedalsScores();
+    const sportScoreResults = await calculatePerSportScores();
+
     // Mark as processed
     await markAsProcessed(weekId, summary);
 
@@ -145,6 +155,9 @@ export async function GET() {
       success: true,
       message: `Weekly rewards calculated for ${weekId}`,
       ...summary,
+      badges: badgeResults,
+      medalsScores: scoreResults,
+      sportScores: sportScoreResults,
       duration: Date.now() - startTime,
     });
   } catch (error) {

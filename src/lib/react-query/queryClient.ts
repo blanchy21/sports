@@ -87,6 +87,10 @@ export const queryKeys = {
     week: (weekId: string) => [...queryKeys.leaderboards.all, 'week', weekId] as const,
     myRank: (username: string) => [...queryKeys.leaderboards.all, 'myRank', username] as const,
   },
+  badges: {
+    all: ['badges'] as const,
+    user: (username: string) => [...queryKeys.badges.all, username] as const,
+  },
   prices: {
     all: ['prices'] as const,
   },

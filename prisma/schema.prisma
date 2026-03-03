@@ -462,6 +462,8 @@ model UserStats {
   currentPostingStreak Int      @default(0) @map("current_posting_streak")
   longestPostingStreak Int      @default(0) @map("longest_posting_streak")
   lastPostWeek         String?  @map("last_post_week")
+  medalsScore          Decimal  @default(0) @map("medals_score") @db.Decimal(10, 2)
+  medalsRank           String?  @map("medals_rank")
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @default(now()) @map("updated_at")
 
@@ -624,4 +626,38 @@ model PredictionComment {
   @@index([predictionId, createdAt])
   @@index([parentCommentId])
   @@map("prediction_comments")
+}
+
+// ============================================================================
+// Phase 4 — Badge system & MEDALS Rank
+// ============================================================================
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  username  String
+  badgeId   String   @map("badge_id")
+  awardedAt DateTime @default(now()) @map("awarded_at")
+
+  @@unique([username, badgeId])
+  @@index([username])
+  @@index([badgeId])
+  @@map("user_badges")
+}
+
+model UserSportStats {
+  id            String   @id @default(uuid())
+  username      String
+  sportId       String   @map("sport_id")
+  posts         Int      @default(0)
+  sportsbites   Int      @default(0)
+  comments      Int      @default(0)
+  viewsReceived Int      @default(0) @map("views_received")
+  medalsScore   Decimal  @default(0) @map("medals_score") @db.Decimal(10, 2)
+  medalsRank    String?  @map("medals_rank")
+  updatedAt     DateTime @default(now()) @map("updated_at")
+
+  @@unique([username, sportId])
+  @@index([username])
+  @@index([sportId])
+  @@map("user_sport_stats")
 }

@@ -19,6 +19,9 @@ import { usePremiumTier } from '@/lib/premium/hooks';
 import { PremiumBadge } from '@/components/medals';
 import { FollowButton } from '@/components/user/FollowButton';
 import { RoleBadge } from '@/components/user/RoleBadge';
+import { RankBadge } from '@/components/badges/RankBadge';
+import { BadgeGrid } from '@/components/badges/BadgeGrid';
+import { useUserRank } from '@/lib/react-query/queries/useUserBadges';
 import { LastSeenIndicator } from '@/components/user/LastSeenIndicator';
 import { PredictionStatsCard } from '@/components/predictions/PredictionStatsCard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,6 +65,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
   const { data: followerCount } = useUserFollowerCount(effectiveHiveProfile ? username : '');
   const { data: followingCount } = useUserFollowingCount(effectiveHiveProfile ? username : '');
   const { tier: premiumTier } = usePremiumTier(effectiveHiveProfile ? username : '');
+  const { rank: medalsRank } = useUserRank(username);
 
   const [userPosts, setUserPosts] = useState<SportsblockPost[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
@@ -253,6 +257,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                   </h1>
                   <RoleBadge username={username} size="md" />
                   {!isSoftUser && premiumTier && <PremiumBadge tier={premiumTier} size="md" />}
+                  <RankBadge rank={medalsRank} size="md" />
                   {!isSoftUser &&
                     (profile as { reputationFormatted?: string }).reputationFormatted && (
                       <div className="rounded-full bg-accent/20 px-2 py-1 dark:bg-accent/20">
@@ -410,6 +415,11 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Badges */}
+        <div className="rounded-lg border bg-card p-4 sm:p-6">
+          <BadgeGrid username={username} />
         </div>
 
         {/* Prediction Stats */}
