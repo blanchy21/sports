@@ -25,6 +25,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { timeAgo } from '@/lib/utils/formatting';
+import Link from 'next/link';
 import { PredictionComments } from './PredictionComments';
 import { StreakBadge } from './StreakBadge';
 import type { PredictionBite } from '@/lib/predictions/types';
@@ -155,15 +156,22 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-4 pt-4">
-          <Avatar
-            src={avatarUrl}
-            fallback={prediction.creatorUsername}
-            alt={prediction.creatorUsername}
-            size="md"
-          />
+          <Link href={`/user/${prediction.creatorUsername}`}>
+            <Avatar
+              src={avatarUrl}
+              fallback={prediction.creatorUsername}
+              alt={prediction.creatorUsername}
+              size="md"
+            />
+          </Link>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="truncate text-sm font-semibold">@{prediction.creatorUsername}</span>
+              <Link
+                href={`/user/${prediction.creatorUsername}`}
+                className="truncate text-sm font-semibold hover:underline"
+              >
+                @{prediction.creatorUsername}
+              </Link>
               <StreakBadge username={prediction.creatorUsername} />
               <span className="shrink-0 text-xs text-muted-foreground">
                 {timeAgo(prediction.createdAt)}
@@ -321,7 +329,9 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
                   <p className="text-xs font-medium text-success/80">Payouts</p>
                   {winningOutcome.stakers.map((s) => (
                     <div key={s.username} className="flex items-center justify-between text-xs">
-                      <span>@{s.username}</span>
+                      <Link href={`/user/${s.username}`} className="hover:underline">
+                        @{s.username}
+                      </Link>
                       <span className="font-semibold">
                         {s.payout ? `${s.payout.toFixed(3)} MEDALS` : `${s.amount} staked`}
                       </span>
