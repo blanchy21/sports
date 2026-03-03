@@ -56,7 +56,7 @@ export const historyLimitSchema = z
 /**
  * Sort options for posts
  */
-export const postSortSchema = z.enum(['created', 'trending', 'payout', 'votes']);
+export const postSortSchema = z.enum(['created', 'trending', 'hot', 'payout', 'votes']);
 
 /**
  * Cursor for pagination (ISO date string or permlink)

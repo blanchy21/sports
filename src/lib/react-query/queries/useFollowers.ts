@@ -1,20 +1,69 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
-import {
-  fetchFollowers,
-  fetchFollowing,
-  followUser,
-  unfollowUser,
-  SocialResult,
-} from '@/lib/hive-workerbee/social';
 import { STALE_TIMES, PAGINATION } from '@/lib/constants/cache';
 import { useBroadcast } from '@/hooks/useBroadcast';
+import type { FollowRelationship } from '@/types';
+
+// Locally defined — matches the server-side SocialResult interface
+// without importing the WASM-dependent social module.
+interface SocialResult {
+  relationships: FollowRelationship[];
+  hasMore: boolean;
+  nextCursor?: string;
+  total?: number;
+}
+
+async function fetchFollowersViaApi(
+  username: string,
+  options: { limit: number; before?: string }
+): Promise<SocialResult> {
+  const params = new URLSearchParams({
+    username,
+    limit: options.limit.toString(),
+  });
+  if (options.before) params.set('before', options.before);
+
+  const response = await fetch(`/api/hive/social/followers?${params}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch followers: ${response.status}`);
+  }
+  const data = await response.json();
+  return {
+    relationships: data.relationships ?? [],
+    hasMore: data.hasMore ?? false,
+    nextCursor: data.nextCursor,
+    total: data.total,
+  };
+}
+
+async function fetchFollowingViaApi(
+  username: string,
+  options: { limit: number; before?: string }
+): Promise<SocialResult> {
+  const params = new URLSearchParams({
+    username,
+    limit: options.limit.toString(),
+  });
+  if (options.before) params.set('before', options.before);
+
+  const response = await fetch(`/api/hive/social/following?${params}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch following: ${response.status}`);
+  }
+  const data = await response.json();
+  return {
+    relationships: data.relationships ?? [],
+    hasMore: data.hasMore ?? false,
+    nextCursor: data.nextCursor,
+    total: data.total,
+  };
+}
 
 export function useFollowers(username: string, options: { enabled?: boolean } = {}) {
   return useInfiniteQuery({
     queryKey: [...queryKeys.users.followers(username)],
     queryFn: ({ pageParam }) =>
-      fetchFollowers(username, {
+      fetchFollowersViaApi(username, {
         limit: PAGINATION.SOCIAL_PAGE_SIZE,
         before: pageParam,
       }),
@@ -38,7 +87,7 @@ export function useFollowing(username: string, options: { enabled?: boolean } = 
   return useInfiniteQuery({
     queryKey: [...queryKeys.users.following(username)],
     queryFn: ({ pageParam }) =>
-      fetchFollowing(username, {
+      fetchFollowingViaApi(username, {
         limit: PAGINATION.SOCIAL_PAGE_SIZE,
         before: pageParam,
       }),
@@ -63,8 +112,25 @@ export function useFollowUser() {
   const { broadcast } = useBroadcast();
 
   return useMutation({
-    mutationFn: ({ username, follower }: { username: string; follower: string }) =>
-      followUser(username, follower, broadcast),
+    mutationFn: async ({ username, follower }: { username: string; follower: string }) => {
+      const operations: [string, Record<string, unknown>][] = [
+        [
+          'custom_json',
+          {
+            required_auths: [],
+            required_posting_auths: [follower],
+            id: 'follow',
+            json: JSON.stringify(['follow', { follower, following: username, what: ['blog'] }]),
+          },
+        ],
+      ];
+
+      const result = await broadcast(operations, 'posting');
+      if (!result.success) {
+        throw new Error(result.error || 'Follow transaction failed');
+      }
+      return result;
+    },
     onSuccess: (_, { username, follower }) => {
       // Invalidate follower/following lists for both users
       queryClient.invalidateQueries({ queryKey: queryKeys.users.followers(username) });
@@ -88,8 +154,25 @@ export function useUnfollowUser() {
   const { broadcast } = useBroadcast();
 
   return useMutation({
-    mutationFn: ({ username, follower }: { username: string; follower: string }) =>
-      unfollowUser(username, follower, broadcast),
+    mutationFn: async ({ username, follower }: { username: string; follower: string }) => {
+      const operations: [string, Record<string, unknown>][] = [
+        [
+          'custom_json',
+          {
+            required_auths: [],
+            required_posting_auths: [follower],
+            id: 'follow',
+            json: JSON.stringify(['follow', { follower, following: username, what: [] }]),
+          },
+        ],
+      ];
+
+      const result = await broadcast(operations, 'posting');
+      if (!result.success) {
+        throw new Error(result.error || 'Unfollow transaction failed');
+      }
+      return result;
+    },
     onSuccess: (_, { username, follower }) => {
       // Invalidate follower/following lists for both users
       queryClient.invalidateQueries({ queryKey: queryKeys.users.followers(username) });

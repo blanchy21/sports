@@ -9,7 +9,7 @@ import type {
   ReactionCounts,
   PollResults,
 } from '@/lib/hive-workerbee/shared';
-import { Loader2, RefreshCw, AlertCircle, Zap, ArrowUp, Sparkles } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle, Zap, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { cn } from '@/lib/utils/client';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -298,9 +298,9 @@ export function SportsbitesFeed({
 
   if (isLoading) {
     return (
-      <div className={cn('space-y-4', className)}>
+      <div className={cn('space-y-0', className)}>
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="animate-pulse rounded-xl border bg-card p-4">
+          <div key={i} className="animate-pulse border-b border-border px-4 py-3">
             <div className="flex gap-3">
               <div className="h-12 w-12 rounded-full bg-muted" />
               <div className="flex-1 space-y-3">
@@ -376,29 +376,23 @@ export function SportsbitesFeed({
   }
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn('space-y-0', className)}>
       {pendingBites.length > 0 && (
         <button
           onClick={showNewBites}
           className={cn(
-            'flex w-full items-center justify-center gap-2 px-4 py-3',
-            'bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20',
-            'rounded-xl border border-primary/30',
+            'flex w-full items-center justify-center gap-2 border-b border-primary/30 bg-primary/5 px-4 py-3',
             'text-sm font-medium text-primary',
-            'hover:from-primary/30 hover:via-primary/20 hover:to-primary/30',
-            'cursor-pointer transition-all duration-300',
-            'animate-pulse hover:animate-none',
-            'shadow-lg shadow-primary/10'
+            'cursor-pointer transition-colors hover:bg-primary/10'
           )}
         >
           <ArrowUp className="h-4 w-4" />
-          <Sparkles className="h-4 w-4" />
           <span>
+            Show{' '}
             {pendingBites.length === 1
               ? '1 new sportsbite'
               : `${pendingBites.length} new sportsbites`}
           </span>
-          <span className="text-primary/70">— tap to see</span>
         </button>
       )}
 
