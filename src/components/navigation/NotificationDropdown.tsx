@@ -25,7 +25,6 @@ import {
 } from '@/contexts/notifications/useNotificationFilter';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/core/Button';
-import { Badge } from '@/components/core/Badge';
 
 interface NotificationDropdownProps {
   isOpen: boolean;
@@ -144,28 +143,28 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'short_reply':
-        return <Zap className="h-4 w-4 text-primary" />;
+        return <Zap className="h-3.5 w-3.5 text-primary" />;
       case 'comment':
-        return <MessageSquare className="h-4 w-4 text-accent" />;
+        return <MessageSquare className="h-3.5 w-3.5 text-accent" />;
       case 'vote':
-        return <ThumbsUp className="h-4 w-4 text-accent" />;
+        return <ThumbsUp className="h-3.5 w-3.5 text-accent" />;
       case 'post':
-        return <FileText className="h-4 w-4 text-purple-500" />;
+        return <FileText className="h-3.5 w-3.5 text-purple-500" />;
       case 'mention':
-        return <AtSign className="h-4 w-4 text-accent" />;
+        return <AtSign className="h-3.5 w-3.5 text-accent" />;
       // Soft notification types
       case 'like':
-        return <Heart className="h-4 w-4 text-destructive" />;
+        return <Heart className="h-3.5 w-3.5 text-destructive" />;
       case 'reply':
-        return <MessageSquare className="h-4 w-4 text-info" />;
+        return <MessageSquare className="h-3.5 w-3.5 text-info" />;
       case 'follow':
-        return <UserPlus className="h-4 w-4 text-success" />;
+        return <UserPlus className="h-3.5 w-3.5 text-success" />;
       case 'tip':
-        return <Coins className="h-4 w-4 text-warning" />;
+        return <Coins className="h-3.5 w-3.5 text-warning" />;
       case 'system':
-        return <Info className="h-4 w-4 text-muted-foreground" />;
+        return <Info className="h-3.5 w-3.5 text-muted-foreground" />;
       default:
-        return <Bell className="h-4 w-4 text-muted-foreground" />;
+        return <Bell className="h-3.5 w-3.5 text-muted-foreground" />;
     }
   };
 
@@ -202,28 +201,24 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full z-50 mt-2 max-h-96 w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-border bg-card shadow-lg"
+      className="absolute right-0 top-full z-50 mt-2 max-h-[520px] w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-border bg-card shadow-lg"
       data-testid="notification-dropdown"
     >
       {/* Header */}
-      <div className="border-b border-border bg-muted/50 p-4">
+      <div className="border-b border-border bg-muted/50 px-3 py-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Bell className="h-5 w-5 text-muted-foreground" />
-            <h3 className="font-semibold text-foreground">Notifications</h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
             {isRealtimeActive && (
-              <div className="flex items-center space-x-1">
-                <div className="h-2 w-2 animate-pulse rounded-full bg-accent"></div>
-                <span className="text-xs text-accent">Live</span>
-              </div>
+              <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" title="Live" />
             )}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowFilters((v) => !v)}
-              className={`text-xs ${showFilters || !allFiltersEnabled ? 'text-accent' : 'text-muted-foreground'} hover:text-foreground`}
+              className={`h-7 px-2 text-xs ${showFilters || !allFiltersEnabled ? 'text-accent' : 'text-muted-foreground'} hover:text-foreground`}
             >
               <SlidersHorizontal className="mr-1 h-3 w-3" />
               Filter
@@ -233,10 +228,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={markAllAsRead}
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
               >
                 <Check className="mr-1 h-3 w-3" />
-                Mark all read
+                Read all
               </Button>
             )}
             {notifications.length > 0 && (
@@ -244,10 +239,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={clearNotifications}
-                className="text-xs text-muted-foreground hover:text-destructive"
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
               >
-                <Trash2 className="mr-1 h-3 w-3" />
-                Clear
+                <Trash2 className="h-3 w-3" />
               </Button>
             )}
           </div>
@@ -256,12 +250,12 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
       {/* Filter chips */}
       {showFilters && (
-        <div className="flex flex-wrap gap-1.5 border-b border-border bg-muted/30 px-4 py-2.5">
+        <div className="flex flex-wrap gap-1 border-b border-border bg-muted/30 px-3 py-1.5">
           {FILTER_CATEGORIES.map((cat) => (
             <button
               key={cat.key}
               onClick={() => toggleFilter(cat.key)}
-              className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+              className={`rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
                 filters[cat.key]
                   ? 'bg-accent text-accent-foreground'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -274,28 +268,23 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       )}
 
       {/* Notifications List */}
-      <div className="max-h-80 overflow-y-auto">
+      <div className="max-h-[420px] overflow-y-auto">
         {filteredNotifications.length === 0 ? (
-          <div className="p-6 text-center text-muted-foreground">
-            <Bell className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-            <p className="text-sm">
+          <div className="p-4 text-center text-muted-foreground">
+            <Bell className="mx-auto mb-1 h-6 w-6 text-muted-foreground/50" />
+            <p className="text-xs">
               {notifications.length > 0
                 ? 'No notifications match your filters'
                 : 'No notifications yet'}
             </p>
-            {notifications.length === 0 && !isRealtimeActive && (
-              <p className="mt-1 text-xs text-muted-foreground/70">
-                Real-time monitoring is inactive
-              </p>
-            )}
           </div>
         ) : (
-          <div className="divide-y divide-border/50">
+          <div className="divide-y divide-border/30">
             {filteredNotifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`cursor-pointer p-4 transition-colors hover:bg-muted/50 ${
-                  !notification.read ? 'bg-accent/10' : ''
+                className={`cursor-pointer px-3 py-2 transition-colors hover:bg-muted/50 ${
+                  !notification.read ? 'bg-accent/5' : ''
                 }`}
                 onClick={() => {
                   markAsRead(notification.id);
@@ -306,45 +295,37 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   }
                 }}
               >
-                <div className="flex items-start space-x-3">
-                  <div className={`rounded-full p-2 ${getNotificationColor(notification.type)}`}>
+                <div className="flex items-start gap-2.5">
+                  <div
+                    className={`mt-0.5 shrink-0 rounded-full p-1 ${getNotificationColor(notification.type)}`}
+                  >
                     {getNotificationIcon(notification.type)}
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium text-foreground">{notification.title}</h4>
-                      {!notification.read && <div className="h-2 w-2 rounded-full bg-accent"></div>}
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="truncate text-[13px] font-medium text-foreground">
+                        {notification.title}
+                      </p>
+                      <span className="shrink-0 text-[11px] text-muted-foreground/60">
+                        {formatDistanceToNow(notification.timestamp, { addSuffix: true })
+                          .replace('about ', '')
+                          .replace(' minutes', 'm')
+                          .replace(' minute', 'm')
+                          .replace(' hours', 'h')
+                          .replace(' hour', 'h')
+                          .replace(' days', 'd')
+                          .replace(' day', 'd')
+                          .replace(' ago', '')}
+                      </span>
                     </div>
 
-                    <p className="mt-1 text-sm text-muted-foreground">{notification.message}</p>
-
-                    {notification.data && (
-                      <div className="mt-2 flex items-center space-x-2">
-                        {/* Hive notification badges */}
-                        {notification.data.author && (
-                          <Badge variant="outline" className="text-xs">
-                            @{notification.data.author}
-                          </Badge>
-                        )}
-                        {notification.data.weight && (
-                          <Badge variant="outline" className="text-xs">
-                            {notification.data.weight}% vote
-                          </Badge>
-                        )}
-                        {/* Soft notification badges */}
-                        {notification.data.sourceUsername && !notification.data.author && (
-                          <Badge variant="outline" className="text-xs">
-                            @{notification.data.sourceUsername}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-
-                    <p className="mt-2 text-xs text-muted-foreground/70">
-                      {formatDistanceToNow(notification.timestamp, { addSuffix: true })}
-                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{notification.message}</p>
                   </div>
+
+                  {!notification.read && (
+                    <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent" />
+                  )}
                 </div>
               </div>
             ))}
@@ -354,8 +335,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
       {/* Footer */}
       {notifications.length > 0 && (
-        <div className="border-t border-border bg-muted/50 p-3">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="border-t border-border bg-muted/50 px-3 py-1.5">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
             <span>
               {filteredNotifications.length}
               {!allFiltersEnabled && ` of ${notifications.length}`} notification
