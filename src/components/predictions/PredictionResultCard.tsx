@@ -35,6 +35,7 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
   ) {
     const sport = SPORT_CATEGORIES.find((s) => s.id === sportCategory);
     const profit = payout - staked;
+    const sportEmoji = sport?.icon || '\u26BD';
 
     return (
       <div
@@ -54,16 +55,43 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
           position: 'relative',
         }}
       >
-        {/* Subtle gradient overlay */}
+        {/* Diagonal stripe texture */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(135deg, rgba(74,222,128,0.08) 0%, transparent 50%, rgba(245,158,11,0.06) 100%)',
+              'repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 12px)',
             pointerEvents: 'none',
           }}
         />
+
+        {/* Dual gradient overlay — green top-left, amber bottom-right */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(135deg, rgba(74,222,128,0.15) 0%, transparent 50%, rgba(245,158,11,0.12) 100%)',
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* Giant faded sport emoji watermark */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: 280,
+            opacity: 0.05,
+            pointerEvents: 'none',
+            lineHeight: 1,
+          }}
+        >
+          {sportEmoji}
+        </div>
 
         {/* Header */}
         <div
@@ -75,15 +103,28 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
             zIndex: 1,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {sport && <span style={{ fontSize: 28 }}>{sport.icon}</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <span
+              style={{
+                fontSize: 40,
+                width: 56,
+                height: 56,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                borderRadius: 28,
+              }}
+            >
+              {sportEmoji}
+            </span>
             <span
               style={{
                 fontSize: 18,
-                fontWeight: 500,
+                fontWeight: 600,
                 color: '#A0A0B8',
                 textTransform: 'uppercase',
-                letterSpacing: 1,
+                letterSpacing: 1.5,
               }}
             >
               {sport?.name || 'Sports'}
@@ -94,12 +135,12 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
               display: 'flex',
               alignItems: 'center',
               gap: 10,
-              backgroundColor: 'rgba(74,222,128,0.15)',
-              color: '#4ADE80',
-              padding: '8px 20px',
+              backgroundColor: '#4ADE80',
+              color: '#1A1A2E',
+              padding: '10px 24px',
               borderRadius: 8,
               fontSize: 16,
-              fontWeight: 700,
+              fontWeight: 800,
               textTransform: 'uppercase',
               letterSpacing: 1.5,
             }}
@@ -127,11 +168,12 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
         >
           <h2
             style={{
-              fontSize: title.length > 80 ? 28 : title.length > 50 ? 34 : 40,
+              fontSize: title.length > 80 ? 30 : title.length > 50 ? 38 : 48,
               fontWeight: 700,
               lineHeight: 1.2,
               margin: 0,
               color: '#F0EBE6',
+              textShadow: '0 2px 20px rgba(0,0,0,0.5)',
             }}
           >
             {title}
@@ -149,50 +191,44 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
           )}
         </div>
 
-        {/* Result banner */}
+        {/* Winner trophy ribbon */}
         <div
           style={{
-            backgroundColor: 'rgba(74,222,128,0.12)',
-            border: '1px solid rgba(74,222,128,0.25)',
+            backgroundColor: 'rgba(74,222,128,0.20)',
+            border: '1px solid rgba(74,222,128,0.30)',
             borderRadius: 12,
-            padding: '14px 28px',
+            padding: '16px 28px',
             textAlign: 'center',
-            fontSize: 22,
-            fontWeight: 600,
+            fontSize: 26,
+            fontWeight: 700,
             color: '#4ADE80',
             position: 'relative',
             zIndex: 1,
             marginBottom: 24,
           }}
         >
-          Winner: {winningOutcomeLabel}
+          {'\uD83C\uDFC6'} Winner: {winningOutcomeLabel} {'\uD83C\uDFC6'}
         </div>
 
-        {/* Stats row */}
+        {/* Stats row — individual stat cards */}
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            gap: 16,
             position: 'relative',
             zIndex: 1,
-            paddingBottom: 24,
-            borderBottom: '1px solid rgba(240,235,230,0.1)',
             marginBottom: 20,
           }}
         >
-          <StatCell label="Predictor" value={`@${username}`} color="#F0EBE6" />
-          <Divider />
-          <StatCell label="Win Rate" value={`${(winRate * 100).toFixed(0)}%`} color="#F59E0B" />
-          <Divider />
-          <StatCell
+          <StatCard label="Predictor" value={`@${username}`} color="#F0EBE6" />
+          <StatCard label="Win Rate" value={`${(winRate * 100).toFixed(0)}%`} color="#F59E0B" />
+          <StatCard
             label="Streak"
-            value={currentStreak > 0 ? `${currentStreak}` : '—'}
+            value={currentStreak > 0 ? `${currentStreak}` : '\u2014'}
             color="#F59E0B"
             prefix={currentStreak > 0 ? '\uD83D\uDD25 ' : ''}
           />
-          <Divider />
-          <StatCell
+          <StatCard
             label="Profit"
             value={`${profit >= 0 ? '+' : ''}${profit.toFixed(0)} M`}
             color={profit >= 0 ? '#4ADE80' : '#F87171'}
@@ -211,14 +247,23 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
         >
           <span
             style={{
-              fontSize: 22,
+              fontSize: 26,
               fontWeight: 800,
               letterSpacing: 2,
               textTransform: 'uppercase',
               color: '#F59E0B',
             }}
           >
-            SportsBlock
+            {'\u26A1'} SportsBlock
+          </span>
+          <span
+            style={{
+              fontSize: 14,
+              color: '#A0A0B8',
+              fontStyle: 'italic',
+            }}
+          >
+            Predict. Stake. Win.
           </span>
           <span
             style={{
@@ -235,7 +280,7 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
 );
 PredictionResultCard.displayName = 'PredictionResultCard';
 
-function StatCell({
+function StatCard({
   label,
   value,
   color,
@@ -247,7 +292,15 @@ function StatCell({
   prefix?: string;
 }) {
   return (
-    <div style={{ textAlign: 'center', flex: 1 }}>
+    <div
+      style={{
+        textAlign: 'center',
+        flex: 1,
+        backgroundColor: 'rgba(255,255,255,0.07)',
+        borderRadius: 10,
+        padding: '12px 0',
+      }}
+    >
       <div
         style={{
           fontSize: 13,
@@ -259,22 +312,10 @@ function StatCell({
       >
         {label}
       </div>
-      <div style={{ fontSize: 22, fontWeight: 700, color }}>
+      <div style={{ fontSize: 26, fontWeight: 700, color }}>
         {prefix}
         {value}
       </div>
     </div>
-  );
-}
-
-function Divider() {
-  return (
-    <div
-      style={{
-        width: 1,
-        height: 40,
-        backgroundColor: 'rgba(240,235,230,0.15)',
-      }}
-    />
   );
 }
