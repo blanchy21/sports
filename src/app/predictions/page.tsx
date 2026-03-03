@@ -8,7 +8,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMedalsBalance } from '@/lib/react-query/queries/useMedals';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Target, ChevronDown, Plus, Medal, Flame, TrendingUp, TrendingDown } from 'lucide-react';
+import {
+  Target,
+  ChevronDown,
+  Plus,
+  Medal,
+  Trophy,
+  Flame,
+  TrendingUp,
+  TrendingDown,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { usePredictionStats } from '@/lib/react-query/queries/usePredictionStats';
 
@@ -52,15 +61,24 @@ export default function PredictionsPage() {
                 <p className="text-sm text-muted-foreground">Stake MEDALS on sports outcomes</p>
               </div>
             </div>
-            {medalsBalance && (
+            <div className="flex items-center gap-2">
               <Link
-                href="/wallet"
+                href="/predictions/leaderboard"
                 className="flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
               >
-                <Medal className="h-3.5 w-3.5" />
-                <span>{parseFloat(medalsBalance.liquid).toFixed(0)}</span>
+                <Trophy className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Leaderboard</span>
               </Link>
-            )}
+              {medalsBalance && (
+                <Link
+                  href="/wallet"
+                  className="flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
+                >
+                  <Medal className="h-3.5 w-3.5" />
+                  <span>{parseFloat(medalsBalance.liquid).toFixed(0)}</span>
+                </Link>
+              )}
+            </div>
           </div>
         </div>
 
