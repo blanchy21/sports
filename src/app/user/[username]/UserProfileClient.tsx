@@ -20,6 +20,7 @@ import { PremiumBadge } from '@/components/medals';
 import { FollowButton } from '@/components/user/FollowButton';
 import { RoleBadge } from '@/components/user/RoleBadge';
 import { LastSeenIndicator } from '@/components/user/LastSeenIndicator';
+import { PredictionStatsCard } from '@/components/predictions/PredictionStatsCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/lib/logger';
 import type { UserAccountData } from '@/lib/hive-workerbee/account';
@@ -410,6 +411,9 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
             </div>
           </div>
         </div>
+
+        {/* Prediction Stats */}
+        <PredictionStatsCard username={username} />
 
         {/* Posts Section */}
         <div className="rounded-lg border bg-card">

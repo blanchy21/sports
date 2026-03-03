@@ -152,4 +152,44 @@ export interface PredictionLeaderboardEntry {
   totalWon: number;
   profitLoss: number;
   winRate: number;
+  currentStreak?: number;
+}
+
+// ============================================================================
+// User Stats Types
+// ============================================================================
+
+/** Per-sport accuracy breakdown */
+export interface PredictionSportStats {
+  sportCategory: string;
+  total: number;
+  wins: number;
+  winRate: number;
+}
+
+/** A single settled prediction result */
+export interface PredictionResult {
+  predictionId: string;
+  title: string;
+  sportCategory: string | null;
+  won: boolean;
+  staked: number;
+  payout: number;
+  settledAt: string;
+}
+
+/** Full prediction stats for a user */
+export interface PredictionUserStats {
+  username: string;
+  totalPredictions: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  currentStreak: number;
+  bestStreak: number;
+  totalStaked: number;
+  totalWon: number;
+  profitLoss: number;
+  bySport: PredictionSportStats[];
+  recentResults: PredictionResult[];
 }

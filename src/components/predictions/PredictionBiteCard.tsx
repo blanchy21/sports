@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { timeAgo } from '@/lib/utils/formatting';
 import { PredictionComments } from './PredictionComments';
+import { StreakBadge } from './StreakBadge';
 import type { PredictionBite } from '@/lib/predictions/types';
 
 function formatCountdown(locksAt: string): string {
@@ -163,6 +164,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="truncate text-sm font-semibold">@{prediction.creatorUsername}</span>
+              <StreakBadge username={prediction.creatorUsername} />
               <span className="shrink-0 text-xs text-muted-foreground">
                 {timeAgo(prediction.createdAt)}
               </span>

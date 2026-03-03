@@ -20,6 +20,35 @@ interface RawLeaderboardRow {
   profit_loss: Prisma.Decimal;
 }
 
+/** Per-prediction outcome for streak calculation */
+interface StreakRow {
+  username: string;
+  prediction_id: string;
+  settled_at: Date;
+  total_staked: Prisma.Decimal;
+  total_payout: Prisma.Decimal;
+}
+
+function computeCurrentStreak(rows: StreakRow[]): number {
+  if (rows.length === 0) return 0;
+
+  const firstWon = Number(rows[0].total_payout) > Number(rows[0].total_staked);
+  let streak = firstWon ? 1 : -1;
+
+  for (let i = 1; i < rows.length; i++) {
+    const won = Number(rows[i].total_payout) > Number(rows[i].total_staked);
+    if (firstWon && won) {
+      streak++;
+    } else if (!firstWon && !won) {
+      streak--;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}
+
 export const GET = createApiHandler('/api/predictions/leaderboard', async (request, _ctx) => {
   const url = new URL(request.url);
   const params = leaderboardSchema.parse({
@@ -43,6 +72,7 @@ export const GET = createApiHandler('/api/predictions/leaderboard', async (reque
       orderBy = Prisma.sql`(COUNT(CASE WHEN ps.payout > 0 AND ps.payout > ps.amount THEN 1 END)::FLOAT / NULLIF(COUNT(CASE WHEN ps.payout > 0 AND ps.payout > ps.amount THEN 1 END) + COUNT(CASE WHEN ps.payout IS NOT NULL AND (ps.payout = 0 OR ps.payout <= ps.amount) THEN 1 END), 0)) DESC NULLS LAST`;
       break;
     case 'streak':
+      // Will sort in application code after computing streaks
       orderBy = Prisma.sql`profit_loss DESC`;
       break;
     default:
@@ -67,7 +97,45 @@ export const GET = createApiHandler('/api/predictions/leaderboard', async (reque
     LIMIT ${params.limit}
   `;
 
-  const leaderboard: PredictionLeaderboardEntry[] = rows.map((row) => {
+  // Compute streaks for all returned users
+  const usernames = rows.map((r) => r.username);
+  let streakMap = new Map<string, number>();
+
+  if (usernames.length > 0) {
+    const streakRows = await prisma.$queryRaw<StreakRow[]>`
+      SELECT
+        ps.username,
+        ps.prediction_id,
+        p.settled_at,
+        SUM(ps.amount) AS total_staked,
+        COALESCE(SUM(ps.payout), 0) AS total_payout
+      FROM prediction_stakes ps
+      JOIN predictions p ON p.id = ps.prediction_id
+      WHERE ps.username IN (${Prisma.join(usernames)})
+        AND ps.refund_tx_id IS NULL
+        AND p.status = 'SETTLED'
+        AND ps.payout IS NOT NULL
+      GROUP BY ps.username, ps.prediction_id, p.settled_at
+      ORDER BY ps.username, p.settled_at DESC
+    `;
+
+    // Group by username and compute streaks
+    const grouped = new Map<string, StreakRow[]>();
+    for (const row of streakRows) {
+      const existing = grouped.get(row.username) || [];
+      existing.push(row);
+      grouped.set(row.username, existing);
+    }
+
+    streakMap = new Map(
+      Array.from(grouped.entries()).map(([username, userRows]) => [
+        username,
+        computeCurrentStreak(userRows),
+      ])
+    );
+  }
+
+  let leaderboard: PredictionLeaderboardEntry[] = rows.map((row) => {
     const wins = Number(row.wins);
     const losses = Number(row.losses);
     const total = wins + losses;
@@ -81,8 +149,14 @@ export const GET = createApiHandler('/api/predictions/leaderboard', async (reque
       totalWon: Number(row.total_won),
       profitLoss: Number(row.profit_loss),
       winRate: total > 0 ? wins / total : 0,
+      currentStreak: streakMap.get(row.username) ?? 0,
     };
   });
+
+  // For streak sort, re-sort by actual streak (descending by winning streak)
+  if (params.sort === 'streak') {
+    leaderboard = leaderboard.sort((a, b) => (b.currentStreak ?? 0) - (a.currentStreak ?? 0));
+  }
 
   return apiSuccess({ leaderboard });
 });

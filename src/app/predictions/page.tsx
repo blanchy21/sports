@@ -8,13 +8,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMedalsBalance } from '@/lib/react-query/queries/useMedals';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Target, ChevronDown, Plus, Medal } from 'lucide-react';
+import { Target, ChevronDown, Plus, Medal, Flame, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
+import { usePredictionStats } from '@/lib/react-query/queries/usePredictionStats';
 
 export default function PredictionsPage() {
   const { user, hiveUser, isLoading: isAuthLoading, authType } = useAuth();
   const walletUsername = hiveUser?.username || user?.hiveUsername;
   const { data: medalsBalance } = useMedalsBalance(walletUsername);
+  const { data: myStats } = usePredictionStats(walletUsername);
   const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -61,6 +63,58 @@ export default function PredictionsPage() {
             )}
           </div>
         </div>
+
+        {/* My Stats bar */}
+        {myStats && myStats.totalPredictions > 0 && walletUsername && (
+          <Link
+            href={`/user/${walletUsername}`}
+            className="mb-4 flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 transition-colors hover:bg-amber-500/10"
+          >
+            <div className="flex items-center gap-4 text-sm">
+              <span className="font-medium">
+                {myStats.wins}W-{myStats.losses}L
+                <span className="ml-1 text-muted-foreground">
+                  ({(myStats.winRate * 100).toFixed(0)}%)
+                </span>
+              </span>
+              {myStats.currentStreak !== 0 && (
+                <span className="flex items-center gap-1">
+                  {myStats.currentStreak > 0 ? (
+                    <Flame className="h-3.5 w-3.5 text-amber-500" />
+                  ) : null}
+                  <span
+                    className={cn(
+                      'font-medium',
+                      myStats.currentStreak > 0
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-muted-foreground'
+                    )}
+                  >
+                    {myStats.currentStreak > 0
+                      ? myStats.currentStreak
+                      : Math.abs(myStats.currentStreak)}
+                    {myStats.currentStreak > 0 ? ' streak' : ' cold'}
+                  </span>
+                </span>
+              )}
+              <span
+                className={cn(
+                  'flex items-center gap-1 font-medium',
+                  myStats.profitLoss >= 0 ? 'text-success' : 'text-destructive'
+                )}
+              >
+                {myStats.profitLoss >= 0 ? (
+                  <TrendingUp className="h-3.5 w-3.5" />
+                ) : (
+                  <TrendingDown className="h-3.5 w-3.5" />
+                )}
+                {myStats.profitLoss >= 0 ? '+' : ''}
+                {myStats.profitLoss.toFixed(1)}
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground">View full stats</span>
+          </Link>
+        )}
 
         {/* Collapsible create prediction section */}
         <div className="mb-6">
