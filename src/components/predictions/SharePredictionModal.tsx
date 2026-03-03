@@ -65,8 +65,10 @@ export function SharePredictionModal({
     const profit = userPayout - totalUserStake;
     const text = [
       `Called it! ${prediction.title}`,
-      `+${profit.toFixed(0)} MEDALS profit`,
-      stats ? `${stats.winRate}% accurate on @sportsblockapp` : 'on @sportsblockapp',
+      `${profit >= 0 ? '+' : ''}${profit.toFixed(0)} MEDALS profit`,
+      stats
+        ? `${(stats.winRate * 100).toFixed(0)}% accurate on @sportsblockapp`
+        : 'on @sportsblockapp',
       'sportsblock.app/predictions',
     ].join(' \u2705 ');
 
