@@ -13,7 +13,14 @@ import type { HiveOperation } from '@/types/hive-operations';
 
 /** The account that handles HIVE → SWAP.HIVE wrapping */
 const DEPOSIT_ACCOUNT = 'honey-swap';
-const DEPOSIT_MEMO = 'SWAP.HIVE';
+const DEPOSIT_MEMO = JSON.stringify({
+  id: 'ssc-mainnet-hive',
+  json: {
+    contractName: 'hivepegged',
+    contractAction: 'buy',
+    contractPayload: {},
+  },
+});
 
 /** Platform swap fee: 0.5% sent to the main sportsblock account */
 export const SWAP_FEE_PERCENT = 0.005;

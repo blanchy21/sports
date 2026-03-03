@@ -243,3 +243,25 @@ Broadcast one op per stake, immediately record success in DB (`payoutTxId` for p
 
 **Store transaction IDs, not booleans, for financial operations.** A `txId` field serves as both an idempotency guard and an audit trail. Derive the boolean status from `txId != null`.
 
+---
+
+## Hive Engine: honey-swap requires full JSON memo for HIVE wrapping
+
+**Date:** 2026-03-03
+**Severity:** Critical — all MEDALS swap purchases silently lost user funds
+
+### Problem
+The `buildSwapOperations` function in `swap.ts` sent HIVE to `honey-swap` with memo `"SWAP.HIVE"`. honey-swap does NOT recognize this short memo format — it only processes wrapping when the memo is the full Hive Engine JSON:
+```
+{"id":"ssc-mainnet-hive","json":{"contractName":"hivepegged","contractAction":"buy","contractPayload":{}}}
+```
+With the wrong memo, honey-swap received the HIVE as a plain transfer and never issued SWAP.HIVE. The subsequent market buy custom_json then failed silently (no SWAP.HIVE balance). The platform fee was also collected for a swap that never completed.
+
+**Impact:** 3 users affected, 32.800 HIVE total lost (blanchy: 5.800, niallon11: 10.000, zusi78: 17.000). Bug existed since the swap feature was deployed on 2026-02-28.
+
+### Fix
+Changed `DEPOSIT_MEMO` from `'SWAP.HIVE'` to `JSON.stringify({ id: 'ssc-mainnet-hive', json: { contractName: 'hivepegged', contractAction: 'buy', contractPayload: {} } })`.
+
+### Rule
+**Always use the full Hive Engine JSON memo format for honey-swap deposits.** The short `"SWAP.HIVE"` memo is NOT valid. Verify memo formats against actual successful on-chain transactions, not documentation or assumptions.
+
