@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { cn } from '@/lib/utils/client';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
@@ -23,12 +23,17 @@ import {
   Pencil,
   Trash2,
   MessageCircle,
+  Share2,
 } from 'lucide-react';
 import { timeAgo } from '@/lib/utils/formatting';
 import Link from 'next/link';
 import { PredictionComments } from './PredictionComments';
 import { StreakBadge } from './StreakBadge';
 import type { PredictionBite } from '@/lib/predictions/types';
+
+const SharePredictionModal = lazy(() =>
+  import('./SharePredictionModal').then((m) => ({ default: m.SharePredictionModal }))
+);
 
 function formatCountdown(locksAt: string): string {
   const remaining = new Date(locksAt).getTime() - Date.now();
@@ -72,6 +77,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [commentsExpanded, setCommentsExpanded] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const hiveUsername =
@@ -138,6 +144,8 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
   }, [prediction.id, onDeleted]);
 
   const winningOutcome = prediction.outcomes.find((o) => o.id === prediction.winningOutcomeId);
+
+  const userWon = prediction.status === 'SETTLED' && userPayout > 0;
 
   // The stake modal should only show for this prediction's outcomes
   const activeStakeOutcome =
@@ -321,8 +329,21 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
 
           {prediction.status === 'SETTLED' && winningOutcome && (
             <div className="space-y-2 rounded-lg bg-success/10 px-3 py-2 text-sm text-success">
-              <div>
-                Winner: <span className="font-semibold">{winningOutcome.label}</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  Winner: <span className="font-semibold">{winningOutcome.label}</span>
+                </div>
+                {userWon && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-success/30 text-success hover:bg-success/10"
+                    onClick={() => setShareOpen(true)}
+                  >
+                    <Share2 className="mr-1.5 h-3.5 w-3.5" />
+                    Share Result
+                  </Button>
+                )}
               </div>
               {winningOutcome.stakers && winningOutcome.stakers.length > 0 && (
                 <div className="space-y-1 border-t border-success/20 pt-2">
@@ -431,6 +452,21 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
           onClose={() => setEditOpen(false)}
           onSaved={(updated) => onUpdated?.(updated)}
         />
+      )}
+
+      {/* Share result modal */}
+      {shareOpen && hiveUsername && winningOutcome && (
+        <Suspense fallback={null}>
+          <SharePredictionModal
+            prediction={prediction}
+            username={hiveUsername}
+            userPayout={userPayout}
+            totalUserStake={totalUserStake}
+            winningOutcomeLabel={winningOutcome.label}
+            isOpen={shareOpen}
+            onClose={() => setShareOpen(false)}
+          />
+        </Suspense>
       )}
     </>
   );
