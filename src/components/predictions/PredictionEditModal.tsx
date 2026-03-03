@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { BaseModal } from '@/components/core/BaseModal';
 import { Button } from '@/components/core/Button';
+import { DateTimePicker } from '@/components/core/DateTimePicker';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { SPORT_CATEGORIES } from '@/types';
 import { Loader2 } from 'lucide-react';
@@ -157,13 +158,11 @@ export function PredictionEditModal({
           <label htmlFor="pred-lock" className="mb-1 block text-sm font-medium">
             Locks At
           </label>
-          <input
+          <DateTimePicker
             id="pred-lock"
-            type="datetime-local"
             value={locksAt}
             min={minLockTime}
-            onChange={(e) => setLocksAt(e.target.value)}
-            className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-warning"
+            onChange={setLocksAt}
             required
           />
           {locksAt &&

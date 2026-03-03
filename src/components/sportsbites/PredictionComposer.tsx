@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/core/Button';
+import { DateTimePicker } from '@/components/core/DateTimePicker';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Trophy, Plus, Minus, Target, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
@@ -285,13 +286,12 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
           <Clock className="h-3.5 w-3.5" />
           Locks at
         </label>
-        <input
-          type="datetime-local"
+        <DateTimePicker
           value={predictionLocksAt}
-          onChange={(e) => setPredictionLocksAt(e.target.value)}
+          onChange={setPredictionLocksAt}
           min={new Date(Date.now() + PREDICTION_CONFIG.MIN_LOCK_TIME_MS).toISOString().slice(0, 16)}
-          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500/50"
           disabled={isPublishing}
+          placeholder="Select lock time"
         />
       </div>
 
