@@ -447,6 +447,29 @@ model Leaderboard {
   @@map("leaderboards")
 }
 
+// Lifetime aggregated user stats (UserMetric is weekly-scoped, this is lifetime)
+model UserStats {
+  id                   String   @id @default(uuid())
+  username             String   @unique
+  totalPosts           Int      @default(0) @map("total_posts")
+  totalSportsbites     Int      @default(0) @map("total_sportsbites")
+  totalComments        Int      @default(0) @map("total_comments")
+  totalViewsReceived   Int      @default(0) @map("total_views_received")
+  totalTipsReceived    Decimal  @default(0) @map("total_tips_received") @db.Decimal(16, 6)
+  totalMedalsEarned    Decimal  @default(0) @map("total_medals_earned") @db.Decimal(16, 6)
+  memberSince          DateTime @default(now()) @map("member_since")
+  lastActiveAt         DateTime @default(now()) @map("last_active_at")
+  currentPostingStreak Int      @default(0) @map("current_posting_streak")
+  longestPostingStreak Int      @default(0) @map("longest_posting_streak")
+  lastPostWeek         String?  @map("last_post_week")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @default(now()) @map("updated_at")
+
+  @@index([totalPosts(sort: Desc)])
+  @@index([lastActiveAt])
+  @@map("user_stats")
+}
+
 // MEDALS tips on sportsbites
 model Tip {
   id                String   @id @default(uuid())

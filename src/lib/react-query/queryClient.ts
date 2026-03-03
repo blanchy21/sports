@@ -82,6 +82,11 @@ export const queryKeys = {
     swap: (amount: number) => [...queryKeys.medals.all, 'swap', amount] as const,
     leaderboard: () => [...queryKeys.medals.all, 'leaderboard'] as const,
   },
+  leaderboards: {
+    all: ['leaderboards'] as const,
+    week: (weekId: string) => [...queryKeys.leaderboards.all, 'week', weekId] as const,
+    myRank: (username: string) => [...queryKeys.leaderboards.all, 'myRank', username] as const,
+  },
   prices: {
     all: ['prices'] as const,
   },

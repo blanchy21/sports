@@ -28,6 +28,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfileCard } from '@/lib/react-query/queries/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { useTrackPostView, useTrackEngagement } from '@/lib/metrics/hooks';
 import { formatDate, formatReadTime } from '@/lib/utils/client';
 import { proxyImagesInContent } from '@/lib/utils/image-proxy';
 import { sanitizePostContent } from '@/lib/utils/sanitize';
@@ -54,6 +55,10 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
 
   const author = params.author as string;
   const permlink = params.permlink as string;
+
+  // Track post view for leaderboard metrics
+  useTrackPostView(author, permlink, { enabled: !!author && !!permlink });
+  const { trackVote, trackShare } = useTrackEngagement();
 
   // Fetch Hive user profile (only for non-soft posts)
   const { profile: hiveProfile, isLoading: isProfileLoading } = useUserProfileCard(author);
@@ -191,7 +196,7 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
   }, [author, permlink, initialPost]);
 
   const handleVoteSuccess = () => {
-    // Vote recorded - could trigger a refresh of the post data here
+    trackVote(author, permlink);
   };
 
   const handleVoteError = () => {
@@ -240,6 +245,7 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
 
   const handleShare = () => {
     if (!post) return;
+    trackShare(author, permlink);
     if (navigator.share) {
       navigator.share({
         title: post.title,

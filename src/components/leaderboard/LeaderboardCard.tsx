@@ -9,9 +9,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { Avatar } from '@/components/core/Avatar';
-import { Trophy, TrendingUp, Eye, MessageCircle, Share2, Star, Sparkles } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import type { LeaderboardEntry, RewardCategory } from '@/lib/metrics/types';
-import { CONTENT_REWARDS } from '@/lib/rewards/config';
+import { CATEGORY_CONFIG, getRewardAmount } from '@/lib/metrics/category-config';
 
 interface LeaderboardCardProps {
   category: RewardCategory;
@@ -20,53 +20,6 @@ interface LeaderboardCardProps {
   showReward?: boolean;
   compact?: boolean;
 }
-
-const CATEGORY_CONFIG: Record<
-  RewardCategory,
-  {
-    title: string;
-    icon: React.ComponentType<{ className?: string }>;
-    color: string;
-    metric: string;
-  }
-> = {
-  MOST_EXTERNAL_VIEWS: {
-    title: 'Most External Views',
-    icon: TrendingUp,
-    color: 'text-info',
-    metric: 'external views',
-  },
-  MOST_VIEWED_POST: {
-    title: 'Most Viewed Post',
-    icon: Eye,
-    color: 'text-purple-500',
-    metric: 'views',
-  },
-  MOST_COMMENTS: {
-    title: 'Top Commenter',
-    icon: MessageCircle,
-    color: 'text-success',
-    metric: 'comments',
-  },
-  MOST_ENGAGED_POST: {
-    title: 'Most Engaged Post',
-    icon: Share2,
-    color: 'text-orange-500',
-    metric: 'engagements',
-  },
-  POST_OF_THE_WEEK: {
-    title: 'Post of the Week',
-    icon: Star,
-    color: 'text-warning',
-    metric: 'curator pick',
-  },
-  BEST_NEWCOMER: {
-    title: 'Best Newcomer',
-    icon: Sparkles,
-    color: 'text-pink-500',
-    metric: 'engagement',
-  },
-};
 
 function getRankBadgeClass(rank: number): string {
   switch (rank) {
@@ -79,14 +32,6 @@ function getRankBadgeClass(rank: number): string {
     default:
       return 'bg-muted text-muted-foreground';
   }
-}
-
-function getRewardAmount(category: RewardCategory): number | null {
-  const config = CONTENT_REWARDS[category];
-  if (!config) return null;
-  if ('reward' in config) return config.reward;
-  if ('maxReward' in config) return config.maxReward;
-  return null;
 }
 
 export function LeaderboardCard({

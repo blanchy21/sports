@@ -26,6 +26,9 @@ import {
   Zap,
 } from 'lucide-react';
 import { PotentialEarningsWidget } from '@/components/widgets/PotentialEarningsWidget';
+import { MyRankCard, LeaderboardCard } from '@/components/leaderboard';
+import { useWeeklyLeaderboards } from '@/lib/react-query/queries/useLeaderboard';
+import { ACTIVE_CATEGORIES } from '@/lib/metrics/category-config';
 import Link from 'next/link';
 import type { SportsblockPost } from '@/lib/shared/types';
 
@@ -44,6 +47,18 @@ export default function DashboardPage() {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+
+  // Calculate current ISO week ID for leaderboard queries
+  const currentWeekId = React.useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    return `${d.getFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
+  }, []);
+
+  const { data: leaderboards } = useWeeklyLeaderboards(currentWeekId, 1);
 
   // Fetch user's recent posts
   const {
@@ -372,6 +387,42 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Leaderboard Section */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <MyRankCard username={user?.username} compact />
+          <div className="rounded-lg border bg-card p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="font-semibold">This Week&apos;s Leaders</h3>
+              <Link href="/leaderboard" className="text-sm text-primary hover:underline">
+                View All
+              </Link>
+            </div>
+            {leaderboards &&
+            ACTIVE_CATEGORIES.some((c) => (leaderboards.leaderboards[c] || []).length > 0) ? (
+              <div className="space-y-3">
+                {ACTIVE_CATEGORIES.map((category) => {
+                  const entries = leaderboards.leaderboards[category] || [];
+                  if (entries.length === 0) return null;
+                  return (
+                    <LeaderboardCard
+                      key={category}
+                      category={category}
+                      entries={entries}
+                      maxEntries={1}
+                      showReward={false}
+                      compact
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No leaderboard data yet this week. View posts to start generating rankings!
+              </p>
+            )}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Recent Posts */}

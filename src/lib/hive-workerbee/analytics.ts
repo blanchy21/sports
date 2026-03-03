@@ -213,6 +213,19 @@ export async function calculateTopAuthors(
   excludeUser?: string,
   sportsbites?: Sportsbite[]
 ): Promise<TopAuthor[]> {
+  try {
+    return await calculateTopAuthorsInner(posts, excludeUser, sportsbites);
+  } catch {
+    // Degrade gracefully — trending sports/topics/community stats still render
+    return [];
+  }
+}
+
+async function calculateTopAuthorsInner(
+  posts: SportsblockPost[],
+  excludeUser?: string,
+  sportsbites?: Sportsbite[]
+): Promise<TopAuthor[]> {
   const recentPosts = filterPostsLast7Days(posts);
   const authorStats: Record<
     string,

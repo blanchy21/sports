@@ -47,7 +47,7 @@ export async function generateWeeklyLeaderboards(weekId?: string): Promise<Weekl
   // Most External Views - posts with highest external clicks
   leaderboards.MOST_EXTERNAL_VIEWS = posts
     .sort((a, b) => b.externalClicks - a.externalClicks)
-    .slice(0, 10)
+    .slice(0, 50)
     .map((post, index) => ({
       rank: index + 1,
       account: post.author,
@@ -59,7 +59,7 @@ export async function generateWeeklyLeaderboards(weekId?: string): Promise<Weekl
   // Most Viewed Post - highest total views
   leaderboards.MOST_VIEWED_POST = posts
     .sort((a, b) => b.views - a.views)
-    .slice(0, 10)
+    .slice(0, 50)
     .map((post, index) => ({
       rank: index + 1,
       account: post.author,
@@ -71,7 +71,7 @@ export async function generateWeeklyLeaderboards(weekId?: string): Promise<Weekl
   // Most Comments Made - users who commented the most
   leaderboards.MOST_COMMENTS = users
     .sort((a, b) => b.commentsMade - a.commentsMade)
-    .slice(0, 10)
+    .slice(0, 50)
     .map((user, index) => ({
       rank: index + 1,
       account: user.account,
@@ -81,7 +81,7 @@ export async function generateWeeklyLeaderboards(weekId?: string): Promise<Weekl
   // Most Engaged Post - highest total engagement (votes + comments + shares)
   leaderboards.MOST_ENGAGED_POST = posts
     .sort((a, b) => b.totalEngagement - a.totalEngagement)
-    .slice(0, 10)
+    .slice(0, 50)
     .map((post, index) => ({
       rank: index + 1,
       account: post.author,
@@ -305,6 +305,70 @@ export async function storeRewardDistributions(
     console.error('Error storing reward distributions:', error);
     throw error;
   }
+}
+
+/**
+ * Get a user's rank and value for a specific leaderboard category.
+ *
+ * If the user is in the stored entries (top 50), returns their rank directly.
+ * Otherwise, queries the raw metrics to calculate their value and counts
+ * how many stored entries score higher to determine approximate rank.
+ */
+export async function getUserRankForCategory(
+  username: string,
+  category: RewardCategory,
+  weekId: string,
+  entries: LeaderboardEntry[]
+): Promise<{ rank: number | null; value: number }> {
+  // Check if user is already in the leaderboard entries
+  const existing = entries.find((e) => e.account === username);
+  if (existing) {
+    return { rank: existing.rank, value: existing.value };
+  }
+
+  // Not in top entries — query raw metrics for their value
+  let userValue = 0;
+
+  try {
+    if (category === 'MOST_COMMENTS') {
+      // User-based: query UserMetric
+      const metric = await prisma.userMetric.findUnique({
+        where: { weekId_account: { weekId, account: username } },
+      });
+      userValue = metric?.commentsMade ?? 0;
+    } else {
+      // Post-based: query user's PostMetric rows, take the max
+      const fieldMap: Record<string, string> = {
+        MOST_EXTERNAL_VIEWS: 'externalClicks',
+        MOST_VIEWED_POST: 'views',
+        MOST_ENGAGED_POST: 'totalEngagement',
+      };
+
+      const field = fieldMap[category];
+      if (!field) return { rank: null, value: 0 };
+
+      const userPosts = await prisma.postMetric.findMany({
+        where: { weekId, author: username },
+        orderBy: { [field]: 'desc' },
+        take: 1,
+      });
+
+      if (userPosts.length > 0) {
+        userValue = (userPosts[0] as unknown as Record<string, number>)[field] ?? 0;
+      }
+    }
+  } catch (error) {
+    console.error(`Error getting user rank for ${category}:`, error);
+    return { rank: null, value: 0 };
+  }
+
+  if (userValue === 0) {
+    return { rank: null, value: 0 };
+  }
+
+  // Count how many entries score higher to determine approximate rank
+  const higherCount = entries.filter((e) => e.value > userValue).length;
+  return { rank: higherCount + 1, value: userValue };
 }
 
 /**

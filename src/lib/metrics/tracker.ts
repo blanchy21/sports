@@ -8,6 +8,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { getWeekId } from '@/lib/rewards/staking-distribution';
 import type { EngagementEvent, EngagementType, PostMetrics, UserMetrics } from './types';
+import { incrementUserStat, updatePostingStreak, touchActivity } from './user-stats';
 
 /**
  * Generate a post ID from author and permlink
@@ -130,7 +131,17 @@ export async function trackEngagement(event: EngagementEvent): Promise<void> {
           lastUpdated: new Date(),
         },
       });
+
+      // Lifetime stats: commenter
+      incrementUserStat(event.viewerAccount, 'totalComments');
+      touchActivity(event.viewerAccount);
     }
+
+    // Lifetime stats: author activity
+    if (event.type === 'view') {
+      incrementUserStat(event.author, 'totalViewsReceived');
+    }
+    touchActivity(event.author);
   } catch (error) {
     console.error('Error tracking engagement:', error);
     // Don't throw - metrics tracking should not break the app
@@ -246,6 +257,10 @@ export async function trackPostCreation(author: string): Promise<void> {
         lastUpdated: new Date(),
       },
     });
+
+    // Lifetime stats
+    incrementUserStat(author, 'totalPosts');
+    updatePostingStreak(author);
   } catch (error) {
     console.error('Error tracking post creation:', error);
   }

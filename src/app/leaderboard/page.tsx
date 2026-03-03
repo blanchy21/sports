@@ -8,93 +8,57 @@
  *  - Token Stakers: MEDALS token holder leaderboard
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { LeaderboardGrid, WeeklyRewardsSummary, MedalsStakersLeaderboard } from '@/components/leaderboard';
+import {
+  LeaderboardGrid,
+  MyRankCard,
+  WeeklyRewardsSummary,
+  MedalsStakersLeaderboard,
+} from '@/components/leaderboard';
 import { Button } from '@/components/core/Button';
 import { ChevronLeft, ChevronRight, RefreshCw, Trophy, Medal } from 'lucide-react';
-import type { WeeklyLeaderboards } from '@/lib/metrics/types';
-import { logger } from '@/lib/logger';
+import { useWeeklyLeaderboards } from '@/lib/react-query/queries/useLeaderboard';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/react-query/queryClient';
 
 type LeaderboardView = 'content' | 'stakers';
+
+function getWeekIdFromOffset(offset: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - offset * 7);
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
+}
 
 export default function LeaderboardPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const _categoryFilter = searchParams.get('category'); // Reserved for future filtering
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Tab state from URL
   const viewParam = searchParams.get('view');
   const activeView: LeaderboardView = viewParam === 'stakers' ? 'stakers' : 'content';
 
-  const [leaderboards, setLeaderboards] = useState<WeeklyLeaderboards | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [currentWeekId, setCurrentWeekId] = useState<string>('');
 
-  // Calculate week ID based on offset
-  const getWeekId = (offset: number): string => {
-    const date = new Date();
-    date.setDate(date.getDate() - offset * 7);
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-    const yearStart = new Date(d.getFullYear(), 0, 1);
-    const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-    return `${d.getFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
-  };
+  const currentWeekId = useMemo(() => getWeekIdFromOffset(weekOffset), [weekOffset]);
 
-  useEffect(() => {
-    // Only fetch content leaderboards when on the content tab
-    if (activeView !== 'content') return;
-
-    const fetchLeaderboards = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const weekId = getWeekId(weekOffset);
-        setCurrentWeekId(weekId);
-
-        const response = await fetch(`/api/metrics/leaderboard?weekId=${weekId}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch leaderboards');
-        }
-
-        if (data.leaderboards) {
-          setLeaderboards({
-            weekId: data.weekId,
-            generatedAt: new Date(data.generatedAt),
-            leaderboards: data.leaderboards,
-          });
-        } else {
-          setLeaderboards(null);
-        }
-      } catch (err) {
-        logger.error('Error fetching leaderboards', 'LeaderboardPage', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLeaderboards();
-  }, [weekOffset, activeView]);
-
-  // Ensure weekId is set even on stakers tab (for header display consistency)
-  useEffect(() => {
-    if (!currentWeekId) {
-      setCurrentWeekId(getWeekId(0));
-    }
-  }, [currentWeekId]);
+  // React Query replaces manual useEffect + useState fetch
+  const { data: leaderboards, isLoading, error } = useWeeklyLeaderboards(currentWeekId, 50);
 
   const handlePreviousWeek = () => setWeekOffset((prev) => prev + 1);
   const handleNextWeek = () => setWeekOffset((prev) => Math.max(0, prev - 1));
-  const handleRefresh = () => setWeekOffset(weekOffset); // Trigger re-fetch
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.leaderboards.week(currentWeekId) });
+  };
 
   const setView = (view: LeaderboardView) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -181,16 +145,20 @@ export default function LeaderboardPage() {
         {/* Content Rankings Tab */}
         {activeView === 'content' && (
           <>
+            {/* My Rankings */}
+            {user && <MyRankCard username={user.username} />}
+
             {/* Weekly Rewards Summary */}
             <WeeklyRewardsSummary weekId={currentWeekId} />
 
-            {/* Leaderboards Grid */}
+            {/* Leaderboards Grid — now showing up to 50 entries */}
             <LeaderboardGrid
-              leaderboards={leaderboards}
+              leaderboards={leaderboards ?? null}
               isLoading={isLoading}
-              error={error}
+              error={error ? (error instanceof Error ? error.message : 'Unknown error') : null}
               weekId={currentWeekId}
               showRewards={true}
+              maxEntries={50}
             />
 
             {/* How to Compete Section */}
@@ -198,38 +166,38 @@ export default function LeaderboardPage() {
               <h2 className="mb-4 text-xl font-bold">How to Compete</h2>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
-                  <h3 className="mb-2 font-semibold">📈 Most External Views</h3>
+                  <h3 className="mb-2 font-semibold">Most External Views</h3>
                   <p className="text-sm text-muted-foreground">
                     Share your posts on social media and other platforms to drive traffic to
                     Sportsblock.
                   </p>
                 </div>
                 <div>
-                  <h3 className="mb-2 font-semibold">👀 Most Viewed Post</h3>
+                  <h3 className="mb-2 font-semibold">Most Viewed Post</h3>
                   <p className="text-sm text-muted-foreground">
                     Create content that keeps users engaged and coming back for more.
                   </p>
                 </div>
                 <div>
-                  <h3 className="mb-2 font-semibold">💬 Top Commenter</h3>
+                  <h3 className="mb-2 font-semibold">Top Commenter</h3>
                   <p className="text-sm text-muted-foreground">
                     Engage with the community by leaving thoughtful comments on posts.
                   </p>
                 </div>
                 <div>
-                  <h3 className="mb-2 font-semibold">🔥 Most Engaged Post</h3>
+                  <h3 className="mb-2 font-semibold">Most Engaged Post</h3>
                   <p className="text-sm text-muted-foreground">
                     Create content that sparks discussions and earns votes.
                   </p>
                 </div>
                 <div>
-                  <h3 className="mb-2 font-semibold">⭐ Post of the Week</h3>
+                  <h3 className="mb-2 font-semibold">Post of the Week</h3>
                   <p className="text-sm text-muted-foreground">
                     Selected by our curator team for exceptional quality content.
                   </p>
                 </div>
                 <div>
-                  <h3 className="mb-2 font-semibold">✨ Best Newcomer</h3>
+                  <h3 className="mb-2 font-semibold">Best Newcomer</h3>
                   <p className="text-sm text-muted-foreground">
                     New to Sportsblock? Make a great first impression! (Available Year 4+)
                   </p>

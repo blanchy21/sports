@@ -17,6 +17,7 @@ interface LeaderboardGridProps {
   error?: string | null;
   weekId?: string;
   showRewards?: boolean;
+  maxEntries?: number;
 }
 
 const CATEGORY_ORDER: RewardCategory[] = [
@@ -34,6 +35,7 @@ export function LeaderboardGrid({
   error = null,
   weekId,
   showRewards = true,
+  maxEntries = 5,
 }: LeaderboardGridProps) {
   if (isLoading) {
     return (
@@ -94,7 +96,7 @@ export function LeaderboardGrid({
               key={category}
               category={category}
               entries={entries}
-              maxEntries={5}
+              maxEntries={maxEntries}
               showReward={showRewards}
             />
           );

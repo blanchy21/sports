@@ -10,6 +10,7 @@ import {
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
+import { trackPostCreation } from '@/lib/metrics/tracker';
 import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
@@ -290,6 +291,9 @@ export async function POST(request: NextRequest) {
         title: data.title.substring(0, 50),
         communityId: data.communityId,
       });
+
+      // Track post creation for leaderboard metrics (fire-and-forget)
+      trackPostCreation(data.authorUsername);
 
       // Update user's lastActiveAt timestamp (fire-and-forget)
       prisma.profile
