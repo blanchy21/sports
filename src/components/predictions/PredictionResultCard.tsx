@@ -183,7 +183,7 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
         >
           <StatCell label="Predictor" value={`@${username}`} color="#F0EBE6" />
           <Divider />
-          <StatCell label="Win Rate" value={`${winRate}%`} color="#F59E0B" />
+          <StatCell label="Win Rate" value={`${(winRate * 100).toFixed(0)}%`} color="#F59E0B" />
           <Divider />
           <StatCell
             label="Streak"
@@ -192,7 +192,11 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
             prefix={currentStreak > 0 ? '\uD83D\uDD25 ' : ''}
           />
           <Divider />
-          <StatCell label="Profit" value={`+${profit.toFixed(0)} M`} color="#4ADE80" />
+          <StatCell
+            label="Profit"
+            value={`${profit >= 0 ? '+' : ''}${profit.toFixed(0)} M`}
+            color={profit >= 0 ? '#4ADE80' : '#F87171'}
+          />
         </div>
 
         {/* Branding footer */}
