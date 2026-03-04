@@ -44,7 +44,7 @@ const LS_USERNAME = 'hivesignerUsername';
 
 export function getHivesignerToken(): string | null {
   try {
-    return localStorage.getItem(LS_TOKEN);
+    return sessionStorage.getItem(LS_TOKEN);
   } catch {
     return null;
   }
@@ -52,7 +52,7 @@ export function getHivesignerToken(): string | null {
 
 export function getHivesignerUsername(): string | null {
   try {
-    return localStorage.getItem(LS_USERNAME);
+    return sessionStorage.getItem(LS_USERNAME);
   } catch {
     return null;
   }
@@ -60,10 +60,10 @@ export function getHivesignerUsername(): string | null {
 
 export function isHivesignerTokenValid(): boolean {
   try {
-    const token = localStorage.getItem(LS_TOKEN);
+    const token = sessionStorage.getItem(LS_TOKEN);
     if (!token) return false;
 
-    const expiry = localStorage.getItem(LS_EXPIRY);
+    const expiry = sessionStorage.getItem(LS_EXPIRY);
     if (!expiry) return true; // no expiry set, assume valid
 
     return Date.now() < Number(expiry);
@@ -74,13 +74,13 @@ export function isHivesignerTokenValid(): boolean {
 
 export function clearHivesignerSession(): void {
   try {
-    localStorage.removeItem(LS_TOKEN);
-    localStorage.removeItem(LS_EXPIRY);
-    localStorage.removeItem(LS_USERNAME);
-    localStorage.removeItem('hivesignerState');
-    localStorage.removeItem('hivesignerTokenType');
+    sessionStorage.removeItem(LS_TOKEN);
+    sessionStorage.removeItem(LS_EXPIRY);
+    sessionStorage.removeItem(LS_USERNAME);
+    sessionStorage.removeItem('hivesignerState');
+    sessionStorage.removeItem('hivesignerTokenType');
   } catch {
-    // localStorage unavailable
+    // sessionStorage unavailable
   }
 }
 

@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
         // Count soft (database) comments on Hive sportsbites
         prisma.$queryRaw<Array<{ post_permlink: string; count: number }>>`
           SELECT post_permlink, COUNT(*)::int as count
-          FROM comments
+          FROM soft_comments
           WHERE post_permlink = ANY(${permlinks}::text[])
             AND is_deleted = false
           GROUP BY post_permlink

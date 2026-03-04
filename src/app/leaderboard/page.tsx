@@ -9,7 +9,7 @@
  *  - My Stats: Personal stats dashboard (authenticated only)
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { Suspense, useState, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import {
@@ -54,7 +54,7 @@ function getWeekIdFromOffset(offset: number): string {
   return `${d.getFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
 }
 
-export default function LeaderboardPage() {
+function LeaderboardContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -297,5 +297,19 @@ export default function LeaderboardPage() {
         {activeView === 'mystats' && user && <MyStatsView username={user.username} />}
       </div>
     </MainLayout>
+  );
+}
+
+export default function LeaderboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      }
+    >
+      <LeaderboardContent />
+    </Suspense>
   );
 }

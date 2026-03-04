@@ -11,6 +11,7 @@ import {
 import { fetchAllEvents } from '@/lib/sports/espn';
 import { createRequestContext } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { validateCsrf } from '@/lib/api/csrf';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 
 export const runtime = 'nodejs';
@@ -36,6 +37,11 @@ export async function POST(
   const user = await getAuthenticatedUserFromSession(request);
   if (!user) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+
+  // CSRF validation
+  if (!validateCsrf(request)) {
+    return NextResponse.json({ success: false, error: 'CSRF validation failed' }, { status: 403 });
   }
 
   // Rate limiting

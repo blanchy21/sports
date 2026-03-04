@@ -59,16 +59,16 @@
 
           const expiryTimestamp = expiresIn ? Date.now() + Number(expiresIn) * 1000 : null;
 
-          localStorage.setItem('hivesignerToken', accessToken);
+          sessionStorage.setItem('hivesignerToken', accessToken);
           if (expiryTimestamp) {
-            localStorage.setItem('hivesignerExpiry', String(expiryTimestamp));
+            sessionStorage.setItem('hivesignerExpiry', String(expiryTimestamp));
           }
-          localStorage.setItem('hivesignerUsername', username);
+          sessionStorage.setItem('hivesignerUsername', username);
           if (state) {
-            localStorage.setItem('hivesignerState', state);
+            sessionStorage.setItem('hivesignerState', state);
           }
           if (tokenType) {
-            localStorage.setItem('hivesignerTokenType', tokenType);
+            sessionStorage.setItem('hivesignerTokenType', tokenType);
           }
 
           // Save wallet session keys for WalletProvider to restore.

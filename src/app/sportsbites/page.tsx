@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { Suspense, useState, useCallback, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ComposeSportsbite, SportsbitesFeed } from '@/components/sportsbites';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +14,7 @@ import { useFollowing } from '@/lib/react-query/queries/useFollowers';
 
 type FeedFilter = 'latest' | 'trending' | 'following';
 
-export default function SportsBitesPage() {
+function SportsBitesContent() {
   const { user, isLoading: isAuthLoading, authType } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -224,5 +224,19 @@ export default function SportsBitesPage() {
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+export default function SportsBitesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      }
+    >
+      <SportsBitesContent />
+    </Suspense>
   );
 }

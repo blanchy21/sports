@@ -85,17 +85,20 @@ export async function calculateAllMedalsScores(): Promise<{
       updates.push({ username: rows[i].username, score: roundedScore, rank: tier.rank });
     }
 
-    // 6. Bulk update via raw SQL for efficiency
+    // 6. Bulk update in batched transactions
     if (updates.length > 0) {
-      const values = updates.map((u) => `('${u.username}', ${u.score}, '${u.rank}')`).join(', ');
-
-      await prisma.$executeRawUnsafe(`
-        UPDATE user_stats SET
-          medals_score = v.score,
-          medals_rank = v.rank
-        FROM (VALUES ${values}) AS v(username, score, rank)
-        WHERE user_stats.username = v.username
-      `);
+      const CHUNK_SIZE = 100;
+      for (let i = 0; i < updates.length; i += CHUNK_SIZE) {
+        const chunk = updates.slice(i, i + CHUNK_SIZE);
+        await prisma.$transaction(
+          chunk.map((u) =>
+            prisma.userStats.update({
+              where: { username: u.username },
+              data: { medalsScore: u.score, medalsRank: u.rank },
+            })
+          )
+        );
+      }
     }
 
     logger.info(`MEDALS scores recalculated for ${updates.length} users`, 'Calculator');
@@ -120,15 +123,15 @@ export async function calculatePerSportScores(): Promise<{
     // 1. Aggregate post counts by sport and author
     const postsBySport = await prisma.$queryRaw<{ sport: string; username: string; cnt: bigint }[]>`
       SELECT sport_category AS sport, author_username AS username, COUNT(*) AS cnt
-      FROM posts
-      WHERE sport_category IS NOT NULL AND is_deleted = false
+      FROM soft_posts
+      WHERE sport_category IS NOT NULL
       GROUP BY sport_category, author_username
     `;
 
     // 2. Aggregate sportsbite counts by sport and author
     const bitesBySport = await prisma.$queryRaw<{ sport: string; username: string; cnt: bigint }[]>`
       SELECT sport_category AS sport, author_username AS username, COUNT(*) AS cnt
-      FROM sportsbites
+      FROM soft_sportsbites
       WHERE sport_category IS NOT NULL AND is_deleted = false
       GROUP BY sport_category, author_username
     `;

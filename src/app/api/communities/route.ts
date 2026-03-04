@@ -8,6 +8,7 @@ import {
   forbiddenError,
 } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { Prisma } from '@/generated/prisma/client';
 
 export const runtime = 'nodejs';
@@ -140,6 +141,10 @@ export async function POST(request: NextRequest) {
   const ctx = createRequestContext(ROUTE);
 
   try {
+    if (!validateCsrf(request)) {
+      return csrfError('Request blocked: invalid origin');
+    }
+
     const body = await request.json();
     const parseResult = createCommunitySchema.safeParse(body);
 
