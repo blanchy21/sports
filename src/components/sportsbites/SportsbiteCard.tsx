@@ -42,6 +42,7 @@ import { useBroadcast } from '@/hooks/useBroadcast';
 import { EmojiReactions } from '@/components/sportsbites/EmojiReactions';
 import { RoleBadge } from '@/components/user/RoleBadge';
 import { RankBadge } from '@/components/badges/RankBadge';
+import { BadgeInline } from '@/components/badges/BadgeInline';
 import { useUserRank } from '@/lib/react-query/queries/useUserBadges';
 import { QuickPoll } from '@/components/sportsbites/QuickPoll';
 import { TipButton } from '@/components/sportsbites/TipButton';
@@ -327,6 +328,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               <span className="text-muted-foreground">@{sportsbite.author}</span>
               <RoleBadge username={sportsbite.author} />
               <RankBadge rank={authorRank} size="sm" />
+              <BadgeInline username={sportsbite.author} maxBadges={2} />
               <span className="text-muted-foreground">·</span>
               <span className="text-sm text-muted-foreground">
                 {formatDate(

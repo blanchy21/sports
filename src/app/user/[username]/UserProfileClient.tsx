@@ -25,6 +25,7 @@ import {
 import { useModal } from '@/components/modals/ModalProvider';
 import { usePremiumTier } from '@/lib/premium/hooks';
 import { PremiumBadge } from '@/components/medals';
+import { StakingBadge } from '@/components/badges/StakingBadge';
 import { FollowButton } from '@/components/user/FollowButton';
 import { RoleBadge } from '@/components/user/RoleBadge';
 import { RankBadge } from '@/components/badges/RankBadge';
@@ -346,6 +347,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                   </h1>
                   <RoleBadge username={username} size="md" />
                   {!isSoftUser && premiumTier && <PremiumBadge tier={premiumTier} size="md" />}
+                  {!isSoftUser && premiumTier && <StakingBadge tier={premiumTier} size="md" />}
                   <RankBadge rank={medalsRank} size="md" />
                   {!isSoftUser &&
                     (profile as { reputationFormatted?: string }).reputationFormatted && (

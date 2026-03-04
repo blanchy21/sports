@@ -20,6 +20,7 @@ import { usePremiumTier } from '@/lib/premium/hooks';
 import { PremiumBadge } from '@/components/medals';
 import { RoleBadge } from '@/components/user/RoleBadge';
 import { RankBadge } from '@/components/badges/RankBadge';
+import { BadgeInline } from '@/components/badges/BadgeInline';
 import { useUserRank } from '@/lib/react-query/queries/useUserBadges';
 // HiveUpgradePrompt no longer needed - soft users can now interact with all content
 import { getProxyImageUrl, shouldProxyImage } from '@/lib/utils/image-proxy';
@@ -236,6 +237,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
                 <PremiumBadge tier={authorPremiumTier} size="sm" showLabel={false} />
               )}
               <RankBadge rank={authorRank} size="sm" />
+              <BadgeInline username={getAuthorName()} maxBadges={2} />
               <span className="shrink-0 text-muted-foreground">•</span>
               <span className="shrink-0 text-sm text-muted-foreground">
                 {formatDate(createdAt)}
