@@ -30,6 +30,7 @@ const RATE_LIMITED_ROUTES = {
   '/api/hive-engine/market': 'read',
   '/api/hive-engine/history': 'read',
   '/api/communities': 'read',
+  '/api/giphy': 'read',
   '/api/image-proxy': 'read',
   '/api/health': 'read',
 

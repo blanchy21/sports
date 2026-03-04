@@ -548,8 +548,8 @@ export function validateOperation(
   }
 
   if ('weight' in operation) {
-    if (operation.weight < 0 || operation.weight > 10000) {
-      errors.push('Vote weight must be between 0 and 10000');
+    if (operation.weight < -10000 || operation.weight > 10000) {
+      errors.push('Vote weight must be between -10000 and 10000');
     }
   }
 

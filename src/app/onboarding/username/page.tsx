@@ -140,7 +140,7 @@ export default function OnboardingUsernamePage() {
 
       // Ensure session cookie is synced before navigating
       // (persistAuthState is debounced — we need the cookie set NOW)
-      await fetch('/api/auth/sb-session', {
+      const syncRes = await fetch('/api/auth/sb-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -151,6 +151,11 @@ export default function OnboardingUsernamePage() {
           loginAt: Date.now(),
         }),
       });
+
+      if (!syncRes.ok) {
+        setError('Account created but session sync failed. Please refresh and try again.');
+        return;
+      }
 
       // Success — redirect to onboarding guide
       router.replace('/onboarding/guide');

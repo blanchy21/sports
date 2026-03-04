@@ -6,6 +6,7 @@
 
 import { parseQuantity } from './client';
 import { MEDALS_CONFIG } from './constants';
+import { getWeekId } from '@/lib/rewards/staking-distribution';
 import type { TransferRecord, ParsedTransaction, QueryOptions } from './types';
 
 // ============================================================================
@@ -168,13 +169,15 @@ export async function getRewardsReceived(
   account: string,
   symbol: string = MEDALS_CONFIG.SYMBOL,
   limit: number = 100
-): Promise<Array<{
-  type: 'staking' | 'curator' | 'content' | 'other';
-  amount: number;
-  from: string;
-  memo?: string;
-  timestamp: Date;
-}>> {
+): Promise<
+  Array<{
+    type: 'staking' | 'curator' | 'content' | 'other';
+    amount: number;
+    from: string;
+    memo?: string;
+    timestamp: Date;
+  }>
+> {
   const incoming = await getIncomingTransfers(account, symbol, limit);
 
   return incoming.map((tx) => {
@@ -242,13 +245,15 @@ export async function getRecentActivity(
   account: string,
   symbol: string = MEDALS_CONFIG.SYMBOL,
   limit: number = 20
-): Promise<Array<{
-  type: 'transfer_in' | 'transfer_out' | 'stake' | 'unstake' | 'delegate' | 'reward';
-  amount: number;
-  counterparty?: string;
-  memo?: string;
-  timestamp: Date;
-}>> {
+): Promise<
+  Array<{
+    type: 'transfer_in' | 'transfer_out' | 'stake' | 'unstake' | 'delegate' | 'reward';
+    amount: number;
+    counterparty?: string;
+    memo?: string;
+    timestamp: Date;
+  }>
+> {
   const [transfers, stakingActions] = await Promise.all([
     getTransferHistory(account, symbol, limit),
     getStakingHistory(account, symbol, limit),
@@ -316,9 +321,7 @@ export async function getDistributionHistory(
 /**
  * Get distribution summary by week
  */
-export async function getWeeklyDistributionSummary(
-  symbol: string = MEDALS_CONFIG.SYMBOL
-): Promise<
+export async function getWeeklyDistributionSummary(symbol: string = MEDALS_CONFIG.SYMBOL): Promise<
   Map<
     string,
     {
@@ -374,17 +377,6 @@ export async function getWeeklyDistributionSummary(
   });
 
   return summary;
-}
-
-/**
- * Get week ID for a date
- */
-function getWeekId(date: Date): string {
-  const year = date.getFullYear();
-  const startOfYear = new Date(year, 0, 1);
-  const days = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
-  const week = Math.ceil((days + startOfYear.getDay() + 1) / 7);
-  return `${year}-W${String(week).padStart(2, '0')}`;
 }
 
 // ============================================================================

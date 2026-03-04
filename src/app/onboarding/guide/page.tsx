@@ -57,6 +57,7 @@ export default function OnboardingGuidePage() {
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState('');
   const [completing, setCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState('');
   const sessionChecked = useRef(false);
 
   // Auth guard: must be logged in with a hiveUsername but not yet completed onboarding
@@ -115,6 +116,7 @@ export default function OnboardingGuidePage() {
 
   const handleComplete = useCallback(async () => {
     setCompleting(true);
+    setCompleteError('');
     try {
       const res = await fetch('/api/hive/complete-onboarding', { method: 'POST' });
       if (!res.ok) {
@@ -124,8 +126,7 @@ export default function OnboardingGuidePage() {
       router.replace('/sportsbites');
     } catch (err) {
       console.error('Onboarding completion failed:', err);
-      // Still redirect — the guard will catch them if it truly failed
-      router.replace('/sportsbites');
+      setCompleteError('Failed to finish onboarding. Please try again.');
     } finally {
       setCompleting(false);
     }
@@ -292,6 +293,17 @@ export default function OnboardingGuidePage() {
                   Install Hive Keychain for your browser
                 </p>
               </div>
+            )}
+
+            {/* Completion error */}
+            {completeError && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 text-center text-sm text-destructive"
+              >
+                {completeError}
+              </motion.p>
             )}
 
             {/* Navigation */}

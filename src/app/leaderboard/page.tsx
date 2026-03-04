@@ -39,6 +39,7 @@ import { useWeeklyLeaderboards } from '@/lib/react-query/queries/useLeaderboard'
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/react-query/queryClient';
+import { getWeekId } from '@/lib/rewards/staking-distribution';
 
 type LeaderboardView = 'content' | 'stakers' | 'mystats';
 type ContentPeriod = 'weekly' | 'monthly' | 'alltime';
@@ -46,12 +47,7 @@ type ContentPeriod = 'weekly' | 'monthly' | 'alltime';
 function getWeekIdFromOffset(offset: number): string {
   const date = new Date();
   date.setDate(date.getDate() - offset * 7);
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-  const yearStart = new Date(d.getFullYear(), 0, 1);
-  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  return `${d.getFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
+  return getWeekId(date);
 }
 
 function LeaderboardContent() {

@@ -181,6 +181,10 @@ export async function GET(request: NextRequest) {
   const referer = request.headers.get('referer');
   const origin = request.headers.get('origin');
   const host = request.headers.get('host');
+  if (!referer && !origin) {
+    ctx.log.warn('Image proxy blocked: no origin or referer header');
+    return forbiddenError('Image proxy is not available for external use', ctx.requestId);
+  }
   if (referer || origin) {
     const source = referer || origin || '';
     try {

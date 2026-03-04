@@ -7,6 +7,7 @@
 
 import { MEDALS_CONFIG, CONTRACTS, CONTRACT_ACTIONS } from './constants';
 import { formatQuantity, isValidAccountName, isValidQuantity } from './client';
+import { getWeekId } from '@/lib/rewards/staking-distribution';
 import type {
   CustomJsonOp,
   TransferPayload,
@@ -429,18 +430,6 @@ export function buildStakingRewardOps(
         `Staking reward ${weekId}`
       )
     );
-}
-
-/**
- * Get current week identifier (ISO week format)
- */
-function getWeekId(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const startOfYear = new Date(year, 0, 1);
-  const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
-  const week = Math.ceil((days + startOfYear.getDay() + 1) / 7);
-  return `${year}-W${String(week).padStart(2, '0')}`;
 }
 
 // ============================================================================

@@ -7,6 +7,14 @@
 
 import { TRUSTED_IMAGE_HOSTS } from '@/lib/constants/image-hosts';
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // Lazy-load isomorphic-dompurify to avoid jsdom initialization during SSG prerender.
 // jsdom tries to read a default-stylesheet.css that doesn't exist in Vercel's build env.
 // Deferring via require() ensures jsdom only loads when sanitize functions are actually called.
@@ -320,7 +328,10 @@ export function sanitizePostContent(content: string): string {
       '<img src="$1" class="max-w-full h-auto rounded-lg shadow-md my-4" loading="lazy" />'
     )
     // Convert markdown links to HTML [text](url)
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+    .replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      (_, text, url) => `<a href="${url}">${escapeHtml(text)}</a>`
+    )
     // Convert horizontal rules (3 or more consecutive dashes, asterisks, or underscores)
     // More lenient: matches lines that START with 3+ rule chars, ignoring trailing content
     // Use [ \t]* instead of \s* to avoid matching newlines
@@ -329,7 +340,7 @@ export function sanitizePostContent(content: string): string {
   // Convert headers (h1-h6) - must process line by line
   processed = processed.replace(/^(#{1,6})\s+(.+)$/gm, (_, hashes, text) => {
     const level = hashes.length;
-    return `<h${level} class="font-bold my-2">${text}</h${level}>`;
+    return `<h${level} class="font-bold my-2">${escapeHtml(text)}</h${level}>`;
   });
 
   // Convert newlines to <br> for line break preservation

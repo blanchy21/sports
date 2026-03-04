@@ -16,6 +16,8 @@ import {
 } from './auth-persistence';
 import { AuthAction } from './auth-reducer';
 import { useAuthProfile, getHiveAvatarUrl } from './useAuthProfile';
+import { useCommunityStore } from '@/stores/communityStore';
+import { useBookmarkStore } from '@/stores/bookmarkStore';
 
 export interface UseAuthActionsOptions {
   dispatch: React.Dispatch<AuthAction>;
@@ -334,6 +336,10 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
       logger.error('Error logging out from wallet', 'useAuthActions', error);
     }
 
+    // Clear persisted Zustand stores to prevent data leaking between users
+    useCommunityStore.getState().clearCommunities();
+    useBookmarkStore.getState().clearBookmarks(getState().user?.id ?? '');
+
     dispatch({ type: 'LOGOUT' });
     await clearPersistedAuthState();
 
@@ -343,7 +349,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
     });
 
     queryClient.clear();
-  }, [wallet, dispatch, abortFetch, queryClient]);
+  }, [wallet, dispatch, abortFetch, queryClient, getState]);
 
   // ============================================================================
   // Upgrade and Update

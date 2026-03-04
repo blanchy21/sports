@@ -40,6 +40,10 @@ const searchSchema = z.object({
 const ROUTE = '/api/giphy';
 
 export async function GET(request: NextRequest) {
+  if (!request.cookies.has('sb_session')) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+
   const ctx = createRequestContext(ROUTE);
   try {
     const { searchParams } = new URL(request.url);
