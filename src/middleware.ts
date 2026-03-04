@@ -98,6 +98,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Skip rate limiting in development to avoid Redis latency on every API call
+  if (process.env.NODE_ENV === 'development' && pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   // Only apply rate limiting to API routes
   if (!pathname.startsWith('/api/')) {
     return NextResponse.next();

@@ -185,7 +185,7 @@ const nextConfig: NextConfig = {
     return config;
   },
   experimental: {
-    optimizeCss: true,
+    optimizeCss: process.env.NODE_ENV === 'production',
     // Tree-shake imports from large packages to reduce bundle size
     optimizePackageImports: [
       'lucide-react',
