@@ -33,6 +33,8 @@ Sentry.init({
     // Expected errors
     'NEXT_NOT_FOUND',
     'NEXT_REDIRECT',
+    // Upstream image host timeouts (transient, handled by the route)
+    'The operation was aborted due to timeout',
   ],
 
   // Before sending, modify or drop events
@@ -46,10 +48,7 @@ Sentry.init({
     const error = hint.originalException;
     if (error instanceof Error) {
       // Skip Hive node connection errors (handled by retry logic)
-      if (
-        error.message?.includes('ECONNREFUSED') ||
-        error.message?.includes('ETIMEDOUT')
-      ) {
+      if (error.message?.includes('ECONNREFUSED') || error.message?.includes('ETIMEDOUT')) {
         return null;
       }
     }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { SportsbiteCard } from './SportsbiteCard';
 import type {
   Sportsbite,
@@ -15,6 +16,7 @@ import { cn } from '@/lib/utils/client';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { logger } from '@/lib/logger';
 import { interleaveAds } from '@/lib/utils/interleave-ads';
+import { prefetchUserProfiles } from '@/lib/react-query/queries/useUserProfile';
 
 const REALTIME_POLL_INTERVAL = 15000;
 
@@ -41,6 +43,7 @@ export function SportsbitesFeed({
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
+  const queryClient = useQueryClient();
   const [pendingBites, setPendingBites] = useState<Sportsbite[]>([]);
   const [newBiteIds, setNewBiteIds] = useState<Set<string>>(new Set());
 
@@ -258,6 +261,13 @@ export function SportsbitesFeed({
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bites]);
+
+  // Batch-prefetch author profiles to avoid N+1 per-card fetches
+  useEffect(() => {
+    if (bites.length === 0) return;
+    const authors = bites.map((b) => b.author);
+    prefetchUserProfiles(authors, queryClient);
+  }, [bites, queryClient]);
 
   useEffect(() => {
     if (!optimisticBite) return;
