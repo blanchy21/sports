@@ -62,12 +62,15 @@ export const Sidebar: React.FC = () => {
 
             const Icon = item.icon;
 
-            const isActive = pathname === item.href;
+            // Dynamic href for profile — use /user/{username} when authenticated
+            const href = item.href === '/profile' && user ? `/user/${user.username}` : item.href;
+
+            const isActive = pathname === href;
 
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={href}
                 className={getLinkClassName(isActive)}
                 suppressHydrationWarning
               >

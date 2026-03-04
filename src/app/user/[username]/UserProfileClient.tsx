@@ -1,13 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { MapPin, Calendar, Link as LinkIcon, ArrowLeft } from 'lucide-react';
+import {
+  MapPin,
+  Calendar,
+  Link as LinkIcon,
+  ArrowLeft,
+  Edit,
+  Settings,
+  RefreshCw,
+  AlertCircle,
+} from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
 import { PostCard } from '@/components/posts/PostCard';
-// getUserPosts is now accessed via API route
 import { SportsblockPost } from '@/lib/shared/types';
 import { useUserProfile, useSoftUserProfile } from '@/lib/react-query/queries/useUserProfile';
 import {
@@ -24,9 +32,16 @@ import { BadgeGrid } from '@/components/badges/BadgeGrid';
 import { useUserRank } from '@/lib/react-query/queries/useUserBadges';
 import { LastSeenIndicator } from '@/components/user/LastSeenIndicator';
 import { PredictionStatsCard } from '@/components/predictions/PredictionStatsCard';
+import { DraftsContent } from '@/components/profile/DraftsContent';
+import { RepliesContent } from '@/components/profile/RepliesContent';
+import { BookmarksContent } from '@/components/profile/BookmarksContent';
+import { FollowersContent } from '@/components/profile/FollowersContent';
+import { FollowingContent } from '@/components/profile/FollowingContent';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/lib/logger';
 import type { UserAccountData } from '@/lib/hive-workerbee/account';
+
+type ProfileTab = 'posts' | 'drafts' | 'replies' | 'bookmarks' | 'following' | 'followers';
 
 interface UserProfileClientProps {
   initialProfile?: UserAccountData | null;
@@ -36,8 +51,10 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
   const params = useParams();
   const router = useRouter();
   const { openModal } = useModal();
-  const { user: currentUser, authType } = useAuth();
+  const { user: currentUser, authType, refreshHiveAccount } = useAuth();
   const username = params.username as string;
+
+  const isOwnProfile = !!currentUser && currentUser.username === username;
 
   // Fetch both profiles in parallel to avoid waterfall
   const {
@@ -72,7 +89,27 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
   const [postsError, setPostsError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
+  // Owner-only state
+  const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+
   const retryLoadPosts = () => setRetryKey((k) => k + 1);
+
+  const handleRefreshProfile = useCallback(async () => {
+    if (authType !== 'hive') return;
+
+    setIsRefreshing(true);
+    setRefreshError(null);
+
+    try {
+      await refreshHiveAccount();
+    } catch {
+      setRefreshError('Failed to refresh profile data. Please try again.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [authType, refreshHiveAccount]);
 
   // Fetch soft user follower/following counts
   useEffect(() => {
@@ -187,7 +224,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
       <MainLayout>
         <div className="mx-auto max-w-4xl p-6">
           <div className="py-12 text-center">
-            <div className="mb-4 text-6xl">⚠️</div>
+            <div className="mb-4 text-6xl">&#x26A0;&#xFE0F;</div>
             <h3 className="mb-2 text-xl font-semibold">User Not Found</h3>
             <p className="mb-4 text-muted-foreground">
               The user profile you&apos;re looking for doesn&apos;t exist.
@@ -202,14 +239,66 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
     );
   }
 
+  // Owner-only tabs (hive users get following/followers tabs too)
+  const ownerTabs: ProfileTab[] =
+    isOwnProfile && authType === 'hive'
+      ? ['posts', 'drafts', 'replies', 'bookmarks', 'following', 'followers']
+      : isOwnProfile
+        ? ['posts', 'drafts', 'replies', 'bookmarks']
+        : [];
+
+  const renderPostsContent = () => (
+    <>
+      {isLoadingPosts ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <span className="ml-2 text-muted-foreground">Loading posts...</span>
+        </div>
+      ) : postsError ? (
+        <div className="py-12 text-center">
+          <p className="mb-4 text-destructive">{postsError}</p>
+          <Button onClick={retryLoadPosts} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      ) : userPosts.length > 0 ? (
+        <div className="space-y-6">
+          {userPosts.map((post) => (
+            <PostCard key={`${post.author}-${post.permlink}`} post={post} />
+          ))}
+        </div>
+      ) : (
+        <div className="py-12 text-center">
+          <div className="mb-4 text-6xl">&#x1F4DD;</div>
+          <h3 className="mb-2 text-xl font-semibold">No posts yet</h3>
+          {isOwnProfile ? (
+            <>
+              <p className="mb-6 text-muted-foreground">
+                Start sharing your sports insights and connect with the community!
+              </p>
+              <Button onClick={() => router.push('/publish')}>
+                <Edit className="mr-2 h-4 w-4" />
+                Create Your First Post
+              </Button>
+            </>
+          ) : (
+            <p className="text-muted-foreground">This user hasn&apos;t posted anything yet.</p>
+          )}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <MainLayout>
       <div className="mx-auto max-w-4xl space-y-6">
-        {/* Back Button */}
-        <Button variant="outline" onClick={() => router.back()} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
+        {/* Back Button — only for other users' profiles */}
+        {!isOwnProfile && (
+          <Button variant="outline" onClick={() => router.back()} className="mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        )}
 
         {/* Profile Header */}
         <div className="overflow-hidden rounded-lg border bg-card">
@@ -271,8 +360,10 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                       <span className="text-xs font-medium text-info">Sportsblock User</span>
                     </div>
                   )}
-                  {/* Follow Button for soft users */}
-                  {isSoftUser &&
+
+                  {/* Follow Button — only for OTHER users' profiles */}
+                  {!isOwnProfile &&
+                    isSoftUser &&
                     softProfile &&
                     currentUser?.id !== (softProfile as { id?: string }).id && (
                       <FollowButton
@@ -283,7 +374,91 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                       />
                     )}
                 </div>
+
+                {/* Owner action buttons — desktop */}
+                {isOwnProfile && (
+                  <div className="mt-2 hidden items-center space-x-2 sm:flex">
+                    {authType === 'hive' && (
+                      <Button
+                        variant="outline"
+                        onClick={handleRefreshProfile}
+                        disabled={isRefreshing}
+                        className="flex items-center space-x-2"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      className="flex items-center space-x-2"
+                      onClick={() => openModal('editProfile')}
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span>Edit Profile</span>
+                    </Button>
+                    <Button variant="outline" size="icon" aria-label="Profile settings">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
                 <p className="mb-2 text-base text-muted-foreground sm:text-lg">@{username}</p>
+
+                {/* Owner action buttons — mobile */}
+                {isOwnProfile && (
+                  <div className="mt-3 flex items-center space-x-2 sm:hidden">
+                    {authType === 'hive' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefreshProfile}
+                        disabled={isRefreshing}
+                        className="flex items-center space-x-1.5"
+                      >
+                        <RefreshCw
+                          className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
+                        />
+                        <span className="text-xs">
+                          {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                        </span>
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center space-x-1.5"
+                      onClick={() => openModal('editProfile')}
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                      <span className="text-xs">Edit Profile</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label="Profile settings"
+                    >
+                      <Settings className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Refresh error */}
+                {refreshError && (
+                  <div className="mt-3 flex items-start space-x-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+                    <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
+                    <div>
+                      <p className="text-sm text-destructive">{refreshError}</p>
+                      <button
+                        onClick={() => setRefreshError(null)}
+                        className="mt-1 text-xs text-destructive underline hover:text-destructive/80"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Profile Details */}
                 <div className="mt-4 space-y-3">
@@ -352,7 +527,11 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                     <>
                       <div
                         className="cursor-pointer text-center transition-opacity hover:opacity-70"
-                        onClick={() => openModal('followersList', { username, type: 'following' })}
+                        onClick={() =>
+                          isOwnProfile
+                            ? setActiveTab('following')
+                            : openModal('followersList', { username, type: 'following' })
+                        }
                       >
                         <div className="text-2xl font-bold text-foreground">
                           {followingCount || 0}
@@ -361,7 +540,11 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                       </div>
                       <div
                         className="cursor-pointer text-center transition-opacity hover:opacity-70"
-                        onClick={() => openModal('followersList', { username, type: 'followers' })}
+                        onClick={() =>
+                          isOwnProfile
+                            ? setActiveTab('followers')
+                            : openModal('followersList', { username, type: 'followers' })
+                        }
                       >
                         <div className="text-2xl font-bold text-foreground">
                           {followerCount || 0}
@@ -425,38 +608,44 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
         {/* Prediction Stats */}
         <PredictionStatsCard username={username} />
 
-        {/* Posts Section */}
-        <div className="rounded-lg border bg-card">
-          <div className="p-4 sm:p-6">
-            <h2 className="mb-4 text-xl font-bold">Posts</h2>
+        {/* Content Section */}
+        {isOwnProfile ? (
+          /* Owner view: tabbed content */
+          <div className="rounded-lg border bg-card">
+            <div className="flex items-center overflow-x-auto border-b border-border px-3 sm:px-6">
+              {ownerTabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={
+                    activeTab === tab
+                      ? 'whitespace-nowrap border-b-2 border-primary px-3 py-2 text-sm font-medium text-primary transition-colors sm:px-4 sm:py-3 sm:text-base'
+                      : 'whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:px-4 sm:py-3 sm:text-base'
+                  }
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
 
-            {isLoadingPosts ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-                <span className="ml-2 text-muted-foreground">Loading posts...</span>
-              </div>
-            ) : postsError ? (
-              <div className="py-12 text-center">
-                <p className="mb-4 text-destructive">{postsError}</p>
-                <Button onClick={retryLoadPosts} variant="outline">
-                  Try Again
-                </Button>
-              </div>
-            ) : userPosts.length > 0 ? (
-              <div className="space-y-6">
-                {userPosts.map((post) => (
-                  <PostCard key={`${post.author}-${post.permlink}`} post={post} />
-                ))}
-              </div>
-            ) : (
-              <div className="py-12 text-center">
-                <div className="mb-4 text-6xl">📝</div>
-                <h3 className="mb-2 text-xl font-semibold">No posts yet</h3>
-                <p className="text-muted-foreground">This user hasn&apos;t posted anything yet.</p>
-              </div>
-            )}
+            <div className="p-3 sm:p-6">
+              {activeTab === 'posts' && renderPostsContent()}
+              {activeTab === 'drafts' && <DraftsContent />}
+              {activeTab === 'replies' && <RepliesContent />}
+              {activeTab === 'bookmarks' && <BookmarksContent />}
+              {activeTab === 'following' && <FollowingContent />}
+              {activeTab === 'followers' && <FollowersContent />}
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Public view: posts only */
+          <div className="rounded-lg border bg-card">
+            <div className="p-4 sm:p-6">
+              <h2 className="mb-4 text-xl font-bold">Posts</h2>
+              {renderPostsContent()}
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

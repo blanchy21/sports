@@ -224,7 +224,7 @@ export const TopNavigation: React.FC = () => {
                 </div>
 
                 <Link
-                  href="/profile"
+                  href={`/user/${user.username}`}
                   className="flex items-center space-x-2 transition-opacity hover:opacity-80 sm:space-x-3"
                   suppressHydrationWarning
                 >
