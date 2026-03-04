@@ -39,14 +39,20 @@ export async function evaluateBadgesForAction(
     const stats = await prisma.userStats.findUnique({ where: { username } });
     if (!stats) return [];
 
-    // 4. Evaluate each candidate
+    // 4. Fetch prediction stats if any candidates need them
+    const needsPredictions = candidates.some((b) => b.metric.startsWith('predictions.'));
+    const pStats = needsPredictions
+      ? ((await batchPredictionStats([username])).get(username) ?? null)
+      : null;
+
+    // 5. Evaluate each candidate
     const newBadgeIds: string[] = [];
     for (const badge of candidates) {
-      const value = resolveMetricValue(badge, stats, null);
+      const value = resolveMetricValue(badge, stats, pStats);
       if (value === null) continue;
 
       if (badge.minSample !== undefined) {
-        const sample = resolveSampleSize(badge, stats, null);
+        const sample = resolveSampleSize(badge, stats, pStats);
         if (sample !== null && sample < badge.minSample) continue;
       }
 
@@ -57,13 +63,13 @@ export async function evaluateBadgesForAction(
 
     if (newBadgeIds.length === 0) return [];
 
-    // 5. Bulk insert (ON CONFLICT DO NOTHING via createMany skipDuplicates)
+    // 6. Bulk insert (ON CONFLICT DO NOTHING via createMany skipDuplicates)
     await prisma.userBadge.createMany({
       data: newBadgeIds.map((badgeId) => ({ username, badgeId })),
       skipDuplicates: true,
     });
 
-    // 6. Create notifications for new badges
+    // 7. Create notifications for new badges
     await createBadgeNotifications(username, newBadgeIds);
 
     logger.info(`Awarded ${newBadgeIds.length} badge(s) to ${username}`, 'Badges', {
