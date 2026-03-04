@@ -19,6 +19,8 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { logger } from '@/lib/logger';
+import { formatAmount } from '@/lib/utils/format-amount';
+import { AmountInput } from '@/components/core/AmountInput';
 
 interface NativeTransferModalProps {
   isOpen: boolean;
@@ -31,13 +33,6 @@ interface NativeTransferModalProps {
 }
 
 type TransferStep = 'form' | 'confirm' | 'success';
-
-function formatAmount(amount: string | number | undefined): string {
-  if (!amount) return '0.000';
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (isNaN(num)) return '0.000';
-  return num.toFixed(3);
-}
 
 interface TextInputProps {
   value: string;
@@ -85,73 +80,6 @@ const TextInput: React.FC<TextInputProps> = ({
     )}
   </div>
 );
-
-interface AmountInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  max?: number;
-  disabled?: boolean;
-  error?: string;
-  symbol: string;
-}
-
-const AmountInput: React.FC<AmountInputProps> = ({
-  value,
-  onChange,
-  max,
-  disabled,
-  error,
-  symbol,
-}) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (val === '' || /^\d*\.?\d{0,3}$/.test(val)) {
-      onChange(val);
-    }
-  };
-
-  return (
-    <div className="space-y-1">
-      <div
-        className={cn(
-          'flex items-center gap-2 rounded-lg border bg-background px-3 py-2',
-          error ? 'border-destructive' : 'border-border focus-within:border-primary',
-          disabled && 'bg-muted/50 opacity-50'
-        )}
-      >
-        <Coins className="h-4 w-4 text-muted-foreground/70" />
-        <input
-          type="text"
-          inputMode="decimal"
-          value={value}
-          onChange={handleChange}
-          placeholder="0.000"
-          disabled={disabled}
-          className="flex-1 bg-transparent font-mono text-lg text-foreground outline-none placeholder:text-muted-foreground/70"
-        />
-        <span className="font-medium text-muted-foreground">{symbol}</span>
-        {max !== undefined && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onChange(formatAmount(max))}
-            disabled={disabled}
-            className="h-7 px-2 text-primary hover:text-primary/80"
-          >
-            MAX
-          </Button>
-        )}
-      </div>
-      {error && (
-        <p className="flex items-center gap-1 text-sm text-destructive">
-          <AlertCircle className="h-3 w-3" />
-          {error}
-        </p>
-      )}
-    </div>
-  );
-};
 
 export const NativeTransferModal: React.FC<NativeTransferModalProps> = ({
   isOpen,
@@ -329,6 +257,9 @@ export const NativeTransferModal: React.FC<NativeTransferModalProps> = ({
             max={balance}
             error={amount ? validation.errors.amount : undefined}
             symbol={currency}
+            icon={<Coins className="h-4 w-4 text-muted-foreground/70" />}
+            focusClass="focus-within:border-primary"
+            maxButtonClass="text-primary hover:text-primary/80"
           />
         </div>
 

@@ -84,7 +84,10 @@ export async function GET(request: NextRequest) {
           contentRewards.status === 'fulfilled'
             ? contentRewards.value
                 .filter((r: { status: string }) => r.status === 'distributed')
-                .reduce((sum: number, r: { amount: number }) => sum + r.amount, 0)
+                .reduce(
+                  (sum: number, r: { amount: { toNumber(): number } }) => sum + r.amount.toNumber(),
+                  0
+                )
             : 0,
         status: null as string | null,
       },

@@ -64,6 +64,10 @@ async function relayBroadcast(operations: HiveOperation[]): Promise<BroadcastRes
 // broadcastOperations — high-level router
 // ---------------------------------------------------------------------------
 
+// In-flight deduplication: prevents double-click from broadcasting the same ops twice.
+// Module-level state scoped to a single browser tab.
+const inFlight = new Set<string>();
+
 export async function broadcastOperations(
   operations: HiveOperation[],
   options: {
@@ -72,33 +76,42 @@ export async function broadcastOperations(
     keyType?: KeyType;
   }
 ): Promise<BroadcastResult> {
-  const { authType, wallet, keyType = 'posting' } = options;
-
-  // Custodial path → server-side signing relay (posting key only)
-  if (authType === 'soft') {
-    if (keyType === 'active') {
-      return {
-        success: false,
-        error: 'Active key operations are not supported for custodial accounts',
-      };
-    }
-    return relayBroadcast(operations);
+  const fingerprint = JSON.stringify(operations);
+  if (inFlight.has(fingerprint)) {
+    return { success: false, error: 'Duplicate broadcast in progress' };
   }
+  inFlight.add(fingerprint);
+  try {
+    const { authType, wallet, keyType = 'posting' } = options;
 
-  // Wallet path → client-side signing
-  if (authType === 'hive') {
-    if (!wallet || !wallet.currentUser) {
-      return {
-        success: false,
-        error: 'Wallet is not connected. Please refresh and try again.',
-      };
+    // Custodial path → server-side signing relay (posting key only)
+    if (authType === 'soft') {
+      if (keyType === 'active') {
+        return {
+          success: false,
+          error: 'Active key operations are not supported for custodial accounts',
+        };
+      }
+      return relayBroadcast(operations);
     }
 
-    return wallet.signAndBroadcast(operations, keyType);
-  }
+    // Wallet path → client-side signing
+    if (authType === 'hive') {
+      if (!wallet || !wallet.currentUser) {
+        return {
+          success: false,
+          error: 'Wallet is not connected. Please refresh and try again.',
+        };
+      }
 
-  // Guest or unknown auth type
-  return { success: false, error: 'Authentication required to broadcast operations' };
+      return wallet.signAndBroadcast(operations, keyType);
+    }
+
+    // Guest or unknown auth type
+    return { success: false, error: 'Authentication required to broadcast operations' };
+  } finally {
+    inFlight.delete(fingerprint);
+  }
 }
 
 // ---------------------------------------------------------------------------

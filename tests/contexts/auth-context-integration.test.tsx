@@ -44,6 +44,11 @@ jest.mock('@/lib/logger', () => ({
   },
 }));
 
+jest.mock('@tanstack/react-query', () => ({
+  ...jest.requireActual('@tanstack/react-query'),
+  useQueryClient: () => ({ clear: jest.fn(), invalidateQueries: jest.fn() }),
+}));
+
 jest.mock('@/lib/api/authenticated-fetch', () => ({
   setAuthInfo: jest.fn(),
   clearAuthInfo: jest.fn(),

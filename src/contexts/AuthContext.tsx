@@ -199,9 +199,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const touchSession = useCallback(() => {
     if (!user) return;
     const now = Date.now();
-    dispatch({ type: 'TOUCH_SESSION', payload: { loginAt: now } });
-    persistAuthState({ user, authType, hiveUser, loginAt: now });
-  }, [user, authType, hiveUser]);
+    dispatch({ type: 'TOUCH_SESSION', payload: { lastActivityAt: now } });
+    persistAuthState({ user, authType, hiveUser, loginAt: authState.loginAt, lastActivityAt: now });
+  }, [user, authType, hiveUser, authState.loginAt]);
 
   // ============================================================================
   // Activity Tracking — throttled touch on user interaction to prevent expiry

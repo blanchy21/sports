@@ -43,6 +43,11 @@ jest.mock('@/contexts/WalletProvider', () => ({
   useWallet: jest.fn(() => mockWallet),
 }));
 
+jest.mock('@tanstack/react-query', () => ({
+  ...jest.requireActual('@tanstack/react-query'),
+  useQueryClient: () => ({ clear: jest.fn(), invalidateQueries: jest.fn() }),
+}));
+
 // Setup localStorage mock
 const localStorageMock = createMockLocalStorage();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });

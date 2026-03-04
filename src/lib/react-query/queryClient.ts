@@ -1,38 +1,40 @@
 import { QueryClient } from '@tanstack/react-query';
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // Optimized caching strategy
-      staleTime: 5 * 60 * 1000, // 5 minutes - posts don't change frequently
-      gcTime: 10 * 60 * 1000, // 10 minutes - keep cached data longer
+export function makeQueryClient(): QueryClient {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Optimized caching strategy
+        staleTime: 5 * 60 * 1000, // 5 minutes - posts don't change frequently
+        gcTime: 10 * 60 * 1000, // 10 minutes - keep cached data longer
 
-      // Smart retry logic
-      retry: (failureCount, error) => {
-        // Don't retry on 4xx errors
-        if (error instanceof Error && 'status' in error && typeof error.status === 'number') {
-          if (error.status >= 400 && error.status < 500) {
-            return false;
+        // Smart retry logic
+        retry: (failureCount, error) => {
+          // Don't retry on 4xx errors
+          if (error instanceof Error && 'status' in error && typeof error.status === 'number') {
+            if (error.status >= 400 && error.status < 500) {
+              return false;
+            }
           }
-        }
-        // Exponential backoff for network errors
-        return failureCount < 2;
+          // Exponential backoff for network errors
+          return failureCount < 2;
+        },
+
+        // Performance optimizations
+        refetchOnWindowFocus: false,
+        refetchOnMount: false, // Prevent unnecessary refetches
+        refetchOnReconnect: true,
+
+        // Network optimizations
+        networkMode: 'online',
       },
-
-      // Performance optimizations
-      refetchOnWindowFocus: false,
-      refetchOnMount: false, // Prevent unnecessary refetches
-      refetchOnReconnect: true,
-
-      // Network optimizations
-      networkMode: 'online',
+      mutations: {
+        retry: 1,
+        networkMode: 'online',
+      },
     },
-    mutations: {
-      retry: 1,
-      networkMode: 'online',
-    },
-  },
-});
+  });
+}
 
 // Query keys factory for consistent key management
 export const queryKeys = {

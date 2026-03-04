@@ -3,7 +3,12 @@ import { User } from '@/types';
 import { HiveAuthUser } from '@/lib/shared/types';
 import { logger } from '@/lib/logger';
 import { setAuthInfo, clearAuthInfo } from '@/lib/api/authenticated-fetch';
-import { AUTH_STORAGE_KEY, ACTIVITY_TIMEOUT_MS, PERSIST_DEBOUNCE_MS } from './auth-types';
+import {
+  AUTH_STORAGE_KEY,
+  SESSION_DURATION_MS,
+  ACTIVITY_TIMEOUT_MS,
+  PERSIST_DEBOUNCE_MS,
+} from './auth-types';
 
 // ============================================================================
 // Constants
@@ -20,13 +25,23 @@ const UI_HINT_STORAGE_KEY = 'authHint';
 // ============================================================================
 
 /**
- * Check if a session is inactive based on loginAt timestamp.
- * loginAt is refreshed on every significant user action (post, comment, page load),
- * so this effectively measures inactivity rather than absolute session age.
+ * Check if a session has expired.
+ *
+ * Two independent checks:
+ * 1. Absolute session lifetime — expires SESSION_DURATION_MS after login (fixed window)
+ * 2. Inactivity timeout — expires ACTIVITY_TIMEOUT_MS after last user activity (sliding window)
+ *
+ * loginAt is the original login timestamp (never updated).
+ * lastActivityAt is refreshed on user interactions (mousedown, keydown, scroll, etc.).
  */
-export function isSessionExpired(loginAt: number | undefined): boolean {
+export function isSessionExpired(loginAt: number | undefined, lastActivityAt?: number): boolean {
   if (!loginAt) return true;
-  return Date.now() - loginAt > ACTIVITY_TIMEOUT_MS;
+  const now = Date.now();
+  // Absolute session lifetime (7 days from login)
+  if (now - loginAt > SESSION_DURATION_MS) return true;
+  // Inactivity timeout (7 days from last activity, if tracked)
+  if (lastActivityAt && now - lastActivityAt > ACTIVITY_TIMEOUT_MS) return true;
+  return false;
 }
 
 // ============================================================================
@@ -107,6 +122,7 @@ export const syncSessionCookie = async (sessionData: {
   authType: AuthType;
   hiveUsername?: string;
   loginAt?: number;
+  lastActivityAt?: number;
   challengeData?: ChallengeData;
   hivesignerToken?: string;
   displayName?: string;
@@ -242,6 +258,7 @@ let pendingPersistState: {
   authType: AuthType;
   hiveUser: HiveAuthUser | null;
   loginAt?: number;
+  lastActivityAt?: number;
   challengeData?: ChallengeData;
   hivesignerToken?: string;
   displayName?: string;
@@ -263,6 +280,7 @@ const executePersist = async (): Promise<void> => {
     authType: authTypeToPersist,
     hiveUser: hiveUserToPersist,
     loginAt: loginAtToPersist,
+    lastActivityAt: lastActivityAtToPersist,
     challengeData: challengeDataToPersist,
     hivesignerToken: hivesignerTokenToPersist,
     displayName: displayNameToPersist,
@@ -284,6 +302,7 @@ const executePersist = async (): Promise<void> => {
       authType: authTypeToPersist,
       hiveUsername: hiveUserToPersist?.username,
       loginAt: loginAtToPersist ?? Date.now(),
+      lastActivityAt: lastActivityAtToPersist,
       challengeData: challengeDataToPersist,
       hivesignerToken: hivesignerTokenToPersist,
       displayName: displayNameToPersist,
@@ -319,6 +338,7 @@ export const persistAuthState = ({
   authType: authTypeToPersist,
   hiveUser: hiveUserToPersist,
   loginAt: loginAtToPersist,
+  lastActivityAt: lastActivityAtToPersist,
   challengeData: challengeDataToPersist,
   hivesignerToken: hivesignerTokenToPersist,
   displayName: displayNameToPersist,
@@ -328,6 +348,7 @@ export const persistAuthState = ({
   authType: AuthType;
   hiveUser: HiveAuthUser | null;
   loginAt?: number;
+  lastActivityAt?: number;
   challengeData?: ChallengeData;
   hivesignerToken?: string;
   displayName?: string;
@@ -347,6 +368,7 @@ export const persistAuthState = ({
     authType: authTypeToPersist,
     hiveUser: hiveUserToPersist,
     loginAt: loginAtToPersist,
+    lastActivityAt: lastActivityAtToPersist ?? pendingPersistState?.lastActivityAt,
     challengeData: challengeDataToPersist ?? pendingPersistState?.challengeData,
     hivesignerToken: hivesignerTokenToPersist ?? pendingPersistState?.hivesignerToken,
     displayName: displayNameToPersist ?? pendingPersistState?.displayName,

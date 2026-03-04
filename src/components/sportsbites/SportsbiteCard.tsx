@@ -288,6 +288,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
 
   return (
     <article
+      aria-label={`Sportsbite by ${sportsbite.author}`}
       className={cn(
         'border-b border-border px-4 py-3',
         'transition-colors hover:bg-muted/30',
@@ -303,7 +304,11 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
     >
       {/* Header */}
       <div className="flex items-start gap-2 pb-0 sm:gap-3">
-        <button onClick={handleUserProfile} className="flex-shrink-0">
+        <button
+          onClick={handleUserProfile}
+          className="flex-shrink-0"
+          aria-label={`View ${sportsbite.author}'s profile`}
+        >
           <Avatar
             src={authorProfile?.avatar}
             fallback={sportsbite.author}
@@ -322,6 +327,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               <button
                 onClick={handleUserProfile}
                 className="cursor-pointer font-semibold hover:underline"
+                aria-label={`View ${sportsbite.author}'s profile`}
               >
                 {authorProfile?.displayName || sportsbite.author}
               </button>
@@ -345,6 +351,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                  aria-label="More options"
                   onClick={() => {
                     setShowMoreMenu(!showMoreMenu);
                     setConfirmingDelete(false);
@@ -363,6 +370,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                             variant="destructive"
                             size="sm"
                             className="h-7 text-xs"
+                            aria-label="Confirm delete"
                             onClick={handleDelete}
                             disabled={isDeleting}
                           >
@@ -372,6 +380,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                             variant="ghost"
                             size="sm"
                             className="h-7 text-xs"
+                            aria-label="Cancel delete"
                             onClick={() => setConfirmingDelete(false)}
                             disabled={isDeleting}
                           >
@@ -383,6 +392,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                       <button
                         onClick={() => setConfirmingDelete(true)}
                         className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive transition-colors hover:bg-muted"
+                        aria-label="Delete sportsbite"
                       >
                         <Trash2 className="h-4 w-4" />
                         Delete
@@ -563,6 +573,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             variant="ghost"
             size="sm"
             onClick={() => setShowReplies(!showReplies)}
+            aria-label={`${sportsbite.children || 0} replies`}
             className={cn(
               'flex h-8 items-center gap-1 px-1 transition-all hover:bg-primary/10 hover:text-primary sm:gap-1.5 sm:px-2',
               showReplies ? 'text-primary' : 'text-muted-foreground'
@@ -577,6 +588,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               variant="ghost"
               size="sm"
               onClick={() => setShowShareMenu(!showShareMenu)}
+              aria-label="Share"
               className="flex h-8 items-center gap-1 px-1 text-muted-foreground transition-all hover:bg-success/10 hover:text-success sm:gap-1.5 sm:px-2"
             >
               <Share2 className="h-4 w-4" />
@@ -587,6 +599,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                 <button
                   onClick={() => handleShare('twitter')}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                  aria-label="Share on X"
                 >
                   <ExternalLink className="h-4 w-4" />
                   Share on X
@@ -594,6 +607,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                 <button
                   onClick={() => handleShare('copy')}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                  aria-label="Copy link"
                 >
                   <Repeat2 className="h-4 w-4" />
                   Copy link
@@ -605,6 +619,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                       onClick={handleReblog}
                       disabled={isReblogging}
                       className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
+                      aria-label="Repost to blog"
                     >
                       <Repeat2 className={cn('h-4 w-4', isReblogging && 'animate-spin')} />
                       {isReblogging ? 'Reposting...' : 'Repost to blog'}
@@ -629,6 +644,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           variant="ghost"
           size="sm"
           onClick={handleBookmark}
+          aria-label={isBookmarked(bookmarkPost) ? 'Remove bookmark' : 'Bookmark'}
           className={cn(
             'h-8 w-8 p-0 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary',
             isBookmarked(bookmarkPost) && 'text-primary'

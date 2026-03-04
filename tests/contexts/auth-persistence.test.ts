@@ -14,6 +14,7 @@ import {
 } from '@/contexts/auth/auth-persistence';
 import {
   AUTH_STORAGE_KEY,
+  SESSION_DURATION_MS,
   ACTIVITY_TIMEOUT_MS,
   PERSIST_DEBOUNCE_MS,
 } from '@/contexts/auth/auth-types';
@@ -66,17 +67,17 @@ describe('Auth Persistence', () => {
       expect(isSessionExpired(undefined)).toBe(true);
     });
 
-    it('returns true when loginAt is 0', () => {
+    it('returns true when loginAt is 0 (absolute lifetime exceeded)', () => {
       expect(isSessionExpired(0)).toBe(true);
     });
 
-    it('returns true when session is older than ACTIVITY_TIMEOUT_MS', () => {
-      const oldLoginAt = Date.now() - ACTIVITY_TIMEOUT_MS - 1000;
+    it('returns true when session exceeds absolute lifetime (SESSION_DURATION_MS)', () => {
+      const oldLoginAt = Date.now() - SESSION_DURATION_MS - 1000;
       expect(isSessionExpired(oldLoginAt)).toBe(true);
     });
 
-    it('returns false when session is within ACTIVITY_TIMEOUT_MS', () => {
-      const recentLoginAt = Date.now() - ACTIVITY_TIMEOUT_MS + 5000;
+    it('returns false when session is within absolute lifetime', () => {
+      const recentLoginAt = Date.now() - SESSION_DURATION_MS + 5000;
       expect(isSessionExpired(recentLoginAt)).toBe(false);
     });
 
@@ -84,10 +85,32 @@ describe('Auth Persistence', () => {
       expect(isSessionExpired(Date.now())).toBe(false);
     });
 
-    it('correctly handles edge case just past expiration boundary', () => {
-      // Just past ACTIVITY_TIMEOUT_MS should be expired
-      const boundaryLoginAt = Date.now() - ACTIVITY_TIMEOUT_MS - 1;
+    it('correctly handles edge case just past absolute expiration boundary', () => {
+      const boundaryLoginAt = Date.now() - SESSION_DURATION_MS - 1;
       expect(isSessionExpired(boundaryLoginAt)).toBe(true);
+    });
+
+    it('returns true when lastActivityAt exceeds ACTIVITY_TIMEOUT_MS', () => {
+      const recentLoginAt = Date.now() - 1000; // within absolute lifetime
+      const oldActivity = Date.now() - ACTIVITY_TIMEOUT_MS - 1000;
+      expect(isSessionExpired(recentLoginAt, oldActivity)).toBe(true);
+    });
+
+    it('returns false when lastActivityAt is within ACTIVITY_TIMEOUT_MS', () => {
+      const recentLoginAt = Date.now() - 1000;
+      const recentActivity = Date.now() - ACTIVITY_TIMEOUT_MS + 5000;
+      expect(isSessionExpired(recentLoginAt, recentActivity)).toBe(false);
+    });
+
+    it('returns false when lastActivityAt is not provided (backwards compat)', () => {
+      const recentLoginAt = Date.now() - 1000;
+      expect(isSessionExpired(recentLoginAt)).toBe(false);
+    });
+
+    it('expires on absolute lifetime even with recent activity', () => {
+      const oldLoginAt = Date.now() - SESSION_DURATION_MS - 1;
+      const recentActivity = Date.now() - 1000;
+      expect(isSessionExpired(oldLoginAt, recentActivity)).toBe(true);
     });
   });
 

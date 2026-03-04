@@ -385,13 +385,13 @@ export async function getRewardDistributions(weekId: string): Promise<ContentRew
         weekId: string;
         category: string;
         winner: unknown;
-        amount: number;
+        amount: { toNumber(): number };
         status: string;
       }) => ({
         weekId: r.weekId,
         category: r.category as RewardCategory,
         winner: r.winner as unknown as { account: string; postId?: string; value: number },
-        amount: r.amount,
+        amount: r.amount.toNumber(),
         status: r.status as 'pending' | 'distributed' | 'failed',
       })
     );

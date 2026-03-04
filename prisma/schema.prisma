@@ -494,7 +494,7 @@ model ContentReward {
   weekId    String   @map("week_id")
   category  String   // RewardCategory
   winner    Json     // { account, postId, value }
-  amount    Float
+  amount    Decimal  @db.Decimal(12, 3)
   status    String   @default("pending") // 'pending' | 'distributed' | 'failed'
   createdAt DateTime @default(now()) @map("created_at")
 

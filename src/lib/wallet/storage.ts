@@ -27,6 +27,15 @@ export function saveWalletSession(provider: WalletProvider, username: string): v
 
 export function loadWalletSession(): WalletSession | null {
   try {
+    const loginAt = localStorage.getItem(KEYS.loginAt);
+    if (loginAt) {
+      const elapsed = Date.now() - new Date(loginAt).getTime();
+      if (elapsed > 7 * 24 * 60 * 60 * 1000) {
+        clearWalletSession();
+        return null;
+      }
+    }
+
     const provider = localStorage.getItem(KEYS.provider) as WalletProvider | null;
     const username = localStorage.getItem(KEYS.username);
 

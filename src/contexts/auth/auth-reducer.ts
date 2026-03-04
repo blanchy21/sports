@@ -38,7 +38,7 @@ export type AuthAction =
       type: 'REFRESH_ACCOUNT';
       payload: { user: User; hiveUser: HiveAuthUser; loginAt: number };
     }
-  | { type: 'TOUCH_SESSION'; payload: { loginAt: number } };
+  | { type: 'TOUCH_SESSION'; payload: { lastActivityAt: number } };
 
 // ============================================================================
 // Reducer Function
@@ -58,6 +58,7 @@ export function authReducer(state: AuthStateInternal, action: AuthAction): AuthS
         authType: action.payload.authType,
         hiveUser: action.payload.hiveUser,
         loginAt: action.payload.loginAt,
+        lastActivityAt: action.payload.loginAt,
         isClient: true,
         hasMounted: true,
         isLoading: false,
@@ -88,6 +89,7 @@ export function authReducer(state: AuthStateInternal, action: AuthAction): AuthS
         authType: action.payload.authType,
         hiveUser: action.payload.hiveUser,
         loginAt: action.payload.loginAt,
+        lastActivityAt: action.payload.loginAt,
         profileLoadFailed: false,
       };
 
@@ -111,6 +113,7 @@ export function authReducer(state: AuthStateInternal, action: AuthAction): AuthS
         authType: 'guest',
         hiveUser: null,
         loginAt: undefined,
+        lastActivityAt: undefined,
         profileLoadFailed: false,
       };
 
@@ -138,7 +141,7 @@ export function authReducer(state: AuthStateInternal, action: AuthAction): AuthS
     case 'TOUCH_SESSION':
       return {
         ...state,
-        loginAt: action.payload.loginAt,
+        lastActivityAt: action.payload.lastActivityAt,
       };
 
     default:

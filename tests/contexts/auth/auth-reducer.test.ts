@@ -225,14 +225,16 @@ describe('authReducer', () => {
       authType: 'soft',
       loginAt: 1000,
     };
-    const newLoginAt = 2000;
+    const newActivityAt = 2000;
 
     const result = authReducer(before, {
       type: 'TOUCH_SESSION',
-      payload: { loginAt: newLoginAt },
+      payload: { lastActivityAt: newActivityAt },
     });
 
-    expect(result.loginAt).toBe(newLoginAt);
+    expect(result.lastActivityAt).toBe(newActivityAt);
+    // loginAt should NOT change (that's the whole point of this fix)
+    expect(result.loginAt).toBe(1000);
     // Everything else unchanged
     expect(result.user).toBe(before.user);
     expect(result.authType).toBe('soft');

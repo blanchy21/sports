@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { signOut as nextAuthSignOut } from 'next-auth/react';
+import { useQueryClient } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
 import { AuthType, User } from '@/types';
 import { HiveAuthUser } from '@/lib/shared/types';
@@ -15,7 +16,6 @@ import {
 } from './auth-persistence';
 import { AuthAction } from './auth-reducer';
 import { useAuthProfile, getHiveAvatarUrl } from './useAuthProfile';
-import { queryClient } from '@/lib/react-query/queryClient';
 
 export interface UseAuthActionsOptions {
   dispatch: React.Dispatch<AuthAction>;
@@ -78,6 +78,7 @@ async function signHiveChallenge(
 export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsReturn {
   const { dispatch, getState } = options;
   const wallet = useWallet();
+  const queryClient = useQueryClient();
 
   // Profile fetching callbacks
   const onProfileLoaded = useCallback(
@@ -342,7 +343,7 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
     });
 
     queryClient.clear();
-  }, [wallet, dispatch, abortFetch]);
+  }, [wallet, dispatch, abortFetch, queryClient]);
 
   // ============================================================================
   // Upgrade and Update

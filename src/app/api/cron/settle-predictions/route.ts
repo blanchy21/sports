@@ -12,6 +12,7 @@ export async function GET() {
   }
 
   // Find all LOCKED predictions that have a matchReference (ESPN event ID)
+  const BATCH_LIMIT = 1_000;
   const predictions = await prisma.prediction.findMany({
     where: {
       status: 'LOCKED',
@@ -20,7 +21,14 @@ export async function GET() {
     include: {
       outcomes: { select: { id: true, label: true } },
     },
+    take: BATCH_LIMIT,
   });
+  if (predictions.length === BATCH_LIMIT) {
+    logger.warn(
+      `Auto-settlement hit ${BATCH_LIMIT} prediction limit — pagination needed`,
+      'cron/settle-predictions'
+    );
+  }
 
   if (predictions.length === 0) {
     return NextResponse.json({ success: true, settled: 0, skipped: 0, errors: 0 });

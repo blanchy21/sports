@@ -98,6 +98,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Block unauthenticated access to admin pages
+  if (pathname.startsWith('/admin')) {
+    if (!request.cookies.has('sb_session')) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+    return NextResponse.next();
+  }
+
   // Skip rate limiting in development to avoid Redis latency on every API call
   if (process.env.NODE_ENV === 'development' && pathname.startsWith('/api/')) {
     return NextResponse.next();
@@ -161,6 +169,8 @@ export const config = {
   matcher: [
     // Landing page — redirect authenticated users to feed
     '/',
+    // Admin pages — require authentication
+    '/admin/:path*',
     // Match all API routes
     '/api/:path*',
   ],

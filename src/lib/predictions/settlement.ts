@@ -53,13 +53,18 @@ export async function executeSettlement(
     // Check if it's a valid retry (already SETTLING) or an invalid state
     const current = await prisma.prediction.findUnique({
       where: { id: predictionId },
-      select: { status: true },
+      select: { status: true, winningOutcomeId: true },
     });
     if (!current) {
       throw new Error(`Prediction not found: ${predictionId}`);
     }
     if (current.status !== PredictionStatus.SETTLING) {
       throw new Error(`Prediction must be LOCKED for settlement (current: ${current.status})`);
+    }
+    if (current.winningOutcomeId && current.winningOutcomeId !== winningOutcomeId) {
+      throw new Error(
+        `Retry outcome mismatch: stored ${current.winningOutcomeId}, requested ${winningOutcomeId}`
+      );
     }
     // SETTLING = retry path, continue
   }

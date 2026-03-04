@@ -37,9 +37,14 @@ export async function calculateAllMedalsScores(): Promise<{
 
   try {
     // 1. Fetch all active user stats
+    const BATCH_LIMIT = 10_000;
     const allStats = await prisma.userStats.findMany({
       where: { lastActiveAt: { gte: sixtyDaysAgo } },
+      take: BATCH_LIMIT,
     });
+    if (allStats.length === BATCH_LIMIT) {
+      logger.warn(`MEDALS score calc hit ${BATCH_LIMIT} user limit — pagination needed`, 'Badges');
+    }
     if (allStats.length === 0) return { usersProcessed: 0 };
 
     const usernames = allStats.map((s) => s.username);

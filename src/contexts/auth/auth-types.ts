@@ -62,6 +62,7 @@ export interface AuthStateInternal {
   authType: AuthType;
   hiveUser: HiveAuthUser | null;
   loginAt: number | undefined;
+  lastActivityAt: number | undefined;
   isLoading: boolean;
   isClient: boolean;
   hasMounted: boolean;
@@ -73,6 +74,7 @@ export const initialAuthState: AuthStateInternal = {
   authType: 'guest',
   hiveUser: null,
   loginAt: undefined,
+  lastActivityAt: undefined,
   isLoading: true,
   isClient: false,
   hasMounted: false,

@@ -21,6 +21,8 @@ import {
   ArrowDownUp,
 } from 'lucide-react';
 
+import { formatAmount } from '@/lib/utils/format-amount';
+
 interface WalletCardProps {
   /** Hive account username */
   account: string;
@@ -34,16 +36,6 @@ interface WalletCardProps {
   className?: string;
   /** Compact mode for sidebar/smaller spaces */
   compact?: boolean;
-}
-
-/**
- * Format a token amount to 3 decimal places
- */
-function formatAmount(amount: string | number | undefined): string {
-  if (!amount) return '0.000';
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (isNaN(num)) return '0.000';
-  return num.toFixed(3);
 }
 
 /**
