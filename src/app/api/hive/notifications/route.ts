@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import { boundedCacheSet, cleanupExpired } from '@/lib/cache/bounded-map';
@@ -59,9 +59,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const ROUTE = '/api/hive/notifications';
 
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
-  const searchParams = request.nextUrl.searchParams;
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
+  const searchParams = (request as NextRequest).nextUrl.searchParams;
 
   // Parse and validate query parameters
   const parseResult = querySchema.safeParse({
@@ -183,9 +182,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return ctx.handleError(error);
+    throw error;
   }
-}
+});
 
 /**
  * Process a blockchain operation into a notification

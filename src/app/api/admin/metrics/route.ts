@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createRequestContext, forbiddenError } from '@/lib/api/response';
+import { createApiHandler, forbiddenError } from '@/lib/api/response';
 import { requireAdmin } from '@/lib/admin/config';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { getWeekId } from '@/lib/rewards/staking-distribution';
@@ -24,88 +24,82 @@ export const dynamic = 'force-dynamic';
 
 const ROUTE = '/api/admin/metrics';
 
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
-
-  const user = await getAuthenticatedUserFromSession(request);
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
+  const user = await getAuthenticatedUserFromSession(request as NextRequest);
   if (!user || !requireAdmin(user)) {
     return forbiddenError('Admin access required', ctx.requestId);
   }
 
-  try {
-    const weekId = getWeekId();
-    const dailyKey = getDailyKey();
+  const weekId = getWeekId();
+  const dailyKey = getDailyKey();
 
-    // Previous week ID for content rewards lookup
-    const prevWeekDate = new Date();
-    prevWeekDate.setDate(prevWeekDate.getDate() - 7);
-    const prevWeekId = getWeekId(prevWeekDate);
+  // Previous week ID for content rewards lookup
+  const prevWeekDate = new Date();
+  prevWeekDate.setDate(prevWeekDate.getDate() - 7);
+  const prevWeekId = getWeekId(prevWeekDate);
 
-    // Fetch all data in parallel from Prisma
-    const [stakingMetrics, curatorMetrics, contentRewards] = await Promise.allSettled([
-      // Staking data - look for user metrics as a proxy for staking activity
-      prisma.userMetric.count({ where: { weekId } }),
-      // Curator rewards - count post metrics for the day
-      prisma.postMetric.aggregate({
-        where: { weekId },
-        _sum: { votes: true },
-      }),
-      // Content rewards for previous week
-      prisma.contentReward.findMany({ where: { weekId: prevWeekId } }),
-    ]);
+  // Fetch all data in parallel from Prisma
+  const [stakingMetrics, curatorMetrics, contentRewards] = await Promise.allSettled([
+    // Staking data - look for user metrics as a proxy for staking activity
+    prisma.userMetric.count({ where: { weekId } }),
+    // Curator rewards - count post metrics for the day
+    prisma.postMetric.aggregate({
+      where: { weekId },
+      _sum: { votes: true },
+    }),
+    // Content rewards for previous week
+    prisma.contentReward.findMany({ where: { weekId: prevWeekId } }),
+  ]);
 
-    // Build metrics response
-    const metrics = {
-      stakingRewards: {
-        lastDistribution: null as string | null,
-        stakingApr: STAKING_APR * 100,
-        totalStakers: stakingMetrics.status === 'fulfilled' ? stakingMetrics.value : 0,
-        totalStaked: 0,
-        weekId,
-        status: null as string | null,
-      },
-      curatorRewards: {
-        todayVotes:
-          curatorMetrics.status === 'fulfilled' ? curatorMetrics.value._sum.votes || 0 : 0,
-        todayRewards: 0,
-        activeCurators: CURATOR_REWARDS.CURATOR_COUNT,
-        dailyKey,
-      },
-      contentRewards: {
-        lastWeek:
-          contentRewards.status === 'fulfilled' && contentRewards.value.length > 0
-            ? prevWeekId
-            : null,
-        pendingDistributions:
-          contentRewards.status === 'fulfilled'
-            ? contentRewards.value.filter((r: { status: string }) => r.status === 'pending').length
-            : 0,
-        totalDistributed:
-          contentRewards.status === 'fulfilled'
-            ? contentRewards.value
-                .filter((r: { status: string }) => r.status === 'distributed')
-                .reduce(
-                  (sum: number, r: { amount: { toNumber(): number } }) => sum + r.amount.toNumber(),
-                  0
-                )
-            : 0,
-        status: null as string | null,
-      },
-    };
-
-    const config = {
-      platformYear: getPlatformYear(),
+  // Build metrics response
+  const metrics = {
+    stakingRewards: {
+      lastDistribution: null as string | null,
       stakingApr: STAKING_APR * 100,
-      curatorRewardAmount: getCuratorRewardAmount(),
-      curatorCount: CURATOR_REWARDS.CURATOR_COUNT,
-    };
+      totalStakers: stakingMetrics.status === 'fulfilled' ? stakingMetrics.value : 0,
+      totalStaked: 0,
+      weekId,
+      status: null as string | null,
+    },
+    curatorRewards: {
+      todayVotes:
+        curatorMetrics.status === 'fulfilled' ? curatorMetrics.value._sum.votes || 0 : 0,
+      todayRewards: 0,
+      activeCurators: CURATOR_REWARDS.CURATOR_COUNT,
+      dailyKey,
+    },
+    contentRewards: {
+      lastWeek:
+        contentRewards.status === 'fulfilled' && contentRewards.value.length > 0
+          ? prevWeekId
+          : null,
+      pendingDistributions:
+        contentRewards.status === 'fulfilled'
+          ? contentRewards.value.filter((r: { status: string }) => r.status === 'pending').length
+          : 0,
+      totalDistributed:
+        contentRewards.status === 'fulfilled'
+          ? contentRewards.value
+              .filter((r: { status: string }) => r.status === 'distributed')
+              .reduce(
+                (sum: number, r: { amount: { toNumber(): number } }) => sum + r.amount.toNumber(),
+                0
+              )
+          : 0,
+      status: null as string | null,
+    },
+  };
 
-    return NextResponse.json({
-      success: true,
-      metrics,
-      config,
-    });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
-}
+  const config = {
+    platformYear: getPlatformYear(),
+    stakingApr: STAKING_APR * 100,
+    curatorRewardAmount: getCuratorRewardAmount(),
+    curatorCount: CURATOR_REWARDS.CURATOR_COUNT,
+  };
+
+  return NextResponse.json({
+    success: true,
+    metrics,
+    config,
+  });
+});

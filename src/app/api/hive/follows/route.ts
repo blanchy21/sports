@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 import { isFollowingUser } from '@/lib/hive-workerbee/social';
 
 export const runtime = 'nodejs';
@@ -13,8 +13,8 @@ const ROUTE = '/api/hive/follows';
  * Checks follow status for a follower against multiple targets in parallel.
  * Returns a map of target username -> boolean.
  */
-export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
+export const GET = createApiHandler(ROUTE, async (request) => {
+  const { searchParams } = (request as NextRequest).nextUrl;
   const follower = searchParams.get('follower');
   const targetsParam = searchParams.get('targets');
 
@@ -44,23 +44,18 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const ctx = createRequestContext(ROUTE);
-  try {
-    const results = await Promise.allSettled(
-      targets.map((target) => isFollowingUser(target, follower))
-    );
+  const results = await Promise.allSettled(
+    targets.map((target) => isFollowingUser(target, follower))
+  );
 
-    const followStatus: Record<string, boolean> = {};
-    targets.forEach((target, i) => {
-      const result = results[i];
-      followStatus[target] = result.status === 'fulfilled' ? result.value : false;
-    });
+  const followStatus: Record<string, boolean> = {};
+  targets.forEach((target, i) => {
+    const result = results[i];
+    followStatus[target] = result.status === 'fulfilled' ? result.value : false;
+  });
 
-    return NextResponse.json(
-      { success: true, followStatus },
-      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
-    );
-  } catch (error) {
-    return ctx.handleError(error);
-  }
-}
+  return NextResponse.json(
+    { success: true, followStatus },
+    { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+  );
+});

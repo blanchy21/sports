@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
-import { createRequestContext, validationError, notFoundError } from '@/lib/api/response';
+import { createApiHandler, validationError, notFoundError } from '@/lib/api/response';
 import { logger } from '@/lib/logger';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import { SoftPost } from '@/types/auth';
@@ -10,6 +10,14 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const ROUTE = '/api/communities/[id]/posts';
+
+/** Extract community ID from URL path: /api/communities/{id}/posts */
+function extractCommunityId(request: Request): string {
+  const url = new URL(request.url);
+  const segments = url.pathname.split('/');
+  // Expected: ['', 'api', 'communities', '{id}', 'posts']
+  return segments[3];
+}
 
 // ============================================
 // Prisma helper for fetching soft posts by community
@@ -168,190 +176,185 @@ const postsQuerySchema = z.object({
  * - includeHive: boolean (default true) - include Hive blockchain posts
  * - includeSoft: boolean (default true) - include soft/database posts
  */
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = createRequestContext(ROUTE);
-  const { id: communityId } = await params;
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
+  const communityId = extractCommunityId(request);
 
-  try {
-    // Parse query parameters
-    const searchParams = Object.fromEntries(request.nextUrl.searchParams);
-    const parseResult = postsQuerySchema.safeParse(searchParams);
+  // Parse query parameters
+  const searchParams = Object.fromEntries((request as NextRequest).nextUrl.searchParams);
+  const parseResult = postsQuerySchema.safeParse(searchParams);
 
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
+  if (!parseResult.success) {
+    return validationError(parseResult.error, ctx.requestId);
+  }
 
-    const { limit, sort, before, includeHive, includeSoft } = parseResult.data;
+  const { limit, sort, before, includeHive, includeSoft } = parseResult.data;
 
-    // Fetch community to get slug - try by ID first, then by slug
-    let community = await prisma.community.findUnique({ where: { id: communityId } });
-    if (!community) {
-      community = await prisma.community.findUnique({ where: { slug: communityId } });
-    }
+  // Fetch community to get slug - try by ID first, then by slug
+  let community = await prisma.community.findUnique({ where: { id: communityId } });
+  if (!community) {
+    community = await prisma.community.findUnique({ where: { slug: communityId } });
+  }
 
-    if (!community) {
-      return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
-    }
+  if (!community) {
+    return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
+  }
 
-    ctx.log.debug('Fetching community posts', {
-      communityId: community.id,
-      slug: community.slug,
-      limit,
-      sort,
-      includeHive,
-      includeSoft,
-    });
+  ctx.log.debug('Fetching community posts', {
+    communityId: community.id,
+    slug: community.slug,
+    limit,
+    sort,
+    includeHive,
+    includeSoft,
+  });
 
-    const allPosts: CommunityPost[] = [];
-    const fetchPromises: Promise<void>[] = [];
+  const allPosts: CommunityPost[] = [];
+  const fetchPromises: Promise<void>[] = [];
 
-    // Fetch soft posts from Prisma
-    if (includeSoft) {
-      fetchPromises.push(
-        getSoftPostsByCommunity(community.id, limit)
-          .then((softPosts) => {
-            allPosts.push(...softPosts.map(softPostToCommunityPost));
-          })
-          .catch((error) => {
-            ctx.log.warn('Failed to fetch soft posts for community', {
-              error,
-              communityId: community.id,
-            });
-          })
-      );
-    }
+  // Fetch soft posts from Prisma
+  if (includeSoft) {
+    fetchPromises.push(
+      getSoftPostsByCommunity(community.id, limit)
+        .then((softPosts) => {
+          allPosts.push(...softPosts.map(softPostToCommunityPost));
+        })
+        .catch((error) => {
+          ctx.log.warn('Failed to fetch soft posts for community', {
+            error,
+            communityId: community.id,
+          });
+        })
+    );
+  }
 
-    // Fetch posts from Hive that have the community tag
-    if (includeHive) {
-      fetchPromises.push(
-        (async () => {
-          try {
-            const { fetchSportsblockPosts } = await import('@/lib/hive-workerbee/content');
+  // Fetch posts from Hive that have the community tag
+  if (includeHive) {
+    fetchPromises.push(
+      (async () => {
+        try {
+          const { fetchSportsblockPosts } = await import('@/lib/hive-workerbee/content');
 
-            const result = await retryWithBackoff(
-              () =>
-                fetchSportsblockPosts({
-                  limit,
-                  sort,
-                  tag: community.slug,
-                  before,
-                }),
-              {
-                maxRetries: 2,
-                initialDelay: 1000,
-                maxDelay: 10000,
-                backoffMultiplier: 2,
-              }
-            );
-
-            // Filter posts that have sub_community metadata matching this community
-            const filteredPosts = result.posts.filter((post) => {
-              try {
-                const metadata =
-                  typeof post.json_metadata === 'string'
-                    ? JSON.parse(post.json_metadata)
-                    : post.json_metadata;
-
-                // Match by sub_community slug or sub_community_id
-                if (
-                  metadata?.sub_community === community.slug ||
-                  metadata?.sub_community_id === community.id
-                ) {
-                  return true;
-                }
-
-                // Also match by tag
-                const tags = metadata?.tags || [];
-                return tags.includes(community.slug);
-              } catch {
-                return false;
-              }
-            });
-
-            // Convert Hive posts to CommunityPost format
-            for (const post of filteredPosts) {
-              // Skip posts with missing required fields
-              if (!post.author || !post.permlink) continue;
-
-              let featuredImage: string | undefined;
-              let tags: string[] = [];
-
-              try {
-                const metadata =
-                  typeof post.json_metadata === 'string'
-                    ? JSON.parse(post.json_metadata)
-                    : post.json_metadata;
-                if (metadata?.image && metadata.image.length > 0) {
-                  featuredImage = metadata.image[0];
-                }
-                if (metadata?.tags && Array.isArray(metadata.tags)) {
-                  tags = metadata.tags;
-                }
-              } catch {
-                // Ignore metadata parsing errors
-              }
-
-              const excerpt =
-                post.body
-                  .replace(/[#*_`~\[\]()>]/g, '')
-                  .substring(0, 200)
-                  .trim() + (post.body.length > 200 ? '...' : '');
-
-              allPosts.push({
-                id: `hive-${post.author}-${post.permlink}`,
-                author: post.author,
-                permlink: post.permlink,
-                title: post.title,
-                body: post.body,
-                excerpt,
-                created: post.created,
-                tags,
-                sportCategory: post.sportCategory,
-                featuredImage,
-                netVotes: post.net_votes,
-                children: post.children,
-                pendingPayout: post.pending_payout_value,
-                source: 'hive',
-                _isSoftPost: false,
-                activeVotes: post.active_votes?.slice(0, 10).map((v) => ({
-                  voter: v.voter,
-                  weight: v.weight,
-                  percent: v.percent,
-                })),
-              });
+          const result = await retryWithBackoff(
+            () =>
+              fetchSportsblockPosts({
+                limit,
+                sort,
+                tag: community.slug,
+                before,
+              }),
+            {
+              maxRetries: 2,
+              initialDelay: 1000,
+              maxDelay: 10000,
+              backoffMultiplier: 2,
             }
-          } catch (error) {
-            ctx.log.warn('Failed to fetch Hive posts for community', {
-              error,
-              communityId: community.id,
+          );
+
+          // Filter posts that have sub_community metadata matching this community
+          const filteredPosts = result.posts.filter((post) => {
+            try {
+              const metadata =
+                typeof post.json_metadata === 'string'
+                  ? JSON.parse(post.json_metadata)
+                  : post.json_metadata;
+
+              // Match by sub_community slug or sub_community_id
+              if (
+                metadata?.sub_community === community.slug ||
+                metadata?.sub_community_id === community.id
+              ) {
+                return true;
+              }
+
+              // Also match by tag
+              const tags = metadata?.tags || [];
+              return tags.includes(community.slug);
+            } catch {
+              return false;
+            }
+          });
+
+          // Convert Hive posts to CommunityPost format
+          for (const post of filteredPosts) {
+            // Skip posts with missing required fields
+            if (!post.author || !post.permlink) continue;
+
+            let featuredImage: string | undefined;
+            let tags: string[] = [];
+
+            try {
+              const metadata =
+                typeof post.json_metadata === 'string'
+                  ? JSON.parse(post.json_metadata)
+                  : post.json_metadata;
+              if (metadata?.image && metadata.image.length > 0) {
+                featuredImage = metadata.image[0];
+              }
+              if (metadata?.tags && Array.isArray(metadata.tags)) {
+                tags = metadata.tags;
+              }
+            } catch {
+              // Ignore metadata parsing errors
+            }
+
+            const excerpt =
+              post.body
+                .replace(/[#*_`~\[\]()>]/g, '')
+                .substring(0, 200)
+                .trim() + (post.body.length > 200 ? '...' : '');
+
+            allPosts.push({
+              id: `hive-${post.author}-${post.permlink}`,
+              author: post.author,
+              permlink: post.permlink,
+              title: post.title,
+              body: post.body,
+              excerpt,
+              created: post.created,
+              tags,
+              sportCategory: post.sportCategory,
+              featuredImage,
+              netVotes: post.net_votes,
+              children: post.children,
+              pendingPayout: post.pending_payout_value,
+              source: 'hive',
+              _isSoftPost: false,
+              activeVotes: post.active_votes?.slice(0, 10).map((v) => ({
+                voter: v.voter,
+                weight: v.weight,
+                percent: v.percent,
+              })),
             });
           }
-        })()
-      );
-    }
-
-    // Wait for all fetches to complete
-    await Promise.all(fetchPromises);
-
-    // Sort by created date (newest first)
-    allPosts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
-
-    const hivePosts = allPosts.filter((p) => p.source === 'hive');
-    const softPosts = allPosts.filter((p) => p.source === 'soft');
-
-    return NextResponse.json({
-      success: true,
-      posts: allPosts.slice(0, limit),
-      community: {
-        id: community.id,
-        slug: community.slug,
-        name: community.name,
-      },
-      hasMore: allPosts.length > limit,
-      count: Math.min(allPosts.length, limit),
-      sources: { hive: hivePosts.length, soft: softPosts.length },
-    });
-  } catch (error) {
-    return ctx.handleError(error);
+        } catch (error) {
+          ctx.log.warn('Failed to fetch Hive posts for community', {
+            error,
+            communityId: community.id,
+          });
+        }
+      })()
+    );
   }
-}
+
+  // Wait for all fetches to complete
+  await Promise.all(fetchPromises);
+
+  // Sort by created date (newest first)
+  allPosts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+
+  const hivePosts = allPosts.filter((p) => p.source === 'hive');
+  const softPosts = allPosts.filter((p) => p.source === 'soft');
+
+  return NextResponse.json({
+    success: true,
+    posts: allPosts.slice(0, limit),
+    community: {
+      id: community.id,
+      slug: community.slug,
+      name: community.name,
+    },
+    hasMore: allPosts.length > limit,
+    count: Math.min(allPosts.length, limit),
+    sources: { hive: hivePosts.length, soft: softPosts.length },
+  });
+});

@@ -7,10 +7,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createRequestContext, forbiddenError } from '@/lib/api/response';
+import { createApiHandler, forbiddenError } from '@/lib/api/response';
 import { requireAdmin } from '@/lib/admin/config';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { withCsrfProtection } from '@/lib/api/csrf';
+import { csrfProtected } from '@/lib/api/csrf';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,11 +28,9 @@ const bodySchema = z.object({
   cronType: z.enum(ALLOWED_CRON_TYPES),
 });
 
-export async function POST(request: NextRequest) {
-  return withCsrfProtection(request, async () => {
-    const ctx = createRequestContext(ROUTE);
-
-    const user = await getAuthenticatedUserFromSession(request);
+export const POST = csrfProtected(
+  createApiHandler(ROUTE, async (request, ctx) => {
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user || !requireAdmin(user)) {
       return forbiddenError('Admin access required', ctx.requestId);
     }
@@ -67,33 +65,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    try {
-      const origin = request.nextUrl.origin;
-      const cronUrl = `${origin}/api/cron/${cronType}`;
+    const origin = (request as NextRequest).nextUrl.origin;
+    const cronUrl = `${origin}/api/cron/${cronType}`;
 
-      ctx.log.info('Triggering cron job', { cronType, url: cronUrl, triggeredBy: user.username });
+    ctx.log.info('Triggering cron job', { cronType, url: cronUrl, triggeredBy: user.username });
 
-      const cronResponse = await fetch(cronUrl, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${cronSecret}`,
-          'Content-Type': 'application/json',
-        },
-      });
+    const cronResponse = await fetch(cronUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${cronSecret}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-      const cronData = await cronResponse.json();
+    const cronData = await cronResponse.json();
 
-      return NextResponse.json({
-        success: cronResponse.ok,
-        cronType,
-        statusCode: cronResponse.status,
-        result: cronData,
-        triggeredBy: user.username,
-        triggeredAt: new Date().toISOString(),
-      });
-    } catch (error) {
-      ctx.log.error('Failed to trigger cron job', error, { cronType });
-      return ctx.handleError(error);
-    }
-  });
-}
+    return NextResponse.json({
+      success: cronResponse.ok,
+      cronType,
+      statusCode: cronResponse.status,
+      result: cronData,
+      triggeredBy: user.username,
+      triggeredAt: new Date().toISOString(),
+    });
+  })
+);

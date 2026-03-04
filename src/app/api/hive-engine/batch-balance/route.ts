@@ -7,8 +7,8 @@
  * Optimized for feed pages to reduce N+1 queries.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createRequestContext } from '@/lib/api/response';
+import { NextResponse } from 'next/server';
+import { createApiHandler } from '@/lib/api/response';
 import { getHiveEngineClient, parseQuantity, isValidAccountName } from '@/lib/hive-engine/client';
 import { MEDALS_CONFIG, CONTRACTS, CACHE_TTLS, PREMIUM_TIERS } from '@/lib/hive-engine/constants';
 import type { TokenBalance } from '@/lib/hive-engine/types';
@@ -39,94 +39,89 @@ function getPremiumTierFromStake(staked: number): PremiumTier | null {
   return null;
 }
 
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
-  try {
-    const { searchParams } = new URL(request.url);
-    const accountsParam = searchParams.get('accounts');
+export const GET = createApiHandler(ROUTE, async (request) => {
+  const { searchParams } = new URL(request.url);
+  const accountsParam = searchParams.get('accounts');
 
-    // Validate accounts parameter
-    if (!accountsParam) {
-      return NextResponse.json(
-        { error: 'accounts parameter is required (comma-separated)' },
-        { status: 400 }
-      );
-    }
-
-    // Parse and deduplicate accounts
-    const accounts = [
-      ...new Set(
-        accountsParam
-          .split(',')
-          .map((a) => a.trim().toLowerCase())
-          .filter(Boolean)
-      ),
-    ];
-
-    if (accounts.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one valid account is required' },
-        { status: 400 }
-      );
-    }
-
-    if (accounts.length > MAX_ACCOUNTS) {
-      return NextResponse.json(
-        { error: `Maximum ${MAX_ACCOUNTS} accounts per request` },
-        { status: 400 }
-      );
-    }
-
-    // Validate all account names
-    const invalidAccounts = accounts.filter((a) => !isValidAccountName(a));
-    if (invalidAccounts.length > 0) {
-      return NextResponse.json(
-        { error: `Invalid account names: ${invalidAccounts.join(', ')}` },
-        { status: 400 }
-      );
-    }
-
-    // Fetch all balances in a single query using $in operator
-    const client = getHiveEngineClient();
-    const balances = await client.find<TokenBalance>(CONTRACTS.TOKENS, 'balances', {
-      account: { $in: accounts },
-      symbol: MEDALS_CONFIG.SYMBOL,
-    });
-
-    // Build response map with all accounts (including those with no balance)
-    const result: BatchBalanceResponse = {};
-
-    // Initialize all accounts with zero
-    for (const account of accounts) {
-      result[account] = {
-        staked: 0,
-        premiumTier: null,
-      };
-    }
-
-    // Fill in actual balances
-    for (const balance of balances) {
-      const staked = parseQuantity(balance.stake);
-      result[balance.account] = {
-        staked,
-        premiumTier: getPremiumTierFromStake(staked),
-      };
-    }
-
+  // Validate accounts parameter
+  if (!accountsParam) {
     return NextResponse.json(
-      {
-        success: true,
-        balances: result,
-        count: accounts.length,
-        timestamp: new Date().toISOString(),
-      },
-      {
-        headers: {
-          'Cache-Control': `public, s-maxage=${CACHE_TTLS.BALANCE}, stale-while-revalidate=${CACHE_TTLS.BALANCE * 2}`,
-        },
-      }
+      { error: 'accounts parameter is required (comma-separated)' },
+      { status: 400 }
     );
-  } catch (error) {
-    return ctx.handleError(error);
   }
-}
+
+  // Parse and deduplicate accounts
+  const accounts = [
+    ...new Set(
+      accountsParam
+        .split(',')
+        .map((a) => a.trim().toLowerCase())
+        .filter(Boolean)
+    ),
+  ];
+
+  if (accounts.length === 0) {
+    return NextResponse.json(
+      { error: 'At least one valid account is required' },
+      { status: 400 }
+    );
+  }
+
+  if (accounts.length > MAX_ACCOUNTS) {
+    return NextResponse.json(
+      { error: `Maximum ${MAX_ACCOUNTS} accounts per request` },
+      { status: 400 }
+    );
+  }
+
+  // Validate all account names
+  const invalidAccounts = accounts.filter((a) => !isValidAccountName(a));
+  if (invalidAccounts.length > 0) {
+    return NextResponse.json(
+      { error: `Invalid account names: ${invalidAccounts.join(', ')}` },
+      { status: 400 }
+    );
+  }
+
+  // Fetch all balances in a single query using $in operator
+  const client = getHiveEngineClient();
+  const balances = await client.find<TokenBalance>(CONTRACTS.TOKENS, 'balances', {
+    account: { $in: accounts },
+    symbol: MEDALS_CONFIG.SYMBOL,
+  });
+
+  // Build response map with all accounts (including those with no balance)
+  const result: BatchBalanceResponse = {};
+
+  // Initialize all accounts with zero
+  for (const account of accounts) {
+    result[account] = {
+      staked: 0,
+      premiumTier: null,
+    };
+  }
+
+  // Fill in actual balances
+  for (const balance of balances) {
+    const staked = parseQuantity(balance.stake);
+    result[balance.account] = {
+      staked,
+      premiumTier: getPremiumTierFromStake(staked),
+    };
+  }
+
+  return NextResponse.json(
+    {
+      success: true,
+      balances: result,
+      count: accounts.length,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      headers: {
+        'Cache-Control': `public, s-maxage=${CACHE_TTLS.BALANCE}, stale-while-revalidate=${CACHE_TTLS.BALANCE * 2}`,
+      },
+    }
+  );
+});

@@ -3,18 +3,16 @@ import { fetchComments } from '@/lib/hive-workerbee/content';
 import { getUserComments } from '@/lib/hive-workerbee/comments';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import { commentsQuerySchema, parseSearchParams } from '@/lib/api/validation';
-import { createRequestContext, validationError } from '@/lib/api/response';
+import { createApiHandler, validationError } from '@/lib/api/response';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const ROUTE = '/api/hive/comments';
 
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
-
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
   // Validate query parameters
-  const parseResult = parseSearchParams(request.nextUrl.searchParams, commentsQuerySchema);
+  const parseResult = parseSearchParams((request as NextRequest).nextUrl.searchParams, commentsQuerySchema);
 
   if (!parseResult.success) {
     return validationError(parseResult.error, ctx.requestId);
@@ -22,59 +20,55 @@ export async function GET(request: NextRequest) {
 
   const { author, permlink, username, limit } = parseResult.data;
 
-  try {
-    // Fetch comments for a specific post
-    if (author && permlink) {
-      ctx.log.debug('Fetching post comments', { author, permlink });
+  // Fetch comments for a specific post
+  if (author && permlink) {
+    ctx.log.debug('Fetching post comments', { author, permlink });
 
-      // Soft posts (permlinks starting with "soft-") don't exist on-chain
-      // so gracefully return empty comments instead of erroring
-      let comments: Awaited<ReturnType<typeof fetchComments>> = [];
-      try {
-        comments = await retryWithBackoff(() => fetchComments(author, permlink), {
-          maxRetries: 2,
-          initialDelay: 1000,
-          maxDelay: 10000,
-          backoffMultiplier: 2,
-        });
-      } catch (err) {
-        ctx.log.debug('Could not fetch comments, returning empty', {
-          author,
-          permlink,
-          error: String(err),
-        });
-      }
-
-      return NextResponse.json(
-        {
-          success: true,
-          comments: comments || [],
-          count: comments?.length || 0,
-        },
-        { headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' } }
-      );
+    // Soft posts (permlinks starting with "soft-") don't exist on-chain
+    // so gracefully return empty comments instead of erroring
+    let comments: Awaited<ReturnType<typeof fetchComments>> = [];
+    try {
+      comments = await retryWithBackoff(() => fetchComments(author, permlink), {
+        maxRetries: 2,
+        initialDelay: 1000,
+        maxDelay: 10000,
+        backoffMultiplier: 2,
+      });
+    } catch (err) {
+      ctx.log.debug('Could not fetch comments, returning empty', {
+        author,
+        permlink,
+        error: String(err),
+      });
     }
-
-    // Fetch user's comments (username is guaranteed by schema refinement)
-    ctx.log.debug('Fetching user comments', { username, limit });
-
-    const comments = await retryWithBackoff(() => getUserComments(username!, limit), {
-      maxRetries: 2,
-      initialDelay: 1000,
-      maxDelay: 10000,
-      backoffMultiplier: 2,
-    });
 
     return NextResponse.json(
       {
         success: true,
         comments: comments || [],
         count: comments?.length || 0,
-        username,
       },
       { headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' } }
     );
-  } catch (error) {
-    return ctx.handleError(error);
   }
-}
+
+  // Fetch user's comments (username is guaranteed by schema refinement)
+  ctx.log.debug('Fetching user comments', { username, limit });
+
+  const comments = await retryWithBackoff(() => getUserComments(username!, limit), {
+    maxRetries: 2,
+    initialDelay: 1000,
+    maxDelay: 10000,
+    backoffMultiplier: 2,
+  });
+
+  return NextResponse.json(
+    {
+      success: true,
+      comments: comments || [],
+      count: comments?.length || 0,
+      username,
+    },
+    { headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' } }
+  );
+});

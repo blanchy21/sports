@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import { accountSummaryQuerySchema, parseSearchParams } from '@/lib/api/validation';
-import { createRequestContext, validationError, notFoundError } from '@/lib/api/response';
+import { createApiHandler, validationError, notFoundError } from '@/lib/api/response';
 import { boundedCacheSet, cleanupExpired } from '@/lib/cache/bounded-map';
 
 // Cache configuration - 60 seconds for account data (good balance for profile info)
@@ -56,11 +56,12 @@ const CACHE_HEADERS = {
 
 const ROUTE = '/api/hive/account/summary';
 
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
-
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
   // Validate query parameters
-  const parseResult = parseSearchParams(request.nextUrl.searchParams, accountSummaryQuerySchema);
+  const parseResult = parseSearchParams(
+    (request as NextRequest).nextUrl.searchParams,
+    accountSummaryQuerySchema
+  );
 
   if (!parseResult.success) {
     return validationError(parseResult.error, ctx.requestId);
@@ -137,6 +138,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return ctx.handleError(error);
+    throw error;
   }
-}
+});

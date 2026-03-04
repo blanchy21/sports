@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 
 // Cache for GIF results to reduce API calls
 interface GifCache {
@@ -39,154 +39,151 @@ const searchSchema = z.object({
 
 const ROUTE = '/api/giphy';
 
-export async function GET(request: NextRequest) {
-  if (!request.cookies.has('sb_session')) {
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
+  // Session cookie check for authentication
+  const cookieHeader = request.headers.get('cookie') || '';
+  if (!cookieHeader.includes('sb_session=')) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
 
-  const ctx = createRequestContext(ROUTE);
-  try {
-    const { searchParams } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
 
-    // Validate and parse params
-    const params = searchSchema.safeParse({
-      q: searchParams.get('q') || undefined,
-      type: searchParams.get('type') || 'trending',
-      limit: searchParams.get('limit') || 24,
-      offset: searchParams.get('offset') || 0,
-    });
+  // Validate and parse params
+  const params = searchSchema.safeParse({
+    q: searchParams.get('q') || undefined,
+    type: searchParams.get('type') || 'trending',
+    limit: searchParams.get('limit') || 24,
+    offset: searchParams.get('offset') || 0,
+  });
 
-    if (!params.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid parameters',
-          details: params.error.issues,
-        },
-        { status: 400 }
-      );
-    }
-
-    const { q, type, limit, offset } = params.data;
-
-    // Require query for search type
-    if (type === 'search' && !q) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Query parameter "q" is required for search',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Get API key from environment (trim whitespace and strip quotes)
-    const apiKey = process.env.GIPHY_API_KEY?.trim().replace(/^["']|["']$/g, '');
-    if (!apiKey) {
-      ctx.log.error('GIPHY_API_KEY not configured');
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'GIF service not configured',
-        },
-        { status: 503 }
-      );
-    }
-
-    // Create cache key
-    const cacheKey =
-      type === 'search' ? `search:${q}:${limit}:${offset}` : `trending:${limit}:${offset}`;
-
-    // Check cache
-    const now = Date.now();
-    const cached = gifCache.get(cacheKey);
-    if (cached && now < cached.expiresAt) {
-      return NextResponse.json(
-        {
-          success: true,
-          data: cached.data,
-          cached: true,
-        },
-        { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
-      );
-    }
-
-    // Build Giphy API URL
-    const giphyUrl = new URL(
-      type === 'search'
-        ? 'https://api.giphy.com/v1/gifs/search'
-        : 'https://api.giphy.com/v1/gifs/trending'
-    );
-
-    giphyUrl.searchParams.set('api_key', apiKey);
-    giphyUrl.searchParams.set('limit', String(limit));
-    giphyUrl.searchParams.set('offset', String(offset));
-    giphyUrl.searchParams.set('rating', 'pg-13'); // Keep content appropriate
-
-    if (type === 'search' && q) {
-      giphyUrl.searchParams.set('q', q);
-    }
-
-    // Fetch from Giphy (no next.revalidate — we have in-memory caching already)
-    const response = await fetch(giphyUrl.toString(), {
-      headers: {
-        Accept: 'application/json',
+  if (!params.success) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Invalid parameters',
+        details: params.error.issues,
       },
-      cache: 'no-store',
+      { status: 400 }
+    );
+  }
+
+  const { q, type, limit, offset } = params.data;
+
+  // Require query for search type
+  if (type === 'search' && !q) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Query parameter "q" is required for search',
+      },
+      { status: 400 }
+    );
+  }
+
+  // Get API key from environment (trim whitespace and strip quotes)
+  const apiKey = process.env.GIPHY_API_KEY?.trim().replace(/^["']|["']$/g, '');
+  if (!apiKey) {
+    ctx.log.error('GIPHY_API_KEY not configured');
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'GIF service not configured',
+      },
+      { status: 503 }
+    );
+  }
+
+  // Create cache key
+  const cacheKey =
+    type === 'search' ? `search:${q}:${limit}:${offset}` : `trending:${limit}:${offset}`;
+
+  // Check cache
+  const now = Date.now();
+  const cached = gifCache.get(cacheKey);
+  if (cached && now < cached.expiresAt) {
+    return NextResponse.json(
+      {
+        success: true,
+        data: cached.data,
+        cached: true,
+      },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    );
+  }
+
+  // Build Giphy API URL
+  const giphyUrl = new URL(
+    type === 'search'
+      ? 'https://api.giphy.com/v1/gifs/search'
+      : 'https://api.giphy.com/v1/gifs/trending'
+  );
+
+  giphyUrl.searchParams.set('api_key', apiKey);
+  giphyUrl.searchParams.set('limit', String(limit));
+  giphyUrl.searchParams.set('offset', String(offset));
+  giphyUrl.searchParams.set('rating', 'pg-13'); // Keep content appropriate
+
+  if (type === 'search' && q) {
+    giphyUrl.searchParams.set('q', q);
+  }
+
+  // Fetch from Giphy (no next.revalidate — we have in-memory caching already)
+  const response = await fetch(giphyUrl.toString(), {
+    headers: {
+      Accept: 'application/json',
+    },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'Unknown error');
+    ctx.log.error(`HTTP ${response.status}: ${errorText}`, undefined, {
+      keyLength: apiKey.length,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      ctx.log.error(`HTTP ${response.status}: ${errorText}`, undefined, {
-        keyLength: apiKey.length,
+    // Return cached data if available, even if expired
+    if (cached) {
+      return NextResponse.json({
+        success: true,
+        data: cached.data,
+        cached: true,
+        expired: true,
       });
-
-      // Return cached data if available, even if expired
-      if (cached) {
-        return NextResponse.json({
-          success: true,
-          data: cached.data,
-          cached: true,
-          expired: true,
-        });
-      }
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to fetch GIFs',
-        },
-        { status: 502 }
-      );
-    }
-
-    const data: GiphyResponse = await response.json();
-    const results = data.data || [];
-
-    // Update cache
-    gifCache.set(cacheKey, {
-      data: results,
-      timestamp: now,
-      expiresAt: now + CACHE_DURATION,
-    });
-
-    // Clean old cache entries (keep max 100)
-    if (gifCache.size > 100) {
-      const oldestKey = gifCache.keys().next().value;
-      if (oldestKey) {
-        gifCache.delete(oldestKey);
-      }
     }
 
     return NextResponse.json(
       {
-        success: true,
-        data: results,
-        cached: false,
+        success: false,
+        error: 'Failed to fetch GIFs',
       },
-      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+      { status: 502 }
     );
-  } catch (error) {
-    return ctx.handleError(error);
   }
-}
+
+  const data: GiphyResponse = await response.json();
+  const results = data.data || [];
+
+  // Update cache
+  gifCache.set(cacheKey, {
+    data: results,
+    timestamp: now,
+    expiresAt: now + CACHE_DURATION,
+  });
+
+  // Clean old cache entries (keep max 100)
+  if (gifCache.size > 100) {
+    const oldestKey = gifCache.keys().next().value;
+    if (oldestKey) {
+      gifCache.delete(oldestKey);
+    }
+  }
+
+  return NextResponse.json(
+    {
+      success: true,
+      data: results,
+      cached: false,
+    },
+    { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+  );
+});

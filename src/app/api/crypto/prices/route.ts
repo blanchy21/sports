@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 
 // Cache for price data to avoid excessive API calls
 interface PriceCache {
@@ -27,9 +27,8 @@ const CACHE_HEADERS = {
 
 const ROUTE = '/api/crypto/prices';
 
-export async function GET(request: NextRequest) {
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
   const startTime = Date.now();
-  const ctx = createRequestContext(ROUTE);
   const url = request.url;
 
   ctx.log.debug('Request started', { url });
@@ -216,4 +215,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

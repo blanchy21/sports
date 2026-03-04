@@ -10,9 +10,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import { createClaimRewardsOperation } from '@/lib/hive-workerbee/shared';
-import { withCsrfProtection } from '@/lib/api/csrf';
+import { csrfProtected } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,86 +38,80 @@ function parseAsset(assetString: string): { amount: number; symbol: string } {
   return { amount: parseFloat(amount || '0'), symbol: symbol || '' };
 }
 
-export async function POST(request: NextRequest) {
-  return withCsrfProtection(request, async () => {
-    const ctx = createRequestContext(ROUTE);
-
-    const user = await getAuthenticatedUserFromSession(request);
+export const POST = csrfProtected(
+  createApiHandler(ROUTE, async (request) => {
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    try {
-      const body = await request.json();
-      const { account } = body;
+    const body = await request.json();
+    const { account } = body;
 
-      if (!account || !isValidAccountName(account)) {
-        return NextResponse.json({ error: 'Valid account is required' }, { status: 400 });
-      }
-
-      if (user.hiveUsername !== account && user.username !== account) {
-        return NextResponse.json(
-          { error: 'Cannot claim rewards for other accounts' },
-          { status: 403 }
-        );
-      }
-
-      // Fetch account and global properties in parallel
-      const [accountResult, globalPropsResult] = await Promise.all([
-        makeHiveApiCall('condenser_api', 'get_accounts', [[account]]),
-        makeHiveApiCall('condenser_api', 'get_dynamic_global_properties', []),
-      ]);
-      const accounts = accountResult as HiveAccount[];
-
-      if (!accounts || accounts.length === 0) {
-        return NextResponse.json({ error: 'Account not found' }, { status: 404 });
-      }
-
-      const accountData = accounts[0];
-      const rewardHive = parseAsset(accountData.reward_hive_balance);
-      const rewardHbd = parseAsset(accountData.reward_hbd_balance);
-      const rewardVesting = parseAsset(accountData.reward_vesting_balance);
-
-      // Check if there are any rewards to claim
-      if (rewardHive.amount === 0 && rewardHbd.amount === 0 && rewardVesting.amount === 0) {
-        return NextResponse.json({ error: 'No pending rewards to claim' }, { status: 400 });
-      }
-
-      const operation = createClaimRewardsOperation(
-        account,
-        accountData.reward_hive_balance,
-        accountData.reward_hbd_balance,
-        accountData.reward_vesting_balance
-      );
-
-      // Convert VESTS to HP for display
-      let hp: number | undefined;
-      if (rewardVesting.amount > 0 && globalPropsResult) {
-        const gp = globalPropsResult as {
-          total_vesting_shares?: string;
-          total_vesting_fund_hive?: string;
-        };
-        const totalShares = parseFloat(gp.total_vesting_shares || '0');
-        const totalFund = parseFloat(gp.total_vesting_fund_hive || '0');
-        if (totalShares > 0) {
-          hp = (rewardVesting.amount / totalShares) * totalFund;
-        }
-      }
-
-      return NextResponse.json({
-        success: true,
-        operation,
-        operationType: 'claim_reward_balance',
-        rewards: {
-          hive: accountData.reward_hive_balance,
-          hbd: accountData.reward_hbd_balance,
-          vesting: accountData.reward_vesting_balance,
-          ...(hp !== undefined && { hp }),
-        },
-        message: `Claim ${accountData.reward_hive_balance}, ${accountData.reward_hbd_balance}, ${accountData.reward_vesting_balance}`,
-      });
-    } catch (error) {
-      return ctx.handleError(error);
+    if (!account || !isValidAccountName(account)) {
+      return NextResponse.json({ error: 'Valid account is required' }, { status: 400 });
     }
-  });
-}
+
+    if (user.hiveUsername !== account && user.username !== account) {
+      return NextResponse.json(
+        { error: 'Cannot claim rewards for other accounts' },
+        { status: 403 }
+      );
+    }
+
+    // Fetch account and global properties in parallel
+    const [accountResult, globalPropsResult] = await Promise.all([
+      makeHiveApiCall('condenser_api', 'get_accounts', [[account]]),
+      makeHiveApiCall('condenser_api', 'get_dynamic_global_properties', []),
+    ]);
+    const accounts = accountResult as HiveAccount[];
+
+    if (!accounts || accounts.length === 0) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+    }
+
+    const accountData = accounts[0];
+    const rewardHive = parseAsset(accountData.reward_hive_balance);
+    const rewardHbd = parseAsset(accountData.reward_hbd_balance);
+    const rewardVesting = parseAsset(accountData.reward_vesting_balance);
+
+    // Check if there are any rewards to claim
+    if (rewardHive.amount === 0 && rewardHbd.amount === 0 && rewardVesting.amount === 0) {
+      return NextResponse.json({ error: 'No pending rewards to claim' }, { status: 400 });
+    }
+
+    const operation = createClaimRewardsOperation(
+      account,
+      accountData.reward_hive_balance,
+      accountData.reward_hbd_balance,
+      accountData.reward_vesting_balance
+    );
+
+    // Convert VESTS to HP for display
+    let hp: number | undefined;
+    if (rewardVesting.amount > 0 && globalPropsResult) {
+      const gp = globalPropsResult as {
+        total_vesting_shares?: string;
+        total_vesting_fund_hive?: string;
+      };
+      const totalShares = parseFloat(gp.total_vesting_shares || '0');
+      const totalFund = parseFloat(gp.total_vesting_fund_hive || '0');
+      if (totalShares > 0) {
+        hp = (rewardVesting.amount / totalShares) * totalFund;
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      operation,
+      operationType: 'claim_reward_balance',
+      rewards: {
+        hive: accountData.reward_hive_balance,
+        hbd: accountData.reward_hbd_balance,
+        vesting: accountData.reward_vesting_balance,
+        ...(hp !== undefined && { hp }),
+      },
+      message: `Claim ${accountData.reward_hive_balance}, ${accountData.reward_hbd_balance}, ${accountData.reward_vesting_balance}`,
+    });
+  })
+);

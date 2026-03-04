@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { fetchFollowing } from '@/lib/hive-workerbee/social';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 import { hiveUsernameSchema, limitSchema, parseSearchParams } from '@/lib/api/validation';
 
 export const runtime = 'nodejs';
@@ -15,10 +15,11 @@ const querySchema = z.object({
   before: z.string().max(256).optional(),
 });
 
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
-
-  const parseResult = parseSearchParams(request.nextUrl.searchParams, querySchema);
+export const GET = createApiHandler(ROUTE, async (request) => {
+  const parseResult = parseSearchParams(
+    (request as NextRequest).nextUrl.searchParams,
+    querySchema
+  );
   if (!parseResult.success) {
     return NextResponse.json(
       { success: false, error: parseResult.error.issues.map((i) => i.message).join('; ') },
@@ -28,20 +29,16 @@ export async function GET(request: NextRequest) {
 
   const { username, limit, before } = parseResult.data;
 
-  try {
-    const result = await fetchFollowing(username, { limit, before });
+  const result = await fetchFollowing(username, { limit, before });
 
-    return NextResponse.json(
-      {
-        success: true,
-        relationships: result.relationships,
-        hasMore: result.hasMore,
-        nextCursor: result.nextCursor,
-        total: result.total,
-      },
-      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
-    );
-  } catch (error) {
-    return ctx.handleError(error);
-  }
-}
+  return NextResponse.json(
+    {
+      success: true,
+      relationships: result.relationships,
+      hasMore: result.hasMore,
+      nextCursor: result.nextCursor,
+      total: result.total,
+    },
+    { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
+  );
+});

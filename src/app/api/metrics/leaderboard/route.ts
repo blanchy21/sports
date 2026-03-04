@@ -18,7 +18,7 @@ import {
   RATE_LIMITS,
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 
 const CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' };
 
@@ -32,9 +32,9 @@ const ROUTE = '/api/metrics/leaderboard';
  * - category: specific category (returns all if not specified)
  * - limit: max entries per category (default: 10)
  */
-export async function GET(request: NextRequest) {
+export const GET = createApiHandler(ROUTE, async (request) => {
   // Rate limiting
-  const clientId = getClientIdentifier(request);
+  const clientId = getClientIdentifier(request as NextRequest);
   const rateLimit = await checkRateLimit(clientId, RATE_LIMITS.read, 'read');
   if (!rateLimit.success) {
     return NextResponse.json(
@@ -43,67 +43,62 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const ctx = createRequestContext(ROUTE);
-  try {
-    const { searchParams } = new URL(request.url);
-    const weekId = searchParams.get('weekId') || getCurrentWeekId();
-    const category = searchParams.get('category') as RewardCategory | null;
-    const parsedLimit = parseInt(searchParams.get('limit') || '10', 10);
-    const limit = Math.min(Math.max(Number.isNaN(parsedLimit) ? 10 : parsedLimit, 1), 100);
+  const { searchParams } = new URL(request.url);
+  const weekId = searchParams.get('weekId') || getCurrentWeekId();
+  const category = searchParams.get('category') as RewardCategory | null;
+  const parsedLimit = parseInt(searchParams.get('limit') || '10', 10);
+  const limit = Math.min(Math.max(Number.isNaN(parsedLimit) ? 10 : parsedLimit, 1), 100);
 
-    // If specific category requested
-    if (category) {
-      const entries = await getCategoryLeaderboard(category, weekId, limit);
-
-      return NextResponse.json(
-        {
-          success: true,
-          weekId,
-          category,
-          entries,
-        },
-        { headers: CACHE_HEADERS }
-      );
-    }
-
-    // Get all leaderboards
-    let leaderboards = await getLeaderboards(weekId);
-
-    // If no leaderboards exist for current week, generate them
-    if (!leaderboards && weekId === getCurrentWeekId()) {
-      leaderboards = await generateWeeklyLeaderboards(weekId);
-    }
-
-    if (!leaderboards) {
-      return NextResponse.json(
-        {
-          success: true,
-          weekId,
-          leaderboards: null,
-          message: 'No leaderboard data available for this week',
-        },
-        { headers: CACHE_HEADERS }
-      );
-    }
-
-    // Apply limit to each category
-    const limitedLeaderboards = Object.fromEntries(
-      Object.entries(leaderboards.leaderboards).map(([cat, entries]) => [
-        cat,
-        entries.slice(0, limit),
-      ])
-    );
+  // If specific category requested
+  if (category) {
+    const entries = await getCategoryLeaderboard(category, weekId, limit);
 
     return NextResponse.json(
       {
         success: true,
         weekId,
-        generatedAt: leaderboards.generatedAt,
-        leaderboards: limitedLeaderboards,
+        category,
+        entries,
       },
       { headers: CACHE_HEADERS }
     );
-  } catch (error) {
-    return ctx.handleError(error);
   }
-}
+
+  // Get all leaderboards
+  let leaderboards = await getLeaderboards(weekId);
+
+  // If no leaderboards exist for current week, generate them
+  if (!leaderboards && weekId === getCurrentWeekId()) {
+    leaderboards = await generateWeeklyLeaderboards(weekId);
+  }
+
+  if (!leaderboards) {
+    return NextResponse.json(
+      {
+        success: true,
+        weekId,
+        leaderboards: null,
+        message: 'No leaderboard data available for this week',
+      },
+      { headers: CACHE_HEADERS }
+    );
+  }
+
+  // Apply limit to each category
+  const limitedLeaderboards = Object.fromEntries(
+    Object.entries(leaderboards.leaderboards).map(([cat, entries]) => [
+      cat,
+      entries.slice(0, limit),
+    ])
+  );
+
+  return NextResponse.json(
+    {
+      success: true,
+      weekId,
+      generatedAt: leaderboards.generatedAt,
+      leaderboards: limitedLeaderboards,
+    },
+    { headers: CACHE_HEADERS }
+  );
+});

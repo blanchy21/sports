@@ -9,7 +9,7 @@ import {
   isHiveDuplicateError,
 } from '@/lib/hive-workerbee/match-threads';
 import { fetchAllEvents } from '@/lib/sports/espn';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { validateCsrf } from '@/lib/api/csrf';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
@@ -29,18 +29,15 @@ const ROUTE = '/api/match-threads/[eventId]/ensure';
  * Fallback for when the cron hasn't run yet.
  * Requires authentication.
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ eventId: string }> }
-) {
+export const POST = createApiHandler(ROUTE, async (request) => {
   // Authentication check
-  const user = await getAuthenticatedUserFromSession(request);
+  const user = await getAuthenticatedUserFromSession(request as NextRequest);
   if (!user) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
 
   // CSRF validation
-  if (!validateCsrf(request)) {
+  if (!validateCsrf(request as NextRequest)) {
     return NextResponse.json({ success: false, error: 'CSRF validation failed' }, { status: 403 });
   }
 
@@ -72,82 +69,79 @@ export async function POST(
     );
   }
 
-  const ctx = createRequestContext(ROUTE);
-  try {
-    const { eventId } = await params;
-    const permlink = getMatchThreadPermlink(eventId);
+  const url = new URL(request.url);
+  const segments = url.pathname.split('/');
+  const eventId = segments[3]; // /api/match-threads/[eventId]/ensure
+  const permlink = getMatchThreadPermlink(eventId);
 
-    // Fast path: already created in this process
-    if (createdContainers.has(permlink)) {
-      return NextResponse.json({ success: true, permlink, alreadyExists: true });
-    }
-
-    // Fetch event data from ESPN to build the container
-    const { events } = await fetchAllEvents();
-    const event = events.find((e) => e.id === eventId);
-
-    if (!event) {
-      return NextResponse.json(
-        { success: false, error: `Event ${eventId} not found` },
-        { status: 404 }
-      );
-    }
-
-    const title = event.teams
-      ? `Match Thread: ${event.teams.home} vs ${event.teams.away}`
-      : `Match Thread: ${event.name}`;
-
-    const body = buildMatchThreadBody(event);
-    const metadata = buildMatchThreadMetadata(event);
-
-    const result = await broadcastWithKey(
-      [
-        [
-          'comment',
-          {
-            parent_author: '',
-            parent_permlink: SPORTSBITES_CONFIG.COMMUNITY_ID,
-            author: MATCH_THREAD_CONFIG.PARENT_AUTHOR,
-            permlink,
-            title,
-            body,
-            json_metadata: metadata,
-          },
-        ],
-        [
-          'comment_options',
-          {
-            author: MATCH_THREAD_CONFIG.PARENT_AUTHOR,
-            permlink,
-            max_accepted_payout: '0.000 HBD',
-            percent_hbd: 10000,
-            allow_votes: true,
-            allow_curation_rewards: true,
-            extensions: [],
-          },
-        ],
-      ],
-      postingKey
-    );
-
-    if (result.success) {
-      createdContainers.add(permlink);
-      return NextResponse.json({
-        success: true,
-        permlink,
-        created: true,
-        transactionId: result.transactionId,
-      });
-    }
-
-    // Duplicate = already exists
-    if (isHiveDuplicateError(result.error)) {
-      createdContainers.add(permlink);
-      return NextResponse.json({ success: true, permlink, alreadyExists: true });
-    }
-
-    throw new Error(result.error || 'Failed to create container');
-  } catch (error) {
-    return ctx.handleError(error);
+  // Fast path: already created in this process
+  if (createdContainers.has(permlink)) {
+    return NextResponse.json({ success: true, permlink, alreadyExists: true });
   }
-}
+
+  // Fetch event data from ESPN to build the container
+  const { events } = await fetchAllEvents();
+  const event = events.find((e) => e.id === eventId);
+
+  if (!event) {
+    return NextResponse.json(
+      { success: false, error: `Event ${eventId} not found` },
+      { status: 404 }
+    );
+  }
+
+  const title = event.teams
+    ? `Match Thread: ${event.teams.home} vs ${event.teams.away}`
+    : `Match Thread: ${event.name}`;
+
+  const body = buildMatchThreadBody(event);
+  const metadata = buildMatchThreadMetadata(event);
+
+  const result = await broadcastWithKey(
+    [
+      [
+        'comment',
+        {
+          parent_author: '',
+          parent_permlink: SPORTSBITES_CONFIG.COMMUNITY_ID,
+          author: MATCH_THREAD_CONFIG.PARENT_AUTHOR,
+          permlink,
+          title,
+          body,
+          json_metadata: metadata,
+        },
+      ],
+      [
+        'comment_options',
+        {
+          author: MATCH_THREAD_CONFIG.PARENT_AUTHOR,
+          permlink,
+          max_accepted_payout: '0.000 HBD',
+          percent_hbd: 10000,
+          allow_votes: true,
+          allow_curation_rewards: true,
+          extensions: [],
+        },
+      ],
+    ],
+    postingKey
+  );
+
+  if (result.success) {
+    createdContainers.add(permlink);
+    return NextResponse.json({
+      success: true,
+      permlink,
+      created: true,
+      transactionId: result.transactionId,
+    });
+  }
+
+  // Duplicate = already exists
+  if (isHiveDuplicateError(result.error)) {
+    createdContainers.add(permlink);
+    return NextResponse.json({ success: true, permlink, alreadyExists: true });
+  }
+
+  throw new Error(result.error || 'Failed to create container');
+});

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
-import { createRequestContext, validationError } from '@/lib/api/response';
+import { createApiHandler, validationError } from '@/lib/api/response';
 import { SoftPost } from '@/types/auth';
 // Use SportsblockPost from workerbee/content which matches what the content functions return
 import { SportsblockPost } from '@/lib/hive-workerbee/content';
@@ -350,186 +350,117 @@ function hivePostToUnified(post: SportsblockPost): UnifiedPost {
  * - includeSoft: boolean (default true)
  * - sportCategory: string (filter by sport)
  */
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
+  const searchParams = Object.fromEntries((request as NextRequest).nextUrl.searchParams);
+  const parseResult = unifiedPostsQuerySchema.safeParse(searchParams);
 
-  try {
-    const searchParams = Object.fromEntries(request.nextUrl.searchParams);
-    const parseResult = unifiedPostsQuerySchema.safeParse(searchParams);
+  if (!parseResult.success) {
+    return validationError(parseResult.error, ctx.requestId);
+  }
 
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
+  const { username, authorId, limit, before, includeHive, includeSoft, sportCategory } =
+    parseResult.data;
 
-    const { username, authorId, limit, before, includeHive, includeSoft, sportCategory } =
-      parseResult.data;
+  ctx.log.debug('Fetching unified posts', {
+    username,
+    authorId,
+    limit,
+    includeHive,
+    includeSoft,
+    sportCategory,
+  });
 
-    ctx.log.debug('Fetching unified posts', {
-      username,
-      authorId,
-      limit,
-      includeHive,
-      includeSoft,
-      sportCategory,
-    });
+  const allPosts: UnifiedPost[] = [];
 
-    const allPosts: UnifiedPost[] = [];
+  const cacheHeaders = {
+    'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+  };
 
-    const cacheHeaders = {
-      'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
-    };
+  // Decode composite cursor once for all paths
+  const cursor = before ? decodeCursor(before) : undefined;
 
-    // Decode composite cursor once for all paths
-    const cursor = before ? decodeCursor(before) : undefined;
-
-    // If authorId is provided, only fetch soft posts
-    if (authorId) {
-      if (includeSoft) {
-        const softPosts = await getSoftPostsByAuthorId(
-          authorId,
-          limit + 1,
-          cursor?.soft,
-          includeHive
-        );
-        allPosts.push(...softPosts.map(softPostToUnified));
-      }
-
-      const hasMore = allPosts.length > limit;
-      const sliced = allPosts.slice(0, limit);
-      const nextCursor = buildNextCursor(sliced, hasMore, cursor);
-
-      return NextResponse.json(
-        {
-          success: true,
-          posts: sliced,
-          count: sliced.length,
-          hasMore,
-          nextCursor,
-          sources: { hive: 0, soft: sliced.length },
-        },
-        { headers: cacheHeaders }
+  // If authorId is provided, only fetch soft posts
+  if (authorId) {
+    if (includeSoft) {
+      const softPosts = await getSoftPostsByAuthorId(
+        authorId,
+        limit + 1,
+        cursor?.soft,
+        includeHive
       );
+      allPosts.push(...softPosts.map(softPostToUnified));
     }
 
-    // If username is provided, check both systems
-    if (username) {
-      // Start profile check and soft post fetch in parallel
-      const fetchPromises: Promise<void>[] = [];
+    const hasMore = allPosts.length > limit;
+    const sliced = allPosts.slice(0, limit);
+    const nextCursor = buildNextCursor(sliced, hasMore, cursor);
 
-      // Soft posts don't depend on profile -- start immediately
-      if (includeSoft) {
-        fetchPromises.push(
-          getSoftPostsByUsername(username, limit + 1, cursor?.soft, includeHive)
-            .then((posts) => {
-              allPosts.push(...posts.map(softPostToUnified));
-            })
-            .catch((error) => {
-              ctx.log.warn('Failed to fetch soft posts', { error, username });
-            })
-        );
-      }
+    return NextResponse.json(
+      {
+        success: true,
+        posts: sliced,
+        count: sliced.length,
+        hasMore,
+        nextCursor,
+        sources: { hive: 0, soft: sliced.length },
+      },
+      { headers: cacheHeaders }
+    );
+  }
 
-      // Profile check runs in parallel with soft post fetch
-      const profilePromise = prisma.profile.findUnique({ where: { username } });
-
-      // Fetch Hive posts if enabled -- gate on profile result to skip for soft-only users
-      if (includeHive) {
-        fetchPromises.push(
-          (async () => {
-            try {
-              const softProfile = await profilePromise;
-              const isSoftUser = softProfile && !softProfile.isHiveUser;
-              if (isSoftUser) return;
-
-              const { getUserPosts } = await import('@/lib/hive-workerbee/content');
-              const hivePosts = await retryWithBackoff(
-                () => getUserPosts(username, limit, cursor?.hive),
-                {
-                  maxRetries: 1,
-                  initialDelay: 500,
-                  maxDelay: 2000,
-                  backoffMultiplier: 2,
-                }
-              );
-              if (hivePosts && hivePosts.length > 0) {
-                allPosts.push(...hivePosts.map(hivePostToUnified));
-              }
-            } catch (error) {
-              ctx.log.warn('Failed to fetch Hive posts', { error, username });
-            }
-          })()
-        );
-      }
-
-      await Promise.all(fetchPromises);
-      const softProfile = await profilePromise;
-      const isSoftUser = softProfile && !softProfile.isHiveUser;
-
-      // Sort by created date (newest first)
-      allPosts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
-
-      const hasMore = allPosts.length > limit;
-      const sliced = allPosts.slice(0, limit);
-      const nextCursor = buildNextCursor(sliced, hasMore, cursor);
-
-      const hivePosts = sliced.filter((p) => p.source === 'hive');
-      const softPosts = sliced.filter((p) => p.source === 'soft');
-
-      return NextResponse.json(
-        {
-          success: true,
-          posts: sliced,
-          count: sliced.length,
-          hasMore,
-          nextCursor,
-          sources: { hive: hivePosts.length, soft: softPosts.length },
-          isSoftUser,
-        },
-        { headers: cacheHeaders }
-      );
-    }
-
-    // No username - fetch general feed
+  // If username is provided, check both systems
+  if (username) {
+    // Start profile check and soft post fetch in parallel
     const fetchPromises: Promise<void>[] = [];
 
-    // Fetch soft posts
+    // Soft posts don't depend on profile -- start immediately
     if (includeSoft) {
       fetchPromises.push(
-        getAllSoftPosts(limit + 1, cursor?.soft, includeHive)
+        getSoftPostsByUsername(username, limit + 1, cursor?.soft, includeHive)
           .then((posts) => {
-            let filtered = posts;
-            if (sportCategory) {
-              filtered = posts.filter((p) => p.sportCategory === sportCategory);
-            }
-            allPosts.push(...filtered.map(softPostToUnified));
+            allPosts.push(...posts.map(softPostToUnified));
           })
           .catch((error) => {
-            ctx.log.warn('Failed to fetch soft posts feed', { error });
+            ctx.log.warn('Failed to fetch soft posts', { error, username });
           })
       );
     }
 
-    // Fetch Hive posts
+    // Profile check runs in parallel with soft post fetch
+    const profilePromise = prisma.profile.findUnique({ where: { username } });
+
+    // Fetch Hive posts if enabled -- gate on profile result to skip for soft-only users
     if (includeHive) {
       fetchPromises.push(
         (async () => {
           try {
-            const { fetchSportsblockPosts } = await import('@/lib/hive-workerbee/content');
-            const result = await retryWithBackoff(
-              () => fetchSportsblockPosts({ limit, sportCategory, before: cursor?.hive }),
-              { maxRetries: 1, initialDelay: 500, maxDelay: 2000, backoffMultiplier: 2 }
+            const softProfile = await profilePromise;
+            const isSoftUser = softProfile && !softProfile.isHiveUser;
+            if (isSoftUser) return;
+
+            const { getUserPosts } = await import('@/lib/hive-workerbee/content');
+            const hivePosts = await retryWithBackoff(
+              () => getUserPosts(username, limit, cursor?.hive),
+              {
+                maxRetries: 1,
+                initialDelay: 500,
+                maxDelay: 2000,
+                backoffMultiplier: 2,
+              }
             );
-            if (result.posts && result.posts.length > 0) {
-              allPosts.push(...result.posts.map(hivePostToUnified));
+            if (hivePosts && hivePosts.length > 0) {
+              allPosts.push(...hivePosts.map(hivePostToUnified));
             }
           } catch (error) {
-            ctx.log.warn('Failed to fetch Hive posts feed', { error });
+            ctx.log.warn('Failed to fetch Hive posts', { error, username });
           }
         })()
       );
     }
 
     await Promise.all(fetchPromises);
+    const softProfile = await profilePromise;
+    const isSoftUser = softProfile && !softProfile.isHiveUser;
 
     // Sort by created date (newest first)
     allPosts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
@@ -549,10 +480,73 @@ export async function GET(request: NextRequest) {
         hasMore,
         nextCursor,
         sources: { hive: hivePosts.length, soft: softPosts.length },
+        isSoftUser,
       },
       { headers: cacheHeaders }
     );
-  } catch (error) {
-    return ctx.handleError(error);
   }
-}
+
+  // No username - fetch general feed
+  const fetchPromises: Promise<void>[] = [];
+
+  // Fetch soft posts
+  if (includeSoft) {
+    fetchPromises.push(
+      getAllSoftPosts(limit + 1, cursor?.soft, includeHive)
+        .then((posts) => {
+          let filtered = posts;
+          if (sportCategory) {
+            filtered = posts.filter((p) => p.sportCategory === sportCategory);
+          }
+          allPosts.push(...filtered.map(softPostToUnified));
+        })
+        .catch((error) => {
+          ctx.log.warn('Failed to fetch soft posts feed', { error });
+        })
+    );
+  }
+
+  // Fetch Hive posts
+  if (includeHive) {
+    fetchPromises.push(
+      (async () => {
+        try {
+          const { fetchSportsblockPosts } = await import('@/lib/hive-workerbee/content');
+          const result = await retryWithBackoff(
+            () => fetchSportsblockPosts({ limit, sportCategory, before: cursor?.hive }),
+            { maxRetries: 1, initialDelay: 500, maxDelay: 2000, backoffMultiplier: 2 }
+          );
+          if (result.posts && result.posts.length > 0) {
+            allPosts.push(...result.posts.map(hivePostToUnified));
+          }
+        } catch (error) {
+          ctx.log.warn('Failed to fetch Hive posts feed', { error });
+        }
+      })()
+    );
+  }
+
+  await Promise.all(fetchPromises);
+
+  // Sort by created date (newest first)
+  allPosts.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+
+  const hasMore = allPosts.length > limit;
+  const sliced = allPosts.slice(0, limit);
+  const nextCursor = buildNextCursor(sliced, hasMore, cursor);
+
+  const hivePosts = sliced.filter((p) => p.source === 'hive');
+  const softPosts = sliced.filter((p) => p.source === 'soft');
+
+  return NextResponse.json(
+    {
+      success: true,
+      posts: sliced,
+      count: sliced.length,
+      hasMore,
+      nextCursor,
+      sources: { hive: hivePosts.length, soft: softPosts.length },
+    },
+    { headers: cacheHeaders }
+  );
+});

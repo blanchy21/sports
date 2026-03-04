@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 import {
   fetchSportsbites,
   getSportsbite,
@@ -44,8 +44,8 @@ const querySchema = z.object({
   permlink: z.string().optional(),
 });
 
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
+  const searchParams = (request as NextRequest).nextUrl.searchParams;
 
   const parseResult = querySchema.safeParse({
     limit: searchParams.get('limit') || 20,
@@ -71,67 +71,66 @@ export async function GET(request: NextRequest) {
   // Deterministic cleanup every 20 requests
   if (++sportsbiteRequestCount % 20 === 0) cleanupCache();
 
-  const ctx = createRequestContext(ROUTE);
-  try {
-    // Single sportsbite lookup
-    if (author && permlink) {
-      const cacheKey = `${author}/${permlink}`;
-      const cached = singleCache.get(cacheKey);
+  // Single sportsbite lookup
+  if (author && permlink) {
+    const cacheKey = `${author}/${permlink}`;
+    const cached = singleCache.get(cacheKey);
 
-      if (cached && now < cached.expiresAt) {
-        return NextResponse.json({
-          success: true,
-          sportsbite: cached.data,
-          cached: true,
-        });
-      }
-
-      const sportsbite = await retryWithBackoff(() => getSportsbite(author, permlink), {
-        maxRetries: 2,
-        initialDelay: 500,
-        maxDelay: 5000,
-        backoffMultiplier: 2,
-      });
-
-      if (sportsbite) {
-        boundedCacheSet(
-          singleCache,
-          cacheKey,
-          {
-            data: sportsbite,
-            expiresAt: now + SINGLE_CACHE_DURATION,
-          },
-          MAX_SINGLE_CACHE_SIZE
-        );
-      }
-
+    if (cached && now < cached.expiresAt) {
       return NextResponse.json({
         success: true,
-        sportsbite: sportsbite || null,
-        cached: false,
-      });
-    }
-
-    // Feed lookup (rolling 7-day aggregation)
-    const feedCacheKey = `feed:${limit}:${before || 'latest'}:${author || 'all'}`;
-    const cachedFeed = feedCache.get(feedCacheKey);
-
-    if (cachedFeed && now < cachedFeed.expiresAt && cachedFeed.data) {
-      return NextResponse.json({
-        success: cachedFeed.data.success,
-        sportsbites: cachedFeed.data.sportsbites,
-        hasMore: cachedFeed.data.hasMore,
-        nextCursor: cachedFeed.data.nextCursor,
-        count: cachedFeed.data.count,
-        config: {
-          maxChars: SPORTSBITES_CONFIG.MAX_CHARS,
-          parentAuthor: SPORTSBITES_CONFIG.PARENT_AUTHOR,
-        },
+        sportsbite: cached.data,
         cached: true,
-        timestamp: cachedFeed.timestamp,
       });
     }
 
+    const sportsbite = await retryWithBackoff(() => getSportsbite(author, permlink), {
+      maxRetries: 2,
+      initialDelay: 500,
+      maxDelay: 5000,
+      backoffMultiplier: 2,
+    });
+
+    if (sportsbite) {
+      boundedCacheSet(
+        singleCache,
+        cacheKey,
+        {
+          data: sportsbite,
+          expiresAt: now + SINGLE_CACHE_DURATION,
+        },
+        MAX_SINGLE_CACHE_SIZE
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      sportsbite: sportsbite || null,
+      cached: false,
+    });
+  }
+
+  // Feed lookup (rolling 7-day aggregation)
+  const feedCacheKey = `feed:${limit}:${before || 'latest'}:${author || 'all'}`;
+  const cachedFeed = feedCache.get(feedCacheKey);
+
+  if (cachedFeed && now < cachedFeed.expiresAt && cachedFeed.data) {
+    return NextResponse.json({
+      success: cachedFeed.data.success,
+      sportsbites: cachedFeed.data.sportsbites,
+      hasMore: cachedFeed.data.hasMore,
+      nextCursor: cachedFeed.data.nextCursor,
+      count: cachedFeed.data.count,
+      config: {
+        maxChars: SPORTSBITES_CONFIG.MAX_CHARS,
+        parentAuthor: SPORTSBITES_CONFIG.PARENT_AUTHOR,
+      },
+      cached: true,
+      timestamp: cachedFeed.timestamp,
+    });
+  }
+
+  try {
     const result = await retryWithBackoff(() => fetchSportsbites({ limit, before, author }), {
       maxRetries: 2,
       initialDelay: 500,
@@ -167,7 +166,6 @@ export async function GET(request: NextRequest) {
     ctx.log.error('Failed to fetch sportsbites', error);
 
     // Stale-while-error
-    const feedCacheKey = `feed:${limit}:${before || 'latest'}:${author || 'all'}`;
     const staleCache = feedCache.get(feedCacheKey);
 
     if (staleCache?.data) {
@@ -187,6 +185,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return ctx.handleError(error);
+    throw error;
   }
-}
+});

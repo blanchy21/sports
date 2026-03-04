@@ -14,7 +14,7 @@ import {
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 
 const ROUTE = '/api/metrics/track';
 
@@ -31,14 +31,14 @@ const trackSchema = z.object({
  *
  * Track engagement events for posts
  */
-export async function POST(request: NextRequest) {
+export const POST = createApiHandler(ROUTE, async (request) => {
   // CSRF protection
-  if (!validateCsrf(request)) {
+  if (!validateCsrf(request as NextRequest)) {
     return csrfError('Request blocked: invalid origin');
   }
 
   // Rate limiting
-  const clientId = getClientIdentifier(request);
+  const clientId = getClientIdentifier(request as NextRequest);
   const rateLimit = await checkRateLimit(clientId, RATE_LIMITS.read, 'metricsTrack');
   if (!rateLimit.success) {
     return NextResponse.json(
@@ -47,65 +47,59 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const ctx = createRequestContext(ROUTE);
-
+  // Parse JSON body with dedicated error handling
+  let body: unknown;
   try {
-    // Parse JSON body with dedicated error handling
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
-    }
-
-    // Validate with Zod
-    const parseResult = trackSchema.safeParse(body);
-    if (!parseResult.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation failed',
-          details: parseResult.error.flatten().fieldErrors,
-        },
-        { status: 400 }
-      );
-    }
-
-    const { type, author, permlink, viewerAccount, referrer } = parseResult.data;
-
-    // Track the event
-    switch (type) {
-      case 'view':
-        await trackPostView(author, permlink, viewerAccount, referrer);
-        break;
-      case 'vote':
-        if (!viewerAccount) {
-          return NextResponse.json(
-            { success: false, error: 'viewerAccount required for vote tracking' },
-            { status: 400 }
-          );
-        }
-        await trackVote(author, permlink, viewerAccount);
-        break;
-      case 'comment':
-        if (!viewerAccount) {
-          return NextResponse.json(
-            { success: false, error: 'viewerAccount required for comment tracking' },
-            { status: 400 }
-          );
-        }
-        await trackComment(author, permlink, viewerAccount);
-        break;
-      case 'share':
-        await trackShare(author, permlink, viewerAccount);
-        break;
-    }
-
-    return NextResponse.json({
-      success: true,
-      tracked: { type, author, permlink },
-    });
-  } catch (error) {
-    return ctx.handleError(error);
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
   }
-}
+
+  // Validate with Zod
+  const parseResult = trackSchema.safeParse(body);
+  if (!parseResult.success) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Validation failed',
+        details: parseResult.error.flatten().fieldErrors,
+      },
+      { status: 400 }
+    );
+  }
+
+  const { type, author, permlink, viewerAccount, referrer } = parseResult.data;
+
+  // Track the event
+  switch (type) {
+    case 'view':
+      await trackPostView(author, permlink, viewerAccount, referrer);
+      break;
+    case 'vote':
+      if (!viewerAccount) {
+        return NextResponse.json(
+          { success: false, error: 'viewerAccount required for vote tracking' },
+          { status: 400 }
+        );
+      }
+      await trackVote(author, permlink, viewerAccount);
+      break;
+    case 'comment':
+      if (!viewerAccount) {
+        return NextResponse.json(
+          { success: false, error: 'viewerAccount required for comment tracking' },
+          { status: 400 }
+        );
+      }
+      await trackComment(author, permlink, viewerAccount);
+      break;
+    case 'share':
+      await trackShare(author, permlink, viewerAccount);
+      break;
+  }
+
+  return NextResponse.json({
+    success: true,
+    tracked: { type, author, permlink },
+  });
+});

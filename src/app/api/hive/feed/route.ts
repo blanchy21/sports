@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { fetchFollowingFeed } from '@/lib/hive-workerbee/content';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import { parseSearchParams } from '@/lib/api/validation';
-import { createRequestContext, validationError } from '@/lib/api/response';
+import { createApiHandler, validationError } from '@/lib/api/response';
 import {
   checkRateLimit,
   getClientIdentifier,
@@ -37,9 +37,7 @@ const feedQuerySchema = z.object({
   start_permlink: z.string().max(256).optional().default(''),
 });
 
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
-
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
   // Rate limiting
   const clientId = getClientIdentifier(request);
   const rateLimit = await checkRateLimit(clientId, RATE_LIMITS.read, 'feed');
@@ -56,7 +54,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Validate query params
-  const parseResult = parseSearchParams(request.nextUrl.searchParams, feedQuerySchema);
+  const parseResult = parseSearchParams((request as NextRequest).nextUrl.searchParams, feedQuerySchema);
 
   if (!parseResult.success) {
     return validationError(parseResult.error, ctx.requestId);
@@ -64,26 +62,21 @@ export async function GET(request: NextRequest) {
 
   const { username, limit, start_author, start_permlink } = parseResult.data;
 
-  try {
-    ctx.log.debug('Fetching following feed', { username, limit });
+  ctx.log.debug('Fetching following feed', { username, limit });
 
-    const result = await retryWithBackoff(
-      () => fetchFollowingFeed(username, limit, start_author, start_permlink),
-      { maxRetries: 2, initialDelay: 1000, maxDelay: 10000, backoffMultiplier: 2 }
-    );
+  const result = await retryWithBackoff(
+    () => fetchFollowingFeed(username, limit, start_author, start_permlink),
+    { maxRetries: 2, initialDelay: 1000, maxDelay: 10000, backoffMultiplier: 2 }
+  );
 
-    return NextResponse.json(
-      {
-        success: true,
-        posts: result.posts,
-        hasMore: result.hasMore,
-        nextCursor: result.nextCursor,
-        count: result.posts.length,
-      },
-      { headers: CACHE_HEADERS }
-    );
-  } catch (error) {
-    ctx.log.error('Request failed', error instanceof Error ? error : undefined);
-    return ctx.handleError(error);
-  }
-}
+  return NextResponse.json(
+    {
+      success: true,
+      posts: result.posts,
+      hasMore: result.hasMore,
+      nextCursor: result.nextCursor,
+      count: result.posts.length,
+    },
+    { headers: CACHE_HEADERS }
+  );
+});

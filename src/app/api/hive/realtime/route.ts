@@ -4,8 +4,8 @@ import {
   startRealtimeMonitoring,
   stopRealtimeMonitoring,
 } from '@/lib/hive-workerbee/realtime';
-import { withCsrfProtection } from '@/lib/api/csrf';
-import { createRequestContext } from '@/lib/api/response';
+import { csrfProtected } from '@/lib/api/csrf';
+import { createApiHandler } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { requireAdmin } from '@/lib/admin/config';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
@@ -15,16 +15,16 @@ const ROUTE = '/api/hive/realtime';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export const GET = createApiHandler(ROUTE, async () => {
   const monitor = getRealtimeMonitor();
   const status = monitor.getStatus();
   return NextResponse.json({ success: true, status });
-}
+});
 
-export async function POST(request: NextRequest) {
-  return withCsrfProtection(request, async () => {
+export const POST = csrfProtected(
+  createApiHandler(ROUTE, async (request) => {
     // Authentication check
-    const user = await getAuthenticatedUserFromSession(request);
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -57,21 +57,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ctx = createRequestContext(ROUTE);
-    try {
-      await startRealtimeMonitoring();
-      const status = getRealtimeMonitor().getStatus();
-      return NextResponse.json({ success: true, started: true, status });
-    } catch (error) {
-      return ctx.handleError(error);
-    }
-  });
-}
+    await startRealtimeMonitoring();
+    const status = getRealtimeMonitor().getStatus();
+    return NextResponse.json({ success: true, started: true, status });
+  })
+);
 
-export async function DELETE(request: NextRequest) {
-  return withCsrfProtection(request, async () => {
+export const DELETE = csrfProtected(
+  createApiHandler(ROUTE, async (request) => {
     // Authentication check
-    const user = await getAuthenticatedUserFromSession(request);
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -104,13 +99,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const ctx = createRequestContext(ROUTE);
-    try {
-      await stopRealtimeMonitoring();
-      const status = getRealtimeMonitor().getStatus();
-      return NextResponse.json({ success: true, stopped: true, status });
-    } catch (error) {
-      return ctx.handleError(error);
-    }
-  });
-}
+    await stopRealtimeMonitoring();
+    const status = getRealtimeMonitor().getStatus();
+    return NextResponse.json({ success: true, stopped: true, status });
+  })
+);

@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createRequestContext } from '@/lib/api/response';
+import { NextResponse } from 'next/server';
+import { createApiHandler } from '@/lib/api/response';
 import { logger } from '@/lib/logger';
 
 interface ESPNArticle {
@@ -156,54 +156,17 @@ async function fetchAllNews(): Promise<NormalizedArticle[]> {
 
 const ROUTE = '/api/sports/news';
 
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
-  try {
-    const { searchParams } = new URL(request.url);
-    const sport = searchParams.get('sport');
-    const rawLimit = parseInt(searchParams.get('limit') || '15', 10);
-    const limit = Math.max(1, Math.min(50, isNaN(rawLimit) ? 15 : rawLimit));
+export const GET = createApiHandler(ROUTE, async (request) => {
+  const { searchParams } = new URL(request.url);
+  const sport = searchParams.get('sport');
+  const rawLimit = parseInt(searchParams.get('limit') || '15', 10);
+  const limit = Math.max(1, Math.min(50, isNaN(rawLimit) ? 15 : rawLimit));
 
-    const now = Date.now();
+  const now = Date.now();
 
-    // Check if we have valid cached data
-    if (newsCache.data && now < newsCache.expiresAt) {
-      let filteredNews = [...newsCache.data];
-
-      // Filter by sport if specified
-      if (sport && sport !== 'all') {
-        const sportConfig = ESPN_SPORTS[sport as keyof typeof ESPN_SPORTS];
-        if (sportConfig) {
-          filteredNews = filteredNews.filter(
-            (article) => article.sport.toLowerCase() === sportConfig.name.toLowerCase()
-          );
-        }
-      }
-
-      filteredNews = filteredNews.slice(0, limit);
-
-      return NextResponse.json(
-        {
-          success: true,
-          data: filteredNews,
-          cached: true,
-          timestamp: newsCache.timestamp,
-        },
-        { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
-      );
-    }
-
-    // Fetch fresh data from ESPN
-    const articles = await fetchAllNews();
-
-    // Update cache
-    newsCache = {
-      data: articles,
-      timestamp: now,
-      expiresAt: now + CACHE_DURATION,
-    };
-
-    let filteredNews = [...articles];
+  // Check if we have valid cached data
+  if (newsCache.data && now < newsCache.expiresAt) {
+    let filteredNews = [...newsCache.data];
 
     // Filter by sport if specified
     if (sport && sport !== 'all') {
@@ -221,12 +184,44 @@ export async function GET(request: NextRequest) {
       {
         success: true,
         data: filteredNews,
-        cached: false,
-        timestamp: now,
+        cached: true,
+        timestamp: newsCache.timestamp,
       },
       { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
     );
-  } catch (error) {
-    return ctx.handleError(error);
   }
-}
+
+  // Fetch fresh data from ESPN
+  const articles = await fetchAllNews();
+
+  // Update cache
+  newsCache = {
+    data: articles,
+    timestamp: now,
+    expiresAt: now + CACHE_DURATION,
+  };
+
+  let filteredNews = [...articles];
+
+  // Filter by sport if specified
+  if (sport && sport !== 'all') {
+    const sportConfig = ESPN_SPORTS[sport as keyof typeof ESPN_SPORTS];
+    if (sportConfig) {
+      filteredNews = filteredNews.filter(
+        (article) => article.sport.toLowerCase() === sportConfig.name.toLowerCase()
+      );
+    }
+  }
+
+  filteredNews = filteredNews.slice(0, limit);
+
+  return NextResponse.json(
+    {
+      success: true,
+      data: filteredNews,
+      cached: false,
+      timestamp: now,
+    },
+    { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+  );
+});

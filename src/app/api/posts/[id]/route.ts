@@ -10,7 +10,7 @@ import {
   RATE_LIMITS,
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 import { logger } from '@/lib/logger';
 
 const ROUTE = '/api/posts/[id]';
@@ -31,75 +31,74 @@ function getViewRedis(): Redis | null {
   }
 }
 
-interface RouteContext {
-  params: Promise<{ id: string }>;
+/** Extract post ID from URL path: /api/posts/{id} */
+function extractPostId(request: Request): string {
+  const url = new URL(request.url);
+  const segments = url.pathname.split('/');
+  // Expected: ['', 'api', 'posts', '{id}']
+  return segments[3];
 }
 
 /**
  * GET /api/posts/[id] - Get a single soft post by ID
  */
-export async function GET(request: NextRequest, context: RouteContext) {
-  const ctx = createRequestContext(ROUTE);
-  try {
-    const { id } = await context.params;
+export const GET = createApiHandler(ROUTE, async (request) => {
+  const id = extractPostId(request);
 
-    const post = await prisma.post.findUnique({ where: { id } });
+  const post = await prisma.post.findUnique({ where: { id } });
 
-    if (!post) {
-      return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
-    }
-
-    // Deduplicated view count increment (fire and forget)
-    const ip =
-      request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() ||
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      'unknown';
-    const ua = request.headers.get('user-agent') || 'unknown';
-    const fingerprint = crypto
-      .createHash('sha256')
-      .update(`${ip}:${ua}`)
-      .digest('hex')
-      .slice(0, 16);
-    const viewKey = `view:${id}:${fingerprint}`;
-
-    const redis = getViewRedis();
-    if (redis) {
-      redis
-        .set(viewKey, '1', { ex: 3600, nx: true })
-        .then((wasSet) => {
-          if (wasSet) {
-            return prisma.post.update({
-              where: { id },
-              data: { viewCount: { increment: 1 } },
-            });
-          }
-        })
-        .catch((err: unknown) => {
-          logger.error('Failed to increment view count', 'posts-by-id', err);
-        });
-    } else {
-      // Redis unavailable — increment anyway (graceful fallback)
-      prisma.post
-        .update({
-          where: { id },
-          data: { viewCount: { increment: 1 } },
-        })
-        .catch((err: unknown) => {
-          logger.error('Failed to increment view count', 'posts-by-id', err);
-        });
-    }
-
-    return NextResponse.json(
-      {
-        success: true,
-        post,
-      },
-      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
-    );
-  } catch (error) {
-    return ctx.handleError(error);
+  if (!post) {
+    return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
   }
-}
+
+  // Deduplicated view count increment (fire and forget)
+  const ip =
+    request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    'unknown';
+  const ua = request.headers.get('user-agent') || 'unknown';
+  const fingerprint = crypto
+    .createHash('sha256')
+    .update(`${ip}:${ua}`)
+    .digest('hex')
+    .slice(0, 16);
+  const viewKey = `view:${id}:${fingerprint}`;
+
+  const redis = getViewRedis();
+  if (redis) {
+    redis
+      .set(viewKey, '1', { ex: 3600, nx: true })
+      .then((wasSet) => {
+        if (wasSet) {
+          return prisma.post.update({
+            where: { id },
+            data: { viewCount: { increment: 1 } },
+          });
+        }
+      })
+      .catch((err: unknown) => {
+        logger.error('Failed to increment view count', 'posts-by-id', err);
+      });
+  } else {
+    // Redis unavailable — increment anyway (graceful fallback)
+    prisma.post
+      .update({
+        where: { id },
+        data: { viewCount: { increment: 1 } },
+      })
+      .catch((err: unknown) => {
+        logger.error('Failed to increment view count', 'posts-by-id', err);
+      });
+  }
+
+  return NextResponse.json(
+    {
+      success: true,
+      post,
+    },
+    { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
+  );
+});
 
 /**
  * PATCH /api/posts/[id] - Update a soft post
@@ -111,14 +110,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
  * - content: string (optional)
  * - tags: string[] (optional)
  */
-export async function PATCH(request: NextRequest, context: RouteContext) {
+export const PATCH = createApiHandler(ROUTE, async (request) => {
   // CSRF protection
-  if (!validateCsrf(request)) {
+  if (!validateCsrf(request as NextRequest)) {
     return csrfError('Request blocked: invalid origin');
   }
 
   // Rate limiting
-  const patchClientId = getClientIdentifier(request);
+  const patchClientId = getClientIdentifier(request as NextRequest);
   const patchRateLimit = await checkRateLimit(patchClientId, RATE_LIMITS.write, 'write');
   if (!patchRateLimit.success) {
     return NextResponse.json(
@@ -130,120 +129,115 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const ctx = createRequestContext(ROUTE);
-  try {
-    const { id } = await context.params;
-    const body = await request.json();
+  const id = extractPostId(request);
+  const body = await request.json();
 
-    // Verify user identity from session cookie
-    const sessionUser = await getAuthenticatedUserFromSession(request);
-    if (!sessionUser) {
+  // Verify user identity from session cookie
+  const sessionUser = await getAuthenticatedUserFromSession(request as NextRequest);
+  if (!sessionUser) {
+    return NextResponse.json(
+      { success: false, error: 'Authentication required' },
+      { status: 401 }
+    );
+  }
+
+  // Check if post exists
+  const existingPost = await prisma.post.findUnique({ where: { id } });
+  if (!existingPost) {
+    return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
+  }
+
+  // Verify the authenticated user owns this post
+  if (existingPost.authorId !== sessionUser.userId) {
+    return NextResponse.json(
+      { success: false, error: 'Not authorized to update this post' },
+      { status: 403 }
+    );
+  }
+
+  // Build updates object
+  const updates: Partial<{ title: string; content: string; tags: string[] }> = {};
+
+  if (body.title !== undefined) {
+    if (body.title.trim().length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // Check if post exists
-    const existingPost = await prisma.post.findUnique({ where: { id } });
-    if (!existingPost) {
-      return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
-    }
-
-    // Verify the authenticated user owns this post
-    if (existingPost.authorId !== sessionUser.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Not authorized to update this post' },
-        { status: 403 }
-      );
-    }
-
-    // Build updates object
-    const updates: Partial<{ title: string; content: string; tags: string[] }> = {};
-
-    if (body.title !== undefined) {
-      if (body.title.trim().length === 0) {
-        return NextResponse.json(
-          { success: false, error: 'Title cannot be empty' },
-          { status: 400 }
-        );
-      }
-      updates.title = body.title.trim();
-    }
-
-    if (body.content !== undefined) {
-      if (body.content.trim().length === 0) {
-        return NextResponse.json(
-          { success: false, error: 'Content cannot be empty' },
-          { status: 400 }
-        );
-      }
-      updates.content = body.content.trim();
-    }
-
-    if (body.tags !== undefined) {
-      if (!Array.isArray(body.tags)) {
-        return NextResponse.json(
-          { success: false, error: 'Tags must be an array' },
-          { status: 400 }
-        );
-      }
-      if (body.tags.length > 10) {
-        return NextResponse.json(
-          { success: false, error: 'Maximum 10 tags allowed' },
-          { status: 400 }
-        );
-      }
-      const invalidTag = body.tags.find(
-        (t: unknown) => typeof t !== 'string' || t.length > 50 || !/^[a-z0-9-]+$/.test(t)
-      );
-      if (invalidTag !== undefined) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Tags must be lowercase alphanumeric with hyphens, max 50 chars',
-          },
-          { status: 400 }
-        );
-      }
-      updates.tags = body.tags;
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'No valid updates provided' },
+        { success: false, error: 'Title cannot be empty' },
         { status: 400 }
       );
     }
-
-    const updatedPost = await prisma.post.update({
-      where: { id },
-      data: updates,
-    });
-
-    return NextResponse.json({
-      success: true,
-      post: updatedPost,
-      message: 'Post updated successfully',
-    });
-  } catch (error) {
-    return ctx.handleError(error);
+    updates.title = body.title.trim();
   }
-}
+
+  if (body.content !== undefined) {
+    if (body.content.trim().length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Content cannot be empty' },
+        { status: 400 }
+      );
+    }
+    updates.content = body.content.trim();
+  }
+
+  if (body.tags !== undefined) {
+    if (!Array.isArray(body.tags)) {
+      return NextResponse.json(
+        { success: false, error: 'Tags must be an array' },
+        { status: 400 }
+      );
+    }
+    if (body.tags.length > 10) {
+      return NextResponse.json(
+        { success: false, error: 'Maximum 10 tags allowed' },
+        { status: 400 }
+      );
+    }
+    const invalidTag = body.tags.find(
+      (t: unknown) => typeof t !== 'string' || t.length > 50 || !/^[a-z0-9-]+$/.test(t)
+    );
+    if (invalidTag !== undefined) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Tags must be lowercase alphanumeric with hyphens, max 50 chars',
+        },
+        { status: 400 }
+      );
+    }
+    updates.tags = body.tags;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json(
+      { success: false, error: 'No valid updates provided' },
+      { status: 400 }
+    );
+  }
+
+  const updatedPost = await prisma.post.update({
+    where: { id },
+    data: updates,
+  });
+
+  return NextResponse.json({
+    success: true,
+    post: updatedPost,
+    message: 'Post updated successfully',
+  });
+});
 
 /**
  * DELETE /api/posts/[id] - Delete a soft post
  *
  * Requires authenticated session. User must own the post.
  */
-export async function DELETE(request: NextRequest, context: RouteContext) {
+export const DELETE = createApiHandler(ROUTE, async (request) => {
   // CSRF protection
-  if (!validateCsrf(request)) {
+  if (!validateCsrf(request as NextRequest)) {
     return csrfError('Request blocked: invalid origin');
   }
 
   // Rate limiting
-  const deleteClientId = getClientIdentifier(request);
+  const deleteClientId = getClientIdentifier(request as NextRequest);
   const deleteRateLimit = await checkRateLimit(deleteClientId, RATE_LIMITS.write, 'write');
   if (!deleteRateLimit.success) {
     return NextResponse.json(
@@ -255,40 +249,35 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const ctx = createRequestContext(ROUTE);
-  try {
-    const { id } = await context.params;
+  const id = extractPostId(request);
 
-    // Verify user identity from session cookie
-    const sessionUser = await getAuthenticatedUserFromSession(request);
-    if (!sessionUser) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // Check if post exists
-    const existingPost = await prisma.post.findUnique({ where: { id } });
-    if (!existingPost) {
-      return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
-    }
-
-    // Verify the authenticated user owns this post
-    if (existingPost.authorId !== sessionUser.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Not authorized to delete this post' },
-        { status: 403 }
-      );
-    }
-
-    await prisma.post.delete({ where: { id } });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Post deleted successfully',
-    });
-  } catch (error) {
-    return ctx.handleError(error);
+  // Verify user identity from session cookie
+  const sessionUser = await getAuthenticatedUserFromSession(request as NextRequest);
+  if (!sessionUser) {
+    return NextResponse.json(
+      { success: false, error: 'Authentication required' },
+      { status: 401 }
+    );
   }
-}
+
+  // Check if post exists
+  const existingPost = await prisma.post.findUnique({ where: { id } });
+  if (!existingPost) {
+    return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
+  }
+
+  // Verify the authenticated user owns this post
+  if (existingPost.authorId !== sessionUser.userId) {
+    return NextResponse.json(
+      { success: false, error: 'Not authorized to delete this post' },
+      { status: 403 }
+    );
+  }
+
+  await prisma.post.delete({ where: { id } });
+
+  return NextResponse.json({
+    success: true,
+    message: 'Post deleted successfully',
+  });
+});

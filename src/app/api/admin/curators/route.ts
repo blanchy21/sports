@@ -11,10 +11,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createRequestContext, forbiddenError, validationError } from '@/lib/api/response';
+import { createApiHandler, forbiddenError, validationError } from '@/lib/api/response';
 import { requireAdmin } from '@/lib/admin/config';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
-import { withCsrfProtection } from '@/lib/api/csrf';
+import { csrfProtected } from '@/lib/api/csrf';
 import { getCuratorAccounts } from '@/lib/rewards/curator-rewards';
 
 export const runtime = 'nodejs';
@@ -32,21 +32,15 @@ const mutationSchema = z.object({
 /**
  * GET /api/admin/curators - List curators
  */
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
-
-  const user = await getAuthenticatedUserFromSession(request);
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
+  const user = await getAuthenticatedUserFromSession(request as NextRequest);
   if (!user || !requireAdmin(user)) {
     return forbiddenError('Admin access required', ctx.requestId);
   }
 
-  try {
-    const curators = getCuratorAccounts();
-    return NextResponse.json({ success: true, curators });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
-}
+  const curators = getCuratorAccounts();
+  return NextResponse.json({ success: true, curators });
+});
 
 /**
  * POST /api/admin/curators - Add a curator
@@ -54,91 +48,79 @@ export async function GET(request: NextRequest) {
  * NOTE: Currently,curator list is managed via CURATOR_ACCOUNTS env var.
  * This endpoint validates the request but returns the current env-based list.
  */
-export async function POST(request: NextRequest) {
-  return withCsrfProtection(request, async () => {
-    const ctx = createRequestContext(ROUTE);
-
-    const user = await getAuthenticatedUserFromSession(request);
+export const POST = csrfProtected(
+  createApiHandler(ROUTE, async (request, ctx) => {
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user || !requireAdmin(user)) {
       return forbiddenError('Admin access required', ctx.requestId);
     }
 
-    try {
-      const body = await request.json();
-      const parseResult = mutationSchema.safeParse(body);
+    const body = await request.json();
+    const parseResult = mutationSchema.safeParse(body);
 
-      if (!parseResult.success) {
-        return validationError(parseResult.error, ctx.requestId);
-      }
-
-      const { curator } = parseResult.data;
-      const curators = getCuratorAccounts();
-
-      if (curators.includes(curator)) {
-        return NextResponse.json(
-          { success: false, error: `${curator} is already a curator` },
-          { status: 409 }
-        );
-      }
-
-      // Currently,curator changes require updating the CURATOR_ACCOUNTS env var
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            'Curator management requires updating the CURATOR_ACCOUNTS environment variable. Please update it in your deployment settings.',
-          curators,
-        },
-        { status: 501 }
-      );
-    } catch (error) {
-      return ctx.handleError(error);
+    if (!parseResult.success) {
+      return validationError(parseResult.error, ctx.requestId);
     }
-  });
-}
+
+    const { curator } = parseResult.data;
+    const curators = getCuratorAccounts();
+
+    if (curators.includes(curator)) {
+      return NextResponse.json(
+        { success: false, error: `${curator} is already a curator` },
+        { status: 409 }
+      );
+    }
+
+    // Currently,curator changes require updating the CURATOR_ACCOUNTS env var
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          'Curator management requires updating the CURATOR_ACCOUNTS environment variable. Please update it in your deployment settings.',
+        curators,
+      },
+      { status: 501 }
+    );
+  })
+);
 
 /**
  * DELETE /api/admin/curators - Remove a curator
  */
-export async function DELETE(request: NextRequest) {
-  return withCsrfProtection(request, async () => {
-    const ctx = createRequestContext(ROUTE);
-
-    const user = await getAuthenticatedUserFromSession(request);
+export const DELETE = csrfProtected(
+  createApiHandler(ROUTE, async (request, ctx) => {
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user || !requireAdmin(user)) {
       return forbiddenError('Admin access required', ctx.requestId);
     }
 
-    try {
-      const body = await request.json();
-      const parseResult = mutationSchema.safeParse(body);
+    const body = await request.json();
+    const parseResult = mutationSchema.safeParse(body);
 
-      if (!parseResult.success) {
-        return validationError(parseResult.error, ctx.requestId);
-      }
-
-      const { curator } = parseResult.data;
-      const curators = getCuratorAccounts();
-
-      if (!curators.includes(curator)) {
-        return NextResponse.json(
-          { success: false, error: `${curator} is not a curator` },
-          { status: 404 }
-        );
-      }
-
-      // Currently,curator changes require updating the CURATOR_ACCOUNTS env var
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            'Curator management requires updating the CURATOR_ACCOUNTS environment variable. Please update it in your deployment settings.',
-          curators,
-        },
-        { status: 501 }
-      );
-    } catch (error) {
-      return ctx.handleError(error);
+    if (!parseResult.success) {
+      return validationError(parseResult.error, ctx.requestId);
     }
-  });
-}
+
+    const { curator } = parseResult.data;
+    const curators = getCuratorAccounts();
+
+    if (!curators.includes(curator)) {
+      return NextResponse.json(
+        { success: false, error: `${curator} is not a curator` },
+        { status: 404 }
+      );
+    }
+
+    // Currently,curator changes require updating the CURATOR_ACCOUNTS env var
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          'Curator management requires updating the CURATOR_ACCOUNTS environment variable. Please update it in your deployment settings.',
+        curators,
+      },
+      { status: 501 }
+    );
+  })
+);

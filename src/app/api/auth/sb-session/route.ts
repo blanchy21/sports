@@ -14,7 +14,7 @@ import { cookies } from 'next/headers';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 import { decryptSession } from '@/lib/api/session-auth';
 import { getSessionEncryptionKey } from '@/lib/api/session-encryption';
 import { getServerSession } from 'next-auth/next';
@@ -143,286 +143,268 @@ async function graduateCustodialUser(hiveUsername: string): Promise<void> {
 /**
  * POST /api/auth/sb-session - Create/update session
  */
-export async function POST(request: NextRequest) {
+export const POST = createApiHandler(ROUTE, async (request) => {
   // CSRF protection for session creation
-  if (!validateCsrf(request)) {
+  if (!validateCsrf(request as NextRequest)) {
     return csrfError('Request blocked: invalid origin');
   }
 
-  const ctx = createRequestContext(ROUTE);
+  const body = await request.json();
+  const parseResult = sessionSchema.safeParse(body);
 
-  try {
-    const body = await request.json();
-    const parseResult = sessionSchema.safeParse(body);
+  if (!parseResult.success) {
+    return NextResponse.json({ success: false, error: 'Invalid session data' }, { status: 400 });
+  }
 
-    if (!parseResult.success) {
-      return NextResponse.json({ success: false, error: 'Invalid session data' }, { status: 400 });
+  const {
+    challenge,
+    challengeMac,
+    signature,
+    hivesignerToken,
+    displayName,
+    avatar,
+    ...sessionFields
+  } = parseResult.data;
+  const sessionData: SessionData = sessionFields;
+
+  // For Hive auth: verify wallet ownership via challenge-response
+  if (sessionData.authType === 'hive') {
+    // Session refresh: if the caller has a valid cookie for the same user+authType, allow
+    // without re-signing (e.g., page reload, profile update, activity touch)
+    const cookieStore = await cookies();
+    const existingCookie = cookieStore.get(SESSION_COOKIE_NAME);
+    let isSessionRefresh = false;
+
+    if (existingCookie?.value) {
+      const existing = decryptSession(existingCookie.value);
+      if (
+        existing &&
+        existing.authType === 'hive' &&
+        existing.username === sessionData.username
+      ) {
+        isSessionRefresh = true;
+      }
     }
 
-    const {
-      challenge,
-      challengeMac,
-      signature,
-      hivesignerToken,
-      displayName,
-      avatar,
-      ...sessionFields
-    } = parseResult.data;
-    const sessionData: SessionData = sessionFields;
-
-    // For Hive auth: verify wallet ownership via challenge-response
-    if (sessionData.authType === 'hive') {
-      // Session refresh: if the caller has a valid cookie for the same user+authType, allow
-      // without re-signing (e.g., page reload, profile update, activity touch)
-      const cookieStore = await cookies();
-      const existingCookie = cookieStore.get(SESSION_COOKIE_NAME);
-      let isSessionRefresh = false;
-
-      if (existingCookie?.value) {
-        const existing = decryptSession(existingCookie.value);
-        if (
-          existing &&
-          existing.authType === 'hive' &&
-          existing.username === sessionData.username
-        ) {
-          isSessionRefresh = true;
-        }
+    if (isSessionRefresh) {
+      // Preserve the original loginAt from the existing cookie to enforce
+      // absolute session expiry. Never accept client-supplied loginAt on refresh.
+      const existingSession = decryptSession(existingCookie!.value);
+      if (existingSession?.loginAt) {
+        sessionData.loginAt = existingSession.loginAt;
       }
-
-      if (isSessionRefresh) {
-        // Preserve the original loginAt from the existing cookie to enforce
-        // absolute session expiry. Never accept client-supplied loginAt on refresh.
-        const existingSession = decryptSession(existingCookie!.value);
-        if (existingSession?.loginAt) {
-          sessionData.loginAt = existingSession.loginAt;
-        }
-      } else if (hivesignerToken) {
-        // HiveSigner OAuth: verify access token server-side
-        // HiveSigner doesn't support message signing, so we verify the OAuth token instead.
-        const tokenResult = await verifyHivesignerToken(hivesignerToken, sessionData.username);
-        if (!tokenResult.valid) {
-          logger.warn('HiveSigner verification failed', 'sb-session', {
-            reason: tokenResult.reason,
-          });
-          return NextResponse.json(
-            { success: false, error: `HiveSigner verification failed: ${tokenResult.reason}` },
-            { status: 401 }
-          );
-        }
-      } else if (challenge && challengeMac && signature) {
-        // Wallet auth (Keychain, HiveAuth, etc.): verify challenge-response
-
-        // Verify challenge integrity and expiry
-        const challengeResult = verifyChallenge(challenge, challengeMac, sessionData.username);
-        if (!challengeResult.valid) {
-          logger.warn('Challenge verification failed', 'sb-session', {
-            reason: challengeResult.reason,
-            user: sessionData.username,
-          });
-          return NextResponse.json(
-            { success: false, error: `Challenge verification failed: ${challengeResult.reason}` },
-            { status: 401 }
-          );
-        }
-
-        // Verify the Hive signature against on-chain posting keys
-        const sigResult = await verifyHivePostingSignature(
-          challenge,
-          signature,
-          sessionData.username
+    } else if (hivesignerToken) {
+      // HiveSigner OAuth: verify access token server-side
+      // HiveSigner doesn't support message signing, so we verify the OAuth token instead.
+      const tokenResult = await verifyHivesignerToken(hivesignerToken, sessionData.username);
+      if (!tokenResult.valid) {
+        logger.warn('HiveSigner verification failed', 'sb-session', {
+          reason: tokenResult.reason,
+        });
+        return NextResponse.json(
+          { success: false, error: `HiveSigner verification failed: ${tokenResult.reason}` },
+          { status: 401 }
         );
-        if (!sigResult.valid) {
-          logger.warn('Signature verification failed', 'sb-session', {
-            reason: sigResult.reason,
-            user: sessionData.username,
-          });
-          return NextResponse.json(
-            { success: false, error: `Signature verification failed: ${sigResult.reason}` },
-            { status: 401 }
-          );
-        }
-      } else {
-        // No verification data provided
-        logger.warn('No verification data provided', 'sb-session', {
+      }
+    } else if (challenge && challengeMac && signature) {
+      // Wallet auth (Keychain, HiveAuth, etc.): verify challenge-response
+
+      // Verify challenge integrity and expiry
+      const challengeResult = verifyChallenge(challenge, challengeMac, sessionData.username);
+      if (!challengeResult.valid) {
+        logger.warn('Challenge verification failed', 'sb-session', {
+          reason: challengeResult.reason,
           user: sessionData.username,
-          hasChallenge: !!challenge,
-          hasMac: !!challengeMac,
-          hasSig: !!signature,
-          hasToken: !!hivesignerToken,
         });
         return NextResponse.json(
-          {
-            success: false,
-            error: 'Hive auth requires verification (challenge-response or HiveSigner token)',
-          },
+          { success: false, error: `Challenge verification failed: ${challengeResult.reason}` },
           { status: 401 }
         );
       }
-      // Auto-graduate: if a Hive wallet user matches a custodial account, wipe server-side keys.
-      // The user has just proven they have working keys in their wallet — the relay is no longer needed.
-      if (!isSessionRefresh && sessionData.hiveUsername) {
-        graduateCustodialUser(sessionData.hiveUsername).catch((err) => {
-          logger.warn('Key wipe failed (non-fatal)', 'sb-session', err);
-        });
-      }
-    }
 
-    // For custodial (soft) auth, verify the caller owns this identity via NextAuth
-    // and override hiveUsername from the server-side session (not client-supplied)
-    if (sessionData.authType === 'soft') {
-      const nextAuthSession = await getServerSession(authOptions);
-      if (!nextAuthSession?.user?.id || nextAuthSession.user.id !== sessionData.userId) {
+      // Verify the Hive signature against on-chain posting keys
+      const sigResult = await verifyHivePostingSignature(
+        challenge,
+        signature,
+        sessionData.username
+      );
+      if (!sigResult.valid) {
+        logger.warn('Signature verification failed', 'sb-session', {
+          reason: sigResult.reason,
+          user: sessionData.username,
+        });
         return NextResponse.json(
-          { success: false, error: 'Session identity mismatch' },
+          { success: false, error: `Signature verification failed: ${sigResult.reason}` },
           { status: 401 }
         );
       }
-      // Use hiveUsername from NextAuth session (sourced from DB) instead of request body
-      sessionData.hiveUsername = nextAuthSession.user.hiveUsername ?? sessionData.hiveUsername;
+    } else {
+      // No verification data provided
+      logger.warn('No verification data provided', 'sb-session', {
+        user: sessionData.username,
+        hasChallenge: !!challenge,
+        hasMac: !!challengeMac,
+        hasSig: !!signature,
+        hasToken: !!hivesignerToken,
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Hive auth requires verification (challenge-response or HiveSigner token)',
+        },
+        { status: 401 }
+      );
     }
-
-    // Ensure loginAt is always set (fresh login gets Date.now(), refresh preserves original)
-    if (!sessionData.loginAt) {
-      sessionData.loginAt = Date.now();
-    }
-
-    // Sync denormalized author data if provided (fire-and-forget)
-    if ((displayName || avatar) && sessionData.username) {
-      syncAuthorData(sessionData.username, { displayName, avatar }).catch((err) => {
-        logger.warn('Author data sync failed (non-fatal)', 'sb-session', err);
+    // Auto-graduate: if a Hive wallet user matches a custodial account, wipe server-side keys.
+    // The user has just proven they have working keys in their wallet — the relay is no longer needed.
+    if (!isSessionRefresh && sessionData.hiveUsername) {
+      graduateCustodialUser(sessionData.hiveUsername).catch((err) => {
+        logger.warn('Key wipe failed (non-fatal)', 'sb-session', err);
       });
     }
-
-    const encryptedSession = encryptSession(sessionData);
-
-    logger.debug('Session created', 'sb-session', {
-      user: sessionData.username,
-      authType: sessionData.authType,
-    });
-
-    // Create response with session cookie
-    const response = NextResponse.json({
-      success: true,
-      message: 'Session created',
-    });
-
-    // Set httpOnly cookie with encrypted session
-    response.cookies.set(SESSION_COOKIE_NAME, encryptedSession, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: SESSION_MAX_AGE,
-      path: '/',
-    });
-
-    return response;
-  } catch (error) {
-    return ctx.handleError(error);
   }
-}
+
+  // For custodial (soft) auth, verify the caller owns this identity via NextAuth
+  // and override hiveUsername from the server-side session (not client-supplied)
+  if (sessionData.authType === 'soft') {
+    const nextAuthSession = await getServerSession(authOptions);
+    if (!nextAuthSession?.user?.id || nextAuthSession.user.id !== sessionData.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Session identity mismatch' },
+        { status: 401 }
+      );
+    }
+    // Use hiveUsername from NextAuth session (sourced from DB) instead of request body
+    sessionData.hiveUsername = nextAuthSession.user.hiveUsername ?? sessionData.hiveUsername;
+  }
+
+  // Ensure loginAt is always set (fresh login gets Date.now(), refresh preserves original)
+  if (!sessionData.loginAt) {
+    sessionData.loginAt = Date.now();
+  }
+
+  // Sync denormalized author data if provided (fire-and-forget)
+  if ((displayName || avatar) && sessionData.username) {
+    syncAuthorData(sessionData.username, { displayName, avatar }).catch((err) => {
+      logger.warn('Author data sync failed (non-fatal)', 'sb-session', err);
+    });
+  }
+
+  const encryptedSession = encryptSession(sessionData);
+
+  logger.debug('Session created', 'sb-session', {
+    user: sessionData.username,
+    authType: sessionData.authType,
+  });
+
+  // Create response with session cookie
+  const response = NextResponse.json({
+    success: true,
+    message: 'Session created',
+  });
+
+  // Set httpOnly cookie with encrypted session
+  response.cookies.set(SESSION_COOKIE_NAME, encryptedSession, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: SESSION_MAX_AGE,
+    path: '/',
+  });
+
+  return response;
+});
 
 /**
  * GET /api/auth/sb-session - Get current session
  */
-export async function GET() {
-  const ctx = createRequestContext(ROUTE);
+export const GET = createApiHandler(ROUTE, async () => {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
 
-  try {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
-
-    if (!sessionCookie?.value) {
-      return NextResponse.json({
-        success: true,
-        authenticated: false,
-        session: null,
-      });
-    }
-
-    const session = decryptSession(sessionCookie.value);
-
-    if (!session) {
-      // Invalid session, clear the cookie
-      const response = NextResponse.json({
-        success: true,
-        authenticated: false,
-        session: null,
-      });
-      response.cookies.delete(SESSION_COOKIE_NAME);
-      return response;
-    }
-
-    // Enforce absolute session expiry (7 days from login)
-    if (session.loginAt && Date.now() - session.loginAt > SESSION_ABSOLUTE_EXPIRY_MS) {
-      const response = NextResponse.json({
-        success: true,
-        authenticated: false,
-        session: null,
-        reason: 'session_expired',
-      });
-      response.cookies.delete(SESSION_COOKIE_NAME);
-      return response;
-    }
-
-    // For soft users, enrich with keysDownloaded from DB so wallet page works after refresh
-    let keysDownloaded: boolean | undefined;
-    if (session.authType === 'soft' && session.hiveUsername) {
-      try {
-        const custodialUser = await prisma.custodialUser.findUnique({
-          where: { hiveUsername: session.hiveUsername },
-          select: { keysDownloaded: true },
-        });
-        keysDownloaded = custodialUser?.keysDownloaded ?? false;
-      } catch {
-        // Non-critical — wallet page will just show upgrade CTA
-      }
-    }
-
+  if (!sessionCookie?.value) {
     return NextResponse.json({
       success: true,
-      authenticated: true,
-      session: {
-        userId: session.userId,
-        username: session.username,
-        authType: session.authType,
-        hiveUsername: session.hiveUsername,
-        loginAt: session.loginAt,
-        ...(keysDownloaded !== undefined && { keysDownloaded }),
-      },
+      authenticated: false,
+      session: null,
     });
-  } catch (error) {
-    return ctx.handleError(error);
   }
-}
+
+  const session = decryptSession(sessionCookie.value);
+
+  if (!session) {
+    // Invalid session, clear the cookie
+    const response = NextResponse.json({
+      success: true,
+      authenticated: false,
+      session: null,
+    });
+    response.cookies.delete(SESSION_COOKIE_NAME);
+    return response;
+  }
+
+  // Enforce absolute session expiry (7 days from login)
+  if (session.loginAt && Date.now() - session.loginAt > SESSION_ABSOLUTE_EXPIRY_MS) {
+    const response = NextResponse.json({
+      success: true,
+      authenticated: false,
+      session: null,
+      reason: 'session_expired',
+    });
+    response.cookies.delete(SESSION_COOKIE_NAME);
+    return response;
+  }
+
+  // For soft users, enrich with keysDownloaded from DB so wallet page works after refresh
+  let keysDownloaded: boolean | undefined;
+  if (session.authType === 'soft' && session.hiveUsername) {
+    try {
+      const custodialUser = await prisma.custodialUser.findUnique({
+        where: { hiveUsername: session.hiveUsername },
+        select: { keysDownloaded: true },
+      });
+      keysDownloaded = custodialUser?.keysDownloaded ?? false;
+    } catch {
+      // Non-critical — wallet page will just show upgrade CTA
+    }
+  }
+
+  return NextResponse.json({
+    success: true,
+    authenticated: true,
+    session: {
+      userId: session.userId,
+      username: session.username,
+      authType: session.authType,
+      hiveUsername: session.hiveUsername,
+      loginAt: session.loginAt,
+      ...(keysDownloaded !== undefined && { keysDownloaded }),
+    },
+  });
+});
 
 /**
  * DELETE /api/auth/sb-session - Clear session (logout)
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = createApiHandler(ROUTE, async (request) => {
   // CSRF protection for logout
-  if (!validateCsrf(request)) {
+  if (!validateCsrf(request as NextRequest)) {
     return csrfError('Request blocked: invalid origin');
   }
 
-  const ctx = createRequestContext(ROUTE);
+  const response = NextResponse.json({
+    success: true,
+    message: 'Session cleared',
+  });
 
-  try {
-    const response = NextResponse.json({
-      success: true,
-      message: 'Session cleared',
-    });
+  // Clear the session cookie
+  response.cookies.set(SESSION_COOKIE_NAME, '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 0,
+    path: '/',
+  });
 
-    // Clear the session cookie
-    response.cookies.set(SESSION_COOKIE_NAME, '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0,
-      path: '/',
-    });
-
-    return response;
-  } catch (error) {
-    return ctx.handleError(error);
-  }
-}
+  return response;
+});

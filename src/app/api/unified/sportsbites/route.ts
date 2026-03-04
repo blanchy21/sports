@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createRequestContext, validationError } from '@/lib/api/response';
+import { createApiHandler, validationError } from '@/lib/api/response';
 import { fetchSportsbites, Sportsbite } from '@/lib/hive-workerbee/sportsbites';
 import { fetchSoftSportsbites } from '@/lib/hive-workerbee/sportsbites-server';
 import { prisma } from '@/lib/db/prisma';
@@ -38,157 +38,151 @@ const querySchema = z.object({
 // GET /api/unified/sportsbites
 // ============================================
 
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
+  const searchParams = Object.fromEntries((request as NextRequest).nextUrl.searchParams);
+  const parseResult = querySchema.safeParse(searchParams);
 
-  try {
-    const searchParams = Object.fromEntries(request.nextUrl.searchParams);
-    const parseResult = querySchema.safeParse(searchParams);
-
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
-
-    const { limit, before, author, includeHive, includeSoft } = parseResult.data;
-
-    ctx.log.debug('Fetching unified sportsbites', {
-      limit,
-      before,
-      author,
-      includeHive,
-      includeSoft,
-    });
-
-    const allBites: Sportsbite[] = [];
-    const fetchPromises: Promise<void>[] = [];
-
-    // Fetch Hive sportsbites
-    if (includeHive) {
-      fetchPromises.push(
-        fetchSportsbites({ limit, before, author })
-          .then((result) => {
-            if (result.success && result.sportsbites.length > 0) {
-              // Tag source for each Hive sportsbite
-              const tagged = result.sportsbites.map((s) => ({ ...s, source: 'hive' as const }));
-              allBites.push(...tagged);
-            }
-          })
-          .catch((error) => {
-            ctx.log.warn('Failed to fetch Hive sportsbites', { error });
-          })
-      );
-    }
-
-    // Fetch soft sportsbites
-    if (includeSoft) {
-      fetchPromises.push(
-        fetchSoftSportsbites({ limit, author })
-          .then((softBites) => {
-            allBites.push(...softBites);
-          })
-          .catch((error) => {
-            ctx.log.warn('Failed to fetch soft sportsbites', { error });
-          })
-      );
-    }
-
-    await Promise.all(fetchPromises);
-
-    // Sort merged results by date (newest first)
-    allBites.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
-
-    // Apply pagination
-    const hasMore = allBites.length > limit;
-    const page = allBites.slice(0, limit);
-    const nextCursor = hasMore ? page[page.length - 1]?.id : undefined;
-
-    // Batch fetch tip totals and soft comment counts for hive sportsbites
-    const hiveBitesOnPage = page.filter((s) => s.source !== 'soft');
-    if (hiveBitesOnPage.length > 0) {
-      const permlinks = hiveBitesOnPage.map((s) => s.permlink);
-      const authors = hiveBitesOnPage.map((s) => s.author);
-
-      const [tipTotals, tipDetails, softCommentCounts] = await Promise.all([
-        prisma.$queryRaw<Array<{ author: string; permlink: string; total: string; count: number }>>`
-          SELECT author, permlink,
-                 COALESCE(SUM(amount), 0)::text as total,
-                 COUNT(*)::int as count
-          FROM tips
-          WHERE author = ANY(${authors}::text[])
-            AND permlink = ANY(${permlinks}::text[])
-          GROUP BY author, permlink
-        `.catch(
-          () => [] as Array<{ author: string; permlink: string; total: string; count: number }>
-        ),
-        prisma.$queryRaw<
-          Array<{ author: string; permlink: string; sender_username: string; total: string }>
-        >`
-          SELECT author, permlink, sender_username,
-                 SUM(amount)::text as total
-          FROM tips
-          WHERE author = ANY(${authors}::text[])
-            AND permlink = ANY(${permlinks}::text[])
-          GROUP BY author, permlink, sender_username
-          ORDER BY SUM(amount) DESC
-        `.catch(
-          () =>
-            [] as Array<{
-              author: string;
-              permlink: string;
-              sender_username: string;
-              total: string;
-            }>
-        ),
-        // Count soft (database) comments on Hive sportsbites
-        prisma.$queryRaw<Array<{ post_permlink: string; count: number }>>`
-          SELECT post_permlink, COUNT(*)::int as count
-          FROM soft_comments
-          WHERE post_permlink = ANY(${permlinks}::text[])
-            AND is_deleted = false
-          GROUP BY post_permlink
-        `.catch(() => [] as Array<{ post_permlink: string; count: number }>),
-      ]);
-
-      for (const bite of hiveBitesOnPage) {
-        const tip = tipTotals.find((t) => t.author === bite.author && t.permlink === bite.permlink);
-        bite.tipTotal = tip ? parseFloat(tip.total) : 0;
-        bite.tipCount = tip ? tip.count : 0;
-        const details = tipDetails.filter(
-          (t) => t.author === bite.author && t.permlink === bite.permlink
-        );
-        if (details.length > 0) {
-          bite.tipDetails = details.map((d) => ({
-            sender: d.sender_username,
-            amount: parseFloat(d.total),
-          }));
-        }
-
-        const softCount = softCommentCounts.find((c) => c.post_permlink === bite.permlink);
-        if (softCount) {
-          bite.children = (bite.children || 0) + softCount.count;
-        }
-      }
-    }
-
-    const hiveBites = page.filter((s) => s.source !== 'soft');
-    const softBites = page.filter((s) => s.source === 'soft');
-
-    return NextResponse.json(
-      {
-        success: true,
-        sportsbites: page,
-        hasMore,
-        nextCursor,
-        count: page.length,
-        sources: { hive: hiveBites.length, soft: softBites.length },
-      },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
-        },
-      }
-    );
-  } catch (error) {
-    return ctx.handleError(error);
+  if (!parseResult.success) {
+    return validationError(parseResult.error, ctx.requestId);
   }
-}
+
+  const { limit, before, author, includeHive, includeSoft } = parseResult.data;
+
+  ctx.log.debug('Fetching unified sportsbites', {
+    limit,
+    before,
+    author,
+    includeHive,
+    includeSoft,
+  });
+
+  const allBites: Sportsbite[] = [];
+  const fetchPromises: Promise<void>[] = [];
+
+  // Fetch Hive sportsbites
+  if (includeHive) {
+    fetchPromises.push(
+      fetchSportsbites({ limit, before, author })
+        .then((result) => {
+          if (result.success && result.sportsbites.length > 0) {
+            // Tag source for each Hive sportsbite
+            const tagged = result.sportsbites.map((s) => ({ ...s, source: 'hive' as const }));
+            allBites.push(...tagged);
+          }
+        })
+        .catch((error) => {
+          ctx.log.warn('Failed to fetch Hive sportsbites', { error });
+        })
+    );
+  }
+
+  // Fetch soft sportsbites
+  if (includeSoft) {
+    fetchPromises.push(
+      fetchSoftSportsbites({ limit, author })
+        .then((softBites) => {
+          allBites.push(...softBites);
+        })
+        .catch((error) => {
+          ctx.log.warn('Failed to fetch soft sportsbites', { error });
+        })
+    );
+  }
+
+  await Promise.all(fetchPromises);
+
+  // Sort merged results by date (newest first)
+  allBites.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+
+  // Apply pagination
+  const hasMore = allBites.length > limit;
+  const page = allBites.slice(0, limit);
+  const nextCursor = hasMore ? page[page.length - 1]?.id : undefined;
+
+  // Batch fetch tip totals and soft comment counts for hive sportsbites
+  const hiveBitesOnPage = page.filter((s) => s.source !== 'soft');
+  if (hiveBitesOnPage.length > 0) {
+    const permlinks = hiveBitesOnPage.map((s) => s.permlink);
+    const authors = hiveBitesOnPage.map((s) => s.author);
+
+    const [tipTotals, tipDetails, softCommentCounts] = await Promise.all([
+      prisma.$queryRaw<Array<{ author: string; permlink: string; total: string; count: number }>>`
+        SELECT author, permlink,
+               COALESCE(SUM(amount), 0)::text as total,
+               COUNT(*)::int as count
+        FROM tips
+        WHERE author = ANY(${authors}::text[])
+          AND permlink = ANY(${permlinks}::text[])
+        GROUP BY author, permlink
+      `.catch(
+        () => [] as Array<{ author: string; permlink: string; total: string; count: number }>
+      ),
+      prisma.$queryRaw<
+        Array<{ author: string; permlink: string; sender_username: string; total: string }>
+      >`
+        SELECT author, permlink, sender_username,
+               SUM(amount)::text as total
+        FROM tips
+        WHERE author = ANY(${authors}::text[])
+          AND permlink = ANY(${permlinks}::text[])
+        GROUP BY author, permlink, sender_username
+        ORDER BY SUM(amount) DESC
+      `.catch(
+        () =>
+          [] as Array<{
+            author: string;
+            permlink: string;
+            sender_username: string;
+            total: string;
+          }>
+      ),
+      // Count soft (database) comments on Hive sportsbites
+      prisma.$queryRaw<Array<{ post_permlink: string; count: number }>>`
+        SELECT post_permlink, COUNT(*)::int as count
+        FROM soft_comments
+        WHERE post_permlink = ANY(${permlinks}::text[])
+          AND is_deleted = false
+        GROUP BY post_permlink
+      `.catch(() => [] as Array<{ post_permlink: string; count: number }>),
+    ]);
+
+    for (const bite of hiveBitesOnPage) {
+      const tip = tipTotals.find((t) => t.author === bite.author && t.permlink === bite.permlink);
+      bite.tipTotal = tip ? parseFloat(tip.total) : 0;
+      bite.tipCount = tip ? tip.count : 0;
+      const details = tipDetails.filter(
+        (t) => t.author === bite.author && t.permlink === bite.permlink
+      );
+      if (details.length > 0) {
+        bite.tipDetails = details.map((d) => ({
+          sender: d.sender_username,
+          amount: parseFloat(d.total),
+        }));
+      }
+
+      const softCount = softCommentCounts.find((c) => c.post_permlink === bite.permlink);
+      if (softCount) {
+        bite.children = (bite.children || 0) + softCount.count;
+      }
+    }
+  }
+
+  const hiveBites = page.filter((s) => s.source !== 'soft');
+  const softBites = page.filter((s) => s.source === 'soft');
+
+  return NextResponse.json(
+    {
+      success: true,
+      sportsbites: page,
+      hasMore,
+      nextCursor,
+      count: page.length,
+      sources: { hive: hiveBites.length, soft: softBites.length },
+    },
+    {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      },
+    }
+  );
+});

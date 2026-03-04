@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import {
-  createRequestContext,
+  createApiHandler,
   validationError,
   unauthorizedError,
   forbiddenError,
 } from '@/lib/api/response';
-import { withCsrfProtection } from '@/lib/api/csrf';
+import { csrfProtected } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { trackPostCreation } from '@/lib/metrics/tracker';
@@ -87,264 +87,252 @@ const createPostSchema = z.object({
  * - authorId: string (filter by author)
  * - communityId: string (filter by community)
  */
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
+export const GET = createApiHandler(ROUTE, async (request, ctx) => {
+  const searchParams = Object.fromEntries((request as NextRequest).nextUrl.searchParams);
+  const parseResult = getPostsQuerySchema.safeParse(searchParams);
 
-  try {
-    const searchParams = Object.fromEntries(request.nextUrl.searchParams);
-    const parseResult = getPostsQuerySchema.safeParse(searchParams);
-
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
-
-    const { limit, authorId, communityId } = parseResult.data;
-
-    ctx.log.debug('Fetching posts', { limit, authorId, communityId });
-
-    const where: Record<string, unknown> = {};
-    if (authorId) where.authorId = authorId;
-    if (communityId) where.communityId = communityId;
-
-    const posts = await prisma.post.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
-
-    return NextResponse.json({
-      success: true,
-      posts,
-      count: posts.length,
-    });
-  } catch (error) {
-    return ctx.handleError(error);
+  if (!parseResult.success) {
+    return validationError(parseResult.error, ctx.requestId);
   }
-}
+
+  const { limit, authorId, communityId } = parseResult.data;
+
+  ctx.log.debug('Fetching posts', { limit, authorId, communityId });
+
+  const where: Record<string, unknown> = {};
+  if (authorId) where.authorId = authorId;
+  if (communityId) where.communityId = communityId;
+
+  const posts = await prisma.post.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  });
+
+  return NextResponse.json({
+    success: true,
+    posts,
+    count: posts.length,
+  });
+});
 
 /**
  * POST /api/posts - Create a new soft post (for non-Hive users)
  *
  * Requires authenticated user. The authorId must match the authenticated user.
  */
-export async function POST(request: NextRequest) {
-  return withCsrfProtection(request, async () => {
-    const ctx = createRequestContext(ROUTE);
+export const POST = csrfProtected(
+  createApiHandler(ROUTE, async (request, ctx) => {
+    // Parse JSON body with error handling
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return validationError('Invalid JSON body', ctx.requestId);
+    }
+
+    // Validate request body
+    const parseResult = createPostSchema.safeParse(body);
+    if (!parseResult.success) {
+      return validationError(parseResult.error, ctx.requestId);
+    }
+
+    const data = parseResult.data;
+
+    // Authorization check: Verify user identity from session cookie
+    const sessionUser = await getAuthenticatedUserFromSession(request as NextRequest);
+
+    if (!sessionUser) {
+      return unauthorizedError('Authentication required', ctx.requestId);
+    }
+
+    const authenticatedUserId = sessionUser.userId;
+
+    // Verify the authenticated user matches the author
+    if (authenticatedUserId !== data.authorId) {
+      ctx.log.warn('Authorization failed: user ID mismatch', {
+        authenticatedUserId,
+        requestedAuthorId: data.authorId,
+      });
+      return forbiddenError('You can only create posts as yourself', ctx.requestId);
+    }
+
+    // Server-side enforcement: always use hiveUsername from session if available,
+    // preventing stale client data from storing emails as authorUsername
+    if (sessionUser.hiveUsername) {
+      data.authorUsername = sessionUser.hiveUsername;
+    }
+
+    // Rate limiting check
+    const rateLimit = await checkRateLimit(
+      authenticatedUserId,
+      RATE_LIMITS.softPosts,
+      'softPosts'
+    );
+    if (!rateLimit.success) {
+      ctx.log.warn('Rate limit exceeded', {
+        authorId: authenticatedUserId,
+        remaining: rateLimit.remaining,
+        reset: new Date(rateLimit.reset).toISOString(),
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rate limit exceeded',
+          message: 'You are posting too frequently. Please wait before creating another post.',
+          retryAfter: Math.ceil((rateLimit.reset - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: createRateLimitHeaders(
+            rateLimit.remaining,
+            rateLimit.reset,
+            RATE_LIMITS.softPosts.limit
+          ),
+        }
+      );
+    }
+
+    // Generate a unique permlink
+    const permlink = `${data.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .slice(0, 50)}-${Date.now()}`;
+
+    // Generate excerpt from content (first 200 chars, strip markdown)
+    const excerpt =
+      data.content
+        .replace(/[#*_`~\[\]()>]/g, '')
+        .substring(0, 200)
+        .trim() + (data.content.length > 200 ? '...' : '');
+
+    // Atomic check-and-write: count + create inside a transaction to prevent TOCTOU race
+    let currentPostCount: number;
+    let post: { id: string };
 
     try {
-      // Parse JSON body with error handling
-      let body: unknown;
-      try {
-        body = await request.json();
-      } catch {
-        return validationError('Invalid JSON body', ctx.requestId);
-      }
-
-      // Validate request body
-      const parseResult = createPostSchema.safeParse(body);
-      if (!parseResult.success) {
-        return validationError(parseResult.error, ctx.requestId);
-      }
-
-      const data = parseResult.data;
-
-      // Authorization check: Verify user identity from session cookie
-      const sessionUser = await getAuthenticatedUserFromSession(request);
-
-      if (!sessionUser) {
-        return unauthorizedError('Authentication required', ctx.requestId);
-      }
-
-      const authenticatedUserId = sessionUser.userId;
-
-      // Verify the authenticated user matches the author
-      if (authenticatedUserId !== data.authorId) {
-        ctx.log.warn('Authorization failed: user ID mismatch', {
-          authenticatedUserId,
-          requestedAuthorId: data.authorId,
+      const result = await prisma.$transaction(async (tx) => {
+        // Count existing posts inside transaction
+        const count = await tx.post.count({
+          where: { authorId: data.authorId },
         });
-        return forbiddenError('You can only create posts as yourself', ctx.requestId);
-      }
 
-      // Server-side enforcement: always use hiveUsername from session if available,
-      // preventing stale client data from storing emails as authorUsername
-      if (sessionUser.hiveUsername) {
-        data.authorUsername = sessionUser.hiveUsername;
-      }
+        if (count >= FREE_POST_LIMIT) {
+          throw Object.assign(new Error('POST_LIMIT_REACHED'), { postCount: count });
+        }
 
-      // Rate limiting check
-      const rateLimit = await checkRateLimit(
-        authenticatedUserId,
-        RATE_LIMITS.softPosts,
-        'softPosts'
-      );
-      if (!rateLimit.success) {
-        ctx.log.warn('Rate limit exceeded', {
-          authorId: authenticatedUserId,
-          remaining: rateLimit.remaining,
-          reset: new Date(rateLimit.reset).toISOString(),
+        // Create the new post inside the same transaction
+        const newPost = await tx.post.create({
+          data: {
+            authorId: data.authorId,
+            authorUsername: data.authorUsername,
+            authorDisplayName: data.authorDisplayName || data.authorUsername,
+            authorAvatar: data.authorAvatar || null,
+            title: data.title,
+            content: data.content,
+            excerpt,
+            permlink,
+            tags: data.tags || [],
+            sportCategory: data.sportCategory || null,
+            featuredImage: data.featuredImage || null,
+            communityId: data.communityId || null,
+            communitySlug: data.communitySlug || null,
+            communityName: data.communityName || null,
+            isPublishedToHive: false,
+            hivePermlink: null,
+            viewCount: 0,
+            likeCount: 0,
+          },
+        });
+
+        return { count, post: newPost };
+      });
+
+      currentPostCount = result.count;
+      post = result.post;
+    } catch (txError: unknown) {
+      if (txError instanceof Error && txError.message === 'POST_LIMIT_REACHED') {
+        const count = (txError as Error & { postCount: number }).postCount;
+        ctx.log.warn('Post limit reached', {
+          authorId: data.authorId,
+          currentCount: count,
+          limit: FREE_POST_LIMIT,
         });
         return NextResponse.json(
           {
             success: false,
-            error: 'Rate limit exceeded',
-            message: 'You are posting too frequently. Please wait before creating another post.',
-            retryAfter: Math.ceil((rateLimit.reset - Date.now()) / 1000),
-          },
-          {
-            status: 429,
-            headers: createRateLimitHeaders(
-              rateLimit.remaining,
-              rateLimit.reset,
-              RATE_LIMITS.softPosts.limit
-            ),
-          }
-        );
-      }
-
-      // Generate a unique permlink
-      const permlink = `${data.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .slice(0, 50)}-${Date.now()}`;
-
-      // Generate excerpt from content (first 200 chars, strip markdown)
-      const excerpt =
-        data.content
-          .replace(/[#*_`~\[\]()>]/g, '')
-          .substring(0, 200)
-          .trim() + (data.content.length > 200 ? '...' : '');
-
-      // Atomic check-and-write: count + create inside a transaction to prevent TOCTOU race
-      let currentPostCount: number;
-      let post: { id: string };
-
-      try {
-        const result = await prisma.$transaction(async (tx) => {
-          // Count existing posts inside transaction
-          const count = await tx.post.count({
-            where: { authorId: data.authorId },
-          });
-
-          if (count >= FREE_POST_LIMIT) {
-            throw Object.assign(new Error('POST_LIMIT_REACHED'), { postCount: count });
-          }
-
-          // Create the new post inside the same transaction
-          const newPost = await tx.post.create({
-            data: {
-              authorId: data.authorId,
-              authorUsername: data.authorUsername,
-              authorDisplayName: data.authorDisplayName || data.authorUsername,
-              authorAvatar: data.authorAvatar || null,
-              title: data.title,
-              content: data.content,
-              excerpt,
-              permlink,
-              tags: data.tags || [],
-              sportCategory: data.sportCategory || null,
-              featuredImage: data.featuredImage || null,
-              communityId: data.communityId || null,
-              communitySlug: data.communitySlug || null,
-              communityName: data.communityName || null,
-              isPublishedToHive: false,
-              hivePermlink: null,
-              viewCount: 0,
-              likeCount: 0,
-            },
-          });
-
-          return { count, post: newPost };
-        });
-
-        currentPostCount = result.count;
-        post = result.post;
-      } catch (txError: unknown) {
-        if (txError instanceof Error && txError.message === 'POST_LIMIT_REACHED') {
-          const count = (txError as Error & { postCount: number }).postCount;
-          ctx.log.warn('Post limit reached', {
-            authorId: data.authorId,
+            error: 'Post limit reached',
+            message: `You've reached the limit of ${FREE_POST_LIMIT} posts. Upgrade to Hive for unlimited posts and earn rewards!`,
+            limitReached: true,
             currentCount: count,
             limit: FREE_POST_LIMIT,
-          });
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'Post limit reached',
-              message: `You've reached the limit of ${FREE_POST_LIMIT} posts. Upgrade to Hive for unlimited posts and earn rewards!`,
-              limitReached: true,
-              currentCount: count,
-              limit: FREE_POST_LIMIT,
-            },
-            { status: 403 }
-          );
-        }
-        throw txError;
+          },
+          { status: 403 }
+        );
       }
+      throw txError;
+    }
 
-      // Calculate remaining posts and warning state
-      const remainingPosts = FREE_POST_LIMIT - currentPostCount - 1;
-      const isNearLimit = currentPostCount >= WARNING_THRESHOLD;
+    // Calculate remaining posts and warning state
+    const remainingPosts = FREE_POST_LIMIT - currentPostCount - 1;
+    const isNearLimit = currentPostCount >= WARNING_THRESHOLD;
 
-      ctx.log.info('Creating post', {
-        authorId: data.authorId,
-        authorUsername: data.authorUsername,
-        title: data.title.substring(0, 50),
-        communityId: data.communityId,
+    ctx.log.info('Creating post', {
+      authorId: data.authorId,
+      authorUsername: data.authorUsername,
+      title: data.title.substring(0, 50),
+      communityId: data.communityId,
+    });
+
+    // Track post creation for leaderboard metrics (fire-and-forget)
+    trackPostCreation(data.authorUsername);
+    evaluateBadgesForAction(data.authorUsername, 'post_created').catch(() => {});
+
+    // Update user's lastActiveAt timestamp (fire-and-forget)
+    prisma.profile
+      .update({
+        where: { id: data.authorId },
+        data: { lastActiveAt: new Date() },
+      })
+      .catch((err) => {
+        logger.warn('Failed to update lastActiveAt', 'posts', {
+          error: err instanceof Error ? err.message : String(err),
+        });
       });
 
-      // Track post creation for leaderboard metrics (fire-and-forget)
-      trackPostCreation(data.authorUsername);
-      evaluateBadgesForAction(data.authorUsername, 'post_created').catch(() => {});
-
-      // Update user's lastActiveAt timestamp (fire-and-forget)
-      prisma.profile
+    // Increment community post count (fire-and-forget)
+    if (data.communityId) {
+      prisma.community
         .update({
-          where: { id: data.authorId },
-          data: { lastActiveAt: new Date() },
+          where: { id: data.communityId },
+          data: { postCount: { increment: 1 } },
         })
-        .catch((err) => {
-          logger.warn('Failed to update lastActiveAt', 'posts', {
-            error: err instanceof Error ? err.message : String(err),
+        .catch((err: unknown) => {
+          ctx.log.warn('Failed to increment community post count', {
+            communityId: data.communityId,
+            error: err,
           });
         });
-
-      // Increment community post count (fire-and-forget)
-      if (data.communityId) {
-        prisma.community
-          .update({
-            where: { id: data.communityId },
-            data: { postCount: { increment: 1 } },
-          })
-          .catch((err: unknown) => {
-            ctx.log.warn('Failed to increment community post count', {
-              communityId: data.communityId,
-              error: err,
-            });
-          });
-      }
-
-      ctx.log.info('Post created successfully', { postId: post.id });
-
-      return NextResponse.json(
-        {
-          success: true,
-          post,
-          message: 'Post created successfully',
-          postLimitInfo: {
-            currentCount: currentPostCount + 1,
-            limit: FREE_POST_LIMIT,
-            remaining: remainingPosts,
-            isNearLimit,
-            upgradePrompt: isNearLimit
-              ? `You have ${remainingPosts} post${remainingPosts === 1 ? '' : 's'} remaining. Upgrade to Hive for unlimited posts!`
-              : null,
-          },
-        },
-        { status: 201 }
-      );
-    } catch (error) {
-      return ctx.handleError(error);
     }
-  });
-}
+
+    ctx.log.info('Post created successfully', { postId: post.id });
+
+    return NextResponse.json(
+      {
+        success: true,
+        post,
+        message: 'Post created successfully',
+        postLimitInfo: {
+          currentCount: currentPostCount + 1,
+          limit: FREE_POST_LIMIT,
+          remaining: remainingPosts,
+          isNearLimit,
+          upgradePrompt: isNearLimit
+            ? `You have ${remainingPosts} post${remainingPosts === 1 ? '' : 's'} remaining. Upgrade to Hive for unlimited posts!`
+            : null,
+        },
+      },
+      { status: 201 }
+    );
+  })
+);

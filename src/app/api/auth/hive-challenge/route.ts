@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createRequestContext } from '@/lib/api/response';
+import { createApiHandler } from '@/lib/api/response';
 import { createChallenge } from '@/lib/auth/hive-challenge';
 
 const ROUTE = '/api/auth/hive-challenge';
@@ -18,10 +18,8 @@ const ROUTE = '/api/auth/hive-challenge';
 // Hive username: 3-16 chars, lowercase alphanumeric + dots/dashes, no leading/trailing dots/dashes
 const HIVE_USERNAME_RE = /^[a-z][a-z0-9.-]{1,14}[a-z0-9]$/;
 
-export async function GET(request: NextRequest) {
-  const ctx = createRequestContext(ROUTE);
-
-  const username = request.nextUrl.searchParams.get('username')?.toLowerCase().trim();
+export const GET = createApiHandler(ROUTE, async (request) => {
+  const username = (request as NextRequest).nextUrl.searchParams.get('username')?.toLowerCase().trim();
 
   if (!username || !HIVE_USERNAME_RE.test(username)) {
     return NextResponse.json(
@@ -30,10 +28,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  try {
-    const { challenge, mac } = createChallenge(username);
-    return NextResponse.json({ success: true, challenge, mac });
-  } catch (error) {
-    return ctx.handleError(error);
-  }
-}
+  const { challenge, mac } = createChallenge(username);
+  return NextResponse.json({ success: true, challenge, mac });
+});
