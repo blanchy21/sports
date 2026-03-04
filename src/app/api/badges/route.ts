@@ -17,8 +17,8 @@ export const GET = createApiHandler('/api/badges', async (request) => {
     );
   }
 
-  // Fetch badges, stats, and sport ranks in parallel
-  const [userBadges, userStats, sportStats] = await Promise.all([
+  // Fetch badges, stats, sport ranks, and monthly titles in parallel
+  const [userBadges, userStats, sportStats, monthlyTitles] = await Promise.all([
     prisma.userBadge.findMany({
       where: { username },
       orderBy: { awardedAt: 'desc' },
@@ -30,6 +30,10 @@ export const GET = createApiHandler('/api/badges', async (request) => {
     prisma.userSportStats.findMany({
       where: { username },
       orderBy: { medalsScore: 'desc' },
+    }),
+    prisma.monthlyTitle.findMany({
+      where: { username },
+      orderBy: { awardedAt: 'desc' },
     }),
   ]);
 
@@ -85,6 +89,12 @@ export const GET = createApiHandler('/api/badges', async (request) => {
       badges,
       rank,
       sportRanks,
+      monthlyTitles: monthlyTitles.map((t) => ({
+        sportId: t.sportId,
+        monthId: t.monthId,
+        badgeId: t.badgeId,
+        score: Number(t.score),
+      })),
       stats: { totalBadges: badges.length },
     },
     { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }

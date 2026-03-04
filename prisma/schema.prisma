@@ -644,6 +644,31 @@ model UserBadge {
   @@map("user_badges")
 }
 
+model MonthlyLeaderboard {
+  id          String   @id @default(uuid())
+  monthId     String   @map("month_id")
+  sportId     String   @map("sport_id") // '_overall' for combined, else sport slug
+  entries     Json
+  generatedAt DateTime @default(now()) @map("generated_at")
+
+  @@unique([monthId, sportId])
+  @@map("monthly_leaderboards")
+}
+
+model MonthlyTitle {
+  id        String   @id @default(uuid())
+  monthId   String   @map("month_id")
+  sportId   String   @map("sport_id")
+  username  String
+  badgeId   String   @map("badge_id")
+  score     Decimal  @db.Decimal(10, 2)
+  awardedAt DateTime @default(now()) @map("awarded_at")
+
+  @@unique([monthId, sportId])
+  @@index([username])
+  @@map("monthly_titles")
+}
+
 model UserSportStats {
   id            String   @id @default(uuid())
   username      String

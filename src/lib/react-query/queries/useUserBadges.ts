@@ -9,12 +9,20 @@ import type {
   MedalsRank,
 } from '@/lib/badges/types';
 
+export interface MonthlyTitleData {
+  sportId: string;
+  monthId: string;
+  badgeId: string;
+  score: number;
+}
+
 interface BadgesResponse {
   success: boolean;
   data: {
     badges: UserBadgeData[];
     rank: UserRankData | null;
     sportRanks: UserSportRankData[];
+    monthlyTitles: MonthlyTitleData[];
     stats: { totalBadges: number };
   };
 }

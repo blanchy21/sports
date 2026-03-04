@@ -1,4 +1,10 @@
-export type BadgeCategory = 'content' | 'engagement' | 'predictions' | 'streak' | 'milestone';
+export type BadgeCategory =
+  | 'content'
+  | 'engagement'
+  | 'predictions'
+  | 'streak'
+  | 'milestone'
+  | 'monthly';
 
 export type BadgeTrigger =
   | 'post_created'

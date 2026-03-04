@@ -5,7 +5,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
 import { STALE_TIMES } from '@/lib/constants/cache';
-import type { WeeklyLeaderboards, RewardCategory } from '@/lib/metrics/types';
+import type { WeeklyLeaderboards, RewardCategory, LeaderboardEntry } from '@/lib/metrics/types';
 
 // Response types
 interface LeaderboardApiResponse {
@@ -75,5 +75,67 @@ export function useMyRank(username: string | undefined) {
     queryFn: fetchMyRank,
     enabled: !!username,
     staleTime: STALE_TIMES.STANDARD,
+  });
+}
+
+// ── Monthly Leaderboard ─────────────────────────────────────────────
+
+interface MonthlyLeaderboardResponse {
+  success: boolean;
+  monthId: string;
+  sportId: string;
+  entries: LeaderboardEntry[];
+  titleHolder: { username: string; badgeId: string; score: number } | null;
+  generatedAt: string | null;
+}
+
+async function fetchMonthlyLeaderboard(
+  monthId: string,
+  sportId?: string
+): Promise<MonthlyLeaderboardResponse> {
+  const params = new URLSearchParams({ monthId });
+  if (sportId) params.set('sportId', sportId);
+
+  const response = await fetch(`/api/leaderboard/monthly?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch monthly leaderboard');
+  const json = await response.json();
+  return json.data ?? json;
+}
+
+export function useMonthlyLeaderboard(monthId: string, sportId?: string) {
+  return useQuery({
+    queryKey: queryKeys.leaderboards.monthly(monthId, sportId),
+    queryFn: () => fetchMonthlyLeaderboard(monthId, sportId),
+    enabled: !!monthId,
+    staleTime: STALE_TIMES.LONG,
+  });
+}
+
+// ── All-Time Leaderboard ────────────────────────────────────────────
+
+export type AllTimeMetric = 'posts' | 'sportsbites' | 'comments' | 'views' | 'medals';
+
+interface AllTimeLeaderboardResponse {
+  success: boolean;
+  metric: AllTimeMetric;
+  entries: LeaderboardEntry[];
+  total: number;
+}
+
+async function fetchAllTimeLeaderboard(
+  metric: AllTimeMetric,
+  limit: number
+): Promise<AllTimeLeaderboardResponse> {
+  const response = await fetch(`/api/leaderboard/all-time?metric=${metric}&limit=${limit}`);
+  if (!response.ok) throw new Error('Failed to fetch all-time leaderboard');
+  const json = await response.json();
+  return json.data ?? json;
+}
+
+export function useAllTimeLeaderboard(metric: AllTimeMetric = 'medals', limit: number = 50) {
+  return useQuery({
+    queryKey: queryKeys.leaderboards.allTime(metric),
+    queryFn: () => fetchAllTimeLeaderboard(metric, limit),
+    staleTime: STALE_TIMES.LONG,
   });
 }

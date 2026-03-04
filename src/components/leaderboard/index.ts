@@ -1,7 +1,7 @@
 /**
  * Leaderboard Components
  *
- * Components for displaying weekly leaderboards and rewards.
+ * Components for displaying weekly, monthly, and all-time leaderboards and rewards.
  */
 
 export { LeaderboardCard } from './LeaderboardCard';
@@ -13,3 +13,6 @@ export { TopStakersWidget } from './TopStakersWidget';
 export { WeeklyWinners } from './WeeklyWinners';
 export { RisingStars } from './RisingStars';
 export { MyStatsView } from './MyStatsView';
+export { MonthlyLeaderboardView } from './MonthlyLeaderboardView';
+export { AllTimeLeaderboardView } from './AllTimeLeaderboardView';
+export { MonthlyTitleBadge } from './MonthlyTitleBadge';

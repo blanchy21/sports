@@ -17,7 +17,12 @@ export const dynamic = 'force-dynamic';
 
 const ROUTE = '/api/admin/trigger-cron';
 
-const ALLOWED_CRON_TYPES = ['staking-rewards', 'curator-rewards', 'weekly-rewards'] as const;
+const ALLOWED_CRON_TYPES = [
+  'staking-rewards',
+  'curator-rewards',
+  'weekly-rewards',
+  'monthly-leaderboard',
+] as const;
 
 const bodySchema = z.object({
   cronType: z.enum(ALLOWED_CRON_TYPES),

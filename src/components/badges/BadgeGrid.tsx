@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils/client';
 import { useUserBadges } from '@/lib/react-query/queries/useUserBadges';
 import { BADGE_CATALOGUE } from '@/lib/badges/catalogue';
 import { AchievementBadge } from './AchievementBadge';
-import { Lock } from 'lucide-react';
+import { Lock, Crown } from 'lucide-react';
+import { SPORT_CATEGORIES } from '@/types/sports';
 import type { BadgeCategory } from '@/lib/badges/types';
 
 interface BadgeGridProps {
@@ -19,6 +20,7 @@ const CATEGORY_LABELS: Record<BadgeCategory, string> = {
   predictions: 'Predictions',
   streak: 'Streaks',
   milestone: 'Milestones',
+  monthly: 'Monthly Titles',
 };
 
 const CATEGORY_ORDER: BadgeCategory[] = [
@@ -90,6 +92,30 @@ export const BadgeGrid: React.FC<BadgeGridProps> = ({ username, className }) => 
           </div>
         </div>
       ))}
+
+      {/* Monthly Titles */}
+      {data?.monthlyTitles && data.monthlyTitles.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+            Monthly Titles
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {data.monthlyTitles.map((title) => {
+              const sport = SPORT_CATEGORIES.find((c) => c.id === title.sportId);
+              return (
+                <span
+                  key={title.badgeId}
+                  className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning"
+                  title={`${sport?.name ?? title.sportId} Writer of the Month (${title.monthId})`}
+                >
+                  <Crown className="h-2.5 w-2.5" />
+                  {sport?.icon} {sport?.name ?? title.sportId} Writer ({title.monthId})
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

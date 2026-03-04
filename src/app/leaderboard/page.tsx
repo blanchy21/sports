@@ -3,8 +3,8 @@
 /**
  * Leaderboard Page
  *
- * Three views:
- *  - Content Rankings: Weekly content leaderboards with MEDALS rewards (default)
+ * Three main tabs:
+ *  - Content Rankings: Weekly / Monthly / All-Time leaderboards
  *  - Token Stakers: MEDALS token holder leaderboard
  *  - My Stats: Personal stats dashboard (authenticated only)
  */
@@ -20,15 +20,28 @@ import {
   WeeklyWinners,
   RisingStars,
   MyStatsView,
+  MonthlyLeaderboardView,
+  AllTimeLeaderboardView,
 } from '@/components/leaderboard';
 import { Button } from '@/components/core/Button';
-import { ChevronLeft, ChevronRight, RefreshCw, Trophy, Medal, BarChart3 } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  Trophy,
+  Medal,
+  BarChart3,
+  Calendar,
+  Clock,
+  Infinity,
+} from 'lucide-react';
 import { useWeeklyLeaderboards } from '@/lib/react-query/queries/useLeaderboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/react-query/queryClient';
 
 type LeaderboardView = 'content' | 'stakers' | 'mystats';
+type ContentPeriod = 'weekly' | 'monthly' | 'alltime';
 
 function getWeekIdFromOffset(offset: number): string {
   const date = new Date();
@@ -52,11 +65,14 @@ export default function LeaderboardPage() {
   const activeView: LeaderboardView =
     viewParam === 'stakers' ? 'stakers' : viewParam === 'mystats' ? 'mystats' : 'content';
 
-  const [weekOffset, setWeekOffset] = useState(0);
+  // Period state from URL
+  const periodParam = searchParams.get('period');
+  const activePeriod: ContentPeriod =
+    periodParam === 'monthly' ? 'monthly' : periodParam === 'alltime' ? 'alltime' : 'weekly';
 
+  const [weekOffset, setWeekOffset] = useState(0);
   const currentWeekId = useMemo(() => getWeekIdFromOffset(weekOffset), [weekOffset]);
 
-  // React Query replaces manual useEffect + useState fetch
   const { data: leaderboards, isLoading, error } = useWeeklyLeaderboards(currentWeekId, 50);
 
   const handlePreviousWeek = () => setWeekOffset((prev) => prev + 1);
@@ -77,6 +93,25 @@ export default function LeaderboardPage() {
     });
   };
 
+  const setPeriod = (period: ContentPeriod) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (period === 'weekly') {
+      params.delete('period');
+    } else {
+      params.set('period', period);
+    }
+    params.delete('view'); // content tab
+    router.push(`/leaderboard${params.toString() ? `?${params.toString()}` : ''}`, {
+      scroll: false,
+    });
+  };
+
+  const PERIOD_OPTIONS: { value: ContentPeriod; label: string; icon: React.ElementType }[] = [
+    { value: 'weekly', label: 'Weekly', icon: Calendar },
+    { value: 'monthly', label: 'Monthly', icon: Clock },
+    { value: 'alltime', label: 'All-Time', icon: Infinity },
+  ];
+
   return (
     <MainLayout>
       <div className="mx-auto max-w-6xl space-y-6">
@@ -86,15 +121,19 @@ export default function LeaderboardPage() {
             <h1 className="text-3xl font-bold">MEDALS Leaderboards</h1>
             <p className="mt-1 text-muted-foreground">
               {activeView === 'content'
-                ? 'Compete for weekly rewards by creating engaging content'
+                ? activePeriod === 'weekly'
+                  ? 'Compete for weekly rewards by creating engaging content'
+                  : activePeriod === 'monthly'
+                    ? 'Monthly content rankings with sport-specific titles'
+                    : 'Lifetime achievement rankings'
                 : activeView === 'stakers'
                   ? 'Top MEDALS token holders and stakers'
                   : 'Your personal stats and achievements'}
             </p>
           </div>
 
-          {/* Week Navigation — only on content tab */}
-          {activeView === 'content' && (
+          {/* Week Navigation — only on content tab / weekly period */}
+          {activeView === 'content' && activePeriod === 'weekly' && (
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -165,71 +204,89 @@ export default function LeaderboardPage() {
         {/* Content Rankings Tab */}
         {activeView === 'content' && (
           <>
-            {/* My Rankings */}
-            {user && <MyRankCard username={user.username} />}
-
-            {/* Weekly Winners */}
-            <WeeklyWinners weekId={currentWeekId} />
-
-            {/* Weekly Rewards Summary */}
-            <WeeklyRewardsSummary weekId={currentWeekId} />
-
-            {/* Rising Stars */}
-            <RisingStars currentWeekId={currentWeekId} />
-
-            {/* Leaderboards Grid — now showing up to 50 entries */}
-            <LeaderboardGrid
-              leaderboards={leaderboards ?? null}
-              isLoading={isLoading}
-              error={error ? (error instanceof Error ? error.message : 'Unknown error') : null}
-              weekId={currentWeekId}
-              showRewards={true}
-              maxEntries={50}
-            />
-
-            {/* How to Compete Section */}
-            <div className="rounded-lg border bg-card p-6">
-              <h2 className="mb-4 text-xl font-bold">How to Compete</h2>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  <h3 className="mb-2 font-semibold">Most External Views</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Share your posts on social media and other platforms to drive traffic to
-                    Sportsblock.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold">Most Viewed Post</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Create content that keeps users engaged and coming back for more.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold">Top Commenter</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Engage with the community by leaving thoughtful comments on posts.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold">Most Engaged Post</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Create content that sparks discussions and earns votes.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold">Post of the Week</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Selected by our curator team for exceptional quality content.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold">Best Newcomer</h3>
-                  <p className="text-sm text-muted-foreground">
-                    New to Sportsblock? Make a great first impression! (Available Year 4+)
-                  </p>
-                </div>
-              </div>
+            {/* Period Selector */}
+            <div className="flex gap-1 rounded-lg border p-1">
+              {PERIOD_OPTIONS.map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  onClick={() => setPeriod(value)}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    activePeriod === value
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </button>
+              ))}
             </div>
+
+            {/* Weekly Content */}
+            {activePeriod === 'weekly' && (
+              <>
+                {user && <MyRankCard username={user.username} />}
+                <WeeklyWinners weekId={currentWeekId} />
+                <WeeklyRewardsSummary weekId={currentWeekId} />
+                <RisingStars currentWeekId={currentWeekId} />
+                <LeaderboardGrid
+                  leaderboards={leaderboards ?? null}
+                  isLoading={isLoading}
+                  error={error ? (error instanceof Error ? error.message : 'Unknown error') : null}
+                  weekId={currentWeekId}
+                  showRewards={true}
+                  maxEntries={50}
+                />
+                <div className="rounded-lg border bg-card p-6">
+                  <h2 className="mb-4 text-xl font-bold">How to Compete</h2>
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div>
+                      <h3 className="mb-2 font-semibold">Most External Views</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Share your posts on social media and other platforms to drive traffic to
+                        Sportsblock.
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="mb-2 font-semibold">Most Viewed Post</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Create content that keeps users engaged and coming back for more.
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="mb-2 font-semibold">Top Commenter</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Engage with the community by leaving thoughtful comments on posts.
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="mb-2 font-semibold">Most Engaged Post</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Create content that sparks discussions and earns votes.
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="mb-2 font-semibold">Post of the Week</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Selected by our curator team for exceptional quality content.
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="mb-2 font-semibold">Best Newcomer</h3>
+                      <p className="text-sm text-muted-foreground">
+                        New to Sportsblock? Make a great first impression! (Available Year 4+)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Monthly Content */}
+            {activePeriod === 'monthly' && <MonthlyLeaderboardView />}
+
+            {/* All-Time Content */}
+            {activePeriod === 'alltime' && <AllTimeLeaderboardView />}
           </>
         )}
 
