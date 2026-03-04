@@ -6,7 +6,7 @@ import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useMonthlyLeaderboard } from '@/lib/react-query/queries/useLeaderboard';
-import { getMonthId, getPreviousMonthId, getNextMonthId } from '@/lib/metrics/monthly-leaderboard';
+import { getMonthId, getPreviousMonthId, getNextMonthId } from '@/lib/metrics/month-helpers';
 import { SPORT_CATEGORIES } from '@/types/sports';
 import { MonthlyTitleBadge } from './MonthlyTitleBadge';
 
