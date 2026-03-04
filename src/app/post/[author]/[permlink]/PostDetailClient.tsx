@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Avatar } from '@/components/core/Avatar';
@@ -26,7 +26,6 @@ interface SoftPostMeta {
 }
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfileCard } from '@/lib/react-query/queries/useUserProfile';
-import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useTrackPostView, useTrackEngagement } from '@/lib/metrics/hooks';
 import { formatDate, formatReadTime } from '@/lib/utils/client';
@@ -34,6 +33,7 @@ import { proxyImagesInContent } from '@/lib/utils/image-proxy';
 import { sanitizePostContent } from '@/lib/utils/sanitize';
 import { logger } from '@/lib/logger';
 import { useBroadcast } from '@/hooks/useBroadcast';
+import { InlinePostComments } from '@/components/comments/InlinePostComments';
 
 interface PostDetailClientProps {
   initialPost?: SportsblockPost | null;
@@ -42,7 +42,6 @@ interface PostDetailClientProps {
 export default function PostDetailClient({ initialPost }: PostDetailClientProps) {
   const params = useParams();
   const router = useRouter();
-  const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const { authType, hiveUser } = useAuth();
   const { broadcast } = useBroadcast();
@@ -52,6 +51,8 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
   const [softPostMeta, setSoftPostMeta] = useState<SoftPostMeta | null>(null);
   const [isLoading, setIsLoading] = useState(!initialPost);
   const [error, setError] = useState<string | null>(null);
+
+  const commentsRef = useRef<HTMLDivElement>(null);
 
   const author = params.author as string;
   const permlink = params.permlink as string;
@@ -204,20 +205,7 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
   };
 
   const handleComment = () => {
-    if (!post) return;
-    if (isSoftPost && softPostMeta) {
-      // Open soft comments modal for soft posts
-      openModal('softComments', {
-        postId: softPostMeta.id,
-        postPermlink: post.permlink,
-        postAuthor: post.author,
-      });
-    } else {
-      openModal('comments', {
-        author: post.author,
-        permlink: post.permlink,
-      });
-    }
+    commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleBookmark = () => {
@@ -431,6 +419,16 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Inline Comments */}
+        <div ref={commentsRef}>
+          <InlinePostComments
+            author={post.author}
+            permlink={post.permlink}
+            isSoftPost={isSoftPost}
+            softPostId={softPostMeta?.id}
+          />
         </div>
       </div>
     </MainLayout>
