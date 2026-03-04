@@ -1002,12 +1002,17 @@ export function extractMediaFromBody(body: string): {
   text: string;
 } {
   const images: string[] = [];
-  const imageRegex = /!\[.*?\]\((.*?)\)/g;
+  // Use [\s\S] to handle URLs that wrap across lines in Hive markdown
+  const imageRegex = /!\[[\s\S]*?\]\(([\s\S]*?)\)/g;
   let match;
   while ((match = imageRegex.exec(body)) !== null) {
-    images.push(match[1]);
+    // Clean up any whitespace/newlines within the captured URL
+    images.push(match[1].replace(/\s+/g, ''));
   }
-  const text = body.replace(/!\[.*?\]\(.*?\)/g, '').trim();
+  const text = body
+    .replace(/!\[[\s\S]*?\]\([\s\S]*?\)/g, '') // Markdown images (multiline)
+    .replace(/<img[^>]*\/?>/gi, '') // HTML <img> tags
+    .trim();
   return { images, text };
 }
 
