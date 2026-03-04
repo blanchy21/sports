@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service | Sportsblock',
+  description: 'Sportsblock terms of service and usage agreement.',
+};
 
 export const revalidate = 86400; // Revalidate once per day
 

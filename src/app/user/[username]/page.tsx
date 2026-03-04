@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import UserProfileClient from './UserProfileClient';
 import { fetchUserAccount } from '@/lib/hive-workerbee/account';
@@ -7,13 +8,15 @@ interface PageProps {
   params: Promise<{ username: string }>;
 }
 
-async function getProfile(username: string): Promise<UserAccountData | null> {
+// Wrapped with React cache() so generateMetadata and the page component
+// share the result within a single server request (no duplicate fetch).
+const getProfile = cache(async (username: string): Promise<UserAccountData | null> => {
   try {
     return await fetchUserAccount(username);
   } catch {
     return null;
   }
-}
+});
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { username } = await params;

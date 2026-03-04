@@ -165,23 +165,24 @@ export async function GET() {
 
     for (const user of expiredUsers) {
       try {
-        // Delete user's posts
-        const postResult = await prisma.post.deleteMany({
-          where: { authorId: user.id },
+        // Delete posts and soft-delete comments atomically per user
+        const { postsCount, commentsCount } = await prisma.$transaction(async (tx) => {
+          const postResult = await tx.post.deleteMany({
+            where: { authorId: user.id },
+          });
+          const commentResult = await tx.comment.updateMany({
+            where: { authorId: user.id, isDeleted: false },
+            data: { isDeleted: true, body: '[archived due to inactivity]' },
+          });
+          return { postsCount: postResult.count, commentsCount: commentResult.count };
         });
-        results.postsDeleted += postResult.count;
 
-        // Soft-delete user's comments (mark as deleted)
-        const commentResult = await prisma.comment.updateMany({
-          where: { authorId: user.id, isDeleted: false },
-          data: { isDeleted: true, body: '[archived due to inactivity]' },
-        });
-        results.commentsDeleted += commentResult.count;
-
+        results.postsDeleted += postsCount;
+        results.commentsDeleted += commentsCount;
         results.usersArchived++;
 
         logger.info(
-          `Archived user ${user.id}: ${postResult.count} posts, ${commentResult.count} comments`,
+          `Archived user ${user.id}: ${postsCount} posts, ${commentsCount} comments`,
           'cron:inactivity-check'
         );
       } catch (error) {

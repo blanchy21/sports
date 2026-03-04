@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import PostDetailClient from './PostDetailClient';
 import { fetchPost } from '@/lib/hive-workerbee/content';
@@ -7,14 +8,15 @@ interface PageProps {
   params: Promise<{ author: string; permlink: string }>;
 }
 
-// Shared fetch — used by both generateMetadata and the page component
-async function getPost(author: string, permlink: string): Promise<SportsblockPost | null> {
+// Wrapped with React cache() so generateMetadata and the page component
+// share the result within a single server request (no duplicate fetch).
+const getPost = cache(async (author: string, permlink: string): Promise<SportsblockPost | null> => {
   try {
     return await fetchPost(author, permlink);
   } catch {
     return null;
   }
-}
+});
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { author, permlink } = await params;

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -11,6 +12,11 @@ import {
   Wallet,
   Lightbulb,
 } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Getting Started | Sportsblock',
+  description: 'How to get started with Sportsblock and the Hive blockchain.',
+};
 
 export const revalidate = 86400;
 

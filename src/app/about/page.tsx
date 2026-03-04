@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'About | Sportsblock',
+  description: 'Learn about Sportsblock — where sports meets blockchain.',
+};
 
 export const revalidate = 86400;
 

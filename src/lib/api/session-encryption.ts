@@ -7,7 +7,12 @@
 
 import crypto from 'crypto';
 
+/** Cached derived key — inputs are env vars that never change at runtime. */
+let _cachedKey: Buffer | null = null;
+
 export function getSessionEncryptionKey(): Buffer {
+  if (_cachedKey) return _cachedKey;
+
   const secret = process.env.SESSION_SECRET;
 
   if (!secret) {
@@ -16,7 +21,8 @@ export function getSessionEncryptionKey(): Buffer {
         'SESSION_SECRET environment variable is required in non-development environments'
       );
     }
-    return crypto.scryptSync('development-only-insecure-key', 'salt', 32);
+    _cachedKey = crypto.scryptSync('development-only-insecure-key', 'salt', 32);
+    return _cachedKey;
   }
 
   if (
@@ -27,5 +33,6 @@ export function getSessionEncryptionKey(): Buffer {
   }
   const salt = process.env.SESSION_ENCRYPTION_SALT || 'sportsblock-session-salt';
 
-  return crypto.scryptSync(secret, salt, 32);
+  _cachedKey = crypto.scryptSync(secret, salt, 32);
+  return _cachedKey;
 }

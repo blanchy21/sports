@@ -120,37 +120,36 @@ export const POST = csrfProtected(
       );
     }
 
-    // Check if user already liked this target
-    const existingLike = await prisma.like.findUnique({
-      where: { userId_targetType_targetId: { userId: user.userId, targetType, targetId } },
-    });
-
-    let liked: boolean;
     const now = new Date();
 
+    // Atomic check-then-act: find existing like, then create or delete inside a transaction
+    const { liked, deletedLike } = await prisma.$transaction(async (tx) => {
+      const existingLike = await tx.like.findUnique({
+        where: { userId_targetType_targetId: { userId: user.userId, targetType, targetId } },
+      });
+
+      if (existingLike) {
+        await tx.like.delete({ where: { id: existingLike.id } });
+        return { liked: false, deletedLike: existingLike };
+      } else {
+        await tx.like.create({
+          data: {
+            userId: user.userId,
+            targetType,
+            targetId,
+            createdAt: now,
+          },
+        });
+        return { liked: true, deletedLike: null };
+      }
+    });
+
+    // Update count and send notifications outside the transaction
     let countFromUpdate: number | null = null;
 
-    if (existingLike) {
-      // Unlike - delete and update count in parallel
-      const [, updatedCount] = await Promise.all([
-        prisma.like.delete({ where: { id: existingLike.id } }),
-        updateTargetLikeCount(targetType, targetId, -1),
-      ]);
-      countFromUpdate = updatedCount;
-      liked = false;
+    if (deletedLike) {
+      countFromUpdate = await updateTargetLikeCount(targetType, targetId, -1);
     } else {
-      // Like - add the like
-      await prisma.like.create({
-        data: {
-          userId: user.userId,
-          targetType,
-          targetId,
-          createdAt: now,
-        },
-      });
-      liked = true;
-
-      // Run count update and notification in parallel
       const [updatedCount] = await Promise.all([
         updateTargetLikeCount(targetType, targetId, 1),
         createLikeNotification(user, targetType, targetId, now),

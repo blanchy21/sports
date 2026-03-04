@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { Post } from '@/types';
-import { SportsblockPost } from '@/lib/hive-workerbee/content';
+import type { SportsblockPost } from '@/lib/shared/types';
 
 // Type guards for Post union
 export function isSportsblockPost(post: Post | SportsblockPost): post is SportsblockPost {

@@ -1,7 +1,13 @@
+import type { Metadata } from 'next';
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/core/Button';
+
+export const metadata: Metadata = {
+  title: 'Whitepaper | Sportsblock',
+  description: 'The Sportsblock whitepaper — our vision, tokenomics, and roadmap.',
+};
 
 export const revalidate = 86400;
 

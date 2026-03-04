@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy | Sportsblock',
+  description: 'Sportsblock privacy policy and data handling practices.',
+};
 
 export const revalidate = 86400;
 
