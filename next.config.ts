@@ -147,6 +147,7 @@ const nextConfig: NextConfig = {
         fs: false,
         net: false,
         tls: false,
+        dns: false,
       };
     } else {
       // On server side, enable WebAssembly support
