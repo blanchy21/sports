@@ -24,7 +24,6 @@ import {
 } from '@/lib/react-query/queries/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { usePremiumTier } from '@/lib/premium/hooks';
-import { PremiumBadge } from '@/components/medals';
 import { StakingBadge } from '@/components/badges/StakingBadge';
 import { FollowButton } from '@/components/user/FollowButton';
 import { RoleBadge } from '@/components/user/RoleBadge';
@@ -346,7 +345,6 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                       : (profile as { profile?: { name?: string } }).profile?.name || username}
                   </h1>
                   <RoleBadge username={username} size="md" />
-                  {!isSoftUser && premiumTier && <PremiumBadge tier={premiumTier} size="md" />}
                   {!isSoftUser && premiumTier && <StakingBadge tier={premiumTier} size="md" />}
                   <RankBadge rank={medalsRank} size="md" />
                   {!isSoftUser &&

@@ -18,6 +18,9 @@ import { logger } from '@/lib/logger';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { cn } from '@/lib/utils/client';
 
+import { buildCommentTree, flattenCommentTree } from '@/lib/utils/comment-tree';
+import type { CommentData } from '@/lib/utils/comment-tree';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -32,88 +35,6 @@ interface ReplyTarget {
   author: string;
   permlink: string;
   source?: string;
-}
-
-interface CommentData {
-  author: string;
-  permlink: string;
-  body: string;
-  created: string;
-  parent_author?: string;
-  parent_permlink?: string;
-  net_votes?: number;
-  source?: string;
-  parentCommentId?: string;
-  [key: string]: unknown;
-}
-
-interface CommentNode {
-  comment: CommentData;
-  children: CommentNode[];
-}
-
-// ---------------------------------------------------------------------------
-// Tree builder
-// ---------------------------------------------------------------------------
-
-function buildCommentTree(
-  comments: CommentData[],
-  sportsbiteAuthor: string,
-  sportsbitePermlink: string
-): CommentNode[] {
-  const byPermlink = new Map<string, CommentNode>();
-  const roots: CommentNode[] = [];
-
-  // Create all nodes first
-  for (const comment of comments) {
-    byPermlink.set(comment.permlink, { comment, children: [] });
-  }
-
-  // Link children to parents
-  for (const comment of comments) {
-    const node = byPermlink.get(comment.permlink)!;
-    let parentKey: string | undefined;
-
-    if (comment.source === 'soft' && comment.parentCommentId) {
-      // Soft comment with a parent — parentCommentId maps to another comment's permlink
-      parentKey = comment.parentCommentId;
-    } else if (
-      comment.parent_author &&
-      comment.parent_permlink &&
-      !(
-        comment.parent_author === sportsbiteAuthor && comment.parent_permlink === sportsbitePermlink
-      )
-    ) {
-      // Hive comment whose parent is another comment (not the sportsbite itself)
-      parentKey = comment.parent_permlink;
-    }
-
-    const parentNode = parentKey ? byPermlink.get(parentKey) : undefined;
-    if (parentNode) {
-      parentNode.children.push(node);
-    } else {
-      roots.push(node);
-    }
-  }
-
-  return roots;
-}
-
-/** Walk the tree into a flat list with depth capped at 2. */
-function flattenCommentTree(
-  tree: CommentNode[]
-): { node: CommentNode; depth: number; parentAuthor?: string }[] {
-  const result: { node: CommentNode; depth: number; parentAuthor?: string }[] = [];
-
-  function walk(nodes: CommentNode[], depth: number, parentAuth?: string) {
-    for (const n of nodes) {
-      result.push({ node: n, depth, parentAuthor: parentAuth });
-      walk(n.children, Math.min(depth + 1, 2), n.comment.author);
-    }
-  }
-
-  walk(tree, 0);
-  return result;
 }
 
 // ---------------------------------------------------------------------------

@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useComments } from '@/lib/react-query/queries/useComments';
 import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
 import { RoleBadge } from '@/components/user/RoleBadge';
 import { MessageCircle, Send, Reply } from 'lucide-react';
-import { formatDate } from '@/lib/utils/client';
+import { formatDate, cn } from '@/lib/utils/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { useToast, toast } from '@/components/core/Toast';
@@ -18,6 +18,8 @@ import { CommentToolbar } from '@/components/comments/CommentToolbar';
 import { CommentContent } from '@/components/comments/CommentContent';
 import { getHiveAvatarUrl } from '@/contexts/auth/useAuthProfile';
 import { logger } from '@/lib/logger';
+import { buildCommentTree, flattenCommentTree } from '@/lib/utils/comment-tree';
+import type { CommentData } from '@/lib/utils/comment-tree';
 
 interface CommentsModalProps {
   isOpen: boolean;
@@ -43,6 +45,13 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: comments, isLoading, error } = useComments(author || '', permlink || '');
+
+  // Build threaded comment tree
+  const flatComments = useMemo(() => {
+    if (!comments || comments.length === 0 || !author || !permlink) return [];
+    const tree = buildCommentTree(comments as CommentData[], author, permlink);
+    return flattenCommentTree(tree, 3);
+  }, [comments, author, permlink]);
 
   const handleSubmitComment = async () => {
     if (!commentText.trim()) {
@@ -172,14 +181,19 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
               Failed to load comments. Please try again later.
             </p>
           </div>
-        ) : comments && comments.length > 0 ? (
+        ) : flatComments.length > 0 ? (
           <div className="space-y-4">
-            {comments.map((comment) => {
-              const isNestedReply = comment.parent_author !== author;
+            {flatComments.map(({ node, depth, parentAuthor }) => {
+              const comment = node.comment;
               return (
                 <div
                   key={`${comment.author}-${comment.permlink}`}
-                  className={`flex space-x-3 ${isNestedReply ? 'ml-8 border-l-2 border-border pl-4' : ''}`}
+                  className={cn(
+                    'flex space-x-3',
+                    depth === 1 && 'ml-8 border-l-2 border-border pl-4',
+                    depth === 2 && 'ml-14 border-l-2 border-border/60 pl-4',
+                    depth >= 3 && 'ml-18 border-l-2 border-border/40 pl-4'
+                  )}
                 >
                   <Avatar
                     src={getHiveAvatarUrl(comment.author)}
@@ -188,15 +202,15 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                     size="sm"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center space-x-2">
+                    <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                       <span className="text-sm font-medium">@{comment.author}</span>
                       <RoleBadge username={comment.author} />
                       <span className="text-xs text-muted-foreground">
                         {formatDate(new Date(comment.created))}
                       </span>
-                      {isNestedReply && (
-                        <span className="rounded bg-accent/20 px-2 py-1 text-xs text-accent">
-                          Reply to @{comment.parent_author}
+                      {depth > 0 && parentAuthor && (
+                        <span className="rounded bg-accent/20 px-2 py-0.5 text-xs text-accent">
+                          Reply to @{parentAuthor}
                         </span>
                       )}
                     </div>
