@@ -100,6 +100,11 @@ export const queryKeys = {
     all: ['userStats'] as const,
     user: (username: string) => [...queryKeys.userStats.all, username] as const,
   },
+  sportsbites: {
+    all: ['sportsbites'] as const,
+    lists: () => [...queryKeys.sportsbites.all, 'list'] as const,
+    list: (filters: Record<string, unknown>) => [...queryKeys.sportsbites.lists(), filters] as const,
+  },
   prices: {
     all: ['prices'] as const,
   },

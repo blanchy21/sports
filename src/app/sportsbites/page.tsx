@@ -11,6 +11,7 @@ import { Zap, TrendingUp, Clock, Users, X, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { Button } from '@/components/core/Button';
 import { useFollowing } from '@/lib/react-query/queries/useFollowers';
+import { useInvalidateSportsbites } from '@/lib/react-query/queries/useSportsbites';
 
 type FeedFilter = 'latest' | 'trending' | 'following';
 
@@ -20,6 +21,7 @@ function SportsBitesContent() {
   const searchParams = useSearchParams();
   const { addToast } = useToast();
 
+  const { invalidateAll: invalidateSportsbites } = useInvalidateSportsbites();
   const tagFilter = searchParams.get('tag') || undefined;
 
   const [activeFilter, setActiveFilter] = useState<FeedFilter>('latest');
@@ -59,8 +61,10 @@ function SportsBitesContent() {
     (bite: Sportsbite | null) => {
       addToast(toast.success('Posted!', 'Your sportsbite is live.'));
       setOptimisticBite(bite);
+      // Invalidate cache so next refetch picks up the new bite from the server
+      invalidateSportsbites();
     },
-    [addToast]
+    [addToast, invalidateSportsbites]
   );
 
   const handlePostError = useCallback(

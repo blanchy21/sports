@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { SportsbiteCard } from './SportsbiteCard';
 import type {
   Sportsbite,
-  SportsbiteApiResponse,
   ReactionEmoji,
   ReactionCounts,
   PollResults,
@@ -15,11 +14,9 @@ import { Button } from '@/components/core/Button';
 import { FeedItemErrorBoundary } from '@/components/core/FeedItemErrorBoundary';
 import { cn } from '@/lib/utils/client';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { logger } from '@/lib/logger';
 import { interleaveAds } from '@/lib/utils/interleave-ads';
 import { prefetchUserProfiles } from '@/lib/react-query/queries/useUserProfile';
-
-const REALTIME_POLL_INTERVAL = 15000;
+import { useSportsbitesFeed, flattenSportsbitePages } from '@/lib/react-query/queries/useSportsbites';
 
 function SportsbitesFeedSkeleton({ className }: { className?: string }) {
   return (
@@ -62,17 +59,110 @@ export function SportsbitesFeed({
   className,
   optimisticBite = null,
 }: SportsbitesFeedProps) {
-  const [bites, setBites] = useState<Sportsbite[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-
   const queryClient = useQueryClient();
+
+  const {
+    data,
+    isLoading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    refetch,
+  } = useSportsbitesFeed({ author });
+
+  // --- Client-side filtering (following + tag) ---
+  const followingListRef = useRef(followingList);
+  followingListRef.current = followingList;
+
+  const allBites = useMemo(() => {
+    let bites = flattenSportsbitePages(data?.pages);
+
+    if (filterMode === 'following' && followingListRef.current.length > 0) {
+      bites = bites.filter((s) => followingListRef.current.includes(s.author));
+    }
+    if (tagFilter) {
+      const tagPattern = new RegExp(
+        `#${tagFilter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+        'i'
+      );
+      bites = bites.filter((s) => tagPattern.test(s.body));
+    }
+    return bites;
+  }, [data?.pages, filterMode, tagFilter]);
+
+  // --- New bites banner (detect new items from background refetches) ---
   const [pendingBites, setPendingBites] = useState<Sportsbite[]>([]);
   const [newBiteIds, setNewBiteIds] = useState<Set<string>>(new Set());
+  const [displayedIds, setDisplayedIds] = useState<Set<string>>(new Set());
+  const newAnimationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Batch-fetched reaction and poll data
+  // Track displayed bite IDs so we can detect new ones from refetches
+  useEffect(() => {
+    if (allBites.length > 0 && displayedIds.size === 0) {
+      // First load — seed displayed IDs
+      setDisplayedIds(new Set(allBites.map((b) => b.id)));
+    }
+  }, [allBites, displayedIds.size]);
+
+  // Detect new bites from background refetches (page 1 re-fetched via refetchInterval)
+  useEffect(() => {
+    if (displayedIds.size === 0 || allBites.length === 0) return;
+
+    const newOnes = allBites.filter((b) => !displayedIds.has(b.id));
+    if (newOnes.length > 0) {
+      setPendingBites((prev) => {
+        const existingIds = new Set(prev.map((s) => s.id));
+        const uniqueNew = newOnes.filter((s) => !existingIds.has(s.id));
+        if (uniqueNew.length === 0) return prev;
+        return [...uniqueNew, ...prev];
+      });
+    }
+  }, [allBites, displayedIds]);
+
+  const showNewBites = useCallback(() => {
+    if (pendingBites.length === 0) return;
+
+    const newIds = new Set(pendingBites.map((s) => s.id));
+    setNewBiteIds(newIds);
+    // Merge pending IDs into displayed set
+    setDisplayedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of newIds) next.add(id);
+      return next;
+    });
+    setPendingBites([]);
+
+    if (newAnimationTimeoutRef.current) clearTimeout(newAnimationTimeoutRef.current);
+    newAnimationTimeoutRef.current = setTimeout(() => {
+      setNewBiteIds(new Set());
+      newAnimationTimeoutRef.current = null;
+    }, 5000);
+  }, [pendingBites]);
+
+  // --- Optimistic bite handling ---
+  useEffect(() => {
+    if (!optimisticBite) return;
+
+    const newId = optimisticBite.id;
+    setNewBiteIds(new Set([newId]));
+    setDisplayedIds((prev) => new Set([newId, ...prev]));
+    setPendingBites([]);
+
+    if (newAnimationTimeoutRef.current) clearTimeout(newAnimationTimeoutRef.current);
+    newAnimationTimeoutRef.current = setTimeout(() => {
+      setNewBiteIds(new Set());
+      newAnimationTimeoutRef.current = null;
+    }, 5000);
+  }, [optimisticBite]);
+
+  // --- Deletion handler (remove from displayed set so it doesn't reappear as "new") ---
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const handleDelete = useCallback((id: string) => {
+    setDeletedIds((prev) => new Set([...prev, id]));
+  }, []);
+
+  // --- Batch-fetched reaction and poll data ---
   const [reactionData, setReactionData] = useState<
     Record<string, { counts: ReactionCounts; userReaction: ReactionEmoji | null }>
   >({});
@@ -80,164 +170,23 @@ export function SportsbitesFeed({
     Record<string, { results: PollResults; userVote: 0 | 1 | null }>
   >({});
 
-  const nextCursorRef = useRef<string | undefined>(undefined);
-  const latestBiteRef = useRef<string | undefined>(undefined);
-  const realtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const newAnimationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Ref for bites so checkForNew can read current value without depending on it
-  const bitesRef = useRef(bites);
-  bitesRef.current = bites;
-
-  const dedupeBites = useCallback((list: Sportsbite[]) => {
+  // Build the final display list (optimistic + server bites, minus deleted)
+  const displayBites = useMemo(() => {
+    const bites = optimisticBite ? [optimisticBite, ...allBites] : allBites;
+    // Dedupe (optimistic bite may appear in server data after refetch)
     const seen = new Set<string>();
-    return list.filter((b) => {
-      if (seen.has(b.id)) return false;
+    return bites.filter((b) => {
+      if (seen.has(b.id) || deletedIds.has(b.id)) return false;
       seen.add(b.id);
       return true;
     });
-  }, []);
-
-  // Use a ref for followingList so changes to it don't recreate filterByMode,
-  // which would cascade into recreating loadBites and triggering a refetch.
-  const followingListRef = useRef(followingList);
-  followingListRef.current = followingList;
-
-  const filterByMode = useCallback(
-    (list: Sportsbite[]) => {
-      let filtered = list;
-      if (filterMode === 'following' && followingListRef.current.length > 0) {
-        filtered = filtered.filter((s) => followingListRef.current.includes(s.author));
-      }
-      if (tagFilter) {
-        const tagLower = tagFilter.toLowerCase();
-        const tagPattern = new RegExp(
-          `#${tagLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
-          'i'
-        );
-        filtered = filtered.filter((s) => tagPattern.test(s.body));
-      }
-      return filtered;
-    },
-    [filterMode, tagFilter]
-  );
-
-  const loadBites = useCallback(
-    async (loadMore = false) => {
-      const cursor = loadMore ? nextCursorRef.current : undefined;
-      if (loadMore && !cursor) return;
-
-      if (loadMore) {
-        setIsLoadingMore(true);
-      } else {
-        setIsLoading(true);
-        setError(null);
-      }
-
-      try {
-        const params = new URLSearchParams({ limit: '20' });
-        if (author) params.append('author', author);
-        if (loadMore && cursor) params.append('before', cursor);
-
-        const response = await fetch(`/api/unified/sportsbites?${params.toString()}`);
-        if (!response.ok) throw new Error(`Failed to fetch sportsbites: ${response.status}`);
-
-        const result: SportsbiteApiResponse = await response.json();
-        if (!result.success) throw new Error(result.error || 'Failed to fetch sportsbites');
-
-        const filtered = filterByMode(result.sportsbites);
-
-        setBites((prev) => {
-          const merged = loadMore ? [...prev, ...filtered] : filtered;
-          return dedupeBites(merged);
-        });
-
-        if (!loadMore && result.sportsbites.length > 0) {
-          latestBiteRef.current = result.sportsbites[0].id;
-        }
-
-        nextCursorRef.current = result.nextCursor;
-        setHasMore(result.hasMore);
-      } catch (err) {
-        logger.error('Error loading sportsbites', 'SportsbitesFeed', err);
-        setError(err instanceof Error ? err.message : 'Failed to load sportsbites');
-        if (!loadMore) setBites([]);
-      } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
-      }
-    },
-    [author, dedupeBites, filterByMode]
-  );
-
-  const checkForNew = useCallback(async () => {
-    if (!latestBiteRef.current || isLoading) return;
-
-    try {
-      const params = new URLSearchParams({ limit: '10' });
-      if (author) params.append('author', author);
-
-      const response = await fetch(`/api/unified/sportsbites?${params.toString()}`);
-      if (!response.ok) return;
-
-      const result: SportsbiteApiResponse = await response.json();
-      if (!result.success || result.sportsbites.length === 0) return;
-
-      const currentBites = bitesRef.current;
-      const currentIds = new Set(currentBites.map((s) => s.id));
-      const newOnes = filterByMode(result.sportsbites).filter((s) => !currentIds.has(s.id));
-
-      if (newOnes.length > 0) {
-        setPendingBites((prev) => {
-          const existingIds = new Set(prev.map((s) => s.id));
-          const uniqueNew = newOnes.filter((s) => !existingIds.has(s.id));
-          return [...uniqueNew, ...prev];
-        });
-      }
-    } catch (err) {
-      logger.error('Error checking for new sportsbites', 'SportsbitesFeed', err);
-    }
-  }, [author, isLoading, filterByMode]);
-
-  const handleDelete = useCallback((id: string) => {
-    setBites((prev) => prev.filter((b) => b.id !== id));
-  }, []);
-
-  const showNewBites = useCallback(() => {
-    if (pendingBites.length === 0) return;
-
-    const newIds = new Set(pendingBites.map((s) => s.id));
-    setNewBiteIds(newIds);
-
-    setBites((prev) => dedupeBites([...pendingBites, ...prev]));
-    setPendingBites([]);
-
-    if (pendingBites.length > 0) {
-      latestBiteRef.current = pendingBites[0].id;
-    }
-
-    if (newAnimationTimeoutRef.current) clearTimeout(newAnimationTimeoutRef.current);
-    newAnimationTimeoutRef.current = setTimeout(() => {
-      setNewBiteIds(new Set());
-      newAnimationTimeoutRef.current = null;
-    }, 5000);
-  }, [pendingBites, dedupeBites]);
-
-  useInfiniteScroll({
-    hasMore,
-    isLoading: isLoadingMore,
-    onLoadMore: () => loadBites(true),
-  });
-
-  useEffect(() => {
-    loadBites();
-  }, [loadBites]);
+  }, [allBites, optimisticBite, deletedIds]);
 
   // Batch-fetch reaction data when bites change
   useEffect(() => {
-    if (bites.length === 0) return;
+    if (displayBites.length === 0) return;
 
-    const idsToFetch = bites.map((b) => b.id).filter((id) => !reactionData[id]);
+    const idsToFetch = displayBites.map((b) => b.id).filter((id) => !reactionData[id]);
     if (idsToFetch.length === 0) return;
 
     const controller = new AbortController();
@@ -260,11 +209,11 @@ export function SportsbitesFeed({
 
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bites]);
+  }, [displayBites]);
 
   // Batch-fetch poll data when bites with polls change
   useEffect(() => {
-    const pollBiteIds = bites
+    const pollBiteIds = displayBites
       .filter((b) => b.poll)
       .map((b) => b.id)
       .filter((id) => !pollData[id]);
@@ -290,43 +239,16 @@ export function SportsbitesFeed({
 
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bites]);
+  }, [displayBites]);
 
-  // Batch-prefetch author profiles to avoid N+1 per-card fetches
+  // Batch-prefetch author profiles
   useEffect(() => {
-    if (bites.length === 0) return;
-    const authors = bites.map((b) => b.author);
+    if (displayBites.length === 0) return;
+    const authors = displayBites.map((b) => b.author);
     prefetchUserProfiles(authors, queryClient);
-  }, [bites, queryClient]);
+  }, [displayBites, queryClient]);
 
-  useEffect(() => {
-    if (!optimisticBite) return;
-
-    // Immediately prepend the new bite with animation
-    const newId = optimisticBite.id;
-    setNewBiteIds(new Set([newId]));
-    setBites((prev) => dedupeBites([optimisticBite, ...prev]));
-    setPendingBites([]);
-    latestBiteRef.current = newId;
-
-    if (newAnimationTimeoutRef.current) clearTimeout(newAnimationTimeoutRef.current);
-    newAnimationTimeoutRef.current = setTimeout(() => {
-      setNewBiteIds(new Set());
-      newAnimationTimeoutRef.current = null;
-    }, 5000);
-  }, [optimisticBite, dedupeBites]);
-
-  useEffect(() => {
-    if (isLoading || bites.length === 0) return;
-    realtimeIntervalRef.current = setInterval(checkForNew, REALTIME_POLL_INTERVAL);
-    return () => {
-      if (realtimeIntervalRef.current) {
-        clearInterval(realtimeIntervalRef.current);
-        realtimeIntervalRef.current = null;
-      }
-    };
-  }, [isLoading, bites.length, checkForNew]);
-
+  // Cleanup animation timeout on unmount
   useEffect(() => {
     return () => {
       if (newAnimationTimeoutRef.current) {
@@ -336,6 +258,14 @@ export function SportsbitesFeed({
     };
   }, []);
 
+  // --- Infinite scroll ---
+  useInfiniteScroll({
+    hasMore: hasNextPage ?? false,
+    isLoading: isFetchingNextPage,
+    onLoadMore: () => fetchNextPage(),
+  });
+
+  // --- Render ---
   if (isLoading) {
     return <SportsbitesFeedSkeleton className={className} />;
   }
@@ -349,8 +279,10 @@ export function SportsbitesFeed({
           </div>
         </div>
         <h3 className="mb-2 text-lg font-semibold">Failed to Load Sportsbites</h3>
-        <p className="mb-4 text-sm text-muted-foreground">{error}</p>
-        <Button onClick={() => loadBites()} variant="outline">
+        <p className="mb-4 text-sm text-muted-foreground">
+          {error instanceof Error ? error.message : 'Failed to load sportsbites'}
+        </p>
+        <Button onClick={() => refetch()} variant="outline">
           <RefreshCw className="mr-2 h-4 w-4" />
           Try Again
         </Button>
@@ -358,7 +290,7 @@ export function SportsbitesFeed({
     );
   }
 
-  if (bites.length === 0) {
+  if (displayBites.length === 0) {
     if (filterMode === 'following') {
       return (
         <div className={cn('rounded-xl border bg-card p-8 text-center', className)}>
@@ -417,7 +349,7 @@ export function SportsbitesFeed({
       )}
 
       {interleaveAds(
-        bites.map((bite) => (
+        displayBites.map((bite) => (
           <FeedItemErrorBoundary key={bite.id}>
             <SportsbiteCard
               sportsbite={bite}
@@ -432,7 +364,7 @@ export function SportsbitesFeed({
         ))
       )}
 
-      {isLoadingMore && (
+      {isFetchingNextPage && (
         <div className="flex justify-center py-6">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -441,7 +373,7 @@ export function SportsbitesFeed({
         </div>
       )}
 
-      {!hasMore && bites.length > 0 && (
+      {!hasNextPage && displayBites.length > 0 && (
         <div className="flex justify-center py-6">
           <p className="text-sm text-muted-foreground">You&apos;ve reached the end of the feed</p>
         </div>
