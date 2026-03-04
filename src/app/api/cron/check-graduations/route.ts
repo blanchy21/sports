@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { Client, PrivateKey } from '@hiveio/dhive';
+import { PrivateKey } from '@hiveio/dhive';
 import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-auth';
-import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
+import { getDhiveClient } from '@/lib/hive/dhive-client';
 import { prisma } from '@/lib/db/prisma';
 import { logger } from '@/lib/logger';
 
@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const dhive = new Client(HIVE_NODES);
+const dhive = getDhiveClient();
 
 const ACCOUNT_CREATOR = process.env.ACCOUNT_CREATOR ?? 'niallon11';
 const HP_GRADUATION_THRESHOLD = 15; // HP required before revoking RC delegation

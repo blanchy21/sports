@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { useShallow } from 'zustand/react/shallow';
 import type { PredictionBite } from '@/lib/predictions/types';
 
 interface PredictionState {
@@ -72,9 +73,9 @@ export const usePredictionStore = create<PredictionState & PredictionActions>()(
 // Granular selectors
 export const useSelectedPrediction = () => usePredictionStore((s) => s.selectedPrediction);
 export const useStakeModalState = () =>
-  usePredictionStore((s) => ({
+  usePredictionStore(useShallow((s) => ({
     isOpen: s.stakeModalOpen,
     outcomeId: s.stakeOutcomeId,
-  }));
+  })));
 export const useSettlementPanelOpen = () => usePredictionStore((s) => s.settlementPanelOpen);
 export const useIsStaking = () => usePredictionStore((s) => s.isStaking);

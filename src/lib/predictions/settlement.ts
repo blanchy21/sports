@@ -1,14 +1,14 @@
-import { Client, PrivateKey } from '@hiveio/dhive';
+import { PrivateKey } from '@hiveio/dhive';
 import { prisma } from '@/lib/db/prisma';
 import { PredictionStatus } from '@/generated/prisma/client';
 import { calculateSettlement } from './odds';
 import { buildPayoutOps, buildFeeOps, type FeeOps, buildRefundOps } from './escrow';
 import type { SettlementResult } from './types';
 import { logger } from '@/lib/logger';
-import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
+import { getDhiveClient } from '@/lib/hive/dhive-client';
 import { evaluateBadgesForAction } from '@/lib/badges/evaluator';
 
-const dhive = new Client(HIVE_NODES);
+const dhive = getDhiveClient();
 
 function getEscrowActiveKey(): PrivateKey {
   const activeKey = process.env.SP_PREDICTIONS_ACTIVE_KEY;

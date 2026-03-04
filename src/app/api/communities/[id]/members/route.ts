@@ -324,7 +324,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         if (!isAdmin) {
           return forbiddenError('Only admins can unban members', ctx.requestId);
         }
-        // For unban, update the status back to pending (they need to rejoin)
+        // For unban, restore member to active status
         const targetMembership = await prisma.communityMember.findUnique({
           where: { communityId_userId: { communityId, userId: targetUserId } },
         });

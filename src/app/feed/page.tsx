@@ -17,6 +17,7 @@ import { prefetchUserProfiles } from '@/lib/react-query/queries/useUserProfile';
 import { prefetchStakedBalances } from '@/lib/premium/hooks';
 import { logger } from '@/lib/logger';
 import { interleaveAds } from '@/lib/utils/interleave-ads';
+import { FeedItemErrorBoundary } from '@/components/core/FeedItemErrorBoundary';
 
 type FeedMode = 'community' | 'following';
 
@@ -328,7 +329,9 @@ export default function FeedPage() {
             ) : posts.length > 0 ? (
               interleaveAds(
                 posts.map((post) => (
-                  <PostCard key={`${post.author}/${post.permlink}`} post={post} />
+                  <FeedItemErrorBoundary key={`${post.author}/${post.permlink}`}>
+                    <PostCard post={post} />
+                  </FeedItemErrorBoundary>
                 ))
               )
             ) : feedMode === 'following' ? (

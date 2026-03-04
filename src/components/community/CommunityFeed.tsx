@@ -10,6 +10,7 @@ import { useCommunityPosts } from '@/lib/react-query/queries/useCommunity';
 import { Community } from '@/types';
 import { interleaveAds } from '@/lib/utils/interleave-ads';
 import type { DisplayPost } from '@/lib/utils/post-helpers';
+import { FeedItemErrorBoundary } from '@/components/core/FeedItemErrorBoundary';
 
 interface CommunityFeedProps {
   community: Community;
@@ -159,7 +160,11 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({
                 _viewCount: post.viewCount,
               };
 
-              return <PostCard key={postKey} post={displayPost} />;
+              return (
+                <FeedItemErrorBoundary key={postKey}>
+                  <PostCard post={displayPost} />
+                </FeedItemErrorBoundary>
+              );
             }
           )
         )}

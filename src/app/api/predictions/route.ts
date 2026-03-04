@@ -66,7 +66,7 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
     where,
     include: {
       outcomes: true,
-      stakes: true,
+      _count: { select: { stakes: true } },
     },
     orderBy: sortByLocksAt ? { locksAt: 'asc' } : { createdAt: 'desc' },
     take: params.limit + 1,

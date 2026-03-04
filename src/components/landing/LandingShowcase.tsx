@@ -4,7 +4,6 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Shield,
   TrendingUp,
   DollarSign,
   CheckCircle,
@@ -12,7 +11,6 @@ import {
   Zap,
   Heart,
   Target,
-  Flame,
   FileText,
   X,
   Ban,

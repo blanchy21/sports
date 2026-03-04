@@ -12,6 +12,7 @@ import type {
 } from '@/lib/hive-workerbee/shared';
 import { Loader2, RefreshCw, AlertCircle, Zap, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/core/Button';
+import { FeedItemErrorBoundary } from '@/components/core/FeedItemErrorBoundary';
 import { cn } from '@/lib/utils/client';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { logger } from '@/lib/logger';
@@ -19,6 +20,30 @@ import { interleaveAds } from '@/lib/utils/interleave-ads';
 import { prefetchUserProfiles } from '@/lib/react-query/queries/useUserProfile';
 
 const REALTIME_POLL_INTERVAL = 15000;
+
+function SportsbitesFeedSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn('space-y-0', className)}>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="animate-pulse border-b border-border px-4 py-3">
+          <div className="flex gap-3">
+            <div className="h-12 w-12 rounded-full bg-muted" />
+            <div className="flex-1 space-y-3">
+              <div className="flex gap-2">
+                <div className="h-4 w-24 rounded bg-muted" />
+                <div className="h-4 w-16 rounded bg-muted" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-full rounded bg-muted" />
+                <div className="h-4 w-3/4 rounded bg-muted" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 interface SportsbitesFeedProps {
   author?: string;
@@ -59,6 +84,10 @@ export function SportsbitesFeed({
   const latestBiteRef = useRef<string | undefined>(undefined);
   const realtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const newAnimationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Ref for bites so checkForNew can read current value without depending on it
+  const bitesRef = useRef(bites);
+  bitesRef.current = bites;
 
   const dedupeBites = useCallback((list: Sportsbite[]) => {
     const seen = new Set<string>();
@@ -154,7 +183,8 @@ export function SportsbitesFeed({
       const result: SportsbiteApiResponse = await response.json();
       if (!result.success || result.sportsbites.length === 0) return;
 
-      const currentIds = new Set(bites.map((s) => s.id));
+      const currentBites = bitesRef.current;
+      const currentIds = new Set(currentBites.map((s) => s.id));
       const newOnes = filterByMode(result.sportsbites).filter((s) => !currentIds.has(s.id));
 
       if (newOnes.length > 0) {
@@ -167,7 +197,7 @@ export function SportsbitesFeed({
     } catch (err) {
       logger.error('Error checking for new sportsbites', 'SportsbitesFeed', err);
     }
-  }, [author, bites, isLoading, filterByMode]);
+  }, [author, isLoading, filterByMode]);
 
   const handleDelete = useCallback((id: string) => {
     setBites((prev) => prev.filter((b) => b.id !== id));
@@ -307,27 +337,7 @@ export function SportsbitesFeed({
   }, []);
 
   if (isLoading) {
-    return (
-      <div className={cn('space-y-0', className)}>
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="animate-pulse border-b border-border px-4 py-3">
-            <div className="flex gap-3">
-              <div className="h-12 w-12 rounded-full bg-muted" />
-              <div className="flex-1 space-y-3">
-                <div className="flex gap-2">
-                  <div className="h-4 w-24 rounded bg-muted" />
-                  <div className="h-4 w-16 rounded bg-muted" />
-                </div>
-                <div className="space-y-2">
-                  <div className="h-4 w-full rounded bg-muted" />
-                  <div className="h-4 w-3/4 rounded bg-muted" />
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+    return <SportsbitesFeedSkeleton className={className} />;
   }
 
   if (error) {
@@ -408,16 +418,17 @@ export function SportsbitesFeed({
 
       {interleaveAds(
         bites.map((bite) => (
-          <SportsbiteCard
-            key={bite.id}
-            sportsbite={bite}
-            isNew={newBiteIds.has(bite.id)}
-            onDelete={handleDelete}
-            initialReactionCounts={reactionData[bite.id]?.counts}
-            initialUserReaction={reactionData[bite.id]?.userReaction}
-            initialPollResults={pollData[bite.id]?.results}
-            initialPollUserVote={pollData[bite.id]?.userVote}
-          />
+          <FeedItemErrorBoundary key={bite.id}>
+            <SportsbiteCard
+              sportsbite={bite}
+              isNew={newBiteIds.has(bite.id)}
+              onDelete={handleDelete}
+              initialReactionCounts={reactionData[bite.id]?.counts}
+              initialUserReaction={reactionData[bite.id]?.userReaction}
+              initialPollResults={pollData[bite.id]?.results}
+              initialPollUserVote={pollData[bite.id]?.userVote}
+            />
+          </FeedItemErrorBoundary>
         ))
       )}
 

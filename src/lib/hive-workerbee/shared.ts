@@ -7,6 +7,8 @@
  * Server-side files re-export these items for backward compatibility.
  */
 
+import { HIVE_NODES } from './nodes';
+
 // ---------------------------------------------------------------------------
 // Platform config
 // ---------------------------------------------------------------------------
@@ -331,11 +333,16 @@ export function createCommentOperation(commentData: {
     commentData.permlink ||
     generatePermlink(commentData.title || 'comment', commentData.parentAuthor || undefined);
 
+  let parsedJsonMetadata: Record<string, unknown> = {};
+  try {
+    parsedJsonMetadata = commentData.jsonMetadata ? JSON.parse(commentData.jsonMetadata) : {};
+  } catch { /* malformed JSON — use defaults */ }
+
   const metadata = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
     format: 'markdown',
     tags: ['sportsblock'],
-    ...(commentData.jsonMetadata ? JSON.parse(commentData.jsonMetadata) : {}),
+    ...parsedJsonMetadata,
   };
 
   return {
@@ -401,6 +408,11 @@ export function createPostOperation(postData: {
   // Extract @-mentioned users for cross-platform notifications
   const users = extractMentions(postData.body, postData.author);
 
+  let parsedJsonMetadata: Record<string, unknown> = {};
+  try {
+    parsedJsonMetadata = postData.jsonMetadata ? JSON.parse(postData.jsonMetadata) : {};
+  } catch { /* malformed JSON — use defaults */ }
+
   const metadata: Record<string, unknown> = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
     format: 'markdown',
@@ -410,7 +422,7 @@ export function createPostOperation(postData: {
     users: users.length > 0 ? users : undefined,
     sport_category: postData.sportCategory,
     image: postData.featuredImage ? [postData.featuredImage] : undefined,
-    ...(postData.jsonMetadata ? JSON.parse(postData.jsonMetadata) : {}),
+    ...parsedJsonMetadata,
   };
 
   if (postData.subCommunity) {
@@ -1159,7 +1171,7 @@ export async function updateHiveProfile(
 
   try {
     // Fetch current account to get existing metadata via direct API call
-    const response = await fetch('https://api.hive.blog', {
+    const response = await fetch(HIVE_NODES[0], {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

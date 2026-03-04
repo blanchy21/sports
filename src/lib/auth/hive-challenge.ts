@@ -13,8 +13,7 @@
 
 import crypto from 'crypto';
 import { Signature, cryptoUtils, PublicKey } from '@hiveio/dhive';
-import { Client } from '@hiveio/dhive';
-import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
+import { getDhiveClient } from '@/lib/hive/dhive-client';
 
 // Challenge expires after 5 minutes
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
@@ -124,7 +123,7 @@ export async function verifyHivePostingSignature(
     const recoveredKeyStr = recoveredKey.toString();
 
     // 3. Fetch on-chain account data
-    const client = new Client(HIVE_NODES);
+    const client = getDhiveClient();
     const accounts = await client.database.getAccounts([username]);
 
     if (!accounts || accounts.length === 0) {

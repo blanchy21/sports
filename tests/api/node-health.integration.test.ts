@@ -1,6 +1,6 @@
 /** @jest-environment node */
 
-jest.mock('@/lib/hive-workerbee/api', () => ({
+jest.mock('@/lib/hive-workerbee/node-utils', () => ({
   checkHiveNodeAvailability: jest.fn(),
   getHiveApiNodes: jest.fn(),
 }));
@@ -13,7 +13,7 @@ jest.mock('@/lib/hive-workerbee/logger', () => ({
 }));
 
 import { NodeHealthManager } from '@/lib/hive-workerbee/node-health';
-import { checkHiveNodeAvailability, getHiveApiNodes } from '@/lib/hive-workerbee/api';
+import { checkHiveNodeAvailability, getHiveApiNodes } from '@/lib/hive-workerbee/node-utils';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from '@/lib/hive-workerbee/logger';
 
 const checkHiveNodeAvailabilityMock = checkHiveNodeAvailability as jest.MockedFunction<typeof checkHiveNodeAvailability>;

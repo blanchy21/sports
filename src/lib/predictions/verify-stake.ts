@@ -5,13 +5,12 @@
  * Hive Engine token transfer for a prediction stake.
  */
 
-import { Client } from '@hiveio/dhive';
 import { PREDICTION_CONFIG } from './constants';
 import { MEDALS_CONFIG } from '@/lib/hive-engine/constants';
 import { logger } from '@/lib/logger';
-import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
+import { getDhiveClient } from '@/lib/hive/dhive-client';
 
-const dhive = new Client(HIVE_NODES);
+const dhive = getDhiveClient();
 
 interface VerifyStakeParams {
   txId: string;

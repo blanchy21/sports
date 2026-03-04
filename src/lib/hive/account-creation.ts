@@ -1,12 +1,12 @@
 import crypto from 'crypto';
-import { Client, PrivateKey } from '@hiveio/dhive';
-import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
+import { PrivateKey } from '@hiveio/dhive';
 import { prisma } from '@/lib/db/prisma';
 import { logger } from '@/lib/logger';
 import { isValidHiveUsername, checkUsernameAvailability } from './username';
 import { encryptKeys } from './key-encryption';
+import { getDhiveClient } from './dhive-client';
 
-const dhive = new Client(HIVE_NODES);
+const dhive = getDhiveClient();
 
 const ACCOUNT_CREATOR = process.env.ACCOUNT_CREATOR ?? 'niallon11';
 const RC_DELEGATION_AMOUNT = 75_000_000_000; // 75B RC (~10 comments + 2 posts + 20 votes/day)

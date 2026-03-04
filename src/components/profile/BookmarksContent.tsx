@@ -9,6 +9,7 @@ import { Bookmark, Search, Loader2, Trash2 } from 'lucide-react';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { BookmarkItem } from '@/stores/bookmarkStore';
 import { getPostTitle, getPostBody, getPostTags } from '@/lib/utils/post-helpers';
+import { FeedItemErrorBoundary } from '@/components/core/FeedItemErrorBoundary';
 
 export function BookmarksContent() {
   const { user } = useAuth();
@@ -122,7 +123,9 @@ export function BookmarksContent() {
       ) : filteredAndSortedBookmarks.length > 0 ? (
         <div className="space-y-6">
           {filteredAndSortedBookmarks.map((bookmark) => (
-            <PostCard key={bookmark.id} post={bookmark.post} />
+            <FeedItemErrorBoundary key={bookmark.id}>
+              <PostCard post={bookmark.post} />
+            </FeedItemErrorBoundary>
           ))}
         </div>
       ) : searchQuery ? (

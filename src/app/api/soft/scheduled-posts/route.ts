@@ -31,7 +31,7 @@ const createScheduledPostSchema = z.object({
  * POST /api/soft/scheduled-posts - Create a scheduled post
  */
 export const POST = csrfProtected(
-  createApiHandler(ROUTE, async (request, ctx) => {
+  createApiHandler(ROUTE, async (request, _ctx) => {
     const sessionUser = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!sessionUser) {
       return NextResponse.json(

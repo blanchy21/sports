@@ -12,7 +12,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { Client, PrivateKey } from '@hiveio/dhive';
+import { PrivateKey } from '@hiveio/dhive';
 import {
   calculateStakingRewards,
   getWeekId,
@@ -27,7 +27,7 @@ import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { verifyCronRequest } from '@/lib/api/cron-auth';
 import { logger } from '@/lib/logger';
-import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
+import { getDhiveClient } from '@/lib/hive/dhive-client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -39,7 +39,7 @@ const BATCH_SIZE = 5;
 /** Delay between batches to land in separate blocks (ms) */
 const BATCH_DELAY_MS = 3500;
 
-const dhive = new Client(HIVE_NODES);
+const dhive = getDhiveClient();
 
 /**
  * Check if rewards have already been processed for this week

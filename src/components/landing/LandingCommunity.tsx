@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, DollarSign, Zap, CheckCircle } from 'lucide-react';
+import { Shield, DollarSign, Zap } from 'lucide-react';
 import Image from 'next/image';
 import { containerVariants, itemVariants } from './LandingSections';
 

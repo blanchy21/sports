@@ -56,6 +56,17 @@ const RATE_LIMITED_ROUTES = {
 
 type RateLimitType = 'read' | 'write' | 'auth' | 'realtime';
 
+// Routes that require authentication (sb_session cookie)
+const PROTECTED_ROUTES = [
+  '/publish',
+  '/wallet',
+  '/settings',
+  '/profile',
+  '/dashboard',
+  '/bookmarks',
+  '/predictions',
+];
+
 function getRateLimitType(pathname: string): RateLimitType | null {
   // Cron jobs use CRON_SECRET auth but still get basic rate limiting to
   // prevent abuse if the secret leaks
@@ -103,6 +114,14 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/admin')) {
     if (!request.cookies.has('sb_session')) {
       return NextResponse.redirect(new URL('/', request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Block unauthenticated access to protected user pages
+  if (PROTECTED_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'))) {
+    if (!request.cookies.has('sb_session')) {
+      return NextResponse.redirect(new URL('/auth', request.url));
     }
     return NextResponse.next();
   }
@@ -172,6 +191,21 @@ export const config = {
     '/',
     // Admin pages — require authentication
     '/admin/:path*',
+    // Protected user pages — require authentication
+    '/publish',
+    '/publish/:path*',
+    '/wallet',
+    '/wallet/:path*',
+    '/settings',
+    '/settings/:path*',
+    '/profile',
+    '/profile/:path*',
+    '/dashboard',
+    '/dashboard/:path*',
+    '/bookmarks',
+    '/bookmarks/:path*',
+    '/predictions',
+    '/predictions/:path*',
     // Match all API routes
     '/api/:path*',
   ],

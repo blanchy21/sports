@@ -1,7 +1,7 @@
-import { Client, PrivateKey, type Operation } from '@hiveio/dhive';
+import { PrivateKey, type Operation } from '@hiveio/dhive';
 import { prisma } from '@/lib/db/prisma';
 import { decryptKeys } from '@/lib/hive/key-encryption';
-import { HIVE_NODES } from '@/lib/hive-workerbee/nodes';
+import { getDhiveClient } from './dhive-client';
 import { logger } from '@/lib/logger';
 import type { HiveOperation } from '@/types/hive-operations';
 
@@ -227,7 +227,7 @@ export async function signAndBroadcast(
     }
 
     const signingKey = PrivateKey.fromString(postingKeyString);
-    const client = new Client(HIVE_NODES);
+    const client = getDhiveClient();
 
     const result = await client.broadcast.sendOperations(
       operations as unknown as Operation[],

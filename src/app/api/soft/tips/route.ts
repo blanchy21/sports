@@ -20,7 +20,7 @@ const tipSchema = z.object({
 });
 
 export const POST = csrfProtected(
-  createApiHandler(ROUTE, async (request, ctx) => {
+  createApiHandler(ROUTE, async (request, _ctx) => {
     const body = await (request as NextRequest).json();
     const parseResult = tipSchema.safeParse(body);
 

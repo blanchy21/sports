@@ -376,58 +376,10 @@ export async function makeHiveApiCall<T = unknown>(
   }, requestKey);
 }
 
-/**
- * Get the list of available Hive API nodes
- * @returns Array of Hive node URLs (verified working nodes only)
- */
 import { HIVE_NODES } from './nodes';
 
-/**
- * Get the list of available Hive API nodes (from shared HIVE_NODES in client.ts)
- */
-export function getHiveApiNodes(): string[] {
-  return [...HIVE_NODES];
-}
-
-/**
- * Check if a Hive API node is available
- * @param nodeUrl - The node URL to check
- * @returns Promise<boolean> - True if node is available
- */
-export async function checkHiveNodeAvailability(nodeUrl: string): Promise<boolean> {
-  try {
-    const response = await fetchWithTimeout(
-      nodeUrl,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'condenser_api.get_dynamic_global_properties',
-          params: [],
-          id: 1,
-        }),
-      },
-      5000
-    ); // 5 second timeout for health checks (should be faster than normal requests)
-
-    if (!response.ok) {
-      return false;
-    }
-
-    // Verify the response is valid JSON and contains expected data
-    const result = await response.json();
-    return result && result.result && !result.error;
-  } catch (error) {
-    // Log health check failures for debugging node connectivity issues
-    logWarn(`Hive node health check failed: ${nodeUrl}`, 'checkHiveNodeAvailability', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return false;
-  }
-}
+// Re-export node utilities from shared module (breaks circular dep with node-health.ts)
+export { getHiveApiNodes, checkHiveNodeAvailability } from './node-utils';
 
 /**
  * Wrap a promise with a timeout

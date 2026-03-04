@@ -6,8 +6,7 @@
  * Enhanced with circuit breaker pattern for better failure handling.
  */
 
-import { checkHiveNodeAvailability } from './api';
-import { getHiveApiNodes } from './api';
+import { checkHiveNodeAvailability, getHiveApiNodes } from './node-utils';
 import { workerBee as workerBeeLog, warn as logWarn, error as logError } from './logger';
 import {
   CircuitBreaker,

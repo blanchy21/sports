@@ -5,19 +5,10 @@
  * ONLY used server-side (cron jobs, API routes). Never imported client-side.
  */
 
-import { Client, PrivateKey, Operation } from '@hiveio/dhive';
-import { HIVE_NODES } from './nodes';
+import { PrivateKey, Operation } from '@hiveio/dhive';
 import { waitForTransaction } from './transaction-confirmation';
 import { error as logError } from './logger';
-
-let dhiveClient: Client | null = null;
-
-function getDhiveClient(): Client {
-  if (!dhiveClient) {
-    dhiveClient = new Client(HIVE_NODES);
-  }
-  return dhiveClient;
-}
+import { getDhiveClient } from '@/lib/hive/dhive-client';
 
 export interface BroadcastResult {
   success: boolean;

@@ -53,7 +53,7 @@ const batchCheckSchema = z.object({
 // GET /api/soft/poll-votes - Get poll results and user's vote
 // ============================================
 
-export const GET = createApiHandler(ROUTE, async (request, ctx) => {
+export const GET = createApiHandler(ROUTE, async (request, _ctx) => {
   const searchParams = Object.fromEntries((request as NextRequest).nextUrl.searchParams);
   const parseResult = getPollResultsSchema.safeParse(searchParams);
 
@@ -93,7 +93,7 @@ export const GET = createApiHandler(ROUTE, async (request, ctx) => {
 // ============================================
 
 export const POST = csrfProtected(
-  createApiHandler(ROUTE, async (request, ctx) => {
+  createApiHandler(ROUTE, async (request, _ctx) => {
     const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user) {
       return unauthorizedError('Authentication required');
@@ -178,7 +178,7 @@ export const POST = csrfProtected(
 // ============================================
 
 export const PATCH = csrfProtected(
-  createApiHandler(ROUTE, async (request, ctx) => {
+  createApiHandler(ROUTE, async (request, _ctx) => {
     const body = await (request as NextRequest).json();
     const parseResult = batchCheckSchema.safeParse(body);
 

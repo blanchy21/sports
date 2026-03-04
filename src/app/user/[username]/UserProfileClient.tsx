@@ -39,6 +39,7 @@ import { FollowersContent } from '@/components/profile/FollowersContent';
 import { FollowingContent } from '@/components/profile/FollowingContent';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/lib/logger';
+import { FeedItemErrorBoundary } from '@/components/core/FeedItemErrorBoundary';
 import type { UserAccountData } from '@/lib/hive-workerbee/account';
 
 type ProfileTab = 'posts' | 'drafts' | 'replies' | 'bookmarks' | 'following' | 'followers';
@@ -264,7 +265,9 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
       ) : userPosts.length > 0 ? (
         <div className="space-y-6">
           {userPosts.map((post) => (
-            <PostCard key={`${post.author}-${post.permlink}`} post={post} />
+            <FeedItemErrorBoundary key={`${post.author}-${post.permlink}`}>
+              <PostCard post={post} />
+            </FeedItemErrorBoundary>
           ))}
         </div>
       ) : (

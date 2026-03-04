@@ -33,6 +33,7 @@ model CustodialUser {
   accountTokens   AccountToken[]
   analyticsEvents AnalyticsEvent[]
 
+  @@index([isGraduated])
   @@map("custodial_users")
 }
 
@@ -103,6 +104,7 @@ model Profile {
   communityMemberships CommunityMember[]
   notifications   Notification[]
   bookmarks       Bookmark[]
+  sportsbites     Sportsbite[] @relation("ProfileSportsbites")
 
   @@index([isHiveUser])
   @@index([lastActiveAt])
@@ -149,6 +151,7 @@ model Post {
 model Sportsbite {
   id                String    @id @default(uuid())
   authorId          String    @map("author_id")
+  author            Profile   @relation("ProfileSportsbites", fields: [authorId], references: [id], onDelete: Cascade)
   authorUsername     String    @map("author_username")
   authorDisplayName String?   @map("author_display_name")
   authorAvatar      String?   @map("author_avatar")
@@ -485,6 +488,7 @@ model Tip {
 
   @@index([author, permlink])
   @@index([recipientUsername, createdAt])
+  @@index([senderUsername])
   @@map("tips")
 }
 
