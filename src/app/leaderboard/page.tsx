@@ -3,9 +3,10 @@
 /**
  * Leaderboard Page
  *
- * Two views:
+ * Three views:
  *  - Content Rankings: Weekly content leaderboards with MEDALS rewards (default)
  *  - Token Stakers: MEDALS token holder leaderboard
+ *  - My Stats: Personal stats dashboard (authenticated only)
  */
 
 import React, { useState, useMemo } from 'react';
@@ -16,15 +17,18 @@ import {
   MyRankCard,
   WeeklyRewardsSummary,
   MedalsStakersLeaderboard,
+  WeeklyWinners,
+  RisingStars,
+  MyStatsView,
 } from '@/components/leaderboard';
 import { Button } from '@/components/core/Button';
-import { ChevronLeft, ChevronRight, RefreshCw, Trophy, Medal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, Trophy, Medal, BarChart3 } from 'lucide-react';
 import { useWeeklyLeaderboards } from '@/lib/react-query/queries/useLeaderboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/react-query/queryClient';
 
-type LeaderboardView = 'content' | 'stakers';
+type LeaderboardView = 'content' | 'stakers' | 'mystats';
 
 function getWeekIdFromOffset(offset: number): string {
   const date = new Date();
@@ -45,7 +49,8 @@ export default function LeaderboardPage() {
 
   // Tab state from URL
   const viewParam = searchParams.get('view');
-  const activeView: LeaderboardView = viewParam === 'stakers' ? 'stakers' : 'content';
+  const activeView: LeaderboardView =
+    viewParam === 'stakers' ? 'stakers' : viewParam === 'mystats' ? 'mystats' : 'content';
 
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -82,7 +87,9 @@ export default function LeaderboardPage() {
             <p className="mt-1 text-muted-foreground">
               {activeView === 'content'
                 ? 'Compete for weekly rewards by creating engaging content'
-                : 'Top MEDALS token holders and stakers'}
+                : activeView === 'stakers'
+                  ? 'Top MEDALS token holders and stakers'
+                  : 'Your personal stats and achievements'}
             </p>
           </div>
 
@@ -140,6 +147,19 @@ export default function LeaderboardPage() {
             <Medal className="h-4 w-4" />
             Token Stakers
           </button>
+          {user && (
+            <button
+              onClick={() => setView('mystats')}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                activeView === 'mystats'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <BarChart3 className="h-4 w-4" />
+              My Stats
+            </button>
+          )}
         </div>
 
         {/* Content Rankings Tab */}
@@ -148,8 +168,14 @@ export default function LeaderboardPage() {
             {/* My Rankings */}
             {user && <MyRankCard username={user.username} />}
 
+            {/* Weekly Winners */}
+            <WeeklyWinners weekId={currentWeekId} />
+
             {/* Weekly Rewards Summary */}
             <WeeklyRewardsSummary weekId={currentWeekId} />
+
+            {/* Rising Stars */}
+            <RisingStars currentWeekId={currentWeekId} />
 
             {/* Leaderboards Grid — now showing up to 50 entries */}
             <LeaderboardGrid
@@ -209,6 +235,9 @@ export default function LeaderboardPage() {
 
         {/* Token Stakers Tab */}
         {activeView === 'stakers' && <MedalsStakersLeaderboard />}
+
+        {/* My Stats Tab */}
+        {activeView === 'mystats' && user && <MyStatsView username={user.username} />}
       </div>
     </MainLayout>
   );

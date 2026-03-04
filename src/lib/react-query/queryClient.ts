@@ -91,6 +91,10 @@ export const queryKeys = {
     all: ['badges'] as const,
     user: (username: string) => [...queryKeys.badges.all, username] as const,
   },
+  userStats: {
+    all: ['userStats'] as const,
+    user: (username: string) => [...queryKeys.userStats.all, username] as const,
+  },
   prices: {
     all: ['prices'] as const,
   },
