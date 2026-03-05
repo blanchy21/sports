@@ -1,8 +1,6 @@
 import * as React from 'react';
-import Image from 'next/image';
 import { cn } from '@/lib/utils/client';
 import { getAvatarUrl, getHiveAvatarUrl } from '@/lib/utils/avatar';
-import { IMAGE_OPTIMIZABLE_HOSTS } from '@/lib/constants/image-hosts';
 
 interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string;
@@ -16,13 +14,6 @@ const sizeClasses = {
   md: 'h-8 w-8 text-sm',
   lg: 'h-12 w-12 text-base',
   xl: 'h-16 w-16 text-lg',
-};
-
-const sizePx: Record<string, string> = {
-  sm: '24px',
-  md: '32px',
-  lg: '48px',
-  xl: '64px',
 };
 
 const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
@@ -45,26 +36,17 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
     // Determine the image URL with cascade logic:
     // With src: src → hive avatar → dicebear
     // Without src: hive avatar → dicebear
-    const { finalUrl, optimizable } = React.useMemo(() => {
-      let url: string | null = null;
-
+    const finalUrl = React.useMemo(() => {
       if (src) {
-        if (fallbackStage === 0) url = src;
-        else if (fallbackStage === 1 && hiveAvatarUrl && src !== hiveAvatarUrl) url = hiveAvatarUrl;
+        if (fallbackStage === 0) return src;
+        if (fallbackStage === 1 && hiveAvatarUrl && src !== hiveAvatarUrl) return hiveAvatarUrl;
       } else {
-        if (fallbackStage === 0 && hiveAvatarUrl) url = hiveAvatarUrl;
+        if (fallbackStage === 0 && hiveAvatarUrl) return hiveAvatarUrl;
       }
 
       // Final fallback: generate a DiceBear avatar
-      if (!url && fallback) {
-        url = getAvatarUrl(null, fallback);
-      }
-
-      if (!url) return { finalUrl: null, optimizable: false };
-
-      let canOptimize = false;
-      try { canOptimize = IMAGE_OPTIMIZABLE_HOSTS.has(new URL(url).hostname); } catch { /* invalid URL */ }
-      return { finalUrl: url, optimizable: canOptimize };
+      if (fallback) return getAvatarUrl(null, fallback);
+      return null;
     }, [src, fallbackStage, fallback, hiveAvatarUrl]);
 
     return (
@@ -78,13 +60,11 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
         {...props}
       >
         {finalUrl ? (
-          <Image
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
             src={finalUrl}
             alt={alt || 'Avatar'}
-            fill
-            sizes={sizePx[size]}
             className="h-full w-full object-cover"
-            unoptimized={!optimizable}
             onError={handleImageError}
           />
         ) : (
