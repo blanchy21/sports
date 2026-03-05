@@ -34,7 +34,8 @@ import type {
   PollResults,
 } from '@/lib/hive-workerbee/shared';
 import { SPORT_CATEGORIES } from '@/types';
-import { getProxyImageUrl, shouldProxyImage, proxyImagesInContent } from '@/lib/utils/image-proxy';
+import { proxyImagesInContent } from '@/lib/utils/image-proxy';
+import { IMAGE_OPTIMIZABLE_HOSTS } from '@/lib/constants/image-hosts';
 import { isTrustedImageHost, sanitizePostContent } from '@/lib/utils/sanitize';
 import { linkifyHashtags } from '@/lib/utils/hashtags';
 import { InlineReplies } from '@/components/sportsbites/InlineReplies';
@@ -447,8 +448,8 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           >
             {allImages.slice(0, 4).map((img, index) => {
               const isGif = img.toLowerCase().endsWith('.gif');
-              const finalUrl = shouldProxyImage(img) ? getProxyImageUrl(img) : img;
               const canUseNextImage = isTrustedImageHost(img) && !isGif;
+              const optimizable = (() => { try { return IMAGE_OPTIMIZABLE_HOSTS.has(new URL(img).hostname); } catch { return false; } })();
 
               return (
                 <div
@@ -465,19 +466,19 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                   {allImages.length === 1 ? (
                     canUseNextImage ? (
                       <Image
-                        src={finalUrl}
+                        src={img}
                         alt={`Image ${index + 1}`}
                         width={600}
                         height={600}
                         sizes="(max-width: 768px) 100vw, 400px"
                         className="h-auto max-h-[512px] w-full rounded-xl object-contain"
-                        unoptimized={!shouldProxyImage(img)}
+                        unoptimized={!optimizable}
                         onError={() => handleImageError(img)}
                       />
                     ) : (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
-                        src={finalUrl}
+                        src={img}
                         alt={`Image ${index + 1}`}
                         className="h-auto max-h-[512px] w-full rounded-xl object-contain"
                         onError={() => handleImageError(img)}
@@ -485,18 +486,18 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                     )
                   ) : canUseNextImage ? (
                     <Image
-                      src={finalUrl}
+                      src={img}
                       alt={`Image ${index + 1}`}
                       fill
                       sizes="(max-width: 768px) 100vw, 400px"
                       className="object-cover transition-transform duration-200 hover:scale-105"
-                      unoptimized={!shouldProxyImage(img)}
+                      unoptimized={!optimizable}
                       onError={() => handleImageError(img)}
                     />
                   ) : (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={finalUrl}
+                      src={img}
                       alt={`Image ${index + 1}`}
                       className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
                       onError={() => handleImageError(img)}

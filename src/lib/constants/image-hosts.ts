@@ -67,3 +67,24 @@ export const PROXY_ALLOWED_HOSTS = [
  * Set version of PROXY_ALLOWED_HOSTS for O(1) lookups.
  */
 export const PROXY_ALLOWED_HOSTS_SET = new Set<string>(PROXY_ALLOWED_HOSTS);
+
+/**
+ * Hosts configured in next.config.ts remotePatterns.
+ * Images from these hosts can be optimized by Next.js Image (/_next/image).
+ * Use this to decide `unoptimized` prop on <Image> — no proxy needed because
+ * Next.js fetches server-side (no CORS issues).
+ */
+export const IMAGE_OPTIMIZABLE_HOSTS = new Set([
+  'images.unsplash.com',
+  'cdn.steemitimages.com',
+  'steemitimages.com',
+  'images.hive.blog',
+  'images.ecency.com',
+  'gateway.ipfs.io',
+  'ipfs.io',
+  'files.peakd.com',
+  'files.ecency.com',
+  'files.3speak.tv',
+  'files.dtube.tv',
+  'api.dicebear.com',
+]);

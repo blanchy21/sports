@@ -23,7 +23,7 @@ import { RankBadge } from '@/components/badges/RankBadge';
 import { BadgeInline } from '@/components/badges/BadgeInline';
 import { useUserRank } from '@/lib/react-query/queries/useUserBadges';
 // HiveUpgradePrompt no longer needed - soft users can now interact with all content
-import { getProxyImageUrl, shouldProxyImage } from '@/lib/utils/image-proxy';
+import { IMAGE_OPTIMIZABLE_HOSTS } from '@/lib/constants/image-hosts';
 import {
   isSportsblockPost,
   isSoftPost as isSoftPostGuard,
@@ -73,6 +73,15 @@ const extractFirstImageUrl = (body: string, jsonMetadata?: string): string | nul
 
   return null;
 };
+
+// Check if Next.js can optimize an image directly (domain is in remotePatterns)
+function canOptimizeImage(url: string): boolean {
+  try {
+    return IMAGE_OPTIMIZABLE_HOSTS.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
 
 const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority = false }) => {
   const [isReblogging, setIsReblogging] = React.useState(false);
@@ -275,38 +284,37 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
           if (isHivePost) {
             const imageUrl = extractFirstImageUrl(post.body, post.json_metadata);
             if (imageUrl) {
-              // Use proxy URL if needed to avoid CORS issues
-              const isProxied = shouldProxyImage(imageUrl);
-              const finalImageUrl = isProxied ? getProxyImageUrl(imageUrl) : imageUrl;
+              // Use direct URL — Next.js Image fetches server-side (no CORS issues).
+              // Only optimize if domain is in next.config remotePatterns.
+              const optimizable = canOptimizeImage(imageUrl);
               return (
                 <div className="relative aspect-video w-full overflow-hidden rounded-md">
                   <Image
-                    src={finalImageUrl}
+                    src={imageUrl}
                     alt={post.title}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover transition-transform duration-200 hover:scale-105"
                     loading={priority ? 'eager' : 'lazy'}
                     priority={priority}
-                    unoptimized={!isProxied}
+                    unoptimized={!optimizable}
                   />
                 </div>
               );
             }
           } else if (post.featuredImage) {
-            const needsProxy = shouldProxyImage(post.featuredImage);
-            const imgSrc = needsProxy ? getProxyImageUrl(post.featuredImage) : post.featuredImage;
+            const optimizable = canOptimizeImage(post.featuredImage);
             return (
               <div className="relative aspect-video w-full overflow-hidden rounded-md">
                 <Image
-                  src={imgSrc}
+                  src={post.featuredImage}
                   alt={post.title}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="object-cover transition-transform duration-200 hover:scale-105"
                   loading={priority ? 'eager' : 'lazy'}
                   priority={priority}
-                  unoptimized={!needsProxy}
+                  unoptimized={!optimizable}
                 />
               </div>
             );
