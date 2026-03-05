@@ -3,10 +3,24 @@ import { createApiHandler, apiSuccess, apiError } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { createHiveAccountForUser, AccountCreationError } from '@/lib/hive/account-creation';
 import { prisma } from '@/lib/db/prisma';
-import { checkRateLimit, RATE_LIMITS } from '@/lib/utils/rate-limit';
+import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/utils/rate-limit';
 import { jwtFieldsCache } from '@/lib/auth/next-auth-options';
 
 export const POST = createApiHandler('/api/hive/create-account', async (request: Request, ctx) => {
+  // IP rate limit — prevent multi-account abuse (5 accounts per IP per day)
+  const ipRateLimit = await checkRateLimit(
+    getClientIdentifier(request),
+    { limit: 5, windowSeconds: 86400 },
+    'accountCreationIp'
+  );
+  if (!ipRateLimit.success) {
+    return apiError(
+      'Too many account creation attempts from this network. Please try again later.',
+      'RATE_LIMITED',
+      429
+    );
+  }
+
   // Auth: require sb_session cookie
   const user = await getAuthenticatedUserFromSession(request as NextRequest);
   if (!user) {

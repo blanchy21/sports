@@ -293,7 +293,6 @@ export async function GET(request: NextRequest) {
     }
 
     ctx.log.error('Image proxy error', error, { imageUrl });
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return internalError(`Failed to proxy image: ${message}`, ctx.requestId);
+    return internalError('Failed to proxy image', ctx.requestId);
   }
 }
