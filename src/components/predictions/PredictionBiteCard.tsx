@@ -85,6 +85,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
   const isAdmin = hiveUsername ? PREDICTION_CONFIG.ADMIN_ACCOUNTS.includes(hiveUsername) : false;
   const isCreator = hiveUsername === prediction.creatorUsername;
   const canSettle = (isCreator || isAdmin) && prediction.status === 'LOCKED';
+  const canApprove = isAdmin && prediction.status === 'PENDING_APPROVAL';
 
   // Map user stakes by outcomeId
   const userStakeMap = useMemo(() => {
@@ -320,6 +321,13 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
             </div>
           )}
 
+          {prediction.status === 'PENDING_APPROVAL' && (
+            <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+              <Clock className="h-4 w-4" />
+              Settlement proposed — awaiting admin approval
+            </div>
+          )}
+
           {prediction.status === 'SETTLING' && (
             <div className="flex items-center gap-2 rounded-lg bg-purple-500/10 px-3 py-2 text-sm text-purple-700 dark:text-purple-400">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -379,7 +387,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
         </div>
 
         {/* Settlement panel for creators/admins */}
-        {canSettle && <PredictionSettlementPanel prediction={prediction} />}
+        {(canSettle || canApprove) && <PredictionSettlementPanel prediction={prediction} />}
 
         {/* Expanded comments */}
         {commentsExpanded && <PredictionComments predictionId={prediction.id} />}
@@ -476,6 +484,10 @@ function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string }> = {
     OPEN: { label: 'Open', className: 'bg-success/15 text-success' },
     LOCKED: { label: 'Locked', className: 'bg-info/15 text-info' },
+    PENDING_APPROVAL: {
+      label: 'Pending',
+      className: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+    },
     SETTLING: {
       label: 'Settling',
       className: 'bg-purple-500/15 text-purple-700 dark:text-purple-400',

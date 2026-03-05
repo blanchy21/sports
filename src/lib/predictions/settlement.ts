@@ -37,16 +37,97 @@ export async function broadcastHiveEngineOps(
   return txId;
 }
 
+const PROPOSAL_CLEAR_DATA = {
+  proposedOutcomeId: null,
+  proposedBy: null,
+  proposedAt: null,
+  proposedAction: null,
+  proposedVoidReason: null,
+} as const;
+
+/**
+ * Propose a settlement — transitions LOCKED → PENDING_APPROVAL.
+ * Stores proposal fields for a second admin to approve.
+ */
+export async function proposeSettlement(
+  predictionId: string,
+  winningOutcomeId: string,
+  proposedBy: string
+): Promise<void> {
+  const result = await prisma.prediction.updateMany({
+    where: { id: predictionId, status: PredictionStatus.LOCKED },
+    data: {
+      status: PredictionStatus.PENDING_APPROVAL,
+      proposedOutcomeId: winningOutcomeId,
+      proposedBy,
+      proposedAt: new Date(),
+      proposedAction: 'settle',
+      proposedVoidReason: null,
+    },
+  });
+  if (result.count === 0) {
+    throw new Error('Prediction must be LOCKED to propose settlement');
+  }
+}
+
+/**
+ * Propose a void — transitions OPEN/LOCKED → PENDING_APPROVAL.
+ * Stores proposal fields for a second admin to approve.
+ */
+export async function proposeVoid(
+  predictionId: string,
+  reason: string,
+  proposedBy: string
+): Promise<void> {
+  const result = await prisma.prediction.updateMany({
+    where: {
+      id: predictionId,
+      status: { in: [PredictionStatus.OPEN, PredictionStatus.LOCKED, PredictionStatus.PENDING_APPROVAL] },
+    },
+    data: {
+      status: PredictionStatus.PENDING_APPROVAL,
+      proposedOutcomeId: null,
+      proposedBy,
+      proposedAt: new Date(),
+      proposedAction: 'void',
+      proposedVoidReason: reason,
+    },
+  });
+  if (result.count === 0) {
+    throw new Error('Prediction must be OPEN, LOCKED, or PENDING_APPROVAL to propose void');
+  }
+}
+
+/**
+ * Reject a proposal — transitions PENDING_APPROVAL → LOCKED.
+ * Clears all proposal fields. Always restores to LOCKED (safe default).
+ */
+export async function rejectProposal(predictionId: string): Promise<void> {
+  const result = await prisma.prediction.updateMany({
+    where: { id: predictionId, status: PredictionStatus.PENDING_APPROVAL },
+    data: {
+      status: PredictionStatus.LOCKED,
+      ...PROPOSAL_CLEAR_DATA,
+    },
+  });
+  if (result.count === 0) {
+    throw new Error('Prediction must be PENDING_APPROVAL to reject');
+  }
+}
+
 export async function executeSettlement(
   predictionId: string,
   winningOutcomeId: string,
   settledBy: string
 ): Promise<SettlementResult> {
-  // Atomic lock: transition LOCKED → SETTLING in a single conditional update.
+  // Atomic lock: transition LOCKED or PENDING_APPROVAL → SETTLING.
   // If count === 0, either already SETTLING (retry) or invalid state.
   const lockResult = await prisma.prediction.updateMany({
-    where: { id: predictionId, status: PredictionStatus.LOCKED },
-    data: { status: PredictionStatus.SETTLING },
+    where: {
+      id: predictionId,
+      status: { in: [PredictionStatus.LOCKED, PredictionStatus.PENDING_APPROVAL] },
+    },
+    data: { status: PredictionStatus.SETTLING, ...PROPOSAL_CLEAR_DATA },
   });
 
   if (lockResult.count === 0) {
@@ -59,7 +140,7 @@ export async function executeSettlement(
       throw new Error(`Prediction not found: ${predictionId}`);
     }
     if (current.status !== PredictionStatus.SETTLING) {
-      throw new Error(`Prediction must be LOCKED for settlement (current: ${current.status})`);
+      throw new Error(`Prediction must be LOCKED or PENDING_APPROVAL for settlement (current: ${current.status})`);
     }
     if (current.winningOutcomeId && current.winningOutcomeId !== winningOutcomeId) {
       throw new Error(
@@ -263,14 +344,14 @@ export async function executeVoidRefund(
     throw new Error(`Prediction not found: ${predictionId}`);
   }
 
-  // Atomic lock: transition OPEN or LOCKED → VOID in a single conditional update.
+  // Atomic lock: transition OPEN, LOCKED, or PENDING_APPROVAL → VOID.
   // If count === 0, either already VOID (retry) or invalid state.
   const lockResult = await prisma.prediction.updateMany({
     where: {
       id: predictionId,
-      status: { in: [PredictionStatus.OPEN, PredictionStatus.LOCKED] },
+      status: { in: [PredictionStatus.OPEN, PredictionStatus.LOCKED, PredictionStatus.PENDING_APPROVAL] },
     },
-    data: { status: PredictionStatus.VOID, isVoid: true, voidReason: reason },
+    data: { status: PredictionStatus.VOID, isVoid: true, voidReason: reason, ...PROPOSAL_CLEAR_DATA },
   });
 
   if (lockResult.count === 0) {

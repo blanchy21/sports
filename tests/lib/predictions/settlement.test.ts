@@ -278,7 +278,7 @@ describe('executeSettlement', () => {
     mockPrisma.prediction.findUnique.mockResolvedValue({ status: 'SETTLED' });
 
     await expect(executeSettlement('pred-1', 'out-a', 'admin')).rejects.toThrow(
-      'must be LOCKED for settlement'
+      'must be LOCKED or PENDING_APPROVAL for settlement'
     );
   });
 

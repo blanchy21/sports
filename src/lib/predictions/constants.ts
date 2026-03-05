@@ -57,5 +57,5 @@ export const PREDICTION_CONFIG = {
   REWARDS_ACCOUNT: 'sb.rewards',
 
   /** Admin accounts that can settle/void any prediction */
-  ADMIN_ACCOUNTS: ['niallon11', 'blanchy'] as readonly string[],
+  ADMIN_ACCOUNTS: ['niallon11', 'blanchy', 'talesfrmthecrypt'] as readonly string[],
 } as const;

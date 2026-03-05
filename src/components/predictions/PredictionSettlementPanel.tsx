@@ -4,10 +4,15 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils/client';
 import { Button } from '@/components/core/Button';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSettlePrediction, useVoidPrediction } from '@/hooks/usePredictionSettlement';
+import {
+  useSettlePrediction,
+  useVoidPrediction,
+  useApprovePrediction,
+  useRejectPrediction,
+} from '@/hooks/usePredictionSettlement';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { useToast, toast } from '@/components/core/Toast';
-import { AlertCircle, Check, Loader2, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { AlertCircle, Check, Loader2, ChevronDown, ChevronUp, X, Clock, ShieldCheck } from 'lucide-react';
 import type { PredictionBite } from '@/lib/predictions/types';
 
 interface PredictionSettlementPanelProps {
@@ -19,6 +24,8 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
   const { addToast } = useToast();
   const settleMutation = useSettlePrediction();
   const voidMutation = useVoidPrediction();
+  const approveMutation = useApprovePrediction();
+  const rejectMutation = useRejectPrediction();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedWinner, setSelectedWinner] = useState<string | null>(null);
@@ -26,19 +33,29 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
   const [showVoidForm, setShowVoidForm] = useState(false);
   const [voidReason, setVoidReason] = useState('');
   const [confirmingVoid, setConfirmingVoid] = useState(false);
+  const [confirmingApprove, setConfirmingApprove] = useState(false);
+  const [confirmingReject, setConfirmingReject] = useState(false);
 
   const hiveUsername =
     hiveUser?.username || user?.hiveUsername || (authType === 'hive' ? user?.username : undefined);
 
   const isAdmin = hiveUsername ? PREDICTION_CONFIG.ADMIN_ACCOUNTS.includes(hiveUsername) : false;
   const isCreator = hiveUsername === prediction.creatorUsername;
+  const isProposer = hiveUsername === prediction.proposedBy;
 
-  // Only render for authorized users on LOCKED predictions
-  if (!hiveUsername || (!isCreator && !isAdmin) || prediction.status !== 'LOCKED') {
+  // Show panel for LOCKED (creators/admins can propose) or PENDING_APPROVAL (admins can approve/reject)
+  const showForLocked = (isCreator || isAdmin) && prediction.status === 'LOCKED';
+  const showForPending = isAdmin && prediction.status === 'PENDING_APPROVAL';
+
+  if (!hiveUsername || (!showForLocked && !showForPending)) {
     return null;
   }
 
-  const isProcessing = settleMutation.isPending || voidMutation.isPending;
+  const isProcessing =
+    settleMutation.isPending ||
+    voidMutation.isPending ||
+    approveMutation.isPending ||
+    rejectMutation.isPending;
 
   const handleSettle = async () => {
     if (!selectedWinner || !confirmingSettle) return;
@@ -50,8 +67,8 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
       });
       addToast(
         toast.success(
-          'Prediction Settled',
-          'The winning outcome has been confirmed and payouts initiated.'
+          'Settlement Proposed',
+          'Awaiting approval from another admin.'
         )
       );
       setIsExpanded(false);
@@ -70,7 +87,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
         predictionId: prediction.id,
         reason: voidReason.trim(),
       });
-      addToast(toast.success('Prediction Voided', 'All stakes will be refunded.'));
+      addToast(toast.success('Void Proposed', 'Awaiting approval from another admin.'));
       setIsExpanded(false);
       setConfirmingVoid(false);
       setShowVoidForm(false);
@@ -80,192 +97,377 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
     }
   };
 
+  const handleApprove = async () => {
+    if (!confirmingApprove) return;
+
+    try {
+      await approveMutation.mutateAsync({ predictionId: prediction.id });
+      const action = prediction.proposedAction === 'settle' ? 'settled' : 'voided';
+      addToast(toast.success('Proposal Approved', `Prediction ${action} successfully.`));
+      setIsExpanded(false);
+      setConfirmingApprove(false);
+    } catch {
+      // Error handled by mutation state
+    }
+  };
+
+  const handleReject = async () => {
+    if (!confirmingReject) return;
+
+    try {
+      await rejectMutation.mutateAsync({ predictionId: prediction.id });
+      addToast(toast.success('Proposal Rejected', 'Prediction returned to LOCKED status.'));
+      setIsExpanded(false);
+      setConfirmingReject(false);
+    } catch {
+      // Error handled by mutation state
+    }
+  };
+
+  const anyError =
+    settleMutation.isError || voidMutation.isError || approveMutation.isError || rejectMutation.isError;
+  const errorMessage =
+    settleMutation.error?.message ||
+    voidMutation.error?.message ||
+    approveMutation.error?.message ||
+    rejectMutation.error?.message ||
+    'Operation failed';
+
+  const panelLabel = prediction.status === 'PENDING_APPROVAL' ? 'Approval Panel' : 'Settlement Panel';
+
   return (
     <div className="border-t">
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-warning transition-colors hover:bg-warning/5"
+        className={cn(
+          'flex w-full items-center justify-between px-4 py-3 text-sm font-medium transition-colors',
+          prediction.status === 'PENDING_APPROVAL'
+            ? 'text-amber-600 hover:bg-amber-500/5'
+            : 'text-warning hover:bg-warning/5'
+        )}
       >
-        <span>Settlement Panel</span>
+        <span className="flex items-center gap-2">
+          {prediction.status === 'PENDING_APPROVAL' && <ShieldCheck className="h-4 w-4" />}
+          {panelLabel}
+        </span>
         {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </button>
 
       {isExpanded && (
         <div className="space-y-4 px-4 pb-4">
-          {/* Warning */}
-          <div className="flex items-center gap-2 rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
-            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-            This action is irreversible
-          </div>
-
           {/* Error display */}
-          {(settleMutation.isError || voidMutation.isError) && (
+          {anyError && (
             <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>
-                {settleMutation.error?.message || voidMutation.error?.message || 'Operation failed'}
-              </span>
+              <span>{errorMessage}</span>
             </div>
           )}
 
-          {/* Settle section */}
-          {!showVoidForm && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">
-                Select winning outcome
-              </label>
-              {prediction.outcomes.map((outcome) => (
-                <button
-                  key={outcome.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedWinner(outcome.id);
-                    setConfirmingSettle(false);
-                  }}
-                  disabled={isProcessing}
-                  className={cn(
-                    'flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors',
-                    selectedWinner === outcome.id
-                      ? 'border-success bg-success/10 text-success'
-                      : 'border-border hover:border-success/60 hover:bg-success/5'
-                  )}
-                >
-                  <span>{outcome.label}</span>
-                  {selectedWinner === outcome.id && <Check className="h-4 w-4" />}
-                </button>
-              ))}
-
-              {selectedWinner && !confirmingSettle && (
-                <Button
-                  onClick={() => setConfirmingSettle(true)}
-                  disabled={isProcessing}
-                  className="w-full bg-success text-white hover:bg-success/90"
-                >
-                  Settle Prediction
-                </Button>
-              )}
-
-              {selectedWinner && confirmingSettle && (
-                <div role="alertdialog" aria-label="Confirm settlement" className="space-y-2">
-                  <p className="text-center text-sm font-medium text-destructive">
-                    Are you sure? This cannot be undone.
+          {/* === PENDING_APPROVAL mode: show proposal info + approve/reject === */}
+          {prediction.status === 'PENDING_APPROVAL' && (
+            <div className="space-y-3">
+              {/* Proposal info */}
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-3 text-sm">
+                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                  <Clock className="h-4 w-4 shrink-0" />
+                  <span className="font-medium">Pending Approval</span>
+                </div>
+                <div className="mt-2 space-y-1 text-muted-foreground">
+                  <p>
+                    <span className="font-medium text-foreground">Proposed by:</span>{' '}
+                    @{prediction.proposedBy}
                   </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setConfirmingSettle(false)}
-                      disabled={isProcessing}
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleSettle}
-                      disabled={isProcessing}
-                      className="flex-1 bg-success text-white hover:bg-success/90"
-                    >
-                      {settleMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Settling...
-                        </>
-                      ) : (
-                        'Confirm Settlement'
-                      )}
-                    </Button>
-                  </div>
+                  <p>
+                    <span className="font-medium text-foreground">Action:</span>{' '}
+                    {prediction.proposedAction === 'settle' ? (
+                      <>
+                        Settle — Winner:{' '}
+                        <span className="font-semibold text-success">
+                          {prediction.outcomes.find((o) => o.id === prediction.proposedOutcomeId)?.label ??
+                            'Unknown'}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        Void — Reason:{' '}
+                        <span className="italic">{prediction.proposedVoidReason}</span>
+                      </>
+                    )}
+                  </p>
+                  {prediction.proposedAt && (
+                    <p className="text-xs">
+                      Proposed {new Date(prediction.proposedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Approve/Reject buttons — only for a DIFFERENT admin */}
+              {isProposer ? (
+                <div className="rounded-lg bg-muted px-3 py-2 text-center text-sm text-muted-foreground">
+                  Waiting for another admin to approve or reject your proposal.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {!confirmingApprove && !confirmingReject && (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setConfirmingApprove(true)}
+                        disabled={isProcessing}
+                        className="flex-1 bg-success text-white hover:bg-success/90"
+                      >
+                        <Check className="mr-1.5 h-4 w-4" />
+                        Approve
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setConfirmingReject(true)}
+                        disabled={isProcessing}
+                        className="flex-1 text-destructive hover:bg-destructive/10"
+                      >
+                        <X className="mr-1.5 h-4 w-4" />
+                        Reject
+                      </Button>
+                    </div>
+                  )}
+
+                  {confirmingApprove && (
+                    <div role="alertdialog" aria-label="Confirm approval" className="space-y-2">
+                      <p className="text-center text-sm font-medium text-destructive">
+                        This will execute the {prediction.proposedAction}. Are you sure?
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setConfirmingApprove(false)}
+                          disabled={isProcessing}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleApprove}
+                          disabled={isProcessing}
+                          className="flex-1 bg-success text-white hover:bg-success/90"
+                        >
+                          {approveMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Approving...
+                            </>
+                          ) : (
+                            'Confirm Approval'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {confirmingReject && (
+                    <div role="alertdialog" aria-label="Confirm rejection" className="space-y-2">
+                      <p className="text-center text-sm font-medium text-warning">
+                        This will return the prediction to LOCKED status.
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setConfirmingReject(false)}
+                          disabled={isProcessing}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleReject}
+                          disabled={isProcessing}
+                          className="flex-1 bg-destructive text-white hover:bg-destructive/90"
+                        >
+                          {rejectMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Rejecting...
+                            </>
+                          ) : (
+                            'Confirm Rejection'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {/* Void section */}
-          <div className="border-t pt-3">
-            {!showVoidForm ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowVoidForm(true)}
-                disabled={isProcessing}
-                className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
-              >
-                <X className="mr-1.5 h-3.5 w-3.5" />
-                Void Prediction
-              </Button>
-            ) : (
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Reason for voiding
-                </label>
-                <textarea
-                  value={voidReason}
-                  onChange={(e) => setVoidReason(e.target.value)}
-                  placeholder="e.g. Match was cancelled..."
-                  className="w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-destructive/50"
-                  rows={2}
-                  disabled={isProcessing}
-                />
+          {/* === LOCKED mode: propose settlement or void === */}
+          {prediction.status === 'LOCKED' && (
+            <>
+              {/* Warning */}
+              <div className="flex items-center gap-2 rounded-lg bg-info/10 px-3 py-2 text-xs text-info">
+                <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                Proposals require approval from a second admin before execution
+              </div>
 
-                {!confirmingVoid ? (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
+              {/* Settle section */}
+              {!showVoidForm && (
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Select winning outcome
+                  </label>
+                  {prediction.outcomes.map((outcome) => (
+                    <button
+                      key={outcome.id}
+                      type="button"
                       onClick={() => {
-                        setShowVoidForm(false);
-                        setVoidReason('');
+                        setSelectedWinner(outcome.id);
+                        setConfirmingSettle(false);
                       }}
                       disabled={isProcessing}
-                      className="flex-1"
+                      className={cn(
+                        'flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors',
+                        selectedWinner === outcome.id
+                          ? 'border-success bg-success/10 text-success'
+                          : 'border-border hover:border-success/60 hover:bg-success/5'
+                      )}
                     >
-                      Cancel
-                    </Button>
+                      <span>{outcome.label}</span>
+                      {selectedWinner === outcome.id && <Check className="h-4 w-4" />}
+                    </button>
+                  ))}
+
+                  {selectedWinner && !confirmingSettle && (
                     <Button
-                      size="sm"
-                      onClick={() => setConfirmingVoid(true)}
-                      disabled={!voidReason.trim() || isProcessing}
-                      className="flex-1 bg-destructive text-white hover:bg-destructive/90"
+                      onClick={() => setConfirmingSettle(true)}
+                      disabled={isProcessing}
+                      className="w-full bg-success text-white hover:bg-success/90"
                     >
-                      Void
+                      Propose Settlement
                     </Button>
-                  </div>
-                ) : (
-                  <div role="alertdialog" aria-label="Confirm void" className="space-y-2">
-                    <p className="text-center text-sm font-medium text-destructive">
-                      Are you sure? All stakes will be refunded.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setConfirmingVoid(false)}
-                        disabled={isProcessing}
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleVoid}
-                        disabled={isProcessing}
-                        className="flex-1 bg-destructive text-white hover:bg-destructive/90"
-                      >
-                        {voidMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Voiding...
-                          </>
-                        ) : (
-                          'Confirm Void'
-                        )}
-                      </Button>
+                  )}
+
+                  {selectedWinner && confirmingSettle && (
+                    <div role="alertdialog" aria-label="Confirm settlement proposal" className="space-y-2">
+                      <p className="text-center text-sm font-medium text-warning">
+                        A second admin will need to approve this before execution.
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setConfirmingSettle(false)}
+                          disabled={isProcessing}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleSettle}
+                          disabled={isProcessing}
+                          className="flex-1 bg-success text-white hover:bg-success/90"
+                        >
+                          {settleMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Proposing...
+                            </>
+                          ) : (
+                            'Confirm Proposal'
+                          )}
+                        </Button>
+                      </div>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* Void section */}
+              <div className="border-t pt-3">
+                {!showVoidForm ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowVoidForm(true)}
+                    disabled={isProcessing}
+                    className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <X className="mr-1.5 h-3.5 w-3.5" />
+                    Propose Void
+                  </Button>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Reason for voiding
+                    </label>
+                    <textarea
+                      value={voidReason}
+                      onChange={(e) => setVoidReason(e.target.value)}
+                      placeholder="e.g. Match was cancelled..."
+                      className="w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-destructive/50"
+                      rows={2}
+                      disabled={isProcessing}
+                    />
+
+                    {!confirmingVoid ? (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setShowVoidForm(false);
+                            setVoidReason('');
+                          }}
+                          disabled={isProcessing}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => setConfirmingVoid(true)}
+                          disabled={!voidReason.trim() || isProcessing}
+                          className="flex-1 bg-destructive text-white hover:bg-destructive/90"
+                        >
+                          Propose Void
+                        </Button>
+                      </div>
+                    ) : (
+                      <div role="alertdialog" aria-label="Confirm void proposal" className="space-y-2">
+                        <p className="text-center text-sm font-medium text-warning">
+                          A second admin will need to approve this before execution.
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setConfirmingVoid(false)}
+                            disabled={isProcessing}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={handleVoid}
+                            disabled={isProcessing}
+                            className="flex-1 bg-destructive text-white hover:bg-destructive/90"
+                          >
+                            {voidMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Proposing...
+                              </>
+                            ) : (
+                              'Confirm Void Proposal'
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       )}
     </div>

@@ -10,7 +10,8 @@ import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { prisma } from '@/lib/db/prisma';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
-import { executeVoidRefund } from '@/lib/predictions/settlement';
+import { proposeVoid } from '@/lib/predictions/settlement';
+import { notifyAdminsOfProposal } from '@/lib/predictions/notifications';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -38,12 +39,18 @@ export const POST = createApiHandler('/api/predictions/[id]/void', async (reques
       throw new ForbiddenError('Only the creator or admins can void predictions');
     }
 
-    if (prediction.status !== 'OPEN' && prediction.status !== 'LOCKED') {
-      throw new ValidationError('Prediction must be OPEN or LOCKED to void');
+    if (!['OPEN', 'LOCKED', 'PENDING_APPROVAL'].includes(prediction.status)) {
+      throw new ValidationError('Prediction must be OPEN, LOCKED, or PENDING_APPROVAL to void');
     }
 
-    await executeVoidRefund(predictionId, body.reason, user.username);
+    await proposeVoid(predictionId, body.reason, user.username);
 
-    return apiSuccess({ message: 'Prediction voided and stakes refunded' });
+    // Notify other admins (fire-and-forget)
+    notifyAdminsOfProposal(prediction, user.username, {
+      action: 'void',
+      reason: body.reason,
+    }).catch(() => {});
+
+    return apiSuccess({ status: 'PENDING_APPROVAL' });
   });
 });

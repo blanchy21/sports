@@ -2,8 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { predictionKeys } from './usePredictions';
 
 /**
- * Settle a prediction by selecting the winning outcome.
- * Only available to the prediction creator or admin accounts.
+ * Propose settlement for a prediction (requires second admin approval).
  */
 export function useSettlePrediction() {
   const queryClient = useQueryClient();
@@ -24,23 +23,19 @@ export function useSettlePrediction() {
       });
       const data = await response.json();
       if (!data.success) {
-        throw new Error(data.error?.message || 'Failed to settle prediction');
+        throw new Error(data.error?.message || 'Failed to propose settlement');
       }
       return data.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: predictionKeys.detail(variables.predictionId) });
       queryClient.invalidateQueries({ queryKey: predictionKeys.lists() });
-      queryClient.invalidateQueries({
-        queryKey: predictionKeys.leaderboard({}),
-      });
     },
   });
 }
 
 /**
- * Void a prediction with a reason.
- * Only available to the prediction creator or admin accounts.
+ * Propose voiding a prediction (requires second admin approval).
  */
 export function useVoidPrediction() {
   const queryClient = useQueryClient();
@@ -55,7 +50,61 @@ export function useVoidPrediction() {
       });
       const data = await response.json();
       if (!data.success) {
-        throw new Error(data.error?.message || 'Failed to void prediction');
+        throw new Error(data.error?.message || 'Failed to propose void');
+      }
+      return data.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: predictionKeys.detail(variables.predictionId) });
+      queryClient.invalidateQueries({ queryKey: predictionKeys.lists() });
+    },
+  });
+}
+
+/**
+ * Approve a pending settlement/void proposal.
+ * Admin-only, must be different from the proposer.
+ */
+export function useApprovePrediction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ predictionId }: { predictionId: string }) => {
+      const response = await fetch(`/api/predictions/${predictionId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error?.message || 'Failed to approve proposal');
+      }
+      return data.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: predictionKeys.detail(variables.predictionId) });
+      queryClient.invalidateQueries({ queryKey: predictionKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: predictionKeys.leaderboard({}) });
+    },
+  });
+}
+
+/**
+ * Reject a pending settlement/void proposal. Returns prediction to LOCKED.
+ */
+export function useRejectPrediction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ predictionId }: { predictionId: string }) => {
+      const response = await fetch(`/api/predictions/${predictionId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error?.message || 'Failed to reject proposal');
       }
       return data.data;
     },

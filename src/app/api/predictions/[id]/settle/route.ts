@@ -10,7 +10,9 @@ import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { prisma } from '@/lib/db/prisma';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
-import { executeSettlement } from '@/lib/predictions/settlement';
+import { proposeSettlement } from '@/lib/predictions/settlement';
+import { checkAutoSettleEligibility } from '@/lib/predictions/auto-settle';
+import { notifyAdminsOfProposal } from '@/lib/predictions/notifications';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -48,8 +50,23 @@ export const POST = createApiHandler('/api/predictions/[id]/settle', async (requ
       throw new ValidationError('Invalid winning outcome ID');
     }
 
-    const settlement = await executeSettlement(predictionId, body.winningOutcomeId, user.username);
+    // Check if auto-settle can handle this — block manual if so
+    const eligibility = await checkAutoSettleEligibility(
+      prediction.matchReference,
+      prediction.outcomes.map((o) => ({ id: o.id, label: o.label }))
+    );
+    if (!eligibility.canManualSettle) {
+      throw new ValidationError(eligibility.reason);
+    }
 
-    return apiSuccess({ settlement });
+    await proposeSettlement(predictionId, body.winningOutcomeId, user.username);
+
+    // Notify other admins (fire-and-forget)
+    notifyAdminsOfProposal(prediction, user.username, {
+      action: 'settle',
+      outcomeLabel: validOutcome.label,
+    }).catch(() => {});
+
+    return apiSuccess({ status: 'PENDING_APPROVAL' });
   });
 });

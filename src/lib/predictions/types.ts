@@ -51,6 +51,11 @@ export interface PredictionBite {
   voidReason: string | null;
   settledAt: string | null;
   settledBy: string | null;
+  proposedOutcomeId: string | null;
+  proposedBy: string | null;
+  proposedAt: string | null;
+  proposedAction: string | null;
+  proposedVoidReason: string | null;
   createdAt: string;
   /** Whether the current user can edit/delete this prediction */
   canModify: boolean;

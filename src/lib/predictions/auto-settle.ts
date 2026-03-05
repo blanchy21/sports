@@ -7,6 +7,7 @@
  */
 
 import { SportsEvent } from '@/types/sports';
+import { fetchEventsByIds } from '@/lib/sports/espn';
 
 type MatchResult = 'home_win' | 'away_win' | 'draw';
 
@@ -126,4 +127,44 @@ export function resolveWinningOutcome(
 
   // Zero or multiple matches → can't auto-settle
   return null;
+}
+
+/**
+ * Check whether a prediction with a matchReference can be auto-settled.
+ * Used to block manual settlement when auto-settle can handle it.
+ */
+export async function checkAutoSettleEligibility(
+  matchReference: string | null,
+  outcomes: { id: string; label: string }[]
+): Promise<{ canManualSettle: boolean; reason: string }> {
+  // No match reference → no auto-settle possible, allow manual
+  if (!matchReference) {
+    return { canManualSettle: true, reason: 'No ESPN match linked' };
+  }
+
+  const eventsMap = await fetchEventsByIds([matchReference]);
+  const event = eventsMap.get(matchReference);
+
+  // ESPN event not found → data gap, allow manual
+  if (!event) {
+    return { canManualSettle: true, reason: 'ESPN event not found' };
+  }
+
+  // Event not finished yet → block manual (wait for result)
+  if (event.status !== 'finished') {
+    return { canManualSettle: false, reason: 'Event not finished yet — wait for the result' };
+  }
+
+  // Event finished — check if auto-settle can resolve it
+  const winningOutcomeId = resolveWinningOutcome(event, outcomes);
+
+  if (winningOutcomeId) {
+    return {
+      canManualSettle: false,
+      reason: 'Auto-settlement will handle this within 5 minutes',
+    };
+  }
+
+  // Event finished but can't auto-resolve → allow manual
+  return { canManualSettle: true, reason: 'Cannot auto-resolve outcome — manual settlement needed' };
 }

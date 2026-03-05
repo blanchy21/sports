@@ -506,6 +506,7 @@ model ContentReward {
 enum PredictionStatus {
   OPEN
   LOCKED
+  PENDING_APPROVAL
   SETTLING
   SETTLED
   VOID
@@ -534,6 +535,11 @@ model Prediction {
   voidReason        String?          @map("void_reason")
   settledAt         DateTime?        @map("settled_at")
   settledBy         String?          @map("settled_by")
+  proposedOutcomeId String?          @map("proposed_outcome_id")
+  proposedBy        String?          @map("proposed_by")
+  proposedAt        DateTime?        @map("proposed_at")
+  proposedAction    String?          @map("proposed_action") // 'settle' or 'void'
+  proposedVoidReason String?         @map("proposed_void_reason")
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
 

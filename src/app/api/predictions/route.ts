@@ -39,7 +39,7 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
   const sortByLocksAt = params.status !== 'SETTLED';
 
   // Active statuses for the default feed — exclude terminal states
-  const ACTIVE_STATUSES: PredictionStatus[] = ['OPEN', 'LOCKED', 'SETTLING'];
+  const ACTIVE_STATUSES: PredictionStatus[] = ['OPEN', 'LOCKED', 'PENDING_APPROVAL', 'SETTLING'];
 
   const where: Record<string, unknown> = {};
   if (params.status) {
