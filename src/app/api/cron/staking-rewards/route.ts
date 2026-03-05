@@ -46,7 +46,7 @@ const dhive = getDhiveClient();
  */
 async function isAlreadyProcessed(weekId: string): Promise<boolean> {
   try {
-    const record = await prisma.analyticsEvent.findFirst({
+    const record = await prisma.analyticsEvent.findUnique({
       where: { eventType: `staking-${weekId}` },
     });
     return !!record;
@@ -103,13 +103,14 @@ async function updateDistributionStatus(
   error?: string
 ): Promise<void> {
   try {
-    const record = await prisma.analyticsEvent.findFirst({
-      where: { eventType: `staking-${weekId}` },
+    const eventType = `staking-${weekId}`;
+    const record = await prisma.analyticsEvent.findUnique({
+      where: { eventType },
     });
     if (record) {
       const metadata = (record.metadata as Record<string, unknown>) || {};
       await prisma.analyticsEvent.update({
-        where: { id: record.id },
+        where: { eventType },
         data: {
           metadata: {
             ...metadata,

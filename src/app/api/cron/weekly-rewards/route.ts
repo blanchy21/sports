@@ -42,7 +42,7 @@ function getPreviousWeekId(): string {
  */
 async function isAlreadyProcessed(weekId: string): Promise<boolean> {
   try {
-    const record = await prisma.analyticsEvent.findFirst({
+    const record = await prisma.analyticsEvent.findUnique({
       where: { eventType: `weekly-rewards-${weekId}` },
     });
     return !!record;

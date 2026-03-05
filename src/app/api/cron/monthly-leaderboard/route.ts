@@ -37,11 +37,9 @@ export async function GET() {
     logger.info(`Generating monthly leaderboards for ${monthId}`, 'cron:monthly-leaderboard');
 
     // Idempotency: check if already generated via analytics event
-    const existing = await prisma.analyticsEvent.findFirst({
-      where: {
-        eventType: 'monthly_leaderboard_generated',
-        metadata: { path: ['monthId'], equals: monthId },
-      },
+    const eventType = `monthly_leaderboard_${monthId}`;
+    const existing = await prisma.analyticsEvent.findUnique({
+      where: { eventType },
     });
 
     if (existing) {
@@ -63,7 +61,7 @@ export async function GET() {
     // Record analytics event for idempotency
     await prisma.analyticsEvent.create({
       data: {
-        eventType: 'monthly_leaderboard_generated',
+        eventType,
         metadata: {
           monthId,
           overallEntries: result.overall.length,

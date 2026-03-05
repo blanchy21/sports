@@ -40,22 +40,10 @@ export const GET = createApiHandler(ROUTE, async () => {
   // Try to fetch cached analytics from the database
   const [trendingSportsRecord, trendingTopicsRecord, topAuthorsRecord, communityStatsRecord] =
     await Promise.allSettled([
-      prisma.analyticsEvent.findFirst({
-        where: { eventType: 'trendingSports' },
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.analyticsEvent.findFirst({
-        where: { eventType: 'trendingTopics' },
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.analyticsEvent.findFirst({
-        where: { eventType: 'topAuthors' },
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.analyticsEvent.findFirst({
-        where: { eventType: 'communityStats' },
-        orderBy: { createdAt: 'desc' },
-      }),
+      prisma.analyticsEvent.findUnique({ where: { eventType: 'trendingSports' } }),
+      prisma.analyticsEvent.findUnique({ where: { eventType: 'trendingTopics' } }),
+      prisma.analyticsEvent.findUnique({ where: { eventType: 'topAuthors' } }),
+      prisma.analyticsEvent.findUnique({ where: { eventType: 'communityStats' } }),
     ]);
 
   if (trendingSportsRecord.status === 'fulfilled' && trendingSportsRecord.value?.metadata) {

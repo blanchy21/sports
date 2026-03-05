@@ -31,7 +31,6 @@ model CustodialUser {
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
   accountTokens   AccountToken[]
-  analyticsEvents AnalyticsEvent[]
 
   @@index([isGraduated])
   @@map("custodial_users")
@@ -60,19 +59,13 @@ enum AccountTokenStatus {
   FAILED
 }
 
-// Lightweight analytics events
+// Key-value store for analytics cache + cron idempotency
 model AnalyticsEvent {
   id        String   @id @default(uuid())
-  eventType String   @map("event_type")
+  eventType String   @unique @map("event_type")
   metadata  Json?
   createdAt DateTime @default(now()) @map("created_at")
 
-  userId    String?  @map("user_id")
-  user      CustodialUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([eventType])
-  @@index([userId])
-  @@index([createdAt])
   @@map("analytics_events")
 }
 

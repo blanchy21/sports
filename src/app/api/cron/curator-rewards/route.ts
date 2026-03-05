@@ -42,9 +42,8 @@ async function getProcessedVoteIds(): Promise<Set<string>> {
   try {
     const today = getDailyKey();
     // Use analyticsEvent as a lightweight store for daily curator data
-    const record = await prisma.analyticsEvent.findFirst({
+    const record = await prisma.analyticsEvent.findUnique({
       where: { eventType: `curator-rewards-${today}` },
-      orderBy: { createdAt: 'desc' },
     });
 
     if (record?.metadata) {
@@ -64,9 +63,8 @@ async function getProcessedVoteIds(): Promise<Set<string>> {
 async function getCuratorDailyCounts(): Promise<Map<string, number>> {
   try {
     const today = getDailyKey();
-    const record = await prisma.analyticsEvent.findFirst({
+    const record = await prisma.analyticsEvent.findUnique({
       where: { eventType: `curator-rewards-${today}` },
-      orderBy: { createdAt: 'desc' },
     });
 
     if (record?.metadata) {
@@ -99,10 +97,11 @@ async function saveProcessedRewards(
   try {
     const today = getDailyKey();
 
+    const eventType = `curator-rewards-${today}`;
+
     // Fetch existing record
-    const existing = await prisma.analyticsEvent.findFirst({
-      where: { eventType: `curator-rewards-${today}` },
-      orderBy: { createdAt: 'desc' },
+    const existing = await prisma.analyticsEvent.findUnique({
+      where: { eventType },
     });
 
     const existingData = (existing?.metadata || {}) as Record<string, unknown>;
@@ -128,19 +127,11 @@ async function saveProcessedRewards(
       lastUpdated: new Date().toISOString(),
     };
 
-    if (existing) {
-      await prisma.analyticsEvent.update({
-        where: { id: existing.id },
-        data: { metadata: metadata as unknown as Prisma.InputJsonValue },
-      });
-    } else {
-      await prisma.analyticsEvent.create({
-        data: {
-          eventType: `curator-rewards-${today}`,
-          metadata: metadata as unknown as Prisma.InputJsonValue,
-        },
-      });
-    }
+    await prisma.analyticsEvent.upsert({
+      where: { eventType },
+      update: { metadata: metadata as unknown as Prisma.InputJsonValue },
+      create: { eventType, metadata: metadata as unknown as Prisma.InputJsonValue },
+    });
   } catch (error) {
     logger.error('Error saving processed rewards', 'cron:curator-rewards', error);
     throw error;

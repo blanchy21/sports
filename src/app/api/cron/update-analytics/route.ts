@@ -13,16 +13,14 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /**
- * Helper to upsert an analytics event by eventType.
- * Deletes old records with the same eventType and creates a fresh one.
+ * Upsert an analytics cache row by eventType (unique constraint).
  */
 async function upsertAnalytics(eventType: string, metadata: Record<string, unknown>) {
-  await prisma.$transaction([
-    prisma.analyticsEvent.deleteMany({ where: { eventType } }),
-    prisma.analyticsEvent.create({
-      data: { eventType, metadata: metadata as Prisma.InputJsonValue },
-    }),
-  ]);
+  await prisma.analyticsEvent.upsert({
+    where: { eventType },
+    update: { metadata: metadata as Prisma.InputJsonValue },
+    create: { eventType, metadata: metadata as Prisma.InputJsonValue },
+  });
 }
 
 /**
