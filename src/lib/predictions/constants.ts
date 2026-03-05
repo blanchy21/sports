@@ -54,7 +54,7 @@ export const PREDICTION_CONFIG = {
   BURN_ACCOUNT: 'medals.burn',
 
   /** Rewards account for fee rewards portion */
-  REWARDS_ACCOUNT: 'sb.rewards',
+  REWARDS_ACCOUNT: 'sp-blockrewards',
 
   /** Admin accounts that can settle/void any prediction */
   ADMIN_ACCOUNTS: ['niallon11', 'blanchy', 'talesfrmthecrypt'] as readonly string[],
