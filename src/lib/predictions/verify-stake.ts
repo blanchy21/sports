@@ -134,12 +134,13 @@ export async function verifyStakeTransaction(params: VerifyStakeParams): Promise
         continue;
       }
 
-      // Verify amount (compare as numbers with 3dp precision)
-      const onChainAmount = parseFloat(cp.quantity || '0');
-      if (Math.abs(onChainAmount - expectedAmount) > 0.001) {
+      // Verify amount using integer comparison (3dp precision, no float tolerance)
+      const onChainCents = Math.round(parseFloat(cp.quantity || '0') * 1000);
+      const expectedCents = Math.round(expectedAmount * 1000);
+      if (onChainCents !== expectedCents) {
         return {
           valid: false,
-          error: `Amount mismatch: on-chain ${onChainAmount}, expected ${expectedAmount}`,
+          error: `Amount mismatch: on-chain ${cp.quantity}, expected ${expectedAmount}`,
         };
       }
 

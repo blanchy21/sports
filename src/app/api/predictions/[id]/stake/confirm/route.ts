@@ -19,6 +19,7 @@ import { serializePrediction } from '@/lib/predictions/serialize';
 import { logger } from '@/lib/logger';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
+import { checkRateLimit, getClientIdentifier } from '@/lib/utils/rate-limit';
 
 const confirmSchema = z.object({
   stakeToken: z.string().min(1),
@@ -29,6 +30,16 @@ export const POST = createApiHandler(
   '/api/predictions/[id]/stake/confirm',
   async (request, _ctx) => {
     return withCsrfProtection(request as NextRequest, async () => {
+      // Rate limit to prevent abuse (expensive on-chain verification per call)
+      const rateLimitResult = await checkRateLimit(
+        getClientIdentifier(request as NextRequest),
+        { limit: 10, windowSeconds: 60 },
+        'stakeConfirm'
+      );
+      if (!rateLimitResult.success) {
+        throw new ValidationError('Too many stake confirmation attempts. Please try again shortly.');
+      }
+
       const user = await getAuthenticatedUserFromSession(request as NextRequest);
       if (!user) throw new AuthError();
       if (user.authType !== 'hive') {
@@ -79,6 +90,12 @@ export const POST = createApiHandler(
         });
         throw new ValidationError(`Transaction verification failed: ${verification.error}`);
       }
+
+      // Consume the stake token BEFORE the DB write to prevent race conditions.
+      // If the DB transaction fails after consumption, the token is lost — but the
+      // user can request a new one. This is safer than consuming after (which could
+      // leave the token unconsumed if Redis fails post-DB-write).
+      await consumeStakeToken(body.stakeToken, { txId: body.txId, username: user.username });
 
       let prediction;
       try {
@@ -138,8 +155,6 @@ export const POST = createApiHandler(
         }
         throw e;
       }
-
-      await consumeStakeToken(body.stakeToken, { txId: body.txId, username: user.username });
 
       return apiSuccess(serializePrediction(prediction, user.username));
     });

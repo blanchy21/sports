@@ -23,6 +23,7 @@ import { verifyChallenge, verifyHivePostingSignature } from '@/lib/auth/hive-cha
 import { prisma } from '@/lib/db/prisma';
 import { logger } from '@/lib/logger';
 import { syncAuthorData } from '@/lib/db/sync-author-data';
+import { getRedisCache } from '@/lib/cache/redis-cache';
 
 const ROUTE = '/api/auth/sb-session';
 const SESSION_COOKIE_NAME = 'sb_session';
@@ -220,6 +221,32 @@ export const POST = createApiHandler(ROUTE, async (request) => {
           { success: false, error: `Challenge verification failed: ${challengeResult.reason}` },
           { status: 401 }
         );
+      }
+
+      // Prevent challenge replay: each nonce can only be used once
+      const nonce = challenge.split(':')[2];
+      if (nonce) {
+        try {
+          const redis = await getRedisCache();
+          if (redis.isAvailable()) {
+            const nonceKey = `challenge-nonce:${nonce}`;
+            const existing = await redis.get(nonceKey);
+            if (existing) {
+              logger.warn('Challenge nonce replay attempt', 'sb-session', {
+                user: sessionData.username,
+              });
+              return NextResponse.json(
+                { success: false, error: 'Challenge already used' },
+                { status: 401 }
+              );
+            }
+            // Mark nonce as consumed with TTL matching challenge window (5 min)
+            await redis.set(nonceKey, { user: sessionData.username, usedAt: Date.now() }, { ttl: 300 });
+          }
+        } catch (err) {
+          // Redis unavailable — log but allow through (challenge HMAC + expiry still protect)
+          logger.warn('Redis unavailable for nonce dedup', 'sb-session', err);
+        }
       }
 
       // Verify the Hive signature against on-chain posting keys
