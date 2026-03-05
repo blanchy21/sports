@@ -48,9 +48,9 @@ function LandingSectionSkeleton() {
   );
 }
 
-// Lazy load the hero section (defers framer-motion ~45KB from initial bundle)
+// Lazy load the hero section — SSR enabled so hero HTML is in initial server response (fast LCP).
+// Loading skeleton only shows during client-side navigations, not initial page load.
 export const LazyLandingHero = dynamic(() => import('@/components/landing/LandingHero'), {
-  ssr: false,
   loading: () => (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
       <div className="absolute inset-0 bg-[#080C14]" />

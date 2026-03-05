@@ -77,6 +77,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://pagead2.googlesyndication.com"
           crossOrigin="anonymous"
         />
+        <link
+          rel="preconnect"
+          href="https://o4510847625003008.ingest.de.sentry.io"
+          crossOrigin="anonymous"
+        />
         <link rel="dns-prefetch" href="https://files.peakd.com" />
         <link rel="dns-prefetch" href="https://images.hive.blog" />
         <link rel="dns-prefetch" href="https://cdn.steemitimages.com" />

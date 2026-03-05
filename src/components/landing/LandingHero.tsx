@@ -57,7 +57,7 @@ export default function LandingHero() {
       <motion.div style={{ y: textY }} className="relative z-10 mx-auto max-w-6xl px-6 text-center">
         {/* Brand */}
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           className="mb-8 flex items-center justify-center gap-3"
@@ -77,7 +77,7 @@ export default function LandingHero() {
 
         {/* Main Headline */}
         <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          initial={false}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
           className="relative"

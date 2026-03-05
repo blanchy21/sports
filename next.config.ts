@@ -36,8 +36,8 @@ const nextConfig: NextConfig = {
               // ideal but require middleware to inject per-request, which Next.js App
               // Router does not yet support reliably with streaming.
               process.env.NODE_ENV === 'development'
-                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://adservice.google.com https://va.vercel-scripts.com"
-                : "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://adservice.google.com https://va.vercel-scripts.com",
+                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://adservice.google.com https://va.vercel-scripts.com https://fundingchoicesmessages.google.com"
+                : "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://adservice.google.com https://va.vercel-scripts.com https://fundingchoicesmessages.google.com",
               // Styles - self and inline (required for styled-jsx and Tailwind)
               "style-src 'self' 'unsafe-inline'",
               // Images - self, data URIs, and allowed image hosts
@@ -48,6 +48,8 @@ const nextConfig: NextConfig = {
               "connect-src 'self' https://api.hive.blog https://api.deathwing.me https://api.openhive.network https://anyx.io https://rpc.ausbit.dev https://api.c0ff33a.uk https://api.coingecko.com https://*.googleapis.com https://*.sentry.io https://*.ingest.sentry.io https://site.api.espn.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://accounts.google.com https://hivesigner.com https://va.vercel-scripts.com",
               // Frames - restricted to video embeds
               "frame-src 'self' https://www.youtube.com https://youtube.com https://player.vimeo.com https://3speak.tv https://emb.3speak.tv https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com",
+              // Workers - self and blob (used by Sentry replay)
+              "worker-src 'self' blob:",
               // Object - none
               "object-src 'none'",
               // Base URI - self only
