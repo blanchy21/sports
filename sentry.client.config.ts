@@ -21,14 +21,8 @@ Sentry.init({
   replaysSessionSampleRate: 0.1, // Sample 10% of sessions
   replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors
 
-  // Integrations
-  integrations: [
-    Sentry.replayIntegration({
-      // Mask all text to protect user privacy
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],
+  // No heavy integrations at init — replay is lazy-loaded below to reduce TTI
+  integrations: [],
 
   // Environment
   environment: process.env.NODE_ENV,
@@ -92,3 +86,18 @@ Sentry.init({
     return event;
   },
 });
+
+// Lazy-load the heavy replay integration after the page is interactive.
+// This keeps ~30-40KB of replay SDK out of the critical rendering path.
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+  const schedule =
+    window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 3000));
+  schedule(() => {
+    Sentry.addIntegration(
+      Sentry.replayIntegration({
+        maskAllText: true,
+        blockAllMedia: true,
+      })
+    );
+  });
+}
