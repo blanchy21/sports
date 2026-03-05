@@ -245,6 +245,19 @@ Broadcast one op per stake, immediately record success in DB (`payoutTxId` for p
 
 ---
 
+## Predictions: Never drop `stakes: true` from the list query
+
+**Date:** 2026-03-05
+**Severity:** High — broken twice (commits 9fb858f, 00af78b), fixed twice (bc6214e, now)
+
+### Problem
+Code review optimizations replaced `stakes: true` with `_count: { select: { stakes: true } }` in `/api/predictions` GET. This drops all stake records, causing the serializer to produce empty `stakers` arrays on outcomes and no `userStakes`. Result: backer names, payout breakdowns, and user stake summaries all disappear from prediction cards.
+
+### Rule
+**The predictions list endpoint MUST include `stakes: true` in its Prisma query.** The staker data is required for three core UI features: backer names on outcome bars, winner payout breakdown on settled cards, and user's own stake summary. If performance becomes an issue, pre-aggregate top stakers into the `PredictionOutcome` model — never solve it by dropping the data from the API.
+
+---
+
 ## Hive Engine: honey-swap requires full JSON memo for HIVE wrapping
 
 **Date:** 2026-03-03
