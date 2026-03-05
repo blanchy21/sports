@@ -296,9 +296,9 @@ export default function LandingShowcase() {
                       <div className="text-xs text-muted-foreground">5 min read</div>
                     </div>
                   </div>
-                  <h4 className="mb-2 font-bold">
+                  <p className="mb-2 font-bold">
                     Why Liverpool&apos;s Midfield Press Is Unstoppable This Season
-                  </h4>
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     Breaking down the tactical genius behind the Reds&apos; relentless high press
                     and why opponents can&apos;t find answers...
