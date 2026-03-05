@@ -256,7 +256,7 @@ function convertMarkdownTables(content: string): string {
       let html = '<table><thead><tr>';
       headerCells.forEach((cell, j) => {
         const align = alignments[j] || 'text-left';
-        html += `<th class="${align}">${cell}</th>`;
+        html += `<th class="${align}">${escapeHtml(cell)}</th>`;
       });
       html += '</tr></thead><tbody>';
 
@@ -271,7 +271,7 @@ function convertMarkdownTables(content: string): string {
         for (let j = 0; j < columnCount; j++) {
           const align = alignments[j] || 'text-left';
           const cellContent = j < cells.length ? cells[j] : '';
-          html += `<td class="${align}">${cellContent}</td>`;
+          html += `<td class="${align}">${escapeHtml(cellContent)}</td>`;
         }
         html += '</tr>';
         i++;
@@ -319,7 +319,7 @@ export function sanitizePostContent(content: string): string {
     // Convert markdown images to HTML first (before bare URL detection)
     .replace(
       /!\[([^\]]*)\]\(([^)]+)\)/g,
-      '<img src="$2" alt="$1" class="max-w-full h-auto rounded-lg shadow-md my-4" loading="lazy" />'
+      (_, alt, url) => `<img src="${url.replace(/"/g, '&quot;')}" alt="${escapeHtml(alt)}" class="max-w-full h-auto rounded-lg shadow-md my-4" loading="lazy" />`
     )
     // Convert bare image URLs to img tags (common in Hive posts).
     // Matches URLs ending in image extensions that are NOT already inside an attribute
@@ -330,7 +330,7 @@ export function sanitizePostContent(content: string): string {
     // Convert markdown links to HTML [text](url)
     .replace(
       /\[([^\]]+)\]\(([^)]+)\)/g,
-      (_, text, url) => `<a href="${url}">${escapeHtml(text)}</a>`
+      (_, text, url) => `<a href="${url.replace(/"/g, '&quot;')}">${escapeHtml(text)}</a>`
     )
     // Convert horizontal rules (3 or more consecutive dashes, asterisks, or underscores)
     // More lenient: matches lines that START with 3+ rule chars, ignoring trailing content

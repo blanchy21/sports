@@ -44,27 +44,32 @@ export interface FeeOps {
   reward: CustomJsonOp | null;
 }
 
-export function buildFeeOps(totalFee: number, predictionId: string): FeeOps {
-  const burnAmount = totalFee * PREDICTION_CONFIG.BURN_SPLIT;
-  const rewardAmount = totalFee * PREDICTION_CONFIG.REWARD_SPLIT;
-
+/**
+ * Build fee transfer operations from pre-calculated Decimal-precision amounts.
+ * Avoids recalculating splits with floating-point — callers pass exact values
+ * from calculateSettlement() which uses Decimal throughout.
+ */
+export function buildFeeOps(
+  fees: { burnAmount: number; rewardAmount: number },
+  predictionId: string
+): FeeOps {
   return {
     burn:
-      burnAmount > 0
+      fees.burnAmount > 0
         ? buildTransferOpFromAmount(
             PREDICTION_CONFIG.ESCROW_ACCOUNT,
             PREDICTION_CONFIG.BURN_ACCOUNT,
-            burnAmount,
+            fees.burnAmount,
             MEDALS_CONFIG.SYMBOL,
             `prediction-fee-burn|${predictionId}`
           )
         : null,
     reward:
-      rewardAmount > 0
+      fees.rewardAmount > 0
         ? buildTransferOpFromAmount(
             PREDICTION_CONFIG.ESCROW_ACCOUNT,
             PREDICTION_CONFIG.REWARDS_ACCOUNT,
-            rewardAmount,
+            fees.rewardAmount,
             MEDALS_CONFIG.SYMBOL,
             `prediction-fee-reward|${predictionId}`
           )

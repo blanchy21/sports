@@ -2,7 +2,7 @@ import * as React from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils/client';
 import { getAvatarUrl, getHiveAvatarUrl } from '@/lib/utils/avatar';
-import { shouldProxyImage, getProxyImageUrl } from '@/lib/utils/image-proxy';
+import { IMAGE_OPTIMIZABLE_HOSTS } from '@/lib/constants/image-hosts';
 
 interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string;
@@ -42,10 +42,10 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
       setFallbackStage((prev) => prev + 1);
     };
 
-    // Determine the image URL with cascade + proxy logic:
+    // Determine the image URL with cascade logic:
     // With src: src → hive avatar → dicebear
     // Without src: hive avatar → dicebear
-    const { finalUrl, isProxied } = React.useMemo(() => {
+    const { finalUrl, optimizable } = React.useMemo(() => {
       let url: string | null = null;
 
       if (src) {
@@ -60,13 +60,11 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
         url = getAvatarUrl(null, fallback);
       }
 
-      if (!url) return { finalUrl: null, isProxied: false };
+      if (!url) return { finalUrl: null, optimizable: false };
 
-      const proxied = shouldProxyImage(url);
-      return {
-        finalUrl: proxied ? getProxyImageUrl(url) : url,
-        isProxied: proxied,
-      };
+      let canOptimize = false;
+      try { canOptimize = IMAGE_OPTIMIZABLE_HOSTS.has(new URL(url).hostname); } catch { /* invalid URL */ }
+      return { finalUrl: url, optimizable: canOptimize };
     }, [src, fallbackStage, fallback, hiveAvatarUrl]);
 
     return (
@@ -86,7 +84,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
             fill
             sizes={sizePx[size]}
             className="h-full w-full object-cover"
-            unoptimized={!isProxied}
+            unoptimized={!optimizable}
             onError={handleImageError}
           />
         ) : (

@@ -18,8 +18,8 @@ export const POST = createApiHandler('/api/predictions/[id]/approve', async (req
     const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user) throw new AuthError();
 
-    if (!PREDICTION_CONFIG.ADMIN_ACCOUNTS.includes(user.username)) {
-      throw new ForbiddenError('Only admins can approve proposals');
+    if (!PREDICTION_CONFIG.ADMIN_ACCOUNTS.includes(user.username) || user.authType !== 'hive') {
+      throw new ForbiddenError('Only Hive-authenticated admins can approve proposals');
     }
 
     const predictionId = new URL(request.url).pathname.split('/predictions/')[1]?.split('/')[0];

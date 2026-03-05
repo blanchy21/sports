@@ -36,9 +36,9 @@ export const POST = createApiHandler('/api/predictions/[id]/settle', async (requ
     if (!prediction) throw new NotFoundError('Prediction not found');
 
     const isCreator = prediction.creatorUsername === user.username;
-    const isAdmin = PREDICTION_CONFIG.ADMIN_ACCOUNTS.includes(user.username);
+    const isAdmin = PREDICTION_CONFIG.ADMIN_ACCOUNTS.includes(user.username) && user.authType === 'hive';
     if (!isCreator && !isAdmin) {
-      throw new ForbiddenError('Only the creator or admins can settle predictions');
+      throw new ForbiddenError('Only the creator or Hive-authenticated admins can settle predictions');
     }
 
     if (prediction.status !== 'LOCKED') {

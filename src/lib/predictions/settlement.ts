@@ -234,7 +234,10 @@ export async function executeSettlement(
     // succeeds but the final transaction fails, fees are sent but prediction stays
     // in SETTLING. The feeBurnTxId/feeRewardTxId guards prevent re-broadcast on retry;
     // the SETTLING state is designed for exactly this (manual retry to complete).
-    const feeOps: FeeOps = buildFeeOps(settlement.platformFee, predictionId);
+    const feeOps: FeeOps = buildFeeOps(
+      { burnAmount: settlement.burnAmount, rewardAmount: settlement.rewardAmount },
+      predictionId
+    );
 
     if (feeOps.burn && !prediction.feeBurnTxId) {
       const txId = await broadcastHiveEngineOps([feeOps.burn]);

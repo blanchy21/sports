@@ -78,7 +78,7 @@ describe('buildPayoutOps', () => {
 
 describe('buildFeeOps', () => {
   it('builds burn and reward operations', () => {
-    const result = buildFeeOps(10, 'pred-1');
+    const result = buildFeeOps({ burnAmount: 5, rewardAmount: 5 }, 'pred-1');
 
     expect(result.burn).not.toBeNull();
     expect(result.reward).not.toBeNull();
@@ -92,24 +92,24 @@ describe('buildFeeOps', () => {
     expect(rewardPayload.contractPayload.memo).toBe('prediction-fee-reward|pred-1');
   });
 
-  it('splits fee according to BURN_SPLIT and REWARD_SPLIT', () => {
-    const result = buildFeeOps(100, 'pred-1');
+  it('uses pre-calculated burn and reward amounts', () => {
+    const result = buildFeeOps({ burnAmount: 50, rewardAmount: 50 }, 'pred-1');
 
     const burnQty = parseFloat(parsePayload(result.burn!).contractPayload.quantity);
     const rewardQty = parseFloat(parsePayload(result.reward!).contractPayload.quantity);
 
-    expect(burnQty).toBeCloseTo(100 * PREDICTION_CONFIG.BURN_SPLIT);
-    expect(rewardQty).toBeCloseTo(100 * PREDICTION_CONFIG.REWARD_SPLIT);
+    expect(burnQty).toBeCloseTo(50);
+    expect(rewardQty).toBeCloseTo(50);
   });
 
-  it('returns null ops when fee is 0', () => {
-    const result = buildFeeOps(0, 'pred-1');
+  it('returns null ops when amounts are 0', () => {
+    const result = buildFeeOps({ burnAmount: 0, rewardAmount: 0 }, 'pred-1');
     expect(result.burn).toBeNull();
     expect(result.reward).toBeNull();
   });
 
   it('sends from escrow account', () => {
-    const result = buildFeeOps(10, 'pred-1');
+    const result = buildFeeOps({ burnAmount: 5, rewardAmount: 5 }, 'pred-1');
     expect(result.burn!.required_auths).toContain(PREDICTION_CONFIG.ESCROW_ACCOUNT);
     expect(result.reward!.required_auths).toContain(PREDICTION_CONFIG.ESCROW_ACCOUNT);
   });

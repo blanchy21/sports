@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createApiHandler } from '@/lib/api/response';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 
 // Cache for GIF results to reduce API calls
 interface GifCache {
@@ -40,9 +41,9 @@ const searchSchema = z.object({
 const ROUTE = '/api/giphy';
 
 export const GET = createApiHandler(ROUTE, async (request, ctx) => {
-  // Session cookie check for authentication
-  const cookieHeader = request.headers.get('cookie') || '';
-  if (!cookieHeader.includes('sb_session=')) {
+  // Verify actual session, not just cookie presence
+  const user = await getAuthenticatedUserFromSession(request as NextRequest);
+  if (!user) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
 
