@@ -16,9 +16,13 @@ import {
   Zap,
 } from 'lucide-react';
 import { PotentialEarningsWidget } from '@/components/widgets/PotentialEarningsWidget';
-import { MyRankCard, LeaderboardCard } from '@/components/leaderboard';
+import {
+  MyRankCard,
+  LeaderboardGrid,
+  WeeklyWinners,
+  WeeklyRewardsSummary,
+} from '@/components/leaderboard';
 import { useWeeklyLeaderboards } from '@/lib/react-query/queries/useLeaderboard';
-import { ACTIVE_CATEGORIES } from '@/lib/metrics/category-config';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -37,7 +41,8 @@ export default function DashboardPage() {
     return `${d.getFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
   }, []);
 
-  const { data: leaderboards } = useWeeklyLeaderboards(currentWeekId, 1);
+  const { data: leaderboards, isLoading: leaderboardsLoading, error: leaderboardsError } =
+    useWeeklyLeaderboards(currentWeekId, 5);
 
   // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
@@ -164,41 +169,24 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Leaderboard Section */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <MyRankCard username={user?.username} compact />
-          <div className="rounded-lg border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-semibold">This Week&apos;s Leaders</h3>
-              <Link href="/leaderboard" className="text-sm text-primary hover:underline">
-                View All
-              </Link>
-            </div>
-            {leaderboards &&
-            ACTIVE_CATEGORIES.some((c) => (leaderboards.leaderboards[c] || []).length > 0) ? (
-              <div className="space-y-3">
-                {ACTIVE_CATEGORIES.map((category) => {
-                  const entries = leaderboards.leaderboards[category] || [];
-                  if (entries.length === 0) return null;
-                  return (
-                    <LeaderboardCard
-                      key={category}
-                      category={category}
-                      entries={entries}
-                      maxEntries={1}
-                      showReward={false}
-                      compact
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                No leaderboard data yet this week. View posts to start generating rankings!
-              </p>
-            )}
-          </div>
-        </div>
+        {/* Your Rankings */}
+        <MyRankCard username={user?.username} />
+
+        {/* Weekly Rewards Summary */}
+        <WeeklyRewardsSummary weekId={currentWeekId} compact />
+
+        {/* This Week's Winners */}
+        <WeeklyWinners weekId={currentWeekId} />
+
+        {/* Full Leaderboard Grid */}
+        <LeaderboardGrid
+          leaderboards={leaderboards ?? null}
+          isLoading={leaderboardsLoading}
+          error={leaderboardsError instanceof Error ? leaderboardsError.message : leaderboardsError ? 'Unknown error' : null}
+          weekId={currentWeekId}
+          showRewards
+          maxEntries={5}
+        />
       </div>
     </MainLayout>
   );
