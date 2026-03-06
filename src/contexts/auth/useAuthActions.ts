@@ -316,7 +316,8 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
 
         fetchProfileInBackground(username, basicUser, newHiveUser);
       } catch (error) {
-        logger.error('Error processing wallet authentication', 'useAuthActions', error);
+        const msg = error instanceof Error ? error.message : String(error);
+        logger.warn('Wallet authentication failed', 'useAuthActions', { error: msg });
         throw error;
       }
     },

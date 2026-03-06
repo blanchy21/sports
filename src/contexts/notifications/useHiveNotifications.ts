@@ -56,7 +56,9 @@ export function useHiveNotifications(
       } catch (error) {
         const isNetworkError = error instanceof TypeError && /failed to fetch/i.test(error.message);
         if (!isNetworkError) {
-          logger.error('Error fetching Hive notifications', 'useHiveNotifications', error);
+          logger.warn('Hive notification poll failed (will retry)', 'useHiveNotifications', {
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
         return null;
       }
