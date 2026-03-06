@@ -5,11 +5,11 @@ import type { ContestStatus } from '@/generated/prisma/client';
 
 const STATUS_CONFIG: Record<ContestStatus, { label: string; className: string }> = {
   DRAFT: { label: 'Draft', className: 'bg-muted text-muted-foreground' },
-  REGISTRATION: { label: 'Open', className: 'bg-green-500/10 text-green-500 border-green-500/20' },
-  ACTIVE: { label: 'Live', className: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
-  CALCULATING: { label: 'Calculating', className: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+  REGISTRATION: { label: 'Open', className: 'bg-green-600 text-white border-green-700' },
+  ACTIVE: { label: 'Live', className: 'bg-amber-500 text-white border-amber-600' },
+  CALCULATING: { label: 'Calculating', className: 'bg-blue-500 text-white border-blue-600' },
   SETTLED: { label: 'Settled', className: 'bg-muted text-muted-foreground' },
-  CANCELLED: { label: 'Cancelled', className: 'bg-destructive/10 text-destructive border-destructive/20' },
+  CANCELLED: { label: 'Cancelled', className: 'bg-destructive text-white border-destructive' },
 };
 
 export function ContestStatusBadge({
@@ -20,7 +20,7 @@ export function ContestStatusBadge({
   comingSoon?: boolean;
 }) {
   const config = comingSoon
-    ? { label: 'Coming Soon', className: 'bg-blue-500/10 text-blue-500 border-blue-500/20' }
+    ? { label: 'Coming Soon', className: 'bg-blue-500 text-white border-blue-600' }
     : STATUS_CONFIG[status] || STATUS_CONFIG.DRAFT;
 
   return (

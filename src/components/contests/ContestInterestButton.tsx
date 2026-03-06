@@ -23,7 +23,11 @@ export function ContestInterestButton({
       toast.error('Please sign in to express interest');
       return;
     }
-    mutate();
+    mutate(undefined, {
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : 'Failed to update interest');
+      },
+    });
   }
 
   return (
