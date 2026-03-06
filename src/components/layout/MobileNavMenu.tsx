@@ -18,6 +18,7 @@ import {
   BookOpen,
   LayoutDashboard,
   LogOut,
+  Trophy,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -75,6 +76,15 @@ export function MobileNavMenu({ onClose }: MobileNavMenuProps) {
         >
           <Target className="h-5 w-5" />
           <span>Predictions</span>
+        </Link>
+
+        <Link
+          href="/contests"
+          onClick={onClose}
+          className={navLinkClass(pathname === '/contests' || pathname.startsWith('/contests/'))}
+        >
+          <Trophy className="h-5 w-5" />
+          <span>Contests</span>
         </Link>
 
         <Link
