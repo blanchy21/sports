@@ -84,7 +84,7 @@ export default function OnboardingGuidePage() {
     setDownloading(true);
     setDownloadError('');
     try {
-      const res = await fetch('/api/hive/download-keys');
+      const res = await fetch('/api/hive/download-keys', { method: 'POST' });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
         throw new Error(err?.error?.message || 'Failed to download keys');

@@ -57,6 +57,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/publish-scheduled-posts",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/monthly-leaderboard",
       "schedule": "0 2 1 * *"
     }

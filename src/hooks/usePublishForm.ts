@@ -55,6 +55,7 @@ export function usePublishForm() {
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showAuthorityPrompt, setShowAuthorityPrompt] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
@@ -263,6 +264,7 @@ export function usePublishForm() {
     showImageDialog, setShowImageDialog,
     showLinkDialog, setShowLinkDialog,
     showScheduleModal, setShowScheduleModal,
+    showAuthorityPrompt, setShowAuthorityPrompt,
     showMenu, setShowMenu,
     isPublishing, setIsPublishing,
     publishError, setPublishError,

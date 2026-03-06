@@ -28,6 +28,38 @@ const createScheduledPostSchema = z.object({
 });
 
 /**
+ * GET /api/soft/scheduled-posts — Fetch user's scheduled posts
+ */
+export const GET = createApiHandler(ROUTE, async (request) => {
+  const sessionUser = await getAuthenticatedUserFromSession(request as NextRequest);
+  if (!sessionUser) {
+    return NextResponse.json(
+      { success: false, error: 'Authentication required' },
+      { status: 401 }
+    );
+  }
+
+  const posts = await prisma.scheduledPost.findMany({
+    where: { userId: sessionUser.userId },
+    orderBy: { scheduledAt: 'desc' },
+  });
+
+  return NextResponse.json({
+    success: true,
+    scheduledPosts: posts.map((p) => ({
+      id: p.id,
+      postData: p.postData,
+      scheduledAt: p.scheduledAt,
+      status: p.status,
+      error: p.error,
+      publishedAt: p.publishedAt,
+      publishedPostId: p.publishedPostId,
+      createdAt: p.createdAt,
+    })),
+  });
+});
+
+/**
  * POST /api/soft/scheduled-posts - Create a scheduled post
  */
 export const POST = csrfProtected(

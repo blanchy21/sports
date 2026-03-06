@@ -3,6 +3,11 @@
 import request from 'supertest';
 import { createRouteTestServer } from './test-server';
 
+jest.mock('@/lib/api/csrf', () => ({
+  csrfProtected: (handler: (...args: unknown[]) => unknown) => handler,
+  validateCsrf: () => true,
+}));
+
 const mockGetAuthenticatedUserFromSession = jest.fn();
 jest.mock('@/lib/api/session-auth', () => ({
   getAuthenticatedUserFromSession: (...args: unknown[]) =>
@@ -36,14 +41,14 @@ jest.mock('@/lib/auth/next-auth-options', () => ({
   authOptions: {},
 }));
 
-import { GET } from '@/app/api/hive/download-keys/route';
+import { POST } from '@/app/api/hive/download-keys/route';
 import { prisma } from '@/lib/db/prisma';
 import { jwtFieldsCache } from '@/lib/auth/next-auth-options';
 
 const mockPrisma = jest.mocked(prisma);
 const mockJwtFieldsCache = jest.mocked(jwtFieldsCache);
 
-describe('GET /api/hive/download-keys', () => {
+describe('POST /api/hive/download-keys', () => {
   let server: ReturnType<typeof createRouteTestServer>;
 
   beforeEach(() => {
@@ -86,7 +91,7 @@ describe('GET /api/hive/download-keys', () => {
 
     server = createRouteTestServer({
       routes: {
-        'GET /api/hive/download-keys': GET,
+        'POST /api/hive/download-keys': POST,
       },
     });
   });
@@ -102,7 +107,7 @@ describe('GET /api/hive/download-keys', () => {
   it('returns 401 when not authenticated', async () => {
     mockGetAuthenticatedUserFromSession.mockResolvedValue(null);
 
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);
@@ -117,7 +122,7 @@ describe('GET /api/hive/download-keys', () => {
       hiveUsername: 'hiveuser',
     });
 
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(403);
     expect(response.body.success).toBe(false);
@@ -132,7 +137,7 @@ describe('GET /api/hive/download-keys', () => {
       hiveUsername: null,
     });
 
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
@@ -146,7 +151,7 @@ describe('GET /api/hive/download-keys', () => {
       reset: Date.now() + 3600000,
     });
 
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(429);
     expect(response.body.success).toBe(false);
@@ -156,7 +161,7 @@ describe('GET /api/hive/download-keys', () => {
   it('returns 401 when NextAuth session is missing', async () => {
     mockGetServerSession.mockResolvedValue(null);
 
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);
@@ -168,7 +173,7 @@ describe('GET /api/hive/download-keys', () => {
       user: { id: 'different-user-456' },
     });
 
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);
@@ -178,7 +183,7 @@ describe('GET /api/hive/download-keys', () => {
   it('returns 404 when custodialUser not found', async () => {
     mockPrisma.custodialUser.findUnique.mockResolvedValue(null as never);
 
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(404);
     expect(response.body.success).toBe(false);
@@ -193,7 +198,7 @@ describe('GET /api/hive/download-keys', () => {
       encryptionSalt: 'salt-data',
     } as never);
 
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(404);
     expect(response.body.success).toBe(false);
@@ -205,7 +210,7 @@ describe('GET /api/hive/download-keys', () => {
       throw new Error('decryption failed');
     });
 
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(500);
     expect(response.body.success).toBe(false);
@@ -216,14 +221,14 @@ describe('GET /api/hive/download-keys', () => {
   });
 
   it('returns 200 with Content-Type text/plain', async () => {
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toBe('text/plain; charset=utf-8');
   });
 
   it('returns 200 with correct Content-Disposition filename', async () => {
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(200);
     expect(response.headers['content-disposition']).toBe(
@@ -232,14 +237,14 @@ describe('GET /api/hive/download-keys', () => {
   });
 
   it('returns 200 with Cache-Control no-store', async () => {
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(200);
     expect(response.headers['cache-control']).toBe('no-store');
   });
 
   it('returns body containing key labels', async () => {
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(200);
     const body = response.text;
@@ -251,7 +256,7 @@ describe('GET /api/hive/download-keys', () => {
   });
 
   it('returns body containing the actual key values from decryptKeys', async () => {
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(200);
     const body = response.text;
@@ -263,7 +268,7 @@ describe('GET /api/hive/download-keys', () => {
   });
 
   it('marks keysDownloaded via prisma.update on success', async () => {
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(200);
     expect(mockPrisma.custodialUser.update).toHaveBeenCalledWith(
@@ -278,7 +283,7 @@ describe('GET /api/hive/download-keys', () => {
   });
 
   it('invalidates jwtFieldsCache on success', async () => {
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(200);
     expect(mockJwtFieldsCache.invalidateByTag).toHaveBeenCalledWith('custodial-user:cust-123');
@@ -289,7 +294,7 @@ describe('GET /api/hive/download-keys', () => {
       throw new Error('key1 key2 key3 key4 pass');
     });
 
-    const response = await request(server).get('/api/hive/download-keys');
+    const response = await request(server).post('/api/hive/download-keys');
 
     expect(response.status).toBe(500);
     const responseText = JSON.stringify(response.body);

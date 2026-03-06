@@ -53,6 +53,46 @@ export function usePublishActions(form: FormState) {
     }
   }, [form]);
 
+  /**
+   * Check posting authority before opening schedule modal.
+   * For Hive users: verify @sportsblock has posting authority.
+   * For soft users: no authority check needed (scheduled posts
+   * are for Hive publishing via the cron job).
+   */
+  const handleScheduleClick = useCallback(async () => {
+    if (form.authType !== 'hive' || !form.hiveUser?.username) {
+      // Soft users can schedule too — the post is stored in DB
+      form.setShowScheduleModal(true);
+      return;
+    }
+
+    try {
+      // Check posting authority via account summary endpoint
+      const res = await fetch(
+        `/api/hive/account/summary?username=${form.hiveUser.username}`
+      );
+      const data = await res.json();
+      if (!data.success || !data.account) {
+        form.setShowScheduleModal(true); // Fall through, let server catch errors
+        return;
+      }
+
+      const hasAuthority = data.account.posting?.account_auths?.some(
+        ([auth]: [string, number]) => auth === 'sportsblock'
+      );
+
+      if (hasAuthority) {
+        form.setShowScheduleModal(true);
+      } else {
+        form.setShowAuthorityPrompt(true);
+      }
+    } catch (error) {
+      logger.error('Error checking posting authority', 'PublishPage', error);
+      // On error, still let them try to schedule
+      form.setShowScheduleModal(true);
+    }
+  }, [form]);
+
   const handleSchedule = useCallback(
     async (scheduledAt: Date) => {
       if (!form.user) return;
@@ -103,9 +143,9 @@ export function usePublishActions(form: FormState) {
         }
 
         form.addToast(
-          toast.success('Success', `Post scheduled for ${scheduledAt.toLocaleString()}`)
+          toast.success('Scheduled', `Post scheduled for ${scheduledAt.toLocaleString()}`)
         );
-        form.router.push('/feed');
+        form.router.push('/drafts?tab=scheduled');
       } catch (error) {
         logger.error('Error scheduling post', 'PublishPage', error);
         form.setPublishError('Failed to schedule post');
@@ -249,5 +289,5 @@ export function usePublishActions(form: FormState) {
     }
   }, [form]);
 
-  return { handleSaveDraft, handleSchedule, handlePublish };
+  return { handleSaveDraft, handleScheduleClick, handleSchedule, handlePublish };
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiHandler, apiError } from '@/lib/api/response';
+import { csrfProtected } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { decryptKeys } from '@/lib/hive/key-encryption';
 import { prisma } from '@/lib/db/prisma';
@@ -11,7 +12,7 @@ import { jwtFieldsCache } from '@/lib/auth/next-auth-options';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export const GET = createApiHandler('/api/hive/download-keys', async (request: Request, ctx) => {
+export const POST = csrfProtected(createApiHandler('/api/hive/download-keys', async (request: Request, ctx) => {
   // 1. Authenticate — must be a custodial (soft) user
   const user = await getAuthenticatedUserFromSession(request as NextRequest);
 
@@ -151,4 +152,4 @@ export const GET = createApiHandler('/api/hive/download-keys', async (request: R
       'Cache-Control': 'no-store',
     },
   });
-});
+}));

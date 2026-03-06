@@ -723,15 +723,30 @@ export function ComposeSportsbite({
           </div>
 
           {authType === 'soft' && user && !user.keysDownloaded && (
-            <a
-              href="/api/hive/download-keys"
-              className="flex items-center gap-2 border-t border-warning/30 bg-warning/10 px-4 py-2.5 transition-colors hover:bg-warning/15"
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/hive/download-keys', { method: 'POST' });
+                  if (!res.ok) return;
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'sportsblock-keys.txt';
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  URL.revokeObjectURL(url);
+                } catch { /* silently fail */ }
+              }}
+              className="flex w-full items-center gap-2 border-t border-warning/30 bg-warning/10 px-4 py-2.5 transition-colors hover:bg-warning/15"
             >
               <Download className="h-3.5 w-3.5 shrink-0 text-warning" />
               <p className="text-xs font-medium text-warning">
                 Download your Hive keys for full self-custody of your account
               </p>
-            </a>
+            </button>
           )}
         </>
       )}
