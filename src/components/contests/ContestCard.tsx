@@ -38,8 +38,7 @@ export const ContestCard = React.memo(function ContestCard({
 }: {
   contest: ContestResponse;
 }) {
-  const prizeNet =
-    contest.prizePool * (1 - contest.platformFeePct - contest.creatorFeePct);
+  const prizeNet = contest.prizePool * (1 - contest.platformFeePct - contest.creatorFeePct);
   const firstPrize = prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.FIRST;
   const secondPrize = prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.SECOND;
   const thirdPrize = prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.THIRD;
@@ -48,9 +47,8 @@ export const ContestCard = React.memo(function ContestCard({
   const isComingSoon = isRegistration && new Date(contest.registrationOpens).getTime() > Date.now();
   const isActive = contest.status === 'ACTIVE';
   const isSettled = contest.status === 'SETTLED';
-  const timeInfo = isRegistration && !isComingSoon
-    ? getTimeRemaining(contest.registrationCloses)
-    : null;
+  const timeInfo =
+    isRegistration && !isComingSoon ? getTimeRemaining(contest.registrationCloses) : null;
   const capacityPct = getCapacityPercent(contest.entryCount, contest.maxEntries);
   const isAlmostFull = capacityPct !== null && capacityPct >= 80;
 
@@ -59,7 +57,7 @@ export const ContestCard = React.memo(function ContestCard({
       <div
         className={cn(
           'relative overflow-hidden rounded-2xl border bg-card transition-all duration-300',
-          'hover:shadow-lg hover:shadow-amber-500/5 hover:-translate-y-0.5',
+          'hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-500/5',
           isRegistration && 'border-amber-500/20 hover:border-amber-500/40',
           isActive && 'border-amber-500/30',
           !isRegistration && !isActive && 'hover:border-border'
@@ -76,9 +74,10 @@ export const ContestCard = React.memo(function ContestCard({
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, 700px"
+              priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
-            <div className="absolute top-3 right-3">
+            <div className="absolute right-3 top-3">
               <ContestStatusBadge status={contest.status} comingSoon={isComingSoon} />
             </div>
           </div>
@@ -87,7 +86,7 @@ export const ContestCard = React.memo(function ContestCard({
         {/* ----------------------------------------------------------------- */}
         {/* Top visual band - gradient background with trophy                 */}
         {/* ----------------------------------------------------------------- */}
-        <div className={cn('relative px-5 pb-4', contest.coverImage ? 'pt-0 -mt-10' : 'pt-5')}>
+        <div className={cn('relative px-5 pb-4', contest.coverImage ? '-mt-10 pt-0' : 'pt-5')}>
           {/* Background gradient layer (only when no image) */}
           {!contest.coverImage && (
             <div
@@ -100,16 +99,22 @@ export const ContestCard = React.memo(function ContestCard({
           )}
 
           {/* Title + creator */}
-          <div className={cn('relative flex items-start justify-between gap-3 mb-4', contest.coverImage && 'z-10')}>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-bold leading-tight line-clamp-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+          <div
+            className={cn(
+              'relative mb-4 flex items-start justify-between gap-3',
+              contest.coverImage && 'z-10'
+            )}
+          >
+            <div className="min-w-0 flex-1">
+              <h3 className="line-clamp-2 text-lg font-bold leading-tight transition-colors group-hover:text-amber-600 dark:group-hover:text-amber-400">
                 {contest.title}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                Created by <span className="font-medium text-foreground">@{contest.creatorUsername}</span>
+                Created by{' '}
+                <span className="font-medium text-foreground">@{contest.creatorUsername}</span>
               </p>
               {contest.description && (
-                <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                   {contest.description}
                 </p>
               )}
@@ -124,7 +129,7 @@ export const ContestCard = React.memo(function ContestCard({
           {/* ----------------------------------------------------------------- */}
           {/* Prize pool hero section                                           */}
           {/* ----------------------------------------------------------------- */}
-          <div className="relative flex items-center gap-4 rounded-xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/10 p-4">
+          <div className="relative flex items-center gap-4 rounded-xl border border-amber-500/10 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-4">
             {/* Trophy icon */}
             <div className="flex-shrink-0">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 ring-1 ring-amber-500/20">
@@ -133,11 +138,11 @@ export const ContestCard = React.memo(function ContestCard({
             </div>
 
             {/* Prize breakdown */}
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium uppercase tracking-wider text-amber-600 dark:text-amber-400/80 mb-0.5">
+            <div className="min-w-0 flex-1">
+              <div className="mb-0.5 text-xs font-medium uppercase tracking-wider text-amber-600 dark:text-amber-400/80">
                 Total Prize Pool
               </div>
-              <div className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 leading-none">
+              <div className="text-2xl font-extrabold leading-none text-amber-600 dark:text-amber-400">
                 {formatPrizeAmount(contest.prizePool)}{' '}
                 <span className="text-sm font-semibold opacity-70">MEDALS</span>
               </div>
@@ -170,14 +175,14 @@ export const ContestCard = React.memo(function ContestCard({
         {/* ----------------------------------------------------------------- */}
         {/* Stats bar                                                         */}
         {/* ----------------------------------------------------------------- */}
-        <div className="grid grid-cols-2 gap-px bg-border/50 border-t border-border/50">
+        <div className="grid grid-cols-2 gap-px border-t border-border/50 bg-border/50">
           {/* Entry Fee */}
           <div className="flex items-center gap-3 bg-card px-5 py-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/80">
               <Coins className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
-              <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+              <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Entry Fee
               </div>
               <div className="text-sm font-bold leading-tight">
@@ -193,14 +198,15 @@ export const ContestCard = React.memo(function ContestCard({
               <Users className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
-              <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+              <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Entries
               </div>
               <div className="text-sm font-bold leading-tight">
                 {contest.entryCount}
                 {contest.maxEntries && (
                   <span className="text-xs font-normal text-muted-foreground">
-                    {' '}/ {contest.maxEntries}
+                    {' '}
+                    / {contest.maxEntries}
                   </span>
                 )}
               </div>
@@ -212,11 +218,11 @@ export const ContestCard = React.memo(function ContestCard({
         {/* Capacity bar (if max entries set)                                 */}
         {/* ----------------------------------------------------------------- */}
         {capacityPct !== null && (
-          <div className="px-5 py-2 border-t border-border/50 bg-card">
-            <div className="flex items-center justify-between text-[11px] mb-1.5">
+          <div className="border-t border-border/50 bg-card px-5 py-2">
+            <div className="mb-1.5 flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground">
                 {isAlmostFull ? (
-                  <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+                  <span className="flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
                     <Flame className="h-3 w-3" />
                     Filling fast
                   </span>
@@ -226,13 +232,11 @@ export const ContestCard = React.memo(function ContestCard({
               </span>
               <span className="font-medium text-muted-foreground">{capacityPct}% full</span>
             </div>
-            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
               <div
                 className={cn(
                   'h-full rounded-full transition-all duration-500',
-                  isAlmostFull
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500'
-                    : 'bg-amber-500/60'
+                  isAlmostFull ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-amber-500/60'
                 )}
                 style={{ width: `${capacityPct}%` }}
               />
@@ -259,48 +263,39 @@ export const ContestCard = React.memo(function ContestCard({
               <div
                 className={cn(
                   'flex items-center gap-1.5 text-sm',
-                  timeInfo.urgent
-                    ? 'text-orange-500 font-semibold'
-                    : 'text-muted-foreground'
+                  timeInfo.urgent ? 'font-semibold text-orange-500' : 'text-muted-foreground'
                 )}
               >
-                <Clock
-                  className={cn(
-                    'h-4 w-4',
-                    timeInfo.urgent && 'animate-pulse'
-                  )}
-                />
+                <Clock className={cn('h-4 w-4', timeInfo.urgent && 'animate-pulse')} />
                 {timeInfo.text}
               </div>
-              <span className="flex items-center gap-1 text-sm font-semibold text-amber-600 dark:text-amber-400 group-hover:gap-2 transition-all">
+              <span className="flex items-center gap-1 text-sm font-semibold text-amber-600 transition-all group-hover:gap-2 dark:text-amber-400">
                 Enter Now
                 <ChevronRight className="h-4 w-4" />
               </span>
             </div>
           ) : isActive ? (
             <div className="flex items-center justify-between px-5 py-3">
-              <div className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 font-medium">
-                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              <div className="flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
                 Competition in progress
               </div>
-              <span className="flex items-center gap-1 text-sm font-semibold text-muted-foreground group-hover:text-foreground group-hover:gap-2 transition-all">
+              <span className="flex items-center gap-1 text-sm font-semibold text-muted-foreground transition-all group-hover:gap-2 group-hover:text-foreground">
                 View
                 <ChevronRight className="h-4 w-4" />
               </span>
             </div>
           ) : isSettled ? (
             <div className="flex items-center justify-between px-5 py-3">
-              <div className="text-sm text-muted-foreground">
-                Competition ended
-              </div>
-              <span className="flex items-center gap-1 text-sm font-semibold text-muted-foreground group-hover:text-foreground group-hover:gap-2 transition-all">
+              <div className="text-sm text-muted-foreground">Competition ended</div>
+              <span className="flex items-center gap-1 text-sm font-semibold text-muted-foreground transition-all group-hover:gap-2 group-hover:text-foreground">
                 Results
                 <ChevronRight className="h-4 w-4" />
               </span>
             </div>
           ) : (
             <div className="flex items-center justify-center px-5 py-3">
-              <span className="flex items-center gap-1 text-sm text-muted-foreground group-hover:text-foreground group-hover:gap-2 transition-all">
+              <span className="flex items-center gap-1 text-sm text-muted-foreground transition-all group-hover:gap-2 group-hover:text-foreground">
                 View Details
                 <ChevronRight className="h-4 w-4" />
               </span>
