@@ -4,7 +4,7 @@ import request from 'supertest';
 import { createRouteTestServer } from './test-server';
 
 jest.mock('@/lib/api/csrf', () => ({
-  csrfProtected: (handler: Function) => handler,
+  csrfProtected: (handler: (...args: unknown[]) => unknown) => handler,
   validateCsrf: () => true,
 }));
 

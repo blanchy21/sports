@@ -23,8 +23,10 @@ jest.mock('@/lib/hive/account-creation', () => ({
 }));
 
 const mockCheckRateLimit = jest.fn();
+const mockGetClientIdentifier = jest.fn().mockReturnValue('127.0.0.1');
 jest.mock('@/lib/utils/rate-limit', () => ({
   checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
+  getClientIdentifier: (...args: unknown[]) => mockGetClientIdentifier(...args),
   RATE_LIMITS: { accountCreation: { limit: 3, windowSeconds: 86400 } },
 }));
 
