@@ -3,10 +3,12 @@
 import React, { Suspense } from 'react';
 import { Button } from '@/components/core/Button';
 import { Eye, EyeOff, Save, Send, AlertCircle, MoreVertical, Calendar } from 'lucide-react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils/client';
 import { usePublishForm } from '@/hooks/usePublishForm';
 import { useEditorActions } from '@/hooks/useEditorActions';
 import { usePublishActions } from '@/hooks/usePublishActions';
+import { useScheduledPosts } from '@/lib/react-query/queries/useScheduledPosts';
 import { ImageDialog } from '@/components/publish/ImageDialog';
 import { LinkDialog } from '@/components/publish/LinkDialog';
 import { PostPublishedModal } from '@/components/publish/PostPublishedModal';
@@ -29,6 +31,8 @@ function PublishPageContent() {
   });
   const { handleSaveDraft, handleScheduleClick, handleSchedule, handlePublish } =
     usePublishActions(form);
+  const { data: scheduledPosts } = useScheduledPosts();
+  const pendingCount = scheduledPosts?.filter((p) => p.status === 'pending').length ?? 0;
 
   if (form.isAuthLoading) return null;
 
@@ -83,6 +87,19 @@ function PublishPageContent() {
           </span>
 
           <div className="flex items-center gap-1">
+            <Link
+              href="/drafts?tab=scheduled"
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Calendar className="h-3.5 w-3.5" />
+              Scheduled
+              {pendingCount > 0 && (
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                  {pendingCount}
+                </span>
+              )}
+            </Link>
+
             <Button
               variant="ghost"
               size="sm"
