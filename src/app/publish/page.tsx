@@ -12,6 +12,7 @@ import { LinkDialog } from '@/components/publish/LinkDialog';
 import { PostPublishedModal } from '@/components/publish/PostPublishedModal';
 import { MarkdownPreview } from '@/components/publish/MarkdownPreview';
 import { ScheduleModal } from '@/components/publish/ScheduleModal';
+import { PostingAuthorityPrompt } from '@/components/publish/PostingAuthorityPrompt';
 import { PublishEditorPanel } from '@/components/publish/PublishEditorPanel';
 import { TopNavigation } from '@/components/layout/TopNavigation';
 
@@ -26,7 +27,8 @@ function PublishPageContent() {
     setShowLinkDialog: form.setShowLinkDialog,
     setPublishError: form.setPublishError,
   });
-  const { handleSaveDraft, handleSchedule, handlePublish } = usePublishActions(form);
+  const { handleSaveDraft, handleScheduleClick, handleSchedule, handlePublish } =
+    usePublishActions(form);
 
   if (form.isAuthLoading) return null;
 
@@ -116,7 +118,7 @@ function PublishPageContent() {
                   </button>
                   <button
                     onClick={() => {
-                      form.setShowScheduleModal(true);
+                      handleScheduleClick();
                       form.setShowMenu(false);
                     }}
                     className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
@@ -169,7 +171,7 @@ function PublishPageContent() {
 
           <Button
             variant="outline"
-            onClick={() => form.setShowScheduleModal(true)}
+            onClick={handleScheduleClick}
             disabled={!form.title || !form.content || !form.selectedSport}
             className="w-full sm:w-auto sm:min-w-[120px]"
           >
@@ -219,6 +221,15 @@ function PublishPageContent() {
         isOpen={form.showScheduleModal}
         onClose={() => form.setShowScheduleModal(false)}
         onSchedule={handleSchedule}
+      />
+
+      <PostingAuthorityPrompt
+        isOpen={form.showAuthorityPrompt}
+        onClose={() => form.setShowAuthorityPrompt(false)}
+        onGranted={() => {
+          form.setShowAuthorityPrompt(false);
+          form.setShowScheduleModal(true);
+        }}
       />
 
       {form.showPostPublishedPrompt && (

@@ -108,4 +108,17 @@ export const queryKeys = {
   prices: {
     all: ['prices'] as const,
   },
+  scheduledPosts: {
+    all: ['scheduledPosts'] as const,
+  },
+  contests: {
+    all: ['contests'] as const,
+    lists: () => [...queryKeys.contests.all, 'list'] as const,
+    list: (filters: Record<string, unknown>) => [...queryKeys.contests.lists(), filters] as const,
+    details: () => [...queryKeys.contests.all, 'detail'] as const,
+    detail: (slug: string) => [...queryKeys.contests.details(), slug] as const,
+    leaderboard: (slug: string) => [...queryKeys.contests.detail(slug), 'leaderboard'] as const,
+    matches: (slug: string) => [...queryKeys.contests.detail(slug), 'matches'] as const,
+    teams: (slug: string) => [...queryKeys.contests.detail(slug), 'teams'] as const,
+  },
 } as const;
