@@ -132,19 +132,22 @@ export function useFollowUser() {
       return result;
     },
     onSuccess: (_, { username, follower }) => {
-      // Invalidate follower/following lists for both users
+      // Optimistically update caches so UI updates immediately
+      // (Hive nodes may take a few seconds to index the new follow)
+      queryClient.setQueriesData<Record<string, boolean>>(
+        { queryKey: ['users', 'followStatus'] },
+        (old) => (old ? { ...old, [username]: true } : old)
+      );
+      queryClient.setQueryData(
+        [...queryKeys.users.detail(username), 'following', follower],
+        true
+      );
+
+      // Invalidate follower/following lists and user details
       queryClient.invalidateQueries({ queryKey: queryKeys.users.followers(username) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.following(follower) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(username) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(follower) });
-
-      // Invalidate the isFollowing check for this specific user pair
-      queryClient.invalidateQueries({
-        queryKey: [...queryKeys.users.detail(username), 'following', follower],
-      });
-
-      // Invalidate batch follow status used by the sidebar
-      queryClient.invalidateQueries({ queryKey: ['users', 'followStatus'] });
     },
   });
 }
@@ -174,19 +177,21 @@ export function useUnfollowUser() {
       return result;
     },
     onSuccess: (_, { username, follower }) => {
-      // Invalidate follower/following lists for both users
+      // Optimistically update caches so UI updates immediately
+      queryClient.setQueriesData<Record<string, boolean>>(
+        { queryKey: ['users', 'followStatus'] },
+        (old) => (old ? { ...old, [username]: false } : old)
+      );
+      queryClient.setQueryData(
+        [...queryKeys.users.detail(username), 'following', follower],
+        false
+      );
+
+      // Invalidate follower/following lists and user details
       queryClient.invalidateQueries({ queryKey: queryKeys.users.followers(username) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.following(follower) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(username) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(follower) });
-
-      // Invalidate the isFollowing check for this specific user pair
-      queryClient.invalidateQueries({
-        queryKey: [...queryKeys.users.detail(username), 'following', follower],
-      });
-
-      // Invalidate batch follow status used by the sidebar
-      queryClient.invalidateQueries({ queryKey: ['users', 'followStatus'] });
     },
   });
 }
