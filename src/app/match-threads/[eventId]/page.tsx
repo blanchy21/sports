@@ -1,64 +1,84 @@
-'use client';
-
-import React, { useState, useEffect, useCallback, use } from 'react';
-import { ArrowLeft, Loader2, AlertCircle, RefreshCw, Lock } from 'lucide-react';
+import React from 'react';
+import type { Metadata } from 'next';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from '@/components/core/Button';
-import { MatchThreadHeader } from '@/components/match-threads/MatchThreadHeader';
-import { MatchThreadFeed } from '@/components/match-threads/MatchThreadFeed';
-import { ComposeSportsbite } from '@/components/sportsbites/ComposeSportsbite';
-import type { Sportsbite } from '@/lib/hive-workerbee/shared';
-import { MatchThread } from '@/types/sports';
+import { fetchAllEvents } from '@/lib/sports/espn';
+import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
+import {
+  MATCH_THREAD_CONFIG,
+  getMatchThreadPermlink,
+  createMatchThread,
+} from '@/lib/hive-workerbee/match-threads';
+import MatchThreadDetailClient from './MatchThreadDetailClient';
 
-interface MatchThreadDetailPageProps {
+interface PageProps {
   params: Promise<{ eventId: string }>;
 }
 
-export default function MatchThreadDetailPage({ params }: MatchThreadDetailPageProps) {
-  const { eventId } = use(params);
-  const [thread, setThread] = useState<MatchThread | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [optimisticBite, setOptimisticBite] = useState<Sportsbite | null>(null);
+async function getMatchThread(eventId: string) {
+  const { events, liveEventIds } = await fetchAllEvents();
+  const event = events.find((e) => e.id === eventId);
 
-  const loadThread = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  if (!event) return null;
 
-    try {
-      const response = await fetch(`/api/match-threads/${eventId}`);
-      if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+  const permlink = getMatchThreadPermlink(eventId);
+  let biteCount = 0;
 
-      const data = await response.json();
-      if (!data.success) throw new Error(data.error || 'Failed to load');
+  try {
+    const content = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [
+      MATCH_THREAD_CONFIG.PARENT_AUTHOR,
+      permlink,
+    ]);
 
-      if (!data.matchThread) {
-        setError('Match thread not found');
-      } else {
-        setThread(data.matchThread as MatchThread);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load match thread');
-    } finally {
-      setIsLoading(false);
+    if (content && content.author && (content.body as string)?.length > 0) {
+      biteCount = (content.children as number) || 0;
     }
-  }, [eventId]);
-
-  useEffect(() => {
-    loadThread();
-  }, [loadThread]);
-
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-3xl p-4 sm:p-6">
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </div>
-    );
+  } catch {
+    // Container doesn't exist yet
   }
 
-  if (error || !thread) {
+  return createMatchThread(event, biteCount, liveEventIds);
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { eventId } = await params;
+  const thread = await getMatchThread(eventId);
+
+  if (!thread) {
+    return { title: 'Match Thread Not Found | Sportsblock' };
+  }
+
+  const { event } = thread;
+  const title = event.teams
+    ? `${event.teams.home} vs ${event.teams.away} — Match Thread | Sportsblock`
+    : `${event.name} — Match Thread | Sportsblock`;
+
+  const description = event.teams
+    ? `Live discussion: ${event.teams.home} vs ${event.teams.away}. ${event.sport}${event.league ? ` — ${event.league}` : ''}. Join the conversation on Sportsblock.`
+    : `Live discussion: ${event.name}. Join the conversation on Sportsblock.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      url: `https://sportsblock.app/match-threads/${eventId}`,
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+    },
+  };
+}
+
+export default async function MatchThreadDetailPage({ params }: PageProps) {
+  const { eventId } = await params;
+  const thread = await getMatchThread(eventId);
+
+  if (!thread) {
     return (
       <div className="mx-auto max-w-3xl p-4 sm:p-6">
         <Link
@@ -75,49 +95,14 @@ export default function MatchThreadDetailPage({ params }: MatchThreadDetailPageP
               <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
           </div>
-          <h3 className="mb-2 text-lg font-semibold">{error || 'Match thread not found'}</h3>
+          <h3 className="mb-2 text-lg font-semibold">Match thread not found</h3>
           <p className="mb-4 text-sm text-muted-foreground">
             This thread may not exist yet or the event has expired.
           </p>
-          <Button onClick={loadThread} variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Try Again
-          </Button>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4 sm:p-6">
-      {/* Back link */}
-      <Link
-        href="/match-threads"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Match Threads
-      </Link>
-
-      {/* Header */}
-      <MatchThreadHeader event={thread.event} isLive={thread.isLive} isOpen={thread.isOpen} />
-
-      {/* Compose area or read-only banner */}
-      {thread.isOpen ? (
-        <ComposeSportsbite
-          matchThreadEventId={eventId}
-          onSuccess={(bite) => setOptimisticBite(bite)}
-          onError={(err) => console.error('Post error:', err)}
-        />
-      ) : (
-        <div className="flex items-center gap-2 rounded-xl border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-          <Lock className="h-4 w-4" />
-          This thread is now read-only. Threads close 24 hours after the match ends.
-        </div>
-      )}
-
-      {/* Feed */}
-      <MatchThreadFeed eventId={eventId} isLive={thread.isLive} optimisticBite={optimisticBite} />
-    </div>
-  );
+  return <MatchThreadDetailClient thread={thread} />;
 }
