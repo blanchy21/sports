@@ -36,10 +36,12 @@ function extractFirstImage(post: SportsblockPost): string | undefined {
 
 function stripMarkdown(text: string): string {
   return text
+    .replace(/<[^>]*>/g, '') // remove HTML tags
     .replace(/!\[.*?\]\(.*?\)/g, '') // remove images
     .replace(/\[([^\]]*)\]\(.*?\)/g, '$1') // links → text
     .replace(/[#*>_~`]/g, '')
     .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
