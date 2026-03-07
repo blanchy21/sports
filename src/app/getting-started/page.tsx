@@ -58,9 +58,94 @@ function SectionCard({
   );
 }
 
+const BASE_URL = 'https://sportsblock.app';
+
+const faqItems = [
+  {
+    question: 'What is Sportsblock?',
+    answer:
+      'Sportsblock is a sports content platform built on the Hive blockchain where fans, writers, and analysts earn real cryptocurrency for quality sports content.',
+  },
+  {
+    question: 'How does the Hive blockchain work?',
+    answer:
+      'Hive is a fast, feeless blockchain for social applications. Actions like posting, voting, and commenting use regenerating Resource Credits instead of transaction fees.',
+  },
+  {
+    question: 'How do I sign up for Sportsblock?',
+    answer:
+      'You can sign up with Google (a Hive account is created for you during onboarding) or connect an existing Hive account using Hive Keychain or HiveSigner.',
+  },
+  {
+    question: 'How do I create posts and Sportsbites?',
+    answer:
+      'Sportsblock supports full-length articles with rich formatting and Sportsbites — short-form, tweet-like takes for quick sports reactions. Both earn rewards through upvotes during a 7-day window.',
+  },
+  {
+    question: 'How does voting and curation work?',
+    answer:
+      'Upvoting distributes real rewards to the author and earns you curation rewards. Your voting power regenerates at about 20% per day, and voting earlier on quality content earns more curation rewards.',
+  },
+  {
+    question: 'What is HIVE Power and staking?',
+    answer:
+      'Staking HIVE converts it into HIVE Power, which increases your vote value, curation rewards, and Resource Credits. Unstaking takes 13 weeks in equal weekly installments.',
+  },
+  {
+    question: 'What is the MEDALS token?',
+    answer:
+      "MEDALS is Sportsblock's native Hive Engine token. Staking MEDALS unlocks tiered benefits from Bronze (100+) to Platinum (10,000+), including weekly reward distributions and governance participation.",
+  },
+  {
+    question: 'How do I use my wallet?',
+    answer:
+      'The Wallet page shows your HIVE, HIVE Power, HBD, MEDALS, and Resource Credits. You can transfer tokens, power up/down, stake MEDALS, and view transaction history.',
+  },
+  {
+    question: 'What tips do you have for new users?',
+    answer:
+      'Write an intro post, engage with others through comments, post consistently, use relevant sport tags, keep voting power above 80%, and securely save your Hive private keys.',
+  },
+];
+
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'FAQPage',
+      mainEntity: faqItems.map((item) => ({
+        '@type': 'Question',
+        name: item.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: item.answer,
+        },
+      })),
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: BASE_URL,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Getting Started',
+          item: `${BASE_URL}/getting-started`,
+        },
+      ],
+    },
+  ],
+});
+
 export default function GettingStartedPage() {
   return (
     <div className="min-h-screen bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <div className="mx-auto max-w-4xl px-4 py-12">
         <Link
           href="/"

@@ -59,7 +59,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (post) {
     const description = stripMarkdown(post.body).slice(0, 160);
-    const image = extractFirstImage(post);
     const canonicalUrl = `${BASE_URL}/post/${author}/${permlink}`;
 
     return {
@@ -73,13 +72,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         url: canonicalUrl,
         authors: [author],
         publishedTime: post.created,
-        ...(image && { images: [{ url: image }] }),
+        images: [
+          {
+            url: `${BASE_URL}/api/og?title=${encodeURIComponent(post.title)}&author=${encodeURIComponent(author)}`,
+            width: 1200,
+            height: 630,
+          },
+        ],
       },
       twitter: {
-        card: image ? 'summary_large_image' : 'summary',
+        card: 'summary_large_image',
         title: post.title,
         description,
-        ...(image && { images: [image] }),
+        images: [
+          `${BASE_URL}/api/og?title=${encodeURIComponent(post.title)}&author=${encodeURIComponent(author)}`,
+        ],
       },
     };
   }
