@@ -41,18 +41,12 @@ export function buildPayoutOps(
 
 export interface FeeOps {
   burn: CustomJsonOp | null;
-  reward: CustomJsonOp | null;
 }
 
 /**
- * Build fee transfer operations from pre-calculated Decimal-precision amounts.
- * Avoids recalculating splits with floating-point — callers pass exact values
- * from calculateSettlement() which uses Decimal throughout.
+ * Build fee burn operation. 100% of platform fees are sent to null (burned).
  */
-export function buildFeeOps(
-  fees: { burnAmount: number; rewardAmount: number },
-  predictionId: string
-): FeeOps {
+export function buildFeeOps(fees: { burnAmount: number }, predictionId: string): FeeOps {
   return {
     burn:
       fees.burnAmount > 0
@@ -62,16 +56,6 @@ export function buildFeeOps(
             fees.burnAmount,
             MEDALS_CONFIG.SYMBOL,
             `prediction-fee-burn|${predictionId}`
-          )
-        : null,
-    reward:
-      fees.rewardAmount > 0
-        ? buildTransferOpFromAmount(
-            PREDICTION_CONFIG.ESCROW_ACCOUNT,
-            PREDICTION_CONFIG.REWARDS_ACCOUNT,
-            fees.rewardAmount,
-            MEDALS_CONFIG.SYMBOL,
-            `prediction-fee-reward|${predictionId}`
           )
         : null,
   };

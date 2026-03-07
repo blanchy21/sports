@@ -14,12 +14,6 @@ export const PREDICTION_CONFIG = {
   /** Platform fee percentage (10%) */
   PLATFORM_FEE_PCT: 0.1,
 
-  /** Split of platform fee that goes to burn (50%) */
-  BURN_SPLIT: 0.5,
-
-  /** Split of platform fee that goes to reward pool (50%) */
-  REWARD_SPLIT: 0.5,
-
   /** Minimum lock time in the future (15 minutes in ms) */
   MIN_LOCK_TIME_MS: 15 * 60 * 1000,
 
@@ -50,11 +44,8 @@ export const PREDICTION_CONFIG = {
   /** Escrow account name on Hive */
   ESCROW_ACCOUNT: 'sp-predictions',
 
-  /** Burn account for fee burn portion */
-  BURN_ACCOUNT: 'medals.burn',
-
-  /** Rewards account for fee rewards portion */
-  REWARDS_ACCOUNT: 'sp-blockrewards',
+  /** Burn account — all platform fees are sent to null (permanently burned) */
+  BURN_ACCOUNT: 'null',
 
   /** Admin accounts that can settle/void any prediction */
   ADMIN_ACCOUNTS: ['niallon11', 'blanchy', 'talesfrmthecrypt'] as readonly string[],

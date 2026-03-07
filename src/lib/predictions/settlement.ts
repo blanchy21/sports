@@ -2,7 +2,7 @@ import { PrivateKey } from '@hiveio/dhive';
 import { prisma } from '@/lib/db/prisma';
 import { PredictionStatus } from '@/generated/prisma/client';
 import { calculateSettlement } from './odds';
-import { buildPayoutOps, buildFeeOps, type FeeOps, buildRefundOps } from './escrow';
+import { buildPayoutOps, buildFeeOps, buildRefundOps } from './escrow';
 import type { SettlementResult } from './types';
 import { logger } from '@/lib/logger';
 import { getDhiveClient } from '@/lib/hive/dhive-client';
@@ -82,7 +82,9 @@ export async function proposeVoid(
   const result = await prisma.prediction.updateMany({
     where: {
       id: predictionId,
-      status: { in: [PredictionStatus.OPEN, PredictionStatus.LOCKED, PredictionStatus.PENDING_APPROVAL] },
+      status: {
+        in: [PredictionStatus.OPEN, PredictionStatus.LOCKED, PredictionStatus.PENDING_APPROVAL],
+      },
     },
     data: {
       status: PredictionStatus.PENDING_APPROVAL,
@@ -140,7 +142,9 @@ export async function executeSettlement(
       throw new Error(`Prediction not found: ${predictionId}`);
     }
     if (current.status !== PredictionStatus.SETTLING) {
-      throw new Error(`Prediction must be LOCKED or PENDING_APPROVAL for settlement (current: ${current.status})`);
+      throw new Error(
+        `Prediction must be LOCKED or PENDING_APPROVAL for settlement (current: ${current.status})`
+      );
     }
     if (current.winningOutcomeId && current.winningOutcomeId !== winningOutcomeId) {
       throw new Error(
@@ -230,14 +234,11 @@ export async function executeSettlement(
   }
 
   try {
-    // Fee broadcasts happen before the final SETTLED transaction. If a fee broadcast
+    // Fee broadcast happens before the final SETTLED transaction. If the broadcast
     // succeeds but the final transaction fails, fees are sent but prediction stays
-    // in SETTLING. The feeBurnTxId/feeRewardTxId guards prevent re-broadcast on retry;
+    // in SETTLING. The feeBurnTxId guard prevents re-broadcast on retry;
     // the SETTLING state is designed for exactly this (manual retry to complete).
-    const feeOps: FeeOps = buildFeeOps(
-      { burnAmount: settlement.burnAmount, rewardAmount: settlement.rewardAmount },
-      predictionId
-    );
+    const feeOps = buildFeeOps({ burnAmount: settlement.burnAmount }, predictionId);
 
     if (feeOps.burn && !prediction.feeBurnTxId) {
       const txId = await broadcastHiveEngineOps([feeOps.burn]);
@@ -246,15 +247,6 @@ export async function executeSettlement(
         data: { feeBurnTxId: txId },
       });
       logger.info(`Fee burn broadcast: ${txId}`, 'Settlement', { predictionId });
-    }
-
-    if (feeOps.reward && !prediction.feeRewardTxId) {
-      const txId = await broadcastHiveEngineOps([feeOps.reward]);
-      await prisma.prediction.update({
-        where: { id: predictionId },
-        data: { feeRewardTxId: txId },
-      });
-      logger.info(`Fee reward broadcast: ${txId}`, 'Settlement', { predictionId });
     }
 
     // Broadcast payout ops to winners — per-stake for idempotency
@@ -301,7 +293,7 @@ export async function executeSettlement(
           winningOutcomeId,
           platformCut: settlement.platformFee,
           burnedAmount: settlement.burnAmount,
-          rewardPoolAmount: settlement.rewardAmount,
+          rewardPoolAmount: 0,
           settledAt: new Date(),
           settledBy,
         },
@@ -352,9 +344,16 @@ export async function executeVoidRefund(
   const lockResult = await prisma.prediction.updateMany({
     where: {
       id: predictionId,
-      status: { in: [PredictionStatus.OPEN, PredictionStatus.LOCKED, PredictionStatus.PENDING_APPROVAL] },
+      status: {
+        in: [PredictionStatus.OPEN, PredictionStatus.LOCKED, PredictionStatus.PENDING_APPROVAL],
+      },
     },
-    data: { status: PredictionStatus.VOID, isVoid: true, voidReason: reason, ...PROPOSAL_CLEAR_DATA },
+    data: {
+      status: PredictionStatus.VOID,
+      isVoid: true,
+      voidReason: reason,
+      ...PROPOSAL_CLEAR_DATA,
+    },
   });
 
   if (lockResult.count === 0) {

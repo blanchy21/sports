@@ -52,8 +52,8 @@ export function calculateSettlement(
   const feePct = D(PREDICTION_CONFIG.PLATFORM_FEE_PCT);
 
   const platformFee = pool.mul(feePct).toDecimalPlaces(PLACES);
-  const burnAmount = platformFee.mul(D(PREDICTION_CONFIG.BURN_SPLIT)).toDecimalPlaces(PLACES);
-  const rewardAmount = platformFee.mul(D(PREDICTION_CONFIG.REWARD_SPLIT)).toDecimalPlaces(PLACES);
+  const burnAmount = platformFee; // 100% of fees burned
+  const rewardAmount = ZERO;
 
   const winningStakes = stakes.filter((s) => s.outcomeId === winningOutcomeId);
   const winningPool = winningStakes.reduce((sum, s) => sum.add(D(s.amount)), ZERO);

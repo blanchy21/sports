@@ -21,8 +21,8 @@ export const MEDALS_CONFIG = {
   ACCOUNTS: {
     /** Main platform account */
     MAIN: 'sportsblock',
-    /** Burn account for deflationary buybacks */
-    BURN: 'medals.burn',
+    /** Burn account (null = permanently inaccessible) */
+    BURN: 'null',
     /** Rewards distribution account (sportsblock main — 5.25M MEDALS liquid) */
     REWARDS: 'sportsblock',
     /** Prediction escrow account */

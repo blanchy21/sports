@@ -84,8 +84,6 @@ describe('calculatePayout', () => {
 
 describe('calculateSettlement', () => {
   const FEE_PCT = PREDICTION_CONFIG.PLATFORM_FEE_PCT;
-  const BURN_SPLIT = PREDICTION_CONFIG.BURN_SPLIT;
-  const REWARD_SPLIT = PREDICTION_CONFIG.REWARD_SPLIT;
 
   it('calculates settlement for a single winner', () => {
     const stakes = [
@@ -98,8 +96,8 @@ describe('calculateSettlement', () => {
     expect(result.totalPool).toBe(100);
     expect(result.winningPool).toBe(50);
     expect(result.platformFee).toBeCloseTo(100 * FEE_PCT);
-    expect(result.burnAmount).toBeCloseTo(100 * FEE_PCT * BURN_SPLIT);
-    expect(result.rewardAmount).toBeCloseTo(100 * FEE_PCT * REWARD_SPLIT);
+    expect(result.burnAmount).toBeCloseTo(100 * FEE_PCT); // 100% burned
+    expect(result.rewardAmount).toBe(0);
 
     expect(result.payouts).toHaveLength(1);
     expect(result.payouts[0].username).toBe('alice');

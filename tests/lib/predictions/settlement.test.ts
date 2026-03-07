@@ -115,10 +115,10 @@ describe('executeSettlement', () => {
 
     const result = await executeSettlement('pred-1', 'out-a', 'admin');
 
-    // Platform fee = 10% of 200 = 20
+    // Platform fee = 10% of 200 = 20, 100% burned
     expect(result.platformFee).toBeCloseTo(20);
-    expect(result.burnAmount).toBeCloseTo(10);
-    expect(result.rewardAmount).toBeCloseTo(10);
+    expect(result.burnAmount).toBeCloseTo(20);
+    expect(result.rewardAmount).toBe(0);
 
     // Alice staked 100 on winning outcome, total pool 200, winning pool 100
     // Payout = (100/100) * 200 * 0.9 = 180
@@ -314,12 +314,13 @@ describe('executeSettlement', () => {
     expect(burnUpdates).toHaveLength(0);
   });
 
-  it('skips fee reward when already broadcast', async () => {
-    const pred = makePrediction({ feeRewardTxId: 'already-rewarded' });
+  it('does not broadcast reward fee (100% burned)', async () => {
+    const pred = makePrediction();
     mockPrisma.prediction.findUnique.mockResolvedValue(pred);
 
     await executeSettlement('pred-1', 'out-a', 'admin');
 
+    // No feeRewardTxId should be set — all fees go to burn
     const predUpdateCalls = mockPrisma.prediction.update.mock.calls;
     const rewardUpdates = predUpdateCalls.filter(
       (call: Array<{ data: { feeRewardTxId?: string } }>) => call[0].data.feeRewardTxId

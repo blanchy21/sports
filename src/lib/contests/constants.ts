@@ -26,9 +26,8 @@ export const CONTEST_CONFIG = {
   MIN_ENTRY_FEE: 10,
   MAX_ENTRY_FEE: 100000,
 
-  /** Platform fee destination accounts */
+  /** Platform fee destination account */
   PLATFORM_ACCOUNT: 'sportsblock',
-  BURN_ACCOUNT: 'medals.burn',
 
   /** Memo prefix for escrow transfers */
   MEMO_PREFIX: 'contest-entry',

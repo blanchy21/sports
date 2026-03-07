@@ -77,41 +77,31 @@ describe('buildPayoutOps', () => {
 });
 
 describe('buildFeeOps', () => {
-  it('builds burn and reward operations', () => {
-    const result = buildFeeOps({ burnAmount: 5, rewardAmount: 5 }, 'pred-1');
+  it('builds burn operation to null account', () => {
+    const result = buildFeeOps({ burnAmount: 10 }, 'pred-1');
 
     expect(result.burn).not.toBeNull();
-    expect(result.reward).not.toBeNull();
 
     const burnPayload = parsePayload(result.burn!);
-    expect(burnPayload.contractPayload.to).toBe(PREDICTION_CONFIG.BURN_ACCOUNT);
+    expect(burnPayload.contractPayload.to).toBe('null');
     expect(burnPayload.contractPayload.memo).toBe('prediction-fee-burn|pred-1');
-
-    const rewardPayload = parsePayload(result.reward!);
-    expect(rewardPayload.contractPayload.to).toBe(PREDICTION_CONFIG.REWARDS_ACCOUNT);
-    expect(rewardPayload.contractPayload.memo).toBe('prediction-fee-reward|pred-1');
   });
 
-  it('uses pre-calculated burn and reward amounts', () => {
-    const result = buildFeeOps({ burnAmount: 50, rewardAmount: 50 }, 'pred-1');
+  it('uses pre-calculated burn amount', () => {
+    const result = buildFeeOps({ burnAmount: 100 }, 'pred-1');
 
     const burnQty = parseFloat(parsePayload(result.burn!).contractPayload.quantity);
-    const rewardQty = parseFloat(parsePayload(result.reward!).contractPayload.quantity);
-
-    expect(burnQty).toBeCloseTo(50);
-    expect(rewardQty).toBeCloseTo(50);
+    expect(burnQty).toBeCloseTo(100);
   });
 
-  it('returns null ops when amounts are 0', () => {
-    const result = buildFeeOps({ burnAmount: 0, rewardAmount: 0 }, 'pred-1');
+  it('returns null op when amount is 0', () => {
+    const result = buildFeeOps({ burnAmount: 0 }, 'pred-1');
     expect(result.burn).toBeNull();
-    expect(result.reward).toBeNull();
   });
 
   it('sends from escrow account', () => {
-    const result = buildFeeOps({ burnAmount: 5, rewardAmount: 5 }, 'pred-1');
+    const result = buildFeeOps({ burnAmount: 10 }, 'pred-1');
     expect(result.burn!.required_auths).toContain(PREDICTION_CONFIG.ESCROW_ACCOUNT);
-    expect(result.reward!.required_auths).toContain(PREDICTION_CONFIG.ESCROW_ACCOUNT);
   });
 });
 
