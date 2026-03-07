@@ -99,28 +99,55 @@ export default async function PostDetailPage({ params }: PageProps) {
   const jsonLd = post
     ? {
         '@context': 'https://schema.org',
-        '@type': 'BlogPosting',
-        headline: post.title,
-        description: stripMarkdown(post.body).slice(0, 160),
-        datePublished: post.created,
-        image: extractFirstImage(post) || `${BASE_URL}/sportsblock-hero.png`,
-        author: {
-          '@type': 'Person',
-          name: author,
-          url: `${BASE_URL}/user/${author}`,
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Sportsblock',
-          logo: {
-            '@type': 'ImageObject',
-            url: `${BASE_URL}/sportsblock512.png`,
+        '@graph': [
+          {
+            '@type': 'BlogPosting',
+            headline: post.title,
+            description: stripMarkdown(post.body).slice(0, 160),
+            datePublished: post.created,
+            image: extractFirstImage(post) || `${BASE_URL}/sportsblock-hero.png`,
+            author: {
+              '@type': 'Person',
+              name: author,
+              url: `${BASE_URL}/user/${author}`,
+            },
+            publisher: {
+              '@type': 'Organization',
+              name: 'Sportsblock',
+              logo: {
+                '@type': 'ImageObject',
+                url: `${BASE_URL}/sportsblock512.png`,
+              },
+            },
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': `${BASE_URL}/post/${author}/${permlink}`,
+            },
           },
-        },
-        mainEntityOfPage: {
-          '@type': 'WebPage',
-          '@id': `${BASE_URL}/post/${author}/${permlink}`,
-        },
+          {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              {
+                '@type': 'ListItem',
+                position: 1,
+                name: 'Home',
+                item: BASE_URL,
+              },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: 'Posts',
+                item: `${BASE_URL}/community/hive-115814`,
+              },
+              {
+                '@type': 'ListItem',
+                position: 3,
+                name: post.title,
+                item: `${BASE_URL}/post/${author}/${permlink}`,
+              },
+            ],
+          },
+        ],
       }
     : null;
 
