@@ -61,6 +61,10 @@ next-env.d.ts
 
 # Lighthouse
 /lighthouse-reports/
+lighthouse-*.report.*
+
+# Local planning docs
+*.docx
 
 # Code review notes (local only)
 /code-review/
