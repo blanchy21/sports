@@ -107,13 +107,12 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
   const readTime = getPostReadTime(post);
   const createdAt = getPostCreatedAt(post);
 
-  // Calculate pending payout for actual Hive posts
-  const pendingPayout =
-    isActualHivePost && isSportsblockPost(post) ? calculatePendingPayout(post) : 0;
+  // Calculate pending payout for actual Hive posts (SportsblockPost or DisplayPost)
+  const pendingPayout = isActualHivePost ? calculatePendingPayout(post) : 0;
 
-  // Fetch Hive user profile if it's a Hive post
+  // Fetch Hive user profile if it's a Hive post (SportsblockPost or DisplayPost)
   const { profile: hiveProfile, isLoading: isProfileLoading } = useUserProfileCard(
-    isHivePost ? authorUsername : null
+    isHivePost || isActualHivePost ? authorUsername : null
   );
 
   // Fetch premium tier and MEDALS rank for the author
@@ -130,14 +129,14 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
   };
 
   const getAuthorAvatar = () => {
-    if (isHivePost) {
+    if (isHivePost || isActualHivePost) {
       return hiveProfile?.avatar;
     }
     return getLegacyAuthorAvatar(post);
   };
 
   const getAuthorDisplayName = () => {
-    if (isHivePost) {
+    if (isHivePost || isActualHivePost) {
       return hiveProfile?.displayName || authorUsername;
     }
     return getLegacyAuthorDisplayName(post);

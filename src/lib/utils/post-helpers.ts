@@ -93,7 +93,8 @@ export function isSoftPost(post: AnyPost): post is ExtendedSportsblockPost | Dis
 /**
  * Check if a post is an actual Hive blockchain post (not soft)
  */
-export function isHivePost(post: AnyPost): post is SportsblockPost {
+export function isHivePost(post: AnyPost): post is SportsblockPost | DisplayPost {
+  if (isDisplayPost(post)) return post._isSoftPost !== true;
   return isSportsblockPost(post) && !isSoftPost(post);
 }
 
