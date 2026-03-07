@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { fetchSportsblockPosts } from '@/lib/hive-workerbee/content';
+import { getAllPosts } from '@/lib/blog';
 
 const BASE_URL = 'https://sportsblock.app';
 
@@ -177,5 +178,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...legalPages, ...communityPages, ...postEntries, ...userEntries];
+  // Blog posts
+  const blogEntries: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
+    url: `${BASE_URL}/blog/${post.slug}`,
+    lastModified: new Date(post.date),
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
+  }));
+
+  const blogIndex: MetadataRoute.Sitemap = [
+    {
+      url: `${BASE_URL}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+  ];
+
+  return [
+    ...staticPages,
+    ...blogIndex,
+    ...blogEntries,
+    ...legalPages,
+    ...communityPages,
+    ...postEntries,
+    ...userEntries,
+  ];
 }

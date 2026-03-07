@@ -8,6 +8,7 @@ const footerLinks = [
   { href: '/medals-token', label: 'MEDALS Token' },
   { href: '/start-sports-blog', label: 'Start Blogging' },
   { href: '/discover', label: 'Discover' },
+  { href: '/blog', label: 'Blog' },
   { href: '/legal/terms', label: 'Terms' },
   { href: '/legal/privacy', label: 'Privacy' },
   { href: '/legal/cookies', label: 'Cookies' },
