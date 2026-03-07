@@ -877,21 +877,53 @@ export async function fetchFollowingFeed(
   startPermlink: string = ''
 ): Promise<ContentResult> {
   try {
-    const fetchLimit = Math.min(limit + 1, HIVE_API_MAX_LIMIT); // over-fetch by 1 to detect hasMore
+    const sportsblockPosts: SportsblockPost[] = [];
+    const maxPages = 10; // Max pages to scan (10 * 20 = 200 posts max)
+    const postsPerPage = HIVE_API_MAX_LIMIT;
+    let cursorAuthor = startAuthor;
+    let cursorPermlink = startPermlink;
 
-    const params: Record<string, unknown> = {
-      tag: username,
-      limit: fetchLimit,
-    };
-    if (startAuthor && startPermlink) {
-      params.start_author = startAuthor;
-      params.start_permlink = startPermlink;
+    for (let page = 0; page < maxPages && sportsblockPosts.length <= limit; page++) {
+      const params: Record<string, unknown> = {
+        tag: username,
+        limit: postsPerPage,
+      };
+      if (cursorAuthor && cursorPermlink) {
+        params.start_author = cursorAuthor;
+        params.start_permlink = cursorPermlink;
+      }
+
+      const result = await getContentOptimized('get_discussions_by_feed', [params]);
+      const posts = toTypedHivePosts(result);
+
+      if (posts.length === 0) break;
+
+      // Skip first post on subsequent pages (inclusive cursor — it's a duplicate)
+      const hasCursor = page > 0 || (page === 0 && startAuthor !== '');
+      const newPosts = hasCursor ? posts.slice(1) : posts;
+
+      if (newPosts.length === 0) break;
+
+      // Filter for sportsblock community posts
+      for (const post of newPosts) {
+        if (
+          isSportsblockCommunityPost(post) &&
+          !MUTED_AUTHORS.includes(post.author) &&
+          !isContainerPost(post)
+        ) {
+          sportsblockPosts.push(toSportsblockPost(post, getSportCategory(post)));
+          if (sportsblockPosts.length > limit) break;
+        }
+      }
+
+      // Set up cursor for next page
+      const lastPost = posts[posts.length - 1];
+      cursorAuthor = lastPost.author;
+      cursorPermlink = lastPost.permlink;
+
+      // If we got fewer than a full page, no more data
+      if (posts.length < postsPerPage) break;
     }
-
-    const result = await getContentOptimized('get_discussions_by_feed', [params]);
-
-    const rawPosts = toTypedHivePosts(result);
-    const sportsblockPosts = toTypedSportsblockPosts(rawPosts);
 
     const hasMore = sportsblockPosts.length > limit;
     const resultPosts = sportsblockPosts.slice(0, limit);
