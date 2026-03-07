@@ -13,7 +13,7 @@ import { useContest } from '@/lib/react-query/queries/useContests';
 import { useAuth } from '@/contexts/AuthContext';
 import { Trophy, Users, Coins, ArrowLeft, Info, BarChart3, Calendar } from 'lucide-react';
 import { Button } from '@/components/core/Button';
-import { CONTEST_CONFIG, CONTEST_TYPES } from '@/lib/contests/constants';
+import { CONTEST_CONFIG, CONTEST_TYPES, PRIZE_MODELS } from '@/lib/contests/constants';
 import { cn } from '@/lib/utils/client';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -35,8 +35,8 @@ export default function ContestDetailPage() {
     return (
       <MainLayout>
         <div className="mx-auto max-w-2xl px-4 py-4">
-          <div className="h-8 w-48 bg-muted/50 animate-pulse rounded mb-4" />
-          <div className="h-40 bg-muted/50 animate-pulse rounded-lg" />
+          <div className="mb-4 h-8 w-48 animate-pulse rounded bg-muted/50" />
+          <div className="h-40 animate-pulse rounded-lg bg-muted/50" />
         </div>
       </MainLayout>
     );
@@ -47,7 +47,10 @@ export default function ContestDetailPage() {
       <MainLayout>
         <div className="mx-auto max-w-2xl px-4 py-8 text-center">
           <p className="text-muted-foreground">Contest not found.</p>
-          <Link href="/contests" className="text-sm text-amber-500 hover:underline mt-2 inline-block">
+          <Link
+            href="/contests"
+            className="mt-2 inline-block text-sm text-amber-500 hover:underline"
+          >
             Back to contests
           </Link>
         </div>
@@ -57,10 +60,12 @@ export default function ContestDetailPage() {
 
   const hasEntered = !!contest.userEntry;
   const isComingSoon =
-    contest.status === 'REGISTRATION' &&
-    new Date(contest.registrationOpens).getTime() > Date.now();
+    contest.status === 'REGISTRATION' && new Date(contest.registrationOpens).getTime() > Date.now();
   const canEnter = contest.status === 'REGISTRATION' && !isComingSoon && !hasEntered && !!user;
-  const prizeNet = contest.prizePool * (1 - contest.platformFeePct - contest.creatorFeePct);
+  const isFixed = contest.prizeModel === PRIZE_MODELS.FIXED;
+  const prizeNet = isFixed
+    ? contest.prizePool
+    : contest.prizePool * (1 - contest.platformFeePct - contest.creatorFeePct);
 
   const showMatches = contest.contestType === CONTEST_TYPES.WORLD_CUP_FANTASY;
   const tabs: { key: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -75,7 +80,7 @@ export default function ContestDetailPage() {
         {/* Back link */}
         <Link
           href="/contests"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           Contests
@@ -83,7 +88,7 @@ export default function ContestDetailPage() {
 
         {/* Cover image */}
         {contest.coverImage && (
-          <div className="relative h-48 w-full overflow-hidden rounded-xl mb-4">
+          <div className="relative mb-4 h-48 w-full overflow-hidden rounded-xl">
             <Image
               src={contest.coverImage}
               alt={contest.title}
@@ -97,7 +102,7 @@ export default function ContestDetailPage() {
         )}
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
               <Trophy className="h-5 w-5 text-amber-500" />
@@ -105,9 +110,15 @@ export default function ContestDetailPage() {
             <div>
               <h1 className="text-xl font-bold">{contest.title}</h1>
               <p className="text-xs text-muted-foreground">
-                Created by <Link href={`/user/${contest.creatorUsername}`} className="font-medium text-foreground hover:text-amber-500 transition-colors">@{contest.creatorUsername}</Link>
+                Created by{' '}
+                <Link
+                  href={`/user/${contest.creatorUsername}`}
+                  className="font-medium text-foreground transition-colors hover:text-amber-500"
+                >
+                  @{contest.creatorUsername}
+                </Link>
               </p>
-              <p className="text-sm text-muted-foreground mt-1">{contest.description}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{contest.description}</p>
             </div>
           </div>
           <ContestStatusBadge status={contest.status} comingSoon={isComingSoon} />
@@ -115,7 +126,7 @@ export default function ContestDetailPage() {
 
         {/* Coming Soon — countdown + interest */}
         {isComingSoon && (
-          <div className="space-y-3 mb-4">
+          <div className="mb-4 space-y-3">
             <ContestCountdown targetDate={contest.registrationOpens} />
             <ContestInterestButton
               slug={slug}
@@ -126,34 +137,36 @@ export default function ContestDetailPage() {
         )}
 
         {/* Prize summary */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="mb-4 grid grid-cols-3 gap-2">
           <div className="rounded-lg border bg-amber-500/5 p-3 text-center">
-            <Coins className="h-4 w-4 text-amber-500 mx-auto mb-1" />
+            <Coins className="mx-auto mb-1 h-4 w-4 text-amber-500" />
             <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
               {(prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.FIRST).toFixed(0)}
             </div>
             <div className="text-[10px] text-muted-foreground">1st Prize MEDALS</div>
           </div>
           <div className="rounded-lg border p-3 text-center">
-            <Users className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
+            <Users className="mx-auto mb-1 h-4 w-4 text-muted-foreground" />
             <div className="text-lg font-bold">{contest.entryCount}</div>
             <div className="text-[10px] text-muted-foreground">Entries</div>
           </div>
           <div className="rounded-lg border p-3 text-center">
-            <Trophy className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
+            <Trophy className="mx-auto mb-1 h-4 w-4 text-muted-foreground" />
             <div className="text-lg font-bold">{contest.prizePool.toFixed(0)}</div>
-            <div className="text-[10px] text-muted-foreground">Total Pool</div>
+            <div className="text-[10px] text-muted-foreground">
+              {isFixed ? 'Guaranteed Pool' : 'Total Pool'}
+            </div>
           </div>
         </div>
 
         {/* User entry status */}
         {hasEntered && (
-          <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-3 mb-4 text-sm">
-            <span className="text-green-600 dark:text-green-400 font-medium">
+          <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/5 p-3 text-sm">
+            <span className="font-medium text-green-600 dark:text-green-400">
               You&apos;re entered!
             </span>
             {contest.userEntry?.rank && (
-              <span className="text-muted-foreground ml-2">
+              <span className="ml-2 text-muted-foreground">
                 Current rank: #{contest.userEntry.rank} ({contest.userEntry.totalScore} pts)
               </span>
             )}
@@ -164,7 +177,7 @@ export default function ContestDetailPage() {
         {canEnter && !showEntryForm && (
           <Button
             onClick={() => setShowEntryForm(true)}
-            className="w-full bg-amber-500 hover:bg-amber-600 text-white mb-4"
+            className="mb-4 w-full bg-amber-500 text-white hover:bg-amber-600"
             size="lg"
           >
             <Trophy className="mr-2 h-4 w-4" />
@@ -174,19 +187,19 @@ export default function ContestDetailPage() {
 
         {/* Entry form */}
         {showEntryForm && canEnter && (
-          <div className="rounded-lg border p-4 mb-4">
+          <div className="mb-4 rounded-lg border p-4">
             <ContestEntryForm contest={contest} />
           </div>
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 border-b">
+        <div className="mb-4 flex gap-1 border-b">
           {tabs.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors',
+                'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
                 activeTab === key
                   ? 'border-amber-500 text-amber-600 dark:text-amber-400'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -202,16 +215,16 @@ export default function ContestDetailPage() {
         {activeTab === 'overview' && (
           <div className="space-y-4">
             {contest.rules && (
-              <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div className="prose prose-sm max-w-none dark:prose-invert">
                 <ReactMarkdown>{contest.rules}</ReactMarkdown>
               </div>
             )}
             <div className="rounded-lg border p-3">
-              <h3 className="text-sm font-semibold mb-2">Prize Distribution</h3>
+              <h3 className="mb-2 text-sm font-semibold">Prize Distribution</h3>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">1st Place (60%)</span>
-                  <span className="font-medium">{(prizeNet * 0.60).toFixed(0)} MEDALS</span>
+                  <span className="font-medium">{(prizeNet * 0.6).toFixed(0)} MEDALS</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">2nd Place (25%)</span>
@@ -221,15 +234,26 @@ export default function ContestDetailPage() {
                   <span className="text-muted-foreground">3rd Place (15%)</span>
                   <span className="font-medium">{(prizeNet * 0.15).toFixed(0)} MEDALS</span>
                 </div>
-                <hr className="my-2" />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Platform Fee (10%)</span>
-                  <span>{(contest.prizePool * contest.platformFeePct).toFixed(0)}</span>
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Creator Fee (10%)</span>
-                  <span>{(contest.prizePool * contest.creatorFeePct).toFixed(0)}</span>
-                </div>
+                {isFixed ? (
+                  <>
+                    <hr className="my-2" />
+                    <div className="text-xs text-muted-foreground">
+                      Entry fees are burned. Prizes are guaranteed by the sponsor.
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <hr className="my-2" />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Platform Fee ({(contest.platformFeePct * 100).toFixed(0)}%)</span>
+                      <span>{(contest.prizePool * contest.platformFeePct).toFixed(0)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Creator Fee ({(contest.creatorFeePct * 100).toFixed(0)}%)</span>
+                      <span>{(contest.prizePool * contest.creatorFeePct).toFixed(0)}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

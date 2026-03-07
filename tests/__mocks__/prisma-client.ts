@@ -22,6 +22,10 @@ export class FakeDecimal {
     return new FakeDecimal(this.value - other.value);
   }
 
+  sub(other: FakeDecimal) {
+    return new FakeDecimal(this.value - other.value);
+  }
+
   mul(other: FakeDecimal) {
     return new FakeDecimal(this.value * other.value);
   }
@@ -45,6 +49,10 @@ export class FakeDecimal {
 
   toNumber() {
     return this.value;
+  }
+
+  toString() {
+    return String(this.value);
   }
 }
 

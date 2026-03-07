@@ -6,7 +6,7 @@
  */
 
 import { buildTransferOpFromAmount, buildBatchTransferOps } from '@/lib/hive-engine/operations';
-import { CONTEST_CONFIG } from './constants';
+import { CONTEST_CONFIG, PRIZE_MODELS } from './constants';
 import { MEDALS_CONFIG } from '@/lib/hive-engine/constants';
 import type { CustomJsonOp } from '@/lib/hive-engine/types';
 
@@ -18,11 +18,7 @@ function toNum(v: { toNumber(): number } | number): number {
 /**
  * Build a MEDALS transfer operation for contest entry fee (user → escrow).
  */
-export function buildEntryFeeOp(
-  username: string,
-  amount: number,
-  contestId: string
-): CustomJsonOp {
+export function buildEntryFeeOp(username: string, amount: number, contestId: string): CustomJsonOp {
   return buildTransferOpFromAmount(
     username,
     CONTEST_CONFIG.ESCROW_ACCOUNT,
@@ -53,7 +49,8 @@ export function buildPrizePayoutOps(
 }
 
 /**
- * Build platform fee transfer (escrow → platform account).
+ * Build platform fee burn (escrow → null).
+ * Platform fees are burned, not kept.
  */
 export function buildPlatformFeeOp(
   amount: { toNumber(): number } | number,
@@ -61,10 +58,10 @@ export function buildPlatformFeeOp(
 ): CustomJsonOp {
   return buildTransferOpFromAmount(
     CONTEST_CONFIG.ESCROW_ACCOUNT,
-    CONTEST_CONFIG.PLATFORM_ACCOUNT,
+    CONTEST_CONFIG.BURN_ACCOUNT,
     toNum(amount),
     MEDALS_CONFIG.SYMBOL,
-    `contest-platform-fee|${contestId}`
+    `contest-platform-fee-burn|${contestId}`
   );
 }
 
@@ -102,4 +99,39 @@ export function buildRefundOps(
   }));
 
   return buildBatchTransferOps(CONTEST_CONFIG.ESCROW_ACCOUNT, transfers);
+}
+
+/**
+ * Build entry fee burn operation (escrow → null).
+ * Used by FIXED model to burn all collected entry fees.
+ */
+export function buildEntryFeeBurnOp(amount: number, contestId: string): CustomJsonOp {
+  return buildTransferOpFromAmount(
+    CONTEST_CONFIG.ESCROW_ACCOUNT,
+    CONTEST_CONFIG.BURN_ACCOUNT,
+    amount,
+    MEDALS_CONFIG.SYMBOL,
+    `contest-entry-fee-burn|${contestId}`
+  );
+}
+
+/**
+ * Build fixed prize payout operations (sportsblock → winners).
+ * Used by FIXED model where prizes come from the sponsor account.
+ */
+export function buildFixedPrizePayoutOps(
+  payouts: Array<{
+    username: string;
+    amount: { toNumber(): number } | number;
+    contestId: string;
+    placement: number;
+  }>
+): CustomJsonOp[] {
+  const transfers = payouts.map((p) => ({
+    to: p.username,
+    amount: toNum(p.amount),
+    memo: `contest-prize|${p.contestId}|place-${p.placement}`,
+  }));
+
+  return buildBatchTransferOps(CONTEST_CONFIG.PLATFORM_ACCOUNT, transfers);
 }

@@ -11,7 +11,8 @@ import { requireAdmin } from '@/lib/admin/config';
 import { ForbiddenError, ValidationError } from '@/lib/api/api-errors';
 import { prisma } from '@/lib/db/prisma';
 import { serializeContest } from '@/lib/contests/serialize';
-import { CONTEST_CONFIG, CONTEST_TYPES } from '@/lib/contests/constants';
+import { CONTEST_CONFIG, CONTEST_TYPES, PRIZE_MODELS } from '@/lib/contests/constants';
+import type { PrizeModel } from '@/lib/contests/constants';
 import type { ContestStatus } from '@/generated/prisma/client';
 
 export const GET = createApiHandler('/api/contests', async (request, _ctx) => {
@@ -39,20 +40,19 @@ export const GET = createApiHandler('/api/contests', async (request, _ctx) => {
   const items = hasMore ? contests.slice(0, limit) : contests;
 
   // Batch-query interest counts
-  const interestCounts = items.length > 0
-    ? await prisma.contestInterest.groupBy({
-        by: ['contestId'],
-        where: { contestId: { in: items.map((c) => c.id) } },
-        _count: { id: true },
-      })
-    : [];
+  const interestCounts =
+    items.length > 0
+      ? await prisma.contestInterest.groupBy({
+          by: ['contestId'],
+          where: { contestId: { in: items.map((c) => c.id) } },
+          _count: { id: true },
+        })
+      : [];
   const countMap = new Map(interestCounts.map((r) => [r.contestId, r._count.id]));
 
   return NextResponse.json({
     success: true,
-    data: items.map((c) =>
-      serializeContest(c, { interestCount: countMap.get(c.id) ?? 0 })
-    ),
+    data: items.map((c) => serializeContest(c, { interestCount: countMap.get(c.id) ?? 0 })),
     pagination: {
       hasMore,
       nextCursor: hasMore ? items[items.length - 1].id : null,
@@ -82,11 +82,23 @@ export const POST = createApiHandler('/api/contests', async (request, ctx) => {
       endsAt,
       typeConfig,
       coverImage,
+      prizeModel: rawPrizeModel,
+      fixedPrizePool,
     } = body;
 
     // Validate required fields
-    if (!slug || !title || !contestType || !entryFee || !registrationOpens || !registrationCloses || !startsAt) {
-      throw new ValidationError('Missing required fields: slug, title, contestType, entryFee, registrationOpens, registrationCloses, startsAt');
+    if (
+      !slug ||
+      !title ||
+      !contestType ||
+      !entryFee ||
+      !registrationOpens ||
+      !registrationCloses ||
+      !startsAt
+    ) {
+      throw new ValidationError(
+        'Missing required fields: slug, title, contestType, entryFee, registrationOpens, registrationCloses, startsAt'
+      );
     }
 
     // Validate contest type
@@ -98,12 +110,27 @@ export const POST = createApiHandler('/api/contests', async (request, ctx) => {
     // Validate entry fee
     const fee = Number(entryFee);
     if (isNaN(fee) || fee < CONTEST_CONFIG.MIN_ENTRY_FEE || fee > CONTEST_CONFIG.MAX_ENTRY_FEE) {
-      throw new ValidationError(`Entry fee must be between ${CONTEST_CONFIG.MIN_ENTRY_FEE} and ${CONTEST_CONFIG.MAX_ENTRY_FEE} MEDALS`);
+      throw new ValidationError(
+        `Entry fee must be between ${CONTEST_CONFIG.MIN_ENTRY_FEE} and ${CONTEST_CONFIG.MAX_ENTRY_FEE} MEDALS`
+      );
     }
 
     // Validate slug format
     if (!/^[a-z0-9-]+$/.test(slug)) {
       throw new ValidationError('Slug must contain only lowercase letters, numbers, and hyphens');
+    }
+
+    // Validate prize model
+    const prizeModel: PrizeModel = rawPrizeModel || PRIZE_MODELS.FEE_FUNDED;
+    const validModels = Object.values(PRIZE_MODELS);
+    if (!validModels.includes(prizeModel)) {
+      throw new ValidationError(`Invalid prizeModel. Must be one of: ${validModels.join(', ')}`);
+    }
+
+    // For FIXED model, fixedPrizePool is required
+    const isFixed = prizeModel === PRIZE_MODELS.FIXED;
+    if (isFixed && (!fixedPrizePool || Number(fixedPrizePool) <= 0)) {
+      throw new ValidationError('fixedPrizePool is required and must be > 0 for FIXED prize model');
     }
 
     const contest = await prisma.contest.create({
@@ -122,16 +149,23 @@ export const POST = createApiHandler('/api/contests', async (request, ctx) => {
         creatorUsername: user.username,
         typeConfig: typeConfig || null,
         coverImage: coverImage || null,
-        platformFeePct: CONTEST_CONFIG.DEFAULT_PLATFORM_FEE_PCT,
-        creatorFeePct: CONTEST_CONFIG.DEFAULT_CREATOR_FEE_PCT,
+        prizeModel,
+        // FIXED: fees don't apply (entire entry fee burned), pool set at creation
+        // FEE_FUNDED: normal fee percentages, pool starts at 0
+        platformFeePct: isFixed ? 0 : CONTEST_CONFIG.DEFAULT_PLATFORM_FEE_PCT,
+        creatorFeePct: isFixed ? 0 : CONTEST_CONFIG.DEFAULT_CREATOR_FEE_PCT,
+        prizePool: isFixed ? Number(fixedPrizePool) : 0,
       },
     });
 
     ctx.log.info('Contest created', { contestId: contest.id, slug, contestType });
 
-    return NextResponse.json({
-      success: true,
-      data: serializeContest(contest),
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        data: serializeContest(contest),
+      },
+      { status: 201 }
+    );
   });
 });

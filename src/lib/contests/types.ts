@@ -51,6 +51,7 @@ export interface ContestResponse {
   platformFeePct: number;
   creatorFeePct: number;
   prizePool: number;
+  prizeModel: string;
   entryCount: number;
   registrationOpens: string;
   registrationCloses: string;

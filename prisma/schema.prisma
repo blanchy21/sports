@@ -719,6 +719,7 @@ model Contest {
   platformFeePct   Decimal       @default(0.10) @map("platform_fee_pct") @db.Decimal(5, 4)
   creatorFeePct    Decimal       @default(0.10) @map("creator_fee_pct") @db.Decimal(5, 4)
   prizePool        Decimal       @default(0) @map("prize_pool") @db.Decimal(12, 3)
+  prizeModel       String        @default("FEE_FUNDED") @map("prize_model")
 
   registrationOpens  DateTime    @map("registration_opens")
   registrationCloses DateTime    @map("registration_closes")
@@ -728,6 +729,8 @@ model Contest {
   creatorUsername   String        @map("creator_username")
   settledAt        DateTime?     @map("settled_at")
   settledBy        String?       @map("settled_by")
+  feeBurnTxId      String?       @map("fee_burn_tx_id")
+  entryFeeBurnTxId String?       @map("entry_fee_burn_tx_id")
 
   typeConfig       Json?         @map("type_config")
   entryCount       Int           @default(0) @map("entry_count")

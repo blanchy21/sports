@@ -8,7 +8,7 @@ import { ContestStatusBadge } from './ContestStatusBadge';
 import { ContestCountdown } from './ContestCountdown';
 import { cn } from '@/lib/utils/client';
 import type { ContestResponse } from '@/lib/contests/types';
-import { CONTEST_CONFIG } from '@/lib/contests/constants';
+import { CONTEST_CONFIG, PRIZE_MODELS } from '@/lib/contests/constants';
 
 function formatPrizeAmount(amount: number): string {
   if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M`;
@@ -38,7 +38,10 @@ export const ContestCard = React.memo(function ContestCard({
 }: {
   contest: ContestResponse;
 }) {
-  const prizeNet = contest.prizePool * (1 - contest.platformFeePct - contest.creatorFeePct);
+  const isFixed = contest.prizeModel === PRIZE_MODELS.FIXED;
+  const prizeNet = isFixed
+    ? contest.prizePool
+    : contest.prizePool * (1 - contest.platformFeePct - contest.creatorFeePct);
   const firstPrize = prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.FIRST;
   const secondPrize = prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.SECOND;
   const thirdPrize = prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.THIRD;
@@ -140,7 +143,7 @@ export const ContestCard = React.memo(function ContestCard({
             {/* Prize breakdown */}
             <div className="min-w-0 flex-1">
               <div className="mb-0.5 text-xs font-medium uppercase tracking-wider text-amber-600 dark:text-amber-400/80">
-                Total Prize Pool
+                {isFixed ? 'Guaranteed Prize Pool' : 'Total Prize Pool'}
               </div>
               <div className="text-2xl font-extrabold leading-none text-amber-600 dark:text-amber-400">
                 {formatPrizeAmount(contest.prizePool)}{' '}

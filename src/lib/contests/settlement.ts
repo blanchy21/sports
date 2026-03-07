@@ -6,14 +6,17 @@
  */
 
 import { prisma } from '@/lib/db/prisma';
-import { CONTEST_CONFIG } from './constants';
+import { CONTEST_CONFIG, PRIZE_MODELS } from './constants';
 import { Prisma } from '@/generated/prisma/client';
 import { logger } from '@/lib/logger';
 
 export interface SettlementResult {
+  prizeModel: string;
   platformFee: Prisma.Decimal;
   creatorFee: Prisma.Decimal;
   prizePoolNet: Prisma.Decimal;
+  /** Total entry fees collected (entryCount × entryFee). Used by FIXED model for burning. */
+  entryFeesCollected: Prisma.Decimal;
   placements: Array<{
     placement: number;
     username: string;
@@ -41,10 +44,27 @@ export async function calculateSettlement(
     throw new Error(`Contest must be in CALCULATING status, got: ${contest.status}`);
   }
 
-  const totalPool = new Prisma.Decimal(contest.prizePool);
-  const platformFee = totalPool.mul(new Prisma.Decimal(contest.platformFeePct));
-  const creatorFee = totalPool.mul(new Prisma.Decimal(contest.creatorFeePct));
-  const prizePoolNet = totalPool.sub(platformFee).sub(creatorFee);
+  const isFixed = contest.prizeModel === PRIZE_MODELS.FIXED;
+  const entryFeesCollected = new Prisma.Decimal(contest.entryCount).mul(
+    new Prisma.Decimal(contest.entryFee)
+  );
+
+  let platformFee: Prisma.Decimal;
+  let creatorFee: Prisma.Decimal;
+  let prizePoolNet: Prisma.Decimal;
+
+  if (isFixed) {
+    // FIXED: prizes come from fixedPrizePool, fees are 0
+    platformFee = new Prisma.Decimal(0);
+    creatorFee = new Prisma.Decimal(0);
+    prizePoolNet = new Prisma.Decimal(contest.prizePool);
+  } else {
+    // FEE_FUNDED: pool = accumulated entry fees, split into fees + prizes
+    const totalPool = new Prisma.Decimal(contest.prizePool);
+    platformFee = totalPool.mul(new Prisma.Decimal(contest.platformFeePct));
+    creatorFee = totalPool.mul(new Prisma.Decimal(contest.creatorFeePct));
+    prizePoolNet = totalPool.sub(platformFee).sub(creatorFee);
+  }
 
   // Get top entries ordered by score
   const entries = await prisma.contestEntry.findMany({
@@ -53,7 +73,14 @@ export async function calculateSettlement(
   });
 
   if (entries.length === 0) {
-    return { platformFee, creatorFee, prizePoolNet, placements: [] };
+    return {
+      prizeModel: contest.prizeModel,
+      platformFee,
+      creatorFee,
+      prizePoolNet,
+      entryFeesCollected,
+      placements: [],
+    };
   }
 
   // Resolve ties for top 3 using tie-breaker (closest to actual total goals)
@@ -130,10 +157,11 @@ export async function calculateSettlement(
 
   logger.info('Settlement calculated', 'contests', {
     contestId,
-    totalPool: totalPool.toString(),
+    prizeModel: contest.prizeModel,
+    prizePoolNet: prizePoolNet.toString(),
     platformFee: platformFee.toString(),
     creatorFee: creatorFee.toString(),
-    prizePoolNet: prizePoolNet.toString(),
+    entryFeesCollected: entryFeesCollected.toString(),
     placements: placements.map((p) => ({
       place: p.placement,
       username: p.username,
@@ -141,5 +169,13 @@ export async function calculateSettlement(
     })),
   });
 
-  return { platformFee, creatorFee, prizePoolNet, placements, tieBreaker };
+  return {
+    prizeModel: contest.prizeModel,
+    platformFee,
+    creatorFee,
+    prizePoolNet,
+    entryFeesCollected,
+    placements,
+    tieBreaker,
+  };
 }

@@ -31,7 +31,20 @@ export const CONTEST_CONFIG = {
 
   /** Memo prefix for escrow transfers */
   MEMO_PREFIX: 'contest-entry',
+
+  /** Burn account for entry fees (FIXED model) and platform fees */
+  BURN_ACCOUNT: 'null',
 } as const;
+
+/** Prize model identifiers */
+export const PRIZE_MODELS = {
+  /** Fixed prize pool funded by sponsor. Entry fees burned. */
+  FIXED: 'FIXED',
+  /** Prize pool = sum of entry fees. */
+  FEE_FUNDED: 'FEE_FUNDED',
+} as const;
+
+export type PrizeModel = (typeof PRIZE_MODELS)[keyof typeof PRIZE_MODELS];
 
 /** Contest type identifiers */
 export const CONTEST_TYPES = {

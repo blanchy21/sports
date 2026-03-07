@@ -8,8 +8,13 @@ import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { AuthError, ValidationError } from '@/lib/api/api-errors';
 import { prisma } from '@/lib/db/prisma';
-import { verifyEntryToken, isEntryTokenConsumed, consumeEntryToken } from '@/lib/contests/entry-token';
+import {
+  verifyEntryToken,
+  isEntryTokenConsumed,
+  consumeEntryToken,
+} from '@/lib/contests/entry-token';
 import { serializeEntry } from '@/lib/contests/serialize';
+import { PRIZE_MODELS } from '@/lib/contests/constants';
 
 export const POST = createApiHandler('/api/contests/[slug]/enter/confirm', async (request, ctx) => {
   return withCsrfProtection(request as NextRequest, async () => {
@@ -65,12 +70,15 @@ export const POST = createApiHandler('/api/contests/[slug]/enter/confirm', async
         },
       });
 
-      // Increment entry count and prize pool
+      // Increment entry count; only increment prizePool for FEE_FUNDED
+      // (FIXED model keeps prizePool at the value set at creation)
       await tx.contest.update({
         where: { id: tokenData.contestId },
         data: {
           entryCount: { increment: 1 },
-          prizePool: { increment: tokenData.amount },
+          ...(contest.prizeModel !== PRIZE_MODELS.FIXED && {
+            prizePool: { increment: tokenData.amount },
+          }),
         },
       });
 
@@ -98,9 +106,12 @@ export const POST = createApiHandler('/api/contests/[slug]/enter/confirm', async
       entryId: entry.id,
     });
 
-    return NextResponse.json({
-      success: true,
-      data: serializeEntry(entry),
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        data: serializeEntry(entry),
+      },
+      { status: 201 }
+    );
   });
 });

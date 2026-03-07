@@ -2,12 +2,7 @@
  * Contest Serialization — Prisma models → API responses
  */
 
-import type {
-  Contest,
-  ContestTeam,
-  ContestEntry,
-  ContestMatch,
-} from '@/generated/prisma/client';
+import type { Contest, ContestTeam, ContestEntry, ContestMatch } from '@/generated/prisma/client';
 import type {
   ContestResponse,
   ContestEntryResponse,
@@ -43,6 +38,7 @@ export function serializeContest(
     platformFeePct: toNumber(contest.platformFeePct),
     creatorFeePct: toNumber(contest.creatorFeePct),
     prizePool: toNumber(contest.prizePool),
+    prizeModel: contest.prizeModel,
     entryCount: contest.entryCount,
     registrationOpens: contest.registrationOpens.toISOString(),
     registrationCloses: contest.registrationCloses.toISOString(),
