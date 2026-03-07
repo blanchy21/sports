@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
@@ -34,6 +35,7 @@ import { sanitizePostContent } from '@/lib/utils/sanitize';
 import { logger } from '@/lib/logger';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { InlinePostComments } from '@/components/comments/InlinePostComments';
+import { useAuthorPosts } from '@/lib/react-query/queries/usePosts';
 
 interface PostDetailClientProps {
   initialPost?: SportsblockPost | null;
@@ -288,25 +290,35 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
         {/* Post Header */}
         <div className="mb-8">
           <div className="mb-4 flex items-center space-x-3">
-            <Avatar
-              src={isSoftPost ? softPostMeta?.authorAvatar : hiveProfile?.avatar}
-              fallback={post.author}
-              alt={
-                isSoftPost
-                  ? softPostMeta?.authorDisplayName || post.author
-                  : hiveProfile?.displayName || post.author
-              }
-              size="md"
-              className={!isSoftPost && isProfileLoading ? 'animate-pulse' : ''}
-            />
+            <Link href={`/user/${post.author}`}>
+              <Avatar
+                src={isSoftPost ? softPostMeta?.authorAvatar : hiveProfile?.avatar}
+                fallback={post.author}
+                alt={
+                  isSoftPost
+                    ? softPostMeta?.authorDisplayName || post.author
+                    : hiveProfile?.displayName || post.author
+                }
+                size="md"
+                className={
+                  !isSoftPost && isProfileLoading
+                    ? 'animate-pulse'
+                    : 'cursor-pointer transition-opacity hover:opacity-80'
+                }
+              />
+            </Link>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold">
-                {isSoftPost
-                  ? softPostMeta?.authorDisplayName || post.author
-                  : hiveProfile?.displayName || post.author}
-              </h1>
+              <p className="text-2xl font-bold">
+                <Link href={`/user/${post.author}`} className="hover:underline">
+                  {isSoftPost
+                    ? softPostMeta?.authorDisplayName || post.author
+                    : hiveProfile?.displayName || post.author}
+                </Link>
+              </p>
               <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                <span>@{post.author}</span>
+                <Link href={`/user/${post.author}`} className="hover:underline">
+                  @{post.author}
+                </Link>
                 <span>•</span>
                 <span className="flex items-center">
                   <Calendar className="mr-1 h-4 w-4" />
@@ -421,6 +433,9 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
           </div>
         </div>
 
+        {/* More by this author */}
+        {!isSoftPost && <MoreByAuthor author={post.author} currentPermlink={post.permlink} />}
+
         {/* Inline Comments */}
         <div ref={commentsRef}>
           <InlinePostComments
@@ -432,5 +447,32 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+function MoreByAuthor({ author, currentPermlink }: { author: string; currentPermlink: string }) {
+  const { data: posts, isLoading } = useAuthorPosts(author, currentPermlink);
+
+  if (isLoading || !posts || posts.length === 0) return null;
+
+  return (
+    <div className="border-t pt-6">
+      <h2 className="mb-4 text-lg font-semibold">More by @{author}</h2>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {posts.map((p) => (
+          <Link
+            key={p.permlink}
+            href={`/post/${p.author}/${p.permlink}`}
+            className="rounded-lg border p-4 transition-colors hover:bg-muted/50"
+          >
+            <h3 className="line-clamp-2 text-sm font-medium">{p.title}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{formatDate(new Date(p.created))}</p>
+          </Link>
+        ))}
+      </div>
+      <Link href={`/user/${author}`} className="mt-4 block text-sm text-primary hover:underline">
+        View all posts by @{author}
+      </Link>
+    </div>
   );
 }

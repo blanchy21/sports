@@ -5,6 +5,7 @@ import { TopNavigation } from './TopNavigation';
 import { Sidebar } from './Sidebar';
 import { RightSidebar } from './RightSidebar';
 import { MobileBottomNav } from './MobileBottomNav';
+import { Footer } from './Footer';
 import { KeyDownloadBanner } from '@/components/KeyDownloadBanner';
 import { cn } from '@/lib/utils/client';
 
@@ -29,6 +30,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           <KeyDownloadBanner />
           {children}
         </main>
+        <Footer />
       </div>
       <Sidebar />
       <MobileBottomNav />

@@ -326,26 +326,27 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
             {post.title}
           </h2>
         </div>
-
-        {/* Tags */}
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {post.tags.slice(0, 3).map((tag, index) => (
-              <span
-                key={`${tag}-${index}`}
-                className="inline-flex items-center rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground"
-              >
-                #{tag}
-              </span>
-            ))}
-            {post.tags.length > 3 && (
-              <span className="inline-flex items-center rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground">
-                +{post.tags.length - 3} more
-              </span>
-            )}
-          </div>
-        )}
       </Link>
+
+      {/* Tags */}
+      {post.tags && post.tags.length > 0 && (
+        <div className="flex flex-wrap gap-2 px-3 pb-3 sm:px-4">
+          {post.tags.slice(0, 3).map((tag, index) => (
+            <Link
+              key={`${tag}-${index}`}
+              href={`/discover?tag=${encodeURIComponent(tag)}`}
+              className="inline-flex items-center rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground transition-colors hover:bg-secondary/80"
+            >
+              #{tag}
+            </Link>
+          ))}
+          {post.tags.length > 3 && (
+            <span className="inline-flex items-center rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground">
+              +{post.tags.length - 3} more
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Footer */}
       <div className="border-t bg-muted/30 px-3 py-2 sm:px-4 sm:py-3">

@@ -141,6 +141,15 @@ export default function AboutPage() {
             <Link href="/getting-started" className="text-sm text-primary hover:underline">
               Getting Started
             </Link>
+            <Link href="/earn-crypto-sports" className="text-sm text-primary hover:underline">
+              Earn Crypto
+            </Link>
+            <Link href="/medals-token" className="text-sm text-primary hover:underline">
+              MEDALS Token
+            </Link>
+            <Link href="/start-sports-blog" className="text-sm text-primary hover:underline">
+              Start Blogging
+            </Link>
             <Link href="/legal/terms" className="text-sm text-primary hover:underline">
               Terms of Service
             </Link>

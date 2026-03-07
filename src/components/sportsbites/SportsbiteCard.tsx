@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import {
   MessageCircle,
@@ -69,7 +69,6 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   initialPollResults,
   initialPollUserVote,
 }: SportsbiteCardProps) {
-  const router = useRouter();
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -135,11 +134,6 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       permlink: sportsbite.permlink,
       voteCount: sportsbite.net_votes || 0,
     });
-  };
-
-  const handleUserProfile = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    router.push(`/user/${sportsbite.author}`);
   };
 
   const pendingPayout = React.useMemo(() => {
@@ -305,8 +299,8 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
     >
       {/* Header */}
       <div className="flex items-start gap-2 pb-0 sm:gap-3">
-        <button
-          onClick={handleUserProfile}
+        <Link
+          href={`/user/${sportsbite.author}`}
           className="flex-shrink-0"
           aria-label={`View ${sportsbite.author}'s profile`}
         >
@@ -320,18 +314,18 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
               isProfileLoading && 'animate-pulse'
             )}
           />
-        </button>
+        </Link>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={handleUserProfile}
-                className="cursor-pointer font-semibold hover:underline"
+              <Link
+                href={`/user/${sportsbite.author}`}
+                className="font-semibold hover:underline"
                 aria-label={`View ${sportsbite.author}'s profile`}
               >
                 {authorProfile?.displayName || sportsbite.author}
-              </button>
+              </Link>
               <span className="text-muted-foreground">@{sportsbite.author}</span>
               <RoleBadge username={sportsbite.author} />
               <RankBadge rank={authorRank} size="sm" />
@@ -449,7 +443,13 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             {allImages.slice(0, 4).map((img, index) => {
               const isGif = img.toLowerCase().endsWith('.gif');
               const canUseNextImage = isTrustedImageHost(img) && !isGif;
-              const optimizable = (() => { try { return IMAGE_OPTIMIZABLE_HOSTS.has(new URL(img).hostname); } catch { return false; } })();
+              const optimizable = (() => {
+                try {
+                  return IMAGE_OPTIMIZABLE_HOSTS.has(new URL(img).hostname);
+                } catch {
+                  return false;
+                }
+              })();
 
               return (
                 <div

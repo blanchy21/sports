@@ -179,20 +179,25 @@ export const RightSidebar: React.FC = () => {
                 {displayedAuthors.map((author) => (
                   <div
                     key={author.id}
-                    className="flex cursor-pointer items-center space-x-3 rounded-md p-2 transition-colors hover:bg-accent"
+                    className="flex items-center space-x-3 rounded-md p-2 transition-colors hover:bg-accent"
                   >
-                    <Avatar
-                      src={getHiveAvatarUrl(author.username)}
-                      fallback={author.displayName || author.username}
-                      alt={author.displayName || author.username}
-                      size="md"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{author.displayName}</div>
-                      <div className="text-xs text-muted-foreground">
-                        @{author.username} • {author.posts} posts
+                    <Link
+                      href={`/user/${author.username}`}
+                      className="flex min-w-0 flex-1 items-center space-x-3"
+                    >
+                      <Avatar
+                        src={getHiveAvatarUrl(author.username)}
+                        fallback={author.displayName || author.username}
+                        alt={author.displayName || author.username}
+                        size="md"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">{author.displayName}</div>
+                        <div className="text-xs text-muted-foreground">
+                          @{author.username} • {author.posts} posts
+                        </div>
                       </div>
-                    </div>
+                    </Link>
                     {user?.isHiveAuth && (
                       <FollowButton
                         username={author.username}

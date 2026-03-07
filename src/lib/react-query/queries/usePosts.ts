@@ -295,3 +295,22 @@ export function useFeedPosts(
     enabled,
   });
 }
+
+// Fetch posts by a specific author, excluding a given permlink
+export function useAuthorPosts(username: string | undefined, excludePermlink?: string) {
+  return useQuery({
+    queryKey: queryKeys.posts.list({ type: 'author', username }),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set('username', username!);
+      params.set('limit', '5');
+      const response = await fetch(`/api/hive/posts?${params}`);
+      if (!response.ok) throw new Error(`Failed to fetch author posts: ${response.status}`);
+      const data = await response.json();
+      const posts: SportsblockPost[] = data.posts ?? [];
+      return posts.filter((p) => p.permlink !== excludePermlink).slice(0, 4);
+    },
+    staleTime: STALE_TIMES.STANDARD,
+    enabled: !!username,
+  });
+}
