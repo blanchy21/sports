@@ -6,7 +6,7 @@
  */
 
 import { buildTransferOpFromAmount, buildBatchTransferOps } from '@/lib/hive-engine/operations';
-import { CONTEST_CONFIG, PRIZE_MODELS } from './constants';
+import { CONTEST_CONFIG } from './constants';
 import { MEDALS_CONFIG } from '@/lib/hive-engine/constants';
 import type { CustomJsonOp } from '@/lib/hive-engine/types';
 
