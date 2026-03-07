@@ -48,10 +48,22 @@ export default function LandingCommunity({ sports }: LandingCommunityProps) {
                 whileHover={{ scale: 1.05, y: -5 }}
                 className="group relative aspect-[3/2] cursor-pointer overflow-hidden rounded-2xl shadow-lg"
               >
-                <div
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-                  style={{ backgroundImage: `url('${sport.image}')` }}
-                />
+                {sport.image.startsWith('/') ? (
+                  <Image
+                    src={sport.image}
+                    alt={sport.name}
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={sport.image}
+                    alt={sport.name}
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                )}
                 <div
                   className={`absolute inset-0 bg-gradient-to-t ${sport.color} opacity-70 transition-opacity duration-300 group-hover:opacity-80`}
                 />

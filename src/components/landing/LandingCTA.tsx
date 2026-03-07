@@ -190,7 +190,7 @@ export default function LandingCTA() {
           </p>
           <Button
             size="lg"
-            className="bg-accent px-12 py-7 text-lg font-semibold text-white shadow-2xl shadow-accent/30 transition-all duration-300 hover:scale-105 hover:bg-accent/90 hover:shadow-accent/50"
+            className="bg-[hsl(20,70%,42%)] px-12 py-7 text-lg font-semibold text-white shadow-2xl shadow-accent/30 transition-all duration-300 hover:scale-105 hover:bg-[hsl(20,70%,38%)] hover:shadow-accent/50"
             onClick={() => signIn('google', { callbackUrl: '/auth/google-callback' })}
           >
             Sign Up Free

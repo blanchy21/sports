@@ -116,7 +116,7 @@ export default function LandingHero() {
         >
           <Button
             size="lg"
-            className="group bg-accent px-10 py-7 text-lg font-semibold text-white shadow-2xl shadow-accent/25 transition-all duration-300 hover:scale-105 hover:bg-accent/90 hover:shadow-accent/40"
+            className="group bg-[hsl(20,70%,42%)] px-10 py-7 text-lg font-semibold text-white shadow-2xl shadow-accent/25 transition-all duration-300 hover:scale-105 hover:bg-[hsl(20,70%,38%)] hover:shadow-accent/40"
             onClick={() => signIn('google', { callbackUrl: '/auth/google-callback' })}
           >
             Sign Up Free

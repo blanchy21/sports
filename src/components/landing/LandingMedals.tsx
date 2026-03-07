@@ -17,6 +17,7 @@ import {
   ArrowRight,
   FileText,
 } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/core/Button';
 import { AnimatedCounter, containerVariants, itemVariants } from './LandingSections';
 
@@ -26,10 +27,15 @@ export default function LandingMedals() {
   return (
     <>
       {/* ━━━ Photo Break ━━━ */}
-      <section
-        className="relative flex min-h-[50vh] items-center justify-center bg-cover bg-fixed bg-center"
-        style={{ backgroundImage: "url('/john-o-nolan-o_gJAkcKJmM-unsplash.jpg')" }}
-      >
+      <section className="relative flex min-h-[50vh] items-center justify-center overflow-hidden">
+        <Image
+          src="/john-o-nolan-o_gJAkcKJmM-unsplash.jpg"
+          alt="Sports stadium"
+          fill
+          sizes="100vw"
+          className="object-cover"
+          priority
+        />
         <div className="absolute inset-0 bg-black/60" />
         <motion.div
           initial={{ opacity: 0, y: 30 }}

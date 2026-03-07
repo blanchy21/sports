@@ -106,8 +106,13 @@ const config: Config = {
           '100%': { boxShadow: '0 0 20px rgba(var(--primary), 0.4)' },
         },
         borderPulse: {
-          '0%, 100%': { borderColor: 'rgba(228, 139, 89, 0.3)' },
-          '50%': { borderColor: 'rgba(228, 139, 89, 0.8)' },
+          '0%, 100%': {
+            boxShadow: '0 0 0 0 rgba(228, 139, 89, 0.3), inset 0 0 0 0 rgba(228, 139, 89, 0.05)',
+          },
+          '50%': {
+            boxShadow:
+              '0 0 15px 2px rgba(228, 139, 89, 0.4), inset 0 0 10px 0 rgba(228, 139, 89, 0.1)',
+          },
         },
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
