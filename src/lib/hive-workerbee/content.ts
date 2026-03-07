@@ -880,7 +880,7 @@ export async function fetchFollowingFeed(
     const fetchLimit = Math.min(limit + 1, HIVE_API_MAX_LIMIT); // over-fetch by 1 to detect hasMore
 
     const params: Record<string, unknown> = {
-      account: username,
+      tag: username,
       limit: fetchLimit,
     };
     if (startAuthor && startPermlink) {
