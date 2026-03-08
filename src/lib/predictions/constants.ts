@@ -48,5 +48,11 @@ export const PREDICTION_CONFIG = {
   BURN_ACCOUNT: 'null',
 
   /** Admin accounts that can settle/void any prediction */
-  ADMIN_ACCOUNTS: ['niallon11', 'blanchy', 'talesfrmthecrypt'] as readonly string[],
+  ADMIN_ACCOUNTS: [
+    'niallon11',
+    'blanchy',
+    'talesfrmthecrypt',
+    'bozz',
+    'fullcoverbetting',
+  ] as readonly string[],
 } as const;
