@@ -42,6 +42,7 @@ export default function LandingShowcase() {
                 alt="Hive"
                 width={28}
                 height={32}
+                loading="lazy"
                 className="h-7 w-auto"
               />
               <span className="text-lg font-bold text-[#E31337]">HIVE</span>
@@ -100,6 +101,7 @@ export default function LandingShowcase() {
                 src={src}
                 alt=""
                 fill
+                loading="lazy"
                 className="object-cover"
                 sizes="(min-width: 640px) 288px, 208px"
               />
@@ -133,6 +135,7 @@ export default function LandingShowcase() {
                 src={src}
                 alt=""
                 fill
+                loading="lazy"
                 className="object-cover"
                 sizes="(min-width: 640px) 288px, 208px"
               />
@@ -333,6 +336,7 @@ export default function LandingShowcase() {
                     alt="Sportsbites"
                     width={32}
                     height={32}
+                    loading="lazy"
                     className="h-8 w-auto"
                   />
                   <span className="text-sm font-semibold text-accent">Sportsbites</span>

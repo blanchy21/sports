@@ -54,10 +54,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sportsblock - Where Sports Meets Blockchain',
+    title: 'Sportsblock - Cut Out The Noise. Earn.',
     description:
-      'Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.',
-    images: ['/sportsblock-hero.png'],
+      'Your sports knowledge has real value. Write about the game you love and earn crypto rewards on the Hive blockchain.',
+    images: ['/x-card-image.png'],
   },
 };
 

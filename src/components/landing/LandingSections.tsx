@@ -18,7 +18,7 @@ const sports = [
   },
   {
     name: 'Basketball',
-    image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80',
+    image: '/basketball-unsplash.jpg',
     color: 'from-[#D47838]/85 to-[#7F4822]/90',
   },
   {
@@ -28,7 +28,7 @@ const sports = [
   },
   {
     name: 'American Football',
-    image: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=800&q=80',
+    image: '/american-football-unsplash.jpg',
     color: 'from-[#A67A30]/85 to-[#62491D]/90',
   },
   {
@@ -38,7 +38,7 @@ const sports = [
   },
   {
     name: 'Boxing',
-    image: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&q=80',
+    image: '/boxing-unsplash.jpg',
     color: 'from-[#AD3939]/85 to-[#602020]/90',
   },
   {

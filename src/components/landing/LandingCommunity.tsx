@@ -48,22 +48,14 @@ export default function LandingCommunity({ sports }: LandingCommunityProps) {
                 whileHover={{ scale: 1.05, y: -5 }}
                 className="group relative aspect-[3/2] cursor-pointer overflow-hidden rounded-2xl shadow-lg"
               >
-                {sport.image.startsWith('/') ? (
-                  <Image
-                    src={sport.image}
-                    alt={sport.name}
-                    fill
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={sport.image}
-                    alt={sport.name}
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                )}
+                <Image
+                  src={sport.image}
+                  alt={sport.name}
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                />
                 <div
                   className={`absolute inset-0 bg-gradient-to-t ${sport.color} opacity-70 transition-opacity duration-300 group-hover:opacity-80`}
                 />
@@ -196,6 +188,7 @@ export default function LandingCommunity({ sports }: LandingCommunityProps) {
                       alt={wallet.alt}
                       width={40}
                       height={40}
+                      loading="lazy"
                       className="h-10 w-10 object-contain"
                     />
                   </div>
