@@ -84,12 +84,14 @@ export const GET = createApiHandler('/api/predictions/leaderboard', async (reque
       ps.username,
       COUNT(DISTINCT ps.prediction_id) AS total_predictions,
       COUNT(CASE WHEN ps.payout > 0 AND ps.payout > ps.amount THEN 1 END) AS wins,
-      COUNT(CASE WHEN ps.payout IS NOT NULL AND (ps.payout = 0 OR ps.payout <= ps.amount) THEN 1 END) AS losses,
+      COUNT(CASE WHEN ps.payout IS NULL OR ps.payout <= ps.amount THEN 1 END) AS losses,
       COALESCE(SUM(ps.amount), 0) AS total_staked,
       COALESCE(SUM(CASE WHEN ps.payout > 0 THEN ps.payout ELSE 0 END), 0) AS total_won,
-      COALESCE(SUM(CASE WHEN ps.payout IS NOT NULL THEN ps.payout - ps.amount ELSE 0 END), 0) AS profit_loss
+      COALESCE(SUM(COALESCE(ps.payout, 0) - ps.amount), 0) AS profit_loss
     FROM prediction_stakes ps
+    JOIN predictions p ON p.id = ps.prediction_id
     WHERE ps.refund_tx_id IS NULL
+    AND p.status = 'SETTLED'
     ${periodFilter}
     GROUP BY ps.username
     HAVING COUNT(DISTINCT ps.prediction_id) >= 3
@@ -114,7 +116,6 @@ export const GET = createApiHandler('/api/predictions/leaderboard', async (reque
       WHERE ps.username IN (${Prisma.join(usernames)})
         AND ps.refund_tx_id IS NULL
         AND p.status = 'SETTLED'
-        AND ps.payout IS NOT NULL
       GROUP BY ps.username, ps.prediction_id, p.settled_at
       ORDER BY ps.username, p.settled_at DESC
     `;

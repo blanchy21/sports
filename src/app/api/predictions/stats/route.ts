@@ -51,7 +51,6 @@ export const GET = createApiHandler('/api/predictions/stats', async (request, _c
     WHERE ps.username = ${username}
       AND ps.refund_tx_id IS NULL
       AND p.status = 'SETTLED'
-      AND ps.payout IS NOT NULL
     GROUP BY ps.prediction_id, p.title, p.sport_category, p.settled_at
     ORDER BY p.settled_at DESC
   `;
@@ -132,7 +131,7 @@ export const GET = createApiHandler('/api/predictions/stats', async (request, _c
         SUM(amount) AS total_staked,
         COALESCE(SUM(payout), 0) AS total_payout
       FROM prediction_stakes
-      WHERE username = ${username} AND refund_tx_id IS NULL AND payout IS NOT NULL
+      WHERE username = ${username} AND refund_tx_id IS NULL
       GROUP BY prediction_id, username
     ) sub ON sub.prediction_id = ps.prediction_id AND sub.username = ps.username
     WHERE ps.username = ${username}
