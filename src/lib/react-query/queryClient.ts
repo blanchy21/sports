@@ -103,7 +103,8 @@ export const queryKeys = {
   sportsbites: {
     all: ['sportsbites'] as const,
     lists: () => [...queryKeys.sportsbites.all, 'list'] as const,
-    list: (filters: Record<string, unknown>) => [...queryKeys.sportsbites.lists(), filters] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...queryKeys.sportsbites.lists(), filters] as const,
   },
   prices: {
     all: ['prices'] as const,
@@ -120,5 +121,13 @@ export const queryKeys = {
     leaderboard: (slug: string) => [...queryKeys.contests.detail(slug), 'leaderboard'] as const,
     matches: (slug: string) => [...queryKeys.contests.detail(slug), 'matches'] as const,
     teams: (slug: string) => [...queryKeys.contests.detail(slug), 'teams'] as const,
+  },
+  lms: {
+    all: ['lms'] as const,
+    competitions: () => [...queryKeys.lms.all, 'competitions'] as const,
+    details: () => [...queryKeys.lms.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.lms.details(), id] as const,
+    board: (id: string) => [...queryKeys.lms.detail(id), 'board'] as const,
+    myPick: (id: string) => [...queryKeys.lms.detail(id), 'myPick'] as const,
   },
 } as const;

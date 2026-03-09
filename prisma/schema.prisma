@@ -849,3 +849,86 @@ model ContestEscrowLedger {
   @@index([contestId])
   @@map("contest_escrow_ledger")
 }
+
+// ============================================================================
+// Phase 6 — Last Man Standing
+// ============================================================================
+
+model LmsCompetition {
+  id                   String    @id // e.g. 'lms-pl-2526-001'
+  name                 String
+  season               String
+  status               String // open | picking | locked | results | complete
+  currentGameweek      Int       @map("current_gameweek")
+  startGameweek        Int       @map("start_gameweek")
+  isFreeEntry          Boolean   @default(true) @map("is_free_entry")
+  entryFeeMedals       Int       @default(0) @map("entry_fee_medals")
+  prizeHive            Int       @default(200) @map("prize_hive")
+  prizeMedals          Int       @default(5000) @map("prize_medals")
+  platformCutPct       Int       @default(0) @map("platform_cut_pct")
+  totalEntries         Int       @default(0) @map("total_entries")
+  escrowAccount        String    @default("sp-predictions") @map("escrow_account")
+  registrationDeadline DateTime? @map("registration_deadline")
+  winnerUsername       String?   @map("winner_username")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  completedAt          DateTime? @map("completed_at")
+
+  entries   LmsEntry[]
+  gameweeks LmsGameweek[]
+
+  @@map("lms_competitions")
+}
+
+model LmsEntry {
+  id                 Int       @id @default(autoincrement())
+  competitionId      String    @map("competition_id")
+  username           String
+  status             String // alive | eliminated | winner
+  usedTeams          String[]  @default([]) @map("used_teams")
+  eliminatedGameweek Int?      @map("eliminated_gameweek")
+  eliminatedByTeam   String?   @map("eliminated_by_team")
+  joinedAt           DateTime  @default(now()) @map("joined_at")
+
+  competition LmsCompetition @relation(fields: [competitionId], references: [id])
+  picks       LmsPick[]
+
+  @@unique([competitionId, username])
+  @@index([competitionId, status])
+  @@map("lms_entries")
+}
+
+model LmsPick {
+  id            Int       @id @default(autoincrement())
+  competitionId String    @map("competition_id")
+  username      String
+  gameweek      Int
+  teamPicked    String    @map("team_picked")
+  isAutoPick    Boolean   @default(false) @map("is_auto_pick")
+  submittedAt   DateTime  @default(now()) @map("submitted_at")
+  result        String    @default("pending") // pending | survived | eliminated | postponed
+  resolvedAt    DateTime? @map("resolved_at")
+  resolvedBy    String?   @map("resolved_by")
+
+  entry LmsEntry @relation(fields: [competitionId, username], references: [competitionId, username])
+
+  @@unique([competitionId, username, gameweek])
+  @@index([competitionId, gameweek])
+  @@index([competitionId, username])
+  @@map("lms_picks")
+}
+
+model LmsGameweek {
+  id              Int       @id @default(autoincrement())
+  competitionId   String    @map("competition_id")
+  gameweek        Int
+  deadline        DateTime
+  status          String // upcoming | picking | locked | complete
+  survivorsCount  Int       @default(0) @map("survivors_count")
+  eliminatedCount Int       @default(0) @map("eliminated_count")
+  fixtures        Json      @default("[]")
+
+  competition LmsCompetition @relation(fields: [competitionId], references: [id])
+
+  @@unique([competitionId, gameweek])
+  @@map("lms_gameweeks")
+}
