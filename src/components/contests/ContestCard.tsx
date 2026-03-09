@@ -45,6 +45,7 @@ export const ContestCard = React.memo(function ContestCard({
   const firstPrize = prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.FIRST;
   const secondPrize = prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.SECOND;
   const thirdPrize = prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.THIRD;
+  const prizeHive = (contest.typeConfig as { prizeHive?: number } | null)?.prizeHive;
 
   const isRegistration = contest.status === 'REGISTRATION';
   const isComingSoon = isRegistration && new Date(contest.registrationOpens).getTime() > Date.now();
@@ -146,8 +147,19 @@ export const ContestCard = React.memo(function ContestCard({
                 {isFixed ? 'Guaranteed Prize Pool' : 'Total Prize Pool'}
               </div>
               <div className="text-2xl font-extrabold leading-none text-amber-600 dark:text-amber-400">
-                {formatPrizeAmount(contest.prizePool)}{' '}
-                <span className="text-sm font-semibold opacity-70">MEDALS</span>
+                {prizeHive ? (
+                  <>
+                    {prizeHive} <span className="text-sm font-semibold opacity-70">HIVE</span>
+                    <span className="text-base font-bold opacity-50"> + </span>
+                    {formatPrizeAmount(contest.prizePool)}{' '}
+                    <span className="text-sm font-semibold opacity-70">MEDALS</span>
+                  </>
+                ) : (
+                  <>
+                    {formatPrizeAmount(contest.prizePool)}{' '}
+                    <span className="text-sm font-semibold opacity-70">MEDALS</span>
+                  </>
+                )}
               </div>
               <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
                 <span>

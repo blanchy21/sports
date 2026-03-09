@@ -66,6 +66,7 @@ export default function ContestDetailPage() {
   const prizeNet = isFixed
     ? contest.prizePool
     : contest.prizePool * (1 - contest.platformFeePct - contest.creatorFeePct);
+  const prizeHive = (contest.typeConfig as { prizeHive?: number } | null)?.prizeHive;
 
   const showMatches = contest.contestType === CONTEST_TYPES.WORLD_CUP_FANTASY;
   const tabs: { key: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -141,9 +142,13 @@ export default function ContestDetailPage() {
           <div className="rounded-lg border bg-amber-500/5 p-3 text-center">
             <Coins className="mx-auto mb-1 h-4 w-4 text-amber-500" />
             <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
-              {(prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.FIRST).toFixed(0)}
+              {prizeHive
+                ? `${prizeHive} HIVE`
+                : (prizeNet * CONTEST_CONFIG.PRIZE_SPLIT.FIRST).toFixed(0)}
             </div>
-            <div className="text-[10px] text-muted-foreground">1st Prize MEDALS</div>
+            <div className="text-[10px] text-muted-foreground">
+              {prizeHive ? '+ MEDALS prizes' : '1st Prize MEDALS'}
+            </div>
           </div>
           <div className="rounded-lg border p-3 text-center">
             <Users className="mx-auto mb-1 h-4 w-4 text-muted-foreground" />
@@ -152,9 +157,15 @@ export default function ContestDetailPage() {
           </div>
           <div className="rounded-lg border p-3 text-center">
             <Trophy className="mx-auto mb-1 h-4 w-4 text-muted-foreground" />
-            <div className="text-lg font-bold">{contest.prizePool.toFixed(0)}</div>
+            <div className="text-lg font-bold">
+              {prizeHive ? `${prizeHive} HIVE` : contest.prizePool.toFixed(0)}
+            </div>
             <div className="text-[10px] text-muted-foreground">
-              {isFixed ? 'Guaranteed Pool' : 'Total Pool'}
+              {prizeHive
+                ? `+ ${contest.prizePool.toFixed(0)} MEDALS`
+                : isFixed
+                  ? 'Guaranteed Pool'
+                  : 'Total Pool'}
             </div>
           </div>
         </div>
@@ -238,7 +249,9 @@ export default function ContestDetailPage() {
                   <>
                     <hr className="my-2" />
                     <div className="text-xs text-muted-foreground">
-                      Entry fees are burned. Prizes are guaranteed by the sponsor.
+                      {prizeHive
+                        ? `Winner takes all: ${prizeHive} HIVE + ${contest.prizePool.toFixed(0)} MEDALS. Funded by SportsBlock.`
+                        : 'Entry fees are burned. Prizes are guaranteed by the sponsor.'}
                     </div>
                   </>
                 ) : (
