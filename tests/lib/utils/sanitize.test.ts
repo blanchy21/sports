@@ -94,6 +94,118 @@ describe('sanitizePostContent', () => {
   it('returns empty string for empty input', () => {
     expect(sanitizePostContent('')).toBe('');
   });
+
+  // Bold
+  it('converts **bold** to <strong>', () => {
+    const result = sanitizePostContent('This is **bold** text');
+    expect(result).toContain('<strong>bold</strong>');
+  });
+
+  it('converts __bold__ to <strong>', () => {
+    const result = sanitizePostContent('This is __bold__ text');
+    expect(result).toContain('<strong>bold</strong>');
+  });
+
+  // Italic
+  it('converts *italic* to <em>', () => {
+    const result = sanitizePostContent('This is *italic* text');
+    expect(result).toContain('<em>italic</em>');
+  });
+
+  it('converts _italic_ to <em>', () => {
+    const result = sanitizePostContent('This is _italic_ text');
+    expect(result).toContain('<em>italic</em>');
+  });
+
+  it('does not italicize underscores in words like some_var_name', () => {
+    const result = sanitizePostContent('some_var_name');
+    expect(result).not.toContain('<em>');
+  });
+
+  // Strikethrough
+  it('converts ~~strikethrough~~ to <del>', () => {
+    const result = sanitizePostContent('This is ~~deleted~~ text');
+    expect(result).toContain('<del>deleted</del>');
+  });
+
+  // Inline code
+  it('converts `code` to <code>', () => {
+    const result = sanitizePostContent('Use `console.log` here');
+    expect(result).toContain('<code>');
+    expect(result).toContain('console.log');
+  });
+
+  it('does not process markdown inside inline code', () => {
+    const result = sanitizePostContent('Use `**not bold**` here');
+    expect(result).not.toContain('<strong>');
+  });
+
+  // Fenced code blocks
+  it('converts fenced code blocks to <pre><code>', () => {
+    const result = sanitizePostContent('```\nconst x = 1;\n```');
+    expect(result).toContain('<pre>');
+    expect(result).toContain('<code>');
+    expect(result).toContain('const x = 1;');
+  });
+
+  it('does not process markdown inside fenced code blocks', () => {
+    const result = sanitizePostContent('```\n**bold** and *italic*\n```');
+    expect(result).not.toContain('<strong>');
+    expect(result).not.toContain('<em>');
+  });
+
+  // Blockquotes
+  it('converts > quote to <blockquote>', () => {
+    const result = sanitizePostContent('> This is a quote');
+    expect(result).toContain('<blockquote>');
+    expect(result).toContain('This is a quote');
+  });
+
+  it('groups consecutive > lines into one blockquote', () => {
+    const result = sanitizePostContent('> Line 1\n> Line 2');
+    expect(result).toContain('<blockquote>');
+    expect(result).toContain('Line 1');
+    expect(result).toContain('Line 2');
+    // Should be one blockquote, not two
+    expect(result.match(/<blockquote>/g)?.length).toBe(1);
+  });
+
+  // Unordered lists
+  it('converts - items to <ul><li>', () => {
+    const result = sanitizePostContent('- Item 1\n- Item 2');
+    expect(result).toContain('<ul>');
+    expect(result).toContain('<li>Item 1</li>');
+    expect(result).toContain('<li>Item 2</li>');
+  });
+
+  it('converts * items to <ul><li>', () => {
+    const result = sanitizePostContent('* Item A\n* Item B');
+    expect(result).toContain('<ul>');
+    expect(result).toContain('<li>Item A</li>');
+    expect(result).toContain('<li>Item B</li>');
+  });
+
+  // Ordered lists
+  it('converts numbered items to <ol><li>', () => {
+    const result = sanitizePostContent('1. First\n2. Second');
+    expect(result).toContain('<ol>');
+    expect(result).toContain('<li>First</li>');
+    expect(result).toContain('<li>Second</li>');
+  });
+
+  // Combined formatting
+  it('handles bold inside list items', () => {
+    const result = sanitizePostContent('- **Bold item**\n- Normal item');
+    expect(result).toContain('<li><strong>Bold item</strong></li>');
+  });
+
+  it('handles bold and italic together (***text***)', () => {
+    // Note: ***text*** at the START of a line is matched as a horizontal rule (3+ asterisks).
+    // When embedded inline, it correctly renders as bold+italic.
+    const result = sanitizePostContent('This is ***bold italic*** text');
+    expect(result).toContain('<strong>');
+    expect(result).toContain('<em>');
+  });
 });
 
 // ---------------------------------------------------------------------------
