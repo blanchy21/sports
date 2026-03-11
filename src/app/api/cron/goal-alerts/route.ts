@@ -32,21 +32,36 @@ const GOAL_TTL_SECONDS = 86400; // 24 hours
 // Goal deduplication helpers
 // ---------------------------------------------------------------------------
 
-/** Build a deterministic key for a single goal event. */
-function buildGoalKey(goal: MatchEvent): string {
-  return `${goal.playerName}:${goal.clock}:${goal.team}`;
+/** Build a deterministic key for a single goal event.
+ *  Normalises the clock to base minutes only (e.g. "45'+2" → "45") so that
+ *  ESPN added-time formatting changes don't generate duplicate keys.
+ */
+function normaliseMinute(clock: string): string {
+  const m = clock.match(/^(\d+)/);
+  return m ? m[1] : clock;
 }
 
-/** Fetch the set of already-posted goal keys for an event from Redis. */
-async function getKnownGoals(eventId: string): Promise<Set<string>> {
+function buildGoalKey(goal: MatchEvent): string {
+  return `${goal.playerName}:${normaliseMinute(goal.clock)}:${goal.team}`;
+}
+
+/** Fetch the set of already-posted goal keys for an event from Redis.
+ *  Returns `null` on failure — callers MUST skip posting when null to avoid duplicates.
+ */
+async function getKnownGoals(eventId: string): Promise<Set<string> | null> {
   try {
     const redis = await getRedisCache();
-    if (!redis.isAvailable()) return new Set();
+    if (!redis.isAvailable()) return null;
 
     const stored = await redis.get<string[]>(`${REDIS_KEY_PREFIX}${eventId}`);
     return new Set(stored ?? []);
-  } catch {
-    return new Set();
+  } catch (err) {
+    logError(
+      `Failed to read known goals for event ${eventId} — skipping to avoid duplicates`,
+      'GoalAlerts',
+      err instanceof Error ? err : undefined
+    );
+    return null;
   }
 }
 
@@ -163,6 +178,13 @@ async function processLiveEvent(
 
   // Determine which goals are new
   const knownGoals = await getKnownGoals(eventId);
+
+  // If Redis read failed, skip this event entirely to avoid duplicate alerts
+  if (knownGoals === null) {
+    logError(`Skipping event ${eventId} — could not read known goals from Redis`, 'GoalAlerts');
+    return { eventId, newGoals: 0, errors: 0 };
+  }
+
   const newGoals = goals.filter((g) => !knownGoals.has(buildGoalKey(g)));
 
   if (newGoals.length === 0) {

@@ -18,8 +18,6 @@ function PlayerRow({ player }: { player: MatchLineupPlayer }) {
       </span>
       {/* Player name */}
       <span className="min-w-0 flex-1 truncate text-sm text-foreground">{player.name}</span>
-      {/* Position */}
-      <span className="shrink-0 text-xs text-muted-foreground">{player.position}</span>
       {/* Sub indicators */}
       {player.subbedIn && (
         <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" title="Subbed in" />
