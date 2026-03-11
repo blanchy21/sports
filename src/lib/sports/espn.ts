@@ -416,9 +416,15 @@ function parseBoxscoreStats(teams: ESPNBoxscoreTeam[]): MatchStat[] {
     const homeStat = homeMap.get(awayStat.name);
     if (!homeStat) continue;
 
+    // Build human-readable display name; fall back to camelCase → Title Case
+    const displayName =
+      STAT_DISPLAY_NAMES[awayStat.name] ??
+      awayStat.displayName ??
+      awayStat.name.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+
     stats.push({
       name: awayStat.name,
-      displayName: STAT_DISPLAY_NAMES[awayStat.name] ?? awayStat.displayName,
+      displayName,
       home: formatStatValue(awayStat.name, homeStat.displayValue),
       away: formatStatValue(awayStat.name, awayStat.displayValue),
     });
@@ -436,8 +442,14 @@ function parseRoster(roster: ESPNRoster): MatchLineup {
       jersey: p.jersey,
       position: typeof p.position === 'string' ? p.position : (p.position?.displayName ?? ''),
       isStarter: p.starter,
-      subbedIn: p.subbedIn || undefined,
-      subbedOut: p.subbedOut || undefined,
+      subbedIn:
+        p.subbedIn === true ||
+        (p.subbedIn as unknown as { didSub: boolean })?.didSub === true ||
+        undefined,
+      subbedOut:
+        p.subbedOut === true ||
+        (p.subbedOut as unknown as { didSub: boolean })?.didSub === true ||
+        undefined,
     })),
   };
 }
