@@ -1,7 +1,7 @@
 import React from 'react';
 import { InFeedAd } from '@/components/ads/InFeedAd';
 
-export const AD_FREQUENCY = 5;
+export const AD_FREQUENCY = 10;
 
 interface InterleaveAdsOptions {
   frequency?: number;
