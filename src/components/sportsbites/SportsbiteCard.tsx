@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -14,7 +14,12 @@ import {
   Trash2,
   Users,
   Coins,
+  Camera,
 } from 'lucide-react';
+
+const ShareSportsbiteModal = React.lazy(() =>
+  import('./ShareSportsbiteModal').then((m) => ({ default: m.ShareSportsbiteModal }))
+);
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
 import { StarVoteButton } from '@/components/voting/StarVoteButton';
@@ -73,6 +78,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [shareImageOpen, setShareImageOpen] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [showReplies, setShowReplies] = useState(false);
   const { authType, hiveUser, user } = useAuth();
@@ -613,6 +619,17 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                   <Repeat2 className="h-4 w-4" />
                   Copy link
                 </button>
+                <button
+                  onClick={() => {
+                    setShareImageOpen(true);
+                    setShowShareMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                  aria-label="Share as image"
+                >
+                  <Camera className="h-4 w-4" />
+                  Share as Image
+                </button>
                 {authType === 'hive' &&
                   sportsbite.source !== 'soft' &&
                   hiveUser?.username !== sportsbite.author && (
@@ -666,6 +683,17 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           permlink={sportsbite.permlink}
           source={sportsbite.source}
         />
+      )}
+
+      {shareImageOpen && (
+        <Suspense fallback={null}>
+          <ShareSportsbiteModal
+            sportsbite={sportsbite}
+            biteText={biteText}
+            isOpen={shareImageOpen}
+            onClose={() => setShareImageOpen(false)}
+          />
+        </Suspense>
       )}
     </article>
   );
