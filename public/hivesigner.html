@@ -105,7 +105,7 @@
 
           // Notify opener if available (desktop popup flow).
           if (window.opener && typeof window.opener.postMessage === 'function') {
-            window.opener.postMessage({ source: 'hivesigner-callback', success: true, username }, window.location.origin);
+            window.opener.postMessage({ source: 'hivesigner-callback', success: true, username, accessToken: accessToken, expiryTimestamp: expiryTimestamp }, window.location.origin);
           }
 
           document.getElementById('status').textContent = 'Login information saved. Redirecting\u2026';

@@ -122,6 +122,20 @@ export function hivesignerLogin(): Promise<WalletLoginOutcome> {
       cleanup();
 
       if (data.success && data.username) {
+        // Store the OAuth token in the opener's sessionStorage so that
+        // loginWithWallet → getHivesignerToken() can find it for server verification.
+        // The popup's sessionStorage is isolated and inaccessible from the opener.
+        if (data.accessToken) {
+          try {
+            sessionStorage.setItem(LS_TOKEN, data.accessToken);
+            sessionStorage.setItem(LS_USERNAME, data.username);
+            if (data.expiryTimestamp) {
+              sessionStorage.setItem(LS_EXPIRY, String(data.expiryTimestamp));
+            }
+          } catch {
+            // sessionStorage unavailable
+          }
+        }
         resolve({ success: true, username: data.username, provider: 'hivesigner' });
       } else {
         resolve({
