@@ -138,6 +138,8 @@ const DEFAULT_CONFIG = {
     'frameborder',
     'allowfullscreen',
     'loading',
+    'data-tiktok-video',
+    'data-tiktok-user',
   ],
   // Allow data: URLs for images (base64 embedded)
   ALLOW_DATA_ATTR: false,
@@ -414,10 +416,10 @@ export function sanitizePostContent(content: string): string {
       /(?<!=["'])(https?:\/\/[^\s<>"]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s<>"]*)?)/gi,
       '<img src="$1" class="max-w-full h-auto rounded-lg shadow-md my-4" loading="lazy" />'
     )
-    // Convert bare TikTok video URLs to iframe embeds
+    // Convert bare TikTok video URLs to placeholder divs (hydrated client-side by TikTokEmbed)
     .replace(
-      /(?<!=["'])https?:\/\/(?:www\.)?tiktok\.com\/@[\w.-]+\/video\/(\d+)(?:\?[^\s<>"]*)?\s*/g,
-      '<div class="tiktok-embed my-3"><iframe src="https://www.tiktok.com/embed/v2/$1" class="tiktok-iframe" allowfullscreen loading="lazy"></iframe></div>'
+      /(?<!=["'])https?:\/\/(?:www\.)?tiktok\.com\/@([\w.-]+)\/video\/(\d+)(?:\?[^\s<>"]*)?\s*/g,
+      '<div data-tiktok-video="$2" data-tiktok-user="$1" class="tiktok-placeholder my-3"></div>'
     )
     // Convert markdown links to HTML [text](url)
     .replace(

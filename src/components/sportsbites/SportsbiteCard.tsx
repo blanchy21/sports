@@ -54,6 +54,7 @@ import { BadgeInline } from '@/components/badges/BadgeInline';
 import { useUserRank } from '@/lib/react-query/queries/useUserBadges';
 import { QuickPoll } from '@/components/sportsbites/QuickPoll';
 import { TipButton } from '@/components/sportsbites/TipButton';
+import { TikTokEmbed } from '@/components/embeds/TikTokEmbed';
 
 interface SportsbiteCardProps {
   sportsbite: Sportsbite;
@@ -111,6 +112,17 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
     () => linkifyHashtags(proxyImagesInContent(sanitizePostContent(biteText))),
     [biteText]
   );
+
+  const tiktokVideos = React.useMemo(() => {
+    const results: { videoId: string; username: string }[] = [];
+    const re = /https?:\/\/(?:www\.)?tiktok\.com\/@([\w.-]+)\/video\/(\d+)/g;
+    let match = re.exec(sportsbite.body);
+    while (match !== null) {
+      results.push({ username: match[1], videoId: match[2] });
+      match = re.exec(sportsbite.body);
+    }
+    return results;
+  }, [sportsbite.body]);
 
   const translatedHtml = React.useMemo(
     () =>
@@ -442,6 +454,10 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             __html: translatedHtml && !showOriginal ? translatedHtml : biteHtml,
           }}
         />
+
+        {tiktokVideos.map((tt) => (
+          <TikTokEmbed key={tt.videoId} videoId={tt.videoId} username={tt.username} />
+        ))}
 
         {translatedText ? (
           <button
