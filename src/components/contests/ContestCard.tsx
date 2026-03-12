@@ -201,8 +201,14 @@ export const ContestCard = React.memo(function ContestCard({
                 Entry Fee
               </div>
               <div className="text-sm font-bold leading-tight">
-                {contest.entryFee}{' '}
-                <span className="text-xs font-normal text-muted-foreground">MEDALS</span>
+                {contest.entryFee > 0 ? (
+                  <>
+                    {contest.entryFee}{' '}
+                    <span className="text-xs font-normal text-muted-foreground">MEDALS</span>
+                  </>
+                ) : (
+                  <span className="text-green-600 dark:text-green-400">Free</span>
+                )}
               </div>
             </div>
           </div>

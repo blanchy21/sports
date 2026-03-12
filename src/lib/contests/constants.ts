@@ -22,8 +22,8 @@ export const CONTEST_CONFIG = {
     THIRD: 0.15,
   },
 
-  /** Entry fee limits in MEDALS */
-  MIN_ENTRY_FEE: 10,
+  /** Entry fee limits in MEDALS (0 = free entry) */
+  MIN_ENTRY_FEE: 0,
   MAX_ENTRY_FEE: 100000,
 
   /** Platform fee destination account */
