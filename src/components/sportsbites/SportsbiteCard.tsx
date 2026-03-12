@@ -15,6 +15,7 @@ import {
   Users,
   Coins,
   Camera,
+  Languages,
 } from 'lucide-react';
 
 const ShareSportsbiteModal = React.lazy(() =>
@@ -29,6 +30,7 @@ import { useToast, toast } from '@/components/core/Toast';
 import { useUserProfileCard } from '@/lib/react-query/queries/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { useTranslate } from '@/hooks/useTranslate';
 import { cn, formatDate } from '@/lib/utils/client';
 import { sportsbiteToBookmarkable } from '@/lib/utils/bookmark-helpers';
 import { extractMediaFromBody } from '@/lib/hive-workerbee/shared';
@@ -86,6 +88,14 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const { broadcast } = useBroadcast();
+  const {
+    translate,
+    translatedText,
+    isTranslating,
+    showOriginal,
+    toggleOriginal,
+    error: translateError,
+  } = useTranslate();
 
   const { profile: authorProfile, isLoading: isProfileLoading } = useUserProfileCard(
     sportsbite.author
@@ -100,6 +110,14 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const biteHtml = React.useMemo(
     () => linkifyHashtags(proxyImagesInContent(sanitizePostContent(biteText))),
     [biteText]
+  );
+
+  const translatedHtml = React.useMemo(
+    () =>
+      translatedText
+        ? linkifyHashtags(proxyImagesInContent(sanitizePostContent(translatedText)))
+        : null,
+    [translatedText]
   );
 
   const bookmarkPost = React.useMemo(
@@ -420,8 +438,31 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       <div className="py-2 sm:pl-[60px]">
         <div
           className="prose prose-sm max-w-none break-words text-[15px] leading-relaxed dark:prose-invert [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-          dangerouslySetInnerHTML={{ __html: biteHtml }}
+          dangerouslySetInnerHTML={{
+            __html: translatedHtml && !showOriginal ? translatedHtml : biteHtml,
+          }}
         />
+
+        {translatedText ? (
+          <button
+            onClick={toggleOriginal}
+            className="mt-1 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
+          >
+            <Languages className="h-3 w-3" />
+            {showOriginal ? 'Show translation' : 'Show original'}
+          </button>
+        ) : (
+          <button
+            onClick={() => translate(biteText)}
+            disabled={isTranslating}
+            className="mt-1 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
+          >
+            <Languages className="h-3 w-3" />
+            {isTranslating ? 'Translating...' : 'Translate'}
+          </button>
+        )}
+
+        {translateError && <p className="mt-1 text-xs text-destructive">{translateError}</p>}
 
         {sportsbite.poll && (
           <QuickPoll
