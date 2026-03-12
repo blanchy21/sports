@@ -17,7 +17,7 @@ import type { HiveOperation } from '@/types/hive-operations';
 // ---------------------------------------------------------------------------
 
 const HIVESIGNER_APP = 'sportsblock';
-const HIVESIGNER_SCOPES = ['login', 'vote', 'comment', 'post'];
+const HIVESIGNER_SCOPES = ['login', 'vote', 'comment', 'post', 'custom_json'];
 
 function getCallbackURL(): string {
   if (typeof window === 'undefined') return '';
@@ -171,7 +171,98 @@ export function hivesignerLogin(): Promise<WalletLoginOutcome> {
 }
 
 // ---------------------------------------------------------------------------
-// Broadcast — POST to HiveSigner API with OAuth token
+// Sign via popup — for active-key operations (e.g. Hive-Engine transfers)
+//
+// HiveSigner OAuth tokens only grant posting authority.  Active-key ops must
+// be approved interactively on hivesigner.com via a deep-link URL.
+// ---------------------------------------------------------------------------
+
+function buildSignURL(operation: HiveOperation): string {
+  const [opType, opBody] = operation;
+  const params = new URLSearchParams();
+
+  if (opType === 'custom_json') {
+    const body = opBody as Record<string, unknown>;
+    if (body.required_auths) params.set('required_auths', JSON.stringify(body.required_auths));
+    if (body.required_posting_auths)
+      params.set('required_posting_auths', JSON.stringify(body.required_posting_auths));
+    if (body.id) params.set('id', String(body.id));
+    if (body.json) params.set('json', String(body.json));
+  }
+
+  const callbackURL = `${window.location.origin}/hivesigner-sign.html`;
+  params.set('redirect_uri', callbackURL);
+
+  return `https://hivesigner.com/sign/${opType}?${params.toString()}`;
+}
+
+export function hivesignerSignPopup(operations: HiveOperation[]): Promise<BroadcastResult> {
+  return new Promise((resolve) => {
+    if (operations.length === 0) {
+      resolve({ success: false, error: 'No operations to sign' });
+      return;
+    }
+
+    // HiveSigner sign URL supports a single operation at a time
+    const url = buildSignURL(operations[0]);
+
+    const width = 600;
+    const height = 700;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    const popup = window.open(
+      url,
+      'hivesigner-sign',
+      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+    );
+
+    if (!popup) {
+      resolve({
+        success: false,
+        error: 'Could not open HiveSigner popup. Please allow popups for this site.',
+      });
+      return;
+    }
+
+    let resolved = false;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (!data || data.source !== 'hivesigner-sign-callback') return;
+
+      cleanup();
+
+      if (data.success && data.transactionId) {
+        resolve({ success: true, transactionId: data.transactionId });
+      } else {
+        resolve({
+          success: false,
+          error: data.error || 'HiveSigner signing was cancelled or failed',
+        });
+      }
+    };
+
+    const pollInterval = setInterval(() => {
+      if (popup.closed && !resolved) {
+        cleanup();
+        resolve({ success: false, error: 'HiveSigner signing popup was closed' });
+      }
+    }, 1000);
+
+    function cleanup() {
+      if (resolved) return;
+      resolved = true;
+      clearInterval(pollInterval);
+      window.removeEventListener('message', handleMessage);
+    }
+
+    window.addEventListener('message', handleMessage);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Broadcast — POST to HiveSigner API with OAuth token (posting-key ops only)
 // ---------------------------------------------------------------------------
 
 export async function hivesignerBroadcast(operations: HiveOperation[]): Promise<BroadcastResult> {
