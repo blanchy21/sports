@@ -80,9 +80,10 @@ export const authOptions: NextAuthOptions = {
             token.hiveUsername = fields.hiveUsername;
           }
           // Progressive fields — only advance forward, never regress from stale cache
-          token.keysDownloaded = fields.keysDownloaded || (token.keysDownloaded as boolean);
+          token.keysDownloaded =
+            fields.keysDownloaded === true || (token.keysDownloaded as boolean) === true;
           token.onboardingCompleted =
-            fields.onboardingCompleted || (token.onboardingCompleted as boolean);
+            fields.onboardingCompleted === true || (token.onboardingCompleted as boolean) === true;
         }
       }
 
