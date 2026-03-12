@@ -51,7 +51,8 @@ function getDOMPurify(): DOMPurifyInstance {
             hostname === 'player.vimeo.com' ||
             hostname === '3speak.tv' ||
             hostname === 'www.3speak.tv' ||
-            hostname.endsWith('.3speak.tv');
+            hostname.endsWith('.3speak.tv') ||
+            hostname === 'www.tiktok.com';
           if (!allowed) {
             node.removeAttribute('src');
           }
@@ -413,6 +414,11 @@ export function sanitizePostContent(content: string): string {
       /(?<!=["'])(https?:\/\/[^\s<>"]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s<>"]*)?)/gi,
       '<img src="$1" class="max-w-full h-auto rounded-lg shadow-md my-4" loading="lazy" />'
     )
+    // Convert bare TikTok video URLs to iframe embeds
+    .replace(
+      /(?<!=["'])https?:\/\/(?:www\.)?tiktok\.com\/@[\w.-]+\/video\/(\d+)(?:\?[^\s<>"]*)?\s*/g,
+      '<div class="tiktok-embed my-3"><iframe src="https://www.tiktok.com/embed/v2/$1" class="tiktok-iframe" allowfullscreen loading="lazy"></iframe></div>'
+    )
     // Convert markdown links to HTML [text](url)
     .replace(
       /\[([^\]]+)\]\(([^)]+)\)/g,
@@ -507,7 +513,7 @@ export function hasSuspiciousContent(content: string): boolean {
     /javascript:/i,
     /on\w+\s*=/i, // onclick, onerror, etc.
     /data:/i,
-    /<iframe[^>]*src\s*=\s*["'](?!https:\/\/(www\.)?(youtube|vimeo|3speak))/i,
+    /<iframe[^>]*src\s*=\s*["'](?!https:\/\/(www\.)?(youtube|vimeo|3speak|tiktok))/i,
   ];
 
   return suspiciousPatterns.some((pattern) => pattern.test(content));
