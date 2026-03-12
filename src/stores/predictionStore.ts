@@ -43,6 +43,7 @@ export const usePredictionStore = create<PredictionState & PredictionActions>()(
         set((state) => {
           state.stakeModalOpen = false;
           state.stakeOutcomeId = null;
+          state.isStaking = false;
         }),
 
       openSettlementPanel: (prediction) =>
@@ -73,9 +74,11 @@ export const usePredictionStore = create<PredictionState & PredictionActions>()(
 // Granular selectors
 export const useSelectedPrediction = () => usePredictionStore((s) => s.selectedPrediction);
 export const useStakeModalState = () =>
-  usePredictionStore(useShallow((s) => ({
-    isOpen: s.stakeModalOpen,
-    outcomeId: s.stakeOutcomeId,
-  })));
+  usePredictionStore(
+    useShallow((s) => ({
+      isOpen: s.stakeModalOpen,
+      outcomeId: s.stakeOutcomeId,
+    }))
+  );
 export const useSettlementPanelOpen = () => usePredictionStore((s) => s.settlementPanelOpen);
 export const useIsStaking = () => usePredictionStore((s) => s.isStaking);
