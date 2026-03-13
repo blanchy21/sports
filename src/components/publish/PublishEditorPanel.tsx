@@ -4,30 +4,38 @@ import React from 'react';
 import { AlertCircle } from 'lucide-react';
 import { SPORT_CATEGORIES } from '@/types';
 import { cn } from '@/lib/utils/client';
-import { formatReadTime } from '@/lib/utils/formatting';
-import { EditorToolbar } from '@/components/publish/EditorToolbar';
+import { EditorStatusBar } from '@/components/publish/EditorStatusBar';
+import { CoverImageUpload } from '@/components/publish/CoverImageUpload';
 import { TagInput } from '@/components/publish/TagInput';
 import { AdvancedOptions } from '@/components/publish/AdvancedOptions';
 import { UpgradeIncentiveBanner } from '@/components/upgrade/UpgradeIncentive';
 import type { usePublishForm } from '@/hooks/usePublishForm';
-import type { useEditorActions } from '@/hooks/useEditorActions';
+
+export type ViewMode = 'editor' | 'split' | 'preview';
 
 type FormState = ReturnType<typeof usePublishForm>;
-type EditorActions = ReturnType<typeof useEditorActions>;
 
 interface PublishEditorPanelProps {
   form: FormState;
-  editor: EditorActions;
+  viewMode: ViewMode;
 }
 
-export function PublishEditorPanel({ form, editor }: PublishEditorPanelProps) {
+export function PublishEditorPanel({ form, viewMode }: PublishEditorPanelProps) {
   return (
     <div
       className={cn(
-        'flex w-full flex-col overflow-hidden border-b md:w-3/5 md:border-b-0 md:border-r',
-        form.showPreview && 'hidden md:flex'
+        'relative z-10 flex flex-col overflow-hidden border-b bg-card/50 md:border-b-0 md:border-r',
+        viewMode === 'preview' ? 'hidden' : 'flex',
+        viewMode === 'editor' ? 'w-full' : 'w-full md:w-1/2'
       )}
     >
+      {/* Cover Image Upload */}
+      <CoverImageUpload
+        coverImage={form.coverImage}
+        onCoverImageChange={form.setCoverImage}
+        username={form.hiveUser?.username || form.user?.username}
+      />
+
       {/* Title Input */}
       <div className="border-b px-4 py-3 sm:px-6 sm:py-4">
         <input
@@ -39,21 +47,8 @@ export function PublishEditorPanel({ form, editor }: PublishEditorPanelProps) {
         />
       </div>
 
-      {/* Single scrollable area for toolbar + editor + fields */}
+      {/* Scrollable editor + fields */}
       <div className="flex-1 overflow-auto">
-        {/* Editor Toolbar - sticky within scroll context */}
-        <div className="sticky top-0 z-10">
-          <EditorToolbar
-            onFormat={editor.handleFormat}
-            onInsertImage={editor.handleInsertImage}
-            onInsertLink={editor.handleInsertLink}
-            onEmoji={editor.handleEmoji}
-            onInsertGif={editor.handleInsertGif}
-            onUndo={editor.handleUndo}
-            onRedo={editor.handleRedo}
-          />
-        </div>
-
         {/* Editor Textarea - auto-grows with content */}
         <div className="px-4 py-3 sm:px-6 sm:py-4">
           <textarea
@@ -61,23 +56,10 @@ export function PublishEditorPanel({ form, editor }: PublishEditorPanelProps) {
             value={form.content}
             onChange={(e) => form.setContent(e.target.value)}
             placeholder="Write your post using Markdown..."
-            className="min-h-[60vh] w-full resize-none border-none bg-transparent font-mono text-sm leading-relaxed outline-none"
+            className="min-h-[60vh] w-full resize-none border-none bg-transparent text-base leading-relaxed outline-none"
             style={{ overflow: 'hidden' }}
           />
         </div>
-
-        {/* Word Count */}
-        {form.content.trim() &&
-          (() => {
-            const wordCount = form.content.trim().split(/\s+/).filter(Boolean).length;
-            return (
-              <div className="border-t px-4 py-1.5 sm:px-6">
-                <span className="text-xs text-muted-foreground">
-                  {wordCount} {wordCount === 1 ? 'word' : 'words'} · {formatReadTime(wordCount)}
-                </span>
-              </div>
-            );
-          })()}
 
         {/* Bottom Fields */}
         <div className="space-y-4 border-t px-4 py-3 sm:px-6 sm:py-4">
@@ -134,6 +116,7 @@ export function PublishEditorPanel({ form, editor }: PublishEditorPanelProps) {
             onChange={form.setTags}
             maxTags={5}
             recentTags={form.recentTags}
+            selectedSport={form.selectedSport}
             placeholder="Add tags..."
           />
 
@@ -217,6 +200,9 @@ export function PublishEditorPanel({ form, editor }: PublishEditorPanelProps) {
           )}
         </div>
       </div>
+
+      {/* Status Bar */}
+      <EditorStatusBar content={form.content} isDraftSaved={form.isDraftSaved} />
     </div>
   );
 }

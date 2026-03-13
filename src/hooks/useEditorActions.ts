@@ -90,11 +90,40 @@ export function useEditorActions({
         case 'h3':
           insertAtCursor('\n### ');
           break;
+        case 'h4':
+          insertAtCursor('\n#### ');
+          break;
+        case 'h5':
+          insertAtCursor('\n##### ');
+          break;
+        case 'h6':
+          insertAtCursor('\n###### ');
+          break;
         case 'bulletList':
           insertAtCursor('\n- ');
           break;
         case 'numberedList':
           insertAtCursor('\n1. ');
+          break;
+        case 'alignLeft':
+          insertMarkdown('<div style="text-align: left">', '</div>', 'left-aligned text');
+          break;
+        case 'alignCenter':
+          insertMarkdown('<center>', '</center>', 'centered text');
+          break;
+        case 'alignRight':
+          insertMarkdown('<div style="text-align: right">', '</div>', 'right-aligned text');
+          break;
+        case 'alignJustify':
+          insertMarkdown('<div style="text-align: justify">', '</div>', 'justified text');
+          break;
+        case 'table':
+          insertAtCursor(
+            '\n| Header 1 | Header 2 | Header 3 |\n| --- | --- | --- |\n| Cell 1 | Cell 2 | Cell 3 |\n| Cell 4 | Cell 5 | Cell 6 |\n'
+          );
+          break;
+        case 'divider':
+          insertAtCursor('\n\n---\n\n');
           break;
       }
     },
