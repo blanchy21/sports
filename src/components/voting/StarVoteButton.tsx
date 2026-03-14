@@ -121,10 +121,10 @@ export const StarVoteButton: React.FC<StarVoteButtonProps> = ({
                       'hover:fill-warning/80 hover:text-warning/80',
                     ],
                     starState === 'empty' && [
-                      'text-muted-foreground/60',
+                      'text-muted-foreground',
                       'hover:fill-warning/60 hover:text-warning/60',
                     ],
-                    starState === 'disabled' && 'text-muted-foreground/50'
+                    starState === 'disabled' && 'text-muted-foreground/70'
                   )}
                 />
               )}
