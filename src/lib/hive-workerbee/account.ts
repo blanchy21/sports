@@ -929,7 +929,7 @@ export async function getAccountHistory(
     // Get account history using Hive API
     const history = (await makeHiveApiCall('condenser_api', 'get_account_history', [
       username,
-      start || -1,
+      start ?? -1,
       limit,
     ])) as Array<[number, HiveTransaction]>;
 
@@ -1023,7 +1023,10 @@ export async function getRecentOperations(
   try {
     debugLog(`[WorkerBee getRecentOperations] Fetching recent operations for: ${username}`);
 
-    const operations = await getAccountHistory(username, limit, start);
+    // Fetch more raw operations than requested since we filter for monetary-only.
+    // Most accounts have ~10-20% monetary operations, so fetch 10x to fill the page.
+    const fetchLimit = Math.min(limit * 10, 1000);
+    const operations = await getAccountHistory(username, fetchLimit, start);
     if (!operations) return null;
 
     // Define monetary operation types (transactions that involve actual money/assets changes)
@@ -1148,7 +1151,7 @@ export async function getRecentOperations(
             description = `Author reward: ${op.operation.hbd_payout}, ${op.operation.hive_payout}`;
             break;
           case 'comment_reward':
-            description = `Comment reward: ${op.operation.hbd_payout}, ${op.operation.hive_payout}`;
+            description = `Comment reward: ${op.operation.total_payout_value || op.operation.payout || 'unknown'}`;
             break;
           case 'escrow_transfer':
             description = `Escrow transfer: ${op.operation.amount}`;
@@ -1173,10 +1176,13 @@ export async function getRecentOperations(
       })
     );
 
+    // Trim to the requested limit (we over-fetched raw operations to ensure enough monetary ones)
+    const trimmed = processedOperations.slice(0, limit);
+
     debugLog(
-      `[WorkerBee getRecentOperations] Processed ${processedOperations.length} monetary operations for ${username}`
+      `[WorkerBee getRecentOperations] Processed ${trimmed.length} monetary operations (from ${processedOperations.length} found) for ${username}`
     );
-    return processedOperations;
+    return trimmed;
   } catch (error) {
     logError(
       'Error fetching recent operations with WorkerBee',
