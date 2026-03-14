@@ -370,32 +370,35 @@ export const RightSidebar: React.FC = () => {
         <MyCommunitiesWidget maxItems={5} className="rounded-lg border bg-card p-4" />
 
         {/* Stats Card */}
-        <div className="rounded-lg bg-gradient-to-r from-primary via-bright-cobalt to-accent p-4 text-white">
+        <div className="rounded-lg border bg-card p-4">
           <div className="mb-3 flex items-center space-x-2">
-            <Trophy className="h-5 w-5" />
+            <Trophy className="h-5 w-5 text-primary" />
             <h3 className="text-base font-semibold">Community Stats</h3>
           </div>
           {isLoading ? (
-            <div className="space-y-2">
-              <div className="h-4 animate-pulse rounded bg-white/20"></div>
-              <div className="h-4 animate-pulse rounded bg-white/20"></div>
-              <div className="h-4 animate-pulse rounded bg-white/20"></div>
-            </div>
+            <LoadingSkeleton />
           ) : error ? (
-            <div className="text-sm opacity-75">Unable to load stats</div>
+            <div className="flex items-center space-x-2 text-muted-foreground">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">Unable to load stats</span>
+            </div>
           ) : (
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm opacity-90">Total Posts (7d)</span>
-                <span className="font-bold">{communityStats.totalPosts.toLocaleString()}</span>
+                <span className="text-sm text-muted-foreground">Total Posts (7d)</span>
+                <span className="text-sm font-bold">
+                  {communityStats.totalPosts.toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm opacity-90">Active Authors</span>
-                <span className="font-bold">{communityStats.totalAuthors.toLocaleString()}</span>
+                <span className="text-sm text-muted-foreground">Active Authors</span>
+                <span className="text-sm font-bold">
+                  {communityStats.totalAuthors.toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm opacity-90">Total Rewards</span>
-                <span className="font-bold">${communityStats.totalRewards.toFixed(2)}</span>
+                <span className="text-sm text-muted-foreground">Total Rewards</span>
+                <span className="text-sm font-bold">${communityStats.totalRewards.toFixed(2)}</span>
               </div>
             </div>
           )}
