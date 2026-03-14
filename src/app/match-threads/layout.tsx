@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { MainLayout } from '@/components/layout/MainLayout';
 
 export const metadata: Metadata = {
   title: 'Match Threads | Sportsblock',
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <MainLayout>{children}</MainLayout>;
 }

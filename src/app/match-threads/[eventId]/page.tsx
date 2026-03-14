@@ -80,7 +80,7 @@ export default async function MatchThreadDetailPage({ params }: PageProps) {
 
   if (!thread) {
     return (
-      <div className="mx-auto max-w-3xl p-4 sm:p-6">
+      <div className="mx-auto max-w-3xl">
         <Link
           href="/match-threads"
           className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
