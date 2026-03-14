@@ -32,8 +32,8 @@ export const HiveBalanceCard: React.FC<HiveBalanceCardProps> = ({
   <div className="rounded-lg border bg-card p-6">
     <div className="mb-4 flex items-center justify-between">
       <div className="flex items-center space-x-3">
-        <div className="rounded-lg bg-accent/10 p-3">
-          <Coins className="h-6 w-6 text-accent" />
+        <div className="rounded-lg bg-primary/10 p-3">
+          <Coins className="h-6 w-6 text-primary" />
         </div>
         <div>
           <h3 className="text-lg font-semibold">HIVE</h3>

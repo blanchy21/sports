@@ -27,8 +27,8 @@ export const HBDBalanceCard: React.FC<HBDBalanceCardProps> = ({
   <div className="rounded-lg border bg-card p-6">
     <div className="mb-4 flex items-center justify-between">
       <div className="flex items-center space-x-3">
-        <div className="rounded-lg bg-primary/10 p-3">
-          <DollarSign className="h-6 w-6 text-primary" />
+        <div className="rounded-lg bg-success/10 p-3">
+          <DollarSign className="h-6 w-6 text-success" />
         </div>
         <div>
           <h3 className="text-lg font-semibold">HBD</h3>

@@ -25,7 +25,7 @@ export const MedalsTokenSection: React.FC<MedalsTokenSectionProps> = ({
           <p className="text-sm text-muted-foreground">Sportsblock Platform Token • Hive Engine</p>
         </div>
       </div>
-      <div className="rounded bg-warning/10 px-2 py-1 text-xs text-warning">Preview</div>
+      <div className="rounded bg-muted px-2 py-1 text-xs text-muted-foreground">Preview</div>
     </div>
 
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -38,7 +38,7 @@ export const MedalsTokenSection: React.FC<MedalsTokenSectionProps> = ({
           <Button
             variant="outline"
             onClick={onSwapClick}
-            className="flex-1 border-warning/30 text-warning hover:bg-warning/10"
+            className="flex-1 border-primary/30 text-primary hover:bg-primary/10"
           >
             <ArrowDownUp className="mr-2 h-4 w-4" />
             Buy MEDALS

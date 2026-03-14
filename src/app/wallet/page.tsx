@@ -212,7 +212,7 @@ export default function WalletPage() {
         )}
 
         {/* Total Portfolio Value */}
-        <div className="rounded-lg bg-gradient-to-r from-primary via-bright-cobalt to-accent p-6 text-white">
+        <div className="rounded-lg bg-gradient-to-br from-primary to-primary/60 p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="mb-2 text-lg font-semibold">Total Portfolio Value</h3>
