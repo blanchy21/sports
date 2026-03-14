@@ -61,6 +61,9 @@ export function usePublishForm() {
   const [publishError, setPublishError] = useState<string | null>(null);
   const [rcStatus, setRcStatus] = useState<RCStatus | null>(null);
 
+  // Draft save tracking
+  const [isDraftSaved, setIsDraftSaved] = useState(true);
+
   // AI-generated image URLs for metadata disclosure
   const [aiGeneratedUrls, setAiGeneratedUrls] = useState<Set<string>>(new Set());
 
@@ -196,6 +199,13 @@ export function usePublishForm() {
     }
   }, [hiveUser, authType, checkRCStatus]);
 
+  // Mark as unsaved when content changes
+  React.useEffect(() => {
+    if (title || content) {
+      setIsDraftSaved(false);
+    }
+  }, [title, content]);
+
   // Auto-grow textarea with content
   React.useEffect(() => {
     const textarea = textareaRef.current;
@@ -249,29 +259,51 @@ export function usePublishForm() {
     searchParams,
 
     // Form state
-    title, setTitle,
-    content, setContent,
-    excerpt, setExcerpt,
-    tags, setTags,
-    selectedSport, setSelectedSport,
-    selectedCommunity, setSelectedCommunity,
-    coverImage, setCoverImage,
-    rewardsOption, setRewardsOption,
-    beneficiaries, setBeneficiaries,
+    title,
+    setTitle,
+    content,
+    setContent,
+    excerpt,
+    setExcerpt,
+    tags,
+    setTags,
+    selectedSport,
+    setSelectedSport,
+    selectedCommunity,
+    setSelectedCommunity,
+    coverImage,
+    setCoverImage,
+    rewardsOption,
+    setRewardsOption,
+    beneficiaries,
+    setBeneficiaries,
 
     // UI state
-    showPreview, setShowPreview,
-    showImageDialog, setShowImageDialog,
-    showLinkDialog, setShowLinkDialog,
-    showScheduleModal, setShowScheduleModal,
-    showAuthorityPrompt, setShowAuthorityPrompt,
-    showMenu, setShowMenu,
-    isPublishing, setIsPublishing,
-    publishError, setPublishError,
+    showPreview,
+    setShowPreview,
+    showImageDialog,
+    setShowImageDialog,
+    showLinkDialog,
+    setShowLinkDialog,
+    showScheduleModal,
+    setShowScheduleModal,
+    showAuthorityPrompt,
+    setShowAuthorityPrompt,
+    showMenu,
+    setShowMenu,
+    isPublishing,
+    setIsPublishing,
+    publishError,
+    setPublishError,
     rcStatus,
-    aiGeneratedUrls, setAiGeneratedUrls,
-    postLimitInfo, setPostLimitInfo,
-    showPostPublishedPrompt, setShowPostPublishedPrompt,
+    isDraftSaved,
+    setIsDraftSaved,
+    aiGeneratedUrls,
+    setAiGeneratedUrls,
+    postLimitInfo,
+    setPostLimitInfo,
+    showPostPublishedPrompt,
+    setShowPostPublishedPrompt,
 
     // Refs
     textareaRef,

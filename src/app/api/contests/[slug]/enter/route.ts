@@ -83,11 +83,50 @@ export const POST = createApiHandler('/api/contests/[slug]/enter', async (reques
       throw new ValidationError(`Unsupported contest type: ${contest.contestType}`);
     }
 
-    // Build the MEDALS transfer operation
     const entryFee = Number(contest.entryFee);
+
+    // Free entry — create directly, no token transfer needed
+    if (entryFee === 0) {
+      const entry = await prisma.$transaction(async (tx) => {
+        const newEntry = await tx.contestEntry.create({
+          data: {
+            contestId: contest.id,
+            username: user.username,
+            entryData: entryData || {},
+            entryFeeTxId: 'free',
+          },
+        });
+
+        await tx.contest.update({
+          where: { id: contest.id },
+          data: { entryCount: { increment: 1 } },
+        });
+
+        return newEntry;
+      });
+
+      ctx.log.info('Free contest entry created', {
+        contestId: contest.id,
+        username: user.username,
+        entryId: entry.id,
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          operation: null,
+          entryToken: null,
+          entryData,
+          contestId: contest.id,
+          entryFee: 0,
+          entryConfirmed: true,
+        },
+      });
+    }
+
+    // Paid entry — build transfer operation + sign token for confirm step
     const operation = buildEntryFeeOp(user.username, entryFee, contest.id);
 
-    // Sign entry token
     const entryToken = signEntryToken({
       contestId: contest.id,
       username: user.username,

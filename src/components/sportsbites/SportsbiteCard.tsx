@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -14,7 +14,13 @@ import {
   Trash2,
   Users,
   Coins,
+  Camera,
+  Languages,
 } from 'lucide-react';
+
+const ShareSportsbiteModal = React.lazy(() =>
+  import('./ShareSportsbiteModal').then((m) => ({ default: m.ShareSportsbiteModal }))
+);
 import { Avatar } from '@/components/core/Avatar';
 import { Button } from '@/components/core/Button';
 import { StarVoteButton } from '@/components/voting/StarVoteButton';
@@ -24,6 +30,7 @@ import { useToast, toast } from '@/components/core/Toast';
 import { useUserProfileCard } from '@/lib/react-query/queries/useUserProfile';
 import { useModal } from '@/components/modals/ModalProvider';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { useTranslate } from '@/hooks/useTranslate';
 import { cn, formatDate } from '@/lib/utils/client';
 import { sportsbiteToBookmarkable } from '@/lib/utils/bookmark-helpers';
 import { extractMediaFromBody } from '@/lib/hive-workerbee/shared';
@@ -47,6 +54,7 @@ import { BadgeInline } from '@/components/badges/BadgeInline';
 import { useUserRank } from '@/lib/react-query/queries/useUserBadges';
 import { QuickPoll } from '@/components/sportsbites/QuickPoll';
 import { TipButton } from '@/components/sportsbites/TipButton';
+import { TikTokEmbed } from '@/components/embeds/TikTokEmbed';
 
 interface SportsbiteCardProps {
   sportsbite: Sportsbite;
@@ -73,6 +81,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [shareImageOpen, setShareImageOpen] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [showReplies, setShowReplies] = useState(false);
   const { authType, hiveUser, user } = useAuth();
@@ -80,6 +89,14 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const { openModal } = useModal();
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const { broadcast } = useBroadcast();
+  const {
+    translate,
+    translatedText,
+    isTranslating,
+    showOriginal,
+    toggleOriginal,
+    error: translateError,
+  } = useTranslate();
 
   const { profile: authorProfile, isLoading: isProfileLoading } = useUserProfileCard(
     sportsbite.author
@@ -94,6 +111,25 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
   const biteHtml = React.useMemo(
     () => linkifyHashtags(proxyImagesInContent(sanitizePostContent(biteText))),
     [biteText]
+  );
+
+  const tiktokVideos = React.useMemo(() => {
+    const results: { videoId: string; username: string }[] = [];
+    const re = /https?:\/\/(?:www\.)?tiktok\.com\/@([\w.-]+)\/video\/(\d+)/g;
+    let match = re.exec(sportsbite.body);
+    while (match !== null) {
+      results.push({ username: match[1], videoId: match[2] });
+      match = re.exec(sportsbite.body);
+    }
+    return results;
+  }, [sportsbite.body]);
+
+  const translatedHtml = React.useMemo(
+    () =>
+      translatedText
+        ? linkifyHashtags(proxyImagesInContent(sanitizePostContent(translatedText)))
+        : null,
+    [translatedText]
   );
 
   const bookmarkPost = React.useMemo(
@@ -414,8 +450,35 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       <div className="py-2 sm:pl-[60px]">
         <div
           className="prose prose-sm max-w-none break-words text-[15px] leading-relaxed dark:prose-invert [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-          dangerouslySetInnerHTML={{ __html: biteHtml }}
+          dangerouslySetInnerHTML={{
+            __html: translatedHtml && !showOriginal ? translatedHtml : biteHtml,
+          }}
         />
+
+        {tiktokVideos.map((tt) => (
+          <TikTokEmbed key={tt.videoId} videoId={tt.videoId} username={tt.username} />
+        ))}
+
+        {translatedText ? (
+          <button
+            onClick={toggleOriginal}
+            className="mt-1 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
+          >
+            <Languages className="h-3 w-3" />
+            {showOriginal ? 'Show translation' : 'Show original'}
+          </button>
+        ) : (
+          <button
+            onClick={() => translate(biteText)}
+            disabled={isTranslating}
+            className="mt-1 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
+          >
+            <Languages className="h-3 w-3" />
+            {isTranslating ? 'Translating...' : 'Translate'}
+          </button>
+        )}
+
+        {translateError && <p className="mt-1 text-xs text-destructive">{translateError}</p>}
 
         {sportsbite.poll && (
           <QuickPoll
@@ -613,6 +676,17 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                   <Repeat2 className="h-4 w-4" />
                   Copy link
                 </button>
+                <button
+                  onClick={() => {
+                    setShareImageOpen(true);
+                    setShowShareMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                  aria-label="Share as image"
+                >
+                  <Camera className="h-4 w-4" />
+                  Share as Image
+                </button>
                 {authType === 'hive' &&
                   sportsbite.source !== 'soft' &&
                   hiveUser?.username !== sportsbite.author && (
@@ -666,6 +740,17 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           permlink={sportsbite.permlink}
           source={sportsbite.source}
         />
+      )}
+
+      {shareImageOpen && (
+        <Suspense fallback={null}>
+          <ShareSportsbiteModal
+            sportsbite={sportsbite}
+            biteText={biteText}
+            isOpen={shareImageOpen}
+            onClose={() => setShareImageOpen(false)}
+          />
+        </Suspense>
       )}
     </article>
   );

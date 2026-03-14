@@ -66,8 +66,8 @@ export const CommentVoteButton: React.FC<CommentVoteButtonProps> = ({
         className={cn(
           'flex h-6 items-center space-x-1 px-2 text-xs',
           isVoted
-            ? 'bg-accent/10 text-accent hover:bg-accent/20 hover:text-accent/80'
-            : 'text-muted-foreground hover:text-accent',
+            ? 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary/80'
+            : 'text-muted-foreground hover:text-primary',
           isDisabled && 'cursor-not-allowed opacity-50'
         )}
         title={

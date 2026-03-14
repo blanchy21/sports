@@ -51,7 +51,8 @@ function getDOMPurify(): DOMPurifyInstance {
             hostname === 'player.vimeo.com' ||
             hostname === '3speak.tv' ||
             hostname === 'www.3speak.tv' ||
-            hostname.endsWith('.3speak.tv');
+            hostname.endsWith('.3speak.tv') ||
+            hostname === 'www.tiktok.com';
           if (!allowed) {
             node.removeAttribute('src');
           }
@@ -137,6 +138,8 @@ const DEFAULT_CONFIG = {
     'frameborder',
     'allowfullscreen',
     'loading',
+    'data-tiktok-video',
+    'data-tiktok-user',
   ],
   // Allow data: URLs for images (base64 embedded)
   ALLOW_DATA_ATTR: false,
@@ -289,6 +292,85 @@ function convertMarkdownTables(content: string): string {
 }
 
 /**
+ * Extract fenced code blocks and replace with placeholders.
+ * Protects code content from being processed by inline markdown conversions.
+ */
+function extractCodeBlocks(content: string): { processed: string; blocks: string[] } {
+  const blocks: string[] = [];
+  const processed = content.replace(/^```(\w*)\n([\s\S]*?)^```\s*$/gm, (_, _lang, code) => {
+    const index = blocks.length;
+    blocks.push(`<pre><code>${escapeHtml(code.replace(/\n$/, ''))}</code></pre>`);
+    return `\x00CODE${index}\x00`;
+  });
+  return { processed, blocks };
+}
+
+/**
+ * Restore code block placeholders with their HTML.
+ */
+function restoreCodeBlocks(content: string, blocks: string[]): string {
+  return content.replace(/\x00CODE(\d+)\x00/g, (_, i) => blocks[parseInt(i)]);
+}
+
+/**
+ * Convert blockquote lines (> text) to <blockquote> HTML.
+ * Groups consecutive > lines into a single blockquote.
+ */
+function convertBlockquotes(content: string): string {
+  const lines = content.split('\n');
+  const result: string[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (/^>\s?/.test(lines[i])) {
+      const quoteLines: string[] = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        quoteLines.push(lines[i].replace(/^>\s?/, ''));
+        i++;
+      }
+      result.push(`<blockquote>${quoteLines.join('<br>')}</blockquote>`);
+    } else {
+      result.push(lines[i]);
+      i++;
+    }
+  }
+  return result.join('\n');
+}
+
+/**
+ * Convert markdown list items to HTML lists.
+ * Handles unordered (- item, * item) and ordered (1. item) lists.
+ * Groups consecutive list items into a single list element.
+ */
+function convertLists(content: string): string {
+  const lines = content.split('\n');
+  const result: string[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (/^[-*]\s+/.test(lines[i])) {
+      const items: string[] = [];
+      while (i < lines.length && /^[-*]\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^[-*]\s+/, ''));
+        i++;
+      }
+      result.push(`<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`);
+      continue;
+    }
+    if (/^\d+\.\s+/.test(lines[i])) {
+      const items: string[] = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\d+\.\s+/, ''));
+        i++;
+      }
+      result.push(`<ol>${items.map((item) => `<li>${item}</li>`).join('')}</ol>`);
+      continue;
+    }
+    result.push(lines[i]);
+    i++;
+  }
+  return result.join('\n');
+}
+
+/**
  * Sanitize and transform markdown-style content to HTML
  *
  * This handles common Hive post patterns like:
@@ -315,17 +397,29 @@ export function sanitizePostContent(content: string): string {
     .replace(/<\/center>/gi, '</div>')
     // Convert Hive/Steemit pull-left/pull-right classes to Tailwind float equivalents
     .replace(/class="pull-right"/gi, 'class="float-right ml-4 mb-2 max-w-[200px]"')
-    .replace(/class="pull-left"/gi, 'class="float-left mr-4 mb-2 max-w-[200px]"')
+    .replace(/class="pull-left"/gi, 'class="float-left mr-4 mb-2 max-w-[200px]"');
+
+  // Extract fenced code blocks to protect content from inline processing
+  const { processed: withoutCode, blocks: codeBlocks } = extractCodeBlocks(processed);
+  processed = withoutCode;
+
+  processed = processed
     // Convert markdown images to HTML first (before bare URL detection)
     .replace(
       /!\[([^\]]*)\]\(([^)]+)\)/g,
-      (_, alt, url) => `<img src="${url.replace(/"/g, '&quot;')}" alt="${escapeHtml(alt)}" class="max-w-full h-auto rounded-lg shadow-md my-4" loading="lazy" />`
+      (_, alt, url) =>
+        `<img src="${url.replace(/"/g, '&quot;')}" alt="${escapeHtml(alt)}" class="max-w-full h-auto rounded-lg shadow-md my-4" loading="lazy" />`
     )
     // Convert bare image URLs to img tags (common in Hive posts).
     // Matches URLs ending in image extensions that are NOT already inside an attribute
     .replace(
       /(?<!=["'])(https?:\/\/[^\s<>"]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s<>"]*)?)/gi,
       '<img src="$1" class="max-w-full h-auto rounded-lg shadow-md my-4" loading="lazy" />'
+    )
+    // Convert bare TikTok video URLs to placeholder divs (hydrated client-side by TikTokEmbed)
+    .replace(
+      /(?<!=["'])https?:\/\/(?:www\.)?tiktok\.com\/@([\w.-]+)\/video\/(\d+)(?:\?[^\s<>"]*)?\s*/g,
+      '<div data-tiktok-video="$2" data-tiktok-user="$1" class="tiktok-placeholder my-3"></div>'
     )
     // Convert markdown links to HTML [text](url)
     .replace(
@@ -343,19 +437,46 @@ export function sanitizePostContent(content: string): string {
     return `<h${level} class="font-bold my-2">${escapeHtml(text)}</h${level}>`;
   });
 
+  // Convert block-level elements
+  processed = convertBlockquotes(processed);
+  processed = convertLists(processed);
+
+  // Convert inline formatting
+  processed = processed
+    // Inline code (before bold/italic — escape markdown chars to protect content)
+    .replace(/`([^`]+)`/g, (_, code) => {
+      let escaped = escapeHtml(code);
+      escaped = escaped.replace(/\*/g, '&#42;').replace(/_/g, '&#95;').replace(/~/g, '&#126;');
+      return `<code>${escaped}</code>`;
+    })
+    // Bold (**text** or __text__) — before italic
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    // Italic (*text* or _text_) — after bold
+    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
+    .replace(/(?<![a-zA-Z0-9])_(.+?)_(?![a-zA-Z0-9])/g, '<em>$1</em>')
+    // Strikethrough (~~text~~)
+    .replace(/~~(.+?)~~/g, '<del>$1</del>');
+
   // Convert newlines to <br> for line break preservation
-  // Skip lines that are already block-level HTML (headers, hr, divs, tables)
+  // Skip lines that are already block-level HTML (headers, hr, divs, tables, lists, blockquotes, code)
   processed = processed.replace(/\n/g, (_, offset) => {
-    // Check if this newline follows a block-level closing/self-closing tag
-    const before = processed.slice(Math.max(0, offset - 20), offset);
+    const before = processed.slice(Math.max(0, offset - 40), offset);
+    const after = processed.slice(offset + 1, Math.min(processed.length, offset + 40));
     if (
-      /<\/(h[1-6]|div|p|table|tr|blockquote|li|ul|ol)>\s*$/i.test(before) ||
-      /<hr[^>]*\/?\s*>\s*$/i.test(before)
+      /<\/(h[1-6]|div|p|table|tr|blockquote|li|ul|ol|pre)>\s*$/i.test(before) ||
+      /<hr[^>]*\/?\s*>\s*$/i.test(before) ||
+      /\x00CODE\d+\x00\s*$/.test(before) ||
+      /^\s*<(h[1-6]|div|p|table|blockquote|ul|ol|pre|hr)/i.test(after) ||
+      /^\s*\x00CODE\d+\x00/.test(after)
     ) {
       return '\n';
     }
     return '<br>\n';
   });
+
+  // Restore fenced code blocks
+  processed = restoreCodeBlocks(processed, codeBlocks);
 
   // Sanitize the processed content
   return sanitizeHtml(processed);
@@ -394,7 +515,7 @@ export function hasSuspiciousContent(content: string): boolean {
     /javascript:/i,
     /on\w+\s*=/i, // onclick, onerror, etc.
     /data:/i,
-    /<iframe[^>]*src\s*=\s*["'](?!https:\/\/(www\.)?(youtube|vimeo|3speak))/i,
+    /<iframe[^>]*src\s*=\s*["'](?!https:\/\/(www\.)?(youtube|vimeo|3speak|tiktok))/i,
   ];
 
   return suspiciousPatterns.some((pattern) => pattern.test(content));

@@ -23,6 +23,7 @@ import { keychainLogin, keychainSignMessage, keychainBroadcast } from '@/lib/wal
 import {
   hivesignerLogin,
   hivesignerBroadcast,
+  hivesignerSignPopup,
   clearHivesignerSession,
 } from '@/lib/wallet/hivesigner';
 import { logger } from '@/lib/logger';
@@ -167,6 +168,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       if (provider === 'keychain') {
         return keychainBroadcast(user, operations, keyType);
+      }
+
+      // HiveSigner: active-key ops (e.g. Hive-Engine transfers) need the
+      // interactive signing popup because the OAuth token only grants posting authority.
+      if (keyType === 'active') {
+        return hivesignerSignPopup(operations);
       }
 
       return hivesignerBroadcast(operations);

@@ -197,7 +197,7 @@ export function PredictionsFeed({ className }: PredictionsFeedProps) {
           <PredictionBiteCard
             key={prediction.id}
             prediction={prediction}
-            tick={tick}
+            tick={prediction.status === 'OPEN' ? tick : undefined}
             onDeleted={handleDeleted}
             onUpdated={handleUpdated}
           />

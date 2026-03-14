@@ -170,17 +170,15 @@ const PriceDisplay: React.FC<{ market: MedalsMarket }> = ({ market }) => {
   const priceChange = formatPercentChange(market.priceChange24h);
 
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-amber-100 bg-gradient-to-r from-amber-50 to-yellow-50 p-4 dark:border-amber-800 dark:from-amber-900/20 dark:to-yellow-900/20">
-      <div className="rounded-full bg-amber-100 p-3 dark:bg-amber-800/30">
-        <DollarSign className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+    <div className="flex items-center gap-4 rounded-lg border bg-card p-4">
+      <div className="rounded-full bg-warning/15 p-3">
+        <DollarSign className="h-6 w-6 text-warning" />
       </div>
       <div className="flex-1">
-        <span className="text-sm text-amber-700 dark:text-amber-400">MEDALS Price</span>
+        <span className="text-sm text-muted-foreground">MEDALS Price</span>
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-amber-900 dark:text-amber-200">
-            {formatPrice(market.price)}
-          </span>
-          <span className="text-lg text-amber-700 dark:text-amber-400">HIVE</span>
+          <span className="text-3xl font-bold text-foreground">{formatPrice(market.price)}</span>
+          <span className="text-lg text-muted-foreground">HIVE</span>
         </div>
       </div>
       <div
@@ -310,7 +308,7 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
               href={`https://tribaldex.com/trade/MEDALS`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-warning/10 py-2 text-sm text-warning transition-colors hover:text-amber-700 dark:hover:text-amber-300"
+              className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-muted py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               Trade on Tribaldex
               <ExternalLink className="h-3 w-3" />
@@ -327,7 +325,7 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <BarChart3 className="h-5 w-5 text-amber-500" />
+            <BarChart3 className="h-5 w-5 text-warning" />
             MEDALS Market
           </CardTitle>
           <div className="flex items-center gap-2">

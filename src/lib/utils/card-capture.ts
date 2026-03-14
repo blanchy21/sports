@@ -3,6 +3,8 @@
  * Uses html2canvas (dynamically imported) to render a DOM element as a PNG.
  */
 
+import { CARD_COLORS } from '@/lib/constants/card-colors';
+
 export interface CaptureResult {
   blob: Blob;
   dataUrl: string;
@@ -19,7 +21,7 @@ const DEFAULTS: Required<CaptureOptions> = {
   width: 1200,
   height: 630,
   scale: 2,
-  backgroundColor: '#1A1A2E',
+  backgroundColor: CARD_COLORS.bg,
 };
 
 /**

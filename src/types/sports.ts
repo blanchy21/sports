@@ -358,6 +358,10 @@ export interface SportsEvent {
   icon: string;
   sport: string;
   league?: string;
+  /** ESPN league slug (e.g. "eng.1", "uefa.champions"). Used to fetch summary data. */
+  leagueSlug?: string;
+  /** ESPN sport key (e.g. "soccer", "football"). Used to fetch summary data. */
+  espnSport?: string;
   teams?: {
     home: string;
     away: string;
@@ -370,6 +374,51 @@ export interface SportsEvent {
   };
   /** Human-readable status detail (e.g. "45'", "Halftime", "FT", "2nd Quarter") */
   statusDetail?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Match Detail types (from ESPN summary endpoint)
+// ---------------------------------------------------------------------------
+
+export interface MatchEvent {
+  type: 'goal' | 'yellowCard' | 'redCard' | 'substitution';
+  clock: string;
+  team: 'home' | 'away';
+  teamName: string;
+  playerName: string;
+  assistName?: string;
+  replacedBy?: string;
+  isPenalty?: boolean;
+  isOwnGoal?: boolean;
+}
+
+export interface MatchStat {
+  name: string;
+  displayName: string;
+  home: string;
+  away: string;
+}
+
+export interface MatchLineupPlayer {
+  name: string;
+  jersey: string;
+  position: string;
+  isStarter: boolean;
+  subbedIn?: boolean;
+  subbedOut?: boolean;
+}
+
+export interface MatchLineup {
+  formation?: string;
+  teamName: string;
+  players: MatchLineupPlayer[];
+}
+
+export interface MatchDetail {
+  events: MatchEvent[];
+  stats: MatchStat[];
+  homeLineup: MatchLineup | null;
+  awayLineup: MatchLineup | null;
 }
 
 export interface EventsApiResponse {

@@ -3,7 +3,11 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Check, ChevronRight, ChevronLeft, Trophy, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/core/Button';
-import { useContestTeams, useContestEntry, useContestEntryConfirm } from '@/lib/react-query/queries/useContests';
+import {
+  useContestTeams,
+  useContestEntry,
+  useContestEntryConfirm,
+} from '@/lib/react-query/queries/useContests';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMedalsBalance } from '@/lib/react-query/queries/useMedals';
@@ -81,7 +85,8 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
 
   const canProceedToMultipliers = selectedTeams.size === 16;
   const canProceedToTieBreaker = multipliers.size === 16;
-  const canProceedToConfirm = tieBreaker !== '' && Number(tieBreaker) >= 0 && Number(tieBreaker) <= 500;
+  const canProceedToConfirm =
+    tieBreaker !== '' && Number(tieBreaker) >= 0 && Number(tieBreaker) <= 500;
 
   const buildEntryData = useCallback(() => {
     const picks = Array.from(selectedTeams.entries()).map(([code, pot]) => ({
@@ -91,6 +96,8 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
     }));
     return { picks, tieBreaker: Number(tieBreaker) };
   }, [selectedTeams, multipliers, tieBreaker]);
+
+  const [freeEntrySuccess, setFreeEntrySuccess] = useState(false);
 
   const handleSubmit = async () => {
     if (!walletUsername) return;
@@ -102,12 +109,16 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
       const entryData = buildEntryData();
 
       const res = await entryMutation.mutateAsync(entryData);
-      const { operation, entryToken } = res.data;
+      const { operation, entryToken, entryConfirmed } = res.data;
 
-      const broadcastResult = await broadcast(
-        [['custom_json', operation]],
-        'active'
-      );
+      // Free entry — already confirmed server-side, no broadcast needed
+      if (entryConfirmed) {
+        setFreeEntrySuccess(true);
+        setStep('confirm');
+        return;
+      }
+
+      const broadcastResult = await broadcast([['custom_json', operation]], 'active');
 
       if (!broadcastResult.success) {
         throw new Error(broadcastResult.error || 'Broadcast failed');
@@ -127,13 +138,13 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
     }
   };
 
-  if (confirmMutation.isSuccess) {
+  if (confirmMutation.isSuccess || freeEntrySuccess) {
     return (
-      <div className="text-center py-8">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10 mx-auto mb-3">
+      <div className="py-8 text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
           <Check className="h-6 w-6 text-green-500" />
         </div>
-        <h3 className="text-lg font-semibold mb-1">You&apos;re In!</h3>
+        <h3 className="mb-1 text-lg font-semibold">You&apos;re In!</h3>
         <p className="text-sm text-muted-foreground">
           Your entry has been confirmed. Check the leaderboard for your position.
         </p>
@@ -150,10 +161,8 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
             {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
             <span
               className={cn(
-                'px-2 py-1 rounded-full',
-                step === s
-                  ? 'bg-amber-500/10 text-amber-500 font-medium'
-                  : 'text-muted-foreground'
+                'rounded-full px-2 py-1',
+                step === s ? 'bg-amber-500/10 font-medium text-amber-500' : 'text-muted-foreground'
               )}
             >
               {['Select Teams', 'Assign Multipliers', 'Tie-Breaker', 'Confirm'][i]}
@@ -179,13 +188,13 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
             const potTeams = teamsByPot.get(pot) || [];
             return (
               <div key={pot}>
-                <h4 className="text-sm font-semibold mb-2">
+                <h4 className="mb-2 text-sm font-semibold">
                   Pot {pot}
-                  <span className="ml-2 text-xs text-muted-foreground font-normal">
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
                     {potCounts[pot] || 0}/4 selected
                   </span>
                 </h4>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
                   {potTeams.map((team) => {
                     const isSelected = selectedTeams.has(team.code);
                     const potFull = (potCounts[pot] || 0) >= 4;
@@ -216,7 +225,7 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
             <Button
               onClick={() => setStep('multipliers')}
               disabled={!canProceedToMultipliers}
-              className="bg-amber-500 hover:bg-amber-600 text-white"
+              className="bg-amber-500 text-white hover:bg-amber-600"
             >
               Next: Assign Multipliers
               <ChevronRight className="ml-1 h-4 w-4" />
@@ -229,7 +238,8 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
       {step === 'multipliers' && (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Assign a unique multiplier (1-16) to each team. Higher multiplier = more points from that team.
+            Assign a unique multiplier (1-16) to each team. Higher multiplier = more points from
+            that team.
           </p>
           <div className="space-y-2">
             {Array.from(selectedTeams.entries()).map(([code, pot]) => {
@@ -237,16 +247,20 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
               const currentMult = multipliers.get(code);
               return (
                 <div key={code} className="flex items-center gap-2 rounded-lg border p-2">
-                  <span className="text-xs text-muted-foreground w-8">P{pot}</span>
-                  <span className="text-sm font-medium flex-1 truncate">{team?.name || code}</span>
+                  <span className="w-8 text-xs text-muted-foreground">P{pot}</span>
+                  <span className="flex-1 truncate text-sm font-medium">{team?.name || code}</span>
                   <select
                     value={currentMult || ''}
                     onChange={(e) => assignMultiplier(code, Number(e.target.value))}
-                    className="rounded-md border bg-background px-2 py-1 text-sm w-16"
+                    className="w-16 rounded-md border bg-background px-2 py-1 text-sm"
                   >
                     <option value="">-</option>
                     {Array.from({ length: 16 }, (_, i) => i + 1).map((n) => (
-                      <option key={n} value={n} disabled={usedMultipliers.has(n) && currentMult !== n}>
+                      <option
+                        key={n}
+                        value={n}
+                        disabled={usedMultipliers.has(n) && currentMult !== n}
+                      >
                         {n}
                       </option>
                     ))}
@@ -263,7 +277,7 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
             <Button
               onClick={() => setStep('tiebreaker')}
               disabled={!canProceedToTieBreaker}
-              className="bg-amber-500 hover:bg-amber-600 text-white"
+              className="bg-amber-500 text-white hover:bg-amber-600"
             >
               Next: Tie-Breaker
               <ChevronRight className="ml-1 h-4 w-4" />
@@ -296,7 +310,7 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
             <Button
               onClick={() => setStep('confirm')}
               disabled={!canProceedToConfirm}
-              className="bg-amber-500 hover:bg-amber-600 text-white"
+              className="bg-amber-500 text-white hover:bg-amber-600"
             >
               Next: Confirm
               <ChevronRight className="ml-1 h-4 w-4" />
@@ -315,9 +329,14 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
               .map(([code]) => {
                 const team = teams?.find((t) => t.code === code);
                 return (
-                  <div key={code} className="flex items-center justify-between rounded bg-muted/50 px-2 py-1">
+                  <div
+                    key={code}
+                    className="flex items-center justify-between rounded bg-muted/50 px-2 py-1"
+                  >
                     <span className="truncate">{team?.name || code}</span>
-                    <span className="font-mono font-bold text-amber-500">x{multipliers.get(code)}</span>
+                    <span className="font-mono font-bold text-amber-500">
+                      x{multipliers.get(code)}
+                    </span>
                   </div>
                 );
               })}
@@ -332,7 +351,7 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
               <span className="font-semibold">{contest.entryFee} MEDALS</span>
             </div>
             {medalsBalance !== undefined && (
-              <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+              <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
                 <span>Your Balance</span>
                 <span>{Number(medalsBalance).toLocaleString()} MEDALS</span>
               </div>
@@ -347,7 +366,7 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
             <Button
               onClick={handleSubmit}
               disabled={entryMutation.isPending || confirmMutation.isPending}
-              className="bg-amber-500 hover:bg-amber-600 text-white"
+              className="bg-amber-500 text-white hover:bg-amber-600"
             >
               {entryMutation.isPending || confirmMutation.isPending ? (
                 'Processing...'

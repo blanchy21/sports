@@ -50,18 +50,23 @@ export const POST = csrfProtected(
       },
     });
 
-    // Create notification for the recipient (if they have a Profile)
+    // Create notification for the recipient
     try {
+      // Try to find a Profile (custodial/Google users); Hive-native users won't have one
       const recipient = await prisma.profile.findFirst({
         where: {
           OR: [{ username: recipientUsername }, { hiveUsername: recipientUsername }],
         },
       });
 
-      if (recipient && (!userId || recipient.id !== userId)) {
+      const isSelfTip = recipient && userId && recipient.id === userId;
+
+      if (!isSelfTip) {
         await prisma.notification.create({
           data: {
-            recipientId: recipient.id,
+            // Use Profile ID if available, otherwise store by username for Hive-native users
+            recipientId: recipient?.id ?? null,
+            recipientUsername: recipientUsername,
             type: 'tip',
             title: 'MEDALS Tip',
             message: `${username} tipped you ${amount} MEDALS`,

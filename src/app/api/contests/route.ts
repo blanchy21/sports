@@ -91,7 +91,8 @@ export const POST = createApiHandler('/api/contests', async (request, ctx) => {
       !slug ||
       !title ||
       !contestType ||
-      !entryFee ||
+      entryFee === undefined ||
+      entryFee === null ||
       !registrationOpens ||
       !registrationCloses ||
       !startsAt

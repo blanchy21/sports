@@ -6,7 +6,7 @@
  * cron jobs.
  */
 
-import { SportsEvent } from '@/types/sports';
+import { SportsEvent, MatchDetail, MatchEvent, MatchStat, MatchLineup } from '@/types/sports';
 
 // -----------------------------------------------------------------------
 // Config
@@ -144,7 +144,8 @@ async function fetchLeagueScoreboard(
 function convertESPNEvent(
   event: ESPNEvent,
   leagueName: string,
-  sportConfig: { icon: string; sportName: string }
+  sportConfig: { icon: string; sportName: string; espnSport: string },
+  leagueSlug: string
 ): SportsEvent {
   const comp = event.competitions?.[0];
   const home = comp?.competitors?.find((c) => c.homeAway === 'home');
@@ -174,6 +175,8 @@ function convertESPNEvent(
     icon: sportConfig.icon,
     sport: sportConfig.sportName,
     league: leagueName,
+    leagueSlug,
+    espnSport: sportConfig.espnSport,
     teams: home && away ? { home: home.team.displayName, away: away.team.displayName } : undefined,
     venue: comp?.venue?.fullName,
     status,
@@ -199,6 +202,7 @@ export async function fetchAllEvents(): Promise<{
     leagueName: string;
     config: (typeof SPORTS_CONFIG)['football'];
     configLeagueName: string;
+    leagueSlug: string;
   }>[] = [];
 
   for (const sportConfig of Object.values(SPORTS_CONFIG)) {
@@ -210,6 +214,7 @@ export async function fetchAllEvents(): Promise<{
             leagueName,
             config: sportConfig,
             configLeagueName: league.name,
+            leagueSlug: league.slug,
           })
         )
       );
@@ -221,10 +226,10 @@ export async function fetchAllEvents(): Promise<{
   const allEvents: SportsEvent[] = [];
   const liveEventIds = new Set<string>();
 
-  for (const { events, leagueName, config, configLeagueName } of results) {
+  for (const { events, leagueName, config, configLeagueName, leagueSlug } of results) {
     const displayLeague = leagueName || configLeagueName;
     for (const event of events) {
-      const sportsEvent = convertESPNEvent(event, displayLeague, config);
+      const sportsEvent = convertESPNEvent(event, displayLeague, config, leagueSlug);
       allEvents.push(sportsEvent);
       if (sportsEvent.status === 'live') {
         liveEventIds.add(sportsEvent.id);
@@ -283,4 +288,216 @@ export function filterBySport(events: SportsEvent[], sport: string): SportsEvent
       (sport.toLowerCase() === 'football' && event.sport === 'Football') ||
       (sport.toLowerCase() === 'nfl' && event.sport === 'American Football')
   );
+}
+
+// -----------------------------------------------------------------------
+// ESPN Summary (match detail) — soccer only
+// -----------------------------------------------------------------------
+
+interface ESPNKeyEvent {
+  type: { text: string } | string;
+  clock?: { displayValue: string } | string;
+  team?: { displayName: string };
+  participants?: { athlete: { displayName: string } }[];
+  scoringPlay?: boolean;
+  text?: string;
+  shortText?: string;
+}
+
+interface ESPNRosterEntry {
+  athlete: { displayName: string };
+  jersey: string;
+  position: { displayName: string } | string;
+  starter: boolean;
+  subbedIn: boolean;
+  subbedOut: boolean;
+}
+
+interface ESPNRoster {
+  homeAway: 'home' | 'away';
+  team: { displayName: string };
+  roster: ESPNRosterEntry[];
+  formation?: string;
+}
+
+interface ESPNBoxscoreTeam {
+  homeAway: 'home' | 'away';
+  statistics: { name: string; displayName: string; displayValue: string }[];
+}
+
+interface ESPNSummaryResponse {
+  keyEvents?: ESPNKeyEvent[];
+  boxscore?: { teams?: ESPNBoxscoreTeam[] };
+  rosters?: ESPNRoster[];
+}
+
+function parseKeyEventType(ke: ESPNKeyEvent): MatchEvent['type'] | null {
+  const raw = typeof ke.type === 'string' ? ke.type : (ke.type?.text ?? '');
+  const lower = raw.toLowerCase();
+
+  if (ke.scoringPlay || lower.includes('goal')) return 'goal';
+  if (lower.includes('red card')) return 'redCard';
+  if (lower.includes('yellow card')) return 'yellowCard';
+  if (lower.includes('substitution')) return 'substitution';
+  return null;
+}
+
+function parseKeyEvents(keyEvents: ESPNKeyEvent[], homeTeamName: string): MatchEvent[] {
+  const events: MatchEvent[] = [];
+
+  for (const ke of keyEvents) {
+    const type = parseKeyEventType(ke);
+    if (!type) continue;
+
+    const teamName = ke.team?.displayName ?? '';
+    const team: 'home' | 'away' = teamName === homeTeamName ? 'home' : 'away';
+    const clock = typeof ke.clock === 'string' ? ke.clock : (ke.clock?.displayValue ?? '');
+    const participants = ke.participants ?? [];
+
+    const typeText = typeof ke.type === 'string' ? ke.type : (ke.type?.text ?? '');
+
+    const event: MatchEvent = {
+      type,
+      clock,
+      team,
+      teamName,
+      playerName: participants[0]?.athlete?.displayName ?? '',
+    };
+
+    if (type === 'goal') {
+      if (participants[1]) event.assistName = participants[1].athlete.displayName;
+      event.isPenalty = typeText.toLowerCase().includes('penalty');
+      event.isOwnGoal = typeText.toLowerCase().includes('own goal');
+    }
+
+    if (type === 'substitution' && participants[1]) {
+      // participants[0] = player coming in, participants[1] = player going out
+      event.playerName = participants[1].athlete.displayName; // player going out
+      event.replacedBy = participants[0].athlete.displayName; // player coming in
+    }
+
+    events.push(event);
+  }
+
+  return events;
+}
+
+/** Display-friendly stat names */
+const STAT_DISPLAY_NAMES: Record<string, string> = {
+  possessionPct: 'Possession',
+  totalShots: 'Total Shots',
+  shotsOnTarget: 'Shots on Target',
+  wonCorners: 'Corners',
+  foulsCommitted: 'Fouls',
+  offsides: 'Offsides',
+  yellowCards: 'Yellow Cards',
+  redCards: 'Red Cards',
+  saves: 'Saves',
+  totalPasses: 'Passes',
+  passPct: 'Pass Accuracy',
+  accuratePasses: 'Accurate Passes',
+};
+
+function formatStatValue(name: string, displayValue: string): string {
+  if (name === 'possessionPct') return `${displayValue}%`;
+  if (name === 'passPct') return `${Math.round(parseFloat(displayValue) * 100)}%`;
+  return displayValue;
+}
+
+function parseBoxscoreStats(teams: ESPNBoxscoreTeam[]): MatchStat[] {
+  const homeTeam = teams.find((t) => t.homeAway === 'home');
+  const awayTeam = teams.find((t) => t.homeAway === 'away');
+  if (!homeTeam || !awayTeam) return [];
+
+  const homeMap = new Map(homeTeam.statistics.map((s) => [s.name, s]));
+  const stats: MatchStat[] = [];
+
+  for (const awayStat of awayTeam.statistics) {
+    const homeStat = homeMap.get(awayStat.name);
+    if (!homeStat) continue;
+
+    // Build human-readable display name; fall back to camelCase → Title Case
+    const displayName =
+      STAT_DISPLAY_NAMES[awayStat.name] ??
+      awayStat.displayName ??
+      awayStat.name.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+
+    stats.push({
+      name: awayStat.name,
+      displayName,
+      home: formatStatValue(awayStat.name, homeStat.displayValue),
+      away: formatStatValue(awayStat.name, awayStat.displayValue),
+    });
+  }
+
+  return stats;
+}
+
+function parseRoster(roster: ESPNRoster): MatchLineup {
+  return {
+    formation: roster.formation,
+    teamName: roster.team.displayName,
+    players: roster.roster.map((p) => ({
+      name: p.athlete.displayName,
+      jersey: p.jersey,
+      position: typeof p.position === 'string' ? p.position : (p.position?.displayName ?? ''),
+      isStarter: p.starter,
+      subbedIn:
+        p.subbedIn === true ||
+        (p.subbedIn as unknown as { didSub: boolean })?.didSub === true ||
+        undefined,
+      subbedOut:
+        p.subbedOut === true ||
+        (p.subbedOut as unknown as { didSub: boolean })?.didSub === true ||
+        undefined,
+    })),
+  };
+}
+
+/**
+ * Fetch detailed match data from ESPN summary endpoint.
+ * Soccer only — returns null for non-soccer or on API failure.
+ */
+export async function fetchEventSummary(
+  espnSport: string,
+  leagueSlug: string,
+  eventId: string,
+  isLive: boolean
+): Promise<MatchDetail | null> {
+  if (espnSport !== 'soccer') return null;
+
+  const url = `${ESPN_BASE}/${espnSport}/${leagueSlug}/summary?event=${eventId}`;
+
+  try {
+    const response = await fetch(url, {
+      next: { revalidate: isLive ? 30 : 300 },
+    });
+
+    if (!response.ok) {
+      console.error(
+        `ESPN summary: failed ${espnSport}/${leagueSlug}/${eventId}: ${response.status}`
+      );
+      return null;
+    }
+
+    const data: ESPNSummaryResponse = await response.json();
+
+    // Determine home team name from rosters
+    const homeRoster = data.rosters?.find((r) => r.homeAway === 'home');
+    const awayRoster = data.rosters?.find((r) => r.homeAway === 'away');
+    const homeTeamName = homeRoster?.team?.displayName ?? '';
+
+    const events = parseKeyEvents(data.keyEvents ?? [], homeTeamName);
+    const stats = parseBoxscoreStats(data.boxscore?.teams ?? []);
+
+    return {
+      events,
+      stats,
+      homeLineup: homeRoster ? parseRoster(homeRoster) : null,
+      awayLineup: awayRoster ? parseRoster(awayRoster) : null,
+    };
+  } catch (error) {
+    console.error(`ESPN summary: error ${espnSport}/${leagueSlug}/${eventId}:`, error);
+    return null;
+  }
 }

@@ -55,8 +55,9 @@ export const GET = createApiHandler('/api/lms/competition/[id]/board', async (re
       gameweeksSurvived: entry.picks.filter(
         (p) => p.result === 'survived' || p.result === 'postponed'
       ).length,
-      // Hide current pick before deadline
+      // Hide current pick before deadline, but indicate if they've picked
       currentPick: isBeforeDeadline ? null : (currentPick?.teamPicked ?? null),
+      hasPicked: !!currentPick,
       lastPick: lastResolvedPick
         ? {
             team: lastResolvedPick.teamPicked,
