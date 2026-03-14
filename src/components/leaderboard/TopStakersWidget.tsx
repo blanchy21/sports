@@ -31,7 +31,7 @@ function getRankBadgeClass(rank: number): string {
     case 2:
       return 'bg-muted text-foreground/80';
     case 3:
-      return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
+      return 'bg-warning/15 text-warning/80';
     default:
       return 'bg-muted text-muted-foreground';
   }
@@ -92,7 +92,7 @@ export function TopStakersWidget({ className }: { className?: string }) {
               <Link
                 key={holder.account}
                 href={`/user/${holder.account}`}
-                className="flex items-center gap-2.5 rounded-md p-1.5 transition-colors hover:bg-accent"
+                className="flex items-center gap-2.5 rounded-md p-1.5 transition-colors hover:bg-muted"
               >
                 <span
                   className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${getRankBadgeClass(holder.rank)}`}
@@ -123,7 +123,7 @@ export function TopStakersWidget({ className }: { className?: string }) {
           </Link>
           <button
             onClick={() => setSwapOpen(true)}
-            className="mt-2 flex w-full items-center justify-center gap-1 text-sm text-amber-600 hover:text-amber-700 hover:underline dark:text-amber-400 dark:hover:text-amber-300"
+            className="mt-2 flex w-full items-center justify-center gap-1 text-sm text-warning hover:underline"
           >
             <ArrowDownUp className="h-3 w-3" />
             Buy MEDALS

@@ -117,9 +117,9 @@ export default function LandingMedals() {
                 stake: 100000,
                 Icon: Gem,
                 benefits: ['Boosted visibility', 'VIP support', 'Platinum badge'],
-                color: 'from-[#7BA0CC] to-[#3C6098]',
-                iconColor: 'text-[#7BA0CC]',
-                iconBg: 'bg-[#7BA0CC]/10',
+                color: 'from-landing-blue to-bright-cobalt',
+                iconColor: 'text-landing-blue',
+                iconBg: 'bg-landing-blue/10',
               },
             ].map((item, index) => (
               <motion.div

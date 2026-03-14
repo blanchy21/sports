@@ -132,7 +132,7 @@ export function ClaimRewardsBanner({ account, showBalances, onClaimed }: ClaimRe
 
         <div className="flex items-center gap-2">
           {status === 'success' && (
-            <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+            <span className="flex items-center gap-1 text-sm text-success">
               <Check className="h-4 w-4" />
               Claimed!
             </span>

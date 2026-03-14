@@ -1,5 +1,6 @@
 import React from 'react';
 import { SPORT_CATEGORIES } from '@/types';
+import { CARD_COLORS } from '@/lib/constants/card-colors';
 
 interface PredictionResultCardProps {
   title: string;
@@ -43,8 +44,8 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
         style={{
           width: 1200,
           height: 630,
-          backgroundColor: '#1A1A2E',
-          color: '#F0EBE6',
+          backgroundColor: CARD_COLORS.bg,
+          color: CARD_COLORS.text,
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           display: 'flex',
           flexDirection: 'column',
@@ -122,7 +123,7 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
               style={{
                 fontSize: 18,
                 fontWeight: 600,
-                color: '#A0A0B8',
+                color: CARD_COLORS.muted,
                 textTransform: 'uppercase',
                 letterSpacing: 1.5,
               }}
@@ -135,8 +136,8 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
               display: 'flex',
               alignItems: 'center',
               gap: 10,
-              backgroundColor: '#4ADE80',
-              color: '#1A1A2E',
+              backgroundColor: CARD_COLORS.green,
+              color: CARD_COLORS.bg,
               padding: '10px 24px',
               borderRadius: 8,
               fontSize: 16,
@@ -172,7 +173,7 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
               fontWeight: 700,
               lineHeight: 1.2,
               margin: 0,
-              color: '#F0EBE6',
+              color: CARD_COLORS.text,
               textShadow: '0 2px 20px rgba(0,0,0,0.5)',
             }}
           >
@@ -182,7 +183,7 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
             <p
               style={{
                 fontSize: 18,
-                color: '#A0A0B8',
+                color: CARD_COLORS.muted,
                 margin: 0,
               }}
             >
@@ -201,7 +202,7 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
             textAlign: 'center',
             fontSize: 26,
             fontWeight: 700,
-            color: '#4ADE80',
+            color: CARD_COLORS.green,
             position: 'relative',
             zIndex: 1,
             marginBottom: 24,
@@ -220,18 +221,22 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
             marginBottom: 20,
           }}
         >
-          <StatCard label="Predictor" value={`@${username}`} color="#F0EBE6" />
-          <StatCard label="Win Rate" value={`${(winRate * 100).toFixed(0)}%`} color="#F59E0B" />
+          <StatCard label="Predictor" value={`@${username}`} color={CARD_COLORS.text} />
+          <StatCard
+            label="Win Rate"
+            value={`${(winRate * 100).toFixed(0)}%`}
+            color={CARD_COLORS.amber}
+          />
           <StatCard
             label="Streak"
             value={currentStreak > 0 ? `${currentStreak}` : '\u2014'}
-            color="#F59E0B"
+            color={CARD_COLORS.amber}
             prefix={currentStreak > 0 ? '\uD83D\uDD25 ' : ''}
           />
           <StatCard
             label="Profit"
             value={`${profit >= 0 ? '+' : ''}${profit.toFixed(0)} M`}
-            color={profit >= 0 ? '#4ADE80' : '#F87171'}
+            color={profit >= 0 ? CARD_COLORS.green : CARD_COLORS.red}
           />
         </div>
 
@@ -251,7 +256,7 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
               fontWeight: 800,
               letterSpacing: 2,
               textTransform: 'uppercase',
-              color: '#F59E0B',
+              color: CARD_COLORS.amber,
             }}
           >
             {'\u26A1'} SportsBlock
@@ -259,7 +264,7 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
           <span
             style={{
               fontSize: 14,
-              color: '#A0A0B8',
+              color: CARD_COLORS.muted,
               fontStyle: 'italic',
             }}
           >
@@ -268,7 +273,7 @@ export const PredictionResultCard = React.forwardRef<HTMLDivElement, PredictionR
           <span
             style={{
               fontSize: 16,
-              color: '#A0A0B8',
+              color: CARD_COLORS.muted,
             }}
           >
             sportsblock.app
@@ -304,7 +309,7 @@ function StatCard({
       <div
         style={{
           fontSize: 13,
-          color: '#A0A0B8',
+          color: CARD_COLORS.muted,
           marginBottom: 4,
           textTransform: 'uppercase',
           letterSpacing: 1,

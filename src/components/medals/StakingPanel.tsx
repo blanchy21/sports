@@ -213,7 +213,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
       <Card className={cn('w-full', className)}>
         <CardContent className="py-12">
           <div className="flex flex-col items-center justify-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             <span className="text-muted-foreground">Loading staking info...</span>
           </div>
         </CardContent>
@@ -225,7 +225,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
     <Card className={cn('w-full', className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Lock className="h-5 w-5 text-amber-500" />
+          <Lock className="h-5 w-5 text-warning" />
           Stake MEDALS
         </CardTitle>
       </CardHeader>
@@ -239,16 +239,16 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
               {formatAmount(liquidBalance)} MEDALS
             </div>
           </div>
-          <div className="rounded-lg bg-warning/10 p-3">
-            <span className="text-xs text-warning">Staked Balance</span>
-            <div className="font-semibold text-amber-900 dark:text-amber-200">
+          <div className="rounded-lg bg-primary/10 p-3">
+            <span className="text-xs text-primary">Staked Balance</span>
+            <div className="font-semibold text-foreground">
               {formatAmount(stakedBalance)} MEDALS
             </div>
           </div>
         </div>
 
         {/* Premium Tier Progress */}
-        <div className="rounded-lg bg-gradient-to-r from-slate-50 to-amber-50 p-4 dark:from-slate-800 dark:to-amber-900/20">
+        <div className="rounded-lg bg-gradient-to-r from-slate-50 to-slate-100 p-4 dark:from-slate-800 dark:to-slate-700">
           <PremiumTierProgress currentStaked={stakedBalance} />
         </div>
 
@@ -259,7 +259,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               action === 'stake'
-                ? 'bg-amber-500 text-white'
+                ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted'
             )}
           >
@@ -271,7 +271,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               action === 'unstake'
-                ? 'bg-amber-500 text-white'
+                ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted'
             )}
           >

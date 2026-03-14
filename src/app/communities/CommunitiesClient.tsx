@@ -58,19 +58,23 @@ export default function CommunitiesClient() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-lg border border-primary/20 bg-gradient-to-r from-primary/10 to-primary/5 p-4">
-            <h3 className="mb-1 text-sm font-medium text-muted-foreground">Find Your Community</h3>
-            <p className="text-sm">
+          <div className="rounded-lg border border-primary/30 bg-gradient-to-r from-primary/15 to-primary/5 p-4">
+            <h3 className="mb-1 text-sm font-medium text-foreground">Find Your Community</h3>
+            <p className="text-sm text-muted-foreground">
               Join communities for your favorite teams, sports, and interests
             </p>
           </div>
-          <div className="rounded-lg border border-accent/20 bg-gradient-to-r from-accent/10 to-accent/5 p-4">
-            <h3 className="mb-1 text-sm font-medium text-muted-foreground">Share & Discuss</h3>
-            <p className="text-sm">Post content, engage in discussions, and connect with fans</p>
+          <div className="rounded-lg border border-accent/30 bg-gradient-to-r from-accent/15 to-accent/5 p-4">
+            <h3 className="mb-1 text-sm font-medium text-foreground">Share & Discuss</h3>
+            <p className="text-sm text-muted-foreground">
+              Post content, engage in discussions, and connect with fans
+            </p>
           </div>
-          <div className="rounded-lg border border-purple-500/20 bg-gradient-to-r from-purple-500/10 to-purple-500/5 p-4">
-            <h3 className="mb-1 text-sm font-medium text-muted-foreground">Build Your Own</h3>
-            <p className="text-sm">Create a community for your club, league, or sports interest</p>
+          <div className="rounded-lg border border-purple-500/30 bg-gradient-to-r from-purple-500/15 to-purple-500/5 p-4">
+            <h3 className="mb-1 text-sm font-medium text-foreground">Build Your Own</h3>
+            <p className="text-sm text-muted-foreground">
+              Create a community for your club, league, or sports interest
+            </p>
           </div>
         </div>
 
