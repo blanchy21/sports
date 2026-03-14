@@ -112,7 +112,7 @@ export default function LandingEarnings() {
                   level: 'Building Reputation',
                   upvotes: '5-20 upvotes',
                   earnings: '$0.50 - $3',
-                  color: 'bg-[#2BAB78]',
+                  color: 'bg-landing-green',
                   width: 'w-1/2',
                 },
                 {
@@ -126,7 +126,7 @@ export default function LandingEarnings() {
                   level: 'Top Contributor',
                   upvotes: '50+ upvotes + curation',
                   earnings: '$5 - $10+',
-                  color: 'bg-[#7BA0CC]',
+                  color: 'bg-landing-blue',
                   width: 'w-full',
                 },
               ].map((tier, index) => (

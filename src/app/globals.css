@@ -24,6 +24,11 @@
     --input: 30 20% 90%;
     --ring: 220 70% 20%;
     --radius: 0.5rem;
+    --cobalt: 216.5 43.4% 41.6%;
+    --warm-accent: 21.6 72% 62.2%;
+    --deep-navy: 224.8 67.6% 20.6%;
+    --landing-green: 156 60% 42%;
+    --landing-blue: 212.6 44% 64%;
     --success: 142 71% 45%;
     --success-foreground: 30 100% 98%;
     --warning: 38 92% 50%;
@@ -52,6 +57,11 @@
     --border: 220 15% 22%;
     --input: 220 15% 22%;
     --ring: 220 60% 55%;
+    --cobalt: 216.5 43.4% 41.6%;
+    --warm-accent: 21.6 72% 62.2%;
+    --deep-navy: 224.8 67.6% 20.6%;
+    --landing-green: 156 60% 42%;
+    --landing-blue: 212.6 44% 64%;
     --success: 142 69% 58%;
     --success-foreground: 30 100% 98%;
     --warning: 38 92% 50%;
@@ -82,6 +92,11 @@
     --border: 220 15% 18%;
     --input: 220 15% 18%;
     --ring: 216 60% 56%;
+    --cobalt: 216.5 43.4% 41.6%;
+    --warm-accent: 21.6 72% 62.2%;
+    --deep-navy: 224.8 67.6% 20.6%;
+    --landing-green: 156 60% 42%;
+    --landing-blue: 212.6 44% 64%;
     --success: 142 69% 58%;
     --success-foreground: 30 20% 98%;
     --warning: 38 92% 50%;

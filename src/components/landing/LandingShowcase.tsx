@@ -400,8 +400,8 @@ export default function LandingShowcase() {
                 title: 'Earn Daily',
                 description:
                   'Fresh reward pools every day. Quick takes earn HIVE and HBD just like full posts.',
-                color: 'text-[#2BAB78]',
-                bg: 'bg-[#2BAB78]/10',
+                color: 'text-landing-green',
+                bg: 'bg-landing-green/10',
               },
             ].map((item, index) => (
               <motion.div

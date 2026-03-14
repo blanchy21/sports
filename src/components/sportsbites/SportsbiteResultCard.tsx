@@ -1,5 +1,6 @@
 import React from 'react';
 import { SPORT_CATEGORIES } from '@/types';
+import { CARD_COLORS } from '@/lib/constants/card-colors';
 
 interface SportsbiteResultCardProps {
   author: string;
@@ -42,8 +43,8 @@ export const SportsbiteResultCard = React.forwardRef<HTMLDivElement, SportsbiteR
         style={{
           width: 1200,
           height: 630,
-          backgroundColor: '#1A1A2E',
-          color: '#F0EBE6',
+          backgroundColor: CARD_COLORS.bg,
+          color: CARD_COLORS.text,
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           display: 'flex',
           flexDirection: 'column',
@@ -121,7 +122,7 @@ export const SportsbiteResultCard = React.forwardRef<HTMLDivElement, SportsbiteR
               style={{
                 fontSize: 18,
                 fontWeight: 600,
-                color: '#A0A0B8',
+                color: CARD_COLORS.muted,
                 textTransform: 'uppercase',
                 letterSpacing: 1.5,
               }}
@@ -136,18 +137,18 @@ export const SportsbiteResultCard = React.forwardRef<HTMLDivElement, SportsbiteR
                 width: 44,
                 height: 44,
                 borderRadius: 22,
-                backgroundColor: '#F59E0B',
+                backgroundColor: CARD_COLORS.amber,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: 18,
                 fontWeight: 700,
-                color: '#1A1A2E',
+                color: CARD_COLORS.bg,
               }}
             >
               {initials}
             </div>
-            <span style={{ fontSize: 16, color: '#A0A0B8' }}>@{author}</span>
+            <span style={{ fontSize: 16, color: CARD_COLORS.muted }}>@{author}</span>
           </div>
         </div>
 
@@ -172,7 +173,7 @@ export const SportsbiteResultCard = React.forwardRef<HTMLDivElement, SportsbiteR
               fontWeight: 600,
               lineHeight: 1.4,
               margin: 0,
-              color: '#F0EBE6',
+              color: CARD_COLORS.text,
               textShadow: '0 2px 20px rgba(0,0,0,0.5)',
             }}
           >
@@ -190,9 +191,9 @@ export const SportsbiteResultCard = React.forwardRef<HTMLDivElement, SportsbiteR
             marginBottom: 20,
           }}
         >
-          <StatCard label="Votes" value={String(votes)} color="#F59E0B" />
-          <StatCard label="Replies" value={String(replies)} color="#F59E0B" />
-          <StatCard label="Posted" value={formattedDate} color="#F0EBE6" />
+          <StatCard label="Votes" value={String(votes)} color={CARD_COLORS.amber} />
+          <StatCard label="Replies" value={String(replies)} color={CARD_COLORS.amber} />
+          <StatCard label="Posted" value={formattedDate} color={CARD_COLORS.text} />
         </div>
 
         {/* Branding footer */}
@@ -211,7 +212,7 @@ export const SportsbiteResultCard = React.forwardRef<HTMLDivElement, SportsbiteR
               fontWeight: 800,
               letterSpacing: 2,
               textTransform: 'uppercase',
-              color: '#F59E0B',
+              color: CARD_COLORS.amber,
             }}
           >
             {'\u26A1'} SportsBlock
@@ -219,13 +220,13 @@ export const SportsbiteResultCard = React.forwardRef<HTMLDivElement, SportsbiteR
           <span
             style={{
               fontSize: 14,
-              color: '#A0A0B8',
+              color: CARD_COLORS.muted,
               fontStyle: 'italic',
             }}
           >
             Your Sports. Your Voice.
           </span>
-          <span style={{ fontSize: 16, color: '#A0A0B8' }}>sportsblock.app</span>
+          <span style={{ fontSize: 16, color: CARD_COLORS.muted }}>sportsblock.app</span>
         </div>
       </div>
     );
@@ -247,7 +248,7 @@ function StatCard({ label, value, color }: { label: string; value: string; color
       <div
         style={{
           fontSize: 13,
-          color: '#A0A0B8',
+          color: CARD_COLORS.muted,
           marginBottom: 4,
           textTransform: 'uppercase',
           letterSpacing: 1,

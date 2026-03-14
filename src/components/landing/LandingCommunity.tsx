@@ -120,8 +120,8 @@ export default function LandingCommunity({ sports }: LandingCommunityProps) {
                 title: 'Zero Fees',
                 description:
                   'No gas fees. No hidden charges. Every transaction on Hive is completely free.',
-                color: 'text-[#2BAB78]',
-                bg: 'bg-[#2BAB78]/10',
+                color: 'text-landing-green',
+                bg: 'bg-landing-green/10',
               },
               {
                 icon: Shield,

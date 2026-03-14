@@ -12,13 +12,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // New palette colors
-        'bright-cobalt': '#3C6098',
-        patience: '#E6DDD6',
-        'silver-bird': '#FBF5F0',
-        'fibonacci-blue': '#112358',
-        'dancing-mist': '#BFC8D8',
-        'aegean-sky': '#E48B59',
+        // Named palette colors (CSS-var-backed for theming)
+        'bright-cobalt': 'hsl(var(--cobalt))',
+        'fibonacci-blue': 'hsl(var(--deep-navy))',
+        'aegean-sky': 'hsl(var(--warm-accent))',
+        'landing-green': 'hsl(var(--landing-green))',
+        'landing-blue': 'hsl(var(--landing-blue))',
         // Theme colors
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -106,6 +105,7 @@ const config: Config = {
           '100%': { boxShadow: '0 0 20px rgba(var(--primary), 0.4)' },
         },
         borderPulse: {
+          /* rgba(228, 139, 89) = aegean-sky / --warm-accent */
           '0%, 100%': {
             boxShadow: '0 0 0 0 rgba(228, 139, 89, 0.3), inset 0 0 0 0 rgba(228, 139, 89, 0.05)',
           },
