@@ -36,6 +36,7 @@ export function usePublishActions(form: FormState) {
       );
       try {
         localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
+        form.setIsDraftSaved(true);
         form.addToast(toast.success('Success', 'Draft updated!'));
       } catch (error) {
         logger.error('Error saving draft', 'PublishPage', error);
@@ -45,6 +46,7 @@ export function usePublishActions(form: FormState) {
       existingDrafts.push(draftData);
       try {
         localStorage.setItem('drafts', JSON.stringify(existingDrafts));
+        form.setIsDraftSaved(true);
         form.addToast(toast.success('Success', 'Draft saved!'));
       } catch (error) {
         logger.error('Error saving draft', 'PublishPage', error);
@@ -68,9 +70,7 @@ export function usePublishActions(form: FormState) {
 
     try {
       // Check posting authority via account summary endpoint
-      const res = await fetch(
-        `/api/hive/account/summary?username=${form.hiveUser.username}`
-      );
+      const res = await fetch(`/api/hive/account/summary?username=${form.hiveUser.username}`);
       const data = await res.json();
       if (!data.success || !data.account) {
         form.setShowScheduleModal(true); // Fall through, let server catch errors
@@ -211,9 +211,7 @@ export function usePublishActions(form: FormState) {
         }
 
         if (form.rcStatus && !form.rcStatus.canPost) {
-          form.setPublishError(
-            form.rcStatus.message || 'Insufficient Resource Credits to post.'
-          );
+          form.setPublishError(form.rcStatus.message || 'Insufficient Resource Credits to post.');
           return;
         }
 
@@ -223,9 +221,7 @@ export function usePublishActions(form: FormState) {
           if (form.tags.length > 0) {
             form.addRecentTags(form.tags);
           }
-          form.addToast(
-            toast.success('Success', `Post published to Hive! View: ${result.url}`)
-          );
+          form.addToast(toast.success('Success', `Post published to Hive! View: ${result.url}`));
           if (result.transactionId) {
             form.confirmTx(result.transactionId);
           }

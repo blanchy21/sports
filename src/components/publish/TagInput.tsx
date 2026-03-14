@@ -4,11 +4,30 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 
+const SPORT_TAGS: Record<string, string[]> = {
+  football: ['football', 'soccer', 'premierleague', 'prediction', 'matchday', 'hive'],
+  'american-football': ['americanfootball', 'nfl', 'prediction', 'touchdown', 'hive'],
+  basketball: ['basketball', 'nba', 'prediction', 'hoops', 'hive'],
+  tennis: ['tennis', 'atp', 'wta', 'prediction', 'hive'],
+  rugby: ['rugby', 'sixnations', 'prediction', 'hive'],
+  cricket: ['cricket', 'ipl', 'prediction', 'hive'],
+  baseball: ['baseball', 'mlb', 'prediction', 'hive'],
+  hockey: ['hockey', 'nhl', 'prediction', 'hive'],
+  mma: ['mma', 'ufc', 'prediction', 'hive'],
+  boxing: ['boxing', 'prediction', 'knockout', 'hive'],
+  motorsport: ['motorsport', 'f1', 'prediction', 'hive'],
+  golf: ['golf', 'pga', 'prediction', 'hive'],
+  darts: ['darts', 'prediction', 'checkout', 'hive'],
+  esports: ['esports', 'gaming', 'prediction', 'hive'],
+  default: ['sports', 'prediction', 'sportsblock', 'hive', 'medals'],
+};
+
 export interface TagInputProps {
   value: string[];
   onChange: (tags: string[]) => void;
   maxTags?: number;
   recentTags?: string[];
+  selectedSport?: string;
   placeholder?: string;
   className?: string;
 }
@@ -18,6 +37,7 @@ export function TagInput({
   onChange,
   maxTags = 10,
   recentTags = [],
+  selectedSport,
   placeholder = 'Add tags...',
   className,
 }: TagInputProps) {
@@ -139,6 +159,42 @@ export function TagInput({
           />
         )}
       </div>
+
+      {/* Sport-contextual suggestions */}
+      {value.length < maxTags &&
+        (() => {
+          const sportKey = selectedSport?.toLowerCase() ?? '';
+          const suggestedTags = SPORT_TAGS[sportKey] ?? SPORT_TAGS.default;
+          const availableSuggestions = suggestedTags.filter((tag) => !value.includes(tag));
+          if (availableSuggestions.length === 0) return null;
+          return (
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">
+                Suggested
+                {selectedSport
+                  ? ` for ${selectedSport.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}`
+                  : ''}
+                :
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {availableSuggestions.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => handleRecentTagClick(tag)}
+                    className={cn(
+                      'rounded-md px-2 py-0.5 text-xs',
+                      'bg-primary/10 text-primary hover:bg-primary/20',
+                      'transition-colors'
+                    )}
+                  >
+                    + #{tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
       {/* Recently used tags */}
       {availableRecentTags.length > 0 && value.length < maxTags && (

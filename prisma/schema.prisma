@@ -253,20 +253,23 @@ model PollVote {
 
 // User notifications
 model Notification {
-  id              String   @id @default(uuid())
-  recipientId     String   @map("recipient_id")
-  recipient       Profile  @relation(fields: [recipientId], references: [id], onDelete: Cascade)
-  type            String   // 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'system'
-  title           String
-  message         String
-  sourceUserId    String?  @map("source_user_id")
-  sourceUsername   String?  @map("source_username")
-  data            Json?
-  read            Boolean  @default(false)
-  createdAt       DateTime @default(now()) @map("created_at")
+  id                String   @id @default(uuid())
+  recipientId       String?  @map("recipient_id")
+  recipient         Profile? @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientUsername  String?  @map("recipient_username")
+  type              String   // 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'system' | 'tip'
+  title             String
+  message           String
+  sourceUserId      String?  @map("source_user_id")
+  sourceUsername     String?  @map("source_username")
+  data              Json?
+  read              Boolean  @default(false)
+  createdAt         DateTime @default(now()) @map("created_at")
 
   @@index([recipientId, createdAt])
   @@index([recipientId, read])
+  @@index([recipientUsername, createdAt])
+  @@index([recipientUsername, read])
   @@map("soft_notifications")
 }
 

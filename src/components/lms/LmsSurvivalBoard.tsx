@@ -109,9 +109,9 @@ export function LmsSurvivalBoard({ entries, isDeadlinePassed }: LmsSurvivalBoard
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center text-sm">
-                      {isDeadlinePassed && entry.currentPick ? (
+                      {entry.currentPick ? (
                         <span className="font-medium">{entry.currentPick}</span>
-                      ) : entry.currentPick && entry.status === 'alive' ? (
+                      ) : entry.hasPicked && !isDeadlinePassed ? (
                         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                           <Lock className="h-3 w-3" />
                           Locked
@@ -119,7 +119,7 @@ export function LmsSurvivalBoard({ entries, isDeadlinePassed }: LmsSurvivalBoard
                       ) : entry.status === 'eliminated' ? (
                         <span className="text-xs text-muted-foreground">-</span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
+                        <span className="text-xs text-muted-foreground">No pick</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center text-sm font-bold">

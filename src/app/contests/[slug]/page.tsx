@@ -192,7 +192,7 @@ export default function ContestDetailPage() {
             size="lg"
           >
             <Trophy className="mr-2 h-4 w-4" />
-            Enter Contest ({contest.entryFee} MEDALS)
+            Enter Contest {contest.entryFee > 0 ? `(${contest.entryFee} MEDALS)` : '(Free)'}
           </Button>
         )}
 
@@ -250,11 +250,11 @@ export default function ContestDetailPage() {
                     <hr className="my-2" />
                     <div className="text-xs text-muted-foreground">
                       {prizeHive
-                        ? `Winner takes all: ${prizeHive} HIVE + ${contest.prizePool.toFixed(0)} MEDALS. Funded by SportsBlock.`
+                        ? `Prizes funded by SportsBlock: ${prizeHive} HIVE + ${contest.prizePool.toFixed(0)} MEDALS split across 1st, 2nd & 3rd.`
                         : 'Entry fees are burned. Prizes are guaranteed by the sponsor.'}
                     </div>
                   </>
-                ) : (
+                ) : contest.entryFee > 0 ? (
                   <>
                     <hr className="my-2" />
                     <div className="flex justify-between text-xs text-muted-foreground">
@@ -264,6 +264,13 @@ export default function ContestDetailPage() {
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>Creator Fee ({(contest.creatorFeePct * 100).toFixed(0)}%)</span>
                       <span>{(contest.prizePool * contest.creatorFeePct).toFixed(0)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <hr className="my-2" />
+                    <div className="text-xs text-muted-foreground">
+                      Free entry. No fees deducted.
                     </div>
                   </>
                 )}

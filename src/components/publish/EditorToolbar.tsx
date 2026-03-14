@@ -1,30 +1,12 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/core/Button';
-import {
-  Bold,
-  Italic,
-  Underline as UnderlineIcon,
-  Strikethrough,
-  List,
-  ListOrdered,
-  Link as LinkIcon,
-  Code,
-  Quote,
-  Upload,
-  Smile,
-  Undo,
-  Redo,
-  Heading1,
-  Heading2,
-  Heading3,
-  Film,
-} from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils/client';
 import dynamic from 'next/dynamic';
 import { GifPicker } from '@/components/gif/GifPicker';
+import type { ViewMode } from '@/components/publish/PublishEditorPanel';
 
-// Import emoji picker dynamically (~300KB uncompressed)
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 export interface EditorToolbarProps {
@@ -35,6 +17,8 @@ export interface EditorToolbarProps {
   onInsertGif?: (gifUrl: string) => void;
   onUndo: () => void;
   onRedo: () => void;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
 export type FormatType =
@@ -47,8 +31,117 @@ export type FormatType =
   | 'h1'
   | 'h2'
   | 'h3'
+  | 'h4'
+  | 'h5'
+  | 'h6'
   | 'bulletList'
-  | 'numberedList';
+  | 'numberedList'
+  | 'alignLeft'
+  | 'alignCenter'
+  | 'alignRight'
+  | 'alignJustify'
+  | 'table'
+  | 'divider';
+
+// Pill-style toolbar button
+function Pill({
+  onClick,
+  children,
+  className,
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-full px-5 py-2 text-[15px] font-medium',
+        'text-foreground/70 transition-colors',
+        'hover:bg-muted hover:text-foreground',
+        'whitespace-nowrap',
+        className
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+// Dropdown pill with chevron
+function DropdownPill({
+  label,
+  items,
+}: {
+  label: string;
+  items: { label: string; onClick: () => void }[];
+}) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [menuPos, setMenuPos] = React.useState<{ top: number; left: number } | null>(null);
+  const ref = React.useRef<HTMLDivElement>(null);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+
+  const handleToggle = () => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={handleToggle}
+        className={cn(
+          'flex items-center gap-1 rounded-full px-5 py-2 text-[15px] font-medium',
+          'text-foreground/70 transition-colors',
+          'hover:bg-muted hover:text-foreground',
+          'whitespace-nowrap',
+          isOpen && 'bg-muted text-foreground'
+        )}
+      >
+        {label}
+        <ChevronDown className="h-3 w-3" />
+      </button>
+      {isOpen && menuPos && (
+        <div
+          className="fixed z-50 min-w-[160px] rounded-lg border bg-card py-1 shadow-lg"
+          style={{ top: menuPos.top, left: menuPos.left }}
+        >
+          {items.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => {
+                item.onClick();
+                setIsOpen(false);
+              }}
+              className="flex w-full items-center px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function EditorToolbar({
   onFormat,
@@ -58,13 +151,13 @@ export function EditorToolbar({
   onInsertGif,
   onUndo,
   onRedo,
+  viewMode,
+  onViewModeChange,
 }: EditorToolbarProps) {
   const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
   const [showGifPicker, setShowGifPicker] = React.useState(false);
-  const emojiButtonRef = React.useRef<HTMLButtonElement>(null);
-  const gifButtonRef = React.useRef<HTMLButtonElement>(null);
+  const emojiButtonRef = React.useRef<HTMLDivElement>(null);
 
-  // Close emoji picker when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -76,163 +169,116 @@ export function EditorToolbar({
         setShowEmojiPicker(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showEmojiPicker]);
-
-  const handleGifSelect = (gifUrl: string) => {
-    onInsertGif?.(gifUrl);
-    setShowGifPicker(false);
-  };
 
   const handleEmojiSelect = (emojiData: { emoji: string }) => {
     onEmoji(emojiData.emoji);
     setShowEmojiPicker(false);
   };
 
-  const ToolbarButton = ({
-    onClick,
-    title,
-    children,
-    className = '',
-  }: {
-    onClick: () => void;
-    title: string;
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      onClick={onClick}
-      title={title}
-      className={`h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground ${className}`}
-    >
-      {children}
-    </Button>
-  );
-
-  const Separator = () => <div className="mx-1 h-5 w-px bg-border" />;
+  const handleGifSelect = (gifUrl: string) => {
+    onInsertGif?.(gifUrl);
+    setShowGifPicker(false);
+  };
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b bg-card px-3 py-2">
+    <div className="scrollbar-none flex items-center gap-1 overflow-x-auto border-b bg-card px-4 py-3">
+      {/* Header dropdown */}
+      <DropdownPill
+        label="Header"
+        items={[
+          { label: 'Heading 1', onClick: () => onFormat('h1') },
+          { label: 'Heading 2', onClick: () => onFormat('h2') },
+          { label: 'Heading 3', onClick: () => onFormat('h3') },
+          { label: 'Heading 4', onClick: () => onFormat('h4') },
+          { label: 'Heading 5', onClick: () => onFormat('h5') },
+          { label: 'Heading 6', onClick: () => onFormat('h6') },
+        ]}
+      />
+
       {/* Text formatting */}
-      <ToolbarButton onClick={() => onFormat('bold')} title="Bold (Ctrl+B)">
-        <Bold className="h-4 w-4" />
-      </ToolbarButton>
+      <Pill onClick={() => onFormat('bold')}>Bold</Pill>
+      <Pill onClick={() => onFormat('italic')}>Italic</Pill>
+      <Pill onClick={onInsertLink}>Link</Pill>
+      <Pill onClick={() => onFormat('quote')}>Quote</Pill>
 
-      <ToolbarButton onClick={() => onFormat('italic')} title="Italic (Ctrl+I)">
-        <Italic className="h-4 w-4" />
-      </ToolbarButton>
+      {/* Format dropdown */}
+      <DropdownPill
+        label="Format"
+        items={[
+          { label: 'Underline', onClick: () => onFormat('underline') },
+          { label: 'Strikethrough', onClick: () => onFormat('strikethrough') },
+          { label: 'Align Left', onClick: () => onFormat('alignLeft') },
+          { label: 'Align Center', onClick: () => onFormat('alignCenter') },
+          { label: 'Align Right', onClick: () => onFormat('alignRight') },
+          { label: 'Align Justify', onClick: () => onFormat('alignJustify') },
+        ]}
+      />
 
-      <ToolbarButton onClick={() => onFormat('underline')} title="Underline">
-        <UnderlineIcon className="h-4 w-4" />
-      </ToolbarButton>
+      {/* List dropdown */}
+      <DropdownPill
+        label="List"
+        items={[
+          { label: 'Bullet List', onClick: () => onFormat('bulletList') },
+          { label: 'Numbered List', onClick: () => onFormat('numberedList') },
+        ]}
+      />
 
-      <ToolbarButton onClick={() => onFormat('strikethrough')} title="Strikethrough">
-        <Strikethrough className="h-4 w-4" />
-      </ToolbarButton>
+      {/* Code dropdown */}
+      <DropdownPill
+        label="Code"
+        items={[{ label: 'Inline Code', onClick: () => onFormat('code') }]}
+      />
 
-      <Separator />
+      {/* Insert dropdown */}
+      <DropdownPill
+        label="Insert"
+        items={[
+          { label: 'Image', onClick: onInsertImage },
+          ...(onInsertGif ? [{ label: 'GIF', onClick: () => setShowGifPicker(true) }] : []),
+          { label: 'Table', onClick: () => onFormat('table') },
+          { label: 'Divider', onClick: () => onFormat('divider') },
+          { label: 'Emoji', onClick: () => setShowEmojiPicker(true) },
+        ]}
+      />
 
-      {/* Headings */}
-      <ToolbarButton onClick={() => onFormat('h1')} title="Heading 1">
-        <Heading1 className="h-4 w-4" />
-      </ToolbarButton>
+      <Pill onClick={onUndo}>Undo</Pill>
+      <Pill onClick={onRedo}>Redo</Pill>
 
-      <ToolbarButton onClick={() => onFormat('h2')} title="Heading 2">
-        <Heading2 className="h-4 w-4" />
-      </ToolbarButton>
-
-      <ToolbarButton onClick={() => onFormat('h3')} title="Heading 3">
-        <Heading3 className="h-4 w-4" />
-      </ToolbarButton>
-
-      <Separator />
-
-      {/* Lists and blocks */}
-      <ToolbarButton onClick={() => onFormat('quote')} title="Quote">
-        <Quote className="h-4 w-4" />
-      </ToolbarButton>
-
-      <ToolbarButton onClick={() => onFormat('bulletList')} title="Bullet List">
-        <List className="h-4 w-4" />
-      </ToolbarButton>
-
-      <ToolbarButton onClick={() => onFormat('numberedList')} title="Numbered List">
-        <ListOrdered className="h-4 w-4" />
-      </ToolbarButton>
-
-      <Separator />
-
-      {/* Insert elements */}
-      <ToolbarButton onClick={onInsertLink} title="Insert Link">
-        <LinkIcon className="h-4 w-4" />
-      </ToolbarButton>
-
-      <ToolbarButton onClick={onInsertImage} title="Insert Image">
-        <Upload className="h-4 w-4" />
-      </ToolbarButton>
-
-      <ToolbarButton onClick={() => onFormat('code')} title="Code">
-        <Code className="h-4 w-4" />
-      </ToolbarButton>
-
-      <Separator />
-
-      {/* Undo/Redo */}
-      <ToolbarButton onClick={onUndo} title="Undo (Ctrl+Z)">
-        <Undo className="h-4 w-4" />
-      </ToolbarButton>
-
-      <ToolbarButton onClick={onRedo} title="Redo (Ctrl+Y)">
-        <Redo className="h-4 w-4" />
-      </ToolbarButton>
-
-      <Separator />
-
-      {/* Emoji picker */}
-      <div className="relative">
-        <Button
-          ref={emojiButtonRef}
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          title="Insert Emoji"
-          className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <Smile className="h-4 w-4" />
-        </Button>
-
-        {showEmojiPicker && (
-          <div className="absolute left-0 top-full z-50 mt-2">
-            <EmojiPicker
-              onEmojiClick={handleEmojiSelect}
-              emojiStyle={'native' as unknown as import('emoji-picker-react').EmojiStyle}
-              lazyLoadEmojis={true}
-            />
-          </div>
-        )}
+      {/* Right-aligned view mode toggle */}
+      <div className="ml-auto flex items-center gap-1">
+        {(['split', 'editor', 'preview'] as const).map((mode) => (
+          <button
+            key={mode}
+            onClick={() => onViewModeChange(mode)}
+            className={cn(
+              'rounded-full px-5 py-2 text-[15px] font-medium capitalize transition-colors',
+              viewMode === mode
+                ? 'text-primary ring-2 ring-primary'
+                : 'text-foreground/70 hover:text-foreground'
+            )}
+          >
+            {mode === 'split' ? 'Split' : mode === 'editor' ? 'Editor' : 'Preview'}
+          </button>
+        ))}
       </div>
 
-      {/* GIF picker */}
-      {onInsertGif && (
-        <div className="relative">
-          <Button
-            ref={gifButtonRef}
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowGifPicker(!showGifPicker)}
-            title="Insert GIF"
-            className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <Film className="h-4 w-4" />
-          </Button>
+      {/* Emoji picker popover */}
+      {showEmojiPicker && (
+        <div ref={emojiButtonRef} className="fixed z-50" style={{ top: '140px', left: '20px' }}>
+          <EmojiPicker
+            onEmojiClick={handleEmojiSelect}
+            emojiStyle={'native' as unknown as import('emoji-picker-react').EmojiStyle}
+            lazyLoadEmojis={true}
+          />
+        </div>
+      )}
 
+      {/* GIF picker */}
+      {showGifPicker && (
+        <div className="fixed z-50" style={{ top: '140px', left: '20px' }}>
           <GifPicker
             isOpen={showGifPicker}
             onClose={() => setShowGifPicker(false)}

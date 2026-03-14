@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>HiveSigner Transaction</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        padding: 2rem;
+        background: #0f172a;
+        color: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      main {
+        max-width: 28rem;
+        text-align: center;
+      }
+      h1 {
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+      }
+      p {
+        margin-bottom: 0.75rem;
+        line-height: 1.5;
+      }
+      .dim {
+        color: rgba(241, 245, 249, 0.7);
+        font-size: 0.9375rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Processing Transaction&hellip;</h1>
+      <p class="dim" id="status">Please wait.</p>
+    </main>
+    <script>
+      (function () {
+        try {
+          // HiveSigner redirects back with query params: ?id=TX_ID or ?error=...
+          var params = new URLSearchParams(window.location.search);
+          var txId = params.get('id');
+          var error = params.get('error');
+
+          if (error) {
+            throw new Error(error);
+          }
+
+          if (txId) {
+            document.getElementById('status').textContent = 'Transaction confirmed! This window will close\u2026';
+
+            if (window.opener && typeof window.opener.postMessage === 'function') {
+              window.opener.postMessage(
+                { source: 'hivesigner-sign-callback', success: true, transactionId: txId },
+                window.location.origin
+              );
+            }
+
+            setTimeout(function () { window.close(); }, 1500);
+          } else {
+            throw new Error('No transaction ID received from HiveSigner');
+          }
+        } catch (err) {
+          var msg = err instanceof Error ? err.message : 'Unknown error';
+          document.getElementById('status').textContent = 'Transaction failed: ' + msg;
+
+          if (window.opener && typeof window.opener.postMessage === 'function') {
+            window.opener.postMessage(
+              { source: 'hivesigner-sign-callback', success: false, error: msg },
+              window.location.origin
+            );
+          }
+
+          // Auto-close after showing error briefly
+          setTimeout(function () { window.close(); }, 3000);
+        }
+      })();
+    </script>
+  </body>
+</html>

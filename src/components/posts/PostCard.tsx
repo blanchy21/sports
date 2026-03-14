@@ -404,7 +404,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
               variant="ghost"
               size="sm"
               onClick={handleComment}
-              className="flex items-center space-x-1 text-muted-foreground hover:text-accent"
+              className="flex items-center space-x-1 text-muted-foreground hover:text-primary"
               aria-label={`${commentCount} comments`}
             >
               <MessageCircle className="h-4 w-4" />
@@ -429,8 +429,8 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
             variant="ghost"
             size="sm"
             onClick={handleBookmark}
-            className={`text-muted-foreground hover:text-warning ${
-              isBookmarked(post) ? 'text-warning' : ''
+            className={`text-muted-foreground hover:text-primary ${
+              isBookmarked(post) ? 'text-primary' : ''
             }`}
             aria-label={isBookmarked(post) ? 'Remove bookmark' : 'Bookmark post'}
           >

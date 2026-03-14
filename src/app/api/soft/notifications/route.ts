@@ -16,8 +16,8 @@ const ROUTE = '/api/soft/notifications';
 
 export interface SoftNotification {
   id: string;
-  recipientId: string;
-  type: 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'system';
+  recipientId: string | null;
+  type: 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'system' | 'tip';
   title: string;
   message: string;
   sourceUserId?: string;
@@ -29,6 +29,10 @@ export interface SoftNotification {
     parentCommentId?: string;
     targetType?: string;
     targetId?: string;
+    author?: string;
+    permlink?: string;
+    amount?: number;
+    txId?: string;
   };
   read: boolean;
   createdAt: string;
@@ -84,16 +88,21 @@ export const GET = createApiHandler(ROUTE, async (request) => {
 
   const { limit, offset, unreadOnly } = parseResult.data;
 
+  // Match notifications by Profile ID or by username (for Hive-native users without a Profile)
+  const recipientFilter = {
+    OR: [{ recipientId: user.userId }, { recipientUsername: user.username }],
+  };
+
   // Build where clause
-  const where: Record<string, unknown> = { recipientId: user.userId };
+  const where: Record<string, unknown> = { ...recipientFilter };
   if (unreadOnly) {
     where.read = false;
   }
 
   // Get total count, unread count, and paginated data in parallel
   const [totalCount, unreadCount, rows] = await Promise.all([
-    prisma.notification.count({ where: { recipientId: user.userId } }),
-    prisma.notification.count({ where: { recipientId: user.userId, read: false } }),
+    prisma.notification.count({ where: recipientFilter }),
+    prisma.notification.count({ where: { ...recipientFilter, read: false } }),
     prisma.notification.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -105,7 +114,7 @@ export const GET = createApiHandler(ROUTE, async (request) => {
   const notifications: SoftNotification[] = rows.map(
     (row: {
       id: string;
-      recipientId: string;
+      recipientId: string | null;
       type: string;
       title: string;
       message: string;
@@ -165,12 +174,16 @@ export const POST = csrfProtected(
       return validationError('Either notificationIds or markAllRead must be provided');
     }
 
+    const ownerFilter = {
+      OR: [{ recipientId: user.userId }, { recipientUsername: user.username }],
+    };
+
     let updatedCount = 0;
 
     if (markAllRead) {
       // Mark all unread notifications as read
       const result = await prisma.notification.updateMany({
-        where: { recipientId: user.userId, read: false },
+        where: { ...ownerFilter, read: false },
         data: { read: true },
       });
       updatedCount = result.count;
@@ -179,7 +192,7 @@ export const POST = csrfProtected(
       const result = await prisma.notification.updateMany({
         where: {
           id: { in: notificationIds },
-          recipientId: user.userId,
+          ...ownerFilter,
         },
         data: { read: true },
       });
@@ -188,7 +201,7 @@ export const POST = csrfProtected(
 
     // Get new unread count
     const unreadCount = await prisma.notification.count({
-      where: { recipientId: user.userId, read: false },
+      where: { ...ownerFilter, read: false },
     });
 
     return NextResponse.json({
@@ -223,12 +236,16 @@ export const DELETE = csrfProtected(
       return validationError('Either notificationIds or deleteAllRead must be provided');
     }
 
+    const ownerFilter = {
+      OR: [{ recipientId: user.userId }, { recipientUsername: user.username }],
+    };
+
     let deletedCount = 0;
 
     if (deleteAllRead) {
       // Delete all read notifications
       const result = await prisma.notification.deleteMany({
-        where: { recipientId: user.userId, read: true },
+        where: { ...ownerFilter, read: true },
       });
       deletedCount = result.count;
     } else if (notificationIds) {
@@ -236,7 +253,7 @@ export const DELETE = csrfProtected(
       const result = await prisma.notification.deleteMany({
         where: {
           id: { in: notificationIds },
-          recipientId: user.userId,
+          ...ownerFilter,
         },
       });
       deletedCount = result.count;

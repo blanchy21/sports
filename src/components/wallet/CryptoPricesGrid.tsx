@@ -15,45 +15,45 @@ export function CryptoPricesGrid({ bitcoinPrice, ethereumPrice }: CryptoPricesGr
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       {bitcoinPrice && (
-        <div className="rounded-lg bg-gradient-to-r from-primary to-accent p-6 text-white">
+        <div className="rounded-lg border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Bitcoin className="h-8 w-8" />
+              <Bitcoin className="h-8 w-8 text-warning" />
               <div>
                 <h3 className="text-lg font-semibold">Bitcoin</h3>
-                <p className="text-sm opacity-90">BTC/USD</p>
+                <p className="text-sm text-muted-foreground">BTC/USD</p>
               </div>
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold">{formatUSD(bitcoinPrice)}</p>
-              <p className="text-sm opacity-90">Current Price</p>
+              <p className="text-sm text-muted-foreground">Current Price</p>
             </div>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="opacity-75">Market Cap Leader</span>
-            <span className="opacity-75">Digital Gold</span>
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Market Cap Leader</span>
+            <span>Digital Gold</span>
           </div>
         </div>
       )}
 
       {ethereumPrice && (
-        <div className="rounded-lg bg-gradient-to-r from-primary to-accent p-6 text-white">
+        <div className="rounded-lg border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Coins className="h-8 w-8" />
+              <Coins className="h-8 w-8 text-primary" />
               <div>
                 <h3 className="text-lg font-semibold">Ethereum</h3>
-                <p className="text-sm opacity-90">ETH/USD</p>
+                <p className="text-sm text-muted-foreground">ETH/USD</p>
               </div>
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold">{formatUSD(ethereumPrice)}</p>
-              <p className="text-sm opacity-90">Current Price</p>
+              <p className="text-sm text-muted-foreground">Current Price</p>
             </div>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="opacity-75">Smart Contracts</span>
-            <span className="opacity-75">DeFi Platform</span>
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Smart Contracts</span>
+            <span>DeFi Platform</span>
           </div>
         </div>
       )}

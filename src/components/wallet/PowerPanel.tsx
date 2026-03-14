@@ -137,7 +137,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
       <Card className={cn('w-full', className)}>
         <CardContent className="py-12">
           <div className="flex flex-col items-center justify-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-accent" />
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             <span className="text-muted-foreground">Loading power info...</span>
           </div>
         </CardContent>
@@ -149,7 +149,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
     <Card className={cn('w-full', className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Zap className="h-5 w-5 text-accent" />
+          <Zap className="h-5 w-5 text-primary" />
           HIVE Power
         </CardTitle>
       </CardHeader>
@@ -161,9 +161,9 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
             <span className="text-xs text-muted-foreground">Liquid HIVE</span>
             <div className="font-semibold text-foreground">{formatAmount(liquidBalance)} HIVE</div>
           </div>
-          <div className="rounded-lg bg-accent/10 p-3">
-            <span className="text-xs text-accent">HIVE Power</span>
-            <div className="font-semibold text-accent">{formatAmount(hivePower)} HP</div>
+          <div className="rounded-lg bg-primary/10 p-3">
+            <span className="text-xs text-primary">HIVE Power</span>
+            <div className="font-semibold text-foreground">{formatAmount(hivePower)} HP</div>
           </div>
         </div>
 
@@ -231,7 +231,9 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
             onClick={() => setAction('powerUp')}
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
-              action === 'powerUp' ? 'bg-accent text-white' : 'text-muted-foreground hover:bg-muted'
+              action === 'powerUp'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted'
             )}
           >
             <Zap className="h-4 w-4" />
@@ -242,7 +244,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               action === 'powerDown'
-                ? 'bg-accent text-white'
+                ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted'
             )}
           >
@@ -263,8 +265,8 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
             error={validation.error}
             disabled={powerMutation.isPending}
             symbol={action === 'powerUp' ? 'HIVE' : 'HP'}
-            focusClass="focus-within:border-accent"
-            maxButtonClass="text-accent hover:text-accent/80"
+            focusClass="focus-within:border-primary"
+            maxButtonClass="text-primary hover:text-primary/80"
           />
 
           {/* Quick amount buttons */}

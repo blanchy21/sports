@@ -53,7 +53,11 @@ export const authOptions: NextAuthOptions = {
         // On subsequent requests, re-check mutable fields (cached with 5-min TTL)
         const cacheKey = `jwt-fields:${token.custodialUserId}`;
         const tag = `custodial-user:${token.custodialUserId}`;
-        type JwtFields = { hiveUsername: string | null; keysDownloaded: boolean; onboardingCompleted: boolean };
+        type JwtFields = {
+          hiveUsername: string | null;
+          keysDownloaded: boolean;
+          onboardingCompleted: boolean;
+        };
 
         let fields = jwtFieldsCache.get<JwtFields>(cacheKey);
         if (!fields) {
@@ -63,7 +67,11 @@ export const authOptions: NextAuthOptions = {
           });
           if (freshUser) {
             fields = freshUser;
-            jwtFieldsCache.set(cacheKey, fields, { tags: [tag] });
+            // During onboarding, fields change rapidly (username → keys → complete).
+            // Use a short TTL so stale cache on other serverless instances resolves
+            // quickly. After onboarding, use the normal 5-min TTL for performance.
+            const ttl = freshUser.onboardingCompleted ? 5 * 60 * 1000 : 30 * 1000;
+            jwtFieldsCache.set(cacheKey, fields, { tags: [tag], ttl });
           }
         }
 
@@ -71,8 +79,11 @@ export const authOptions: NextAuthOptions = {
           if (fields.hiveUsername) {
             token.hiveUsername = fields.hiveUsername;
           }
-          token.keysDownloaded = fields.keysDownloaded;
-          token.onboardingCompleted = fields.onboardingCompleted;
+          // Progressive fields — only advance forward, never regress from stale cache
+          token.keysDownloaded =
+            fields.keysDownloaded === true || (token.keysDownloaded as boolean) === true;
+          token.onboardingCompleted =
+            fields.onboardingCompleted === true || (token.onboardingCompleted as boolean) === true;
         }
       }
 

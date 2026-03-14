@@ -59,6 +59,7 @@ export interface LmsBoardEntry {
   eliminatedGameweek: number | null;
   gameweeksSurvived: number;
   currentPick: string | null; // hidden pre-deadline
+  hasPicked: boolean;
   lastPick: {
     team: string;
     result: LmsPickResult;

@@ -112,7 +112,7 @@ export const RightSidebar: React.FC = () => {
   );
 
   return (
-    <aside className="hidden bg-background xl:fixed xl:right-0 xl:top-16 xl:flex xl:h-[calc(100vh-4rem)] xl:w-80 xl:flex-col xl:overflow-y-auto xl:border-l xl:p-4 2xl:top-[4.5rem] 2xl:h-[calc(100vh-4.5rem)] 2xl:w-[28rem] 2xl:p-6">
+    <aside className="sidebar-scroll hidden bg-background xl:fixed xl:right-0 xl:top-16 xl:flex xl:h-[calc(100vh-4rem)] xl:w-80 xl:flex-col xl:overflow-y-auto xl:border-l xl:p-4 2xl:top-[4.5rem] 2xl:h-[calc(100vh-4.5rem)] 2xl:w-[28rem] 2xl:p-6">
       <div className="space-y-6">
         {/* Trending Topics */}
         <div className="rounded-lg border bg-card p-4">
@@ -134,7 +134,7 @@ export const RightSidebar: React.FC = () => {
                   <Link
                     key={topic.id}
                     href={`/sportsbites?tag=${encodeURIComponent(topic.name)}`}
-                    className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-accent"
+                    className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-muted"
                   >
                     <div>
                       <div className="text-sm font-medium">#{topic.name}</div>
@@ -179,7 +179,7 @@ export const RightSidebar: React.FC = () => {
                 {displayedAuthors.map((author) => (
                   <div
                     key={author.id}
-                    className="flex items-center space-x-3 rounded-md p-2 transition-colors hover:bg-accent"
+                    className="flex items-center space-x-3 rounded-md p-2 transition-colors hover:bg-muted"
                   >
                     <Link
                       href={`/user/${author.username}`}
@@ -229,7 +229,7 @@ export const RightSidebar: React.FC = () => {
             <button
               onClick={refreshEvents}
               disabled={isRefreshing}
-              className="rounded-md p-1 transition-colors hover:bg-accent disabled:opacity-50"
+              className="rounded-md p-1 transition-colors hover:bg-muted disabled:opacity-50"
               title="Refresh events"
             >
               <RefreshCw
@@ -277,7 +277,7 @@ export const RightSidebar: React.FC = () => {
                   return (
                     <div
                       key={event.id}
-                      className={`flex cursor-pointer items-start space-x-3 rounded-md p-2 transition-colors hover:bg-accent ${
+                      className={`flex cursor-pointer items-start space-x-3 rounded-md p-2 transition-colors hover:bg-muted ${
                         event.status === 'live'
                           ? 'border border-destructive/20 bg-destructive/5'
                           : ''
@@ -343,7 +343,7 @@ export const RightSidebar: React.FC = () => {
                 <Link
                   key={item.sport.id}
                   href={`/discover?sportCategory=${item.sport.id}`}
-                  className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-accent"
+                  className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-muted"
                 >
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{item.sport.icon}</span>

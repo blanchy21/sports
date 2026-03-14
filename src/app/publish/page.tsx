@@ -1,8 +1,8 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 import { Button } from '@/components/core/Button';
-import { Eye, EyeOff, Save, Send, AlertCircle, MoreVertical, Calendar } from 'lucide-react';
+import { Save, Send, AlertCircle, MoreVertical, Calendar, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils/client';
 import { usePublishForm } from '@/hooks/usePublishForm';
@@ -16,9 +16,15 @@ import { MarkdownPreview } from '@/components/publish/MarkdownPreview';
 import { ScheduleModal } from '@/components/publish/ScheduleModal';
 import { PostingAuthorityPrompt } from '@/components/publish/PostingAuthorityPrompt';
 import { PublishEditorPanel } from '@/components/publish/PublishEditorPanel';
+import { EditorToolbar } from '@/components/publish/EditorToolbar';
+import { DraftsDrawer } from '@/components/publish/DraftsDrawer';
 import { TopNavigation } from '@/components/layout/TopNavigation';
 
+import type { ViewMode } from '@/components/publish/PublishEditorPanel';
+
 function PublishPageContent() {
+  const [viewMode, setViewMode] = useState<ViewMode>('split');
+  const [showDrafts, setShowDrafts] = useState(false);
   const form = usePublishForm();
   const editor = useEditorActions({
     content: form.content,
@@ -53,7 +59,7 @@ function PublishPageContent() {
   const previewLink = `sportsblock.app/@${username}/[post-slug]`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/[0.03] to-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <TopNavigation />
 
       {/* Sub-header: community selector + actions */}
@@ -87,6 +93,14 @@ function PublishPageContent() {
           </span>
 
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowDrafts(true)}
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Drafts
+            </button>
+
             <Link
               href="/drafts?tab=scheduled"
               className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -99,16 +113,6 @@ function PublishPageContent() {
                 </span>
               )}
             </Link>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => form.setShowPreview(!form.showPreview)}
-              className="h-8 w-8 p-0 md:hidden"
-              title={form.showPreview ? 'Show editor' : 'Show preview'}
-            >
-              {form.showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
 
             <div className="relative" ref={form.menuRef}>
               <Button
@@ -151,15 +155,50 @@ function PublishPageContent() {
         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-bright-cobalt to-accent" />
       </div>
 
+      {/* Full-width Toolbar */}
+      <EditorToolbar
+        onFormat={editor.handleFormat}
+        onInsertImage={editor.handleInsertImage}
+        onInsertLink={editor.handleInsertLink}
+        onEmoji={editor.handleEmoji}
+        onInsertGif={editor.handleInsertGif}
+        onUndo={editor.handleUndo}
+        onRedo={editor.handleRedo}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
+
       {/* Main Content - Split View */}
-      <div className="flex h-[calc(100vh-8rem)] flex-col overflow-hidden sm:h-[calc(100vh-9.5rem)] md:flex-row lg:h-[calc(100vh-10.5rem)]">
-        <PublishEditorPanel form={form} editor={editor} />
+      <div className="relative flex flex-1 flex-col overflow-hidden md:flex-row">
+        {/* Ambient warm glow — dark mode only */}
+        {/* Ambient warm glow — dark mode */}
+        <div
+          className="pointer-events-none absolute inset-0 z-0 hidden dark:block"
+          aria-hidden="true"
+        >
+          <div className="absolute -top-20 left-1/4 h-[600px] w-[700px] rounded-full bg-red-500/[0.12] blur-[120px]" />
+          <div className="absolute -top-10 right-1/4 h-[500px] w-[600px] rounded-full bg-amber-500/[0.15] blur-[100px]" />
+          <div className="absolute bottom-0 left-1/2 h-[400px] w-[800px] -translate-x-1/2 rounded-full bg-orange-500/[0.08] blur-[140px]" />
+        </div>
+        {/* Ambient warm glow — light mode */}
+        <div
+          className="pointer-events-none absolute inset-0 z-0 block dark:hidden"
+          aria-hidden="true"
+        >
+          <div className="absolute -top-20 left-0 h-[600px] w-[60%] rounded-full bg-orange-300/[0.15] blur-[100px]" />
+          <div className="absolute left-1/3 top-0 h-[500px] w-[50%] rounded-full bg-amber-200/[0.2] blur-[80px]" />
+          <div className="absolute right-0 top-10 h-[600px] w-[50%] rounded-full bg-emerald-200/[0.1] blur-[100px]" />
+          <div className="absolute bottom-0 left-1/4 h-[300px] w-[600px] rounded-full bg-rose-200/[0.12] blur-[120px]" />
+        </div>
+        <PublishEditorPanel form={form} viewMode={viewMode} />
 
         {/* Right Side - Preview */}
         <div
           className={cn(
-            'overflow-hidden bg-muted/20 md:flex md:w-2/5 md:flex-col',
-            form.showPreview ? 'flex w-full flex-col' : 'hidden'
+            'relative z-10 overflow-hidden bg-card/50',
+            viewMode === 'editor' && 'hidden',
+            viewMode === 'preview' && 'flex w-full flex-col',
+            viewMode === 'split' && 'hidden md:flex md:w-1/2 md:flex-col'
           )}
         >
           <MarkdownPreview
@@ -246,6 +285,20 @@ function PublishPageContent() {
         onGranted={() => {
           form.setShowAuthorityPrompt(false);
           form.setShowScheduleModal(true);
+        }}
+      />
+
+      <DraftsDrawer
+        isOpen={showDrafts}
+        onClose={() => setShowDrafts(false)}
+        onRestore={(draft) => {
+          form.setTitle(draft.title || '');
+          form.setContent(draft.content || '');
+          form.setExcerpt(draft.excerpt || '');
+          form.setSelectedSport(draft.sport || '');
+          form.setTags(Array.isArray(draft.tags) ? draft.tags : []);
+          form.setCoverImage(draft.imageUrl || '');
+          form.setIsDraftSaved(true);
         }}
       />
 

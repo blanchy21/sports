@@ -61,9 +61,12 @@ export function PredictionStakeModal({
   const { data: balanceData } = useMedalsBalance(hiveUsername);
   const balance = balanceData ? parseFloat(balanceData.liquid) : null;
 
-  // Track isStaking flag in store based on stakeState
+  // Track isStaking flag in store based on stakeState, and clear on unmount
   useEffect(() => {
     usePredictionStore.getState().setIsStaking(stakeState === 'confirming');
+    return () => {
+      usePredictionStore.getState().setIsStaking(false);
+    };
   }, [stakeState]);
 
   // Reset state on open

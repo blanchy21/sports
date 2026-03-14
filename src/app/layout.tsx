@@ -24,6 +24,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://sportsblock.app'),
+  alternates: {
+    canonical: './',
+  },
   title: 'Sportsblock - Where Sports Meets Blockchain',
   description:
     'Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.',

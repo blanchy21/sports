@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { MatchThreadHeader } from '@/components/match-threads/MatchThreadHeader';
+import { MatchDetailTabs } from '@/components/match-threads/MatchDetailTabs';
 import { MatchThreadFeed } from '@/components/match-threads/MatchThreadFeed';
 import { ComposeSportsbite } from '@/components/sportsbites/ComposeSportsbite';
 import type { Sportsbite } from '@/lib/hive-workerbee/shared';
@@ -15,6 +16,8 @@ interface MatchThreadDetailClientProps {
 
 export default function MatchThreadDetailClient({ thread }: MatchThreadDetailClientProps) {
   const [optimisticBite, setOptimisticBite] = useState<Sportsbite | null>(null);
+
+  const isSoccer = thread.event.espnSport === 'soccer';
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4 sm:p-6">
@@ -29,6 +32,9 @@ export default function MatchThreadDetailClient({ thread }: MatchThreadDetailCli
 
       {/* Header */}
       <MatchThreadHeader event={thread.event} isLive={thread.isLive} isOpen={thread.isOpen} />
+
+      {/* Match detail tabs (soccer only) */}
+      <MatchDetailTabs eventId={thread.eventId} isSoccer={isSoccer} isLive={thread.isLive} />
 
       {/* Compose area or read-only banner */}
       {thread.isOpen ? (

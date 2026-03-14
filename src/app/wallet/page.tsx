@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Wallet, RefreshCw, BarChart3, Eye, EyeOff } from 'lucide-react';
+import { Wallet, RefreshCw, BarChart3, Eye, EyeOff, Medal, Coins, DollarSign } from 'lucide-react';
 import { TransferModal, SwapModal } from '@/components/medals';
 import {
   ClaimRewardsBanner,
@@ -212,7 +212,7 @@ export default function WalletPage() {
         )}
 
         {/* Total Portfolio Value */}
-        <div className="rounded-lg bg-gradient-to-r from-primary via-bright-cobalt to-accent p-6 text-white">
+        <div className="rounded-lg bg-gradient-to-br from-primary to-primary/60 p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="mb-2 text-lg font-semibold">Total Portfolio Value</h3>
@@ -242,42 +242,101 @@ export default function WalletPage() {
           />
         )}
 
-        <MedalsTokenSection
-          walletUsername={walletUsername || user.username}
-          onTransferClick={() => setTransferModalOpen(true)}
-          onSwapClick={() => setSwapModalOpen(true)}
-        />
+        {/* MEDALS Section */}
+        <section>
+          <div className="mb-4 flex items-center gap-3">
+            <div className="rounded-lg bg-warning/10 p-2">
+              <Medal className="h-5 w-5 text-warning" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">MEDALS</h2>
+              <p className="text-sm text-muted-foreground">Platform token on Hive Engine</p>
+            </div>
+          </div>
+          <MedalsTokenSection
+            walletUsername={walletUsername || user.username}
+            onTransferClick={() => setTransferModalOpen(true)}
+            onSwapClick={() => setSwapModalOpen(true)}
+          />
+        </section>
 
-        <HiveBalanceCard
-          showBalances={showBalances}
-          hivePrice={hivePrice}
-          hiveUSDValue={hiveUSDValue}
-          hivePowerUSDValue={hivePowerUSDValue}
-          liquidHiveBalance={user.liquidHiveBalance || 0}
-          hivePower={user.hivePower || 0}
-          votingPower={user.votingPower || 0}
-          walletUsername={walletUsername || user.username}
-          onPowerOperationComplete={() => refreshAccountData()}
-          onSendClick={() => {
-            setNativeTransferCurrency('HIVE');
-            setNativeTransferOpen(true);
-          }}
-        />
+        <hr className="border-border/50" />
 
-        <HBDBalanceCard
-          showBalances={showBalances}
-          hbdPrice={hbdPrice}
-          hbdUSDValue={hbdUSDValue}
-          savingsHbdUSDValue={savingsHbdUSDValue}
-          liquidHbdBalance={user.liquidHbdBalance || 0}
-          savingsHbdBalance={user.savingsHbdBalance || 0}
-          savingsApr={user.savingsApr ?? null}
-          onSendClick={() => {
-            setNativeTransferCurrency('HBD');
-            setNativeTransferOpen(true);
-          }}
-        />
+        {/* HIVE Section */}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <Coins className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">HIVE</h2>
+                <p className="text-sm text-muted-foreground">
+                  Native blockchain token &amp; governance
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold">{hivePrice ? formatUSD(hivePrice) : 'N/A'}</p>
+              <p className="text-xs text-muted-foreground">Current Price</p>
+            </div>
+          </div>
+          <HiveBalanceCard
+            showBalances={showBalances}
+            hivePrice={hivePrice}
+            hiveUSDValue={hiveUSDValue}
+            hivePowerUSDValue={hivePowerUSDValue}
+            liquidHiveBalance={user.liquidHiveBalance || 0}
+            hivePower={user.hivePower || 0}
+            votingPower={user.votingPower || 0}
+            walletUsername={walletUsername || user.username}
+            onPowerOperationComplete={() => refreshAccountData()}
+            onSendClick={() => {
+              setNativeTransferCurrency('HIVE');
+              setNativeTransferOpen(true);
+            }}
+          />
+        </section>
 
+        <hr className="border-border/50" />
+
+        {/* HBD Section */}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-success/10 p-2">
+                <DollarSign className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">HBD</h2>
+                <p className="text-sm text-muted-foreground">
+                  Stablecoin pegged to ~$1 USD
+                  {user.savingsApr ? ` \u2022 ${user.savingsApr.toFixed(1)}% APR` : ''}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold">{hbdPrice ? formatUSD(hbdPrice) : 'N/A'}</p>
+              <p className="text-xs text-muted-foreground">Current Price</p>
+            </div>
+          </div>
+          <HBDBalanceCard
+            showBalances={showBalances}
+            hbdPrice={hbdPrice}
+            hbdUSDValue={hbdUSDValue}
+            savingsHbdUSDValue={savingsHbdUSDValue}
+            liquidHbdBalance={user.liquidHbdBalance || 0}
+            savingsHbdBalance={user.savingsHbdBalance || 0}
+            onSendClick={() => {
+              setNativeTransferCurrency('HBD');
+              setNativeTransferOpen(true);
+            }}
+          />
+        </section>
+
+        <hr className="border-border/50" />
+
+        {/* Market Prices & Transactions */}
         <CryptoPricesGrid bitcoinPrice={bitcoinPrice} ethereumPrice={ethereumPrice} />
 
         <TransactionHistory username={walletUsername || user.username} />

@@ -39,7 +39,7 @@ export default function LandingHero() {
             y: [0, -20, 0],
           }}
           transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#3C6098]/15 blur-3xl"
+          className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bright-cobalt/15 blur-3xl"
         />
         <motion.div
           animate={{
