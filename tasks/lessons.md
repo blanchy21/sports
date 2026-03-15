@@ -1,5 +1,24 @@
 # Lessons Learned
 
+## Redis dedup: isAvailable() (PING) doesn't guarantee GET/SET work
+
+**Date:** 2026-03-14
+**Severity:** High — caused 47 duplicate goal alerts in one match thread
+
+### Problem
+Redis `isAvailable()` only checks the `connected` flag set during initial `PING`. When Upstash has intermittent issues, PING succeeds but GET/SET silently fail (returning null/false). The old code stored all goal keys in a single array after posting — one failed `redis.set` lost ALL dedup state, and `redis.get` returning null was conflated with "no known goals" instead of "error".
+
+### Fix
+Three-layer defense:
+1. **Canary write/read** — verify actual GET/SET before processing, not just PING
+2. **Per-key write-ahead** — each item gets its own Redis key, written BEFORE the action. If write fails, skip the action. Never batch all keys into one save-at-the-end call.
+3. **Deterministic permlinks** — use content-derived identifiers so the target system (Hive) itself rejects duplicates as a safety net.
+
+### Generalizable Rule
+When using Redis for dedup/idempotency: (a) always verify reads AND writes work, not just connectivity; (b) use write-ahead (mark before acting), not write-behind (mark after acting); (c) add a second dedup layer in the target system where possible.
+
+---
+
 ## Hive API: `condenser_api.get_following` has exclusive start parameter
 
 **Date:** 2026-02-05

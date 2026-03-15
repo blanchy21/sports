@@ -1,49 +1,54 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils/client';
-import { RANK_TIERS } from '@/lib/badges/catalogue';
 import type { MedalsRank } from '@/lib/badges/types';
-import { Trophy, Crown, Award, BarChart3, Swords, User } from 'lucide-react';
-
-const RANK_ICONS: Record<string, React.ElementType> = {
-  Trophy,
-  Crown,
-  Award,
-  BarChart3,
-  Swords,
-  User,
-};
 
 interface RankBadgeProps {
   rank: MedalsRank | null | undefined;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
+
+const RANK_ASSETS: Record<MedalsRank, { label: string; src: string }> = {
+  rookie: { label: 'Rookie', src: '/badges/roles/rookie.png' },
+  contender: { label: 'Contender', src: '/badges/roles/contender.png' },
+  analyst: { label: 'Analyst', src: '/badges/roles/analyst.png' },
+  pundit: { label: 'Pundit', src: '/badges/roles/pundit.png' },
+  legend: { label: 'Legend', src: '/badges/roles/legend.png' },
+  'hall-of-fame': { label: 'Hall of Fame', src: '/badges/roles/hall-of-fame.png' },
+};
+
+// Height in px — width auto-calculated from 4:5 aspect ratio (160:200)
+const SIZE_PX: Record<string, number> = {
+  sm: 32,
+  md: 44,
+  lg: 64,
+};
 
 export const RankBadge: React.FC<RankBadgeProps> = ({ rank, size = 'sm', className }) => {
   if (!rank) return null;
 
-  const tier = RANK_TIERS.find((t) => t.rank === rank);
-  if (!tier) return null;
+  const asset = RANK_ASSETS[rank];
+  if (!asset) return null;
 
-  const Icon = RANK_ICONS[tier.icon] ?? User;
-
-  const sizeClasses = size === 'sm' ? 'px-1.5 py-0 text-[10px]' : 'px-2 py-0.5 text-xs';
-  const iconSize = size === 'sm' ? 'h-2.5 w-2.5' : 'h-3 w-3';
+  const h = SIZE_PX[size];
+  const w = Math.round(h * (160 / 200)); // 4:5 aspect ratio
 
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 rounded-full font-semibold text-white',
-        tier.bgGradient,
-        sizeClasses,
-        className
-      )}
-      title={`MEDALS Rank: ${tier.label}`}
+    <div
+      className={cn('inline-flex shrink-0 items-center', className)}
+      title={`MEDALS Rank: ${asset.label}`}
     >
-      <Icon className={iconSize} />
-      {tier.label}
-    </span>
+      <Image
+        src={asset.src}
+        alt={`${asset.label} rank badge`}
+        width={w}
+        height={h}
+        className="object-contain"
+        priority={false}
+      />
+    </div>
   );
 };
