@@ -26,9 +26,6 @@ const DEPOSIT_MEMO = JSON.stringify({
 export const SWAP_FEE_PERCENT = 0.005;
 const FEE_RECIPIENT = MEDALS_CONFIG.ACCOUNTS.MAIN;
 
-/** Slippage buffer added on top of worst fill price (0.5%) */
-const SLIPPAGE_MULTIPLIER = 1.005;
-
 // ============================================================================
 // Swap Quote
 // ============================================================================
@@ -134,24 +131,18 @@ export function walkSellBook(
 
 /**
  * Build the three operations needed for a HIVE → MEDALS swap:
- * 1. transfer 1% fee to sportsblock
+ * 1. transfer 0.5% fee to sportsblock
  * 2. transfer remaining HIVE to honey-swap (wraps as SWAP.HIVE)
- * 3. custom_json market buy for MEDALS using SWAP.HIVE
+ * 3. custom_json marketBuy for MEDALS using SWAP.HIVE (true market order)
  *
  * @param username  Hive account executing the swap
- * @param hiveAmount  Gross HIVE amount (before fee)
  * @param fee  Fee amount in HIVE
  * @param netHive  HIVE amount after fee (deposited to Hive Engine)
- * @param estimatedMedals  Expected MEDALS output (from quote)
- * @param worstPrice  Worst fill price from quote (used for slippage protection)
  */
 export function buildSwapOperations(
   username: string,
-  hiveAmount: number,
   fee: number,
-  netHive: number,
-  estimatedMedals: number,
-  worstPrice: number
+  netHive: number
 ): HiveOperation[] {
   const operations: HiveOperation[] = [];
 
@@ -179,10 +170,9 @@ export function buildSwapOperations(
     },
   ]);
 
-  // Max price with slippage buffer
-  const maxPrice = worstPrice * SLIPPAGE_MULTIPLIER;
-
-  // Op 3: Market buy MEDALS with SWAP.HIVE
+  // Op 3: True market buy — fills immediately at best available price.
+  // Uses 'marketBuy' (quantity = SWAP.HIVE to spend) instead of 'buy'
+  // (limit order with quantity + price) which can sit unfilled.
   operations.push([
     'custom_json',
     {
@@ -191,11 +181,10 @@ export function buildSwapOperations(
       required_posting_auths: [],
       json: JSON.stringify({
         contractName: 'market',
-        contractAction: 'buy',
+        contractAction: 'marketBuy',
         contractPayload: {
           symbol: MEDALS_CONFIG.SYMBOL,
-          quantity: estimatedMedals.toFixed(8),
-          price: maxPrice.toFixed(8),
+          quantity: netHive.toFixed(8),
         },
       }),
     },

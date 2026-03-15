@@ -1,11 +1,13 @@
 /**
- * React Query hooks for HIVE → MEDALS swap
+ * React Query hooks for HIVE -> MEDALS swap
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
 import { queryKeys } from '../queryClient';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { buildSwapOperations } from '@/lib/hive-engine/swap';
+import { logger } from '@/lib/logger';
 import type { SwapQuote } from '@/lib/hive-engine/types';
 
 // ============================================================================
@@ -45,35 +47,50 @@ async function fetchSwapQuote(amount: number): Promise<SwapQuote> {
   };
 }
 
+interface OpenOrdersResponse {
+  openOrders: Array<{
+    price: string;
+    quantity: string;
+    timestamp: number;
+    txId: string;
+  }>;
+  count: number;
+}
+
+async function fetchOpenOrders(account: string): Promise<OpenOrdersResponse> {
+  const response = await fetch(`/api/hive-engine/open-orders?account=${account}&symbol=MEDALS`);
+  if (!response.ok) {
+    throw new Error('Failed to check open orders');
+  }
+  return response.json();
+}
+
 // ============================================================================
 // Hooks
 // ============================================================================
 
 /**
  * Fetch a swap quote for a given HIVE amount.
- * Debounced via the `amount` key — only fires when amount > 0.
+ * Debounced via the `amount` key -- only fires when amount > 0.
  */
 export function useSwapQuote(amount: number) {
   return useQuery({
     queryKey: queryKeys.medals.swap(amount),
     queryFn: () => fetchSwapQuote(amount),
     enabled: amount > 0,
-    staleTime: 15_000, // 15s — order book changes fast
+    staleTime: 15_000, // 15s -- order book changes fast
     refetchOnWindowFocus: true,
   });
 }
 
 interface SwapParams {
   username: string;
-  hiveAmount: number;
   fee: number;
   netHive: number;
-  estimatedMedals: number;
-  worstPrice: number;
 }
 
 /**
- * Mutation: execute HIVE → MEDALS swap (fee + deposit + market buy in one tx).
+ * Mutation: execute HIVE -> MEDALS swap (fee + deposit + market buy in one tx).
  */
 export function useSwapMedals() {
   const queryClient = useQueryClient();
@@ -81,16 +98,9 @@ export function useSwapMedals() {
 
   return useMutation({
     mutationFn: async (params: SwapParams) => {
-      const { username, hiveAmount, fee, netHive, estimatedMedals, worstPrice } = params;
+      const { username, fee, netHive } = params;
 
-      const operations = buildSwapOperations(
-        username,
-        hiveAmount,
-        fee,
-        netHive,
-        estimatedMedals,
-        worstPrice
-      );
+      const operations = buildSwapOperations(username, fee, netHive);
 
       const result = await broadcast(operations, 'active');
 
@@ -109,4 +119,51 @@ export function useSwapMedals() {
       queryClient.invalidateQueries({ queryKey: queryKeys.medals.market() });
     },
   });
+}
+
+// ============================================================================
+// Post-swap verification
+// ============================================================================
+
+export type SwapVerifyStatus = 'idle' | 'verifying' | 'filled' | 'open_order' | 'error';
+
+/**
+ * Hook to verify whether a swap order actually filled on Hive Engine.
+ *
+ * After broadcast succeeds, call `verify(account)` to poll the sidechain.
+ * Hive Engine processes blocks every ~3s, so we wait before checking.
+ */
+export function useVerifySwap() {
+  const [status, setStatus] = useState<SwapVerifyStatus>('idle');
+  const [openOrderCount, setOpenOrderCount] = useState(0);
+
+  const verify = useCallback(async (account: string) => {
+    setStatus('verifying');
+    setOpenOrderCount(0);
+
+    try {
+      // Wait for Hive Engine sidechain to process (typically 3-6 seconds)
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      const data = await fetchOpenOrders(account);
+
+      if (data.count > 0) {
+        setOpenOrderCount(data.count);
+        setStatus('open_order');
+      } else {
+        setStatus('filled');
+      }
+    } catch (error) {
+      logger.error('Failed to verify swap', 'useVerifySwap', error);
+      // If verification fails, assume filled but warn
+      setStatus('filled');
+    }
+  }, []);
+
+  const reset = useCallback(() => {
+    setStatus('idle');
+    setOpenOrderCount(0);
+  }, []);
+
+  return { status, openOrderCount, verify, reset };
 }

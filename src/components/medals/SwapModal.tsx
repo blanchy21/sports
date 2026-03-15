@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { cn } from '@/lib/utils/client';
 import { BaseModal, ModalFooter } from '@/components/core/BaseModal';
 import { Button } from '@/components/core/Button';
-import { useSwapQuote, useSwapMedals } from '@/lib/react-query/queries/useSwap';
+import { useSwapQuote, useSwapMedals, useVerifySwap } from '@/lib/react-query/queries/useSwap';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   ArrowDownUp,
@@ -15,6 +15,8 @@ import {
   ArrowRight,
   Coins,
   Lock,
+  ExternalLink,
+  Clock,
 } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
@@ -26,7 +28,7 @@ interface SwapModalProps {
   onSwapComplete?: () => void;
 }
 
-type SwapStep = 'form' | 'confirm' | 'success';
+type SwapStep = 'form' | 'confirm' | 'verifying' | 'success' | 'open_order';
 
 function formatHive(amount: number): string {
   return amount.toFixed(3);
@@ -95,7 +97,7 @@ const HiveAmountInput: React.FC<{
 };
 
 /**
- * SwapModal — HIVE → MEDALS swap via Hive Engine order book
+ * SwapModal -- HIVE -> MEDALS swap via Hive Engine order book
  */
 export const SwapModal: React.FC<SwapModalProps> = ({
   isOpen,
@@ -108,6 +110,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
   const [step, setStep] = useState<SwapStep>('form');
   const [amount, setAmount] = useState('');
   const swapMutation = useSwapMedals();
+  const { status: verifyStatus, verify, reset: resetVerify } = useVerifySwap();
 
   const amountNum = parseFloat(amount) || 0;
 
@@ -137,8 +140,9 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     setStep('form');
     setAmount('');
     swapMutation.reset();
+    resetVerify();
     onClose();
-  }, [onClose, swapMutation]);
+  }, [onClose, swapMutation, resetVerify]);
 
   const handleConfirm = async () => {
     if (!quote || !canProceed || swapMutation.isPending) return;
@@ -146,21 +150,31 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     try {
       await swapMutation.mutateAsync({
         username: account,
-        hiveAmount: amountNum,
         fee: quote.fee,
         netHive: quote.netHive,
-        estimatedMedals: quote.estimatedMedals,
-        worstPrice: quote.worstPrice,
       });
 
-      setStep('success');
-      onSwapComplete?.();
+      // Transaction broadcast succeeded -- now verify the order filled
+      setStep('verifying');
+      await verify(account);
     } catch (error) {
       logger.error('Swap failed', 'SwapModal', error);
     }
   };
 
-  // Custodial users can't swap — need Keychain
+  // Transition from verifying to final step based on verify result
+  useEffect(() => {
+    if (step !== 'verifying') return;
+    if (verifyStatus === 'filled') {
+      setStep('success');
+      onSwapComplete?.();
+    } else if (verifyStatus === 'open_order') {
+      setStep('open_order');
+      onSwapComplete?.();
+    }
+  }, [step, verifyStatus, onSwapComplete]);
+
+  // Custodial users can't swap -- need Keychain
   if (authType !== 'hive') {
     return (
       <BaseModal
@@ -276,7 +290,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
             {!quote.sufficient && (
               <p className="mt-1 flex items-center gap-1 text-destructive">
                 <AlertCircle className="h-3 w-3" />
-                Insufficient liquidity — not enough sell orders to fill this amount
+                Insufficient liquidity -- not enough sell orders to fill this amount
               </p>
             )}
           </div>
@@ -325,13 +339,13 @@ export const SwapModal: React.FC<SwapModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-amber-700 dark:text-amber-400">Rate</span>
               <span className="text-amber-900 dark:text-amber-200">
-                1 MEDALS = {quote ? quote.averagePrice.toFixed(6) : '–'} HIVE
+                1 MEDALS = {quote ? quote.averagePrice.toFixed(6) : '-'} HIVE
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-amber-700 dark:text-amber-400">Fee (0.5%)</span>
               <span className="text-amber-900 dark:text-amber-200">
-                {quote ? formatHive(quote.fee) : '–'} HIVE
+                {quote ? formatHive(quote.fee) : '-'} HIVE
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -350,7 +364,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
             <p>
               {quote.priceImpact > 5
                 ? 'High price impact! You may receive significantly fewer MEDALS than expected. Consider swapping a smaller amount.'
-                : 'Moderate price impact. The order book is thin at this size — you may want to swap in smaller batches.'}
+                : 'Moderate price impact. The order book is thin at this size -- you may want to swap in smaller batches.'}
             </p>
           </div>
         )}
@@ -401,6 +415,24 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     </>
   );
 
+  // ---------- Verifying Step ----------
+  const renderVerifyingStep = () => (
+    <div className="space-y-4 py-6 text-center">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+      </div>
+      <div>
+        <h3 className="text-lg font-semibold text-foreground">Verifying Swap</h3>
+        <p className="mt-1 text-muted-foreground">
+          Transaction broadcast successfully. Checking if your order filled on Hive Engine...
+        </p>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        This usually takes a few seconds while the sidechain processes the transaction.
+      </p>
+    </div>
+  );
+
   // ---------- Success Step ----------
   const renderSuccessStep = () => (
     <>
@@ -412,7 +444,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           <h3 className="text-lg font-semibold text-foreground">Swap Successful!</h3>
           <p className="mt-1 text-muted-foreground">
             You swapped {formatHive(amountNum)} HIVE for ~
-            {quote ? formatMedals(quote.estimatedMedals) : '–'} MEDALS
+            {quote ? formatMedals(quote.estimatedMedals) : '-'} MEDALS
           </p>
         </div>
 
@@ -424,27 +456,74 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           <div className="mt-2 flex items-center justify-between text-muted-foreground">
             <span>Fee (0.5%)</span>
             <span className="font-medium text-foreground">
-              {quote ? formatHive(quote.fee) : '–'} HIVE
+              {quote ? formatHive(quote.fee) : '-'} HIVE
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between text-muted-foreground">
             <span>MEDALS Received (est.)</span>
             <span className="font-medium text-warning">
-              {quote ? formatMedals(quote.estimatedMedals) : '–'} MEDALS
+              {quote ? formatMedals(quote.estimatedMedals) : '-'} MEDALS
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between text-muted-foreground">
             <span>Avg. Price</span>
             <span className="font-medium text-foreground">
-              {quote ? quote.averagePrice.toFixed(6) : '–'} HIVE
+              {quote ? quote.averagePrice.toFixed(6) : '-'} HIVE
             </span>
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          Your MEDALS balance will update after the Hive Engine sidechain processes the transaction
-          (usually within 1–2 minutes).
-        </p>
+        <p className="text-xs text-muted-foreground">Your MEDALS balance will update shortly.</p>
+      </div>
+
+      <ModalFooter className="justify-center border-t-0 px-0 pb-0 pt-4">
+        <Button onClick={handleClose}>Close</Button>
+      </ModalFooter>
+    </>
+  );
+
+  // ---------- Open Order Step (order did NOT fill) ----------
+  const renderOpenOrderStep = () => (
+    <>
+      <div className="space-y-4 py-6 text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+          <Clock className="h-8 w-8 text-amber-500" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Order Pending</h3>
+          <p className="mt-1 text-muted-foreground">
+            Your HIVE was deposited but the buy order has not fully filled yet. This can happen when
+            the order book changes between quoting and execution.
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-left text-sm dark:border-amber-800 dark:bg-amber-900/20">
+          <h4 className="mb-2 font-medium text-amber-800 dark:text-amber-300">What happened?</h4>
+          <ul className="list-inside list-disc space-y-1 text-amber-700 dark:text-amber-400">
+            <li>Your {formatHive(amountNum)} HIVE was deposited to Hive Engine</li>
+            <li>A limit buy order was placed for MEDALS</li>
+            <li>The order is waiting to be matched with sellers</li>
+          </ul>
+        </div>
+
+        <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-left text-sm text-muted-foreground">
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <div>
+            <p>
+              Your open order may fill shortly as new sellers appear. You can check your open orders
+              and cancel them on Tribaldex if needed.
+            </p>
+            <a
+              href={`https://tribaldex.com/trade/MEDALS`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-1 text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+            >
+              View on Tribaldex
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        </div>
       </div>
 
       <ModalFooter className="justify-center border-t-0 px-0 pb-0 pt-4">
@@ -458,7 +537,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
       isOpen={isOpen}
       onClose={handleClose}
       title={
-        step === 'success' ? undefined : (
+        step === 'success' || step === 'open_order' || step === 'verifying' ? undefined : (
           <div className="flex items-center gap-2">
             <ArrowDownUp className="h-5 w-5 text-amber-500" />
             {step === 'form' ? 'Buy MEDALS' : 'Confirm Swap'}
@@ -469,11 +548,13 @@ export const SwapModal: React.FC<SwapModalProps> = ({
         step === 'form' ? 'Swap HIVE for MEDALS via the Hive Engine order book' : undefined
       }
       size="md"
-      showHeader={step !== 'success'}
+      showHeader={step !== 'success' && step !== 'open_order' && step !== 'verifying'}
     >
       {step === 'form' && renderFormStep()}
       {step === 'confirm' && renderConfirmStep()}
+      {step === 'verifying' && renderVerifyingStep()}
       {step === 'success' && renderSuccessStep()}
+      {step === 'open_order' && renderOpenOrderStep()}
     </BaseModal>
   );
 };

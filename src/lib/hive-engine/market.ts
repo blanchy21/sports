@@ -290,6 +290,27 @@ export async function getMedalsPoolInfo(): Promise<PoolInfo | null> {
 }
 
 // ============================================================================
+// Open Orders
+// ============================================================================
+
+/**
+ * Get a user's open buy orders for a token.
+ * Used to verify whether a market buy actually filled.
+ */
+export async function getUserOpenBuyOrders(
+  account: string,
+  symbol: string = MEDALS_CONFIG.SYMBOL
+): Promise<OrderBookEntry[]> {
+  const client = getHiveEngineClient();
+  return client.find<OrderBookEntry>(
+    CONTRACTS.MARKET,
+    'buyBook',
+    { account, symbol },
+    { limit: 10, index: 'timestamp', descending: true }
+  );
+}
+
+// ============================================================================
 // Price Calculations
 // ============================================================================
 
@@ -389,10 +410,7 @@ export async function getMarketStats(symbol: string = MEDALS_CONFIG.SYMBOL): Pro
   spread: number;
   spreadPercent: number;
 } | null> {
-  const [marketData, poolInfo] = await Promise.all([
-    getMarketData(symbol),
-    getPoolInfo(symbol),
-  ]);
+  const [marketData, poolInfo] = await Promise.all([getMarketData(symbol), getPoolInfo(symbol)]);
 
   if (!marketData) {
     return null;
