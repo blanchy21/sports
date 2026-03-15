@@ -41,6 +41,10 @@ jest.mock('@/lib/logger', () => ({
   logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));
 
+jest.mock('@/lib/hive-workerbee/optimization', () => ({
+  getAccountOptimized: jest.fn().mockResolvedValue(null),
+}));
+
 import { prisma } from '@/lib/db/prisma';
 import {
   executeSettlement,
