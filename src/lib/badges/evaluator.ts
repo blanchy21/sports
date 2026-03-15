@@ -9,6 +9,7 @@ import { prisma } from '@/lib/db/prisma';
 import { logger } from '@/lib/logger';
 import { BADGE_CATALOGUE } from './catalogue';
 import type { BadgeTrigger, BadgeDefinition } from './types';
+import { getAccountOptimized } from '@/lib/hive-workerbee/optimization';
 
 // ── Inline evaluation (after user action) ──────────────────
 
@@ -109,6 +110,29 @@ export async function evaluateAllBadges(): Promise<{
     if (allStats.length === 0) return { usersProcessed: 0, badgesAwarded: 0 };
 
     const usernames = allStats.map((s) => s.username);
+
+    // 1b. Reconcile stats from Hive for users with 0 posts (likely untracked on-chain activity)
+    const staleUsers = allStats.filter((s) => s.totalPosts === 0 && s.totalComments === 0);
+    if (staleUsers.length > 0) {
+      const RECONCILE_BATCH = 50; // Limit Hive API calls per sweep
+      const toReconcile = staleUsers.slice(0, RECONCILE_BATCH);
+      let reconciled = 0;
+      for (const user of toReconcile) {
+        const updated = await reconcileStatsFromHive(user.username);
+        if (updated) reconciled++;
+      }
+      if (reconciled > 0) {
+        logger.info(`Reconciled ${reconciled}/${toReconcile.length} users from Hive`, 'Badges');
+        // Re-fetch stats for reconciled users so badge evaluation uses updated values
+        const refreshed = await prisma.userStats.findMany({
+          where: { username: { in: toReconcile.map((u) => u.username) } },
+        });
+        for (const fresh of refreshed) {
+          const idx = allStats.findIndex((s) => s.username === fresh.username);
+          if (idx >= 0) allStats[idx] = fresh;
+        }
+      }
+    }
 
     // 2. Fetch all existing badges for these users
     const existingBadges = await prisma.userBadge.findMany({
@@ -288,6 +312,65 @@ function resolveSampleSize(
     return pStats?.total ?? 0;
   }
   return null;
+}
+
+/**
+ * Reconcile UserStats from Hive account data.
+ *
+ * The Hive account has a `post_count` field (total root posts + comments on-chain).
+ * If UserStats.totalPosts + totalComments is much lower than the Hive count,
+ * this means the user posted on-chain before our tracking was in place.
+ * We update UserStats to reflect the Hive counts so badges evaluate correctly.
+ *
+ * Fire-and-forget — errors logged, never thrown.
+ */
+export async function reconcileStatsFromHive(username: string): Promise<boolean> {
+  try {
+    const account = await getAccountOptimized(username);
+    if (!account) return false;
+
+    const hivePostCount = (account.post_count as number) || 0;
+    if (hivePostCount === 0) return false;
+
+    const stats = await prisma.userStats.findUnique({
+      where: { username },
+      select: { totalPosts: true, totalComments: true },
+    });
+
+    const dbTotal = (stats?.totalPosts ?? 0) + (stats?.totalComments ?? 0);
+
+    // Only reconcile if Hive shows significantly more activity than our DB
+    if (hivePostCount <= dbTotal) return false;
+
+    // Hive's post_count includes both root posts and comments.
+    // We can't distinguish between them without scanning history, so
+    // we attribute the gap to totalPosts (most badges care about posts).
+    // This is a conservative approximation — the weekly cron will keep it updated.
+    const gap = hivePostCount - dbTotal;
+
+    await prisma.userStats.upsert({
+      where: { username },
+      create: {
+        username,
+        totalPosts: gap,
+        lastActiveAt: new Date(),
+        updatedAt: new Date(),
+      },
+      update: {
+        totalPosts: { increment: gap },
+        updatedAt: new Date(),
+      },
+    });
+
+    logger.info(
+      `Reconciled UserStats for ${username}: added ${gap} posts from Hive (hive=${hivePostCount}, db=${dbTotal})`,
+      'Badges'
+    );
+    return true;
+  } catch (error) {
+    logger.error(`Stats reconciliation failed for ${username}`, 'Badges', error);
+    return false;
+  }
 }
 
 /**

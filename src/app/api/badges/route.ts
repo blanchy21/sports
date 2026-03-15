@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { createApiHandler, apiSuccess } from '@/lib/api/response';
 import { BADGE_CATALOGUE, RANK_TIERS, getRankTierForScore } from '@/lib/badges/catalogue';
 import type { UserBadgeData, UserRankData, UserSportRankData } from '@/lib/badges/types';
+import { reconcileStatsFromHive, evaluateBadgesForAction } from '@/lib/badges/evaluator';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,16 +18,13 @@ export const GET = createApiHandler('/api/badges', async (request) => {
     );
   }
 
-  // Fetch badges, stats, sport ranks, and monthly titles in parallel
-  const [userBadges, userStats, sportStats, monthlyTitles] = await Promise.all([
+  // Fetch badges, stats (full row for reconciliation check), sport ranks, monthly titles
+  const [userBadges, fullStats, sportStats, monthlyTitles] = await Promise.all([
     prisma.userBadge.findMany({
       where: { username },
       orderBy: { awardedAt: 'desc' },
     }),
-    prisma.userStats.findUnique({
-      where: { username },
-      select: { medalsScore: true, medalsRank: true },
-    }),
+    prisma.userStats.findUnique({ where: { username } }),
     prisma.userSportStats.findMany({
       where: { username },
       orderBy: { medalsScore: 'desc' },
@@ -36,6 +34,22 @@ export const GET = createApiHandler('/api/badges', async (request) => {
       orderBy: { awardedAt: 'desc' },
     }),
   ]);
+
+  // If user has stale stats (0 posts + 0 comments), reconcile from Hive and re-evaluate
+  // This is fire-and-forget — the current response uses existing data, but next request
+  // will reflect the reconciled stats and any newly awarded badges.
+  if (fullStats && fullStats.totalPosts === 0 && fullStats.totalComments === 0) {
+    reconcileStatsFromHive(username)
+      .then((updated) => {
+        if (updated) {
+          // Re-evaluate all badge triggers after reconciliation
+          return evaluateBadgesForAction(username, 'post_created');
+        }
+      })
+      .catch(() => {});
+  }
+
+  const userStats = fullStats;
 
   // Join badge rows with catalogue definitions
   const badges: UserBadgeData[] = userBadges
