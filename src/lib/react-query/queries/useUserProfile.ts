@@ -163,27 +163,31 @@ export async function prefetchUserProfiles(
   }
 }
 
+/**
+ * Follower count hook — shares cache with useUserProfile via `select`.
+ * No extra API call when useUserProfile is already fetched/fetching.
+ */
 export function useUserFollowerCount(username: string) {
   return useQuery({
-    queryKey: [...queryKeys.users.followers(username), 'count'],
-    queryFn: async () => {
-      const account = await fetchAccountViaApi(username);
-      return account?.stats?.followers ?? 0;
-    },
+    queryKey: queryKeys.users.detail(username),
+    queryFn: () => fetchAccountViaApi(username),
     enabled: !!username,
-    staleTime: STALE_TIMES.STABLE,
+    staleTime: STALE_TIMES.STANDARD,
+    select: (data) => data?.stats?.followers ?? 0,
   });
 }
 
+/**
+ * Following count hook — shares cache with useUserProfile via `select`.
+ * No extra API call when useUserProfile is already fetched/fetching.
+ */
 export function useUserFollowingCount(username: string) {
   return useQuery({
-    queryKey: [...queryKeys.users.following(username), 'count'],
-    queryFn: async () => {
-      const account = await fetchAccountViaApi(username);
-      return account?.stats?.following ?? 0;
-    },
+    queryKey: queryKeys.users.detail(username),
+    queryFn: () => fetchAccountViaApi(username),
     enabled: !!username,
-    staleTime: STALE_TIMES.STABLE,
+    staleTime: STALE_TIMES.STANDARD,
+    select: (data) => data?.stats?.following ?? 0,
   });
 }
 
