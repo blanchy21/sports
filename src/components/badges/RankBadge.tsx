@@ -22,9 +22,9 @@ const RANK_ASSETS: Record<MedalsRank, { label: string; src: string }> = {
 
 // Height in px — width auto-calculated from 4:5 aspect ratio (160:200)
 const SIZE_PX: Record<string, number> = {
-  sm: 32,
-  md: 44,
-  lg: 64,
+  sm: 96,
+  md: 112,
+  lg: 140,
 };
 
 export const RankBadge: React.FC<RankBadgeProps> = ({ rank, size = 'sm', className }) => {
