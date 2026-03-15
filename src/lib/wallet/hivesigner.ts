@@ -276,11 +276,14 @@ export async function hivesignerBroadcast(operations: HiveOperation[]): Promise<
   }
 
   try {
+    // Use standard Bearer prefix (HiveSigner returns token_type=bearer)
+    const authHeader = token.toLowerCase().startsWith('bearer ') ? token : `Bearer ${token}`;
+
     const response = await fetch('https://hivesigner.com/api/broadcast', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: token,
+        Authorization: authHeader,
       },
       body: JSON.stringify({ operations }),
     });

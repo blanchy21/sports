@@ -89,8 +89,12 @@ async function verifyHivesignerToken(
   expectedUsername: string
 ): Promise<{ valid: boolean; reason?: string }> {
   try {
+    // HiveSigner OAuth returns token_type=bearer; use standard Bearer prefix.
+    // Accept tokens with or without existing prefix for backwards compatibility.
+    const authHeader = token.toLowerCase().startsWith('bearer ') ? token : `Bearer ${token}`;
+
     const res = await fetch('https://hivesigner.com/api/me', {
-      headers: { Authorization: token },
+      headers: { Authorization: authHeader },
     });
 
     if (!res.ok) {
@@ -98,7 +102,9 @@ async function verifyHivesignerToken(
     }
 
     const data = await res.json();
-    const tokenUsername = (data.user ?? data.name ?? data.account ?? '').toLowerCase();
+    // HiveSigner /api/me returns { user: "username", _id: "username", account: {...} }
+    const rawUser = data.user ?? data.name ?? data._id ?? '';
+    const tokenUsername = (typeof rawUser === 'string' ? rawUser : '').toLowerCase();
     const expected = expectedUsername.toLowerCase();
 
     if (!tokenUsername) {
@@ -178,11 +184,7 @@ export const POST = createApiHandler(ROUTE, async (request) => {
 
     if (existingCookie?.value) {
       const existing = decryptSession(existingCookie.value);
-      if (
-        existing &&
-        existing.authType === 'hive' &&
-        existing.username === sessionData.username
-      ) {
+      if (existing && existing.authType === 'hive' && existing.username === sessionData.username) {
         isSessionRefresh = true;
       }
     }
@@ -241,7 +243,11 @@ export const POST = createApiHandler(ROUTE, async (request) => {
               );
             }
             // Mark nonce as consumed with TTL matching challenge window (5 min)
-            await redis.set(nonceKey, { user: sessionData.username, usedAt: Date.now() }, { ttl: 300 });
+            await redis.set(
+              nonceKey,
+              { user: sessionData.username, usedAt: Date.now() },
+              { ttl: 300 }
+            );
           }
         } catch (err) {
           // Redis unavailable — log but allow through (challenge HMAC + expiry still protect)

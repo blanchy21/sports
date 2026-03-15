@@ -298,8 +298,16 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           displayName: basicUser.displayName,
           avatar: basicUser.avatar,
         });
-        if (process.env.NODE_ENV === 'development' && !cookieSynced) {
-          console.warn('[loginWithWallet] Direct cookie sync FAILED for user:', username);
+        if (!cookieSynced) {
+          logger.warn('Session cookie sync failed for wallet login', 'useAuthActions', {
+            provider,
+            user: username,
+            hasChallengeData: !!challengeData,
+            hasHivesignerToken: !!hivesignerToken,
+          });
+          // Revert the optimistic LOGIN dispatch — user has no valid server session
+          dispatch({ type: 'LOGOUT' });
+          throw new Error('Failed to create secure session. Please try logging in again.');
         }
 
         // Debounced persist for UI hint & activity updates
