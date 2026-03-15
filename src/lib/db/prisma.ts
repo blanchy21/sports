@@ -13,7 +13,7 @@ function createPrismaClient(): PrismaClient {
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
   });
-  const adapter = new PrismaPg(pool);
+  const adapter = new PrismaPg(pool as unknown as ConstructorParameters<typeof PrismaPg>[0]);
   return new PrismaClient({ adapter });
 }
 
