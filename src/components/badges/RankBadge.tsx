@@ -20,8 +20,15 @@ const RANK_ASSETS: Record<MedalsRank, { label: string; src: string }> = {
   'hall-of-fame': { label: 'Hall of Fame', src: '/badges/roles/hall-of-fame.png' },
 };
 
-// Height in px — width auto-calculated from 4:5 aspect ratio (160:200)
-const SIZE_PX: Record<string, number> = {
+// Responsive height classes: smaller on mobile, full size on sm+ breakpoint
+const SIZE_CLASSES: Record<string, string> = {
+  sm: 'h-[56px] sm:h-[96px]',
+  md: 'h-[64px] sm:h-[112px]',
+  lg: 'h-[80px] sm:h-[140px]',
+};
+
+// Render at largest size — CSS constrains the visual height
+const RENDER_PX: Record<string, number> = {
   sm: 96,
   md: 112,
   lg: 140,
@@ -33,7 +40,7 @@ export const RankBadge: React.FC<RankBadgeProps> = ({ rank, size = 'sm', classNa
   const asset = RANK_ASSETS[rank];
   if (!asset) return null;
 
-  const h = SIZE_PX[size];
+  const h = RENDER_PX[size];
   const w = Math.round(h * (160 / 200)); // 4:5 aspect ratio
 
   return (
@@ -46,7 +53,7 @@ export const RankBadge: React.FC<RankBadgeProps> = ({ rank, size = 'sm', classNa
         alt={`${asset.label} rank badge`}
         width={w}
         height={h}
-        className="object-contain"
+        className={cn('w-auto object-contain', SIZE_CLASSES[size])}
         priority={false}
       />
     </div>
