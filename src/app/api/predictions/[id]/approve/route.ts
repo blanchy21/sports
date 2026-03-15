@@ -30,8 +30,21 @@ export const POST = createApiHandler('/api/predictions/[id]/approve', async (req
 
     if (!prediction) throw new NotFoundError('Prediction not found');
 
+    // SETTLING = partial settlement failed mid-broadcast, allow admin retry
+    if (prediction.status === 'SETTLING') {
+      if (!prediction.winningOutcomeId) {
+        throw new ValidationError('SETTLING prediction has no winningOutcomeId — cannot retry');
+      }
+      const settlement = await executeSettlement(
+        predictionId,
+        prediction.winningOutcomeId,
+        user.username
+      );
+      return apiSuccess({ settlement, retried: true });
+    }
+
     if (prediction.status !== 'PENDING_APPROVAL') {
-      throw new ValidationError('Prediction must be PENDING_APPROVAL to approve');
+      throw new ValidationError('Prediction must be PENDING_APPROVAL or SETTLING to approve');
     }
 
     if (prediction.proposedBy === user.username) {

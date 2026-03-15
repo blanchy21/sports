@@ -12,7 +12,16 @@ import {
 } from '@/hooks/usePredictionSettlement';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { useToast, toast } from '@/components/core/Toast';
-import { AlertCircle, Check, Loader2, ChevronDown, ChevronUp, X, Clock, ShieldCheck } from 'lucide-react';
+import {
+  AlertCircle,
+  Check,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Clock,
+  ShieldCheck,
+} from 'lucide-react';
 import type { PredictionBite } from '@/lib/predictions/types';
 
 interface PredictionSettlementPanelProps {
@@ -35,6 +44,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
   const [confirmingVoid, setConfirmingVoid] = useState(false);
   const [confirmingApprove, setConfirmingApprove] = useState(false);
   const [confirmingReject, setConfirmingReject] = useState(false);
+  const [confirmingRetry, setConfirmingRetry] = useState(false);
 
   const hiveUsername =
     hiveUser?.username || user?.hiveUsername || (authType === 'hive' ? user?.username : undefined);
@@ -43,11 +53,13 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
   const isCreator = hiveUsername === prediction.creatorUsername;
   const isProposer = hiveUsername === prediction.proposedBy;
 
-  // Show panel for LOCKED (creators/admins can propose) or PENDING_APPROVAL (admins can approve/reject)
+  // Show panel for LOCKED (creators/admins can propose), PENDING_APPROVAL (admins can approve/reject),
+  // or SETTLING (admins can retry a stuck settlement)
   const showForLocked = (isCreator || isAdmin) && prediction.status === 'LOCKED';
   const showForPending = isAdmin && prediction.status === 'PENDING_APPROVAL';
+  const showForSettling = isAdmin && prediction.status === 'SETTLING';
 
-  if (!hiveUsername || (!showForLocked && !showForPending)) {
+  if (!hiveUsername || (!showForLocked && !showForPending && !showForSettling)) {
     return null;
   }
 
@@ -65,12 +77,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
         predictionId: prediction.id,
         winningOutcomeId: selectedWinner,
       });
-      addToast(
-        toast.success(
-          'Settlement Proposed',
-          'Awaiting approval from another admin.'
-        )
-      );
+      addToast(toast.success('Settlement Proposed', 'Awaiting approval from another admin.'));
       setIsExpanded(false);
       setConfirmingSettle(false);
       setSelectedWinner(null);
@@ -125,7 +132,10 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
   };
 
   const anyError =
-    settleMutation.isError || voidMutation.isError || approveMutation.isError || rejectMutation.isError;
+    settleMutation.isError ||
+    voidMutation.isError ||
+    approveMutation.isError ||
+    rejectMutation.isError;
   const errorMessage =
     settleMutation.error?.message ||
     voidMutation.error?.message ||
@@ -133,7 +143,25 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
     rejectMutation.error?.message ||
     'Operation failed';
 
-  const panelLabel = prediction.status === 'PENDING_APPROVAL' ? 'Approval Panel' : 'Settlement Panel';
+  const handleRetry = async () => {
+    if (!confirmingRetry) return;
+
+    try {
+      await approveMutation.mutateAsync({ predictionId: prediction.id });
+      addToast(toast.success('Settlement Retried', 'Prediction settled successfully.'));
+      setIsExpanded(false);
+      setConfirmingRetry(false);
+    } catch {
+      // Error handled by mutation state
+    }
+  };
+
+  const panelLabel =
+    prediction.status === 'SETTLING'
+      ? 'Settlement Stuck — Retry'
+      : prediction.status === 'PENDING_APPROVAL'
+        ? 'Approval Panel'
+        : 'Settlement Panel';
 
   return (
     <div className="border-t">
@@ -142,9 +170,11 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           'flex w-full items-center justify-between px-4 py-3 text-sm font-medium transition-colors',
-          prediction.status === 'PENDING_APPROVAL'
-            ? 'text-amber-600 hover:bg-amber-500/5'
-            : 'text-warning hover:bg-warning/5'
+          prediction.status === 'SETTLING'
+            ? 'text-destructive hover:bg-destructive/5'
+            : prediction.status === 'PENDING_APPROVAL'
+              ? 'text-amber-600 hover:bg-amber-500/5'
+              : 'text-warning hover:bg-warning/5'
         )}
       >
         <span className="flex items-center gap-2">
@@ -175,8 +205,8 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                 </div>
                 <div className="mt-2 space-y-1 text-muted-foreground">
                   <p>
-                    <span className="font-medium text-foreground">Proposed by:</span>{' '}
-                    @{prediction.proposedBy}
+                    <span className="font-medium text-foreground">Proposed by:</span> @
+                    {prediction.proposedBy}
                   </p>
                   <p>
                     <span className="font-medium text-foreground">Action:</span>{' '}
@@ -184,8 +214,8 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                       <>
                         Settle — Winner:{' '}
                         <span className="font-semibold text-success">
-                          {prediction.outcomes.find((o) => o.id === prediction.proposedOutcomeId)?.label ??
-                            'Unknown'}
+                          {prediction.outcomes.find((o) => o.id === prediction.proposedOutcomeId)
+                            ?.label ?? 'Unknown'}
                         </span>
                       </>
                     ) : (
@@ -300,6 +330,62 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
             </div>
           )}
 
+          {/* === SETTLING mode: retry stuck settlement === */}
+          {prediction.status === 'SETTLING' && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-3 text-sm">
+                <div className="flex items-center gap-2 text-destructive">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span className="font-medium">Settlement Stuck</span>
+                </div>
+                <p className="mt-2 text-muted-foreground">
+                  A previous settlement attempt failed mid-broadcast. Some payouts may already be
+                  sent. Retrying will skip completed steps and finish the settlement.
+                </p>
+              </div>
+
+              {!confirmingRetry ? (
+                <Button
+                  onClick={() => setConfirmingRetry(true)}
+                  disabled={isProcessing}
+                  className="w-full bg-warning text-white hover:bg-warning/90"
+                >
+                  Retry Settlement
+                </Button>
+              ) : (
+                <div role="alertdialog" aria-label="Confirm settlement retry" className="space-y-2">
+                  <p className="text-center text-sm font-medium text-warning">
+                    This will resume the stuck settlement. Already-sent payouts will be skipped.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setConfirmingRetry(false)}
+                      disabled={isProcessing}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleRetry}
+                      disabled={isProcessing}
+                      className="flex-1 bg-warning text-white hover:bg-warning/90"
+                    >
+                      {approveMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Retrying...
+                        </>
+                      ) : (
+                        'Confirm Retry'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* === LOCKED mode: propose settlement or void === */}
           {prediction.status === 'LOCKED' && (
             <>
@@ -347,7 +433,11 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                   )}
 
                   {selectedWinner && confirmingSettle && (
-                    <div role="alertdialog" aria-label="Confirm settlement proposal" className="space-y-2">
+                    <div
+                      role="alertdialog"
+                      aria-label="Confirm settlement proposal"
+                      className="space-y-2"
+                    >
                       <p className="text-center text-sm font-medium text-warning">
                         A second admin will need to approve this before execution.
                       </p>
@@ -431,7 +521,11 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                         </Button>
                       </div>
                     ) : (
-                      <div role="alertdialog" aria-label="Confirm void proposal" className="space-y-2">
+                      <div
+                        role="alertdialog"
+                        aria-label="Confirm void proposal"
+                        className="space-y-2"
+                      >
                         <p className="text-center text-sm font-medium text-warning">
                           A second admin will need to approve this before execution.
                         </p>

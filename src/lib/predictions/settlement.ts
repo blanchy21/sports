@@ -129,7 +129,7 @@ export async function executeSettlement(
       id: predictionId,
       status: { in: [PredictionStatus.LOCKED, PredictionStatus.PENDING_APPROVAL] },
     },
-    data: { status: PredictionStatus.SETTLING, ...PROPOSAL_CLEAR_DATA },
+    data: { status: PredictionStatus.SETTLING, winningOutcomeId, ...PROPOSAL_CLEAR_DATA },
   });
 
   if (lockResult.count === 0) {
