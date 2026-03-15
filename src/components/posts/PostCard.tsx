@@ -239,10 +239,10 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
               >
                 @{getAuthorName()}
               </Link>
-              <RoleBadge username={getAuthorName()} />
               {authorPremiumTier && (
                 <PremiumBadge tier={authorPremiumTier} size="sm" showLabel={false} />
               )}
+              <RoleBadge username={getAuthorName()} />
               <RankBadge rank={authorRank} size="sm" />
               <span className="shrink-0 text-muted-foreground">•</span>
               <span className="shrink-0 text-sm text-muted-foreground">

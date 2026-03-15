@@ -20,9 +20,9 @@ const TIER_ASSETS: Record<PremiumTier, { label: string; src: string }> = {
 
 // Height in px — width auto-calculated from 4:5 aspect ratio
 const SIZE_PX: Record<string, number> = {
-  sm: 20,
-  md: 28,
-  lg: 40,
+  sm: 32,
+  md: 44,
+  lg: 64,
 };
 
 /**

@@ -347,8 +347,8 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                       ? (profile as { displayName?: string }).displayName || username
                       : (profile as { profile?: { name?: string } }).profile?.name || username}
                   </h1>
-                  <RoleBadge username={username} size="md" />
                   {!isSoftUser && premiumTier && <StakingBadge tier={premiumTier} size="md" />}
+                  <RoleBadge username={username} size="md" />
                   <RankBadge rank={medalsRank} size="md" />
                   {!isSoftUser &&
                     (profile as { reputationFormatted?: string }).reputationFormatted && (
