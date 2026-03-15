@@ -402,7 +402,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
               variant="ghost"
               size="sm"
               onClick={handleComment}
-              className="flex items-center space-x-1 text-muted-foreground hover:text-primary"
+              className="flex items-center space-x-1 text-muted-foreground hover:bg-primary/10 hover:text-primary"
               aria-label={`${commentCount} comments`}
             >
               <MessageCircle className="h-4 w-4" />
@@ -415,7 +415,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
                 size="sm"
                 onClick={handleReblog}
                 disabled={isReblogging}
-                className="flex items-center space-x-1 text-muted-foreground hover:text-success"
+                className="flex items-center space-x-1 text-muted-foreground hover:bg-success/10 hover:text-success"
                 aria-label="Reblog post"
               >
                 <Repeat2 className={cn('h-4 w-4', isReblogging && 'animate-spin')} />
@@ -427,7 +427,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
             variant="ghost"
             size="sm"
             onClick={handleBookmark}
-            className={`text-muted-foreground hover:text-primary ${
+            className={`text-muted-foreground hover:bg-primary/10 hover:text-primary ${
               isBookmarked(post) ? 'text-primary' : ''
             }`}
             aria-label={isBookmarked(post) ? 'Remove bookmark' : 'Bookmark post'}
