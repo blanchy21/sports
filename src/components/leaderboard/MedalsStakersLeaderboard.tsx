@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Avatar } from '@/components/core/Avatar';
 import { getHiveAvatarUrl } from '@/lib/utils/avatar';
 import { Loader2, Medal, RefreshCw } from 'lucide-react';
@@ -34,23 +35,11 @@ interface LeaderboardResponse {
   timestamp: string;
 }
 
-const TIER_STYLES: Record<string, { label: string; className: string }> = {
-  BRONZE: {
-    label: 'Bronze',
-    className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  },
-  SILVER: {
-    label: 'Silver',
-    className: 'bg-muted text-foreground/80',
-  },
-  GOLD: {
-    label: 'Gold',
-    className: 'bg-warning/15 text-warning',
-  },
-  PLATINUM: {
-    label: 'Platinum',
-    className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  },
+const TIER_ASSETS: Record<string, { label: string; src: string }> = {
+  BRONZE: { label: 'Bronze', src: '/badges/staking/badge-bronze.png' },
+  SILVER: { label: 'Silver', src: '/badges/staking/badge-silver.png' },
+  GOLD: { label: 'Gold', src: '/badges/staking/badge-gold.png' },
+  PLATINUM: { label: 'Platinum', src: '/badges/staking/badge-platinum.png' },
 };
 
 function getRankBadgeClass(rank: number): string {
@@ -75,14 +64,17 @@ function formatAmount(amount: number): string {
 }
 
 function PremiumBadge({ tier }: { tier: PremiumTier }) {
-  const style = TIER_STYLES[tier];
-  if (!style) return null;
+  const asset = TIER_ASSETS[tier];
+  if (!asset) return null;
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${style.className}`}
-    >
-      {style.label}
-    </span>
+    <Image
+      src={asset.src}
+      alt={`${asset.label} tier`}
+      width={16}
+      height={20}
+      className="inline-block object-contain"
+      title={`${asset.label} tier`}
+    />
   );
 }
 
