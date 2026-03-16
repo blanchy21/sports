@@ -16,6 +16,12 @@ interface PredictionEditModalProps {
   onSaved: (updated: PredictionBite) => void;
 }
 
+/** Format a Date as a local datetime-local string (YYYY-MM-DDTHH:MM) */
+function toLocalDateTimeString(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function PredictionEditModal({
   prediction,
   isOpen,
@@ -29,13 +35,11 @@ export function PredictionEditModal({
   const [sportCategory, setSportCategory] = useState(prediction.sportCategory ?? '');
   const [matchReference, setMatchReference] = useState(prediction.matchReference ?? '');
   const [locksAt, setLocksAt] = useState(() => {
-    // Format for datetime-local input (YYYY-MM-DDTHH:MM)
-    const d = new Date(prediction.locksAt);
-    return d.toISOString().slice(0, 16);
+    // Format UTC date as local time for datetime-local input
+    return toLocalDateTimeString(new Date(prediction.locksAt));
   });
   const minLockTime = useMemo(() => {
-    const d = new Date(Date.now() + PREDICTION_CONFIG.MIN_LOCK_TIME_MS);
-    return d.toISOString().slice(0, 16);
+    return toLocalDateTimeString(new Date(Date.now() + PREDICTION_CONFIG.MIN_LOCK_TIME_MS));
   }, []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

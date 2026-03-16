@@ -11,6 +11,12 @@ import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { usePlaceStake } from '@/hooks/usePredictionStake';
 import { logger } from '@/lib/logger';
 
+/** Format a Date as a local datetime-local string (YYYY-MM-DDTHH:MM) */
+function toLocalDateTimeString(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 interface PredictionComposerProps {
   onSuccess?: (bite: null) => void;
   onError?: (error: string) => void;
@@ -289,7 +295,7 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
         <DateTimePicker
           value={predictionLocksAt}
           onChange={setPredictionLocksAt}
-          min={new Date(Date.now() + PREDICTION_CONFIG.MIN_LOCK_TIME_MS).toISOString().slice(0, 16)}
+          min={toLocalDateTimeString(new Date(Date.now() + PREDICTION_CONFIG.MIN_LOCK_TIME_MS))}
           disabled={isPublishing}
           placeholder="Select lock time"
         />
