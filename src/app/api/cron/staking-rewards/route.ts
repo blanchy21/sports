@@ -489,7 +489,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { forceRecalculate = false, dryRun = true, retryBroadcast = false } = body;
+    const {
+      forceRecalculate = false,
+      dryRun = true,
+      retryBroadcast = false,
+      weekId: requestedWeekId,
+    } = body;
 
     // Retry path: re-broadcast a previously failed distribution
     if (retryBroadcast) {
@@ -501,7 +506,7 @@ export async function POST(request: Request) {
         );
       }
 
-      const weekId = getWeekId();
+      const weekId = requestedWeekId || getWeekId();
       const activeKey = PrivateKey.fromString(activeKeyStr);
       const retryResult = await retryFailedBroadcast(weekId, activeKey);
 
