@@ -19,6 +19,7 @@ import {
   getRewardsAccount,
   validateRewardsBalance,
   buildRewardTransferOperations,
+  chunkArray,
   type StakerInfo,
   type DistributionResult,
 } from '@/lib/rewards/staking-distribution';
@@ -33,11 +34,15 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
-/** Max custom_json ops per Hive transaction (Hive limits to 5 per block per account) */
-const BATCH_SIZE = 5;
+/**
+ * Max transfers per custom_json payload (Hive Engine processes arrays).
+ * Each batch becomes a single custom_json op, so we stay well under the
+ * 5 custom_json-per-block-per-account limit.
+ */
+const TRANSFERS_PER_BATCH = 25;
 
-/** Delay between batches to land in separate blocks (ms) */
-const BATCH_DELAY_MS = 3500;
+/** Delay between batches to land in separate blocks (ms). Hive blocks are 3s. */
+const BATCH_DELAY_MS = 4000;
 
 const dhive = getDhiveClient();
 
@@ -179,7 +184,11 @@ async function fetchAllStakers(): Promise<StakerInfo[]> {
 
 /**
  * Broadcast reward transfers in batches via Hive custom_json.
- * Each batch contains up to BATCH_SIZE transfer ops in a single transaction.
+ *
+ * Each batch bundles up to TRANSFERS_PER_BATCH transfers into a **single**
+ * custom_json operation using a JSON array payload. Hive Engine processes
+ * array payloads atomically. This avoids the 5-custom_json-per-block limit
+ * that caused failures when we sent one custom_json per transfer.
  */
 async function broadcastRewards(
   distributionResult: DistributionResult,
@@ -195,32 +204,31 @@ async function broadcastRewards(
     return { batchesSent: 0, totalTransfers: 0 };
   }
 
+  const batches = chunkArray(transferPayloads, TRANSFERS_PER_BATCH);
   let batchesSent = 0;
 
-  for (let i = 0; i < transferPayloads.length; i += BATCH_SIZE) {
-    const batch = transferPayloads.slice(i, i + BATCH_SIZE);
-
-    // Each transfer is a separate custom_json op in the Hive transaction
-    const ops = batch.map((payload) => [
+  for (const batch of batches) {
+    // Single custom_json op with an array of transfer payloads
+    const op = [
       'custom_json',
       {
         id: 'ssc-mainnet-hive',
         required_auths: [rewardsAccount],
         required_posting_auths: [] as string[],
-        json: JSON.stringify(payload),
+        json: JSON.stringify(batch),
       },
-    ]);
+    ];
 
     logger.info(
-      `Broadcasting batch ${batchesSent + 1} (${batch.length} transfers, offset ${i})`,
+      `Broadcasting batch ${batchesSent + 1}/${batches.length} (${batch.length} transfers)`,
       'cron:staking-rewards'
     );
 
-    await dhive.broadcast.sendOperations(ops as never[], activeKey);
+    await dhive.broadcast.sendOperations([op] as never[], activeKey);
     batchesSent++;
 
     // Wait between batches so they land in different blocks
-    if (i + BATCH_SIZE < transferPayloads.length) {
+    if (batchesSent < batches.length) {
       await new Promise((r) => setTimeout(r, BATCH_DELAY_MS));
     }
   }
@@ -413,9 +421,61 @@ export async function GET() {
 }
 
 /**
+ * Retry broadcasting a previously failed distribution using stored data.
+ * Reconstructs the DistributionResult from the DB record and re-broadcasts.
+ */
+async function retryFailedBroadcast(weekId: string, activeKey: PrivateKey) {
+  const eventType = `staking-${weekId}`;
+  const record = await prisma.analyticsEvent.findUnique({ where: { eventType } });
+
+  if (!record) {
+    return { error: `No distribution record found for ${weekId}`, status: 404 as const };
+  }
+
+  const metadata = record.metadata as Record<string, unknown>;
+  if (metadata.status === 'completed') {
+    return { error: `Distribution ${weekId} already completed`, status: 400 as const };
+  }
+
+  const distributions =
+    (metadata.topDistributions as Array<{ account: string; amount: number; percentage: number }>) ||
+    [];
+  if (distributions.length === 0) {
+    return { error: `No distributions found in record for ${weekId}`, status: 400 as const };
+  }
+
+  // Rebuild minimal DistributionResult for broadcast
+  const distributionResult: DistributionResult = {
+    weeklyPool: metadata.weeklyPool as number,
+    totalStaked: metadata.totalStaked as number,
+    stakerCount: metadata.stakerCount as number,
+    eligibleStakerCount: metadata.eligibleStakerCount as number,
+    distributions,
+    timestamp: new Date(metadata.createdAt as string),
+    weekId,
+    apr: metadata.apr as number,
+  };
+
+  const broadcastResult = await broadcastRewards(distributionResult, activeKey);
+  await updateDistributionStatus(weekId, 'completed');
+
+  return {
+    success: true,
+    weekId,
+    totalToDistribute: distributions.reduce((sum, d) => sum + d.amount, 0),
+    distributionResult,
+    broadcastResult,
+  };
+}
+
+/**
  * POST handler for manual trigger with options.
  *
- * Body: { dryRun?: boolean (default true), forceRecalculate?: boolean }
+ * Body: {
+ *   dryRun?: boolean (default true),
+ *   forceRecalculate?: boolean,
+ *   retryBroadcast?: boolean — retry broadcasting a failed week (uses stored data)
+ * }
  *
  * When dryRun=false and SPORTSBLOCK_ACTIVE_KEY is set, broadcasts transfers.
  */
@@ -429,7 +489,47 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { forceRecalculate = false, dryRun = true } = body;
+    const { forceRecalculate = false, dryRun = true, retryBroadcast = false } = body;
+
+    // Retry path: re-broadcast a previously failed distribution
+    if (retryBroadcast) {
+      const activeKeyStr = process.env.SPORTSBLOCK_ACTIVE_KEY;
+      if (!activeKeyStr) {
+        return NextResponse.json(
+          { success: false, message: 'SPORTSBLOCK_ACTIVE_KEY not configured' },
+          { status: 400 }
+        );
+      }
+
+      const weekId = getWeekId();
+      const activeKey = PrivateKey.fromString(activeKeyStr);
+      const retryResult = await retryFailedBroadcast(weekId, activeKey);
+
+      if ('error' in retryResult) {
+        return NextResponse.json(
+          { success: false, error: retryResult.error },
+          { status: retryResult.status }
+        );
+      }
+
+      logger.info(
+        `Retry broadcast complete: ${retryResult.broadcastResult.totalTransfers} transfers in ${retryResult.broadcastResult.batchesSent} batches`,
+        'cron:staking-rewards'
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: `Retry broadcast completed for ${weekId}`,
+        weekId,
+        result: {
+          totalToDistribute: retryResult.totalToDistribute,
+          broadcast: retryResult.broadcastResult,
+        },
+        status: 'completed',
+        retried: true,
+        duration: Date.now() - startTime,
+      });
+    }
 
     const result = await processStakingRewards({ forceRecalculate });
 

@@ -122,11 +122,11 @@ export function calculateStakingRewards(stakers: StakerInfo[]): DistributionResu
 }
 
 /**
- * Build Hive Engine transfer operations for reward distribution
+ * Build Hive Engine transfer payloads for reward distribution.
  *
  * @param distributions - Array of reward distributions
  * @param memo - Memo to include with transfers
- * @returns Array of custom_json operation payloads
+ * @returns Array of Hive Engine sidechain transfer payloads
  */
 export function buildRewardTransferOperations(
   distributions: RewardDistribution[],
@@ -153,6 +153,17 @@ export function buildRewardTransferOperations(
         memo,
       },
     }));
+}
+
+/**
+ * Chunk an array into groups of a given size.
+ */
+export function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
 }
 
 /**
