@@ -26,6 +26,7 @@ import { useModal } from '@/components/modals/ModalProvider';
 import { usePremiumTier } from '@/lib/premium/hooks';
 import { StakingBadge } from '@/components/badges/StakingBadge';
 import { FollowButton } from '@/components/user/FollowButton';
+import { HiveFollowButton } from '@/components/user/HiveFollowButton';
 import { RoleBadge } from '@/components/user/RoleBadge';
 import { RankBadge } from '@/components/badges/RankBadge';
 import { BadgeGrid } from '@/components/badges/BadgeGrid';
@@ -376,6 +377,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                         onFollowChange={(_, newCount) => setSoftFollowerCount(newCount)}
                       />
                     )}
+                  {!isOwnProfile && !isSoftUser && <HiveFollowButton targetUsername={username} />}
                 </div>
 
                 {/* Owner action buttons — desktop */}
