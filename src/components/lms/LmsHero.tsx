@@ -47,8 +47,10 @@ export function LmsHero({ competition, isEntered, isAlive, onJoin, joining }: Lm
   const timeInfo = useMemo(() => (deadline ? getTimeRemaining(deadline) : null), [deadline]);
   const statusInfo = useMemo(() => getStatusInfo(competition.status), [competition.status]);
 
-  const showJoinButton =
-    !isEntered && (competition.status === 'open' || competition.status === 'picking');
+  const isRegistrationOpen =
+    (competition.status === 'open' || competition.status === 'picking') &&
+    competition.currentGameweek <= competition.startGameweek;
+  const showJoinButton = !isEntered && isRegistrationOpen;
 
   return (
     <div className="relative overflow-hidden rounded-2xl border bg-card">
@@ -107,7 +109,7 @@ export function LmsHero({ competition, isEntered, isAlive, onJoin, joining }: Lm
             </div>
           </div>
 
-          {competition.isFreeEntry && (
+          {competition.isFreeEntry && isRegistrationOpen && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1.5 text-sm font-bold text-green-600 ring-1 ring-green-500/20 dark:text-green-400">
               <Shield className="h-4 w-4" />
               FREE ENTRY

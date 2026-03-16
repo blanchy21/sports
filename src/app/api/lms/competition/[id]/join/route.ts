@@ -23,9 +23,12 @@ export const POST = createApiHandler('/api/lms/competition/[id]/join', async (re
   const competition = await prisma.lmsCompetition.findUnique({ where: { id } });
   if (!competition) throw new NotFoundError('Competition not found');
 
-  // Check competition is accepting entries
+  // Only allow joining during the first gameweek (open or picking)
   if (competition.status !== 'open' && competition.status !== 'picking') {
     throw new ValidationError('Competition is not accepting entries');
+  }
+  if (competition.currentGameweek > competition.startGameweek) {
+    throw new ValidationError('Registration is closed — competition is already underway');
   }
 
   // Check registration deadline
