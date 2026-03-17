@@ -333,7 +333,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
       }}
     >
       {/* Header */}
-      <div className="flex items-start gap-2 pb-0 sm:gap-3">
+      <div className="flex items-center gap-2 pb-0 sm:gap-3">
         <Link
           href={`/user/${sportsbite.author}`}
           className="flex-shrink-0"
@@ -396,7 +396,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                         <p className="mb-2 text-sm font-medium">Are you sure?</p>
                         <div className="flex gap-2">
                           <Button
-                            variant="destructive"
+                            variant="danger"
                             size="sm"
                             className="h-7 text-xs"
                             aria-label="Confirm delete"

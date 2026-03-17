@@ -212,7 +212,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
     >
       {/* Header */}
       <div className="border-b p-3 sm:p-4">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-x-2 overflow-hidden">
           <Link
             href={`/user/${getAuthorName()}`}
             aria-label={`View ${getAuthorDisplayName()}'s profile`}
@@ -221,7 +221,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
               src={getAuthorAvatar()}
               fallback={getAuthorName()}
               alt={getAuthorDisplayName()}
-              size="sm"
+              size="md"
               className={
                 isProfileLoading
                   ? 'animate-pulse'
@@ -229,45 +229,39 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
               }
             />
           </Link>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-x-2 overflow-hidden">
-              <Link
-                href={`/user/${getAuthorName()}`}
-                aria-label={`View @${getAuthorName()}'s profile`}
-                className="shrink-0 text-sm font-medium hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                @{getAuthorName()}
-              </Link>
-              {authorPremiumTier && (
-                <PremiumBadge tier={authorPremiumTier} size="sm" showLabel={false} />
-              )}
-              <RoleBadge username={getAuthorName()} />
-              <RankBadge rank={authorRank} size="sm" />
-              <span className="shrink-0 text-muted-foreground">•</span>
-              <span className="shrink-0 text-sm text-muted-foreground">
-                {formatDate(createdAt)}
-              </span>
-              <span className="shrink-0 text-muted-foreground">•</span>
-              <span className="truncate text-sm text-muted-foreground">
-                {formatReadTime(readTime)}
-              </span>
-            </div>
+          <Link
+            href={`/user/${getAuthorName()}`}
+            aria-label={`View @${getAuthorName()}'s profile`}
+            className="shrink-0 text-sm font-medium hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            @{getAuthorName()}
+          </Link>
+          {authorPremiumTier && (
+            <PremiumBadge tier={authorPremiumTier} size="sm" showLabel={false} />
+          )}
+          <RoleBadge username={getAuthorName()} />
+          <RankBadge rank={authorRank} size="sm" />
+          <span className="shrink-0 text-muted-foreground">•</span>
+          <span className="shrink-0 text-sm text-muted-foreground">{formatDate(createdAt)}</span>
+          <span className="shrink-0 text-muted-foreground">•</span>
+          <span className="truncate text-sm text-muted-foreground">{formatReadTime(readTime)}</span>
+        </div>
+        {(sportCategory || (isActualHivePost && pendingPayout > 0)) && (
+          <div className="mt-1 flex items-center gap-x-3 pl-10 text-xs">
             {sportCategory && (
-              <div className="mt-1 flex items-center space-x-1">
-                <MapPin className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">{sportCategory}</span>
-              </div>
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <MapPin className="h-3 w-3" />
+                {sportCategory}
+              </span>
             )}
             {isActualHivePost && pendingPayout > 0 && (
-              <div className="mt-1 flex items-center space-x-1">
-                <span className="text-xs font-medium text-accent">
-                  💰 {formatAsset(pendingPayout, 'HIVE', 3)} pending
-                </span>
-              </div>
+              <span className="font-medium text-accent">
+                💰 {formatAsset(pendingPayout, 'HIVE', 3)} pending
+              </span>
             )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Content */}
