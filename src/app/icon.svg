@@ -1,0 +1,7 @@
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SportsBlock">
+  <title>SportsBlock</title>
+  <!-- Simplified hexagon for small sizes -->
+  <polygon points="29,22 16,29 3,22 3,10 16,3 29,10" fill="#00C49A"/>
+  <path d="M10,24 L16,13 L22,24" fill="none" stroke="#051A14" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="16" cy="27" r="2" fill="#051A14"/>
+</svg>
