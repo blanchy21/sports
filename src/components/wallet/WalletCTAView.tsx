@@ -64,7 +64,7 @@ export function WalletCTAView({
             </p>
             <Link href="/auth">
               <Button
-                variant="secondary"
+                variant="outline"
                 className="bg-white font-semibold text-primary hover:bg-white/90"
               >
                 Connect Hive Wallet

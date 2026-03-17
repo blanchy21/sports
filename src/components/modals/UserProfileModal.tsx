@@ -216,7 +216,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           <Button
             onClick={handleFollowToggle}
             disabled={isFollowLoading || isCheckingFollow}
-            variant={isFollowing ? 'outline' : 'default'}
+            variant={isFollowing ? 'outline' : 'primary'}
           >
             {isFollowLoading ? (
               <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />

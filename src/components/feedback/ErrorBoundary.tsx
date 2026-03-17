@@ -147,7 +147,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
-              <Button onClick={this.resetErrorBoundary} variant="default" className="flex-1">
+              <Button onClick={this.resetErrorBoundary} variant="primary" className="flex-1">
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Try Again
               </Button>

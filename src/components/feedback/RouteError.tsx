@@ -38,7 +38,7 @@ export function RouteError({
         )}
 
         <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
-          <Button onClick={reset} variant="default" className="flex-1">
+          <Button onClick={reset} variant="primary" className="flex-1">
             <RefreshCw className="mr-2 h-4 w-4" />
             Try Again
           </Button>

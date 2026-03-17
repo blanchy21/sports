@@ -137,7 +137,7 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
 
   return (
     <Button
-      variant={isFollowing ? 'outline' : 'default'}
+      variant={isFollowing ? 'outline' : 'primary'}
       size={size}
       onClick={handleFollow}
       disabled={isDisabled}

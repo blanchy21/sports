@@ -6,15 +6,7 @@ import { Button } from '@/components/core/Button';
 import { Avatar } from '@/components/core/Avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import {
-  Heart,
-  DollarSign,
-  Award,
-  FileText,
-  RefreshCw,
-  AlertCircle,
-  Zap,
-} from 'lucide-react';
+import { Heart, DollarSign, Award, FileText, RefreshCw, AlertCircle, Zap } from 'lucide-react';
 import { PotentialEarningsWidget } from '@/components/widgets/PotentialEarningsWidget';
 import {
   MyRankCard,
@@ -41,8 +33,11 @@ export default function DashboardPage() {
     return `${d.getFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
   }, []);
 
-  const { data: leaderboards, isLoading: leaderboardsLoading, error: leaderboardsError } =
-    useWeeklyLeaderboards(currentWeekId, 5);
+  const {
+    data: leaderboards,
+    isLoading: leaderboardsLoading,
+    error: leaderboardsError,
+  } = useWeeklyLeaderboards(currentWeekId, 5);
 
   // Redirect if not authenticated (wait for auth to load first)
   React.useEffect(() => {
@@ -159,7 +154,7 @@ export default function DashboardPage() {
               </ul>
               <Link href="/auth">
                 <Button
-                  variant="secondary"
+                  variant="outline"
                   className="bg-white font-semibold text-primary hover:bg-white/90"
                 >
                   Connect Hive Wallet
@@ -182,7 +177,13 @@ export default function DashboardPage() {
         <LeaderboardGrid
           leaderboards={leaderboards ?? null}
           isLoading={leaderboardsLoading}
-          error={leaderboardsError instanceof Error ? leaderboardsError.message : leaderboardsError ? 'Unknown error' : null}
+          error={
+            leaderboardsError instanceof Error
+              ? leaderboardsError.message
+              : leaderboardsError
+                ? 'Unknown error'
+                : null
+          }
           weekId={currentWeekId}
           showRewards
           maxEntries={5}

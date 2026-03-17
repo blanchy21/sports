@@ -175,7 +175,7 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
 
   return (
     <Button
-      variant="default"
+      variant="primary"
       size={size}
       onClick={handleJoin}
       disabled={isInviteOnly}

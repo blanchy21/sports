@@ -31,8 +31,8 @@ export const AmountInput: React.FC<AmountInputProps> = ({
   error,
   symbol = 'MEDALS',
   icon,
-  focusClass = 'focus-within:border-amber-500',
-  maxButtonClass = 'text-warning hover:text-amber-700 dark:hover:text-amber-300',
+  focusClass = 'focus-within:border-sb-gold',
+  maxButtonClass = 'text-sb-gold hover:text-sb-gold-shine',
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -52,8 +52,8 @@ export const AmountInput: React.FC<AmountInputProps> = ({
     <div className="space-y-1">
       <div
         className={cn(
-          'flex items-center gap-2 rounded-lg border bg-background px-3 py-2',
-          error ? 'border-destructive' : cn('border-border', focusClass),
+          'flex items-center gap-2 rounded-lg border bg-sb-stadium px-3 py-2',
+          error ? 'border-sb-loss' : cn('border-sb-border', focusClass),
           disabled && 'bg-muted/50 opacity-50'
         )}
       >
@@ -65,7 +65,7 @@ export const AmountInput: React.FC<AmountInputProps> = ({
           onChange={handleChange}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 bg-transparent font-mono text-lg text-foreground outline-none placeholder:text-muted-foreground/70"
+          className="flex-1 bg-transparent font-mono text-lg text-sb-text-primary outline-none placeholder:text-sb-text-muted"
         />
         <span className="font-medium text-muted-foreground">{symbol}</span>
         {max !== undefined && (
@@ -82,7 +82,7 @@ export const AmountInput: React.FC<AmountInputProps> = ({
         )}
       </div>
       {error && (
-        <p className="flex items-center gap-1 text-sm text-destructive">
+        <p className="flex items-center gap-1 text-sm text-sb-loss">
           <AlertCircle className="h-3 w-3" />
           {error}
         </p>

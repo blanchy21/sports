@@ -3,27 +3,29 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils/client';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap font-body font-semibold transition-all focus-visible:outline-none disabled:opacity-40 disabled:pointer-events-none',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow hover:bg-primary/90',
-        destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
+        primary: 'bg-sb-teal text-[#051A14] hover:brightness-110 active:scale-[0.97]',
+        gold: 'bg-sb-gold text-[#1A0A00] hover:brightness-110 active:scale-[0.97]',
         outline:
-          'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground',
-        secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+          'bg-transparent text-sb-teal border border-sb-teal hover:bg-sb-teal/10 active:scale-[0.97]',
+        ghost:
+          'bg-transparent text-sb-text-body border border-sb-border hover:bg-sb-turf active:scale-[0.97] font-medium',
+        danger:
+          'bg-transparent text-sb-loss border border-sb-loss hover:bg-sb-loss/10 active:scale-[0.97]',
+        link: 'text-sb-teal underline-offset-4 hover:underline font-medium',
       },
       size: {
-        default: 'h-9 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-10 rounded-md px-8',
-        icon: 'h-9 w-9',
+        sm: 'h-8 px-3.5 text-xs rounded-md',
+        default: 'h-10 px-5 text-sm rounded-lg',
+        lg: 'h-12 px-7 text-base rounded-[10px]',
+        icon: 'h-10 w-10 rounded-lg',
       },
     },
     defaultVariants: {
-      variant: 'default',
+      variant: 'primary',
       size: 'default',
     },
   }

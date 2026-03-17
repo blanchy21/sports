@@ -102,7 +102,7 @@ export default function DiscoverClient({ initialPosts }: DiscoverClientProps) {
         {/* Sport Filter */}
         <div className="flex flex-wrap gap-2">
           <Button
-            variant={selectedSport === 'all' ? 'default' : 'outline'}
+            variant={selectedSport === 'all' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setSelectedSport('all')}
           >
@@ -112,7 +112,7 @@ export default function DiscoverClient({ initialPosts }: DiscoverClientProps) {
             (sport) => (
               <Button
                 key={sport.id}
-                variant={selectedSport === sport.id ? 'default' : 'outline'}
+                variant={selectedSport === sport.id ? 'primary' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedSport(sport.id)}
                 className="flex items-center space-x-2"
@@ -157,10 +157,7 @@ export default function DiscoverClient({ initialPosts }: DiscoverClientProps) {
             <div className="space-y-6">
               {posts.map((post, index) => (
                 <FeedItemErrorBoundary key={`${post.author}-${post.permlink}`}>
-                  <PostCard
-                    post={post}
-                    priority={index < 2}
-                  />
+                  <PostCard post={post} priority={index < 2} />
                 </FeedItemErrorBoundary>
               ))}
             </div>

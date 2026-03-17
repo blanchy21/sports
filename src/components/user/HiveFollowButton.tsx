@@ -93,7 +93,7 @@ export const HiveFollowButton: React.FC<HiveFollowButtonProps> = ({
 
   return (
     <Button
-      variant={isFollowing ? 'outline' : 'default'}
+      variant={isFollowing ? 'outline' : 'primary'}
       size={size}
       onClick={handleToggle}
       disabled={isDisabled}

@@ -129,7 +129,7 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
               />
             </div>
             <Button
-              variant={showAdvancedFilters ? 'default' : 'outline'}
+              variant={showAdvancedFilters ? 'primary' : 'outline'}
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             >
               <SlidersHorizontal className="mr-2 h-4 w-4" />
@@ -142,7 +142,7 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
             {SORT_OPTIONS.map((option) => (
               <Button
                 key={option.value}
-                variant={filters.sort === option.value ? 'default' : 'outline'}
+                variant={filters.sort === option.value ? 'primary' : 'outline'}
                 size="sm"
                 onClick={() => handleSortChange(option.value)}
               >
@@ -171,7 +171,7 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
                   {SPORT_CATEGORIES.slice(0, 10).map((sport) => (
                     <Button
                       key={sport.id}
-                      variant={filters.sportCategory === sport.id ? 'default' : 'outline'}
+                      variant={filters.sportCategory === sport.id ? 'primary' : 'outline'}
                       size="sm"
                       onClick={() => handleSportCategoryChange(sport.id)}
                     >
@@ -186,7 +186,7 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
                 <label className="mb-2 block text-sm font-medium">Community Type</label>
                 <div className="flex gap-2">
                   <Button
-                    variant={filters.type === 'public' ? 'default' : 'outline'}
+                    variant={filters.type === 'public' ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => handleTypeChange('public')}
                   >
@@ -194,7 +194,7 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
                     Public
                   </Button>
                   <Button
-                    variant={filters.type === 'private' ? 'default' : 'outline'}
+                    variant={filters.type === 'private' ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => handleTypeChange('private')}
                   >
@@ -202,7 +202,7 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
                     Private
                   </Button>
                   <Button
-                    variant={filters.type === 'invite-only' ? 'default' : 'outline'}
+                    variant={filters.type === 'invite-only' ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => handleTypeChange('invite-only')}
                   >
