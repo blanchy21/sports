@@ -6,7 +6,7 @@ import { DollarSign, Shield, Zap, Flame, TrendingUp, Clock } from 'lucide-react'
 
 export default function LandingEarnings() {
   return (
-    <section className="bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30 px-6 py-24">
+    <section className="bg-gradient-to-b from-sb-turf/30 via-sb-turf/50 to-sb-turf/30 px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -15,17 +15,17 @@ export default function LandingEarnings() {
           transition={{ duration: 0.8 }}
           className="mb-16 text-center"
         >
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 font-semibold text-primary">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-sb-teal/10 px-4 py-2 font-semibold text-sb-teal">
             <Zap className="h-4 w-4" />
             Powered by Hive Blockchain
           </div>
-          <h2 className="mb-6 text-4xl font-bold md:text-5xl">
+          <h2 className="mb-6 font-display text-4xl font-bold md:text-5xl">
             Your Opinions Have{' '}
-            <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-sb-gold to-sb-teal bg-clip-text text-transparent">
               Real Value
             </span>
           </h2>
-          <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+          <p className="mx-auto max-w-2xl text-xl text-sb-text-muted">
             No premium subscriptions required. No follower thresholds. Start earning from day one.
           </p>
         </motion.div>
@@ -71,16 +71,16 @@ export default function LandingEarnings() {
                 className="group flex items-start gap-5"
               >
                 <div className="relative">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-lg font-bold text-white shadow-lg shadow-primary/25 transition-transform group-hover:scale-110">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-sb-teal to-sb-teal-deep text-lg font-bold text-white shadow-lg shadow-sb-teal/25 transition-transform group-hover:scale-110">
                     {item.step}
                   </div>
                 </div>
                 <div className="flex-1">
-                  <h3 className="mb-2 flex items-center gap-2 text-xl font-bold">
-                    <item.icon className="h-5 w-5 text-accent" />
+                  <h3 className="mb-2 flex items-center gap-2 font-display text-xl font-bold">
+                    <item.icon className="h-5 w-5 text-sb-teal" />
                     {item.title}
                   </h3>
-                  <p className="text-muted-foreground">{item.description}</p>
+                  <p className="text-sb-text-muted">{item.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -92,11 +92,11 @@ export default function LandingEarnings() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="rounded-3xl border-2 border-primary/20 bg-sb-stadium p-8 shadow-xl shadow-primary/5"
+            className="rounded-3xl border-2 border-sb-teal/20 bg-sb-stadium p-8 shadow-xl shadow-sb-teal/5"
           >
             <div className="mb-8 text-center">
-              <h3 className="mb-2 text-2xl font-bold">Earning Potential</h3>
-              <p className="text-sm text-muted-foreground">Based on community engagement</p>
+              <h3 className="mb-2 font-display text-2xl font-bold">Earning Potential</h3>
+              <p className="text-sm text-sb-text-muted">Based on community engagement</p>
             </div>
 
             <div className="space-y-4">
@@ -105,28 +105,28 @@ export default function LandingEarnings() {
                   level: 'Getting Started',
                   upvotes: '1-5 upvotes',
                   earnings: '$0.01 - $0.50',
-                  color: 'bg-primary',
+                  color: 'bg-sb-teal',
                   width: 'w-1/4',
                 },
                 {
                   level: 'Building Reputation',
                   upvotes: '5-20 upvotes',
                   earnings: '$0.50 - $3',
-                  color: 'bg-landing-green',
+                  color: 'bg-sb-teal',
                   width: 'w-1/2',
                 },
                 {
                   level: 'Established Creator',
                   upvotes: '20-50 upvotes',
                   earnings: '$3 - $10',
-                  color: 'bg-accent',
+                  color: 'bg-sb-gold',
                   width: 'w-3/4',
                 },
                 {
                   level: 'Top Contributor',
                   upvotes: '50+ upvotes + curation',
                   earnings: '$5 - $10+',
-                  color: 'bg-landing-blue',
+                  color: 'bg-sb-teal-deep',
                   width: 'w-full',
                 },
               ].map((tier, index) => (
@@ -140,7 +140,7 @@ export default function LandingEarnings() {
                 >
                   <div className="mb-2 flex items-center justify-between">
                     <span className="font-semibold">{tier.level}</span>
-                    <span className="text-lg font-bold text-primary">{tier.earnings}</span>
+                    <span className="text-lg font-bold text-sb-teal">{tier.earnings}</span>
                   </div>
                   <div className="h-3 overflow-hidden rounded-full bg-sb-turf">
                     <motion.div
@@ -151,14 +151,14 @@ export default function LandingEarnings() {
                       className={`h-full ${tier.color} ${tier.width} rounded-full`}
                     />
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{tier.upvotes}</p>
+                  <p className="mt-1 text-xs text-sb-text-muted">{tier.upvotes}</p>
                 </motion.div>
               ))}
             </div>
 
             <div className="mt-8 border-t pt-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                <Zap className="mr-1 inline h-4 w-4 text-accent" />
+              <p className="text-sm text-sb-text-muted">
+                <Zap className="mr-1 inline h-4 w-4 text-sb-teal" />
                 Rewards paid in HIVE & HBD cryptocurrency
               </p>
             </div>
@@ -179,9 +179,9 @@ export default function LandingEarnings() {
             { icon: Clock, label: 'Rewards distributed daily', value: '24h' },
           ].map((stat, i) => (
             <div key={i} className="rounded-xl border bg-sb-stadium p-4 text-center sm:p-5">
-              <stat.icon className="mx-auto mb-2 h-5 w-5 text-accent" />
-              <div className="text-lg font-bold text-primary sm:text-xl">{stat.value}</div>
-              <div className="text-xs text-muted-foreground">{stat.label}</div>
+              <stat.icon className="mx-auto mb-2 h-5 w-5 text-sb-teal" />
+              <div className="text-lg font-bold text-sb-teal sm:text-xl">{stat.value}</div>
+              <div className="text-xs text-sb-text-muted">{stat.label}</div>
             </div>
           ))}
         </motion.div>

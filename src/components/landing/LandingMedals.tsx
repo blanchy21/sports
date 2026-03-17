@@ -44,7 +44,7 @@ export default function LandingMedals() {
           transition={{ duration: 0.8 }}
           className="relative z-10 px-6 text-center"
         >
-          <h2 className="text-4xl font-black uppercase tracking-wider text-white md:text-6xl">
+          <h2 className="font-display text-4xl font-black uppercase tracking-wider text-white md:text-6xl">
             Every Sport. One Community.
           </h2>
         </motion.div>
@@ -60,17 +60,17 @@ export default function LandingMedals() {
             transition={{ duration: 0.8 }}
             className="mb-16 text-center"
           >
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#D4A84B]/10 px-4 py-2 font-semibold text-[#D4A84B]">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-sb-gold/10 px-4 py-2 font-semibold text-sb-gold">
               <Trophy className="h-4 w-4" />
               MEDALS Token
             </div>
-            <h2 className="mb-6 text-4xl font-bold md:text-5xl">
+            <h2 className="mb-6 font-display text-4xl font-bold md:text-5xl">
               Stake & Unlock{' '}
-              <span className="bg-gradient-to-r from-[#D4A84B] to-[#C08860] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-sb-gold to-sb-gold-shine bg-clip-text text-transparent">
                 Premium Perks
               </span>
             </h2>
-            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+            <p className="mx-auto max-w-2xl text-xl text-sb-text-muted">
               MEDALS is our community token. Stake to earn passive rewards and unlock exclusive
               features.
             </p>
@@ -108,18 +108,18 @@ export default function LandingMedals() {
                 stake: 25000,
                 Icon: Crown,
                 benefits: ['Exclusive contests', 'Analytics dashboard', 'Gold badge'],
-                color: 'from-[#D4A84B] to-[#8B7030]',
-                iconColor: 'text-[#D4A84B]',
-                iconBg: 'bg-[#D4A84B]/10',
+                color: 'from-sb-gold to-[#8B7030]',
+                iconColor: 'text-sb-gold',
+                iconBg: 'bg-sb-gold/10',
               },
               {
                 tier: 'Platinum',
                 stake: 100000,
                 Icon: Gem,
                 benefits: ['Boosted visibility', 'VIP support', 'Platinum badge'],
-                color: 'from-landing-blue to-bright-cobalt',
-                iconColor: 'text-landing-blue',
-                iconBg: 'bg-landing-blue/10',
+                color: 'from-sb-teal-deep to-sb-teal',
+                iconColor: 'text-sb-teal-deep',
+                iconBg: 'bg-sb-teal-deep/10',
               },
             ].map((item, index) => (
               <motion.div
@@ -134,18 +134,18 @@ export default function LandingMedals() {
                 <div className={`mb-4 inline-flex rounded-xl p-3 ${item.iconBg}`}>
                   <item.Icon className={`h-8 w-8 ${item.iconColor}`} />
                 </div>
-                <h3 className="mb-1 text-xl font-bold">{item.tier}</h3>
+                <h3 className="mb-1 font-display text-xl font-bold">{item.tier}</h3>
                 <div className="mb-4 flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-primary">
+                  <span className="font-mono text-2xl font-bold text-sb-gold">
                     <AnimatedCounter end={item.stake} />
                   </span>
-                  <span className="text-sm text-muted-foreground">MEDALS</span>
+                  <span className="text-sm text-sb-text-muted">MEDALS</span>
                 </div>
 
                 <ul className="space-y-2">
                   {item.benefits.map((benefit, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle className="h-4 w-4 flex-shrink-0 text-accent" />
+                    <li key={i} className="flex items-center gap-2 text-sm text-sb-text-muted">
+                      <CheckCircle className="h-4 w-4 flex-shrink-0 text-sb-teal" />
                       {benefit}
                     </li>
                   ))}
@@ -174,13 +174,13 @@ export default function LandingMedals() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="rounded-xl border border-[#D4A84B]/20 bg-gradient-to-br from-[#D4A84B]/5 to-[#C08860]/5 p-5 text-center"
+                className="rounded-xl border border-sb-gold/20 bg-gradient-to-br from-sb-gold/5 to-sb-gold-shine/5 p-5 text-center"
               >
-                <stat.icon className="mx-auto mb-2 h-6 w-6 text-[#D4A84B]" />
-                <div className="text-xl font-bold text-primary">
+                <stat.icon className="mx-auto mb-2 h-6 w-6 text-sb-gold" />
+                <div className="text-xl font-bold text-sb-gold">
                   <AnimatedCounter end={stat.value} suffix={stat.suffix} />
                 </div>
-                <div className="text-xs text-muted-foreground">{stat.label}</div>
+                <div className="text-xs text-sb-text-muted">{stat.label}</div>
               </motion.div>
             ))}
           </motion.div>
@@ -191,21 +191,21 @@ export default function LandingMedals() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="animate-border-pulse overflow-hidden rounded-2xl border-2 border-accent/30 bg-gradient-to-r from-accent/10 via-accent/5 to-accent/10 p-8 text-center"
+            className="animate-border-pulse overflow-hidden rounded-2xl border-2 border-sb-gold/30 bg-gradient-to-r from-sb-gold/10 via-sb-gold/5 to-sb-gold/10 p-8 text-center"
           >
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-accent/20 px-3 py-1 text-sm font-bold text-accent">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-sb-gold/20 px-3 py-1 text-sm font-bold text-sb-gold">
               <Flame className="h-4 w-4" />
               TOKEN PRESALE
             </div>
-            <h3 className="mb-2 text-2xl font-bold">
+            <h3 className="mb-2 font-display text-2xl font-bold">
               <AnimatedCounter end={10} suffix="M" /> MEDALS at 0.04 HIVE each
             </h3>
-            <p className="mb-6 text-muted-foreground">
+            <p className="mb-6 text-sb-text-muted">
               Get in early. Stake for rewards and unlock premium features.
             </p>
             <Button
               variant="outline"
-              className="group border-accent/50 hover:bg-accent/10"
+              className="group border-sb-gold/50 hover:bg-sb-gold/10"
               onClick={() => router.push('/whitepaper')}
             >
               <FileText className="mr-2 h-4 w-4" />

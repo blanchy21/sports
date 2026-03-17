@@ -35,7 +35,7 @@ export default function LandingShowcase() {
         >
           {/* Hive logo + text */}
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Powered by</span>
+            <span className="text-sm text-sb-text-muted">Powered by</span>
             <div className="flex items-center gap-2">
               <Image
                 src="/hive-logo.svg"
@@ -49,7 +49,7 @@ export default function LandingShowcase() {
             </div>
           </div>
 
-          <div className="hidden h-6 w-px bg-border sm:block" />
+          <div className="hidden h-6 w-px bg-sb-border sm:block" />
 
           {[
             { label: 'MEDALS Supply', value: '500M' },
@@ -64,8 +64,8 @@ export default function LandingShowcase() {
               transition={{ duration: 0.4, delay: 0.1 + i * 0.1 }}
               className="text-center"
             >
-              <div className="text-lg font-bold text-primary">{item.value}</div>
-              <div className="text-xs text-muted-foreground">{item.label}</div>
+              <div className="text-lg font-bold text-sb-teal">{item.value}</div>
+              <div className="text-xs text-sb-text-muted">{item.label}</div>
             </motion.div>
           ))}
         </motion.div>
@@ -146,7 +146,7 @@ export default function LandingShowcase() {
 
       {/* ━━━ Problem / Solution ━━━ */}
       <section className="relative overflow-hidden px-6 py-24">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-sb-turf/20 to-background" />
 
         <div className="relative z-10 mx-auto max-w-6xl">
           <motion.div
@@ -156,13 +156,13 @@ export default function LandingShowcase() {
             transition={{ duration: 0.8 }}
             className="mb-16 text-center"
           >
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-accent/10 px-4 py-2 font-semibold text-accent">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-sb-gold/10 px-4 py-2 font-semibold text-sb-gold">
               <Target className="h-4 w-4" />
               Why Sportsblock Exists
             </div>
-            <h2 className="text-4xl font-bold md:text-5xl">
+            <h2 className="font-display text-4xl font-bold md:text-5xl">
               Built for{' '}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-sb-teal to-sb-teal-flash bg-clip-text text-transparent">
                 True Sports Fans
               </span>
             </h2>
@@ -175,13 +175,15 @@ export default function LandingShowcase() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="rounded-3xl border border-destructive/20 bg-gradient-to-br from-destructive/5 to-transparent p-8 sm:p-10"
+              className="rounded-3xl border border-sb-loss/20 bg-gradient-to-br from-sb-loss/5 to-transparent p-8 sm:p-10"
             >
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-destructive/10 px-3 py-1.5 text-sm font-semibold text-destructive">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-sb-loss/10 px-3 py-1.5 text-sm font-semibold text-sb-loss">
                 <Ban className="h-4 w-4" />
                 Sound Familiar?
               </div>
-              <h3 className="mb-6 text-2xl font-bold sm:text-3xl">Your Sports Feed Is Broken</h3>
+              <h3 className="mb-6 font-display text-2xl font-bold sm:text-3xl">
+                Your Sports Feed Is Broken
+              </h3>
               <div className="space-y-5">
                 {[
                   'Drowned in political takes and drama that have nothing to do with sports',
@@ -196,10 +198,10 @@ export default function LandingShowcase() {
                     transition={{ duration: 0.5, delay: 0.2 + i * 0.15 }}
                     className="flex items-start gap-3"
                   >
-                    <div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
-                      <X className="h-3.5 w-3.5 text-destructive" />
+                    <div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-sb-loss/10">
+                      <X className="h-3.5 w-3.5 text-sb-loss" />
                     </div>
-                    <p className="text-muted-foreground">{text}</p>
+                    <p className="text-sb-text-muted">{text}</p>
                   </motion.div>
                 ))}
               </div>
@@ -211,13 +213,13 @@ export default function LandingShowcase() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="rounded-3xl border border-accent/30 bg-gradient-to-br from-accent/5 to-transparent p-8 sm:p-10"
+              className="rounded-3xl border border-sb-teal/30 bg-gradient-to-br from-sb-teal/5 to-transparent p-8 sm:p-10"
             >
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1.5 text-sm font-semibold text-accent">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-sb-teal/10 px-3 py-1.5 text-sm font-semibold text-sb-teal">
                 <Heart className="h-4 w-4" />
                 Welcome to Sportsblock
               </div>
-              <h3 className="mb-6 text-2xl font-bold sm:text-3xl">
+              <h3 className="mb-6 font-display text-2xl font-bold sm:text-3xl">
                 Built for Fans Who Just Want Sports
               </h3>
               <div className="space-y-5">
@@ -234,8 +236,8 @@ export default function LandingShowcase() {
                     transition={{ duration: 0.5, delay: 0.3 + i * 0.15 }}
                     className="flex items-start gap-3"
                   >
-                    <div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-accent/10">
-                      <CheckCircle className="h-3.5 w-3.5 text-accent" />
+                    <div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-sb-teal/10">
+                      <CheckCircle className="h-3.5 w-3.5 text-sb-teal" />
                     </div>
                     <p className="text-sb-text-primary">{text}</p>
                   </motion.div>
@@ -247,8 +249,8 @@ export default function LandingShowcase() {
       </section>
 
       {/* ━━━ Features: Articles & Sportsbites ━━━ */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-muted/30 to-background px-6 py-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
+      <section className="relative overflow-hidden bg-gradient-to-b from-sb-turf/30 to-background px-6 py-24">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sb-teal/5 via-transparent to-transparent" />
 
         <div className="relative z-10 mx-auto max-w-6xl">
           <motion.div
@@ -258,17 +260,17 @@ export default function LandingShowcase() {
             transition={{ duration: 0.8 }}
             className="mb-16 text-center"
           >
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 font-semibold text-primary">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-sb-teal/10 px-4 py-2 font-semibold text-sb-teal">
               <Zap className="h-4 w-4" />
               Two Ways to Play
             </div>
-            <h2 className="mb-6 text-4xl font-bold md:text-5xl">
+            <h2 className="mb-6 font-display text-4xl font-bold md:text-5xl">
               Articles &{' '}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-sb-teal to-sb-gold bg-clip-text text-transparent">
                 Sportsbites
               </span>
             </h2>
-            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+            <p className="mx-auto max-w-2xl text-xl text-sb-text-muted">
               Long-form analysis or quick-fire takes. Both earn rewards.
             </p>
           </motion.div>
@@ -284,36 +286,36 @@ export default function LandingShowcase() {
               whileHover={{ y: -8 }}
               className="group overflow-hidden rounded-3xl border bg-sb-stadium shadow-lg transition-shadow hover:shadow-xl"
             >
-              <div className="h-2 bg-gradient-to-r from-primary to-bright-cobalt" />
+              <div className="h-2 bg-gradient-to-r from-sb-teal to-sb-teal-flash" />
               <div className="p-8">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-sb-teal/10 px-3 py-1 text-sm font-semibold text-sb-teal">
                   <FileText className="h-3.5 w-3.5" />
                   Full Articles
                 </div>
                 {/* Mock article preview */}
                 <div className="mb-6 rounded-2xl border bg-sb-turf/30 p-5">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-accent" />
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sb-teal to-sb-gold" />
                     <div>
                       <div className="text-sm font-semibold">@sportsfanatic</div>
-                      <div className="text-xs text-muted-foreground">5 min read</div>
+                      <div className="text-xs text-sb-text-muted">5 min read</div>
                     </div>
                   </div>
                   <p className="mb-2 font-bold">
                     Why Liverpool&apos;s Midfield Press Is Unstoppable This Season
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-sb-text-muted">
                     Breaking down the tactical genius behind the Reds&apos; relentless high press
                     and why opponents can&apos;t find answers...
                   </p>
-                  <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="mt-3 flex items-center gap-4 text-xs text-sb-text-muted">
                     <span>42 upvotes</span>
                     <span>18 comments</span>
-                    <span className="font-semibold text-accent">$7.84 earned</span>
+                    <span className="font-semibold text-sb-gold">$7.84 earned</span>
                   </div>
                 </div>
-                <p className="text-lg font-semibold text-primary">Deep analysis. Real earnings.</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-lg font-semibold text-sb-teal">Deep analysis. Real earnings.</p>
+                <p className="text-sm text-sb-text-muted">
                   Earn $3-$10+ per quality article from community upvotes.
                 </p>
               </div>
@@ -328,7 +330,7 @@ export default function LandingShowcase() {
               whileHover={{ y: -8 }}
               className="group overflow-hidden rounded-3xl border bg-sb-stadium shadow-lg transition-shadow hover:shadow-xl"
             >
-              <div className="h-2 bg-gradient-to-r from-accent to-aegean-sky" />
+              <div className="h-2 bg-gradient-to-r from-sb-gold to-sb-gold-shine" />
               <div className="p-8">
                 <div className="mb-4 flex items-center gap-3">
                   <Image
@@ -339,15 +341,15 @@ export default function LandingShowcase() {
                     loading="lazy"
                     className="h-8 w-auto"
                   />
-                  <span className="text-sm font-semibold text-accent">Sportsbites</span>
+                  <span className="text-sm font-semibold text-sb-gold">Sportsbites</span>
                 </div>
                 {/* Mock sportsbite */}
                 <div className="mb-6 rounded-2xl border bg-sb-turf/30 p-5">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-accent to-aegean-sky" />
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sb-gold to-sb-gold-shine" />
                     <div>
                       <div className="text-sm font-semibold">@matchday_maven</div>
-                      <div className="text-xs text-muted-foreground">Just now</div>
+                      <div className="text-xs text-sb-text-muted">Just now</div>
                     </div>
                   </div>
                   <p className="mb-3 text-sm">
@@ -355,15 +357,15 @@ export default function LandingShowcase() {
                     are running away with it. #PremierLeague
                   </p>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-4 text-xs text-sb-text-muted">
                       <span>28 upvotes</span>
-                      <span className="font-semibold text-accent">$1.42 earned</span>
+                      <span className="font-semibold text-sb-gold">$1.42 earned</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">138/280</span>
+                    <span className="text-xs text-sb-text-muted">138/280</span>
                   </div>
                 </div>
-                <p className="text-lg font-semibold text-accent">Quick takes. Live reactions.</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-lg font-semibold text-sb-gold">Quick takes. Live reactions.</p>
+                <p className="text-sm text-sb-text-muted">
                   280-character posts for live match moments. Earn daily.
                 </p>
               </div>
@@ -384,24 +386,24 @@ export default function LandingShowcase() {
                 title: 'Instant Posts',
                 description:
                   '280 characters is all you need. React to goals, calls, and clutch moments.',
-                color: 'text-primary',
-                bg: 'bg-primary/10',
+                color: 'text-sb-teal',
+                bg: 'bg-sb-teal/10',
               },
               {
                 icon: TrendingUp,
                 title: 'Trending Feed',
                 description:
                   'See what the community is buzzing about. The hottest takes rise to the top.',
-                color: 'text-accent',
-                bg: 'bg-accent/10',
+                color: 'text-sb-gold',
+                bg: 'bg-sb-gold/10',
               },
               {
                 icon: DollarSign,
                 title: 'Earn Daily',
                 description:
                   'Fresh reward pools every day. Quick takes earn HIVE and HBD just like full posts.',
-                color: 'text-landing-green',
-                bg: 'bg-landing-green/10',
+                color: 'text-sb-teal',
+                bg: 'bg-sb-teal/10',
               },
             ].map((item, index) => (
               <motion.div
@@ -409,13 +411,13 @@ export default function LandingShowcase() {
                 variants={itemVariants}
                 whileHover={{ y: -6, scale: 1.02 }}
                 transition={{ duration: 0.3 }}
-                className="rounded-2xl border bg-sb-stadium p-6 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+                className="rounded-2xl border bg-sb-stadium p-6 transition-all duration-300 hover:shadow-lg hover:shadow-sb-teal/5"
               >
                 <div className={`inline-flex p-3 ${item.bg} mb-4 rounded-xl`}>
                   <item.icon className={`h-6 w-6 ${item.color}`} />
                 </div>
-                <h3 className="mb-2 text-lg font-bold">{item.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+                <h3 className="mb-2 font-display text-lg font-bold">{item.title}</h3>
+                <p className="text-sm leading-relaxed text-sb-text-muted">{item.description}</p>
               </motion.div>
             ))}
           </motion.div>

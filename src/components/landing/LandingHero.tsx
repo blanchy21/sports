@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react';
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/core/Button';
+import { Logo } from '@/components/ui/Logo';
 import { useModal } from '@/components/modals/ModalProvider';
 
 export default function LandingHero() {
@@ -24,7 +25,7 @@ export default function LandingHero() {
     >
       {/* Background */}
       <motion.div style={{ y: parallaxY }} className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[#080C14]" />
+        <div className="absolute inset-0 bg-sb-void" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_40%,rgba(60,96,152,0.15),transparent)]" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
       </motion.div>
@@ -39,7 +40,7 @@ export default function LandingHero() {
             y: [0, -20, 0],
           }}
           transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bright-cobalt/15 blur-3xl"
+          className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-sb-teal/15 blur-3xl"
         />
         <motion.div
           animate={{
@@ -49,7 +50,7 @@ export default function LandingHero() {
             y: [0, 30, 0],
           }}
           transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -bottom-48 -left-48 h-[500px] w-[500px] rounded-full bg-primary/10 blur-3xl"
+          className="absolute -bottom-48 -left-48 h-[500px] w-[500px] rounded-full bg-sb-teal/10 blur-3xl"
         />
       </div>
 
@@ -62,17 +63,7 @@ export default function LandingHero() {
           transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           className="mb-8 flex items-center justify-center gap-3"
         >
-          <Image
-            src="/sportsblock-logo-trans.png"
-            alt="Sportsblock"
-            width={80}
-            height={80}
-            className="h-14 w-14 drop-shadow-lg sm:h-16 sm:w-16 md:h-[72px] md:w-[72px]"
-            priority
-          />
-          <span className="text-4xl font-bold tracking-wide text-white/90 sm:text-5xl">
-            Sportsblock
-          </span>
+          <Logo variant="horizontal" size={56} className="drop-shadow-lg" />
         </motion.div>
 
         {/* Main Headline */}
@@ -82,12 +73,12 @@ export default function LandingHero() {
           transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
           className="relative"
         >
-          <h1 className="mb-4 text-4xl font-black tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
+          <h1 className="mb-4 font-display text-4xl font-black tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
             <span className="text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]">
               PURE SPORTS.
             </span>
             <br />
-            <span className="animate-shimmer bg-gradient-to-r from-accent via-aegean-sky via-50% to-accent bg-clip-text text-transparent">
+            <span className="animate-shimmer bg-gradient-to-r from-sb-teal via-sb-teal-flash via-50% to-sb-teal bg-clip-text text-transparent">
               REAL REWARDS.
             </span>
           </h1>
@@ -116,7 +107,7 @@ export default function LandingHero() {
         >
           <Button
             size="lg"
-            className="group bg-[hsl(20,70%,42%)] px-10 py-7 text-lg font-semibold text-white shadow-2xl shadow-accent/25 transition-all duration-300 hover:scale-105 hover:bg-[hsl(20,70%,38%)] hover:shadow-accent/40"
+            className="group px-10 py-7 text-lg font-semibold shadow-2xl shadow-sb-teal/25 transition-all duration-300 hover:scale-105 hover:shadow-sb-teal/40"
             onClick={() => signIn('google', { callbackUrl: '/auth/google-callback' })}
           >
             Sign Up Free
@@ -142,7 +133,7 @@ export default function LandingHero() {
           <div className="flex flex-wrap items-center justify-center gap-4 text-white/70 sm:gap-8">
             {['Zero fees', 'Free to join', 'You own everything'].map((text, i) => (
               <div key={i} className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+                <div className="h-1.5 w-1.5 rounded-full bg-sb-teal" />
                 <span className="text-sm font-medium">{text}</span>
               </div>
             ))}
