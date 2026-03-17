@@ -35,6 +35,10 @@ const SharePredictionModal = lazy(() =>
   import('./SharePredictionModal').then((m) => ({ default: m.SharePredictionModal }))
 );
 
+const ShareToSportsbiteModal = lazy(() =>
+  import('./ShareToSportsbiteModal').then((m) => ({ default: m.ShareToSportsbiteModal }))
+);
+
 function formatCountdown(locksAt: string): string {
   const remaining = new Date(locksAt).getTime() - Date.now();
   if (remaining <= 0) return 'Locked';
@@ -78,6 +82,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
   const [deleting, setDeleting] = useState(false);
   const [commentsExpanded, setCommentsExpanded] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shareSportsbiteOpen, setShareSportsbiteOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const hiveUsername =
@@ -283,8 +288,8 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
           </div>
         )}
 
-        {/* Comment toggle */}
-        <div className="px-4 pt-2">
+        {/* Actions row */}
+        <div className="flex items-center gap-4 px-4 pt-2">
           <button
             onClick={() => setCommentsExpanded((prev) => !prev)}
             className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-sb-text-primary"
@@ -292,6 +297,15 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
             <MessageCircle className="h-4 w-4" />
             <span>{prediction.commentCount || 0}</span>
           </button>
+          {hiveUsername && (
+            <button
+              onClick={() => setShareSportsbiteOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-sb-gold"
+            >
+              <Share2 className="h-4 w-4" />
+              <span>Share</span>
+            </button>
+          )}
         </div>
 
         {/* Status-dependent footer */}
@@ -475,6 +489,18 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
             winningOutcomeLabel={winningOutcome.label}
             isOpen={shareOpen}
             onClose={() => setShareOpen(false)}
+          />
+        </Suspense>
+      )}
+
+      {/* Share to sportsbites modal */}
+      {shareSportsbiteOpen && hiveUsername && (
+        <Suspense fallback={null}>
+          <ShareToSportsbiteModal
+            prediction={prediction}
+            username={hiveUsername}
+            isOpen={shareSportsbiteOpen}
+            onClose={() => setShareSportsbiteOpen(false)}
           />
         </Suspense>
       )}
