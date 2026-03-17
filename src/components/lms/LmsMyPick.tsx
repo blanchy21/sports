@@ -57,13 +57,13 @@ export function LmsMyPick({ competitionId, competition }: LmsMyPickProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl border bg-card p-6">
+      <div className="rounded-2xl border bg-sb-stadium p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 w-40 rounded bg-muted" />
-          <div className="h-4 w-64 rounded bg-muted/60" />
+          <div className="h-6 w-40 rounded bg-sb-turf" />
+          <div className="h-4 w-64 rounded bg-sb-turf/60" />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-20 rounded-xl bg-muted/40" />
+              <div key={i} className="h-20 rounded-xl bg-sb-turf/40" />
             ))}
           </div>
         </div>
@@ -73,7 +73,7 @@ export function LmsMyPick({ competitionId, competition }: LmsMyPickProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border bg-card p-5">
+      <div className="rounded-2xl border bg-sb-stadium p-5">
         {/* Header with deadline */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-lg font-bold">Your Pick — GW{competition.currentGameweek}</h3>
@@ -117,7 +117,7 @@ export function LmsMyPick({ competitionId, competition }: LmsMyPickProps) {
         )}
 
         {isDeadlinePassed && currentPick && (
-          <div className="rounded-xl bg-muted/30 p-4 text-center">
+          <div className="rounded-xl bg-sb-turf/30 p-4 text-center">
             <div className="text-sm text-muted-foreground">Your pick is locked</div>
             <div className="mt-1 text-lg font-bold">{currentPick}</div>
           </div>

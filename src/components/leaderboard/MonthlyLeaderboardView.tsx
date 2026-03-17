@@ -17,11 +17,11 @@ function getRankBadgeClass(rank: number): string {
     case 1:
       return 'bg-warning/15 text-warning';
     case 2:
-      return 'bg-muted text-foreground/80';
+      return 'bg-sb-turf text-sb-text-primary/80';
     case 3:
       return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
     default:
-      return 'bg-muted text-muted-foreground';
+      return 'bg-sb-turf text-muted-foreground';
   }
 }
 
@@ -68,7 +68,7 @@ export function MonthlyLeaderboardView() {
           <Button variant="outline" size="sm" onClick={handlePrevMonth} aria-label="Previous month">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="min-w-[160px] rounded bg-muted px-3 py-1 text-center text-sm font-medium">
+          <span className="min-w-[160px] rounded bg-sb-turf px-3 py-1 text-center text-sm font-medium">
             {formatMonthLabel(monthId)}
           </span>
           <Button
@@ -107,7 +107,7 @@ export function MonthlyLeaderboardView() {
       )}
 
       {/* Entries */}
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-lg border bg-sb-stadium">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

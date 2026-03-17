@@ -42,7 +42,7 @@ export default function BlogListPage() {
       <div className="mx-auto max-w-3xl px-4 py-12">
         <Link
           href="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-sb-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to SPORTSBLOCK
@@ -58,9 +58,9 @@ export default function BlogListPage() {
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="block rounded-xl border bg-card p-6 transition-colors hover:bg-muted/50"
+              className="block rounded-xl border bg-sb-stadium p-6 transition-colors hover:bg-sb-turf/50"
             >
-              <h2 className="mb-2 text-xl font-semibold text-foreground">{post.title}</h2>
+              <h2 className="mb-2 text-xl font-semibold text-sb-text-primary">{post.title}</h2>
               <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{post.description}</p>
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">

@@ -120,7 +120,7 @@ export function SearchModal({ onClose }: SearchModalProps) {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
       <div className="relative z-10 mx-4 w-full max-w-2xl">
-        <div className="overflow-hidden rounded-lg border bg-card shadow-2xl">
+        <div className="overflow-hidden rounded-lg border bg-sb-stadium shadow-2xl">
           <div className="flex items-center space-x-4 border-b p-4">
             <Search className="h-6 w-6 text-muted-foreground" />
             <input
@@ -131,7 +131,7 @@ export function SearchModal({ onClose }: SearchModalProps) {
               className="flex-1 border-none bg-transparent text-lg outline-none"
               autoFocus
             />
-            <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-muted">
+            <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-sb-turf">
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -149,7 +149,7 @@ export function SearchModal({ onClose }: SearchModalProps) {
                   <button
                     key={result.username}
                     onClick={() => handleUserClick(result.username)}
-                    className="flex w-full items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-muted"
+                    className="flex w-full items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-sb-turf"
                   >
                     <Avatar
                       src={result.avatar}
@@ -159,7 +159,7 @@ export function SearchModal({ onClose }: SearchModalProps) {
                     />
                     <div className="flex-1 text-left">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">
+                        <span className="font-semibold text-sb-text-primary">
                           {result.displayName || result.username}
                         </span>
                         {result.isHiveUser ? (

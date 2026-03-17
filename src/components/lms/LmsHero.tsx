@@ -53,7 +53,7 @@ export function LmsHero({ competition, isEntered, isAlive, onJoin, joining }: Lm
   const showJoinButton = !isEntered && isRegistrationOpen;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border bg-card">
+    <div className="relative overflow-hidden rounded-2xl border bg-sb-stadium">
       {/* Background gradient */}
       <div
         className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-30"
@@ -120,11 +120,12 @@ export function LmsHero({ competition, isEntered, isAlive, onJoin, joining }: Lm
         {/* Stats row */}
         <div className="mb-6 flex flex-wrap gap-6 text-sm text-muted-foreground">
           <div>
-            <span className="font-bold text-foreground">{competition.totalEntries}</span> entries
+            <span className="font-bold text-sb-text-primary">{competition.totalEntries}</span>{' '}
+            entries
           </div>
           {competition.aliveCount !== undefined && (
             <div>
-              <span className="font-bold text-foreground">{competition.aliveCount}</span> alive
+              <span className="font-bold text-sb-text-primary">{competition.aliveCount}</span> alive
             </div>
           )}
         </div>

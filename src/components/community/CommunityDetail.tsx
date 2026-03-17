@@ -53,17 +53,17 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
   if (isLoading) {
     return (
       <div className={`space-y-6 ${className}`}>
-        <div className="animate-pulse rounded-lg border bg-card p-6">
+        <div className="animate-pulse rounded-lg border bg-sb-stadium p-6">
           <div className="mb-6 flex items-center space-x-4">
-            <div className="h-20 w-20 rounded-full bg-muted"></div>
+            <div className="h-20 w-20 rounded-full bg-sb-turf"></div>
             <div className="flex-1">
-              <div className="mb-2 h-8 w-1/3 rounded bg-muted"></div>
-              <div className="mb-2 h-4 w-1/4 rounded bg-muted"></div>
-              <div className="h-4 w-1/2 rounded bg-muted"></div>
+              <div className="mb-2 h-8 w-1/3 rounded bg-sb-turf"></div>
+              <div className="mb-2 h-4 w-1/4 rounded bg-sb-turf"></div>
+              <div className="h-4 w-1/2 rounded bg-sb-turf"></div>
             </div>
           </div>
-          <div className="mb-2 h-4 w-full rounded bg-muted"></div>
-          <div className="h-4 w-3/4 rounded bg-muted"></div>
+          <div className="mb-2 h-4 w-full rounded bg-sb-turf"></div>
+          <div className="h-4 w-3/4 rounded bg-sb-turf"></div>
         </div>
       </div>
     );
@@ -73,7 +73,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
     return (
       <div className={`py-12 text-center ${className}`}>
         <div className="mb-4 text-6xl">⚠️</div>
-        <h3 className="mb-2 text-xl font-semibold text-foreground">Community Not Found</h3>
+        <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">Community Not Found</h3>
         <p className="mb-6 text-muted-foreground">
           The community you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
@@ -204,7 +204,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
               'border-b-2 px-4 py-2 text-sm font-medium transition-colors',
               activeTab === 'posts'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-sb-text-primary'
             )}
           >
             <FileText className="mr-2 inline h-4 w-4" />
@@ -216,7 +216,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
               'border-b-2 px-4 py-2 text-sm font-medium transition-colors',
               activeTab === 'about'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-sb-text-primary'
             )}
           >
             About
@@ -227,7 +227,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
               'border-b-2 px-4 py-2 text-sm font-medium transition-colors',
               activeTab === 'members'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-sb-text-primary'
             )}
           >
             <Users className="mr-2 inline h-4 w-4" />

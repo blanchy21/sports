@@ -265,7 +265,7 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
           <Trophy className="h-4 w-4 text-muted-foreground" />
         </button>
         {showPredictionSportPicker && (
-          <div className="absolute left-0 top-full z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border bg-card p-1.5 shadow-lg">
+          <div className="absolute left-0 top-full z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border bg-sb-stadium p-1.5 shadow-lg">
             {SPORT_CATEGORIES.map((sport) => (
               <button
                 key={sport.id}
@@ -274,7 +274,7 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
                   setShowPredictionSportPicker(false);
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted',
+                  'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm transition-colors hover:bg-sb-turf',
                   predictionSportCategory === sport.id && 'bg-amber-500/10 text-amber-600'
                 )}
               >
@@ -317,7 +317,7 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
                     'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors',
                     creatorStakeOutcome === i
                       ? 'border-amber-500 bg-amber-500/10'
-                      : 'border-border hover:bg-muted/50'
+                      : 'border-sb-border hover:bg-sb-turf/50'
                   )}
                 >
                   <input
@@ -343,7 +343,7 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
                 'flex-1 rounded-full px-2 py-1.5 text-xs font-medium transition-colors',
                 creatorStakeAmount === amt
                   ? 'bg-amber-500 text-white'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  : 'bg-sb-turf text-muted-foreground hover:bg-sb-turf/80'
               )}
             >
               {amt}

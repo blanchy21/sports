@@ -130,7 +130,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
         ref={modalRef}
         tabIndex={-1}
         className={cn(
-          'relative mx-2 my-4 flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-lg border bg-card shadow-lg outline-none sm:mx-4 sm:my-8 sm:max-h-[calc(100vh-4rem)]',
+          'relative mx-2 my-4 flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-lg border bg-sb-stadium shadow-lg outline-none sm:mx-4 sm:my-8 sm:max-h-[calc(100vh-4rem)]',
           sizeClasses[size],
           className
         )}
@@ -146,7 +146,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
               {title && (
                 <h2
                   id="modal-title"
-                  className="truncate text-base font-semibold text-foreground sm:text-lg"
+                  className="truncate text-base font-semibold text-sb-text-primary sm:text-lg"
                 >
                   {title}
                 </h2>
@@ -192,7 +192,7 @@ export const ModalTitle: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className }) => (
-  <h2 className={cn('text-base font-semibold text-foreground sm:text-lg', className)}>
+  <h2 className={cn('text-base font-semibold text-sb-text-primary sm:text-lg', className)}>
     {children}
   </h2>
 );
@@ -215,7 +215,7 @@ export const ModalFooter: React.FC<{
 }> = ({ children, className }) => (
   <div
     className={cn(
-      'flex flex-col-reverse items-center justify-end gap-2 border-t bg-muted/30 p-4 sm:flex-row sm:gap-3 sm:p-6',
+      'flex flex-col-reverse items-center justify-end gap-2 border-t bg-sb-turf/30 p-4 sm:flex-row sm:gap-3 sm:p-6',
       className
     )}
   >

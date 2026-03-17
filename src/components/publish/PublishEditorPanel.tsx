@@ -24,7 +24,7 @@ export function PublishEditorPanel({ form, viewMode }: PublishEditorPanelProps) 
   return (
     <div
       className={cn(
-        'relative z-10 flex flex-col overflow-hidden border-b bg-card/50 md:border-b-0 md:border-r',
+        'relative z-10 flex flex-col overflow-hidden border-b bg-sb-stadium/50 md:border-b-0 md:border-r',
         viewMode === 'preview' ? 'hidden' : 'flex',
         viewMode === 'editor' ? 'w-full' : 'w-full md:w-1/2'
       )}
@@ -66,7 +66,7 @@ export function PublishEditorPanel({ form, viewMode }: PublishEditorPanelProps) 
           {/* Short Description / Excerpt */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Short Description</label>
+              <label className="text-sm font-medium text-sb-text-primary">Short Description</label>
               <span className="text-xs text-muted-foreground">{form.excerpt.length}/120</span>
             </div>
             <input
@@ -76,7 +76,7 @@ export function PublishEditorPanel({ form, viewMode }: PublishEditorPanelProps) 
               placeholder="Brief description of your post (optional)"
               className={cn(
                 'w-full rounded-lg border bg-background px-3 py-2',
-                'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
+                'text-sm focus:outline-none focus:ring-2 focus:ring-sb-teal'
               )}
               maxLength={120}
             />
@@ -84,7 +84,7 @@ export function PublishEditorPanel({ form, viewMode }: PublishEditorPanelProps) 
 
           {/* Sport Category */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
+            <label className="text-sm font-medium text-sb-text-primary">
               Choose a Sport <span className="text-destructive">*</span>
             </label>
             <select
@@ -92,7 +92,7 @@ export function PublishEditorPanel({ form, viewMode }: PublishEditorPanelProps) 
               onChange={(e) => form.setSelectedSport(e.target.value)}
               className={cn(
                 'w-full rounded-lg border bg-background px-3 py-2.5',
-                'text-sm focus:outline-none focus:ring-2 focus:ring-ring',
+                'text-sm focus:outline-none focus:ring-2 focus:ring-sb-teal',
                 !form.selectedSport && 'text-muted-foreground'
               )}
             >

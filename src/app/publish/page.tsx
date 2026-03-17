@@ -63,9 +63,9 @@ function PublishPageContent() {
       <TopNavigation />
 
       {/* Sub-header: community selector + actions */}
-      <div className="relative border-b bg-card">
+      <div className="relative border-b bg-sb-stadium">
         <div className="flex items-center justify-between px-4 py-2 sm:px-6">
-          <span className="text-sm text-foreground">
+          <span className="text-sm text-sb-text-primary">
             Write a new post in{' '}
             <select
               value={form.selectedCommunity?.id || ''}
@@ -95,7 +95,7 @@ function PublishPageContent() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowDrafts(true)}
-              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-sb-turf hover:text-sb-text-primary"
             >
               <FileText className="h-3.5 w-3.5" />
               Drafts
@@ -103,12 +103,12 @@ function PublishPageContent() {
 
             <Link
               href="/drafts?tab=scheduled"
-              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-sb-turf hover:text-sb-text-primary"
             >
               <Calendar className="h-3.5 w-3.5" />
               Scheduled
               {pendingCount > 0 && (
-                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-[#051A14]">
                   {pendingCount}
                 </span>
               )}
@@ -126,13 +126,13 @@ function PublishPageContent() {
               </Button>
 
               {form.showMenu && (
-                <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border bg-card py-1 shadow-lg">
+                <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border bg-sb-stadium py-1 shadow-lg">
                   <button
                     onClick={() => {
                       handleSaveDraft();
                       form.setShowMenu(false);
                     }}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-sb-turf"
                   >
                     <Save className="h-4 w-4" />
                     Save Draft
@@ -142,7 +142,7 @@ function PublishPageContent() {
                       handleScheduleClick();
                       form.setShowMenu(false);
                     }}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-sb-turf"
                   >
                     <Calendar className="h-4 w-4" />
                     Schedule Post
@@ -195,7 +195,7 @@ function PublishPageContent() {
         {/* Right Side - Preview */}
         <div
           className={cn(
-            'relative z-10 overflow-hidden bg-card/50',
+            'relative z-10 overflow-hidden bg-sb-stadium/50',
             viewMode === 'editor' && 'hidden',
             viewMode === 'preview' && 'flex w-full flex-col',
             viewMode === 'split' && 'hidden md:flex md:w-1/2 md:flex-col'
@@ -213,7 +213,7 @@ function PublishPageContent() {
       </div>
 
       {/* Fixed Bottom Action Bar */}
-      <div className="border-t bg-card/80 px-4 py-3 backdrop-blur-sm sm:px-6 sm:py-4">
+      <div className="border-t bg-sb-stadium/80 px-4 py-3 backdrop-blur-sm sm:px-6 sm:py-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
           <Button
             variant="outline"

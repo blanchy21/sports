@@ -43,12 +43,12 @@ function getStatusBadge(status: string): { label: string; className: string } {
     case 'complete':
       return {
         label: 'ENDED',
-        className: 'bg-muted text-muted-foreground ring-border',
+        className: 'bg-sb-turf text-muted-foreground ring-border',
       };
     default:
       return {
         label: status.toUpperCase(),
-        className: 'bg-muted text-muted-foreground ring-border',
+        className: 'bg-sb-turf text-muted-foreground ring-border',
       };
   }
 }
@@ -81,11 +81,13 @@ export const LmsCompetitionCard = React.memo(function LmsCompetitionCard({
     <Link href="/contests/last-man-standing" className="group block">
       <div
         className={cn(
-          'relative overflow-hidden rounded-2xl border bg-card transition-all duration-300',
+          'relative overflow-hidden rounded-2xl border bg-sb-stadium transition-all duration-300',
           'hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-500/5',
           (competition.status === 'open' || competition.status === 'picking') &&
             'border-amber-500/20 hover:border-amber-500/40',
-          competition.status !== 'open' && competition.status !== 'picking' && 'hover:border-border'
+          competition.status !== 'open' &&
+            competition.status !== 'picking' &&
+            'hover:border-sb-border'
         )}
       >
         {/* Cover image */}
@@ -164,9 +166,9 @@ export const LmsCompetitionCard = React.memo(function LmsCompetitionCard({
         </div>
 
         {/* Stats bar */}
-        <div className="grid grid-cols-2 gap-px border-t border-border/50 bg-border/50">
-          <div className="flex items-center gap-3 bg-card px-5 py-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/80">
+        <div className="grid grid-cols-2 gap-px border-t border-sb-border/50 bg-border/50">
+          <div className="flex items-center gap-3 bg-sb-stadium px-5 py-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sb-turf/80">
               <Users className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
@@ -183,8 +185,8 @@ export const LmsCompetitionCard = React.memo(function LmsCompetitionCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-card px-5 py-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/80">
+          <div className="flex items-center gap-3 bg-sb-stadium px-5 py-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sb-turf/80">
               <Shield className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
@@ -197,7 +199,7 @@ export const LmsCompetitionCard = React.memo(function LmsCompetitionCard({
         </div>
 
         {/* Footer - countdown / CTA */}
-        <div className="border-t border-border/50 bg-card">
+        <div className="border-t border-sb-border/50 bg-sb-stadium">
           <div className="flex items-center justify-between px-5 py-3">
             {timeInfo ? (
               <div

@@ -25,7 +25,7 @@ export default function LandingShowcase() {
   return (
     <>
       {/* ━━━ Trust Bar ━━━ */}
-      <section className="border-b border-border/50 bg-muted/30 px-6 py-8">
+      <section className="border-b border-sb-border/50 bg-sb-turf/30 px-6 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -237,7 +237,7 @@ export default function LandingShowcase() {
                     <div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-accent/10">
                       <CheckCircle className="h-3.5 w-3.5 text-accent" />
                     </div>
-                    <p className="text-foreground">{text}</p>
+                    <p className="text-sb-text-primary">{text}</p>
                   </motion.div>
                 ))}
               </div>
@@ -282,7 +282,7 @@ export default function LandingShowcase() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
               whileHover={{ y: -8 }}
-              className="group overflow-hidden rounded-3xl border bg-card shadow-lg transition-shadow hover:shadow-xl"
+              className="group overflow-hidden rounded-3xl border bg-sb-stadium shadow-lg transition-shadow hover:shadow-xl"
             >
               <div className="h-2 bg-gradient-to-r from-primary to-bright-cobalt" />
               <div className="p-8">
@@ -291,7 +291,7 @@ export default function LandingShowcase() {
                   Full Articles
                 </div>
                 {/* Mock article preview */}
-                <div className="mb-6 rounded-2xl border bg-muted/30 p-5">
+                <div className="mb-6 rounded-2xl border bg-sb-turf/30 p-5">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-accent" />
                     <div>
@@ -326,7 +326,7 @@ export default function LandingShowcase() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.15 }}
               whileHover={{ y: -8 }}
-              className="group overflow-hidden rounded-3xl border bg-card shadow-lg transition-shadow hover:shadow-xl"
+              className="group overflow-hidden rounded-3xl border bg-sb-stadium shadow-lg transition-shadow hover:shadow-xl"
             >
               <div className="h-2 bg-gradient-to-r from-accent to-aegean-sky" />
               <div className="p-8">
@@ -342,7 +342,7 @@ export default function LandingShowcase() {
                   <span className="text-sm font-semibold text-accent">Sportsbites</span>
                 </div>
                 {/* Mock sportsbite */}
-                <div className="mb-6 rounded-2xl border bg-muted/30 p-5">
+                <div className="mb-6 rounded-2xl border bg-sb-turf/30 p-5">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-gradient-to-br from-accent to-aegean-sky" />
                     <div>
@@ -409,7 +409,7 @@ export default function LandingShowcase() {
                 variants={itemVariants}
                 whileHover={{ y: -6, scale: 1.02 }}
                 transition={{ duration: 0.3 }}
-                className="rounded-2xl border bg-card p-6 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+                className="rounded-2xl border bg-sb-stadium p-6 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
               >
                 <div className={`inline-flex p-3 ${item.bg} mb-4 rounded-xl`}>
                   <item.icon className={`h-6 w-6 ${item.color}`} />

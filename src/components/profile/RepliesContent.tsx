@@ -99,7 +99,7 @@ export function RepliesContent() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-sb-stadium p-4">
           <div className="flex items-center space-x-3">
             <div className="rounded-lg bg-primary/10 p-2">
               <MessageSquare className="h-5 w-5 text-primary" />
@@ -117,7 +117,7 @@ export function RepliesContent() {
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-sb-stadium p-4">
           <div className="flex items-center space-x-3">
             <div className="rounded-lg bg-primary/10 p-2">
               <Reply className="h-5 w-5 text-primary" />
@@ -131,7 +131,7 @@ export function RepliesContent() {
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-sb-stadium p-4">
           <div className="flex items-center space-x-3">
             <div className="rounded-lg bg-primary/10 p-2">
               <ThumbsUp className="h-5 w-5 text-primary" />
@@ -168,7 +168,7 @@ export function RepliesContent() {
             {allReplies.map((reply) => (
               <div
                 key={`${reply.author}/${reply.permlink}`}
-                className={`rounded-lg border bg-card p-5 transition-all duration-300 hover:shadow-md ${
+                className={`rounded-lg border bg-sb-stadium p-5 transition-all duration-300 hover:shadow-md ${
                   reply.isNew
                     ? 'animate-pulse border-accent/30 bg-accent/10 shadow-lg'
                     : 'hover:shadow-md'
@@ -210,7 +210,7 @@ export function RepliesContent() {
                     </div>
 
                     <div
-                      className="prose prose-sm mb-3 max-w-none overflow-hidden whitespace-pre-wrap break-words text-foreground"
+                      className="prose prose-sm mb-3 max-w-none overflow-hidden whitespace-pre-wrap break-words text-sb-text-primary"
                       dangerouslySetInnerHTML={{ __html: sanitizePostContent(reply.body) }}
                     />
 
@@ -238,9 +238,9 @@ export function RepliesContent() {
 
       {/* Empty State */}
       {!isLoading && !error && (!allReplies || allReplies.length === 0) && (
-        <div className="rounded-lg border bg-card p-12 text-center">
+        <div className="rounded-lg border bg-sb-stadium p-12 text-center">
           <div className="mb-4 flex justify-center">
-            <div className="rounded-full bg-muted p-4">
+            <div className="rounded-full bg-sb-turf p-4">
               <MessageSquare className="h-12 w-12 text-muted-foreground" />
             </div>
           </div>

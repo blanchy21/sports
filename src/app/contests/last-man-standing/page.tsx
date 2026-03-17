@@ -20,7 +20,7 @@ function LmsRulesSection() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-2xl border bg-card">
+    <div className="rounded-2xl border bg-sb-stadium">
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between px-5 py-4 text-left"
@@ -38,29 +38,29 @@ function LmsRulesSection() {
       {open && (
         <div className="space-y-3 border-t px-5 py-4 text-sm text-muted-foreground">
           <div>
-            <span className="font-semibold text-foreground">1. Join for free</span> — Enter the
+            <span className="font-semibold text-sb-text-primary">1. Join for free</span> — Enter the
             competition at no cost.
           </div>
           <div>
-            <span className="font-semibold text-foreground">2. Pick a team each gameweek</span> —
-            Select one Premier League team to win their match. You can only use each team once
+            <span className="font-semibold text-sb-text-primary">2. Pick a team each gameweek</span>{' '}
+            — Select one Premier League team to win their match. You can only use each team once
             throughout the entire competition.
           </div>
           <div>
-            <span className="font-semibold text-foreground">3. Survive or be eliminated</span> — If
-            your team wins, you survive. If they draw or lose, you&apos;re eliminated.
+            <span className="font-semibold text-sb-text-primary">3. Survive or be eliminated</span>{' '}
+            — If your team wins, you survive. If they draw or lose, you&apos;re eliminated.
           </div>
           <div>
-            <span className="font-semibold text-foreground">4. Last one standing wins</span> — The
-            last survivor takes the entire prize pool.
+            <span className="font-semibold text-sb-text-primary">4. Last one standing wins</span> —
+            The last survivor takes the entire prize pool.
           </div>
-          <div className="rounded-lg bg-muted/30 p-3 text-xs">
-            <span className="font-semibold text-foreground">Auto-pick:</span> If you don&apos;t
+          <div className="rounded-lg bg-sb-turf/30 p-3 text-xs">
+            <span className="font-semibold text-sb-text-primary">Auto-pick:</span> If you don&apos;t
             submit a pick before the deadline, the first alphabetically available team will be
             assigned automatically.
           </div>
-          <div className="rounded-lg bg-muted/30 p-3 text-xs">
-            <span className="font-semibold text-foreground">Postponed matches:</span> If your
+          <div className="rounded-lg bg-sb-turf/30 p-3 text-xs">
+            <span className="font-semibold text-sb-text-primary">Postponed matches:</span> If your
             team&apos;s match is postponed, the team is returned to your available pool and you
             survive the gameweek.
           </div>
@@ -86,17 +86,17 @@ function LmsPageContent() {
     return (
       <div className="space-y-4">
         {/* Hero skeleton */}
-        <div className="animate-pulse rounded-2xl border bg-card p-6">
-          <div className="mb-4 h-4 w-32 rounded bg-muted" />
-          <div className="mb-2 h-8 w-2/3 rounded bg-muted" />
-          <div className="mb-6 h-4 w-full rounded bg-muted/60" />
-          <div className="h-12 w-48 rounded-xl bg-muted" />
+        <div className="animate-pulse rounded-2xl border bg-sb-stadium p-6">
+          <div className="mb-4 h-4 w-32 rounded bg-sb-turf" />
+          <div className="mb-2 h-8 w-2/3 rounded bg-sb-turf" />
+          <div className="mb-6 h-4 w-full rounded bg-sb-turf/60" />
+          <div className="h-12 w-48 rounded-xl bg-sb-turf" />
         </div>
         {/* Board skeleton */}
-        <div className="animate-pulse rounded-2xl border bg-card p-6">
-          <div className="mb-4 h-6 w-40 rounded bg-muted" />
+        <div className="animate-pulse rounded-2xl border bg-sb-stadium p-6">
+          <div className="mb-4 h-6 w-40 rounded bg-sb-turf" />
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="mb-2 h-10 w-full rounded bg-muted/40" />
+            <div key={i} className="mb-2 h-10 w-full rounded bg-sb-turf/40" />
           ))}
         </div>
       </div>

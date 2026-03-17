@@ -22,7 +22,7 @@ export function ContestMatchSchedule({ slug }: { slug: string }) {
     return (
       <div className="space-y-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-10 rounded-lg bg-muted/50 animate-pulse" />
+          <div key={i} className="h-10 animate-pulse rounded-lg bg-sb-turf/50" />
         ))}
       </div>
     );
@@ -42,8 +42,8 @@ export function ContestMatchSchedule({ slug }: { slug: string }) {
 
   // Sort rounds in tournament order
   const sortedRounds = [...grouped.keys()].sort((a, b) => {
-    const aIdx = WORLD_CUP_CONFIG.ROUNDS.indexOf(a as typeof WORLD_CUP_CONFIG.ROUNDS[number]);
-    const bIdx = WORLD_CUP_CONFIG.ROUNDS.indexOf(b as typeof WORLD_CUP_CONFIG.ROUNDS[number]);
+    const aIdx = WORLD_CUP_CONFIG.ROUNDS.indexOf(a as (typeof WORLD_CUP_CONFIG.ROUNDS)[number]);
+    const bIdx = WORLD_CUP_CONFIG.ROUNDS.indexOf(b as (typeof WORLD_CUP_CONFIG.ROUNDS)[number]);
     return aIdx - bIdx;
   });
 
@@ -53,7 +53,7 @@ export function ContestMatchSchedule({ slug }: { slug: string }) {
         const roundMatches = grouped.get(round) || [];
         return (
           <div key={round}>
-            <h3 className="text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wide">
+            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               {ROUND_LABELS[round] || round}
             </h3>
             <div className="space-y-1">
@@ -63,15 +63,15 @@ export function ContestMatchSchedule({ slug }: { slug: string }) {
                   <div
                     key={match.id}
                     className={cn(
-                      'grid grid-cols-[1fr_60px_1fr] items-center gap-2 px-3 py-2 rounded-lg text-sm',
-                      hasResult ? 'bg-muted/30' : 'bg-muted/10'
+                      'grid grid-cols-[1fr_60px_1fr] items-center gap-2 rounded-lg px-3 py-2 text-sm',
+                      hasResult ? 'bg-sb-turf/30' : 'bg-sb-turf/10'
                     )}
                   >
-                    <span className="text-right font-medium truncate">{match.homeTeamCode}</span>
+                    <span className="truncate text-right font-medium">{match.homeTeamCode}</span>
                     <span className="text-center font-mono font-bold">
                       {hasResult ? `${match.homeScore} - ${match.awayScore}` : 'vs'}
                     </span>
-                    <span className="font-medium truncate">{match.awayTeamCode}</span>
+                    <span className="truncate font-medium">{match.awayTeamCode}</span>
                   </div>
                 );
               })}

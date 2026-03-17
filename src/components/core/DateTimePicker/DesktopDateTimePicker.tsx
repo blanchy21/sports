@@ -214,7 +214,7 @@ export function DesktopDateTimePicker({
           'flex w-full items-center gap-2 rounded-lg border bg-background px-3 py-2 text-left text-sm transition-colors',
           'focus:outline-none focus:ring-2 focus:ring-warning',
           'disabled:cursor-not-allowed disabled:opacity-50',
-          displayText ? 'text-foreground' : 'text-muted-foreground',
+          displayText ? 'text-sb-text-primary' : 'text-muted-foreground',
         ].join(' ')}
       >
         <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -226,7 +226,7 @@ export function DesktopDateTimePicker({
         createPortal(
           <div
             ref={popoverRef}
-            className="z-50 w-80 rounded-lg border bg-card p-4 shadow-lg"
+            className="z-50 w-80 rounded-lg border bg-sb-stadium p-4 shadow-lg"
             style={popoverStyle}
           >
             {/* Quick presets */}

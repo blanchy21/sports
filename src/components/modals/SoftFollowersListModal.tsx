@@ -122,11 +122,11 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-sb-border">
             {users.map((user) => (
               <div
                 key={user.id}
-                className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
+                className="flex items-center justify-between p-4 transition-colors hover:bg-sb-turf/50"
               >
                 <div
                   className="flex flex-1 cursor-pointer items-center space-x-3"
@@ -134,7 +134,7 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
                 >
                   <Avatar fallback={user.username} size="sm" />
                   <div>
-                    <p className="font-medium text-foreground">@{user.username}</p>
+                    <p className="font-medium text-sb-text-primary">@{user.username}</p>
                   </div>
                 </div>
                 {currentUser?.id !== user.userId && (
@@ -150,7 +150,7 @@ export const SoftFollowersListModal: React.FC<SoftFollowersListModalProps> = ({
         )}
 
         {hasMore && !isLoading && (
-          <div className="border-t border-border p-4">
+          <div className="border-t border-sb-border p-4">
             <Button variant="outline" className="w-full" onClick={loadMore}>
               Load More
             </Button>

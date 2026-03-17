@@ -102,7 +102,7 @@ function SportsBitesContent() {
     <MainLayout>
       <div className="mx-auto max-w-3xl">
         {/* Header */}
-        <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-border bg-background/95 px-4 backdrop-blur-xl">
+        <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-sb-border bg-background/95 px-4 backdrop-blur-xl">
           <div className="flex items-center justify-between py-3">
             <h1 className="text-xl font-bold">Sportsbites</h1>
 
@@ -126,14 +126,14 @@ function SportsBitesContent() {
                   className={cn(
                     'flex flex-1 items-center justify-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors',
                     isActive
-                      ? 'border-primary font-semibold text-foreground'
-                      : 'border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                      ? 'border-primary font-semibold text-sb-text-primary'
+                      : 'border-transparent text-muted-foreground hover:bg-sb-turf/50 hover:text-sb-text-primary'
                   )}
                 >
                   <Icon className="h-4 w-4" />
                   {filter.label}
                   {filter.id === 'following' && followingList.length > 0 && (
-                    <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                    <span className="ml-1 rounded-full bg-sb-turf px-1.5 py-0.5 text-xs text-muted-foreground">
                       {followingList.length}
                     </span>
                   )}
@@ -156,7 +156,7 @@ function SportsBitesContent() {
               variant="ghost"
               size="sm"
               onClick={() => router.push('/sportsbites')}
-              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-sb-text-primary"
             >
               <X className="mr-1 h-3 w-3" />
               Clear
@@ -189,7 +189,7 @@ function SportsBitesContent() {
                   setInfoBannerDismissed(true);
                   localStorage.setItem('sportsbites-info-dismissed', 'true');
                 }}
-                className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-sb-turf hover:text-sb-text-primary"
                 aria-label="Dismiss"
               >
                 <X className="h-4 w-4" />
@@ -208,19 +208,19 @@ function SportsBitesContent() {
 
         {/* Feature highlights */}
         <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-xl border bg-card p-5 text-center">
+          <div className="rounded-xl border bg-sb-stadium p-5 text-center">
             <div className="mb-3 text-3xl">&#9889;</div>
             <h3 className="mb-1 font-semibold">Quick Takes</h3>
             <p className="text-sm text-muted-foreground">280 characters for instant reactions</p>
           </div>
 
-          <div className="rounded-xl border bg-card p-5 text-center">
+          <div className="rounded-xl border bg-sb-stadium p-5 text-center">
             <div className="mb-3 text-3xl">&#127942;</div>
             <h3 className="mb-1 font-semibold">Earn Rewards</h3>
             <p className="text-sm text-muted-foreground">Get upvoted and earn HIVE/HBD</p>
           </div>
 
-          <div className="rounded-xl border bg-card p-5 text-center">
+          <div className="rounded-xl border bg-sb-stadium p-5 text-center">
             <div className="mb-3 text-3xl">&#128279;</div>
             <h3 className="mb-1 font-semibold">Decentralized</h3>
             <p className="text-sm text-muted-foreground">Stored forever on Hive blockchain</p>

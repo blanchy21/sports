@@ -168,13 +168,13 @@ export default function OnboardingGuidePage() {
           className="mb-8 text-center"
         >
           <h1 className="mb-2 text-3xl font-black tracking-tight">
-            <span className="text-foreground">SPORTS</span>
+            <span className="text-sb-text-primary">SPORTS</span>
             <span className="bg-gradient-to-r from-accent to-aegean-sky bg-clip-text text-transparent">
               BLOCK
             </span>
           </h1>
           <p className="text-sm text-muted-foreground">
-            Welcome, <span className="font-medium text-foreground">@{user.hiveUsername}</span>
+            Welcome, <span className="font-medium text-sb-text-primary">@{user.hiveUsername}</span>
           </p>
         </motion.div>
 
@@ -207,7 +207,7 @@ export default function OnboardingGuidePage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -40 }}
             transition={{ duration: 0.3 }}
-            className="rounded-2xl border border-border bg-card p-8"
+            className="rounded-2xl border border-sb-border bg-sb-stadium p-8"
           >
             {/* Icon */}
             <div className="mb-6 flex justify-center">
@@ -217,7 +217,9 @@ export default function OnboardingGuidePage() {
             </div>
 
             {/* Title */}
-            <h2 className="mb-4 text-center text-xl font-bold text-foreground">{step.title}</h2>
+            <h2 className="mb-4 text-center text-xl font-bold text-sb-text-primary">
+              {step.title}
+            </h2>
 
             {/* Body */}
             <p className="mb-6 text-center text-sm leading-relaxed text-muted-foreground">
@@ -274,7 +276,7 @@ export default function OnboardingGuidePage() {
                     href="https://chromewebstore.google.com/detail/hive-keychain/jcacnejopjdphbnjgfaaobbfafkihpep"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-sb-border px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:text-sb-text-primary"
                   >
                     Chrome
                     <ExternalLink className="h-3 w-3" />
@@ -283,7 +285,7 @@ export default function OnboardingGuidePage() {
                     href="https://addons.mozilla.org/en-US/firefox/addon/hive-keychain/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-sb-border px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:text-sb-text-primary"
                   >
                     Firefox
                     <ExternalLink className="h-3 w-3" />
@@ -311,7 +313,7 @@ export default function OnboardingGuidePage() {
               {currentStep > 0 ? (
                 <button
                   onClick={handleBack}
-                  className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-sb-text-primary"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back

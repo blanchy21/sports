@@ -40,7 +40,7 @@ export const BadgeGrid: React.FC<BadgeGridProps> = ({ username, className }) => 
         <h3 className="text-sm font-semibold text-muted-foreground">Badges</h3>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-8 animate-pulse rounded-full bg-muted" />
+            <div key={i} className="h-8 animate-pulse rounded-full bg-sb-turf" />
           ))}
         </div>
       </div>
@@ -81,7 +81,7 @@ export const BadgeGrid: React.FC<BadgeGridProps> = ({ username, className }) => 
               return (
                 <span
                   key={badge.id}
-                  className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground opacity-50"
+                  className="inline-flex items-center gap-1 rounded-full bg-sb-turf px-2 py-0.5 text-xs text-muted-foreground opacity-50"
                   title={`${badge.name} — ${badge.description}`}
                 >
                   <Lock className="h-2.5 w-2.5" />

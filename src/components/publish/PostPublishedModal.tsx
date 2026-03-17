@@ -26,12 +26,12 @@ export function PostPublishedModal({
 }: PostPublishedModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="mx-4 w-full max-w-md rounded-lg border bg-card p-6 shadow-xl">
+      <div className="mx-4 w-full max-w-md rounded-lg border bg-sb-stadium p-6 shadow-xl">
         <div className="mb-4 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-success/15">
             <Send className="h-6 w-6 text-success" />
           </div>
-          <h3 className="text-lg font-semibold text-foreground">Post Published!</h3>
+          <h3 className="text-lg font-semibold text-sb-text-primary">Post Published!</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             Your post is now live on Sportsblock.
           </p>

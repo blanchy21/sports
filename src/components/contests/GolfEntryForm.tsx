@@ -204,7 +204,7 @@ export function GolfEntryForm({ contest }: { contest: ContestResponse }) {
                 ? 'border-destructive/50 bg-destructive/5'
                 : combinedOdds >= GOLF_FANTASY_CONFIG.MIN_COMBINED_ODDS
                   ? 'border-green-500/50 bg-green-500/5'
-                  : 'bg-muted/30'
+                  : 'bg-sb-turf/30'
             )}
           >
             <div className="mb-0.5 text-xs text-muted-foreground">Combined Odds</div>
@@ -256,7 +256,7 @@ export function GolfEntryForm({ contest }: { contest: ContestResponse }) {
                       ? 'border border-green-500/50 bg-green-500/10'
                       : isFull
                         ? 'opacity-40'
-                        : 'hover:bg-muted/50'
+                        : 'hover:bg-sb-turf/50'
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -335,7 +335,7 @@ export function GolfEntryForm({ contest }: { contest: ContestResponse }) {
               return (
                 <div
                   key={code}
-                  className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"
+                  className="flex items-center justify-between rounded-lg bg-sb-turf/50 px-3 py-2 text-sm"
                 >
                   <span className="font-medium">{team?.name || code}</span>
                   <span className="font-mono text-xs text-muted-foreground">{team?.odds}/1</span>

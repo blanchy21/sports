@@ -26,9 +26,9 @@ export default function RepliesPage() {
     return (
       <MainLayout>
         <div className="mx-auto max-w-4xl space-y-6">
-          <div className="rounded-lg border bg-card p-12 text-center">
+          <div className="rounded-lg border bg-sb-stadium p-12 text-center">
             <div className="mb-4 flex justify-center">
-              <div className="rounded-full bg-muted p-4">
+              <div className="rounded-full bg-sb-turf p-4">
                 <MessageSquare className="h-12 w-12 text-muted-foreground" />
               </div>
             </div>

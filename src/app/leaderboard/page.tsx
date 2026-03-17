@@ -139,7 +139,7 @@ function LeaderboardContent() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="min-w-[100px] rounded bg-muted px-3 py-1 text-center text-sm font-medium">
+              <span className="min-w-[100px] rounded bg-sb-turf px-3 py-1 text-center text-sm font-medium">
                 {currentWeekId}
               </span>
               <Button
@@ -159,13 +159,13 @@ function LeaderboardContent() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex gap-1 rounded-lg bg-muted p-1">
+        <div className="flex gap-1 rounded-lg bg-sb-turf p-1">
           <button
             onClick={() => setView('content')}
             className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
               activeView === 'content'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-background text-sb-text-primary shadow-sm'
+                : 'text-muted-foreground hover:text-sb-text-primary'
             }`}
           >
             <Trophy className="h-4 w-4" />
@@ -175,8 +175,8 @@ function LeaderboardContent() {
             onClick={() => setView('stakers')}
             className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
               activeView === 'stakers'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-background text-sb-text-primary shadow-sm'
+                : 'text-muted-foreground hover:text-sb-text-primary'
             }`}
           >
             <Medal className="h-4 w-4" />
@@ -187,8 +187,8 @@ function LeaderboardContent() {
               onClick={() => setView('mystats')}
               className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 activeView === 'mystats'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-sb-text-primary shadow-sm'
+                  : 'text-muted-foreground hover:text-sb-text-primary'
               }`}
             >
               <BarChart3 className="h-4 w-4" />
@@ -208,8 +208,8 @@ function LeaderboardContent() {
                   onClick={() => setPeriod(value)}
                   className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                     activePeriod === value
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-primary text-[#051A14]'
+                      : 'text-muted-foreground hover:text-sb-text-primary'
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" />
@@ -233,7 +233,7 @@ function LeaderboardContent() {
                   showRewards={true}
                   maxEntries={50}
                 />
-                <div className="rounded-lg border bg-card p-6">
+                <div className="rounded-lg border bg-sb-stadium p-6">
                   <h2 className="mb-4 text-xl font-bold">How to Compete</h2>
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>

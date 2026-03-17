@@ -24,7 +24,7 @@ export default function MatchThreadDetailClient({ thread }: MatchThreadDetailCli
       {/* Back link */}
       <Link
         href="/match-threads"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-sb-text-primary"
       >
         <ArrowLeft className="h-4 w-4" />
         Match Threads
@@ -44,7 +44,7 @@ export default function MatchThreadDetailClient({ thread }: MatchThreadDetailCli
           onError={(err) => console.error('Post error:', err)}
         />
       ) : (
-        <div className="flex items-center gap-2 rounded-xl border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 rounded-xl border bg-sb-turf/50 px-4 py-3 text-sm text-muted-foreground">
           <Lock className="h-4 w-4" />
           This thread is now read-only. Threads close 24 hours after the match ends.
         </div>

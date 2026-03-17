@@ -245,7 +245,7 @@ export function CommentToolbar({
         </Button>
 
         {activePanel === 'image' && (
-          <div className="absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg border bg-card p-3 shadow-lg">
+          <div className="absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg border bg-sb-stadium p-3 shadow-lg">
             <div className="mb-3 flex gap-1">
               <button
                 type="button"
@@ -254,8 +254,8 @@ export function CommentToolbar({
                 className={cn(
                   'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                   imageInputMode === 'upload'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted'
+                    ? 'bg-primary text-[#051A14]'
+                    : 'text-muted-foreground hover:bg-sb-turf'
                 )}
               >
                 <Upload className="h-3.5 w-3.5" />
@@ -268,8 +268,8 @@ export function CommentToolbar({
                 className={cn(
                   'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                   imageInputMode === 'url'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted'
+                    ? 'bg-primary text-[#051A14]'
+                    : 'text-muted-foreground hover:bg-sb-turf'
                 )}
               >
                 <LinkIcon className="h-3.5 w-3.5" />

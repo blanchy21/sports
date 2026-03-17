@@ -54,7 +54,7 @@ export const AmountInput: React.FC<AmountInputProps> = ({
         className={cn(
           'flex items-center gap-2 rounded-lg border bg-sb-stadium px-3 py-2',
           error ? 'border-sb-loss' : cn('border-sb-border', focusClass),
-          disabled && 'bg-muted/50 opacity-50'
+          disabled && 'bg-sb-turf/50 opacity-50'
         )}
       >
         {icon}

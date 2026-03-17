@@ -29,7 +29,7 @@ export const HiveBalanceCard: React.FC<HiveBalanceCardProps> = ({
   onPowerOperationComplete,
   onSendClick,
 }) => (
-  <div className="rounded-lg border bg-card p-6">
+  <div className="rounded-lg border bg-sb-stadium p-6">
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <div className="space-y-2">
         <div className="flex items-center justify-between">

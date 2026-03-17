@@ -161,7 +161,7 @@ export function DraftsContent() {
           {drafts.map((draft) => (
             <div
               key={draft.id}
-              className="rounded-lg border bg-card p-6 transition-shadow hover:shadow-md"
+              className="rounded-lg border bg-sb-stadium p-6 transition-shadow hover:shadow-md"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">

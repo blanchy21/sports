@@ -13,19 +13,19 @@ export function ComparisonTable({
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-border">
-            <th className="pb-3 pr-4 text-left font-semibold text-foreground">Feature</th>
+          <tr className="border-b border-sb-border">
+            <th className="pb-3 pr-4 text-left font-semibold text-sb-text-primary">Feature</th>
             {headers.map((header) => (
-              <th key={header} className="pb-3 pr-4 text-left font-semibold text-foreground">
+              <th key={header} className="pb-3 pr-4 text-left font-semibold text-sb-text-primary">
                 {header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-sb-border">
           {rows.map((row) => (
             <tr key={row.feature}>
-              <td className="py-3 pr-4 font-medium text-foreground">{row.feature}</td>
+              <td className="py-3 pr-4 font-medium text-sb-text-primary">{row.feature}</td>
               {row.values.map((value, i) => (
                 <td key={i} className="py-3 pr-4 text-muted-foreground">
                   {typeof value === 'boolean' ? (

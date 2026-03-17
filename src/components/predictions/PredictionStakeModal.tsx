@@ -187,7 +187,7 @@ export function PredictionStakeModal({
                       'flex-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                       amount === qa
                         ? 'bg-warning text-white'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        : 'bg-sb-turf text-muted-foreground hover:bg-sb-turf/80'
                     )}
                   >
                     {qa}
@@ -235,7 +235,9 @@ export function PredictionStakeModal({
             {balance !== null && (
               <div className="text-xs text-muted-foreground">
                 Available balance:{' '}
-                <span className="font-medium text-foreground">{balance.toFixed(2)} MEDALS</span>
+                <span className="font-medium text-sb-text-primary">
+                  {balance.toFixed(2)} MEDALS
+                </span>
               </div>
             )}
 

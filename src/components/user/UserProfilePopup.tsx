@@ -122,7 +122,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
       {/* Popup */}
       <div
         ref={popupRef}
-        className="fixed z-50 min-w-[320px] rounded-xl border border-border/50 bg-white/80 shadow-xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.85)]"
+        className="fixed z-50 min-w-[320px] rounded-xl border border-sb-border/50 bg-white/80 shadow-xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.85)]"
         style={{
           left: triggerRef.current?.getBoundingClientRect().left || 0,
           bottom: window.innerHeight - (triggerRef.current?.getBoundingClientRect().top || 0) + 10,
@@ -146,7 +146,7 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-base font-semibold text-foreground">
+              <div className="text-base font-semibold text-sb-text-primary">
                 {user.displayName || user.username}
               </div>
               <div className="text-sm text-muted-foreground">@{user.username}</div>
@@ -157,13 +157,13 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
           <div className="mb-5 flex space-x-2">
             {/* HP (Hive Power) */}
             <div className="flex-1 rounded-lg border border-primary bg-gradient-to-br from-primary to-primary/80 px-3 py-2.5 text-center shadow-sm">
-              <div className="text-xs font-semibold text-primary-foreground">
+              <div className="text-xs font-semibold text-[#051A14]">
                 {user.hivePower !== undefined ? user.hivePower.toFixed(0) : 0} HP
               </div>
             </div>
             {/* MEDALS */}
             <div className="flex-1 rounded-lg border border-accent bg-gradient-to-br from-accent to-accent/80 px-3 py-2.5 text-center shadow-sm">
-              <div className="text-xs font-semibold text-primary-foreground">
+              <div className="text-xs font-semibold text-[#051A14]">
                 {medalsBalance ? parseFloat(medalsBalance.total).toFixed(0) : '...'} MEDALS
               </div>
             </div>
@@ -179,14 +179,14 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
                   className={`h-3 w-3 text-white ${isRefreshingRC ? 'animate-spin' : ''}`}
                 />
               </button>
-              <div className="text-xs font-semibold text-primary-foreground">
+              <div className="text-xs font-semibold text-[#051A14]">
                 RC
                 {user.rcPercentage !== undefined ? (
-                  <div className="text-xs font-normal text-primary-foreground/80">
+                  <div className="text-xs font-normal text-[#051A14]/80">
                     {user.rcPercentage.toFixed(1)}%
                   </div>
                 ) : (
-                  <div className="text-xs font-normal text-primary-foreground/80">
+                  <div className="text-xs font-normal text-[#051A14]/80">
                     Resource Credits information not available
                   </div>
                 )}
@@ -201,14 +201,14 @@ export const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
               onClick={handleAddAccount}
               className="flex w-full items-center space-x-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-foreground/5 dark:hover:bg-white/[0.08]"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sb-turf">
                 <UserPlus className="h-4 w-4 text-muted-foreground" />
               </div>
-              <span className="text-sm font-medium text-foreground">Add/Switch account</span>
+              <span className="text-sm font-medium text-sb-text-primary">Add/Switch account</span>
             </button>
 
             {/* Divider */}
-            <div className="my-2 border-t border-border/50 dark:border-white/[0.08]" />
+            <div className="my-2 border-t border-sb-border/50 dark:border-white/[0.08]" />
 
             {/* Logout */}
             <button

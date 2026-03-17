@@ -49,7 +49,7 @@ export function LeaderboardCard({
 
   if (displayEntries.length === 0) {
     return (
-      <div className="rounded-lg border bg-card p-4">
+      <div className="rounded-lg border bg-sb-stadium p-4">
         <div className="mb-4 flex items-center gap-2">
           <Icon className={`h-5 w-5 ${config.color}`} />
           <h3 className="font-semibold">{config.title}</h3>
@@ -60,7 +60,7 @@ export function LeaderboardCard({
   }
 
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="rounded-lg border bg-sb-stadium p-4">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">

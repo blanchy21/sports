@@ -12,7 +12,11 @@ interface PostingAuthorityPromptProps {
   onGranted: () => void;
 }
 
-export function PostingAuthorityPrompt({ isOpen, onClose, onGranted }: PostingAuthorityPromptProps) {
+export function PostingAuthorityPrompt({
+  isOpen,
+  onClose,
+  onGranted,
+}: PostingAuthorityPromptProps) {
   const { hiveUser } = useAuth();
   const [isGranting, setIsGranting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,16 +47,18 @@ export function PostingAuthorityPrompt({ isOpen, onClose, onGranted }: PostingAu
       }
 
       // Build new account_auths with sportsblock added
-      const newAccountAuths = [
-        ...posting.account_auths,
-        ['sportsblock', 1],
-      ].sort(([a]: [string, number], [b]: [string, number]) => a.localeCompare(b));
+      const newAccountAuths = [...posting.account_auths, ['sportsblock', 1]].sort(
+        ([a]: [string, number], [b]: [string, number]) => a.localeCompare(b)
+      );
 
       // Request Keychain to sign account_update2 (active authority required)
-      const keychain = (window as unknown as { hive_keychain?: { requestBroadcast: (...args: unknown[]) => void } })
-        .hive_keychain;
+      const keychain = (
+        window as unknown as { hive_keychain?: { requestBroadcast: (...args: unknown[]) => void } }
+      ).hive_keychain;
       if (!keychain) {
-        throw new Error('Hive Keychain extension not found. Please install it to grant posting authority.');
+        throw new Error(
+          'Hive Keychain extension not found. Please install it to grant posting authority.'
+        );
       }
 
       const operations = [
@@ -99,13 +105,13 @@ export function PostingAuthorityPrompt({ isOpen, onClose, onGranted }: PostingAu
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-lg border bg-sb-stadium p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Grant Posting Authority</h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-muted-foreground hover:text-foreground"
+            className="p-1 text-muted-foreground hover:text-sb-text-primary"
           >
             <X className="h-5 w-5" />
           </button>
@@ -116,9 +122,9 @@ export function PostingAuthorityPrompt({ isOpen, onClose, onGranted }: PostingAu
           <div className="text-sm">
             <p className="mb-2 font-medium">Why is this needed?</p>
             <p className="text-muted-foreground">
-              To publish scheduled posts on your behalf, Sportsblock needs posting authority
-              on your Hive account. This only allows posting — it cannot transfer funds or
-              change your account settings.
+              To publish scheduled posts on your behalf, Sportsblock needs posting authority on your
+              Hive account. This only allows posting — it cannot transfer funds or change your
+              account settings.
             </p>
           </div>
         </div>

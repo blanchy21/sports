@@ -29,11 +29,11 @@ function getRankBadgeClass(rank: number): string {
     case 1:
       return 'bg-warning/15 text-warning';
     case 2:
-      return 'bg-muted text-foreground/80';
+      return 'bg-sb-turf text-sb-text-primary/80';
     case 3:
       return 'bg-warning/15 text-warning/80';
     default:
-      return 'bg-muted text-muted-foreground';
+      return 'bg-sb-turf text-muted-foreground';
   }
 }
 
@@ -65,7 +65,7 @@ export function TopStakersWidget({ className }: { className?: string }) {
   }, []);
 
   return (
-    <div className={className || 'rounded-lg border bg-card p-4'}>
+    <div className={className || 'rounded-lg border bg-sb-stadium p-4'}>
       <div className="mb-4 flex items-center space-x-2">
         <Medal className="h-5 w-5 text-primary" />
         <h3 className="text-base font-semibold">Top MEDALS Stakers</h3>
@@ -73,11 +73,11 @@ export function TopStakersWidget({ className }: { className?: string }) {
 
       {isLoading ? (
         <div className="animate-pulse">
-          <div className="mb-2 h-4 rounded bg-muted" />
+          <div className="mb-2 h-4 rounded bg-sb-turf" />
           <div className="space-y-2">
-            <div className="h-3 rounded bg-muted" />
-            <div className="h-3 rounded bg-muted" />
-            <div className="h-3 rounded bg-muted" />
+            <div className="h-3 rounded bg-sb-turf" />
+            <div className="h-3 rounded bg-sb-turf" />
+            <div className="h-3 rounded bg-sb-turf" />
           </div>
         </div>
       ) : error ? (
@@ -92,7 +92,7 @@ export function TopStakersWidget({ className }: { className?: string }) {
               <Link
                 key={holder.account}
                 href={`/user/${holder.account}`}
-                className="flex items-center gap-2.5 rounded-md p-1.5 transition-colors hover:bg-muted"
+                className="flex items-center gap-2.5 rounded-md p-1.5 transition-colors hover:bg-sb-turf"
               >
                 <span
                   className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${getRankBadgeClass(holder.rank)}`}

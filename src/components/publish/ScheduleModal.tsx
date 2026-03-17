@@ -94,14 +94,14 @@ export function ScheduleModal({ isOpen, onClose, onSchedule, initialDate }: Sche
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-lg border bg-card p-4 shadow-xl sm:p-6">
+      <div className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-lg border bg-sb-stadium p-4 shadow-xl sm:p-6">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between sm:mb-6">
-          <h3 className="text-base font-semibold text-foreground sm:text-lg">Schedule Post</h3>
+          <h3 className="text-base font-semibold text-sb-text-primary sm:text-lg">Schedule Post</h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-muted-foreground transition-colors hover:text-foreground"
+            className="p-1 text-muted-foreground transition-colors hover:text-sb-text-primary"
           >
             <X className="h-5 w-5" />
           </button>
@@ -109,7 +109,7 @@ export function ScheduleModal({ isOpen, onClose, onSchedule, initialDate }: Sche
 
         {/* Quick select buttons */}
         <div className="mb-4 sm:mb-6">
-          <span className="mb-2 block text-sm font-medium text-foreground">Quick select</span>
+          <span className="mb-2 block text-sm font-medium text-sb-text-primary">Quick select</span>
           <div className="grid grid-cols-2 gap-2">
             {quickOptions.map((option) => (
               <button
@@ -118,7 +118,7 @@ export function ScheduleModal({ isOpen, onClose, onSchedule, initialDate }: Sche
                 onClick={() => handleQuickSelect(option)}
                 className={cn(
                   'rounded-lg px-3 py-2 text-xs sm:text-sm',
-                  'bg-muted text-foreground hover:bg-muted/80',
+                  'bg-sb-turf text-sb-text-primary hover:bg-sb-turf/80',
                   'text-center transition-colors'
                 )}
               >
@@ -131,7 +131,7 @@ export function ScheduleModal({ isOpen, onClose, onSchedule, initialDate }: Sche
         {/* Date and time inputs */}
         <div className="mb-4 space-y-3 sm:mb-6 sm:space-y-4">
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <label className="flex items-center gap-2 text-sm font-medium text-sb-text-primary">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               Date
             </label>
@@ -143,13 +143,13 @@ export function ScheduleModal({ isOpen, onClose, onSchedule, initialDate }: Sche
               max={maxDate}
               className={cn(
                 'w-full rounded-lg border bg-background px-3 py-2',
-                'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
+                'text-sm focus:outline-none focus:ring-2 focus:ring-sb-teal'
               )}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <label className="flex items-center gap-2 text-sm font-medium text-sb-text-primary">
               <Clock className="h-4 w-4 text-muted-foreground" />
               Time
             </label>
@@ -159,14 +159,14 @@ export function ScheduleModal({ isOpen, onClose, onSchedule, initialDate }: Sche
               onChange={handleTimeChange}
               className={cn(
                 'w-full rounded-lg border bg-background px-3 py-2',
-                'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
+                'text-sm focus:outline-none focus:ring-2 focus:ring-sb-teal'
               )}
             />
           </div>
         </div>
 
         {/* Timezone display */}
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-muted/50 p-2 text-xs text-muted-foreground sm:mb-6 sm:p-3 sm:text-sm">
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-sb-turf/50 p-2 text-xs text-muted-foreground sm:mb-6 sm:p-3 sm:text-sm">
           <Globe className="h-4 w-4 flex-shrink-0" />
           <span className="truncate">Timezone: {timezone}</span>
         </div>
@@ -176,7 +176,7 @@ export function ScheduleModal({ isOpen, onClose, onSchedule, initialDate }: Sche
           <span className="text-xs text-muted-foreground sm:text-sm">
             Your post will be published:
           </span>
-          <p className="text-sm font-medium text-foreground sm:text-base">
+          <p className="text-sm font-medium text-sb-text-primary sm:text-base">
             {selectedDate.toLocaleDateString('en-US', {
               weekday: 'short',
               year: 'numeric',

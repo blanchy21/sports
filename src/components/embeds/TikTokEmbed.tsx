@@ -43,11 +43,11 @@ export function TikTokEmbed({ videoId, username }: TikTokEmbedProps) {
         href={videoUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="my-3 flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted"
+        className="my-3 flex items-center gap-3 rounded-lg border border-sb-border bg-sb-stadium p-3 transition-colors hover:bg-sb-turf"
       >
         <TikTokIcon />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">
+          <p className="truncate text-sm font-medium text-sb-text-primary">
             {data?.title || 'TikTok Video'}
           </p>
           <p className="text-xs text-muted-foreground">@{data?.authorName || username} · TikTok</p>
@@ -60,7 +60,7 @@ export function TikTokEmbed({ videoId, username }: TikTokEmbedProps) {
   // Loading skeleton
   if (!data) {
     return (
-      <div className="my-3 h-[180px] w-full max-w-[325px] animate-pulse rounded-lg bg-muted" />
+      <div className="my-3 h-[180px] w-full max-w-[325px] animate-pulse rounded-lg bg-sb-turf" />
     );
   }
 
@@ -70,7 +70,7 @@ export function TikTokEmbed({ videoId, username }: TikTokEmbedProps) {
       href={videoUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="group my-3 block w-full max-w-[325px] overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/50"
+      className="group my-3 block w-full max-w-[325px] overflow-hidden rounded-lg border border-sb-border bg-sb-stadium transition-colors hover:border-primary/50"
     >
       <div className="relative aspect-[9/16] max-h-[400px] w-full overflow-hidden bg-black">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -95,7 +95,7 @@ export function TikTokEmbed({ videoId, username }: TikTokEmbedProps) {
         </div>
       </div>
       <div className="px-3 py-2">
-        <p className="line-clamp-2 text-sm text-foreground">{data.title}</p>
+        <p className="line-clamp-2 text-sm text-sb-text-primary">{data.title}</p>
         <p className="mt-0.5 text-xs text-muted-foreground">@{data.authorName}</p>
       </div>
     </a>

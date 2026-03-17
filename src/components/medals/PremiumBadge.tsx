@@ -214,7 +214,7 @@ export const PremiumTierProgress: React.FC<PremiumTierProgressProps> = ({
         </div>
       </div>
 
-      <div className="relative h-3 overflow-hidden rounded-full bg-muted">
+      <div className="relative h-3 overflow-hidden rounded-full bg-sb-turf">
         <div
           className={cn('absolute h-full rounded-full transition-all duration-500', nextGradient)}
           style={{ width: `${progressPercent}%` }}

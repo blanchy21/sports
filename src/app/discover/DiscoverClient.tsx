@@ -127,7 +127,7 @@ export default function DiscoverClient({ initialPosts }: DiscoverClientProps) {
               variant="ghost"
               size="sm"
               onClick={() => setShowAllSports(!showAllSports)}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-sb-text-primary"
             >
               {showAllSports
                 ? 'Show less'

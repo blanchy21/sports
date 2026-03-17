@@ -40,7 +40,7 @@ export function MyStatsView({ username, className }: MyStatsViewProps) {
 
   if (!statsData) {
     return (
-      <div className={cn('rounded-lg border bg-card p-6 text-center', className)}>
+      <div className={cn('rounded-lg border bg-sb-stadium p-6 text-center', className)}>
         <p className="text-muted-foreground">
           No stats available yet. Start posting to build your profile!
         </p>
@@ -59,7 +59,7 @@ export function MyStatsView({ username, className }: MyStatsViewProps) {
   return (
     <div className={cn('space-y-6', className)}>
       {/* MEDALS Rank Card */}
-      <div className="rounded-lg border bg-card p-6">
+      <div className="rounded-lg border bg-sb-stadium p-6">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="mb-1 text-lg font-bold">MEDALS Rank</h3>
@@ -76,7 +76,7 @@ export function MyStatsView({ username, className }: MyStatsViewProps) {
               <span>{currentTier.label}</span>
               <span>{nextTier.label}</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-2 overflow-hidden rounded-full bg-sb-turf">
               <div
                 className={cn('h-full rounded-full transition-all', currentTier.bgGradient)}
                 style={{ width: `${Math.round(progressToNext)}%` }}
@@ -90,7 +90,7 @@ export function MyStatsView({ username, className }: MyStatsViewProps) {
       </div>
 
       {/* Activity Summary */}
-      <div className="rounded-lg border bg-card p-6">
+      <div className="rounded-lg border bg-sb-stadium p-6">
         <h3 className="mb-4 text-lg font-bold">Activity Summary</h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <StatCard icon={PenLine} label="Posts" value={stats.totalPosts} />
@@ -113,7 +113,7 @@ export function MyStatsView({ username, className }: MyStatsViewProps) {
 
       {/* Prediction Stats */}
       {predictions.total > 0 && (
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-sb-stadium p-6">
           <h3 className="mb-4 text-lg font-bold">Predictions</h3>
           <div className="grid grid-cols-3 gap-3">
             <StatCard
@@ -130,7 +130,7 @@ export function MyStatsView({ username, className }: MyStatsViewProps) {
 
       {/* Sport Ranks */}
       {sportRanks.length > 0 && (
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-sb-stadium p-6">
           <h3 className="mb-4 text-lg font-bold">Sport Ranks</h3>
           <div className="flex flex-wrap gap-2">
             {sportRanks.map((sr) => (
@@ -146,7 +146,7 @@ export function MyStatsView({ username, className }: MyStatsViewProps) {
       )}
 
       {/* Badge Collection + Progress */}
-      <div className="rounded-lg border bg-card p-6">
+      <div className="rounded-lg border bg-sb-stadium p-6">
         <h3 className="mb-4 text-lg font-bold">Badge Collection</h3>
         <BadgeGrid username={username} />
         <div className="mt-6">
@@ -169,7 +169,7 @@ function StatCard({
   suffix?: string;
 }) {
   return (
-    <div className="rounded-lg bg-muted/50 p-3 text-center">
+    <div className="rounded-lg bg-sb-turf/50 p-3 text-center">
       <Icon className="mx-auto mb-1 h-4 w-4 text-muted-foreground" />
       <div className="text-lg font-bold">
         {value.toLocaleString()}

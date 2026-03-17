@@ -48,7 +48,7 @@ export default function PredictionsPage() {
     <MainLayout>
       <div className="mx-auto max-w-3xl">
         {/* Header */}
-        <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-border/50 bg-background/95 px-4 backdrop-blur-xl">
+        <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-sb-border/50 bg-background/95 px-4 backdrop-blur-xl">
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 shadow-lg">
@@ -138,7 +138,7 @@ export default function PredictionsPage() {
         <div className="mb-6">
           <button
             onClick={() => setIsCreateOpen(!isCreateOpen)}
-            className="flex w-full items-center justify-between rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted/50"
+            className="flex w-full items-center justify-between rounded-xl border bg-sb-stadium px-4 py-3 transition-colors hover:bg-sb-turf/50"
           >
             <span className="flex items-center gap-2 text-sm font-medium">
               <Plus

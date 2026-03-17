@@ -57,18 +57,18 @@ export function LmsPickHistory({ history }: LmsPickHistoryProps) {
   const sorted = [...history].sort((a, b) => b.gameweek - a.gameweek);
 
   return (
-    <div className="rounded-2xl border bg-card p-5">
+    <div className="rounded-2xl border bg-sb-stadium p-5">
       <h3 className="mb-4 text-lg font-bold">Pick History</h3>
       <div className="overflow-hidden rounded-xl border">
         <table className="w-full">
           <thead>
-            <tr className="border-b bg-muted/30 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <tr className="border-b bg-sb-turf/30 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <th className="w-16 px-4 py-3">GW</th>
               <th className="px-4 py-3">Team</th>
               <th className="px-4 py-3 text-center">Result</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/50">
+          <tbody className="divide-y divide-sb-border/50">
             {sorted.map((pick) => {
               const result = getResultDisplay(pick.result);
               const Icon = result.icon;
@@ -81,7 +81,7 @@ export function LmsPickHistory({ history }: LmsPickHistoryProps) {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold">{pick.teamPicked}</span>
                       {pick.isAutoPick && (
-                        <span className="inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-sb-turf px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                           <Zap className="h-2.5 w-2.5" />
                           Auto
                         </span>

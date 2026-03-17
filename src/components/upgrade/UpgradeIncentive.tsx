@@ -129,7 +129,7 @@ export const UpgradeIncentive: React.FC<UpgradeIncentiveProps> = (props) => {
         </div>
 
         <div className="min-w-0 flex-1">
-          <h4 className="font-semibold text-foreground">{config.title}</h4>
+          <h4 className="font-semibold text-sb-text-primary">{config.title}</h4>
           <p className="mt-1 text-sm text-muted-foreground">{config.getMessage(props)}</p>
 
           <Link href="/settings?tab=wallet" className="mt-3 block">
@@ -203,7 +203,10 @@ export const UpgradeIncentiveToast: React.FC<{
 
   return (
     <div
-      className={cn('flex items-center gap-3 rounded-lg border bg-card p-3 shadow-lg', className)}
+      className={cn(
+        'flex items-center gap-3 rounded-lg border bg-sb-stadium p-3 shadow-lg',
+        className
+      )}
     >
       <div
         className={cn(
@@ -226,7 +229,7 @@ export const UpgradeIncentiveToast: React.FC<{
       {onDismiss && (
         <button
           onClick={onDismiss}
-          className="rounded p-1 transition-colors hover:bg-muted"
+          className="rounded p-1 transition-colors hover:bg-sb-turf"
           aria-label="Dismiss"
         >
           <X className="h-4 w-4 text-muted-foreground" />

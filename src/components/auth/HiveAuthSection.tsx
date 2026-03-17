@@ -88,7 +88,7 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
   );
 
   return (
-    <div className="bg-muted/50 p-6">
+    <div className="bg-sb-turf/50 p-6">
       <h3 className="mb-4 text-lg font-semibold">Or connect with Hive Blockchain</h3>
 
       {/* Error Message */}
@@ -106,10 +106,10 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
 
       <div className="space-y-3">
         <div className="text-center">
-          <h4 className="mb-1 text-base font-semibold text-foreground">
+          <h4 className="mb-1 text-base font-semibold text-sb-text-primary">
             Connect with Hive Blockchain
           </h4>
-          <p className="mb-3 text-xs text-foreground/70">
+          <p className="mb-3 text-xs text-sb-text-primary/70">
             Choose your preferred wallet to access the Hive ecosystem
           </p>
         </div>
@@ -118,7 +118,7 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
         {!wallet.isReady && (
           <div className="flex items-center justify-center p-4">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="ml-2 text-sm text-foreground/70">Loading wallets...</span>
+            <span className="ml-2 text-sm text-sb-text-primary/70">Loading wallets...</span>
           </div>
         )}
 
@@ -209,9 +209,9 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
       </div>
 
       {/* Benefits */}
-      <div className="mt-4 rounded-lg border border-border bg-card p-3">
-        <h5 className="mb-2 text-sm font-medium text-foreground/80">Why connect with Hive?</h5>
-        <ul className="space-y-1 text-xs text-foreground/70">
+      <div className="mt-4 rounded-lg border border-sb-border bg-sb-stadium p-3">
+        <h5 className="mb-2 text-sm font-medium text-sb-text-primary/80">Why connect with Hive?</h5>
+        <ul className="space-y-1 text-xs text-sb-text-primary/70">
           <li>• Earn rewards for your content</li>
           <li>• Vote on posts and comments</li>
           <li>• Access exclusive features</li>

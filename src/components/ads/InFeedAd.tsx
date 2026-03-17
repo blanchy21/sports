@@ -38,7 +38,7 @@ export function InFeedAd({ slot, format = 'fluid', layoutKey }: InFeedAdProps) {
 
   return (
     <AdWrapper>
-      <div ref={containerRef} className="overflow-hidden rounded-lg border bg-card">
+      <div ref={containerRef} className="overflow-hidden rounded-lg border bg-sb-stadium">
         <div className="px-3 pt-2">
           <span className="text-xs text-muted-foreground">Sponsored</span>
         </div>

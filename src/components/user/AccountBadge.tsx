@@ -46,7 +46,7 @@ export const AccountBadge: React.FC<AccountBadgeProps> = ({
         </div>
         <div>
           <div
-            className={`font-medium text-foreground ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-lg' : 'text-sm'}`}
+            className={`font-medium text-sb-text-primary ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-lg' : 'text-sm'}`}
           >
             {user.displayName || user.username}
           </div>
@@ -83,7 +83,7 @@ export const AccountBadge: React.FC<AccountBadgeProps> = ({
       <div className="min-w-0 flex-1">
         <div className="flex items-center space-x-2">
           <div
-            className={`truncate font-medium text-foreground ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-lg' : 'text-sm'}`}
+            className={`truncate font-medium text-sb-text-primary ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-lg' : 'text-sm'}`}
           >
             {user.displayName || user.username}
           </div>
@@ -140,7 +140,7 @@ export const AccountTypeIndicator: React.FC<{ user: User; className?: string }> 
       {isHiveUser ? (
         <>
           <div className="h-2 w-2 rounded-full bg-success"></div>
-          <span className="text-sm text-foreground/70">Hive Account</span>
+          <span className="text-sm text-sb-text-primary/70">Hive Account</span>
           <Badge variant="default" className="text-xs">
             <Zap className="mr-1 h-3 w-3" />
             Can Earn
@@ -149,7 +149,7 @@ export const AccountTypeIndicator: React.FC<{ user: User; className?: string }> 
       ) : (
         <>
           <div className="h-2 w-2 rounded-full bg-info"></div>
-          <span className="text-sm text-foreground/70">Email Account</span>
+          <span className="text-sm text-sb-text-primary/70">Email Account</span>
           <Badge variant="secondary" className="text-xs">
             <UserIcon className="mr-1 h-3 w-3" />
             View Only
@@ -177,7 +177,7 @@ export const UpgradePrompt: React.FC<{
           <Star className="h-4 w-4 text-warning" />
         </div>
         <div className="min-w-0 flex-1">
-          <h4 className="mb-1 font-medium text-foreground">Unlock Earning Potential</h4>
+          <h4 className="mb-1 font-medium text-sb-text-primary">Unlock Earning Potential</h4>
           <p className="mb-3 text-sm text-warning">
             Upgrade to a Hive account to start earning crypto rewards for your sports content and
             engagement.

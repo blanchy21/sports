@@ -92,7 +92,7 @@ export default function LandingEarnings() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="rounded-3xl border-2 border-primary/20 bg-card p-8 shadow-xl shadow-primary/5"
+            className="rounded-3xl border-2 border-primary/20 bg-sb-stadium p-8 shadow-xl shadow-primary/5"
           >
             <div className="mb-8 text-center">
               <h3 className="mb-2 text-2xl font-bold">Earning Potential</h3>
@@ -142,7 +142,7 @@ export default function LandingEarnings() {
                     <span className="font-semibold">{tier.level}</span>
                     <span className="text-lg font-bold text-primary">{tier.earnings}</span>
                   </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-muted">
+                  <div className="h-3 overflow-hidden rounded-full bg-sb-turf">
                     <motion.div
                       initial={{ width: 0 }}
                       whileInView={{ width: '100%' }}
@@ -178,7 +178,7 @@ export default function LandingEarnings() {
             { icon: Shield, label: 'Zero platform fees', value: '0%' },
             { icon: Clock, label: 'Rewards distributed daily', value: '24h' },
           ].map((stat, i) => (
-            <div key={i} className="rounded-xl border bg-card p-4 text-center sm:p-5">
+            <div key={i} className="rounded-xl border bg-sb-stadium p-4 text-center sm:p-5">
               <stat.icon className="mx-auto mb-2 h-5 w-5 text-accent" />
               <div className="text-lg font-bold text-primary sm:text-xl">{stat.value}</div>
               <div className="text-xs text-muted-foreground">{stat.label}</div>

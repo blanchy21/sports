@@ -110,10 +110,10 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-card shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-sb-stadium shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b p-6">
-          <h2 className="text-2xl font-bold text-foreground">
+          <h2 className="text-2xl font-bold text-sb-text-primary">
             {step === 'intro' && 'Upgrade to Hive Account'}
             {step === 'wallet' && 'Connect Your Hive Wallet'}
             {step === 'connecting' && 'Connecting...'}
@@ -132,10 +132,10 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-orange-500">
                   <Crown className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="mb-2 text-xl font-semibold text-foreground">
+                <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">
                   Unlock Your Earning Potential
                 </h3>
-                <p className="text-foreground/70">
+                <p className="text-sb-text-primary/70">
                   Connect your Hive wallet to start earning crypto rewards for your sports content
                   and engagement.
                 </p>
@@ -147,8 +147,8 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                     <Zap className="h-4 w-4 text-success" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-foreground">Earn Crypto Rewards</h4>
-                    <p className="text-sm text-foreground/70">
+                    <h4 className="font-medium text-sb-text-primary">Earn Crypto Rewards</h4>
+                    <p className="text-sm text-sb-text-primary/70">
                       Get paid in HIVE and HBD for quality content and engagement
                     </p>
                   </div>
@@ -159,8 +159,8 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                     <Shield className="h-4 w-4 text-info" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-foreground">Full Blockchain Access</h4>
-                    <p className="text-sm text-foreground/70">
+                    <h4 className="font-medium text-sb-text-primary">Full Blockchain Access</h4>
+                    <p className="text-sm text-sb-text-primary/70">
                       Vote, comment, and participate in Hive governance
                     </p>
                   </div>
@@ -171,8 +171,8 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                     <Star className="h-4 w-4 text-purple-600" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-foreground">Keep Your Content</h4>
-                    <p className="text-sm text-foreground/70">
+                    <h4 className="font-medium text-sb-text-primary">Keep Your Content</h4>
+                    <p className="text-sm text-sb-text-primary/70">
                       Your existing posts will be preserved and can earn rewards
                     </p>
                   </div>
@@ -183,7 +183,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                 <div className="flex items-start space-x-2">
                   <div className="mt-0.5 h-4 w-4 text-sm text-info">ℹ️</div>
                   <div>
-                    <h4 className="text-sm font-medium text-foreground">What happens next?</h4>
+                    <h4 className="text-sm font-medium text-sb-text-primary">What happens next?</h4>
                     <p className="mt-1 text-xs text-info">
                       You&apos;ll connect your Hive wallet, and your account will be upgraded to a
                       full Hive account. All your existing content will be preserved and can start
@@ -210,10 +210,10 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-info/15">
                   <Wallet className="h-6 w-6 text-info" />
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-foreground">
+                <h3 className="mb-2 text-lg font-semibold text-sb-text-primary">
                   Choose Your Hive Wallet
                 </h3>
-                <p className="text-foreground/70">
+                <p className="text-sb-text-primary/70">
                   Select your preferred wallet to connect to the Hive blockchain
                 </p>
               </div>
@@ -283,7 +283,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                     key={provider}
                     onClick={() => handleWalletSelection(provider)}
                     disabled={isConnecting}
-                    className="flex h-16 w-full items-center justify-start space-x-4 border-2 border-border bg-card text-foreground/80 transition-all duration-200 hover:border-info/30 hover:bg-info/10 disabled:opacity-50"
+                    className="flex h-16 w-full items-center justify-start space-x-4 border-2 border-sb-border bg-sb-stadium text-sb-text-primary/80 transition-all duration-200 hover:border-info/30 hover:bg-info/10 disabled:opacity-50"
                   >
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-info/15 text-2xl">
                       {getProviderIcon(provider)}
@@ -316,7 +316,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-warning/30 bg-card text-xs text-warning hover:bg-warning/15"
+                      className="border-warning/30 bg-sb-stadium text-xs text-warning hover:bg-warning/15"
                       onClick={() =>
                         window.open(
                           'https://chrome.google.com/webstore/detail/hive-keychain/poipeahgbjcobddaglhciijbnfkmemoh',
@@ -343,10 +343,12 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-info border-t-transparent"></div>
               </div>
               <div>
-                <h3 className="mb-2 text-lg font-semibold text-foreground">
+                <h3 className="mb-2 text-lg font-semibold text-sb-text-primary">
                   Connecting to Hive...
                 </h3>
-                <p className="text-foreground/70">Please approve the connection in your wallet</p>
+                <p className="text-sb-text-primary/70">
+                  Please approve the connection in your wallet
+                </p>
               </div>
             </div>
           )}
@@ -358,8 +360,10 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                 <CheckCircle className="h-8 w-8 text-success" />
               </div>
               <div>
-                <h3 className="mb-2 text-xl font-semibold text-foreground">Upgrade Complete!</h3>
-                <p className="text-foreground/70">
+                <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">
+                  Upgrade Complete!
+                </h3>
+                <p className="text-sb-text-primary/70">
                   Your account has been successfully upgraded to a Hive account. You can now earn
                   crypto rewards!
                 </p>
@@ -369,7 +373,7 @@ export const UpgradeFlow: React.FC<UpgradeFlowProps> = ({ isOpen, onClose }) => 
                 <div className="flex items-start space-x-2">
                   <CheckCircle className="mt-0.5 h-4 w-4 text-success" />
                   <div>
-                    <h4 className="text-sm font-medium text-foreground">What&apos;s next?</h4>
+                    <h4 className="text-sm font-medium text-sb-text-primary">What&apos;s next?</h4>
                     <ul className="mt-1 space-y-1 text-xs text-success">
                       <li>• Your existing content is preserved</li>
                       <li>• Start earning rewards for new content</li>

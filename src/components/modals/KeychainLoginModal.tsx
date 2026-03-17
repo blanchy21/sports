@@ -85,17 +85,17 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, 
             />
           </div>
           <div>
-            <h2 className="truncate text-base font-bold text-primary-foreground sm:text-lg">
+            <h2 className="truncate text-base font-bold text-[#051A14] sm:text-lg">
               Sign in with Keychain
             </h2>
-            <p className="text-xs text-primary-foreground/60">Connect your Hive wallet</p>
+            <p className="text-xs text-[#051A14]/60">Connect your Hive wallet</p>
           </div>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="h-8 w-8 flex-shrink-0 p-0 text-primary-foreground/70 hover:bg-white/10 hover:text-primary-foreground"
+          className="h-8 w-8 flex-shrink-0 p-0 text-[#051A14]/70 hover:bg-white/10 hover:text-[#051A14]"
           aria-label="Close modal"
         >
           <X className="h-4 w-4" />
@@ -105,16 +105,16 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, 
       {/* Content */}
       <div className="space-y-5 p-4 sm:p-6">
         {/* Keychain Status */}
-        <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2.5 text-sm">
+        <div className="flex items-center gap-2 rounded-lg bg-sb-turf/50 px-3 py-2.5 text-sm">
           {isKeychainAvailable ? (
             <>
               <CheckCircle className="h-4 w-4 flex-shrink-0 text-success" />
-              <span className="text-foreground/80">Hive Keychain extension detected</span>
+              <span className="text-sb-text-primary/80">Hive Keychain extension detected</span>
             </>
           ) : (
             <>
               <XCircle className="h-4 w-4 flex-shrink-0 text-destructive" />
-              <span className="text-foreground/80">Hive Keychain not detected</span>
+              <span className="text-sb-text-primary/80">Hive Keychain not detected</span>
               <a
                 href="https://hive-keychain.com/"
                 target="_blank"
@@ -130,7 +130,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, 
 
         {/* Username Input */}
         <div className="space-y-2">
-          <label htmlFor="hive-username" className="block text-sm font-medium text-foreground">
+          <label htmlFor="hive-username" className="block text-sm font-medium text-sb-text-primary">
             Hive Username
           </label>
           <div className="relative">
@@ -145,7 +145,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, 
               onChange={(e) => setHiveUsername(e.target.value.toLowerCase())}
               onKeyDown={handleKeyDown}
               placeholder="username"
-              className="w-full rounded-lg border border-border bg-background py-3 pl-9 pr-4 text-foreground transition-all placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+              className="w-full rounded-lg border border-sb-border bg-background py-3 pl-9 pr-4 text-sb-text-primary transition-all placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
               disabled={isConnecting}
               autoComplete="username"
             />
@@ -189,10 +189,10 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, 
         {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
+            <div className="w-full border-t border-sb-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase tracking-wider">
-            <span className="bg-card px-3 text-muted-foreground/70">Or</span>
+            <span className="bg-sb-stadium px-3 text-muted-foreground/70">Or</span>
           </div>
         </div>
 
@@ -200,7 +200,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, 
         <Button
           variant="outline"
           onClick={handleAlternativeLogin}
-          className="w-full border-border/60 text-foreground/70 hover:border-accent/40 hover:text-foreground"
+          className="w-full border-sb-border/60 text-sb-text-primary/70 hover:border-accent/40 hover:text-sb-text-primary"
         >
           Alternative login methods
         </Button>

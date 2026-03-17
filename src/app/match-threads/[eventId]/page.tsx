@@ -83,13 +83,13 @@ export default async function MatchThreadDetailPage({ params }: PageProps) {
       <div className="mx-auto max-w-3xl">
         <Link
           href="/match-threads"
-          className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-sb-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Match Threads
         </Link>
 
-        <div className="rounded-xl border bg-card p-8 text-center">
+        <div className="rounded-xl border bg-sb-stadium p-8 text-center">
           <div className="mb-4 flex justify-center">
             <div className="rounded-full bg-destructive/15 p-3">
               <AlertCircle className="h-8 w-8 text-destructive" />

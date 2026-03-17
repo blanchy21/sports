@@ -20,13 +20,13 @@ export const CommunityTeam: React.FC<CommunityTeamProps> = ({ communityId, class
     return (
       <div className={`space-y-4 ${className}`}>
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="animate-pulse rounded-lg border bg-card p-6">
+          <div key={i} className="animate-pulse rounded-lg border bg-sb-stadium p-6">
             <div className="flex items-center space-x-4">
-              <div className="h-12 w-12 rounded-full bg-muted"></div>
+              <div className="h-12 w-12 rounded-full bg-sb-turf"></div>
               <div className="flex-1">
-                <div className="mb-2 h-5 w-1/4 rounded bg-muted"></div>
-                <div className="mb-2 h-4 w-1/3 rounded bg-muted"></div>
-                <div className="h-3 w-1/2 rounded bg-muted"></div>
+                <div className="mb-2 h-5 w-1/4 rounded bg-sb-turf"></div>
+                <div className="mb-2 h-4 w-1/3 rounded bg-sb-turf"></div>
+                <div className="h-3 w-1/2 rounded bg-sb-turf"></div>
               </div>
             </div>
           </div>
@@ -39,7 +39,7 @@ export const CommunityTeam: React.FC<CommunityTeamProps> = ({ communityId, class
     return (
       <div className={`py-12 text-center ${className}`}>
         <div className="mb-4 text-6xl">⚠️</div>
-        <h3 className="mb-2 text-xl font-semibold text-foreground">Error Loading Team</h3>
+        <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">Error Loading Team</h3>
         <p className="text-muted-foreground">Failed to load community team information.</p>
       </div>
     );
@@ -109,7 +109,7 @@ export const CommunityTeam: React.FC<CommunityTeamProps> = ({ communityId, class
       {team.length === 0 && (
         <div className="py-12 text-center">
           <div className="mb-4 text-6xl">👥</div>
-          <h3 className="mb-2 text-xl font-semibold text-foreground">No Team Information</h3>
+          <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">No Team Information</h3>
           <p className="text-muted-foreground">
             Team information is not available for this community.
           </p>
@@ -146,7 +146,7 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member }) => {
       case 'moderator':
         return 'bg-accent/20 text-accent';
       default:
-        return 'bg-muted text-foreground';
+        return 'bg-sb-turf text-sb-text-primary';
     }
   };
 

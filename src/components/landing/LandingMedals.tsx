@@ -126,7 +126,7 @@ export default function LandingMedals() {
                 key={index}
                 variants={itemVariants}
                 whileHover={{ y: -8, scale: 1.03 }}
-                className="group relative overflow-hidden rounded-2xl border bg-card p-6"
+                className="group relative overflow-hidden rounded-2xl border bg-sb-stadium p-6"
               >
                 <div
                   className={`absolute left-0 right-0 top-0 h-1 bg-gradient-to-r ${item.color}`}

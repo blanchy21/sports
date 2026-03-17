@@ -16,23 +16,26 @@ import { cn } from '@/lib/utils/client';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { interleaveAds } from '@/lib/utils/interleave-ads';
 import { prefetchUserProfiles } from '@/lib/react-query/queries/useUserProfile';
-import { useSportsbitesFeed, flattenSportsbitePages } from '@/lib/react-query/queries/useSportsbites';
+import {
+  useSportsbitesFeed,
+  flattenSportsbitePages,
+} from '@/lib/react-query/queries/useSportsbites';
 
 function SportsbitesFeedSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn('space-y-0', className)}>
       {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="animate-pulse border-b border-border px-4 py-3">
+        <div key={i} className="animate-pulse border-b border-sb-border px-4 py-3">
           <div className="flex gap-3">
-            <div className="h-12 w-12 rounded-full bg-muted" />
+            <div className="h-12 w-12 rounded-full bg-sb-turf" />
             <div className="flex-1 space-y-3">
               <div className="flex gap-2">
-                <div className="h-4 w-24 rounded bg-muted" />
-                <div className="h-4 w-16 rounded bg-muted" />
+                <div className="h-4 w-24 rounded bg-sb-turf" />
+                <div className="h-4 w-16 rounded bg-sb-turf" />
               </div>
               <div className="space-y-2">
-                <div className="h-4 w-full rounded bg-muted" />
-                <div className="h-4 w-3/4 rounded bg-muted" />
+                <div className="h-4 w-full rounded bg-sb-turf" />
+                <div className="h-4 w-3/4 rounded bg-sb-turf" />
               </div>
             </div>
           </div>
@@ -61,15 +64,8 @@ export function SportsbitesFeed({
 }: SportsbitesFeedProps) {
   const queryClient = useQueryClient();
 
-  const {
-    data,
-    isLoading,
-    error,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    refetch,
-  } = useSportsbitesFeed({ author });
+  const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
+    useSportsbitesFeed({ author });
 
   // --- Client-side filtering (following + tag) ---
   const followingListRef = useRef(followingList);
@@ -82,10 +78,7 @@ export function SportsbitesFeed({
       bites = bites.filter((s) => followingListRef.current.includes(s.author));
     }
     if (tagFilter) {
-      const tagPattern = new RegExp(
-        `#${tagFilter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
-        'i'
-      );
+      const tagPattern = new RegExp(`#${tagFilter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
       bites = bites.filter((s) => tagPattern.test(s.body));
     }
     return bites;
@@ -272,7 +265,7 @@ export function SportsbitesFeed({
 
   if (error) {
     return (
-      <div className={cn('rounded-xl border bg-card p-8 text-center', className)}>
+      <div className={cn('rounded-xl border bg-sb-stadium p-8 text-center', className)}>
         <div className="mb-4 flex justify-center">
           <div className="rounded-full bg-destructive/15 p-3">
             <AlertCircle className="h-8 w-8 text-destructive" />
@@ -293,7 +286,7 @@ export function SportsbitesFeed({
   if (displayBites.length === 0) {
     if (filterMode === 'following') {
       return (
-        <div className={cn('rounded-xl border bg-card p-8 text-center', className)}>
+        <div className={cn('rounded-xl border bg-sb-stadium p-8 text-center', className)}>
           <div className="mb-4 flex justify-center">
             <div className="rounded-full bg-primary/10 p-3">
               <Zap className="h-8 w-8 text-primary" />
@@ -309,7 +302,7 @@ export function SportsbitesFeed({
       );
     }
     return (
-      <div className={cn('rounded-xl border bg-card p-12 text-center', className)}>
+      <div className={cn('rounded-xl border bg-sb-stadium p-12 text-center', className)}>
         <div className="mb-4 flex justify-center">
           <div className="rounded-full bg-primary/10 p-4">
             <Zap className="h-12 w-12 text-primary" />

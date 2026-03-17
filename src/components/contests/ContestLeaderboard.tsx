@@ -19,7 +19,7 @@ export function ContestLeaderboard({ slug }: { slug: string }) {
     return (
       <div className="space-y-2">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="h-12 rounded-lg bg-muted/50 animate-pulse" />
+          <div key={i} className="h-12 animate-pulse rounded-lg bg-sb-turf/50" />
         ))}
       </div>
     );
@@ -33,8 +33,8 @@ export function ContestLeaderboard({ slug }: { slug: string }) {
 
   if (entries.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
+      <div className="py-8 text-center text-muted-foreground">
+        <Trophy className="mx-auto mb-2 h-8 w-8 opacity-50" />
         <p className="text-sm">No entries yet. Be the first to enter!</p>
       </div>
     );
@@ -54,8 +54,8 @@ export function ContestLeaderboard({ slug }: { slug: string }) {
         <div
           key={entry.username}
           className={cn(
-            'grid grid-cols-[40px_1fr_80px] gap-2 items-center px-3 py-2.5 rounded-lg',
-            entry.rank <= 3 ? 'bg-amber-500/5' : 'hover:bg-muted/50'
+            'grid grid-cols-[40px_1fr_80px] items-center gap-2 rounded-lg px-3 py-2.5',
+            entry.rank <= 3 ? 'bg-amber-500/5' : 'hover:bg-sb-turf/50'
           )}
         >
           {/* Rank */}
@@ -70,23 +70,25 @@ export function ContestLeaderboard({ slug }: { slug: string }) {
           {/* Username */}
           <Link
             href={`/user/${entry.username}`}
-            className="text-sm font-medium truncate hover:underline"
+            className="truncate text-sm font-medium hover:underline"
           >
             @{entry.username}
           </Link>
 
           {/* Score */}
           <div className="text-right">
-            <span className={cn('text-sm font-semibold', entry.rank <= 3 && RANK_STYLES[entry.rank])}>
+            <span
+              className={cn('text-sm font-semibold', entry.rank <= 3 && RANK_STYLES[entry.rank])}
+            >
               {entry.totalScore.toLocaleString()}
             </span>
-            <span className="text-xs text-muted-foreground ml-0.5">pts</span>
+            <span className="ml-0.5 text-xs text-muted-foreground">pts</span>
           </div>
         </div>
       ))}
 
       {data?.pagination?.hasMore && (
-        <p className="text-xs text-center text-muted-foreground py-2">
+        <p className="py-2 text-center text-xs text-muted-foreground">
           Showing top {entries.length} of {data.pagination.total}
         </p>
       )}

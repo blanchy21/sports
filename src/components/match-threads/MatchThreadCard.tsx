@@ -45,7 +45,7 @@ export function MatchThreadCard({ thread }: MatchThreadCardProps) {
     <Link
       href={`/match-threads/${thread.eventId}`}
       className={cn(
-        'block rounded-xl border bg-card p-4 transition-all hover:shadow-md',
+        'block rounded-xl border bg-sb-stadium p-4 transition-all hover:shadow-md',
         isLive && 'border-success/50 shadow-sm shadow-success/10'
       )}
     >
@@ -72,7 +72,7 @@ export function MatchThreadCard({ thread }: MatchThreadCardProps) {
                   <span
                     className={cn(
                       'font-bold tabular-nums',
-                      isLive ? 'text-success' : 'text-foreground'
+                      isLive ? 'text-success' : 'text-sb-text-primary'
                     )}
                   >
                     {event.score.home} - {event.score.away}
@@ -114,7 +114,7 @@ export function MatchThreadCard({ thread }: MatchThreadCardProps) {
             </span>
           )}
           {!isOpen && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-1 rounded-full bg-sb-turf px-2.5 py-1 text-xs font-medium text-muted-foreground">
               <Lock className="h-3 w-3" />
               Read Only
             </span>

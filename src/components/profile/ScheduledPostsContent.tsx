@@ -3,23 +3,23 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/core/Button';
 import { useRouter } from 'next/navigation';
+import { Calendar, Clock, CheckCircle, AlertCircle, XCircle, Loader2, Trash2 } from 'lucide-react';
 import {
-  Calendar,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  XCircle,
-  Loader2,
-  Trash2,
-} from 'lucide-react';
-import { useScheduledPosts, useCancelScheduledPost } from '@/lib/react-query/queries/useScheduledPosts';
+  useScheduledPosts,
+  useCancelScheduledPost,
+} from '@/lib/react-query/queries/useScheduledPosts';
 
-const statusConfig: Record<string, { icon: React.ElementType; label: string; className: string }> = {
-  pending: { icon: Clock, label: 'Pending', className: 'text-amber-500 bg-amber-500/10' },
-  published: { icon: CheckCircle, label: 'Published', className: 'text-green-500 bg-green-500/10' },
-  failed: { icon: AlertCircle, label: 'Failed', className: 'text-destructive bg-destructive/10' },
-  cancelled: { icon: XCircle, label: 'Cancelled', className: 'text-muted-foreground bg-muted' },
-};
+const statusConfig: Record<string, { icon: React.ElementType; label: string; className: string }> =
+  {
+    pending: { icon: Clock, label: 'Pending', className: 'text-amber-500 bg-amber-500/10' },
+    published: {
+      icon: CheckCircle,
+      label: 'Published',
+      className: 'text-green-500 bg-green-500/10',
+    },
+    failed: { icon: AlertCircle, label: 'Failed', className: 'text-destructive bg-destructive/10' },
+    cancelled: { icon: XCircle, label: 'Cancelled', className: 'text-muted-foreground bg-sb-turf' },
+  };
 
 export function ScheduledPostsContent() {
   const router = useRouter();
@@ -79,7 +79,7 @@ export function ScheduledPostsContent() {
         return (
           <div
             key={post.id}
-            className="rounded-lg border bg-card p-6 transition-shadow hover:shadow-md"
+            className="rounded-lg border bg-sb-stadium p-6 transition-shadow hover:shadow-md"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">

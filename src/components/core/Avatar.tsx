@@ -53,7 +53,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
       <div
         ref={ref}
         className={cn(
-          'relative flex shrink-0 overflow-hidden rounded-full bg-muted',
+          'relative flex shrink-0 overflow-hidden rounded-full bg-sb-turf',
           sizeClasses[size],
           className
         )}
@@ -68,7 +68,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
             onError={handleImageError}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
+          <div className="flex h-full w-full items-center justify-center bg-primary text-[#051A14]">
             {fallback ? (
               fallback.charAt(0).toUpperCase()
             ) : (

@@ -38,7 +38,7 @@ export function PollComposer({ poll, onChange, className }: PollComposerProps) {
           variant="ghost"
           size="sm"
           onClick={() => onChange(null)}
-          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-sb-text-primary"
         >
           <X className="h-4 w-4" />
         </Button>

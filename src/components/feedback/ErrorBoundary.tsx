@@ -110,10 +110,10 @@ export class ErrorBoundary extends Component<Props, State> {
       // Default fallback UI
       return (
         <div className="flex min-h-screen items-center justify-center bg-background p-4">
-          <div className="w-full max-w-md space-y-6 rounded-lg border border-destructive/50 bg-card p-6 shadow-lg">
+          <div className="w-full max-w-md space-y-6 rounded-lg border border-destructive/50 bg-sb-stadium p-6 shadow-lg">
             <div className="flex items-center space-x-3">
               <AlertCircle className="h-8 w-8 text-destructive" />
-              <h1 className="text-2xl font-bold text-foreground">Something went wrong</h1>
+              <h1 className="text-2xl font-bold text-sb-text-primary">Something went wrong</h1>
             </div>
 
             <div className="space-y-2">
@@ -122,8 +122,8 @@ export class ErrorBoundary extends Component<Props, State> {
               </p>
 
               {process.env.NODE_ENV === 'development' && this.state.error && (
-                <details className="mt-4 rounded-md bg-muted p-3">
-                  <summary className="cursor-pointer text-sm font-medium text-foreground">
+                <details className="mt-4 rounded-md bg-sb-turf p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-sb-text-primary">
                     Error Details (Development Only)
                   </summary>
                   <div className="mt-2 space-y-2">
@@ -267,11 +267,11 @@ export function ApiErrorFallback({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted/50 p-6">
+    <div className="flex flex-col items-center justify-center rounded-lg border border-sb-border bg-sb-turf/50 p-6">
       <div className="mb-4 rounded-full bg-destructive/10 p-3">
         <AlertCircle className="h-6 w-6 text-destructive" />
       </div>
-      <h3 className="mb-1 text-lg font-semibold text-foreground">{title}</h3>
+      <h3 className="mb-1 text-lg font-semibold text-sb-text-primary">{title}</h3>
       <p className="mb-4 max-w-sm text-center text-sm text-muted-foreground">
         {getUserFriendlyMessage()}
       </p>
@@ -305,11 +305,11 @@ export function EmptyStateFallback({
   const IconComponent = Icon || AlertCircle;
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg bg-muted/30 p-8">
-      <div className="mb-4 rounded-full bg-muted p-3">
+    <div className="flex flex-col items-center justify-center rounded-lg bg-sb-turf/30 p-8">
+      <div className="mb-4 rounded-full bg-sb-turf p-3">
         <IconComponent className="h-6 w-6 text-muted-foreground" />
       </div>
-      <h3 className="mb-1 text-lg font-semibold text-foreground">{title}</h3>
+      <h3 className="mb-1 text-lg font-semibold text-sb-text-primary">{title}</h3>
       {description && (
         <p className="mb-4 max-w-sm text-center text-sm text-muted-foreground">{description}</p>
       )}
@@ -337,7 +337,7 @@ export function LoadingFallback({
       {Array.from({ length: lines }).map((_, i) => (
         <div
           key={i}
-          className="h-4 rounded bg-muted"
+          className="h-4 rounded bg-sb-turf"
           style={{ width: `${Math.random() * 40 + 60}%` }}
         />
       ))}

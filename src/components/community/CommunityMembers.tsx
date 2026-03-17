@@ -22,12 +22,12 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
     return (
       <div className={`space-y-4 ${className}`}>
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="animate-pulse rounded-lg border bg-card p-4">
+          <div key={i} className="animate-pulse rounded-lg border bg-sb-stadium p-4">
             <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 rounded-full bg-muted"></div>
+              <div className="h-10 w-10 rounded-full bg-sb-turf"></div>
               <div className="flex-1">
-                <div className="mb-2 h-4 w-1/4 rounded bg-muted"></div>
-                <div className="h-3 w-1/3 rounded bg-muted"></div>
+                <div className="mb-2 h-4 w-1/4 rounded bg-sb-turf"></div>
+                <div className="h-3 w-1/3 rounded bg-sb-turf"></div>
               </div>
             </div>
           </div>
@@ -40,7 +40,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
     return (
       <div className={`py-12 text-center ${className}`}>
         <div className="mb-4 text-6xl">⚠️</div>
-        <h3 className="mb-2 text-xl font-semibold text-foreground">Error Loading Members</h3>
+        <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">Error Loading Members</h3>
         <p className="mb-6 text-muted-foreground">
           Failed to load community members. Please try again later.
         </p>
@@ -69,7 +69,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ communityId,
       ) : (
         <div className="py-12 text-center">
           <div className="mb-4 text-6xl">👥</div>
-          <h3 className="mb-2 text-xl font-semibold text-foreground">No Members Yet</h3>
+          <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">No Members Yet</h3>
           <p className="text-muted-foreground">This community doesn&apos;t have any members yet.</p>
         </div>
       )}
@@ -128,6 +128,6 @@ const getRoleColor = (role: string) => {
     case 'moderator':
       return 'bg-accent/20 text-accent';
     default:
-      return 'bg-muted text-foreground';
+      return 'bg-sb-turf text-sb-text-primary';
   }
 };

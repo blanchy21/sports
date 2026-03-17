@@ -26,7 +26,7 @@ export const Footer: React.FC = () => {
           <Link
             key={link.href}
             href={link.href}
-            className="transition-colors hover:text-foreground"
+            className="transition-colors hover:text-sb-text-primary"
           >
             {link.label}
           </Link>

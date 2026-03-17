@@ -14,7 +14,7 @@ export default function LandingCommunity({ sports }: LandingCommunityProps) {
   return (
     <>
       {/* ━━━ Sports Grid ━━━ */}
-      <section className="bg-muted/30 px-6 py-24">
+      <section className="bg-sb-turf/30 px-6 py-24">
         <div className="mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -145,7 +145,7 @@ export default function LandingCommunity({ sports }: LandingCommunityProps) {
                 variants={itemVariants}
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ duration: 0.3 }}
-                className="rounded-2xl border bg-card p-8 text-center transition-all duration-300 hover:shadow-xl hover:shadow-primary/5"
+                className="rounded-2xl border bg-sb-stadium p-8 text-center transition-all duration-300 hover:shadow-xl hover:shadow-primary/5"
               >
                 <div className={`mx-auto inline-flex p-3 ${item.bg} mb-5 rounded-xl`}>
                   <item.icon className={`h-7 w-7 ${item.color}`} />
@@ -182,7 +182,7 @@ export default function LandingCommunity({ sports }: LandingCommunityProps) {
                   transition={{ duration: 0.5, delay: i * 0.1 }}
                   className="flex flex-col items-center gap-2"
                 >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border bg-card p-3 transition-shadow hover:shadow-lg">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border bg-sb-stadium p-3 transition-shadow hover:shadow-lg">
                     <Image
                       src={wallet.src}
                       alt={wallet.alt}

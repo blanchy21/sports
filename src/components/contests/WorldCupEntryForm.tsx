@@ -208,7 +208,7 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
                           isSelected
                             ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400'
                             : potFull
-                              ? 'border-muted bg-muted/30 text-muted-foreground opacity-50'
+                              ? 'border-muted bg-sb-turf/30 text-muted-foreground opacity-50'
                               : 'border-muted hover:border-amber-500/50'
                         )}
                       >
@@ -331,7 +331,7 @@ export function WorldCupEntryForm({ contest }: { contest: ContestResponse }) {
                 return (
                   <div
                     key={code}
-                    className="flex items-center justify-between rounded bg-muted/50 px-2 py-1"
+                    className="flex items-center justify-between rounded bg-sb-turf/50 px-2 py-1"
                   >
                     <span className="truncate">{team?.name || code}</span>
                     <span className="font-mono font-bold text-amber-500">

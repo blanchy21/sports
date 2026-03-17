@@ -104,7 +104,7 @@ export function QuickPoll({
   const pct1 = getPercentage(results.option1Count);
 
   return (
-    <div className={cn('rounded-lg border bg-muted/30 p-3', className)}>
+    <div className={cn('rounded-lg border bg-sb-turf/30 p-3', className)}>
       <div className="mb-2 flex items-center gap-1.5">
         <BarChart3 className="h-3.5 w-3.5 text-primary" />
         <span className="text-sm font-medium">{poll.question}</span>
@@ -151,7 +151,7 @@ export function QuickPoll({
               <div
                 className={cn(
                   'absolute inset-y-0 left-0 rounded-lg transition-all duration-500',
-                  isSelected ? 'bg-primary/15' : 'bg-muted/50'
+                  isSelected ? 'bg-primary/15' : 'bg-sb-turf/50'
                 )}
                 style={{ width: `${pct}%` }}
               />

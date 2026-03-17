@@ -36,9 +36,9 @@ function DraftsPageContent() {
     return (
       <MainLayout>
         <div className="mx-auto max-w-4xl space-y-6">
-          <div className="rounded-lg border bg-card p-12 text-center">
+          <div className="rounded-lg border bg-sb-stadium p-12 text-center">
             <div className="mb-4 flex justify-center">
-              <div className="rounded-full bg-muted p-4">
+              <div className="rounded-full bg-sb-turf p-4">
                 <AlertCircle className="h-12 w-12 text-muted-foreground" />
               </div>
             </div>
@@ -54,14 +54,14 @@ function DraftsPageContent() {
     <MainLayout>
       <div className="mx-auto max-w-4xl space-y-6">
         {/* Tab Navigation */}
-        <div className="flex gap-1 rounded-lg border bg-card p-1">
+        <div className="flex gap-1 rounded-lg border bg-sb-stadium p-1">
           <button
             onClick={() => setTab('drafts')}
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors',
               activeTab === 'drafts'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                ? 'bg-primary text-[#051A14]'
+                : 'text-muted-foreground hover:bg-sb-turf hover:text-sb-text-primary'
             )}
           >
             <FileEdit className="h-4 w-4" />
@@ -72,8 +72,8 @@ function DraftsPageContent() {
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors',
               activeTab === 'scheduled'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                ? 'bg-primary text-[#051A14]'
+                : 'text-muted-foreground hover:bg-sb-turf hover:text-sb-text-primary'
             )}
           >
             <Calendar className="h-4 w-4" />

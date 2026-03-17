@@ -55,7 +55,7 @@ const Stat: React.FC<StatProps> = ({ label, value, icon, subValue, className }) 
       {icon}
       {label}
     </span>
-    <span className="text-lg font-semibold text-foreground">{value}</span>
+    <span className="text-lg font-semibold text-sb-text-primary">{value}</span>
     {subValue && <span className="text-xs text-muted-foreground/70">{subValue}</span>}
   </div>
 );
@@ -67,24 +67,24 @@ const WalletCardSkeleton: React.FC<{ compact?: boolean }> = ({ compact }) => (
   <Card className={cn('w-full', compact ? 'p-3' : '')}>
     <CardHeader className={compact ? 'p-0 pb-3' : ''}>
       <div className="flex items-center justify-between">
-        <div className="h-6 w-32 animate-pulse rounded bg-muted" />
-        <div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
+        <div className="h-6 w-32 animate-pulse rounded bg-sb-turf" />
+        <div className="h-6 w-20 animate-pulse rounded-full bg-sb-turf" />
       </div>
     </CardHeader>
     <CardContent className={compact ? 'p-0' : ''}>
       <div className="grid grid-cols-2 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="space-y-2">
-            <div className="h-3 w-16 animate-pulse rounded bg-muted" />
-            <div className="h-6 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-16 animate-pulse rounded bg-sb-turf" />
+            <div className="h-6 w-24 animate-pulse rounded bg-sb-turf" />
           </div>
         ))}
       </div>
     </CardContent>
     {!compact && (
       <CardFooter className="gap-2">
-        <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
-        <div className="h-9 flex-1 animate-pulse rounded bg-muted" />
+        <div className="h-9 flex-1 animate-pulse rounded bg-sb-turf" />
+        <div className="h-9 flex-1 animate-pulse rounded bg-sb-turf" />
       </CardFooter>
     )}
   </Card>
@@ -99,7 +99,7 @@ const WalletCardError: React.FC<{ error: Error; onRetry: () => void }> = ({ erro
       <div className="flex flex-col items-center space-y-3 text-center">
         <AlertCircle className="h-10 w-10 text-destructive" />
         <div>
-          <p className="font-medium text-foreground">Failed to load wallet</p>
+          <p className="font-medium text-sb-text-primary">Failed to load wallet</p>
           <p className="text-sm text-muted-foreground">{error.message}</p>
         </div>
         <Button variant="outline" size="sm" onClick={onRetry}>
@@ -158,7 +158,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-amber-500" />
-              <span className="font-semibold text-foreground">MEDALS</span>
+              <span className="font-semibold text-sb-text-primary">MEDALS</span>
             </div>
             <PremiumBadge tier={premiumTier} size="sm" />
           </div>
@@ -166,17 +166,17 @@ export const WalletCard: React.FC<WalletCardProps> = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total</span>
-              <span className="font-semibold text-foreground">{total}</span>
+              <span className="font-semibold text-sb-text-primary">{total}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Liquid</span>
-              <span className="text-foreground/80">{liquid}</span>
+              <span className="text-sb-text-primary/80">{liquid}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Staked</span>
-              <span className="text-foreground/80">{staked}</span>
+              <span className="text-sb-text-primary/80">{staked}</span>
             </div>
-            <div className="flex items-center justify-between border-t border-border pt-2">
+            <div className="flex items-center justify-between border-t border-sb-border pt-2">
               <span className="text-sm text-muted-foreground">Value</span>
               <span className="font-medium text-success">{hiveValue} HIVE</span>
             </div>
@@ -271,7 +271,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
         {/* Delegations if present */}
         {(parseFloat(balance?.delegatedIn || '0') > 0 ||
           parseFloat(balance?.delegatedOut || '0') > 0) && (
-          <div className="mt-4 rounded-lg bg-muted/50 p-3 text-sm">
+          <div className="mt-4 rounded-lg bg-sb-turf/50 p-3 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Delegated In:</span>
               <span className="font-medium text-success">

@@ -260,7 +260,7 @@ export default function WalletPage() {
           />
         </section>
 
-        <hr className="border-border/50" />
+        <hr className="border-sb-border/50" />
 
         {/* HIVE Section */}
         <section>
@@ -298,7 +298,7 @@ export default function WalletPage() {
           />
         </section>
 
-        <hr className="border-border/50" />
+        <hr className="border-sb-border/50" />
 
         {/* HBD Section */}
         <section>
@@ -334,7 +334,7 @@ export default function WalletPage() {
           />
         </section>
 
-        <hr className="border-border/50" />
+        <hr className="border-sb-border/50" />
 
         {/* Market Prices & Transactions */}
         <CryptoPricesGrid bitcoinPrice={bitcoinPrice} ethereumPrice={ethereumPrice} />

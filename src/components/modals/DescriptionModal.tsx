@@ -85,8 +85,8 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({
                 placeholder="Enter a description..."
               />
             ) : (
-              <div className="min-h-[200px] rounded-lg border bg-muted/30 p-3">
-                <p className="whitespace-pre-wrap text-sm text-foreground">
+              <div className="min-h-[200px] rounded-lg border bg-sb-turf/30 p-3">
+                <p className="whitespace-pre-wrap text-sm text-sb-text-primary">
                   {description || 'No description available.'}
                 </p>
               </div>

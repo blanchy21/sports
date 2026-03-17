@@ -15,7 +15,7 @@ export function CryptoPricesGrid({ bitcoinPrice, ethereumPrice }: CryptoPricesGr
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       {bitcoinPrice && (
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-sb-stadium p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Bitcoin className="h-8 w-8 text-warning" />
@@ -37,7 +37,7 @@ export function CryptoPricesGrid({ bitcoinPrice, ethereumPrice }: CryptoPricesGr
       )}
 
       {ethereumPrice && (
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-sb-stadium p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Coins className="h-8 w-8 text-primary" />

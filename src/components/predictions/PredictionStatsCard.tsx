@@ -14,13 +14,13 @@ export function PredictionStatsCard({ username }: PredictionStatsCardProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border bg-card p-4">
+      <div className="rounded-lg border bg-sb-stadium p-4">
         <div className="animate-pulse space-y-3">
-          <div className="h-5 w-40 rounded bg-muted" />
+          <div className="h-5 w-40 rounded bg-sb-turf" />
           <div className="grid grid-cols-3 gap-3">
-            <div className="h-16 rounded bg-muted" />
-            <div className="h-16 rounded bg-muted" />
-            <div className="h-16 rounded bg-muted" />
+            <div className="h-16 rounded bg-sb-turf" />
+            <div className="h-16 rounded bg-sb-turf" />
+            <div className="h-16 rounded bg-sb-turf" />
           </div>
         </div>
       </div>
@@ -32,7 +32,7 @@ export function PredictionStatsCard({ username }: PredictionStatsCardProps) {
   const profitPositive = stats.profitLoss >= 0;
 
   return (
-    <div className="rounded-lg border border-amber-500/20 bg-card p-4">
+    <div className="rounded-lg border border-amber-500/20 bg-sb-stadium p-4">
       <div className="mb-3 flex items-center gap-2">
         <Target className="h-5 w-5 text-amber-500" />
         <h3 className="text-base font-semibold">Prediction Stats</h3>
@@ -69,7 +69,7 @@ export function PredictionStatsCard({ username }: PredictionStatsCardProps) {
       </div>
 
       {/* P/L row */}
-      <div className="mt-3 flex items-center gap-4 rounded-lg bg-muted/50 px-3 py-2 text-sm">
+      <div className="mt-3 flex items-center gap-4 rounded-lg bg-sb-turf/50 px-3 py-2 text-sm">
         <div className="flex items-center gap-1.5">
           <span className="text-muted-foreground">Staked:</span>
           <span className="font-medium">{stats.totalStaked.toFixed(0)} MEDALS</span>
@@ -108,7 +108,7 @@ export function PredictionStatsCard({ username }: PredictionStatsCardProps) {
                     {category?.name ?? sport.sportCategory}
                   </span>
                   <div className="flex-1">
-                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-sb-turf">
                       <div
                         className={cn(
                           'h-full rounded-full transition-all',
@@ -159,7 +159,7 @@ function StatCell({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg bg-muted/50 p-2.5 text-center">
+    <div className="rounded-lg bg-sb-turf/50 p-2.5 text-center">
       <div className={cn('flex items-center justify-center gap-1 text-lg font-bold', valueClass)}>
         {icon}
         {value}

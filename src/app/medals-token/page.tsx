@@ -171,36 +171,36 @@ export default function MedalsTokenPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="pb-2 pr-4 text-left font-semibold text-foreground">Tier</th>
-                  <th className="pb-2 pr-4 text-left font-semibold text-foreground">
+                <tr className="border-b border-sb-border">
+                  <th className="pb-2 pr-4 text-left font-semibold text-sb-text-primary">Tier</th>
+                  <th className="pb-2 pr-4 text-left font-semibold text-sb-text-primary">
                     Staked MEDALS
                   </th>
-                  <th className="pb-2 text-left font-semibold text-foreground">Benefits</th>
+                  <th className="pb-2 text-left font-semibold text-sb-text-primary">Benefits</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-sb-border">
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Bronze</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">Bronze</td>
                   <td className="py-2 pr-4">1,000+</td>
                   <td className="py-2">Member badge, access to exclusive content channels</td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Silver</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">Silver</td>
                   <td className="py-2 pr-4">5,000+</td>
                   <td className="py-2">
                     Enhanced content visibility, priority support, weekly rewards
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Gold</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">Gold</td>
                   <td className="py-2 pr-4">25,000+</td>
                   <td className="py-2">
                     Featured content slots, larger weekly reward share, community governance
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Platinum</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">Platinum</td>
                   <td className="py-2 pr-4">100,000+</td>
                   <td className="py-2">
                     Maximum reward multiplier, premium features, platform governance voting
@@ -281,35 +281,37 @@ export default function MedalsTokenPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="pb-2 pr-4 text-left font-semibold text-foreground">Aspect</th>
-                  <th className="pb-2 pr-4 text-left font-semibold text-foreground">HIVE / HBD</th>
-                  <th className="pb-2 text-left font-semibold text-foreground">MEDALS</th>
+                <tr className="border-b border-sb-border">
+                  <th className="pb-2 pr-4 text-left font-semibold text-sb-text-primary">Aspect</th>
+                  <th className="pb-2 pr-4 text-left font-semibold text-sb-text-primary">
+                    HIVE / HBD
+                  </th>
+                  <th className="pb-2 text-left font-semibold text-sb-text-primary">MEDALS</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-sb-border">
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Scope</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">Scope</td>
                   <td className="py-2 pr-4">Entire Hive blockchain</td>
                   <td className="py-2">Sportsblock-specific</td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">How you earn</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">How you earn</td>
                   <td className="py-2 pr-4">Content upvotes (author + curation)</td>
                   <td className="py-2">Content, curation, predictions, activity</td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Staking benefit</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">Staking benefit</td>
                   <td className="py-2 pr-4">HIVE Power increases vote strength</td>
                   <td className="py-2">Tiered rewards + weekly distributions</td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Trading</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">Trading</td>
                   <td className="py-2 pr-4">Major crypto exchanges</td>
                   <td className="py-2">Hive Engine DEX</td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Best for</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">Best for</td>
                   <td className="py-2 pr-4">Broad blockchain participation</td>
                   <td className="py-2">Sportsblock community engagement</td>
                 </tr>
@@ -332,11 +334,13 @@ export default function MedalsTokenPage() {
 
         {/* FAQ section */}
         <section>
-          <h2 className="mb-6 text-xl font-semibold text-foreground">Frequently Asked Questions</h2>
+          <h2 className="mb-6 text-xl font-semibold text-sb-text-primary">
+            Frequently Asked Questions
+          </h2>
           <div className="space-y-6">
             {faqItems.map((item) => (
               <div key={item.question}>
-                <h3 className="mb-2 font-semibold text-foreground">{item.question}</h3>
+                <h3 className="mb-2 font-semibold text-sb-text-primary">{item.question}</h3>
                 <p className="text-muted-foreground">{item.answer}</p>
               </div>
             ))}

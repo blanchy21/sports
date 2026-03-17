@@ -136,7 +136,7 @@ export function PredictionComments({ predictionId }: PredictionCommentsProps) {
   };
 
   return (
-    <div className="border-t bg-muted/20 px-4 py-3">
+    <div className="border-t bg-sb-turf/20 px-4 py-3">
       {isLoading ? (
         <div className="flex items-center justify-center py-4">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -219,7 +219,7 @@ export function PredictionComments({ predictionId }: PredictionCommentsProps) {
               </span>
               <button
                 onClick={clearReplyTarget}
-                className="ml-auto rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="ml-auto rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-sb-turf hover:text-sb-text-primary"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -240,7 +240,7 @@ export function PredictionComments({ predictionId }: PredictionCommentsProps) {
                 replyingTo ? `Reply to @${replyingTo.username}...` : 'Write a comment...'
               }
               className={cn(
-                'flex-1 resize-none rounded-lg border bg-background p-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary',
+                'flex-1 resize-none rounded-lg border bg-background p-2 text-sm text-sb-text-primary focus:outline-none focus:ring-2 focus:ring-primary',
                 isOverLimit && 'border-destructive focus:ring-destructive'
               )}
               rows={2}

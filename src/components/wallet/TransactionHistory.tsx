@@ -123,7 +123,7 @@ export function TransactionHistory({ username }: TransactionHistoryProps) {
   }, [fetchTransactions]);
 
   return (
-    <div className="rounded-lg border bg-card p-6">
+    <div className="rounded-lg border bg-sb-stadium p-6">
       <div className="mb-6 flex items-center justify-between">
         <h3 className="flex items-center text-lg font-semibold">
           <Activity className="mr-2 h-5 w-5" />
@@ -175,7 +175,7 @@ export function TransactionHistory({ username }: TransactionHistoryProps) {
             {transactions.map((transaction) => (
               <div
                 key={transaction.id}
-                className="flex items-center justify-between rounded-lg border bg-muted/50 p-4 transition-colors hover:bg-muted/70"
+                className="flex items-center justify-between rounded-lg border bg-sb-turf/50 p-4 transition-colors hover:bg-sb-turf/70"
               >
                 <div className="flex items-center space-x-3">
                   <div className="rounded-lg bg-primary/10 p-2">

@@ -33,7 +33,7 @@ function EventDetail({ event }: { event: MatchEvent }) {
       const suffix = tags.length > 0 ? ` (${tags.join(', ')})` : '';
       return (
         <div>
-          <p className="text-sm font-semibold text-foreground">
+          <p className="text-sm font-semibold text-sb-text-primary">
             {event.playerName}
             {suffix}
           </p>
@@ -46,7 +46,7 @@ function EventDetail({ event }: { event: MatchEvent }) {
     case 'substitution':
       return (
         <div>
-          <p className="text-sm text-foreground">
+          <p className="text-sm text-sb-text-primary">
             <span className="text-red-400">{event.playerName}</span>
             <span className="mx-1.5 text-muted-foreground">&harr;</span>
             <span className="text-green-400">{event.replacedBy}</span>
@@ -54,7 +54,7 @@ function EventDetail({ event }: { event: MatchEvent }) {
         </div>
       );
     default:
-      return <p className="text-sm text-foreground">{event.playerName}</p>;
+      return <p className="text-sm text-sb-text-primary">{event.playerName}</p>;
   }
 }
 
@@ -118,7 +118,7 @@ export function MatchEventsTimeline({ events, homeTeam, awayTeam }: MatchEventsT
                 className={cn(
                   'absolute left-1/2 -translate-x-1/2',
                   'flex h-7 min-w-7 items-center justify-center rounded-full px-1.5',
-                  isGoal ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                  isGoal ? 'bg-primary text-[#051A14]' : 'bg-sb-turf text-muted-foreground',
                   'text-xs font-bold tabular-nums'
                 )}
               >

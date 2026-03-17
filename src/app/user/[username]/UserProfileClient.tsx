@@ -207,12 +207,12 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
       <MainLayout>
         <div className="mx-auto max-w-4xl p-4 sm:p-6">
           <div className="animate-pulse space-y-6">
-            <div className="h-32 rounded-lg bg-muted sm:h-48"></div>
+            <div className="h-32 rounded-lg bg-sb-turf sm:h-48"></div>
             <div className="flex items-center space-x-4">
-              <div className="h-24 w-24 rounded-full bg-muted sm:h-32 sm:w-32"></div>
+              <div className="h-24 w-24 rounded-full bg-sb-turf sm:h-32 sm:w-32"></div>
               <div className="flex-1 space-y-2">
-                <div className="h-8 w-1/3 rounded bg-muted"></div>
-                <div className="h-4 w-1/4 rounded bg-muted"></div>
+                <div className="h-8 w-1/3 rounded bg-sb-turf"></div>
+                <div className="h-4 w-1/4 rounded bg-sb-turf"></div>
               </div>
             </div>
           </div>
@@ -305,7 +305,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
         )}
 
         {/* Profile Header */}
-        <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="overflow-hidden rounded-lg border bg-sb-stadium">
           {/* Cover Photo */}
           <div className="relative h-32 bg-gradient-to-r from-primary via-bright-cobalt to-accent sm:h-48">
             {!isSoftUser &&
@@ -343,7 +343,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
 
               <div className="mt-4 flex-1 text-center sm:text-left">
                 <div className="mb-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start sm:gap-3">
-                  <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
+                  <h1 className="text-2xl font-bold text-sb-text-primary sm:text-3xl">
                     {isSoftUser
                       ? (profile as { displayName?: string }).displayName || username
                       : (profile as { profile?: { name?: string } }).profile?.name || username}
@@ -471,7 +471,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                     (profile as { profile?: { location?: string } }).profile?.location && (
                       <div className="flex items-center space-x-3 text-sm">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-foreground">
+                        <span className="text-sb-text-primary">
                           {(profile as { profile?: { location?: string } }).profile!.location}
                         </span>
                       </div>
@@ -479,7 +479,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
 
                   <div className="flex items-center space-x-3 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-foreground">
+                    <span className="text-sb-text-primary">
                       Joined{' '}
                       {new Date(profile.createdAt).toLocaleDateString('en-US', {
                         month: 'long',
@@ -518,7 +518,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                   ? (profile as { bio?: string }).bio
                   : (profile as { profile?: { about?: string } }).profile?.about) && (
                   <div className="mt-6">
-                    <p className="max-w-2xl text-base leading-relaxed text-foreground">
+                    <p className="max-w-2xl text-base leading-relaxed text-sb-text-primary">
                       {isSoftUser
                         ? (profile as { bio?: string }).bio
                         : (profile as { profile?: { about?: string } }).profile?.about}
@@ -527,7 +527,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                 )}
 
                 {/* Stats Section */}
-                <div className="mt-6 flex items-center justify-center gap-4 border-t border-border pt-4 sm:justify-start sm:gap-6">
+                <div className="mt-6 flex items-center justify-center gap-4 border-t border-sb-border pt-4 sm:justify-start sm:gap-6">
                   {!isSoftUser ? (
                     <>
                       <div
@@ -538,7 +538,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                             : openModal('followersList', { username, type: 'following' })
                         }
                       >
-                        <div className="text-2xl font-bold text-foreground">
+                        <div className="text-2xl font-bold text-sb-text-primary">
                           {followingCount || 0}
                         </div>
                         <div className="text-sm text-muted-foreground">Following</div>
@@ -551,13 +551,15 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                             : openModal('followersList', { username, type: 'followers' })
                         }
                       >
-                        <div className="text-2xl font-bold text-foreground">
+                        <div className="text-2xl font-bold text-sb-text-primary">
                           {followerCount || 0}
                         </div>
                         <div className="text-sm text-muted-foreground">Followers</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-foreground">{userPosts.length}</div>
+                        <div className="text-2xl font-bold text-sb-text-primary">
+                          {userPosts.length}
+                        </div>
                         <div className="text-sm text-muted-foreground">Posts</div>
                       </div>
                     </>
@@ -573,7 +575,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                           })
                         }
                       >
-                        <div className="text-2xl font-bold text-foreground">
+                        <div className="text-2xl font-bold text-sb-text-primary">
                           {softFollowingCount}
                         </div>
                         <div className="text-sm text-muted-foreground">Following</div>
@@ -588,13 +590,15 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                           })
                         }
                       >
-                        <div className="text-2xl font-bold text-foreground">
+                        <div className="text-2xl font-bold text-sb-text-primary">
                           {softFollowerCount}
                         </div>
                         <div className="text-sm text-muted-foreground">Followers</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-foreground">{userPosts.length}</div>
+                        <div className="text-2xl font-bold text-sb-text-primary">
+                          {userPosts.length}
+                        </div>
                         <div className="text-sm text-muted-foreground">Posts</div>
                       </div>
                     </>
@@ -606,7 +610,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
         </div>
 
         {/* Badges */}
-        <div className="rounded-lg border bg-card p-4 sm:p-6">
+        <div className="rounded-lg border bg-sb-stadium p-4 sm:p-6">
           <BadgeGrid username={username} />
         </div>
 
@@ -616,8 +620,8 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
         {/* Content Section */}
         {isOwnProfile ? (
           /* Owner view: tabbed content */
-          <div className="rounded-lg border bg-card">
-            <div className="flex items-center overflow-x-auto border-b border-border px-3 sm:px-6">
+          <div className="rounded-lg border bg-sb-stadium">
+            <div className="flex items-center overflow-x-auto border-b border-sb-border px-3 sm:px-6">
               {ownerTabs.map((tab) => (
                 <button
                   key={tab}
@@ -625,7 +629,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
                   className={
                     activeTab === tab
                       ? 'whitespace-nowrap border-b-2 border-primary px-3 py-2 text-sm font-medium text-primary transition-colors sm:px-4 sm:py-3 sm:text-base'
-                      : 'whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:px-4 sm:py-3 sm:text-base'
+                      : 'whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-sb-text-primary sm:px-4 sm:py-3 sm:text-base'
                   }
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -644,7 +648,7 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
           </div>
         ) : (
           /* Public view: posts only */
-          <div className="rounded-lg border bg-card">
+          <div className="rounded-lg border bg-sb-stadium">
             <div className="p-4 sm:p-6">
               <h2 className="mb-4 text-xl font-bold">Posts</h2>
               {renderPostsContent()}

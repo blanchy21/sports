@@ -10,9 +10,9 @@ import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 function MarkdownLoadingSkeleton() {
   return (
     <div className="animate-pulse space-y-3">
-      <div className="h-4 w-3/4 rounded bg-muted"></div>
-      <div className="h-4 w-full rounded bg-muted"></div>
-      <div className="h-4 w-5/6 rounded bg-muted"></div>
+      <div className="h-4 w-3/4 rounded bg-sb-turf"></div>
+      <div className="h-4 w-full rounded bg-sb-turf"></div>
+      <div className="h-4 w-5/6 rounded bg-sb-turf"></div>
     </div>
   );
 }

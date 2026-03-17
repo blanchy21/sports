@@ -35,8 +35,8 @@ export default function ContestDetailPage() {
     return (
       <MainLayout>
         <div className="mx-auto max-w-2xl px-4 py-4">
-          <div className="mb-4 h-8 w-48 animate-pulse rounded bg-muted/50" />
-          <div className="h-40 animate-pulse rounded-lg bg-muted/50" />
+          <div className="mb-4 h-8 w-48 animate-pulse rounded bg-sb-turf/50" />
+          <div className="h-40 animate-pulse rounded-lg bg-sb-turf/50" />
         </div>
       </MainLayout>
     );
@@ -81,7 +81,7 @@ export default function ContestDetailPage() {
         {/* Back link */}
         <Link
           href="/contests"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-sb-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Contests
@@ -114,7 +114,7 @@ export default function ContestDetailPage() {
                 Created by{' '}
                 <Link
                   href={`/user/${contest.creatorUsername}`}
-                  className="font-medium text-foreground transition-colors hover:text-amber-500"
+                  className="font-medium text-sb-text-primary transition-colors hover:text-amber-500"
                 >
                   @{contest.creatorUsername}
                 </Link>
@@ -213,7 +213,7 @@ export default function ContestDetailPage() {
                 'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
                 activeTab === key
                   ? 'border-amber-500 text-amber-600 dark:text-amber-400'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-sb-text-primary'
               )}
             >
               <Icon className="h-4 w-4" />

@@ -28,9 +28,9 @@ function LoadingSkeleton() {
     <div className="space-y-4 p-4">
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} className="flex items-center gap-3">
-          <div className="h-4 w-10 animate-pulse rounded bg-muted" />
-          <div className="h-4 flex-1 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-10 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-10 animate-pulse rounded bg-sb-turf" />
+          <div className="h-4 flex-1 animate-pulse rounded bg-sb-turf" />
+          <div className="h-4 w-10 animate-pulse rounded bg-sb-turf" />
         </div>
       ))}
     </div>
@@ -96,7 +96,7 @@ export function MatchDetailTabs({ eventId, isSoccer, isLive }: MatchDetailTabsPr
   const awayTeam = detail?.awayLineup?.teamName ?? undefined;
 
   return (
-    <div className="rounded-xl border bg-card">
+    <div className="rounded-xl border bg-sb-stadium">
       {/* Tab bar */}
       <div className="flex gap-1 border-b p-1.5">
         {TABS.map((tab) => (
@@ -106,8 +106,8 @@ export function MatchDetailTabs({ eventId, isSoccer, isLive }: MatchDetailTabsPr
             className={cn(
               'flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
               activeTab === tab.key
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-sb-turf text-sb-text-primary'
+                : 'text-muted-foreground hover:text-sb-text-primary'
             )}
           >
             {tab.label}

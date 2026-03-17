@@ -59,8 +59,8 @@ function Pill({
       onClick={onClick}
       className={cn(
         'rounded-full px-5 py-2 text-[15px] font-medium',
-        'text-foreground/70 transition-colors',
-        'hover:bg-muted hover:text-foreground',
+        'text-sb-text-primary/70 transition-colors',
+        'hover:bg-sb-turf hover:text-sb-text-primary',
         'whitespace-nowrap',
         className
       )}
@@ -111,10 +111,10 @@ function DropdownPill({
         onClick={handleToggle}
         className={cn(
           'flex items-center gap-1 rounded-full px-5 py-2 text-[15px] font-medium',
-          'text-foreground/70 transition-colors',
-          'hover:bg-muted hover:text-foreground',
+          'text-sb-text-primary/70 transition-colors',
+          'hover:bg-sb-turf hover:text-sb-text-primary',
           'whitespace-nowrap',
-          isOpen && 'bg-muted text-foreground'
+          isOpen && 'bg-sb-turf text-sb-text-primary'
         )}
       >
         {label}
@@ -122,7 +122,7 @@ function DropdownPill({
       </button>
       {isOpen && menuPos && (
         <div
-          className="fixed z-50 min-w-[160px] rounded-lg border bg-card py-1 shadow-lg"
+          className="fixed z-50 min-w-[160px] rounded-lg border bg-sb-stadium py-1 shadow-lg"
           style={{ top: menuPos.top, left: menuPos.left }}
         >
           {items.map((item) => (
@@ -132,7 +132,7 @@ function DropdownPill({
                 item.onClick();
                 setIsOpen(false);
               }}
-              className="flex w-full items-center px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center px-4 py-2 text-sm text-sb-text-primary transition-colors hover:bg-sb-turf"
             >
               {item.label}
             </button>
@@ -184,7 +184,7 @@ export function EditorToolbar({
   };
 
   return (
-    <div className="scrollbar-none sticky top-0 z-20 flex items-center gap-1 overflow-x-auto border-b bg-card px-4 py-3">
+    <div className="scrollbar-none sticky top-0 z-20 flex items-center gap-1 overflow-x-auto border-b bg-sb-stadium px-4 py-3">
       {/* Header dropdown */}
       <DropdownPill
         label="Header"
@@ -257,7 +257,7 @@ export function EditorToolbar({
               'rounded-full px-5 py-2 text-[15px] font-medium capitalize transition-colors',
               viewMode === mode
                 ? 'text-primary ring-2 ring-primary'
-                : 'text-foreground/70 hover:text-foreground'
+                : 'text-sb-text-primary/70 hover:text-sb-text-primary'
             )}
           >
             {mode === 'split' ? 'Split' : mode === 'editor' ? 'Editor' : 'Preview'}

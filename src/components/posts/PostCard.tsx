@@ -206,7 +206,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
     <article
       aria-label={`Post: ${post.title}`}
       className={cn(
-        'overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-md',
+        'overflow-hidden rounded-lg border bg-sb-stadium transition-shadow hover:shadow-md',
         className
       )}
     >
@@ -341,7 +341,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
       )}
 
       {/* Footer */}
-      <div className="border-t bg-muted/30 px-3 py-2 sm:px-4 sm:py-3">
+      <div className="border-t bg-sb-turf/30 px-3 py-2 sm:px-4 sm:py-3">
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-center space-x-2 sm:space-x-4">
             {/* Voting/Like Section */}

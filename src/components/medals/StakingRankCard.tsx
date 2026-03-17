@@ -111,7 +111,7 @@ export const StakingRankCard: React.FC<StakingRankCardProps> = ({ account, class
               <Trophy className="h-3.5 w-3.5 text-primary" />
               Rank
             </div>
-            <div className="mt-1 text-xl font-bold text-foreground">
+            <div className="mt-1 text-xl font-bold text-sb-text-primary">
               {userRank ? `#${userRank.rank}` : '—'}
             </div>
             <div className="text-[11px] text-muted-foreground">of {totalHolders} stakers</div>
@@ -123,7 +123,7 @@ export const StakingRankCard: React.FC<StakingRankCardProps> = ({ account, class
               <PieChart className="h-3.5 w-3.5 text-sb-teal" />
               Stake Share
             </div>
-            <div className="mt-1 text-xl font-bold text-foreground">
+            <div className="mt-1 text-xl font-bold text-sb-text-primary">
               {stakeSharePct > 0 ? `${stakeSharePct.toFixed(2)}%` : '0%'}
             </div>
             <div className="text-[11px] text-muted-foreground">of network</div>
@@ -135,7 +135,7 @@ export const StakingRankCard: React.FC<StakingRankCardProps> = ({ account, class
               <Gift className="h-3.5 w-3.5 text-sb-teal" />
               Weekly
             </div>
-            <div className="mt-1 text-xl font-bold text-foreground">
+            <div className="mt-1 text-xl font-bold text-sb-text-primary">
               {formatCompact(parseFloat(weeklyReward))}
             </div>
             <div className="text-[11px] text-muted-foreground">MEDALS/week</div>
@@ -144,7 +144,7 @@ export const StakingRankCard: React.FC<StakingRankCardProps> = ({ account, class
 
         {/* Tier Roadmap */}
         <div className="space-y-2">
-          <h4 className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+          <h4 className="flex items-center gap-1.5 text-sm font-medium text-sb-text-primary/80">
             <Target className="h-4 w-4 text-muted-foreground" />
             Tier Roadmap
           </h4>
@@ -168,8 +168,8 @@ export const StakingRankCard: React.FC<StakingRankCardProps> = ({ account, class
                       : isAchieved
                         ? 'border-sb-teal/30 bg-sb-teal/5'
                         : isNext
-                          ? 'border-border bg-muted/30'
-                          : 'border-border/50 bg-background opacity-60'
+                          ? 'border-sb-border bg-sb-turf/30'
+                          : 'border-sb-border/50 bg-background opacity-60'
                   )}
                 >
                   {/* Tier icon */}

@@ -47,11 +47,11 @@ function getRankBadgeClass(rank: number): string {
     case 1:
       return 'bg-warning/15 text-warning';
     case 2:
-      return 'bg-muted text-foreground/80';
+      return 'bg-sb-turf text-sb-text-primary/80';
     case 3:
       return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
     default:
-      return 'bg-muted text-muted-foreground';
+      return 'bg-sb-turf text-muted-foreground';
   }
 }
 
@@ -115,7 +115,7 @@ export function MedalsStakersLeaderboard() {
 
   if (error) {
     return (
-      <div className="rounded-lg border bg-card p-8 text-center">
+      <div className="rounded-lg border bg-sb-stadium p-8 text-center">
         <p className="text-muted-foreground">Failed to load leaderboard</p>
         <Button variant="outline" size="sm" onClick={fetchLeaderboard} className="mt-3">
           Try again
@@ -126,7 +126,7 @@ export function MedalsStakersLeaderboard() {
 
   if (!data || data.holders.length === 0) {
     return (
-      <div className="rounded-lg border bg-card p-8 text-center">
+      <div className="rounded-lg border bg-sb-stadium p-8 text-center">
         <Medal className="mx-auto h-10 w-10 text-muted-foreground" />
         <p className="mt-3 text-muted-foreground">No MEDALS holders found</p>
       </div>
@@ -168,7 +168,7 @@ export function MedalsStakersLeaderboard() {
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden rounded-lg border bg-card md:block">
+      <div className="hidden rounded-lg border bg-sb-stadium md:block">
         <table className="w-full">
           <thead>
             <tr className="border-b text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -237,7 +237,7 @@ export function MedalsStakersLeaderboard() {
         {data.holders.map((holder) => (
           <div
             key={holder.account}
-            className={`rounded-lg border bg-card p-3 ${holder.rank <= 3 ? 'border-accent/30' : ''}`}
+            className={`rounded-lg border bg-sb-stadium p-3 ${holder.rank <= 3 ? 'border-accent/30' : ''}`}
           >
             <div className="flex items-center gap-3">
               <span

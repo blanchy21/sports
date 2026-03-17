@@ -136,18 +136,18 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
           <div className="rounded-full bg-success/10 p-1.5">
             <DollarSign className="h-4 w-4 text-success" />
           </div>
-          <h3 className="font-semibold text-foreground">Potential Earnings</h3>
+          <h3 className="font-semibold text-sb-text-primary">Potential Earnings</h3>
         </div>
         <div className="relative">
           <button
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
-            className="rounded-full p-1 transition-colors hover:bg-muted"
+            className="rounded-full p-1 transition-colors hover:bg-sb-turf"
           >
             <Info className="h-4 w-4 text-muted-foreground" />
           </button>
           {showTooltip && (
-            <div className="absolute right-0 top-full z-10 mt-1 w-64 rounded-lg border bg-popover p-3 text-xs text-muted-foreground shadow-lg">
+            <div className="absolute right-0 top-full z-10 mt-1 w-64 rounded-lg border bg-sb-turf p-3 text-xs text-muted-foreground shadow-lg">
               <p>
                 This is an estimate based on average Hive rewards. Actual earnings depend on content
                 quality, timing, and community engagement.
@@ -178,7 +178,7 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Est. weekly:</span>
               <div className="text-right">
-                <span className="font-medium text-foreground">${earnings.weeklyUsd}</span>
+                <span className="font-medium text-sb-text-primary">${earnings.weeklyUsd}</span>
                 {earnings.weeklyHive && (
                   <span className="ml-1 text-xs text-muted-foreground">
                     ({earnings.weeklyHive} HIVE)
@@ -188,7 +188,7 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
             </div>
 
             {/* Stats breakdown */}
-            <div className="border-t border-border pt-2">
+            <div className="border-t border-sb-border pt-2">
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span>{stats.postCount} posts</span>
                 <span>{stats.totalLikes} likes received</span>
@@ -226,7 +226,7 @@ export const PotentialEarningsWidget: React.FC<PotentialEarningsWidgetProps> = (
 
       {/* HIVE Price footer */}
       {hivePrice && (
-        <div className="mt-3 border-t border-border pt-2">
+        <div className="mt-3 border-t border-sb-border pt-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>HIVE Price</span>
             <span>${hivePrice.toFixed(4)} USD</span>

@@ -163,32 +163,36 @@ export default function EarnCryptoSportsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="pb-2 pr-4 text-left font-semibold text-foreground">Stage</th>
-                  <th className="pb-2 pr-4 text-left font-semibold text-foreground">
+                <tr className="border-b border-sb-border">
+                  <th className="pb-2 pr-4 text-left font-semibold text-sb-text-primary">Stage</th>
+                  <th className="pb-2 pr-4 text-left font-semibold text-sb-text-primary">
                     Typical Earnings
                   </th>
-                  <th className="pb-2 text-left font-semibold text-foreground">What It Takes</th>
+                  <th className="pb-2 text-left font-semibold text-sb-text-primary">
+                    What It Takes
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-sb-border">
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Getting Started</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">Getting Started</td>
                   <td className="py-2 pr-4">$0.01 – $0.50</td>
                   <td className="py-2">First posts, building initial connections</td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Building Reputation</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">
+                    Building Reputation
+                  </td>
                   <td className="py-2 pr-4">$0.50 – $3.00</td>
                   <td className="py-2">Regular posting, engaging with community</td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Established</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">Established</td>
                   <td className="py-2 pr-4">$3.00 – $10.00</td>
                   <td className="py-2">Consistent quality, growing follower base</td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4 font-medium text-foreground">Top Contributor</td>
+                  <td className="py-2 pr-4 font-medium text-sb-text-primary">Top Contributor</td>
                   <td className="py-2 pr-4">$5.00 – $10.00+</td>
                   <td className="py-2">Recognized expert, strong community engagement</td>
                 </tr>
@@ -287,11 +291,13 @@ export default function EarnCryptoSportsPage() {
 
         {/* FAQ section */}
         <section>
-          <h2 className="mb-6 text-xl font-semibold text-foreground">Frequently Asked Questions</h2>
+          <h2 className="mb-6 text-xl font-semibold text-sb-text-primary">
+            Frequently Asked Questions
+          </h2>
           <div className="space-y-6">
             {faqItems.map((item) => (
               <div key={item.question}>
-                <h3 className="mb-2 font-semibold text-foreground">{item.question}</h3>
+                <h3 className="mb-2 font-semibold text-sb-text-primary">{item.question}</h3>
                 <p className="text-muted-foreground">{item.answer}</p>
               </div>
             ))}

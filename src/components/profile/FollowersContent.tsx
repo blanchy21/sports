@@ -36,12 +36,12 @@ export function FollowersContent() {
       <div className="animate-pulse space-y-4">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="flex items-center space-x-4">
-            <div className="h-12 w-12 rounded-full bg-muted"></div>
+            <div className="h-12 w-12 rounded-full bg-sb-turf"></div>
             <div className="flex-1">
-              <div className="mb-2 h-4 w-1/3 rounded bg-muted"></div>
-              <div className="h-3 w-1/2 rounded bg-muted"></div>
+              <div className="mb-2 h-4 w-1/3 rounded bg-sb-turf"></div>
+              <div className="h-3 w-1/2 rounded bg-sb-turf"></div>
             </div>
-            <div className="h-8 w-20 rounded bg-muted"></div>
+            <div className="h-8 w-20 rounded bg-sb-turf"></div>
           </div>
         ))}
       </div>
@@ -80,7 +80,7 @@ export function FollowersContent() {
       {followersData?.relationships.map((rel) => (
         <div
           key={`${rel.follower}-${rel.following}`}
-          className="flex items-center justify-between rounded-lg p-4 transition-colors hover:bg-muted/50"
+          className="flex items-center justify-between rounded-lg p-4 transition-colors hover:bg-sb-turf/50"
         >
           <div
             className="flex flex-1 cursor-pointer items-center space-x-4"

@@ -17,7 +17,7 @@ function PlayerRow({ player }: { player: MatchLineupPlayer }) {
         {player.jersey}
       </span>
       {/* Player name */}
-      <span className="min-w-0 flex-1 truncate text-sm text-foreground">{player.name}</span>
+      <span className="min-w-0 flex-1 truncate text-sm text-sb-text-primary">{player.name}</span>
       {/* Sub indicators */}
       {player.subbedIn && (
         <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" title="Subbed in" />
@@ -37,7 +37,7 @@ function LineupColumn({ lineup }: { lineup: MatchLineup }) {
     <div className="min-w-0 flex-1">
       {/* Team name + formation */}
       <div className="mb-3">
-        <h4 className="text-sm font-semibold text-foreground">{lineup.teamName}</h4>
+        <h4 className="text-sm font-semibold text-sb-text-primary">{lineup.teamName}</h4>
         {lineup.formation && <p className="text-xs text-muted-foreground">{lineup.formation}</p>}
       </div>
 

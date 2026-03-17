@@ -39,11 +39,11 @@ function getRankBadgeClass(rank: number): string {
     case 1:
       return 'bg-warning/15 text-warning';
     case 2:
-      return 'bg-muted text-foreground/80';
+      return 'bg-sb-turf text-sb-text-primary/80';
     case 3:
       return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
     default:
-      return 'bg-muted text-muted-foreground';
+      return 'bg-sb-turf text-muted-foreground';
   }
 }
 
@@ -66,12 +66,12 @@ export default function PredictionsLeaderboardPage() {
     <MainLayout>
       <div className="mx-auto max-w-3xl">
         {/* Header */}
-        <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-border/50 bg-background/95 px-4 backdrop-blur-xl">
+        <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-sb-border/50 bg-background/95 px-4 backdrop-blur-xl">
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
               <Link
                 href="/predictions"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-sb-turf hover:text-sb-text-primary"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Link>
@@ -98,7 +98,7 @@ export default function PredictionsLeaderboardPage() {
                 'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                 sort === tab.value
                   ? 'bg-amber-500 text-white'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  : 'bg-sb-turf text-muted-foreground hover:bg-sb-turf/80'
               )}
             >
               {tab.label}
@@ -116,7 +116,7 @@ export default function PredictionsLeaderboardPage() {
                 'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
                 period === tab.value
                   ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-sb-text-primary'
               )}
             >
               {tab.label}
@@ -134,7 +134,7 @@ export default function PredictionsLeaderboardPage() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden rounded-lg border bg-card md:block">
+            <div className="hidden rounded-lg border bg-sb-stadium md:block">
               <table className="w-full">
                 <thead>
                   <tr className="border-b text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -221,7 +221,10 @@ export default function PredictionsLeaderboardPage() {
                 return (
                   <div
                     key={entry.username}
-                    className={cn('rounded-lg border bg-card p-3', rank <= 3 && 'border-accent/30')}
+                    className={cn(
+                      'rounded-lg border bg-sb-stadium p-3',
+                      rank <= 3 && 'border-accent/30'
+                    )}
                   >
                     <div className="flex items-center gap-3">
                       <span
@@ -303,12 +306,12 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-2">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="animate-pulse rounded-lg border bg-card p-3">
+        <div key={i} className="animate-pulse rounded-lg border bg-sb-stadium p-3">
           <div className="flex items-center gap-3">
-            <div className="h-7 w-7 rounded-full bg-muted" />
-            <div className="h-7 w-7 rounded-full bg-muted" />
-            <div className="h-4 w-28 rounded bg-muted" />
-            <div className="ml-auto h-4 w-16 rounded bg-muted" />
+            <div className="h-7 w-7 rounded-full bg-sb-turf" />
+            <div className="h-7 w-7 rounded-full bg-sb-turf" />
+            <div className="h-4 w-28 rounded bg-sb-turf" />
+            <div className="ml-auto h-4 w-16 rounded bg-sb-turf" />
           </div>
         </div>
       ))}
@@ -318,7 +321,7 @@ function LoadingSkeleton() {
 
 function EmptyState() {
   return (
-    <div className="rounded-xl border bg-card p-12 text-center">
+    <div className="rounded-xl border bg-sb-stadium p-12 text-center">
       <div className="mb-4 flex justify-center">
         <div className="rounded-full bg-amber-500/10 p-4">
           <Target className="h-12 w-12 text-amber-500" />
@@ -334,7 +337,7 @@ function EmptyState() {
 
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="rounded-xl border bg-card p-8 text-center">
+    <div className="rounded-xl border bg-sb-stadium p-8 text-center">
       <div className="mb-4 flex justify-center">
         <div className="rounded-full bg-destructive/15 p-3">
           <AlertCircle className="h-8 w-8 text-destructive" />

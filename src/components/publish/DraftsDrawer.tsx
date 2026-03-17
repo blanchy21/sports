@@ -74,7 +74,7 @@ export function DraftsDrawer({ isOpen, onClose, onRestore }: DraftsDrawerProps) 
       {/* Drawer */}
       <div
         className={cn(
-          'fixed left-0 top-0 z-50 h-full w-80 border-r bg-card shadow-xl',
+          'fixed left-0 top-0 z-50 h-full w-80 border-r bg-sb-stadium shadow-xl',
           'transform transition-transform duration-200 ease-out',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -110,7 +110,7 @@ export function DraftsDrawer({ isOpen, onClose, onRestore }: DraftsDrawerProps) 
                 }}
                 className={cn(
                   'group w-full rounded-lg border p-3 text-left',
-                  'transition-colors hover:bg-muted/50'
+                  'transition-colors hover:bg-sb-turf/50'
                 )}
               >
                 <div className="flex items-start justify-between gap-2">

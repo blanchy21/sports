@@ -108,7 +108,7 @@ export const RealtimeFeed: React.FC<RealtimeFeedProps> = ({ className }) => {
       case 'new_comment':
         return 'bg-accent/10 border-accent/20';
       default:
-        return 'bg-muted/10 border-muted/20';
+        return 'bg-sb-turf/10 border-muted/20';
     }
   };
 

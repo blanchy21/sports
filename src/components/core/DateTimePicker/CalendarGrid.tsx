@@ -85,7 +85,7 @@ export function CalendarGrid({
           type="button"
           onClick={onPrevMonth}
           disabled={!canGoPrev}
-          className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
+          className="rounded p-1 text-muted-foreground hover:bg-sb-turf disabled:opacity-30"
           aria-label="Previous month"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -95,7 +95,7 @@ export function CalendarGrid({
           type="button"
           onClick={onNextMonth}
           disabled={!canGoNext}
-          className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
+          className="rounded p-1 text-muted-foreground hover:bg-sb-turf disabled:opacity-30"
           aria-label="Next month"
         >
           <ChevronRight className="h-4 w-4" />
@@ -132,7 +132,7 @@ export function CalendarGrid({
               className={[
                 'flex h-8 w-full items-center justify-center rounded text-sm transition-colors',
                 disabled && 'cursor-not-allowed text-muted-foreground/40',
-                !disabled && !selected && 'hover:bg-muted',
+                !disabled && !selected && 'hover:bg-sb-turf',
                 selected && 'bg-warning font-semibold text-white',
                 !selected && today && 'border border-warning font-medium',
               ]

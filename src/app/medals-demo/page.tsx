@@ -84,19 +84,19 @@ export default function MedalsDemoPage() {
         <section className="space-y-4">
           <h2 className="border-b pb-2 text-xl font-semibold">Premium Tier Progress</h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="rounded-lg border bg-card p-4">
+            <div className="rounded-lg border bg-sb-stadium p-4">
               <p className="mb-3 text-sm text-muted-foreground">500 MEDALS staked (No tier yet):</p>
               <PremiumTierProgress currentStaked={500} />
             </div>
-            <div className="rounded-lg border bg-card p-4">
+            <div className="rounded-lg border bg-sb-stadium p-4">
               <p className="mb-3 text-sm text-muted-foreground">3,000 MEDALS staked (Bronze):</p>
               <PremiumTierProgress currentStaked={3000} />
             </div>
-            <div className="rounded-lg border bg-card p-4">
+            <div className="rounded-lg border bg-sb-stadium p-4">
               <p className="mb-3 text-sm text-muted-foreground">15,000 MEDALS staked (Silver):</p>
               <PremiumTierProgress currentStaked={15000} />
             </div>
-            <div className="rounded-lg border bg-card p-4">
+            <div className="rounded-lg border bg-sb-stadium p-4">
               <p className="mb-3 text-sm text-muted-foreground">
                 100,000+ MEDALS (Platinum - Max tier):
               </p>
@@ -156,7 +156,7 @@ export default function MedalsDemoPage() {
           </p>
           <button
             onClick={() => setTransferModalOpen(true)}
-            className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
+            className="rounded-md bg-primary px-4 py-2 text-[#051A14] hover:bg-primary/90"
           >
             Open Transfer Modal
           </button>

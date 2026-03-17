@@ -157,22 +157,24 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
       <CardContent className="space-y-6">
         {/* Current Balance Display */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg bg-muted p-3">
+          <div className="rounded-lg bg-sb-turf p-3">
             <span className="text-xs text-muted-foreground">Liquid HIVE</span>
-            <div className="font-semibold text-foreground">{formatAmount(liquidBalance)} HIVE</div>
+            <div className="font-semibold text-sb-text-primary">
+              {formatAmount(liquidBalance)} HIVE
+            </div>
           </div>
           <div className="rounded-lg bg-primary/10 p-3">
             <span className="text-xs text-primary">HIVE Power</span>
-            <div className="font-semibold text-foreground">{formatAmount(hivePower)} HP</div>
+            <div className="font-semibold text-sb-text-primary">{formatAmount(hivePower)} HP</div>
           </div>
         </div>
 
         {/* Effective HP with Delegations */}
         {(delegatedIn > 0 || delegatedOut > 0) && (
-          <div className="rounded-lg bg-muted p-3 text-sm">
+          <div className="rounded-lg bg-sb-turf p-3 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Effective HP</span>
-              <span className="font-medium text-foreground">
+              <span className="font-medium text-sb-text-primary">
                 {formatAmount(effectiveHivePower)} HP
               </span>
             </div>
@@ -226,14 +228,14 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
         )}
 
         {/* Action Tabs */}
-        <div className="flex rounded-lg border border-border p-1">
+        <div className="flex rounded-lg border border-sb-border p-1">
           <button
             onClick={() => setAction('powerUp')}
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               action === 'powerUp'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted'
+                ? 'bg-primary text-[#051A14]'
+                : 'text-muted-foreground hover:bg-sb-turf'
             )}
           >
             <Zap className="h-4 w-4" />
@@ -244,8 +246,8 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               action === 'powerDown'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted'
+                ? 'bg-primary text-[#051A14]'
+                : 'text-muted-foreground hover:bg-sb-turf'
             )}
           >
             <TrendingDown className="h-4 w-4" />
@@ -255,7 +257,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
 
         {/* Amount Input */}
         <div className="space-y-3">
-          <label className="text-sm font-medium text-foreground/80">
+          <label className="text-sm font-medium text-sb-text-primary/80">
             Amount to {action === 'powerUp' ? 'power up' : 'power down'}
           </label>
           <AmountInput
@@ -359,7 +361,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
         {/* Advanced Info Toggle */}
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="flex w-full items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground/80"
+          className="flex w-full items-center justify-center gap-1 text-xs text-muted-foreground hover:text-sb-text-primary/80"
         >
           {showAdvanced ? (
             <>
@@ -376,7 +378,7 @@ export const PowerPanel: React.FC<PowerPanelProps> = ({
 
         {/* Advanced Info */}
         {showAdvanced && powerInfo?.conversionRate && (
-          <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+          <div className="rounded-lg bg-sb-turf p-3 text-xs text-muted-foreground">
             <p>1 HIVE = {parseFloat(powerInfo.conversionRate.vestsPerHive).toFixed(6)} VESTS</p>
             <p>1 VESTS = {parseFloat(powerInfo.conversionRate.hivePerVest).toFixed(6)} HIVE</p>
           </div>

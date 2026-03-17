@@ -197,17 +197,17 @@ export function MatchThreadFeed({
     return (
       <div className={cn('space-y-4', className)}>
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="animate-pulse rounded-xl border bg-card p-4">
+          <div key={i} className="animate-pulse rounded-xl border bg-sb-stadium p-4">
             <div className="flex gap-3">
-              <div className="h-12 w-12 rounded-full bg-muted" />
+              <div className="h-12 w-12 rounded-full bg-sb-turf" />
               <div className="flex-1 space-y-3">
                 <div className="flex gap-2">
-                  <div className="h-4 w-24 rounded bg-muted" />
-                  <div className="h-4 w-16 rounded bg-muted" />
+                  <div className="h-4 w-24 rounded bg-sb-turf" />
+                  <div className="h-4 w-16 rounded bg-sb-turf" />
                 </div>
                 <div className="space-y-2">
-                  <div className="h-4 w-full rounded bg-muted" />
-                  <div className="h-4 w-3/4 rounded bg-muted" />
+                  <div className="h-4 w-full rounded bg-sb-turf" />
+                  <div className="h-4 w-3/4 rounded bg-sb-turf" />
                 </div>
               </div>
             </div>
@@ -219,7 +219,7 @@ export function MatchThreadFeed({
 
   if (error) {
     return (
-      <div className={cn('rounded-xl border bg-card p-8 text-center', className)}>
+      <div className={cn('rounded-xl border bg-sb-stadium p-8 text-center', className)}>
         <div className="mb-4 flex justify-center">
           <div className="rounded-full bg-destructive/15 p-3">
             <AlertCircle className="h-8 w-8 text-destructive" />
@@ -237,7 +237,7 @@ export function MatchThreadFeed({
 
   if (bites.length === 0) {
     return (
-      <div className={cn('rounded-xl border bg-card p-12 text-center', className)}>
+      <div className={cn('rounded-xl border bg-sb-stadium p-12 text-center', className)}>
         <div className="mb-4 flex justify-center">
           <div className="rounded-full bg-primary/10 p-4">
             <MessageSquare className="h-12 w-12 text-primary" />

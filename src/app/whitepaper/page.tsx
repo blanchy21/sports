@@ -13,7 +13,7 @@ export const revalidate = 86400;
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-6 mt-16 border-b border-border pb-3 text-3xl font-bold first:mt-0">
+    <h2 className="mb-6 mt-16 border-b border-sb-border pb-3 text-3xl font-bold first:mt-0">
       {children}
     </h2>
   );
@@ -48,7 +48,7 @@ function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
             {headers.map((h, i) => (
               <th
                 key={i}
-                className="border border-border bg-primary px-4 py-3 text-left font-semibold text-primary-foreground"
+                className="border border-sb-border bg-primary px-4 py-3 text-left font-semibold text-[#051A14]"
               >
                 {h}
               </th>
@@ -57,9 +57,9 @@ function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="even:bg-muted/30">
+            <tr key={i} className="even:bg-sb-turf/30">
               {row.map((cell, j) => (
-                <td key={j} className="border border-border px-4 py-3 text-muted-foreground">
+                <td key={j} className="border border-sb-border px-4 py-3 text-muted-foreground">
                   {cell}
                 </td>
               ))}
@@ -75,11 +75,11 @@ export default function WhitepaperPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
+      <header className="sticky top-0 z-50 border-b border-sb-border bg-background/80 backdrop-blur-lg">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <Link
             href="/"
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-sb-text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Home
@@ -101,7 +101,7 @@ export default function WhitepaperPage() {
             Version 4.0 &middot; February 2026
           </div>
           <h1 className="mb-4 text-5xl font-black tracking-tight sm:text-6xl">
-            <span className="text-foreground">SPORTSBLOCK</span>{' '}
+            <span className="text-sb-text-primary">SPORTSBLOCK</span>{' '}
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               WHITEPAPER
             </span>
@@ -127,7 +127,7 @@ export default function WhitepaperPage() {
       </section>
 
       {/* Table of Contents */}
-      <nav className="border-b border-border bg-muted/30 px-6 py-8">
+      <nav className="border-b border-sb-border bg-sb-turf/30 px-6 py-8">
         <div className="mx-auto max-w-4xl">
           <h2 className="mb-4 text-lg font-bold">Table of Contents</h2>
           <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
@@ -149,7 +149,7 @@ export default function WhitepaperPage() {
               <a
                 key={item}
                 href={`#${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-sb-turf hover:text-sb-text-primary"
               >
                 <span className="text-primary">&bull;</span>
                 {item}
@@ -612,7 +612,7 @@ export default function WhitepaperPage() {
         </section>
 
         {/* Footer */}
-        <div className="mt-16 border-t border-border pt-8 text-center">
+        <div className="mt-16 border-t border-sb-border pt-8 text-center">
           <p className="text-sm italic text-muted-foreground">
             For updates, follow @sportsblockinfo on X or visit sportsblock.app
           </p>

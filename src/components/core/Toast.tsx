@@ -138,9 +138,11 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
     >
       {getIcon()}
       <div className="min-w-0 flex-1">
-        {toast.title && <div className="text-sm font-medium text-foreground">{toast.title}</div>}
+        {toast.title && (
+          <div className="text-sm font-medium text-sb-text-primary">{toast.title}</div>
+        )}
         {toast.description && (
-          <div className="mt-1 text-sm text-foreground/70">{toast.description}</div>
+          <div className="mt-1 text-sm text-sb-text-primary/70">{toast.description}</div>
         )}
       </div>
       <button
@@ -148,7 +150,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
           e.stopPropagation();
           onRemove();
         }}
-        className="flex-shrink-0 text-muted-foreground/70 transition-colors hover:text-foreground/70"
+        className="flex-shrink-0 text-muted-foreground/70 transition-colors hover:text-sb-text-primary/70"
       >
         <X className="h-4 w-4" />
       </button>

@@ -40,7 +40,7 @@ export function WeeklyWinners({ weekId, className }: WeeklyWinnersProps) {
   if (winners.length === 0) return null;
 
   return (
-    <div className={cn('rounded-lg border bg-card p-4', className)}>
+    <div className={cn('rounded-lg border bg-sb-stadium p-4', className)}>
       <div className="mb-3 flex items-center gap-2">
         <Crown className="h-5 w-5 text-warning" />
         <h3 className="font-semibold">This Week&apos;s Winners</h3>

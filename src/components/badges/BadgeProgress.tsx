@@ -113,7 +113,7 @@ export const BadgeProgress: React.FC<BadgeProgressProps> = ({ username, classNam
                 {formatValue(current, badge.metric)} / {formatValue(badge.threshold, badge.metric)}
               </span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="h-1.5 overflow-hidden rounded-full bg-sb-turf">
               <div
                 className={cn('h-full rounded-full transition-all', badge.bgGradient)}
                 style={{ width: `${Math.round(progress * 100)}%` }}

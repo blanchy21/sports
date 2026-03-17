@@ -41,7 +41,7 @@ function StatusBadge({ status }: { status: string }) {
     picking: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
     locked: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
     results: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    complete: 'bg-muted text-muted-foreground',
+    complete: 'bg-sb-turf text-muted-foreground',
   };
   return (
     <span
@@ -183,7 +183,7 @@ function CompetitionAdmin({ competition }: { competition: LmsCompetitionResponse
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="rounded-2xl border bg-card p-4">
+      <div className="rounded-2xl border bg-sb-stadium p-4">
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold">{comp.name}</h2>
@@ -246,7 +246,7 @@ function CompetitionAdmin({ competition }: { competition: LmsCompetitionResponse
 
       {/* Fixture Results Entry (locked state) */}
       {comp.status === 'locked' && fixtures.length > 0 && (
-        <div className="rounded-2xl border bg-card p-4">
+        <div className="rounded-2xl border bg-sb-stadium p-4">
           <h3 className="mb-3 text-sm font-semibold">GW{comp.currentGameweek} Results</h3>
           <div className="space-y-2">
             {fixtures.map((f) => {
@@ -307,13 +307,13 @@ function CompetitionAdmin({ competition }: { competition: LmsCompetitionResponse
 
       {/* Player Board */}
       {board && board.length > 0 && (
-        <div className="rounded-2xl border bg-card p-4">
+        <div className="rounded-2xl border bg-sb-stadium p-4">
           <h3 className="mb-3 text-sm font-semibold">Players ({board.length})</h3>
           <div className="max-h-96 space-y-1 overflow-y-auto">
             {board.map((entry, i) => (
               <div
                 key={entry.username}
-                className="flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-muted/30"
+                className="flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-sb-turf/30"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-6 text-xs text-muted-foreground">{i + 1}</span>
@@ -329,7 +329,7 @@ function CompetitionAdmin({ competition }: { competition: LmsCompetitionResponse
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   {entry.currentPick && (
-                    <span className="font-medium text-foreground">{entry.currentPick}</span>
+                    <span className="font-medium text-sb-text-primary">{entry.currentPick}</span>
                   )}
                   {entry.lastPick && (
                     <span>
@@ -381,7 +381,7 @@ export default function AdminLmsPage() {
           </Button>
         </div>
 
-        {isLoading && <div className="h-20 animate-pulse rounded-lg bg-muted/50" />}
+        {isLoading && <div className="h-20 animate-pulse rounded-lg bg-sb-turf/50" />}
 
         {/* Competition list */}
         {competitions && !selectedId && (
@@ -393,7 +393,7 @@ export default function AdminLmsPage() {
               <button
                 key={comp.id}
                 onClick={() => setSelectedId(comp.id)}
-                className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+                className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-sb-turf/50"
               >
                 <div className="flex items-center gap-3">
                   <StatusBadge status={comp.status} />
@@ -417,7 +417,7 @@ export default function AdminLmsPage() {
           <div>
             <button
               onClick={() => setSelectedId(null)}
-              className="mb-3 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              className="mb-3 flex items-center gap-1 text-sm text-muted-foreground hover:text-sb-text-primary"
             >
               <ChevronRight className="h-3 w-3 rotate-180" />
               Back to list

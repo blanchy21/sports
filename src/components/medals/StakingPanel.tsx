@@ -82,7 +82,7 @@ const PendingUnstakeItem: React.FC<PendingUnstakeItemProps> = ({
       <div className="flex items-center gap-3">
         <Clock className={cn('h-4 w-4', isComplete ? 'text-success' : 'text-warning')} />
         <div>
-          <span className="font-medium text-foreground">{formatAmount(quantity)}</span>
+          <span className="font-medium text-sb-text-primary">{formatAmount(quantity)}</span>
           <span className="ml-1 text-muted-foreground">MEDALS</span>
         </div>
       </div>
@@ -233,15 +233,15 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
       <CardContent className="space-y-6">
         {/* Current Balance Display */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg bg-muted/50 p-3">
+          <div className="rounded-lg bg-sb-turf/50 p-3">
             <span className="text-xs text-muted-foreground">Liquid Balance</span>
-            <div className="font-semibold text-foreground">
+            <div className="font-semibold text-sb-text-primary">
               {formatAmount(liquidBalance)} MEDALS
             </div>
           </div>
           <div className="rounded-lg bg-primary/10 p-3">
             <span className="text-xs text-primary">Staked Balance</span>
-            <div className="font-semibold text-foreground">
+            <div className="font-semibold text-sb-text-primary">
               {formatAmount(stakedBalance)} MEDALS
             </div>
           </div>
@@ -253,14 +253,14 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
         </div>
 
         {/* Action Tabs */}
-        <div className="flex rounded-lg border border-border p-1">
+        <div className="flex rounded-lg border border-sb-border p-1">
           <button
             onClick={() => setAction('stake')}
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               action === 'stake'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted'
+                ? 'bg-primary text-[#051A14]'
+                : 'text-muted-foreground hover:bg-sb-turf'
             )}
           >
             <Lock className="h-4 w-4" />
@@ -271,8 +271,8 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               action === 'unstake'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted'
+                ? 'bg-primary text-[#051A14]'
+                : 'text-muted-foreground hover:bg-sb-turf'
             )}
           >
             <Unlock className="h-4 w-4" />
@@ -282,7 +282,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
 
         {/* Amount Input */}
         <div className="space-y-3">
-          <label className="text-sm font-medium text-foreground/80">Amount to {action}</label>
+          <label className="text-sm font-medium text-sb-text-primary/80">Amount to {action}</label>
           <AmountInput
             value={amount}
             onChange={setAmount}
@@ -403,7 +403,7 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
           stakeInfo.pendingUnstakeTransactions.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-foreground/80">Pending Unstakes</h4>
+                <h4 className="text-sm font-medium text-sb-text-primary/80">Pending Unstakes</h4>
                 <span className="text-xs text-muted-foreground">
                   {stakeInfo.pendingUnstakeTransactions.length} pending
                 </span>
@@ -427,8 +427,8 @@ export const StakingPanel: React.FC<StakingPanelProps> = ({
         {stakeInfo?.delegations &&
           ((stakeInfo.delegations.incoming?.length ?? 0) > 0 ||
             (stakeInfo.delegations.outgoing?.length ?? 0) > 0) && (
-            <div className="space-y-2 rounded-lg bg-muted/50 p-3 text-sm">
-              <h4 className="font-medium text-foreground/80">Delegations</h4>
+            <div className="space-y-2 rounded-lg bg-sb-turf/50 p-3 text-sm">
+              <h4 className="font-medium text-sb-text-primary/80">Delegations</h4>
               {(stakeInfo.delegations.incoming?.length ?? 0) > 0 && (
                 <div>
                   <span className="text-muted-foreground">Received:</span>

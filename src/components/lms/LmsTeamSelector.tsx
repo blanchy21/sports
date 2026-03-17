@@ -69,13 +69,13 @@ export function LmsTeamSelector({
                 canSelect &&
                   !isSelected &&
                   !isCurrentPick &&
-                  'border-border bg-card hover:border-amber-500/40 hover:bg-amber-500/5',
+                  'border-sb-border bg-sb-stadium hover:border-amber-500/40 hover:bg-amber-500/5',
                 // Selected state
                 isSelected && 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30',
                 // Already picked this GW
                 isCurrentPick && !isSelected && 'border-amber-500/30 bg-amber-500/5',
                 // Used in previous GW
-                isUsed && 'cursor-not-allowed border-border/50 bg-muted/30 opacity-50',
+                isUsed && 'cursor-not-allowed border-sb-border/50 bg-sb-turf/30 opacity-50',
                 // Disabled (deadline passed)
                 disabled && !isUsed && 'cursor-not-allowed opacity-60'
               )}
@@ -152,7 +152,7 @@ export function LmsTeamSelector({
       )}
 
       {disabled && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-sb-turf/50 p-3 text-sm text-muted-foreground">
           <Lock className="h-4 w-4" />
           The deadline has passed. Picks are locked for this gameweek.
         </div>

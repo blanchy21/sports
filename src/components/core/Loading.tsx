@@ -74,7 +74,7 @@ export function Loading({
         {Array.from({ length: skeletonLines }).map((_, i) => (
           <div key={i} className="animate-pulse">
             <div
-              className={cn('h-4 rounded bg-muted', i === skeletonLines - 1 ? 'w-3/4' : 'w-full')}
+              className={cn('h-4 rounded bg-sb-turf', i === skeletonLines - 1 ? 'w-3/4' : 'w-full')}
             />
           </div>
         ))}
@@ -117,24 +117,24 @@ export function PostLoadingSkeleton({ count = 3 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="animate-pulse space-y-4 rounded-lg border border-border bg-card p-6"
+          className="animate-pulse space-y-4 rounded-lg border border-sb-border bg-sb-stadium p-6"
         >
           <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-full bg-muted" />
+            <div className="h-10 w-10 rounded-full bg-sb-turf" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 w-1/4 rounded bg-muted" />
-              <div className="h-3 w-1/6 rounded bg-muted" />
+              <div className="h-4 w-1/4 rounded bg-sb-turf" />
+              <div className="h-3 w-1/6 rounded bg-sb-turf" />
             </div>
           </div>
           <div className="space-y-2">
-            <div className="h-6 w-3/4 rounded bg-muted" />
-            <div className="h-4 w-full rounded bg-muted" />
-            <div className="h-4 w-5/6 rounded bg-muted" />
+            <div className="h-6 w-3/4 rounded bg-sb-turf" />
+            <div className="h-4 w-full rounded bg-sb-turf" />
+            <div className="h-4 w-5/6 rounded bg-sb-turf" />
           </div>
           <div className="flex items-center space-x-4">
-            <div className="h-4 w-16 rounded bg-muted" />
-            <div className="h-4 w-16 rounded bg-muted" />
-            <div className="h-4 w-16 rounded bg-muted" />
+            <div className="h-4 w-16 rounded bg-sb-turf" />
+            <div className="h-4 w-16 rounded bg-sb-turf" />
+            <div className="h-4 w-16 rounded bg-sb-turf" />
           </div>
         </div>
       ))}
@@ -149,10 +149,10 @@ export function CardLoadingSkeleton({ count = 1 }: { count?: number }) {
   return (
     <div className="space-y-4">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="animate-pulse rounded-lg border border-border bg-card p-4">
-          <div className="mb-2 h-4 w-1/3 rounded bg-muted" />
-          <div className="mb-1 h-3 w-full rounded bg-muted" />
-          <div className="h-3 w-2/3 rounded bg-muted" />
+        <div key={i} className="animate-pulse rounded-lg border border-sb-border bg-sb-stadium p-4">
+          <div className="mb-2 h-4 w-1/3 rounded bg-sb-turf" />
+          <div className="mb-1 h-3 w-full rounded bg-sb-turf" />
+          <div className="h-3 w-2/3 rounded bg-sb-turf" />
         </div>
       ))}
     </div>

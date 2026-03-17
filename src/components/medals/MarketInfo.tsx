@@ -97,7 +97,7 @@ const Stat: React.FC<StatProps> = ({ label, value, icon, suffix, trend, classNam
       {label}
     </span>
     <div className="flex items-baseline gap-1">
-      <span className="text-lg font-semibold text-foreground">{value}</span>
+      <span className="text-lg font-semibold text-sb-text-primary">{value}</span>
       {suffix && <span className="text-sm text-muted-foreground">{suffix}</span>}
       {trend && (
         <span
@@ -126,15 +126,15 @@ const MarketInfoSkeleton: React.FC<{ compact?: boolean }> = ({ compact }) => (
   <Card className={cn('w-full', compact ? 'p-3' : '')}>
     {!compact && (
       <CardHeader>
-        <div className="h-6 w-32 animate-pulse rounded bg-muted" />
+        <div className="h-6 w-32 animate-pulse rounded bg-sb-turf" />
       </CardHeader>
     )}
     <CardContent className={compact ? 'p-0' : ''}>
       <div className={cn('grid gap-4', compact ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4')}>
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="space-y-2">
-            <div className="h-3 w-16 animate-pulse rounded bg-muted" />
-            <div className="h-6 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-16 animate-pulse rounded bg-sb-turf" />
+            <div className="h-6 w-24 animate-pulse rounded bg-sb-turf" />
           </div>
         ))}
       </div>
@@ -151,7 +151,7 @@ const MarketInfoError: React.FC<{ error: Error; onRetry: () => void }> = ({ erro
       <div className="flex flex-col items-center space-y-3 text-center">
         <AlertCircle className="h-10 w-10 text-destructive" />
         <div>
-          <p className="font-medium text-foreground">Failed to load market data</p>
+          <p className="font-medium text-sb-text-primary">Failed to load market data</p>
           <p className="text-sm text-muted-foreground">{error.message}</p>
         </div>
         <Button variant="outline" size="sm" onClick={onRetry}>
@@ -170,14 +170,16 @@ const PriceDisplay: React.FC<{ market: MedalsMarket }> = ({ market }) => {
   const priceChange = formatPercentChange(market.priceChange24h);
 
   return (
-    <div className="flex items-center gap-4 rounded-lg border bg-card p-4">
+    <div className="flex items-center gap-4 rounded-lg border bg-sb-stadium p-4">
       <div className="rounded-full bg-warning/15 p-3">
         <DollarSign className="h-6 w-6 text-warning" />
       </div>
       <div className="flex-1">
         <span className="text-sm text-muted-foreground">MEDALS Price</span>
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-foreground">{formatPrice(market.price)}</span>
+          <span className="text-3xl font-bold text-sb-text-primary">
+            {formatPrice(market.price)}
+          </span>
           <span className="text-lg text-muted-foreground">HIVE</span>
         </div>
       </div>
@@ -185,7 +187,7 @@ const PriceDisplay: React.FC<{ market: MedalsMarket }> = ({ market }) => {
         className={cn(
           'rounded-full px-3 py-1.5 text-sm font-semibold',
           priceChange.isZero
-            ? 'bg-muted text-muted-foreground'
+            ? 'bg-sb-turf text-muted-foreground'
             : priceChange.isPositive
               ? 'bg-success/15 text-success'
               : 'bg-destructive/15 text-destructive'
@@ -212,7 +214,7 @@ const SpreadDisplay: React.FC<{ market: MedalsMarket }> = ({ market }) => {
   const spread = ask > 0 && bid > 0 ? ((ask - bid) / ask) * 100 : 0;
 
   return (
-    <div className="rounded-lg bg-muted/50 p-3">
+    <div className="rounded-lg bg-sb-turf/50 p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="flex items-center gap-1 text-xs text-muted-foreground">
           <ArrowUpDown className="h-3 w-3" />
@@ -266,7 +268,7 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
       <Card className={cn('w-full', className)}>
         <CardContent className="p-4">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground/80">MEDALS Market</span>
+            <span className="text-sm font-medium text-sb-text-primary/80">MEDALS Market</span>
             <Button variant="ghost" size="sm" onClick={() => refetch()} className="h-7 w-7 p-0">
               <RefreshCw className="h-3 w-3" />
             </Button>
@@ -276,7 +278,7 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Price</span>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">
+                <span className="font-semibold text-sb-text-primary">
                   {formatPrice(market.price)} HIVE
                 </span>
                 <span
@@ -295,11 +297,11 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">24h Volume</span>
-              <span className="text-foreground/80">{formatVolume(market.volume24h)} HIVE</span>
+              <span className="text-sb-text-primary/80">{formatVolume(market.volume24h)} HIVE</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Last Trade</span>
-              <span className="text-foreground/80">{formatPrice(market.lastPrice)} HIVE</span>
+              <span className="text-sb-text-primary/80">{formatPrice(market.lastPrice)} HIVE</span>
             </div>
           </div>
 
@@ -308,7 +310,7 @@ export const MarketInfo: React.FC<MarketInfoProps> = ({
               href={`https://tribaldex.com/trade/MEDALS`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-muted py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-sb-turf py-2 text-sm text-muted-foreground transition-colors hover:text-sb-text-primary"
             >
               Trade on Tribaldex
               <ExternalLink className="h-3 w-3" />

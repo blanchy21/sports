@@ -49,7 +49,7 @@ export const MyCommunitiesWidget: React.FC<MyCommunitiesWidgetProps> = ({
             <Link
               key={community.id}
               href={`/community/${community.slug || community.id}`}
-              className="group flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-muted"
+              className="group flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-sb-turf"
             >
               <Avatar
                 src={community.avatar}

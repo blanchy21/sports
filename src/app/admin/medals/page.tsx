@@ -278,21 +278,21 @@ export default function MedalsAdminDashboard() {
 
         {/* Overview Stats */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="rounded-lg border bg-card p-4">
+          <div className="rounded-lg border bg-sb-stadium p-4">
             <div className="mb-2 flex items-center gap-2 text-muted-foreground">
               <TrendingUp className="h-4 w-4" />
               <span className="text-sm">Platform Year</span>
             </div>
             <p className="text-3xl font-bold">{platformYear}</p>
           </div>
-          <div className="rounded-lg border bg-card p-4">
+          <div className="rounded-lg border bg-sb-stadium p-4">
             <div className="mb-2 flex items-center gap-2 text-muted-foreground">
               <Coins className="h-4 w-4" />
               <span className="text-sm">Weekly Staking Pool</span>
             </div>
             <p className="text-3xl font-bold">{weeklyStakingPool.toLocaleString()}</p>
           </div>
-          <div className="rounded-lg border bg-card p-4">
+          <div className="rounded-lg border bg-sb-stadium p-4">
             <div className="mb-2 flex items-center gap-2 text-muted-foreground">
               <Users className="h-4 w-4" />
               <span className="text-sm">Curator Reward</span>
@@ -300,7 +300,7 @@ export default function MedalsAdminDashboard() {
             <p className="text-3xl font-bold">{curatorRewardAmount}</p>
             <p className="text-xs text-muted-foreground">per vote</p>
           </div>
-          <div className="rounded-lg border bg-card p-4">
+          <div className="rounded-lg border bg-sb-stadium p-4">
             <div className="mb-2 flex items-center gap-2 text-muted-foreground">
               <BarChart3 className="h-4 w-4" />
               <span className="text-sm">Active Curators</span>
@@ -310,7 +310,7 @@ export default function MedalsAdminDashboard() {
         </div>
 
         {/* Cron Jobs Management */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-sb-stadium p-6">
           <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
             <Clock className="h-5 w-5" />
             Scheduled Jobs
@@ -320,7 +320,7 @@ export default function MedalsAdminDashboard() {
             <div className="rounded-lg border p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-semibold">Staking Rewards</h3>
-                <span className="rounded bg-muted px-2 py-1 text-xs">Sundays 00:00 UTC</span>
+                <span className="rounded bg-sb-turf px-2 py-1 text-xs">Sundays 00:00 UTC</span>
               </div>
               <p className="mb-3 text-sm text-muted-foreground">
                 Distributes {weeklyStakingPool.toLocaleString()} MEDALS weekly to stakers
@@ -354,7 +354,7 @@ export default function MedalsAdminDashboard() {
             <div className="rounded-lg border p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-semibold">Curator Rewards</h3>
-                <span className="rounded bg-muted px-2 py-1 text-xs">Every 15 min</span>
+                <span className="rounded bg-sb-turf px-2 py-1 text-xs">Every 15 min</span>
               </div>
               <p className="mb-3 text-sm text-muted-foreground">
                 Processes curator votes and queues rewards
@@ -376,7 +376,7 @@ export default function MedalsAdminDashboard() {
             <div className="rounded-lg border p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-semibold">Content Rewards</h3>
-                <span className="rounded bg-muted px-2 py-1 text-xs">Mondays 00:00 UTC</span>
+                <span className="rounded bg-sb-turf px-2 py-1 text-xs">Mondays 00:00 UTC</span>
               </div>
               <p className="mb-3 text-sm text-muted-foreground">
                 Generates leaderboards and calculates content rewards
@@ -406,7 +406,7 @@ export default function MedalsAdminDashboard() {
         </div>
 
         {/* Curator Management */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-sb-stadium p-6">
           <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
             <Users className="h-5 w-5" />
             Curator Management
@@ -465,7 +465,7 @@ export default function MedalsAdminDashboard() {
         </div>
 
         {/* Quick Links */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-sb-stadium p-6">
           <h2 className="mb-4 text-xl font-bold">Quick Links</h2>
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" onClick={() => router.push('/leaderboard')}>
@@ -480,7 +480,7 @@ export default function MedalsAdminDashboard() {
         </div>
 
         {/* Admin Info */}
-        <div className="rounded-lg bg-muted/50 p-4 text-sm">
+        <div className="rounded-lg bg-sb-turf/50 p-4 text-sm">
           <span className="text-muted-foreground">Logged in as:</span>{' '}
           <span className="font-mono">@{username}</span>
         </div>

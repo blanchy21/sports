@@ -158,7 +158,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
     <>
       <div
         className={cn(
-          'overflow-hidden rounded-xl border bg-card transition-all',
+          'overflow-hidden rounded-xl border bg-sb-stadium transition-all',
           'border-l-4 border-l-sb-gold',
           isNew && 'duration-500 animate-in fade-in slide-in-from-top-2'
         )}
@@ -202,19 +202,19 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((prev) => !prev)}
-                className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="rounded-full p-1 text-muted-foreground hover:bg-sb-turf hover:text-sb-text-primary"
                 aria-label="Prediction options"
               >
                 <MoreHorizontal className="h-5 w-5" />
               </button>
               {menuOpen && (
-                <div className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-lg border bg-card shadow-lg">
+                <div className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-lg border bg-sb-stadium shadow-lg">
                   <button
                     onClick={() => {
                       setMenuOpen(false);
                       setEditOpen(true);
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-sb-turf"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                     Edit
@@ -287,7 +287,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
         <div className="px-4 pt-2">
           <button
             onClick={() => setCommentsExpanded((prev) => !prev)}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-sb-text-primary"
           >
             <MessageCircle className="h-4 w-4" />
             <span>{prediction.commentCount || 0}</span>
@@ -381,7 +381,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
           )}
 
           {prediction.status === 'REFUNDED' && (
-            <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 rounded-lg bg-sb-turf px-3 py-2 text-sm text-muted-foreground">
               <AlertCircle className="h-4 w-4" />
               <span>Refunded — no opposing stakes</span>
             </div>
@@ -413,7 +413,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
             onClick={() => !deleting && setDeleteConfirm(false)}
             aria-hidden="true"
           />
-          <div className="relative mx-4 w-full max-w-sm rounded-lg border bg-card p-6 shadow-lg">
+          <div className="relative mx-4 w-full max-w-sm rounded-lg border bg-sb-stadium p-6 shadow-lg">
             <h3 className="text-lg font-semibold">Delete Prediction</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Are you sure you want to delete this prediction? This action cannot be undone.
@@ -494,12 +494,12 @@ function StatusBadge({ status }: { status: string }) {
       label: 'Settling',
       className: 'bg-sb-teal/12 text-sb-teal',
     },
-    SETTLED: { label: 'Settled', className: 'bg-muted text-muted-foreground' },
+    SETTLED: { label: 'Settled', className: 'bg-sb-turf text-muted-foreground' },
     VOID: { label: 'Void', className: 'bg-sb-loss/12 text-sb-loss' },
     REFUNDED: { label: 'Refunded', className: 'bg-sb-loss/12 text-sb-loss' },
   };
 
-  const c = config[status] ?? { label: status, className: 'bg-muted text-muted-foreground' };
+  const c = config[status] ?? { label: status, className: 'bg-sb-turf text-muted-foreground' };
 
   return (
     <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', c.className)}>

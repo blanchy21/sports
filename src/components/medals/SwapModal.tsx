@@ -60,8 +60,8 @@ const HiveAmountInput: React.FC<{
       <div
         className={cn(
           'flex items-center gap-2 rounded-lg border bg-background px-3 py-2',
-          error ? 'border-destructive' : 'border-border focus-within:border-amber-500',
-          disabled && 'bg-muted/50 opacity-50'
+          error ? 'border-destructive' : 'border-sb-border focus-within:border-amber-500',
+          disabled && 'bg-sb-turf/50 opacity-50'
         )}
       >
         <Coins className="h-4 w-4 text-muted-foreground/70" />
@@ -72,7 +72,7 @@ const HiveAmountInput: React.FC<{
           onChange={handleChange}
           placeholder="0.000"
           disabled={disabled}
-          className="flex-1 bg-transparent font-mono text-lg text-foreground outline-none placeholder:text-muted-foreground/70"
+          className="flex-1 bg-transparent font-mono text-lg text-sb-text-primary outline-none placeholder:text-muted-foreground/70"
         />
         <span className="font-medium text-muted-foreground">HIVE</span>
         <Button
@@ -189,11 +189,11 @@ export const SwapModal: React.FC<SwapModalProps> = ({
         size="md"
       >
         <div className="space-y-4 py-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sb-turf">
             <Lock className="h-8 w-8 text-muted-foreground" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Keychain Required</h3>
+            <h3 className="text-lg font-semibold text-sb-text-primary">Keychain Required</h3>
             <p className="mt-2 text-muted-foreground">
               Connect with Hive Keychain to swap tokens. Token swaps require signing with your
               active key, which is only available through Hive Keychain.
@@ -212,16 +212,16 @@ export const SwapModal: React.FC<SwapModalProps> = ({
     <>
       <div className="space-y-5">
         {/* Balance Display */}
-        <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+        <div className="flex items-center justify-between rounded-lg bg-sb-turf/50 p-3">
           <span className="text-sm text-muted-foreground">Available HIVE</span>
-          <span className="font-semibold text-foreground">
+          <span className="font-semibold text-sb-text-primary">
             {formatHive(liquidHiveBalance)} HIVE
           </span>
         </div>
 
         {/* Amount Input */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground/80">HIVE Amount</label>
+          <label className="text-sm font-medium text-sb-text-primary/80">HIVE Amount</label>
           <HiveAmountInput
             value={amount}
             onChange={setAmount}
@@ -232,17 +232,17 @@ export const SwapModal: React.FC<SwapModalProps> = ({
 
         {/* Arrow separator */}
         <div className="flex justify-center">
-          <div className="rounded-full border bg-muted/50 p-2">
+          <div className="rounded-full border bg-sb-turf/50 p-2">
             <ArrowDownUp className="h-4 w-4 text-muted-foreground" />
           </div>
         </div>
 
         {/* Estimated Output */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground/80">Estimated MEDALS</label>
-          <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2">
+          <label className="text-sm font-medium text-sb-text-primary/80">Estimated MEDALS</label>
+          <div className="flex items-center gap-2 rounded-lg border bg-sb-turf/30 px-3 py-2">
             <Coins className="h-4 w-4 text-warning" />
-            <span className="flex-1 font-mono text-lg text-foreground">
+            <span className="flex-1 font-mono text-lg text-sb-text-primary">
               {quoteLoading ? (
                 <span className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -260,7 +260,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
 
         {/* Quote Details */}
         {quote && amountNum > 0 && (
-          <div className="space-y-2 rounded-lg bg-muted/30 p-3 text-sm">
+          <div className="space-y-2 rounded-lg bg-sb-turf/30 p-3 text-sm">
             <div className="flex items-center justify-between text-muted-foreground">
               <span>Rate</span>
               <span>1 MEDALS = {quote.averagePrice.toFixed(6)} HIVE</span>
@@ -322,7 +322,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           <div className="flex items-center justify-between py-2">
             <div className="text-center">
               <span className="block text-xs text-muted-foreground">You Pay</span>
-              <span className="text-lg font-bold text-foreground">
+              <span className="text-lg font-bold text-sb-text-primary">
                 {formatHive(amountNum)} HIVE
               </span>
             </div>
@@ -370,7 +370,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
         )}
 
         {/* Info */}
-        <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+        <div className="flex items-start gap-2 rounded-lg bg-sb-turf/50 p-3 text-sm text-muted-foreground">
           <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground/70" />
           <p>
             This will send a 0.5% fee, deposit HIVE to Hive Engine, and place a market buy order for
@@ -422,7 +422,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
         <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
       </div>
       <div>
-        <h3 className="text-lg font-semibold text-foreground">Verifying Swap</h3>
+        <h3 className="text-lg font-semibold text-sb-text-primary">Verifying Swap</h3>
         <p className="mt-1 text-muted-foreground">
           Transaction broadcast successfully. Checking if your order filled on Hive Engine...
         </p>
@@ -441,21 +441,21 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           <CheckCircle className="h-8 w-8 text-success" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Swap Successful!</h3>
+          <h3 className="text-lg font-semibold text-sb-text-primary">Swap Successful!</h3>
           <p className="mt-1 text-muted-foreground">
             You swapped {formatHive(amountNum)} HIVE for ~
             {quote ? formatMedals(quote.estimatedMedals) : '-'} MEDALS
           </p>
         </div>
 
-        <div className="rounded-lg bg-muted/50 p-4 text-sm">
+        <div className="rounded-lg bg-sb-turf/50 p-4 text-sm">
           <div className="flex items-center justify-between text-muted-foreground">
             <span>HIVE Spent</span>
-            <span className="font-medium text-foreground">{formatHive(amountNum)} HIVE</span>
+            <span className="font-medium text-sb-text-primary">{formatHive(amountNum)} HIVE</span>
           </div>
           <div className="mt-2 flex items-center justify-between text-muted-foreground">
             <span>Fee (0.5%)</span>
-            <span className="font-medium text-foreground">
+            <span className="font-medium text-sb-text-primary">
               {quote ? formatHive(quote.fee) : '-'} HIVE
             </span>
           </div>
@@ -467,7 +467,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           </div>
           <div className="mt-2 flex items-center justify-between text-muted-foreground">
             <span>Avg. Price</span>
-            <span className="font-medium text-foreground">
+            <span className="font-medium text-sb-text-primary">
               {quote ? quote.averagePrice.toFixed(6) : '-'} HIVE
             </span>
           </div>
@@ -490,7 +490,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           <Clock className="h-8 w-8 text-amber-500" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Order Pending</h3>
+          <h3 className="text-lg font-semibold text-sb-text-primary">Order Pending</h3>
           <p className="mt-1 text-muted-foreground">
             Your HIVE was deposited but the buy order has not fully filled yet. This can happen when
             the order book changes between quoting and execution.
@@ -506,7 +506,7 @@ export const SwapModal: React.FC<SwapModalProps> = ({
           </ul>
         </div>
 
-        <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-left text-sm text-muted-foreground">
+        <div className="flex items-start gap-2 rounded-lg bg-sb-turf/50 p-3 text-left text-sm text-muted-foreground">
           <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <div>
             <p>

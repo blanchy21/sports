@@ -32,10 +32,10 @@ export const HiveUpgradePrompt: React.FC<HiveUpgradePromptProps> = ({
     <div
       className={cn('fixed inset-0 z-50 flex items-center justify-center bg-black/50', className)}
     >
-      <div className="relative mx-4 w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
+      <div className="relative mx-4 w-full max-w-md rounded-lg border bg-sb-stadium p-6 shadow-lg">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
+          className="absolute right-4 top-4 text-muted-foreground hover:text-sb-text-primary"
         >
           <X className="h-5 w-5" />
         </button>

@@ -13,7 +13,7 @@ export function EditorStatusBar({ content, isDraftSaved }: EditorStatusBarProps)
   const readTime = Math.max(1, Math.ceil(words / 200));
 
   return (
-    <div className="flex items-center gap-3 border-t bg-card px-4 py-1.5 text-xs text-muted-foreground">
+    <div className="flex items-center gap-3 border-t bg-sb-stadium px-4 py-1.5 text-xs text-muted-foreground">
       <span>
         {words} {words === 1 ? 'word' : 'words'}
       </span>

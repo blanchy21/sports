@@ -62,8 +62,8 @@ const TextInput: React.FC<TextInputProps> = ({
     <div
       className={cn(
         'flex items-center gap-2 rounded-lg border bg-background px-3 py-2',
-        error ? 'border-destructive' : 'border-border focus-within:border-amber-500',
-        disabled && 'bg-muted/50 opacity-50'
+        error ? 'border-destructive' : 'border-sb-border focus-within:border-amber-500',
+        disabled && 'bg-sb-turf/50 opacity-50'
       )}
     >
       {icon && <span className="text-muted-foreground/70">{icon}</span>}
@@ -74,7 +74,7 @@ const TextInput: React.FC<TextInputProps> = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/70"
+        className="flex-1 bg-transparent text-sb-text-primary outline-none placeholder:text-muted-foreground/70"
       />
     </div>
     {error && (
@@ -167,16 +167,16 @@ export const TransferModal: React.FC<TransferModalProps> = ({
     <>
       <div className="space-y-5">
         {/* Balance Display */}
-        <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+        <div className="flex items-center justify-between rounded-lg bg-sb-turf/50 p-3">
           <span className="text-sm text-muted-foreground">Available Balance</span>
-          <span className="font-semibold text-foreground">
+          <span className="font-semibold text-sb-text-primary">
             {formatAmount(liquidBalance)} MEDALS
           </span>
         </div>
 
         {/* Recipient Input */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground/80">Recipient</label>
+          <label className="text-sm font-medium text-sb-text-primary/80">Recipient</label>
           <TextInput
             value={recipient}
             onChange={setRecipient}
@@ -190,7 +190,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
 
         {/* Amount Input */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground/80">Amount</label>
+          <label className="text-sm font-medium text-sb-text-primary/80">Amount</label>
           <AmountInput
             value={amount}
             onChange={setAmount}
@@ -202,7 +202,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
 
         {/* Memo Input */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground/80">
+          <label className="text-sm font-medium text-sb-text-primary/80">
             Memo <span className="font-normal text-muted-foreground/70">(optional)</span>
           </label>
           <TextInput
@@ -242,12 +242,12 @@ export const TransferModal: React.FC<TransferModalProps> = ({
           <div className="flex items-center justify-between py-2">
             <div className="text-center">
               <span className="block text-xs text-muted-foreground">From</span>
-              <span className="font-medium text-foreground">@{account}</span>
+              <span className="font-medium text-sb-text-primary">@{account}</span>
             </div>
             <ArrowUpRight className="mx-3 h-5 w-5 text-amber-500" />
             <div className="text-center">
               <span className="block text-xs text-muted-foreground">To</span>
-              <span className="font-medium text-foreground">@{recipient}</span>
+              <span className="font-medium text-sb-text-primary">@{recipient}</span>
             </div>
           </div>
 
@@ -271,7 +271,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({
         </div>
 
         {/* Warning */}
-        <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+        <div className="flex items-start gap-2 rounded-lg bg-sb-turf/50 p-3 text-sm text-muted-foreground">
           <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground/70" />
           <p>
             This action cannot be undone. Please verify the recipient address and amount before
@@ -328,25 +328,27 @@ export const TransferModal: React.FC<TransferModalProps> = ({
           <CheckCircle className="h-8 w-8 text-success" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Transfer Successful!</h3>
+          <h3 className="text-lg font-semibold text-sb-text-primary">Transfer Successful!</h3>
           <p className="mt-1 text-muted-foreground">
             You sent {formatAmount(amountNum)} MEDALS to @{recipient}
           </p>
         </div>
 
-        <div className="rounded-lg bg-muted/50 p-4 text-sm">
+        <div className="rounded-lg bg-sb-turf/50 p-4 text-sm">
           <div className="flex items-center justify-between text-muted-foreground">
             <span>Amount</span>
-            <span className="font-medium text-foreground">{formatAmount(amountNum)} MEDALS</span>
+            <span className="font-medium text-sb-text-primary">
+              {formatAmount(amountNum)} MEDALS
+            </span>
           </div>
           <div className="mt-2 flex items-center justify-between text-muted-foreground">
             <span>Recipient</span>
-            <span className="font-medium text-foreground">@{recipient}</span>
+            <span className="font-medium text-sb-text-primary">@{recipient}</span>
           </div>
           {memo && (
             <div className="mt-2 flex items-start justify-between text-muted-foreground">
               <span>Memo</span>
-              <span className="max-w-[200px] truncate text-right font-medium text-foreground">
+              <span className="max-w-[200px] truncate text-right font-medium text-sb-text-primary">
                 {memo}
               </span>
             </div>

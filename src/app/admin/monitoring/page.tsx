@@ -188,7 +188,7 @@ export default function MonitoringPage() {
       case 'unhealthy':
         return 'bg-destructive/15 text-destructive border-destructive/30';
       default:
-        return 'bg-muted text-foreground border-border';
+        return 'bg-sb-turf text-sb-text-primary border-sb-border';
     }
   };
 
@@ -226,7 +226,9 @@ export default function MonitoringPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">WorkerBee Monitoring Dashboard</h1>
+            <h1 className="text-3xl font-bold text-sb-text-primary">
+              WorkerBee Monitoring Dashboard
+            </h1>
             <p className="mt-1 text-muted-foreground">
               Real-time performance monitoring and optimization metrics
             </p>
@@ -334,7 +336,7 @@ export default function MonitoringPage() {
               {nodeHealthData.nodeStatuses.map((node) => (
                 <div
                   key={node.url}
-                  className="flex items-center justify-between rounded-lg bg-muted/50 p-3"
+                  className="flex items-center justify-between rounded-lg bg-sb-turf/50 p-3"
                 >
                   <div className="flex items-center space-x-3">
                     <div

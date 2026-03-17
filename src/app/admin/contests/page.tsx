@@ -30,7 +30,7 @@ export default function AdminContestsPage() {
   return (
     <MainLayout>
       <div className="mx-auto max-w-2xl px-4 py-4">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Trophy className="h-5 w-5 text-amber-500" />
             <h1 className="text-xl font-bold">Contest Admin</h1>
@@ -43,10 +43,10 @@ export default function AdminContestsPage() {
         </div>
 
         {/* Contests list */}
-        {isLoading && <div className="h-20 bg-muted/50 animate-pulse rounded-lg" />}
+        {isLoading && <div className="h-20 animate-pulse rounded-lg bg-sb-turf/50" />}
 
         {contests && contests.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8">No contests yet.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">No contests yet.</p>
         )}
 
         {contests && contests.length > 0 && (
@@ -55,11 +55,11 @@ export default function AdminContestsPage() {
               <Link
                 key={contest.id}
                 href={`/contests/${contest.slug}`}
-                className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-sb-turf/50"
               >
                 <div className="flex items-center gap-3">
                   <div>
-                    <div className="font-medium text-sm">{contest.title}</div>
+                    <div className="text-sm font-medium">{contest.title}</div>
                     <div className="text-xs text-muted-foreground">
                       {contest.entryCount} entries | {contest.prizePool.toFixed(0)} MEDALS pool
                     </div>
@@ -75,15 +75,26 @@ export default function AdminContestsPage() {
         )}
 
         {/* Help text */}
-        <div className="mt-6 rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground space-y-2">
-          <p className="font-medium text-foreground text-sm">Admin Actions</p>
+        <div className="mt-6 space-y-2 rounded-lg border bg-sb-turf/30 p-4 text-xs text-muted-foreground">
+          <p className="text-sm font-medium text-sb-text-primary">Admin Actions</p>
           <p>Create contests, add matches, and enter results via the API:</p>
-          <ul className="list-disc list-inside space-y-1">
-            <li><code>POST /api/contests</code> — Create a contest</li>
-            <li><code>PATCH /api/contests/[slug]</code> — Update status (DRAFT → REGISTRATION → ACTIVE)</li>
-            <li><code>POST /api/contests/[slug]/matches</code> — Add matches (batch)</li>
-            <li><code>PATCH /api/contests/[slug]/matches/[id]/result</code> — Enter match result</li>
-            <li><code>POST /api/contests/[slug]/settle</code> — Settle and distribute prizes</li>
+          <ul className="list-inside list-disc space-y-1">
+            <li>
+              <code>POST /api/contests</code> — Create a contest
+            </li>
+            <li>
+              <code>PATCH /api/contests/[slug]</code> — Update status (DRAFT → REGISTRATION →
+              ACTIVE)
+            </li>
+            <li>
+              <code>POST /api/contests/[slug]/matches</code> — Add matches (batch)
+            </li>
+            <li>
+              <code>PATCH /api/contests/[slug]/matches/[id]/result</code> — Enter match result
+            </li>
+            <li>
+              <code>POST /api/contests/[slug]/settle</code> — Settle and distribute prizes
+            </li>
           </ul>
         </div>
       </div>

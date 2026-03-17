@@ -370,14 +370,14 @@ export function ComposeSportsbite({
 
   if (!user) {
     return (
-      <div className="rounded-xl border bg-card p-6 text-center">
+      <div className="rounded-xl border bg-sb-stadium p-6 text-center">
         <p className="text-muted-foreground">Sign in to post sportsbites</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border bg-card">
+    <div className="rounded-xl border bg-sb-stadium">
       {predictionOnly && isHiveAuth ? (
         <PredictionComposer onSuccess={onSuccess} onError={onError} />
       ) : (
@@ -476,7 +476,7 @@ export function ComposeSportsbite({
                 {poll && <PollComposer poll={poll} onChange={(p) => setPoll(p)} className="mt-3" />}
 
                 {showImageInput && (
-                  <div className="mt-3 rounded-lg border bg-muted/50 p-3">
+                  <div className="mt-3 rounded-lg border bg-sb-turf/50 p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-sm font-medium text-muted-foreground">
                         Add image from URL
@@ -524,7 +524,7 @@ export function ComposeSportsbite({
           </div>
 
           {/* Toolbar */}
-          <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-3">
+          <div className="flex items-center justify-between border-t bg-sb-turf/30 px-4 py-3">
             <div className="flex items-center gap-1">
               <input
                 ref={fileInputRef}
@@ -618,7 +618,7 @@ export function ComposeSportsbite({
                 </Button>
 
                 {showSportPicker && (
-                  <div className="absolute left-0 top-full z-50 mt-2 max-h-60 w-48 overflow-y-auto rounded-lg border bg-card p-2 shadow-lg">
+                  <div className="absolute left-0 top-full z-50 mt-2 max-h-60 w-48 overflow-y-auto rounded-lg border bg-sb-stadium p-2 shadow-lg">
                     {SPORT_CATEGORIES.map((sport) => (
                       <button
                         key={sport.id}
@@ -628,7 +628,7 @@ export function ComposeSportsbite({
                         }}
                         className={cn(
                           'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm',
-                          'transition-colors hover:bg-muted',
+                          'transition-colors hover:bg-sb-turf',
                           sportCategory === sport.id && 'bg-primary/10 text-primary'
                         )}
                       >
@@ -733,12 +733,16 @@ export function ComposeSportsbite({
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'sportsblock-keys.txt';
+                  a.download =
+                    res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] ||
+                    'sportsblock-keys.txt';
                   document.body.appendChild(a);
                   a.click();
                   a.remove();
                   URL.revokeObjectURL(url);
-                } catch { /* silently fail */ }
+                } catch {
+                  /* silently fail */
+                }
               }}
               className="flex w-full items-center gap-2 border-t border-warning/30 bg-warning/10 px-4 py-2.5 transition-colors hover:bg-warning/15"
             >

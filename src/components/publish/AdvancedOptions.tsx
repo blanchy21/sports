@@ -106,15 +106,15 @@ export function AdvancedOptions({
   const totalBeneficiaryWeight = beneficiaries.reduce((sum, b) => sum + b.weight, 0);
 
   return (
-    <div className="rounded-lg border bg-card">
+    <div className="rounded-lg border bg-sb-stadium">
       {/* Toggle header */}
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           'flex w-full items-center justify-between px-4 py-3',
-          'text-sm font-medium text-foreground',
-          'transition-colors hover:bg-muted/50',
+          'text-sm font-medium text-sb-text-primary',
+          'transition-colors hover:bg-sb-turf/50',
           isExpanded && 'border-b'
         )}
       >
@@ -131,7 +131,7 @@ export function AdvancedOptions({
         <div className="space-y-6 p-4">
           {/* Community Selection */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Community (Optional)</label>
+            <label className="text-sm font-medium text-sb-text-primary">Community (Optional)</label>
             <select
               value={selectedCommunity?.id || ''}
               onChange={(e) => {
@@ -147,7 +147,7 @@ export function AdvancedOptions({
               }}
               className={cn(
                 'w-full rounded-lg border bg-background px-3 py-2',
-                'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
+                'text-sm focus:outline-none focus:ring-2 focus:ring-sb-teal'
               )}
             >
               <option value="">Main Sportsblock Feed</option>
@@ -177,13 +177,15 @@ export function AdvancedOptions({
           {/* Rewards Distribution (Hive users only) */}
           {isHiveUser && (
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Rewards Distribution</label>
+              <label className="text-sm font-medium text-sb-text-primary">
+                Rewards Distribution
+              </label>
               <select
                 value={rewardsOption}
                 onChange={(e) => onRewardsChange(e.target.value as RewardsOption)}
                 className={cn(
                   'w-full rounded-lg border bg-background px-3 py-2',
-                  'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
+                  'text-sm focus:outline-none focus:ring-2 focus:ring-sb-teal'
                 )}
               >
                 {REWARDS_OPTIONS.map((option) => (
@@ -202,7 +204,7 @@ export function AdvancedOptions({
           {isHiveUser && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">Beneficiaries</label>
+                <label className="text-sm font-medium text-sb-text-primary">Beneficiaries</label>
                 <span className="text-xs text-muted-foreground">
                   {totalBeneficiaryWeight}% allocated
                 </span>
@@ -215,7 +217,7 @@ export function AdvancedOptions({
                     key={ben.account}
                     className={cn(
                       'flex items-center justify-between rounded-lg px-3 py-2',
-                      'bg-muted/50'
+                      'bg-sb-turf/50'
                     )}
                   >
                     <div className="flex items-center gap-2">
@@ -254,7 +256,7 @@ export function AdvancedOptions({
                     placeholder="Username"
                     className={cn(
                       'flex-1 rounded-lg border bg-background px-3 py-2',
-                      'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
+                      'text-sm focus:outline-none focus:ring-2 focus:ring-sb-teal'
                     )}
                   />
                   <input
@@ -273,7 +275,7 @@ export function AdvancedOptions({
                     max={100 - totalBeneficiaryWeight}
                     className={cn(
                       'w-16 rounded-lg border bg-background px-3 py-2',
-                      'text-center text-sm focus:outline-none focus:ring-2 focus:ring-ring'
+                      'text-center text-sm focus:outline-none focus:ring-2 focus:ring-sb-teal'
                     )}
                   />
                   <span className="text-sm text-muted-foreground">%</span>
@@ -299,7 +301,7 @@ export function AdvancedOptions({
 
           {/* Cover Image */}
           <div className="space-y-3">
-            <label className="text-sm font-medium text-foreground">Cover Image</label>
+            <label className="text-sm font-medium text-sb-text-primary">Cover Image</label>
 
             {/* Current cover image */}
             {coverImage && (
@@ -334,7 +336,7 @@ export function AdvancedOptions({
               placeholder="Enter image URL or select from detected images"
               className={cn(
                 'w-full rounded-lg border bg-background px-3 py-2',
-                'text-sm focus:outline-none focus:ring-2 focus:ring-ring'
+                'text-sm focus:outline-none focus:ring-2 focus:ring-sb-teal'
               )}
             />
 
@@ -353,7 +355,7 @@ export function AdvancedOptions({
                         'transition-all hover:border-primary',
                         coverImage === img
                           ? 'border-primary ring-2 ring-primary/20'
-                          : 'border-border'
+                          : 'border-sb-border'
                       )}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}

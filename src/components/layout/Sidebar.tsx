@@ -48,13 +48,13 @@ export const Sidebar: React.FC = () => {
       'flex items-center px-4 py-3 text-base font-medium rounded-md transition-colors';
     const activeClasses = isActive
       ? 'text-primary bg-primary/10 dark:text-white dark:bg-white/10'
-      : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white';
+      : 'text-muted-foreground hover:bg-foreground/5 hover:text-sb-text-primary dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white';
     const className = `${baseClasses} ${activeClasses}`;
     return className;
   };
 
   return (
-    <aside className="hidden border-border/50 bg-white/70 backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.75)] lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:overflow-y-auto lg:border-r lg:pb-4 lg:pt-16 xl:w-80 xl:pt-[4.5rem]">
+    <aside className="hidden border-sb-border/50 bg-white/70 backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.75)] lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:overflow-y-auto lg:border-r lg:pb-4 lg:pt-16 xl:w-80 xl:pt-[4.5rem]">
       <div className="flex min-h-0 flex-1 flex-col">
         {/* Navigation */}
         <nav className="flex-1 space-y-1 px-4 py-4">
@@ -85,7 +85,7 @@ export const Sidebar: React.FC = () => {
 
         {/* User Profile Section at Bottom */}
         {user && (
-          <div className="border-t border-border/50 p-4 dark:border-white/[0.08]">
+          <div className="border-t border-sb-border/50 p-4 dark:border-white/[0.08]">
             <div
               ref={profileTriggerRef}
               onClick={() => setShowProfilePopup(!showProfilePopup)}

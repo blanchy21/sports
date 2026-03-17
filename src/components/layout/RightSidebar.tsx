@@ -50,8 +50,8 @@ const FollowButton: React.FC<{ username: string; isFollowing: boolean }> = ({
       disabled={isMutating}
       className={`rounded-md px-3 py-1 text-xs transition-colors disabled:opacity-50 ${
         isFollowing
-          ? 'bg-muted text-muted-foreground hover:bg-muted/80'
-          : 'bg-primary text-primary-foreground hover:bg-primary/90'
+          ? 'bg-sb-turf text-muted-foreground hover:bg-sb-turf/80'
+          : 'bg-primary text-[#051A14] hover:bg-primary/90'
       }`}
     >
       {isMutating ? '...' : isFollowing ? 'Following' : 'Follow'}
@@ -102,11 +102,11 @@ export const RightSidebar: React.FC = () => {
   // Loading skeleton component
   const LoadingSkeleton = () => (
     <div className="animate-pulse">
-      <div className="mb-2 h-4 rounded bg-muted"></div>
+      <div className="mb-2 h-4 rounded bg-sb-turf"></div>
       <div className="space-y-2">
-        <div className="h-3 rounded bg-muted"></div>
-        <div className="h-3 rounded bg-muted"></div>
-        <div className="h-3 rounded bg-muted"></div>
+        <div className="h-3 rounded bg-sb-turf"></div>
+        <div className="h-3 rounded bg-sb-turf"></div>
+        <div className="h-3 rounded bg-sb-turf"></div>
       </div>
     </div>
   );
@@ -115,7 +115,7 @@ export const RightSidebar: React.FC = () => {
     <aside className="sidebar-scroll hidden bg-background xl:fixed xl:right-0 xl:top-16 xl:flex xl:h-[calc(100vh-4rem)] xl:w-80 xl:flex-col xl:overflow-y-auto xl:border-l xl:p-4 2xl:top-[4.5rem] 2xl:h-[calc(100vh-4.5rem)] 2xl:w-[28rem] 2xl:p-6">
       <div className="space-y-6">
         {/* Trending Topics */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-sb-stadium p-4">
           <div className="mb-4 flex items-center space-x-2">
             <TrendingUp className="h-5 w-5 text-primary" />
             <h3 className="text-base font-semibold">Trending Topics</h3>
@@ -134,7 +134,7 @@ export const RightSidebar: React.FC = () => {
                   <Link
                     key={topic.id}
                     href={`/sportsbites?tag=${encodeURIComponent(topic.name)}`}
-                    className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-muted"
+                    className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-sb-turf"
                   >
                     <div>
                       <div className="text-sm font-medium">#{topic.name}</div>
@@ -161,7 +161,7 @@ export const RightSidebar: React.FC = () => {
         <TopStakersWidget />
 
         {/* Top Authors */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-sb-stadium p-4">
           <div className="mb-4 flex items-center space-x-2">
             <Users className="h-5 w-5 text-primary" />
             <h3 className="text-base font-semibold">Top Authors</h3>
@@ -179,7 +179,7 @@ export const RightSidebar: React.FC = () => {
                 {displayedAuthors.map((author) => (
                   <div
                     key={author.id}
-                    className="flex items-center space-x-3 rounded-md p-2 transition-colors hover:bg-muted"
+                    className="flex items-center space-x-3 rounded-md p-2 transition-colors hover:bg-sb-turf"
                   >
                     <Link
                       href={`/user/${author.username}`}
@@ -220,7 +220,7 @@ export const RightSidebar: React.FC = () => {
         </div>
 
         {/* Upcoming Events */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-sb-stadium p-4">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Calendar className="h-5 w-5 text-primary" />
@@ -229,7 +229,7 @@ export const RightSidebar: React.FC = () => {
             <button
               onClick={refreshEvents}
               disabled={isRefreshing}
-              className="rounded-md p-1 transition-colors hover:bg-muted disabled:opacity-50"
+              className="rounded-md p-1 transition-colors hover:bg-sb-turf disabled:opacity-50"
               title="Refresh events"
             >
               <RefreshCw
@@ -277,7 +277,7 @@ export const RightSidebar: React.FC = () => {
                   return (
                     <div
                       key={event.id}
-                      className={`flex cursor-pointer items-start space-x-3 rounded-md p-2 transition-colors hover:bg-muted ${
+                      className={`flex cursor-pointer items-start space-x-3 rounded-md p-2 transition-colors hover:bg-sb-turf ${
                         event.status === 'live'
                           ? 'border border-destructive/20 bg-destructive/5'
                           : ''
@@ -297,11 +297,11 @@ export const RightSidebar: React.FC = () => {
                           </span>
                         </div>
                         {event.teams ? (
-                          <div className="mt-0.5 text-xs text-foreground">
+                          <div className="mt-0.5 text-xs text-sb-text-primary">
                             {event.teams.home} vs {event.teams.away}
                           </div>
                         ) : (
-                          <div className="mt-0.5 truncate text-xs text-foreground">
+                          <div className="mt-0.5 truncate text-xs text-sb-text-primary">
                             {event.name}
                           </div>
                         )}
@@ -325,7 +325,7 @@ export const RightSidebar: React.FC = () => {
         </div>
 
         {/* Trending Sports */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-sb-stadium p-4">
           <div className="mb-4 flex items-center space-x-2">
             <Star className="h-5 w-5 text-primary" />
             <h3 className="text-base font-semibold">Trending Sports</h3>
@@ -343,7 +343,7 @@ export const RightSidebar: React.FC = () => {
                 <Link
                   key={item.sport.id}
                   href={`/discover?sportCategory=${item.sport.id}`}
-                  className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-muted"
+                  className="flex items-center justify-between rounded-md p-2 transition-colors hover:bg-sb-turf"
                 >
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{item.sport.icon}</span>
@@ -367,10 +367,10 @@ export const RightSidebar: React.FC = () => {
         </div>
 
         {/* My Communities */}
-        <MyCommunitiesWidget maxItems={5} className="rounded-lg border bg-card p-4" />
+        <MyCommunitiesWidget maxItems={5} className="rounded-lg border bg-sb-stadium p-4" />
 
         {/* Stats Card */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-sb-stadium p-4">
           <div className="mb-3 flex items-center space-x-2">
             <Trophy className="h-5 w-5 text-primary" />
             <h3 className="text-base font-semibold">Community Stats</h3>
@@ -406,25 +406,25 @@ export const RightSidebar: React.FC = () => {
 
         {/* Legal Links */}
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <Link href="/about" className="transition-colors hover:text-foreground">
+          <Link href="/about" className="transition-colors hover:text-sb-text-primary">
             About
           </Link>
           <span>·</span>
-          <Link href="/legal/terms" className="transition-colors hover:text-foreground">
+          <Link href="/legal/terms" className="transition-colors hover:text-sb-text-primary">
             Terms
           </Link>
           <span>·</span>
-          <Link href="/legal/privacy" className="transition-colors hover:text-foreground">
+          <Link href="/legal/privacy" className="transition-colors hover:text-sb-text-primary">
             Privacy
           </Link>
           <span>·</span>
-          <Link href="/legal/cookies" className="transition-colors hover:text-foreground">
+          <Link href="/legal/cookies" className="transition-colors hover:text-sb-text-primary">
             Cookies
           </Link>
           <span>·</span>
           <Link
             href="/legal/community-guidelines"
-            className="transition-colors hover:text-foreground"
+            className="transition-colors hover:text-sb-text-primary"
           >
             Guidelines
           </Link>

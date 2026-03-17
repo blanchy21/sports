@@ -84,7 +84,7 @@ export function RisingStars({ currentWeekId, className }: RisingStarsProps) {
   if (stars.length === 0) return null;
 
   return (
-    <div className={cn('rounded-lg border bg-card p-4', className)}>
+    <div className={cn('rounded-lg border bg-sb-stadium p-4', className)}>
       <div className="mb-3 flex items-center gap-2">
         <TrendingUp className="h-5 w-5 text-success" />
         <h3 className="font-semibold">Rising Stars</h3>
@@ -95,7 +95,7 @@ export function RisingStars({ currentWeekId, className }: RisingStarsProps) {
           <Link
             key={star.username}
             href={`/user/${star.username}`}
-            className="flex items-center justify-between rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50"
+            className="flex items-center justify-between rounded-md px-2 py-1.5 transition-colors hover:bg-sb-turf/50"
           >
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-muted-foreground">#{star.currentRank}</span>

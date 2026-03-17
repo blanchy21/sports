@@ -50,7 +50,7 @@ function SectionCard({
           <Icon className="h-5 w-5 text-primary" />
         </div>
         <div className="min-w-0">
-          <h2 className="mb-3 text-xl font-semibold text-foreground">{title}</h2>
+          <h2 className="mb-3 text-xl font-semibold text-sb-text-primary">{title}</h2>
           <div className="space-y-4 leading-relaxed text-muted-foreground">{children}</div>
         </div>
       </div>
@@ -149,7 +149,7 @@ export default function GettingStartedPage() {
       <div className="mx-auto max-w-4xl px-4 py-12">
         <Link
           href="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-sb-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to SPORTSBLOCK
@@ -171,7 +171,7 @@ export default function GettingStartedPage() {
                 <a
                   key={s.id}
                   href={`#${s.id}`}
-                  className="block rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="block rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sb-turf hover:text-sb-text-primary"
                 >
                   {s.label}
                 </a>
@@ -232,13 +232,16 @@ export default function GettingStartedPage() {
             <SectionCard id="signing-up" icon={UserPlus} title="Signing Up">
               <p>There are two ways to join SPORTSBLOCK:</p>
 
-              <div className="rounded-lg border border-border p-4">
-                <h3 className="mb-2 font-semibold text-foreground">Option 1: Google Sign-In</h3>
+              <div className="rounded-lg border border-sb-border p-4">
+                <h3 className="mb-2 font-semibold text-sb-text-primary">
+                  Option 1: Google Sign-In
+                </h3>
                 <p>
                   The easiest way to get started. Sign in with your Google account and we&apos;ll
                   create a Hive account for you during onboarding. You&apos;ll pick a username
-                  (prefixed with <code className="rounded bg-muted px-1.5 py-0.5 text-xs">sb-</code>
-                  ) and download your private keys.
+                  (prefixed with{' '}
+                  <code className="rounded bg-sb-turf px-1.5 py-0.5 text-xs">sb-</code>) and
+                  download your private keys.
                 </p>
                 <p className="mt-2 text-sm">
                   <strong>Important:</strong> Save your keys somewhere safe. They&apos;re the only
@@ -246,8 +249,8 @@ export default function GettingStartedPage() {
                 </p>
               </div>
 
-              <div className="rounded-lg border border-border p-4">
-                <h3 className="mb-2 font-semibold text-foreground">Option 2: Hive Wallet</h3>
+              <div className="rounded-lg border border-sb-border p-4">
+                <h3 className="mb-2 font-semibold text-sb-text-primary">Option 2: Hive Wallet</h3>
                 <p>
                   If you already have a Hive account, connect directly using{' '}
                   <a
@@ -363,32 +366,36 @@ export default function GettingStartedPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border">
-                      <th className="pb-2 pr-4 text-left font-semibold text-foreground">Tier</th>
-                      <th className="pb-2 pr-4 text-left font-semibold text-foreground">
+                    <tr className="border-b border-sb-border">
+                      <th className="pb-2 pr-4 text-left font-semibold text-sb-text-primary">
+                        Tier
+                      </th>
+                      <th className="pb-2 pr-4 text-left font-semibold text-sb-text-primary">
                         Staked MEDALS
                       </th>
-                      <th className="pb-2 text-left font-semibold text-foreground">Benefits</th>
+                      <th className="pb-2 text-left font-semibold text-sb-text-primary">
+                        Benefits
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-sb-border">
                     <tr>
-                      <td className="py-2 pr-4 font-medium text-foreground">Bronze</td>
+                      <td className="py-2 pr-4 font-medium text-sb-text-primary">Bronze</td>
                       <td className="py-2 pr-4">100+</td>
                       <td className="py-2">Basic member badge, access to exclusive content</td>
                     </tr>
                     <tr>
-                      <td className="py-2 pr-4 font-medium text-foreground">Silver</td>
+                      <td className="py-2 pr-4 font-medium text-sb-text-primary">Silver</td>
                       <td className="py-2 pr-4">500+</td>
                       <td className="py-2">Enhanced visibility, priority support</td>
                     </tr>
                     <tr>
-                      <td className="py-2 pr-4 font-medium text-foreground">Gold</td>
+                      <td className="py-2 pr-4 font-medium text-sb-text-primary">Gold</td>
                       <td className="py-2 pr-4">2,000+</td>
                       <td className="py-2">Weekly reward distributions, featured content slots</td>
                     </tr>
                     <tr>
-                      <td className="py-2 pr-4 font-medium text-foreground">Platinum</td>
+                      <td className="py-2 pr-4 font-medium text-sb-text-primary">Platinum</td>
                       <td className="py-2 pr-4">10,000+</td>
                       <td className="py-2">
                         Maximum rewards, governance participation, premium features

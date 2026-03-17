@@ -207,7 +207,7 @@ export default function FeedPage() {
     <MainLayout>
       <div className="mx-auto max-w-4xl space-y-6">
         {/* Write Post Section */}
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-sb-stadium p-4">
           <div className="flex items-center space-x-3">
             <Avatar
               src={user?.avatar}
@@ -233,14 +233,14 @@ export default function FeedPage() {
         </div>
 
         {/* Feed Mode Tabs */}
-        <div className="flex rounded-lg border border-border p-1">
+        <div className="flex rounded-lg border border-sb-border p-1">
           <button
             onClick={() => setFeedMode('community')}
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               feedMode === 'community'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted'
+                ? 'bg-primary text-[#051A14]'
+                : 'text-muted-foreground hover:bg-sb-turf'
             )}
           >
             <TrendingUp className="h-4 w-4" />
@@ -251,8 +251,8 @@ export default function FeedPage() {
             className={cn(
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               feedMode === 'following'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted'
+                ? 'bg-primary text-[#051A14]'
+                : 'text-muted-foreground hover:bg-sb-turf'
             )}
           >
             <UserCheck className="h-4 w-4" />
@@ -266,7 +266,7 @@ export default function FeedPage() {
             {stats.map((stat, index) => {
               const Icon = stat.icon;
               return (
-                <div key={index} className="rounded-lg border bg-card p-4">
+                <div key={index} className="rounded-lg border bg-sb-stadium p-4">
                   <div className="flex items-center space-x-3">
                     <div className="rounded-lg bg-primary/10 p-2">
                       <Icon className="h-5 w-5 text-primary" />
@@ -274,7 +274,7 @@ export default function FeedPage() {
                     <div>
                       <div className="text-2xl font-bold">
                         {statsLoading ? (
-                          <div className="h-8 w-16 animate-pulse rounded bg-muted"></div>
+                          <div className="h-8 w-16 animate-pulse rounded bg-sb-turf"></div>
                         ) : statsError ? (
                           <span className="text-lg text-destructive">Error</span>
                         ) : (
@@ -306,23 +306,25 @@ export default function FeedPage() {
           <div className="space-y-6">
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="animate-pulse rounded-lg border bg-card p-6">
+                <div key={i} className="animate-pulse rounded-lg border bg-sb-stadium p-6">
                   <div className="mb-4 flex items-center space-x-3">
-                    <div className="h-10 w-10 rounded-full bg-muted"></div>
+                    <div className="h-10 w-10 rounded-full bg-sb-turf"></div>
                     <div className="flex-1">
-                      <div className="mb-2 h-4 w-1/4 rounded bg-muted"></div>
-                      <div className="h-3 w-1/3 rounded bg-muted"></div>
+                      <div className="mb-2 h-4 w-1/4 rounded bg-sb-turf"></div>
+                      <div className="h-3 w-1/3 rounded bg-sb-turf"></div>
                     </div>
                   </div>
-                  <div className="mb-3 h-6 w-3/4 rounded bg-muted"></div>
-                  <div className="mb-2 h-4 w-full rounded bg-muted"></div>
-                  <div className="h-4 w-2/3 rounded bg-muted"></div>
+                  <div className="mb-3 h-6 w-3/4 rounded bg-sb-turf"></div>
+                  <div className="mb-2 h-4 w-full rounded bg-sb-turf"></div>
+                  <div className="h-4 w-2/3 rounded bg-sb-turf"></div>
                 </div>
               ))
             ) : errorMessage ? (
               <div className="py-12 text-center">
                 <div className="mb-4 text-6xl">⚠️</div>
-                <h3 className="mb-2 text-xl font-semibold text-foreground">Error Loading Posts</h3>
+                <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">
+                  Error Loading Posts
+                </h3>
                 <p className="mb-6 text-muted-foreground">{errorMessage}</p>
                 <Button onClick={() => refetch()}>Try Again</Button>
               </div>
@@ -337,7 +339,7 @@ export default function FeedPage() {
             ) : feedMode === 'following' ? (
               <div className="py-12 text-center">
                 <div className="mb-4 text-6xl">👥</div>
-                <h3 className="mb-2 text-xl font-semibold text-foreground">
+                <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">
                   No posts from people you follow
                 </h3>
                 <p className="mb-6 text-muted-foreground">
@@ -351,7 +353,9 @@ export default function FeedPage() {
             ) : (
               <div className="py-12 text-center">
                 <div className="mb-4 text-6xl">🏆</div>
-                <h3 className="mb-2 text-xl font-semibold text-foreground">No posts available</h3>
+                <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">
+                  No posts available
+                </h3>
                 <p className="mb-6 text-muted-foreground">Check back later for new content.</p>
                 <Button onClick={() => router.push('/publish')}>
                   <Plus className="mr-2 h-4 w-4" />

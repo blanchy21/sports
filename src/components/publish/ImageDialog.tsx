@@ -128,10 +128,13 @@ export function ImageDialog({ username, onInsert, onClose, onAiImageGenerated }:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="mx-4 w-full max-w-md rounded-lg border bg-card p-6 shadow-xl">
+      <div className="mx-4 w-full max-w-md rounded-lg border bg-sb-stadium p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Insert Image</h3>
-          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground">
+          <button
+            onClick={handleClose}
+            className="text-muted-foreground hover:text-sb-text-primary"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -144,7 +147,7 @@ export function ImageDialog({ username, onInsert, onClose, onAiImageGenerated }:
               'flex-1 border-b-2 py-2 text-sm font-medium transition-colors',
               imageTab === 'url'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-sb-text-primary'
             )}
           >
             <LinkIcon className="mr-2 inline h-4 w-4" />
@@ -156,7 +159,7 @@ export function ImageDialog({ username, onInsert, onClose, onAiImageGenerated }:
               'flex-1 border-b-2 py-2 text-sm font-medium transition-colors',
               imageTab === 'upload'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-sb-text-primary'
             )}
           >
             <Upload className="mr-2 inline h-4 w-4" />
@@ -168,7 +171,7 @@ export function ImageDialog({ username, onInsert, onClose, onAiImageGenerated }:
               'flex-1 border-b-2 py-2 text-sm font-medium transition-colors',
               imageTab === 'generate'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-sb-text-primary'
             )}
           >
             <Sparkles className="mr-2 inline h-4 w-4" />
@@ -185,7 +188,7 @@ export function ImageDialog({ username, onInsert, onClose, onAiImageGenerated }:
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="https://example.com/image.jpg"
-                className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sb-teal"
                 autoFocus
               />
             </div>
@@ -258,7 +261,7 @@ export function ImageDialog({ username, onInsert, onClose, onAiImageGenerated }:
                 placeholder="e.g. A dramatic soccer goal celebration under stadium lights"
                 maxLength={500}
                 rows={3}
-                className="w-full resize-none rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full resize-none rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sb-teal"
                 autoFocus
                 disabled={isGenerating}
               />
@@ -295,7 +298,7 @@ export function ImageDialog({ username, onInsert, onClose, onAiImageGenerated }:
               value={imageAlt}
               onChange={(e) => setImageAlt(e.target.value)}
               placeholder="Optional caption below image"
-              className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-lg border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sb-teal"
             />
           </div>
 

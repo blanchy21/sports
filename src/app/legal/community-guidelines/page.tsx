@@ -9,7 +9,7 @@ export default function CommunityGuidelinesPage() {
       <div className="mx-auto max-w-3xl px-4 py-12">
         <Link
           href="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-sb-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to SPORTSBLOCK
@@ -18,7 +18,7 @@ export default function CommunityGuidelinesPage() {
         <h1 className="mb-2 text-3xl font-bold">Community Guidelines</h1>
         <p className="mb-8 text-sm text-muted-foreground">Last updated: January 2025</p>
 
-        <div className="prose prose-sm max-w-none space-y-8 text-foreground dark:prose-invert">
+        <div className="prose prose-sm max-w-none space-y-8 text-sb-text-primary dark:prose-invert">
           <section>
             <p className="text-base leading-relaxed text-muted-foreground">
               SPORTSBLOCK is a community of sports enthusiasts sharing content on the Hive
@@ -30,7 +30,7 @@ export default function CommunityGuidelinesPage() {
           <section>
             <h2 className="mb-3 text-xl font-semibold">Our Core Values</h2>
             <div className="grid gap-3">
-              <div className="flex items-start gap-3 rounded-lg border bg-card p-3">
+              <div className="flex items-start gap-3 rounded-lg border bg-sb-stadium p-3">
                 <span className="text-2xl">🏆</span>
                 <div>
                   <h3 className="font-medium">Quality Content</h3>
@@ -39,7 +39,7 @@ export default function CommunityGuidelinesPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 rounded-lg border bg-card p-3">
+              <div className="flex items-start gap-3 rounded-lg border bg-sb-stadium p-3">
                 <span className="text-2xl">🤝</span>
                 <div>
                   <h3 className="font-medium">Respect</h3>
@@ -48,7 +48,7 @@ export default function CommunityGuidelinesPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 rounded-lg border bg-card p-3">
+              <div className="flex items-start gap-3 rounded-lg border bg-sb-stadium p-3">
                 <span className="text-2xl">💎</span>
                 <div>
                   <h3 className="font-medium">Authenticity</h3>

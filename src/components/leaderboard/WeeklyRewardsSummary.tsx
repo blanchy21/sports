@@ -60,7 +60,7 @@ export function WeeklyRewardsSummary({ weekId, compact = false }: WeeklyRewardsS
   }
 
   return (
-    <div className="rounded-lg border bg-card p-6">
+    <div className="rounded-lg border bg-sb-stadium p-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -133,7 +133,7 @@ export function WeeklyRewardsSummary({ weekId, compact = false }: WeeklyRewardsS
             return (
               <div
                 key={key}
-                className="flex items-center justify-between rounded bg-muted/50 px-3 py-2 text-sm"
+                className="flex items-center justify-between rounded bg-sb-turf/50 px-3 py-2 text-sm"
               >
                 <span className="mr-2 truncate">{config.name}</span>
                 <span className="whitespace-nowrap font-medium">{amount.toLocaleString()}</span>

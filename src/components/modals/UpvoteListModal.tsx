@@ -84,7 +84,7 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
       className="flex max-h-[80vh] flex-col"
     >
       {/* Stats */}
-      <div className="border-b bg-muted/30 p-4 sm:p-6">
+      <div className="border-b bg-sb-turf/30 p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div className="text-center">
             <div className="text-xl font-bold text-destructive sm:text-2xl">{totalVotes}</div>
@@ -148,7 +148,7 @@ export const UpvoteListModal: React.FC<UpvoteListModalProps> = ({ isOpen, onClos
         ) : (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">💔</div>
-            <h3 className="mb-2 text-xl font-semibold text-foreground">No Upvotes Yet</h3>
+            <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">No Upvotes Yet</h3>
             <p className="text-muted-foreground">This post hasn&apos;t received any upvotes yet.</p>
           </div>
         )}

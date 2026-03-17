@@ -105,7 +105,7 @@ export function TagInput({
     <div className={cn('space-y-2', className)}>
       {/* Tag count label */}
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground">Tags</label>
+        <label className="text-sm font-medium text-sb-text-primary">Tags</label>
         <span className="text-xs text-muted-foreground">
           {value.length}/{maxTags}
         </span>
@@ -115,7 +115,7 @@ export function TagInput({
       <div
         className={cn(
           'flex min-h-[42px] flex-wrap gap-1.5 rounded-lg border bg-background p-2',
-          'focus-within:border-transparent focus-within:ring-2 focus-within:ring-ring',
+          'focus-within:border-transparent focus-within:ring-2 focus-within:ring-sb-teal',
           'cursor-text transition-colors'
         )}
         onClick={() => inputRef.current?.focus()}
@@ -208,7 +208,7 @@ export function TagInput({
                 onClick={() => handleRecentTagClick(tag)}
                 className={cn(
                   'rounded-md px-2 py-0.5 text-xs',
-                  'bg-muted text-muted-foreground hover:bg-muted/80',
+                  'bg-sb-turf text-muted-foreground hover:bg-sb-turf/80',
                   'transition-colors'
                 )}
               >

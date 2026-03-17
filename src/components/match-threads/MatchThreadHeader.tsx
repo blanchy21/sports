@@ -24,7 +24,7 @@ interface MatchThreadHeaderProps {
 
 export function MatchThreadHeader({ event, isLive, isOpen }: MatchThreadHeaderProps) {
   return (
-    <div className={cn('rounded-xl border bg-card p-6', isLive && 'border-success/50')}>
+    <div className={cn('rounded-xl border bg-sb-stadium p-6', isLive && 'border-success/50')}>
       {/* Sport + League */}
       <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
         <span className="text-lg">{event.icon}</span>
@@ -45,7 +45,7 @@ export function MatchThreadHeader({ event, isLive, isOpen }: MatchThreadHeaderPr
           </span>
         )}
         {!isOpen && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-sb-turf px-3 py-1 text-sm font-medium text-muted-foreground">
             <Lock className="h-3.5 w-3.5" />
             Read Only
           </span>
@@ -59,7 +59,9 @@ export function MatchThreadHeader({ event, isLive, isOpen }: MatchThreadHeaderPr
             <>
               <h1 className="text-2xl font-bold sm:text-3xl">
                 {event.teams.home}{' '}
-                <span className={cn('tabular-nums', isLive ? 'text-success' : 'text-foreground')}>
+                <span
+                  className={cn('tabular-nums', isLive ? 'text-success' : 'text-sb-text-primary')}
+                >
                   {event.score.home} - {event.score.away}
                 </span>{' '}
                 {event.teams.away}

@@ -43,14 +43,14 @@ export const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-border bg-card shadow-lg"
+      className="absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-sb-border bg-sb-stadium shadow-lg"
       data-testid="settings-dropdown"
     >
       {/* Header */}
-      <div className="border-b border-border bg-muted/50 p-4">
+      <div className="border-b border-sb-border bg-sb-turf/50 p-4">
         <div className="flex items-center space-x-2">
           <Settings className="h-5 w-5 text-muted-foreground" />
-          <h3 className="font-semibold text-foreground">Settings</h3>
+          <h3 className="font-semibold text-sb-text-primary">Settings</h3>
         </div>
       </div>
 
@@ -60,14 +60,14 @@ export const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
         <Link
           href="/getting-started"
           onClick={onClose}
-          className="flex items-center space-x-3 rounded-lg p-3 text-sm text-foreground transition-colors hover:bg-muted/50"
+          className="flex items-center space-x-3 rounded-lg p-3 text-sm text-sb-text-primary transition-colors hover:bg-sb-turf/50"
         >
           <BookOpen className="h-5 w-5 text-muted-foreground" />
           <span>Getting Started</span>
         </Link>
 
         {/* Theme Toggle */}
-        <div className="rounded-lg p-3 transition-colors hover:bg-muted/50">
+        <div className="rounded-lg p-3 transition-colors hover:bg-sb-turf/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               {theme === 'dark' ? (
@@ -76,7 +76,7 @@ export const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
                 <Sun className="h-5 w-5 text-muted-foreground" />
               )}
               <div>
-                <p className="text-sm font-medium text-foreground">Appearance</p>
+                <p className="text-sm font-medium text-sb-text-primary">Appearance</p>
                 <p className="text-xs text-muted-foreground">
                   {theme === 'dark' ? 'Dark mode' : 'Light mode'}
                 </p>

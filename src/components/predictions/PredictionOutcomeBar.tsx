@@ -36,14 +36,14 @@ export function PredictionOutcomeBar({
         !isClickable && 'cursor-default',
         isWinner && 'border-sb-win bg-sb-win-bg',
         isSelected && !isWinner && 'border-sb-gold bg-sb-gold/10',
-        !isWinner && !isSelected && 'border-border bg-card'
+        !isWinner && !isSelected && 'border-sb-border bg-sb-stadium'
       )}
     >
       {/* Background fill bar */}
       <div
         className={cn(
           'absolute inset-y-0 left-0 transition-all duration-500',
-          isWinner ? 'bg-sb-win/15' : isSelected ? 'bg-sb-gold/10' : 'bg-muted/50'
+          isWinner ? 'bg-sb-win/15' : isSelected ? 'bg-sb-gold/10' : 'bg-sb-turf/50'
         )}
         style={{ width: `${Math.max(percentage, 2)}%` }}
       />
@@ -78,7 +78,10 @@ export function PredictionOutcomeBar({
             {outcome.backerCount} {outcome.backerCount === 1 ? 'backer' : 'backers'}
           </span>
           <span
-            className={cn('font-mono font-semibold', isWinner ? 'text-sb-win' : 'text-foreground')}
+            className={cn(
+              'font-mono font-semibold',
+              isWinner ? 'text-sb-win' : 'text-sb-text-primary'
+            )}
           >
             {outcome.odds.toFixed(2)}x
           </span>
@@ -91,7 +94,8 @@ export function PredictionOutcomeBar({
           <div className="flex flex-wrap gap-x-2 gap-y-0.5">
             {outcome.stakers.map((s) => (
               <span key={s.username} className="text-[11px] text-muted-foreground">
-                @{s.username} <span className="font-medium text-foreground/70">{s.amount}</span>
+                @{s.username}{' '}
+                <span className="font-medium text-sb-text-primary/70">{s.amount}</span>
               </span>
             ))}
           </div>

@@ -123,7 +123,7 @@ export default async function BlogPostPage({ params }: PageProps) {
       <article className="mx-auto max-w-3xl px-4 py-12">
         <Link
           href="/blog"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-sb-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           All posts
@@ -164,20 +164,20 @@ export default async function BlogPostPage({ params }: PageProps) {
 
         {/* CTA */}
         <div className="mt-12 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8 text-center">
-          <h2 className="mb-3 text-2xl font-bold text-foreground">Ready to Get Started?</h2>
+          <h2 className="mb-3 text-2xl font-bold text-sb-text-primary">Ready to Get Started?</h2>
           <p className="mx-auto mb-6 max-w-md text-muted-foreground">
             Join Sportsblock and start earning crypto from your sports knowledge today.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/auth"
-              className="inline-flex items-center rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="inline-flex items-center rounded-lg bg-primary px-6 py-3 font-semibold text-[#051A14] transition-colors hover:bg-primary/90"
             >
               Sign Up Free
             </Link>
             <Link
               href="/getting-started"
-              className="inline-flex items-center rounded-lg border border-border px-6 py-3 font-semibold text-foreground transition-colors hover:bg-muted"
+              className="inline-flex items-center rounded-lg border border-sb-border px-6 py-3 font-semibold text-sb-text-primary transition-colors hover:bg-sb-turf"
             >
               Learn More
             </Link>

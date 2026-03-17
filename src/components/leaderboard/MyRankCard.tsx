@@ -25,7 +25,7 @@ export function MyRankCard({ username, compact = false }: MyRankCardProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border bg-card p-4">
+      <div className="rounded-lg border bg-sb-stadium p-4">
         <div className="flex items-center justify-center py-6">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           <span className="ml-2 text-sm text-muted-foreground">Loading rankings...</span>
@@ -36,7 +36,7 @@ export function MyRankCard({ username, compact = false }: MyRankCardProps) {
 
   if (error || !data) {
     return (
-      <div className="rounded-lg border bg-card p-4">
+      <div className="rounded-lg border bg-sb-stadium p-4">
         <div className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-sb-gold" />
           <h3 className="font-semibold">Your Rankings</h3>
@@ -47,7 +47,7 @@ export function MyRankCard({ username, compact = false }: MyRankCardProps) {
   }
 
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="rounded-lg border bg-sb-stadium p-4">
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">

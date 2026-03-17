@@ -168,9 +168,9 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="max-h-[90vh] w-full max-w-2xl overflow-y-auto bg-card">
+      <Card className="max-h-[90vh] w-full max-w-2xl overflow-y-auto bg-sb-stadium">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card p-6">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-sb-stadium p-6">
           <div className="flex items-center space-x-3">
             <div className="rounded-lg bg-primary/10 p-2">
               <Users className="h-6 w-6 text-primary" />
@@ -282,7 +282,7 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
                     'rounded-lg border p-4 text-left transition-all',
                     formData.type === type.value
                       ? 'border-primary bg-primary/5 ring-2 ring-primary'
-                      : 'border-border hover:border-primary/50'
+                      : 'border-sb-border hover:border-primary/50'
                   )}
                 >
                   <div className="mb-2 flex items-center space-x-2">

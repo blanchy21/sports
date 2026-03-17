@@ -177,7 +177,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Preview Section */}
-        <div className="relative overflow-hidden rounded-lg bg-muted/30">
+        <div className="relative overflow-hidden rounded-lg bg-sb-turf/30">
           {/* Cover Image Preview */}
           <div
             className="h-24 bg-gradient-to-r from-primary via-bright-cobalt to-accent"
@@ -218,7 +218,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               value={formData.name}
               onChange={handleInputChange('name')}
               maxLength={50}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-lg border border-sb-border bg-background px-3 py-2 text-sb-text-primary placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -235,7 +235,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               onChange={handleInputChange('about')}
               rows={3}
               maxLength={500}
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full resize-none rounded-lg border border-sb-border bg-background px-3 py-2 text-sb-text-primary placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <p className="text-right text-xs text-muted-foreground">{formData.about.length}/500</p>
           </div>
@@ -253,7 +253,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               value={formData.location}
               onChange={handleInputChange('location')}
               maxLength={100}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-lg border border-sb-border bg-background px-3 py-2 text-sb-text-primary placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -269,7 +269,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               placeholder="https://yourwebsite.com"
               value={formData.website}
               onChange={handleInputChange('website')}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-lg border border-sb-border bg-background px-3 py-2 text-sb-text-primary placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -285,7 +285,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               placeholder="https://example.com/your-avatar.jpg"
               value={formData.profile_image}
               onChange={handleInputChange('profile_image')}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-lg border border-sb-border bg-background px-3 py-2 text-sb-text-primary placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <p className="text-xs text-muted-foreground">
               Enter a URL to an image. You can upload images to services like Imgur or use existing
@@ -305,7 +305,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               placeholder="https://example.com/your-cover.jpg"
               value={formData.cover_image}
               onChange={handleInputChange('cover_image')}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-lg border border-sb-border bg-background px-3 py-2 text-sb-text-primary placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <p className="text-xs text-muted-foreground">
               Recommended size: 1500x500 pixels for best results.

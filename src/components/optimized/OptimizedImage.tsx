@@ -60,7 +60,10 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   if (hasError) {
     return (
       <div
-        className={cn('flex items-center justify-center bg-muted text-muted-foreground', className)}
+        className={cn(
+          'flex items-center justify-center bg-sb-turf text-muted-foreground',
+          className
+        )}
         style={{ width, height }}
       >
         <div className="text-center">
@@ -78,7 +81,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     >
       {isLoading && (
         <div
-          className="absolute inset-0 flex animate-pulse items-center justify-center bg-muted"
+          className="absolute inset-0 flex animate-pulse items-center justify-center bg-sb-turf"
           style={{ width, height }}
         >
           <div className="text-muted-foreground">Loading...</div>

@@ -79,7 +79,7 @@ export function WalletCTAView({
 
       {/* Benefits Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-lg border bg-card p-5">
+        <div className="rounded-lg border bg-sb-stadium p-5">
           <div className="mb-3 flex items-center gap-3">
             <div className="rounded-lg bg-success/10 p-2">
               <DollarSign className="h-5 w-5 text-success" />
@@ -92,7 +92,7 @@ export function WalletCTAView({
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card p-5">
+        <div className="rounded-lg border bg-sb-stadium p-5">
           <div className="mb-3 flex items-center gap-3">
             <div className="rounded-lg bg-warning/10 p-2">
               <Star className="h-5 w-5 text-warning" />
@@ -105,7 +105,7 @@ export function WalletCTAView({
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card p-5">
+        <div className="rounded-lg border bg-sb-stadium p-5">
           <div className="mb-3 flex items-center gap-3">
             <div className="rounded-lg bg-info/10 p-2">
               <Activity className="h-5 w-5 text-info" />
@@ -118,7 +118,7 @@ export function WalletCTAView({
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card p-5">
+        <div className="rounded-lg border bg-sb-stadium p-5">
           <div className="mb-3 flex items-center gap-3">
             <div className="rounded-lg bg-purple-500/10 p-2">
               <Users className="h-5 w-5 text-purple-500" />
@@ -130,7 +130,7 @@ export function WalletCTAView({
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card p-5">
+        <div className="rounded-lg border bg-sb-stadium p-5">
           <div className="mb-3 flex items-center gap-3">
             <div className="rounded-lg bg-indigo-500/10 p-2">
               <Shield className="h-5 w-5 text-indigo-500" />
@@ -142,7 +142,7 @@ export function WalletCTAView({
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card p-5">
+        <div className="rounded-lg border bg-sb-stadium p-5">
           <div className="mb-3 flex items-center gap-3">
             <div className="rounded-lg bg-warning/10 p-2">
               <Medal className="h-5 w-5 text-warning" />
@@ -156,14 +156,14 @@ export function WalletCTAView({
       </div>
 
       {/* How It Works */}
-      <div className="rounded-lg border bg-card p-6">
+      <div className="rounded-lg border bg-sb-stadium p-6">
         <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
           <Zap className="h-5 w-5 text-primary" />
           How Hive Rewards Work
         </h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-[#051A14]">
               1
             </div>
             <div>
@@ -174,7 +174,7 @@ export function WalletCTAView({
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-[#051A14]">
               2
             </div>
             <div>
@@ -185,7 +185,7 @@ export function WalletCTAView({
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-[#051A14]">
               3
             </div>
             <div>
@@ -199,35 +199,35 @@ export function WalletCTAView({
       </div>
 
       {/* Current Crypto Prices (Preview) */}
-      <div className="rounded-lg border bg-card p-6">
+      <div className="rounded-lg border bg-sb-stadium p-6">
         <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
           <TrendingUp className="h-5 w-5 text-primary" />
           Current Market Prices
         </h3>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {hivePrice && (
-            <div className="rounded-lg bg-muted/50 p-4 text-center">
+            <div className="rounded-lg bg-sb-turf/50 p-4 text-center">
               <Coins className="mx-auto mb-2 h-6 w-6 text-accent" />
               <p className="text-sm text-muted-foreground">HIVE</p>
               <p className="text-lg font-bold">{formatUSD(hivePrice)}</p>
             </div>
           )}
           {hbdPrice && (
-            <div className="rounded-lg bg-muted/50 p-4 text-center">
+            <div className="rounded-lg bg-sb-turf/50 p-4 text-center">
               <DollarSign className="mx-auto mb-2 h-6 w-6 text-primary" />
               <p className="text-sm text-muted-foreground">HBD</p>
               <p className="text-lg font-bold">{formatUSD(hbdPrice)}</p>
             </div>
           )}
           {bitcoinPrice && (
-            <div className="rounded-lg bg-muted/50 p-4 text-center">
+            <div className="rounded-lg bg-sb-turf/50 p-4 text-center">
               <Bitcoin className="mx-auto mb-2 h-6 w-6 text-warning" />
               <p className="text-sm text-muted-foreground">Bitcoin</p>
               <p className="text-lg font-bold">{formatUSD(bitcoinPrice)}</p>
             </div>
           )}
           {ethereumPrice && (
-            <div className="rounded-lg bg-muted/50 p-4 text-center">
+            <div className="rounded-lg bg-sb-turf/50 p-4 text-center">
               <Coins className="mx-auto mb-2 h-6 w-6 text-info" />
               <p className="text-sm text-muted-foreground">Ethereum</p>
               <p className="text-lg font-bold">{formatUSD(ethereumPrice)}</p>

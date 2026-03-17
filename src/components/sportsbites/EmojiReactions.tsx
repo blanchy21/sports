@@ -160,7 +160,7 @@ export function EmojiReactions({
       {/* Popup */}
       {isOpen && (
         <div className="absolute bottom-full right-0 z-30 mb-2 animate-fade-in sm:left-1/2 sm:right-auto sm:-translate-x-1/2">
-          <div className="flex items-center gap-0.5 rounded-full border bg-card px-2 py-1.5 shadow-lg">
+          <div className="flex items-center gap-0.5 rounded-full border bg-sb-stadium px-2 py-1.5 shadow-lg">
             {EMOJI_ORDER.map((emoji) => {
               const isActive = userReaction === emoji;
               const count = counts[emoji];

@@ -54,14 +54,14 @@ export const TopNavigation: React.FC = () => {
       'relative flex flex-col items-center justify-center rounded-lg px-4 py-2 transition-all duration-200 xl:px-5 xl:py-3',
       isActive
         ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:h-[2px] after:w-6 after:-translate-x-1/2 after:rounded-full after:bg-primary dark:text-white dark:after:bg-white'
-        : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
+        : 'text-muted-foreground hover:bg-foreground/5 hover:text-sb-text-primary dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
     );
 
   const iconBtnClass =
-    'h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white sm:h-11 sm:w-11 lg:h-11 lg:w-11';
+    'h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-sb-text-primary dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white sm:h-11 sm:w-11 lg:h-11 lg:w-11';
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.75)] dark:shadow-none">
+    <header className="sticky top-0 z-50 w-full border-b border-sb-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.75)] dark:shadow-none">
       <div className="h-14 sm:h-16 lg:h-[4.5rem]">
         <div className="relative flex h-full items-center px-4 sm:px-6">
           {/* Mobile Menu Button */}
@@ -69,7 +69,7 @@ export const TopNavigation: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="mr-2 h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white lg:hidden"
+            className="mr-2 h-10 w-10 text-muted-foreground hover:bg-foreground/5 hover:text-sb-text-primary dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white lg:hidden"
             aria-label="Menu"
           >
             <Menu className="h-6 w-6" />
@@ -129,7 +129,7 @@ export const TopNavigation: React.FC = () => {
                   ref={newsButtonRef}
                   variant="ghost"
                   onClick={() => setShowNews(!showNews)}
-                  className="flex h-auto flex-col items-center justify-center rounded-lg px-4 py-2 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white xl:px-5 xl:py-3"
+                  className="flex h-auto flex-col items-center justify-center rounded-lg px-4 py-2 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-sb-text-primary dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white xl:px-5 xl:py-3"
                 >
                   <Newspaper className="h-5 w-5 xl:h-6 xl:w-6" />
                   <span className="mt-0.5 text-[10px] font-medium xl:text-xs">News</span>
@@ -199,7 +199,7 @@ export const TopNavigation: React.FC = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowSettings(!showSettings)}
-                    className="h-11 w-11 text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white xl:h-11 xl:w-11"
+                    className="h-11 w-11 text-muted-foreground hover:bg-foreground/5 hover:text-sb-text-primary dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white xl:h-11 xl:w-11"
                     aria-label="Settings"
                   >
                     <Settings className="h-5 w-5 xl:h-6 xl:w-6" />
@@ -225,7 +225,7 @@ export const TopNavigation: React.FC = () => {
                     className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
                   />
                   <div className="hidden flex-col xl:flex">
-                    <div className="text-base font-semibold text-foreground lg:text-lg">
+                    <div className="text-base font-semibold text-sb-text-primary lg:text-lg">
                       {user.displayName || user.username}
                     </div>
                     <div className="text-xs text-muted-foreground lg:text-sm">@{user.username}</div>
@@ -238,14 +238,14 @@ export const TopNavigation: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => router.push('/auth')}
-                  className="hidden border-border bg-transparent text-xs font-medium text-foreground hover:bg-foreground/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10 sm:flex sm:text-sm"
+                  className="hidden border-sb-border bg-transparent text-xs font-medium text-sb-text-primary hover:bg-foreground/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10 sm:flex sm:text-sm"
                 >
                   Sign In
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => router.push('/auth')}
-                  className="bg-primary text-xs font-medium text-primary-foreground hover:bg-primary/90 sm:text-sm"
+                  className="bg-primary text-xs font-medium text-[#051A14] hover:bg-primary/90 sm:text-sm"
                 >
                   Sign Up
                 </Button>

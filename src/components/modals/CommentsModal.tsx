@@ -164,11 +164,11 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="flex animate-pulse space-x-3">
-                <div className="h-8 w-8 rounded-full bg-muted"></div>
+                <div className="h-8 w-8 rounded-full bg-sb-turf"></div>
                 <div className="flex-1">
-                  <div className="mb-2 h-4 w-1/4 rounded bg-muted"></div>
-                  <div className="mb-1 h-4 w-full rounded bg-muted"></div>
-                  <div className="h-4 w-3/4 rounded bg-muted"></div>
+                  <div className="mb-2 h-4 w-1/4 rounded bg-sb-turf"></div>
+                  <div className="mb-1 h-4 w-full rounded bg-sb-turf"></div>
+                  <div className="h-4 w-3/4 rounded bg-sb-turf"></div>
                 </div>
               </div>
             ))}
@@ -176,7 +176,9 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         ) : error ? (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">⚠️</div>
-            <h3 className="mb-2 text-xl font-semibold text-foreground">Error Loading Comments</h3>
+            <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">
+              Error Loading Comments
+            </h3>
             <p className="text-muted-foreground">
               Failed to load comments. Please try again later.
             </p>
@@ -190,9 +192,9 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                   key={`${comment.author}-${comment.permlink}`}
                   className={cn(
                     'flex space-x-3',
-                    depth === 1 && 'ml-8 border-l-2 border-border pl-4',
-                    depth === 2 && 'ml-14 border-l-2 border-border/60 pl-4',
-                    depth >= 3 && 'ml-18 border-l-2 border-border/40 pl-4'
+                    depth === 1 && 'ml-8 border-l-2 border-sb-border pl-4',
+                    depth === 2 && 'ml-14 border-l-2 border-sb-border/60 pl-4',
+                    depth >= 3 && 'ml-18 border-l-2 border-sb-border/40 pl-4'
                   )}
                 >
                   <Avatar
@@ -256,7 +258,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
         ) : (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">💬</div>
-            <h3 className="mb-2 text-xl font-semibold text-foreground">No Comments Yet</h3>
+            <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">No Comments Yet</h3>
             <p className="text-muted-foreground">Be the first to comment on this post!</p>
           </div>
         )}
@@ -264,7 +266,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
 
       {/* Reply indicator with original comment preview */}
       {replyingTo && (
-        <div className="border-b border-t bg-muted/50 px-4 py-3">
+        <div className="border-b border-t bg-sb-turf/50 px-4 py-3">
           <div className="flex items-start gap-3">
             <Avatar
               src={getHiveAvatarUrl(replyingTo.author)}
@@ -305,7 +307,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, d
                 placeholder={
                   replyingTo ? `Reply to @${replyingTo.author}...` : 'Write a comment...'
                 }
-                className="w-full resize-none rounded-lg border bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary sm:text-base"
+                className="w-full resize-none rounded-lg border bg-background p-3 text-sm text-sb-text-primary focus:outline-none focus:ring-2 focus:ring-primary sm:text-base"
                 rows={2}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}

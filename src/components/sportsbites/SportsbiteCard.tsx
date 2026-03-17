@@ -320,8 +320,8 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
     <article
       aria-label={`Sportsbite by ${sportsbite.author}`}
       className={cn(
-        'border-b border-border px-4 py-3',
-        'transition-colors hover:bg-muted/30',
+        'border-b border-sb-border px-4 py-3',
+        'transition-colors hover:bg-sb-turf/30',
         'group relative cursor-pointer',
         isNew && 'animate-slide-in-top border-l-2 border-l-primary',
         className
@@ -379,7 +379,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-sb-text-primary"
                   aria-label="More options"
                   onClick={() => {
                     setShowMoreMenu(!showMoreMenu);
@@ -390,7 +390,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                 </Button>
 
                 {showMoreMenu && (
-                  <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] animate-fade-in rounded-lg border bg-card py-1 shadow-xl">
+                  <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] animate-fade-in rounded-lg border bg-sb-stadium py-1 shadow-xl">
                     {confirmingDelete ? (
                       <div className="px-3 py-2">
                         <p className="mb-2 text-sm font-medium">Are you sure?</p>
@@ -420,7 +420,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                     ) : (
                       <button
                         onClick={() => setConfirmingDelete(true)}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive transition-colors hover:bg-muted"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive transition-colors hover:bg-sb-turf"
                         aria-label="Delete sportsbite"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -516,7 +516,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                 <div
                   key={img}
                   className={cn(
-                    'relative overflow-hidden bg-muted',
+                    'relative overflow-hidden bg-sb-turf',
                     allImages.length === 1
                       ? 'max-h-[512px]'
                       : allImages.length === 3 && index === 0
@@ -657,10 +657,10 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
             </Button>
 
             {showShareMenu && (
-              <div className="absolute bottom-full left-0 z-20 mb-2 min-w-[140px] animate-fade-in rounded-lg border bg-card py-1 shadow-xl">
+              <div className="absolute bottom-full left-0 z-20 mb-2 min-w-[140px] animate-fade-in rounded-lg border bg-sb-stadium py-1 shadow-xl">
                 <button
                   onClick={() => handleShare('twitter')}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-sb-turf"
                   aria-label="Share on X"
                 >
                   <ExternalLink className="h-4 w-4" />
@@ -668,7 +668,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                 </button>
                 <button
                   onClick={() => handleShare('copy')}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-sb-turf"
                   aria-label="Copy link"
                 >
                   <Repeat2 className="h-4 w-4" />
@@ -679,7 +679,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                     setShareImageOpen(true);
                     setShowShareMenu(false);
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-sb-turf"
                   aria-label="Share as image"
                 >
                   <Camera className="h-4 w-4" />
@@ -691,7 +691,7 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
                     <button
                       onClick={handleReblog}
                       disabled={isReblogging}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-sb-turf disabled:opacity-50"
                       aria-label="Repost to blog"
                     >
                       <Repeat2 className={cn('h-4 w-4', isReblogging && 'animate-spin')} />

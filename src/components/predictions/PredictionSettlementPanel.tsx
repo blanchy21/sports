@@ -205,11 +205,11 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                 </div>
                 <div className="mt-2 space-y-1 text-muted-foreground">
                   <p>
-                    <span className="font-medium text-foreground">Proposed by:</span> @
+                    <span className="font-medium text-sb-text-primary">Proposed by:</span> @
                     {prediction.proposedBy}
                   </p>
                   <p>
-                    <span className="font-medium text-foreground">Action:</span>{' '}
+                    <span className="font-medium text-sb-text-primary">Action:</span>{' '}
                     {prediction.proposedAction === 'settle' ? (
                       <>
                         Settle — Winner:{' '}
@@ -235,7 +235,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
 
               {/* Approve/Reject buttons — only for a DIFFERENT admin */}
               {isProposer ? (
-                <div className="rounded-lg bg-muted px-3 py-2 text-center text-sm text-muted-foreground">
+                <div className="rounded-lg bg-sb-turf px-3 py-2 text-center text-sm text-muted-foreground">
                   Waiting for another admin to approve or reject your proposal.
                 </div>
               ) : (
@@ -414,7 +414,7 @@ export function PredictionSettlementPanel({ prediction }: PredictionSettlementPa
                         'flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors',
                         selectedWinner === outcome.id
                           ? 'border-success bg-success/10 text-success'
-                          : 'border-border hover:border-success/60 hover:bg-success/5'
+                          : 'border-sb-border hover:border-success/60 hover:bg-success/5'
                       )}
                     >
                       <span>{outcome.label}</span>

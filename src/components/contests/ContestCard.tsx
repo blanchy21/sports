@@ -60,11 +60,11 @@ export const ContestCard = React.memo(function ContestCard({
     <Link href={`/contests/${contest.slug}`} className="group block">
       <div
         className={cn(
-          'relative overflow-hidden rounded-2xl border bg-card transition-all duration-300',
+          'relative overflow-hidden rounded-2xl border bg-sb-stadium transition-all duration-300',
           'hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-500/5',
           isRegistration && 'border-amber-500/20 hover:border-amber-500/40',
           isActive && 'border-amber-500/30',
-          !isRegistration && !isActive && 'hover:border-border'
+          !isRegistration && !isActive && 'hover:border-sb-border'
         )}
       >
         {/* ----------------------------------------------------------------- */}
@@ -115,7 +115,7 @@ export const ContestCard = React.memo(function ContestCard({
               </h3>
               <p className="mt-1 text-xs text-muted-foreground">
                 Created by{' '}
-                <span className="font-medium text-foreground">@{contest.creatorUsername}</span>
+                <span className="font-medium text-sb-text-primary">@{contest.creatorUsername}</span>
               </p>
               {contest.description && (
                 <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
@@ -164,21 +164,21 @@ export const ContestCard = React.memo(function ContestCard({
               <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
                 <span>
                   1st{' '}
-                  <span className="font-semibold text-foreground">
+                  <span className="font-semibold text-sb-text-primary">
                     {formatPrizeAmount(firstPrize)}
                   </span>
                 </span>
                 <span className="text-border">|</span>
                 <span>
                   2nd{' '}
-                  <span className="font-semibold text-foreground">
+                  <span className="font-semibold text-sb-text-primary">
                     {formatPrizeAmount(secondPrize)}
                   </span>
                 </span>
                 <span className="text-border">|</span>
                 <span>
                   3rd{' '}
-                  <span className="font-semibold text-foreground">
+                  <span className="font-semibold text-sb-text-primary">
                     {formatPrizeAmount(thirdPrize)}
                   </span>
                 </span>
@@ -190,10 +190,10 @@ export const ContestCard = React.memo(function ContestCard({
         {/* ----------------------------------------------------------------- */}
         {/* Stats bar                                                         */}
         {/* ----------------------------------------------------------------- */}
-        <div className="grid grid-cols-2 gap-px border-t border-border/50 bg-border/50">
+        <div className="grid grid-cols-2 gap-px border-t border-sb-border/50 bg-border/50">
           {/* Entry Fee */}
-          <div className="flex items-center gap-3 bg-card px-5 py-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/80">
+          <div className="flex items-center gap-3 bg-sb-stadium px-5 py-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sb-turf/80">
               <Coins className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
@@ -214,8 +214,8 @@ export const ContestCard = React.memo(function ContestCard({
           </div>
 
           {/* Entries */}
-          <div className="flex items-center gap-3 bg-card px-5 py-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/80">
+          <div className="flex items-center gap-3 bg-sb-stadium px-5 py-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sb-turf/80">
               <Users className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
@@ -239,7 +239,7 @@ export const ContestCard = React.memo(function ContestCard({
         {/* Capacity bar (if max entries set)                                 */}
         {/* ----------------------------------------------------------------- */}
         {capacityPct !== null && (
-          <div className="border-t border-border/50 bg-card px-5 py-2">
+          <div className="border-t border-sb-border/50 bg-sb-stadium px-5 py-2">
             <div className="mb-1.5 flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground">
                 {isAlmostFull ? (
@@ -253,7 +253,7 @@ export const ContestCard = React.memo(function ContestCard({
               </span>
               <span className="font-medium text-muted-foreground">{capacityPct}% full</span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="h-1.5 overflow-hidden rounded-full bg-sb-turf">
               <div
                 className={cn(
                   'h-full rounded-full transition-all duration-500',
@@ -268,7 +268,7 @@ export const ContestCard = React.memo(function ContestCard({
         {/* ----------------------------------------------------------------- */}
         {/* Footer - countdown / CTA                                          */}
         {/* ----------------------------------------------------------------- */}
-        <div className="border-t border-border/50 bg-card">
+        <div className="border-t border-sb-border/50 bg-sb-stadium">
           {isComingSoon ? (
             <div className="flex items-center justify-between px-5 py-3">
               <ContestCountdown targetDate={contest.registrationOpens} compact />
@@ -301,7 +301,7 @@ export const ContestCard = React.memo(function ContestCard({
                 <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
                 Competition in progress
               </div>
-              <span className="flex items-center gap-1 text-sm font-semibold text-muted-foreground transition-all group-hover:gap-2 group-hover:text-foreground">
+              <span className="flex items-center gap-1 text-sm font-semibold text-muted-foreground transition-all group-hover:gap-2 group-hover:text-sb-text-primary">
                 View
                 <ChevronRight className="h-4 w-4" />
               </span>
@@ -309,14 +309,14 @@ export const ContestCard = React.memo(function ContestCard({
           ) : isSettled ? (
             <div className="flex items-center justify-between px-5 py-3">
               <div className="text-sm text-muted-foreground">Competition ended</div>
-              <span className="flex items-center gap-1 text-sm font-semibold text-muted-foreground transition-all group-hover:gap-2 group-hover:text-foreground">
+              <span className="flex items-center gap-1 text-sm font-semibold text-muted-foreground transition-all group-hover:gap-2 group-hover:text-sb-text-primary">
                 Results
                 <ChevronRight className="h-4 w-4" />
               </span>
             </div>
           ) : (
             <div className="flex items-center justify-center px-5 py-3">
-              <span className="flex items-center gap-1 text-sm text-muted-foreground transition-all group-hover:gap-2 group-hover:text-foreground">
+              <span className="flex items-center gap-1 text-sm text-muted-foreground transition-all group-hover:gap-2 group-hover:text-sb-text-primary">
                 View Details
                 <ChevronRight className="h-4 w-4" />
               </span>

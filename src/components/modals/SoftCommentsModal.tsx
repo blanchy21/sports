@@ -196,7 +196,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
     const replies = repliesByParent[comment.id] || [];
 
     return (
-      <div key={comment.id} className={`${isReply ? 'ml-8 border-l-2 border-border pl-4' : ''}`}>
+      <div key={comment.id} className={`${isReply ? 'ml-8 border-l-2 border-sb-border pl-4' : ''}`}>
         <div className="flex space-x-3 py-3">
           <Avatar
             src={
@@ -291,20 +291,22 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
         ) : error ? (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">⚠️</div>
-            <h3 className="mb-2 text-xl font-semibold text-foreground">Error Loading Comments</h3>
+            <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">
+              Error Loading Comments
+            </h3>
             <p className="text-muted-foreground">{error}</p>
             <Button className="mt-4" onClick={fetchComments}>
               Try Again
             </Button>
           </div>
         ) : comments.length > 0 ? (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-sb-border">
             {topLevelComments.map((comment) => renderComment(comment))}
           </div>
         ) : (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">💬</div>
-            <h3 className="mb-2 text-xl font-semibold text-foreground">No Comments Yet</h3>
+            <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">No Comments Yet</h3>
             <p className="text-muted-foreground">Be the first to comment on this post!</p>
           </div>
         )}
@@ -312,7 +314,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
 
       {/* Reply indicator with original comment preview */}
       {replyingTo && (
-        <div className="border-b border-t bg-muted/50 px-4 py-3">
+        <div className="border-b border-t bg-sb-turf/50 px-4 py-3">
           <div className="flex items-start gap-3">
             <Avatar
               src={
@@ -362,7 +364,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
                   placeholder={
                     replyingTo ? `Reply to @${replyingTo.authorUsername}...` : 'Write a comment...'
                   }
-                  className="w-full resize-none rounded-lg border bg-background p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary sm:text-base"
+                  className="w-full resize-none rounded-lg border bg-background p-3 text-sm text-sb-text-primary focus:outline-none focus:ring-2 focus:ring-primary sm:text-base"
                   rows={2}
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
@@ -398,7 +400,7 @@ export const SoftCommentsModal: React.FC<SoftCommentsModalProps> = ({ isOpen, on
             </Button>
           </div>
         ) : (
-          <div className="rounded-lg bg-muted/50 py-4 text-center">
+          <div className="rounded-lg bg-sb-turf/50 py-4 text-center">
             <p className="text-sm text-muted-foreground">Sign in to comment on this post.</p>
           </div>
         )}

@@ -9,7 +9,7 @@ export default function CookiePolicyPage() {
       <div className="mx-auto max-w-3xl px-4 py-12">
         <Link
           href="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-sb-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to SPORTSBLOCK
@@ -18,7 +18,7 @@ export default function CookiePolicyPage() {
         <h1 className="mb-2 text-3xl font-bold">Cookie Policy</h1>
         <p className="mb-8 text-sm text-muted-foreground">Last updated: February 2025</p>
 
-        <div className="prose prose-sm max-w-none space-y-8 text-foreground dark:prose-invert">
+        <div className="prose prose-sm max-w-none space-y-8 text-sb-text-primary dark:prose-invert">
           <section>
             <h2 className="mb-3 text-xl font-semibold">1. What Are Cookies</h2>
             <p className="leading-relaxed text-muted-foreground">
@@ -36,9 +36,9 @@ export default function CookiePolicyPage() {
             <p className="mb-2 leading-relaxed text-muted-foreground">
               These cookies are necessary for the Platform to function and cannot be disabled.
             </p>
-            <div className="mb-4 overflow-hidden rounded-lg border bg-card">
+            <div className="mb-4 overflow-hidden rounded-lg border bg-sb-stadium">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50">
+                <thead className="bg-sb-turf/50">
                   <tr>
                     <th className="p-3 text-left font-medium">Cookie</th>
                     <th className="p-3 text-left font-medium">Purpose</th>
@@ -69,9 +69,9 @@ export default function CookiePolicyPage() {
             <p className="mb-2 leading-relaxed text-muted-foreground">
               These cookies enable enhanced functionality and personalization.
             </p>
-            <div className="mb-4 overflow-hidden rounded-lg border bg-card">
+            <div className="mb-4 overflow-hidden rounded-lg border bg-sb-stadium">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50">
+                <thead className="bg-sb-turf/50">
                   <tr>
                     <th className="p-3 text-left font-medium">Cookie</th>
                     <th className="p-3 text-left font-medium">Purpose</th>
@@ -97,9 +97,9 @@ export default function CookiePolicyPage() {
             <p className="mb-2 leading-relaxed text-muted-foreground">
               These cookies help us understand how visitors interact with our Platform.
             </p>
-            <div className="mb-4 overflow-hidden rounded-lg border bg-card">
+            <div className="mb-4 overflow-hidden rounded-lg border bg-sb-stadium">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50">
+                <thead className="bg-sb-turf/50">
                   <tr>
                     <th className="p-3 text-left font-medium">Cookie</th>
                     <th className="p-3 text-left font-medium">Purpose</th>
@@ -125,9 +125,9 @@ export default function CookiePolicyPage() {
               We use Google AdSense to display advertisements. These cookies are used to serve ads
               relevant to you and to measure ad performance.
             </p>
-            <div className="mb-4 overflow-hidden rounded-lg border bg-card">
+            <div className="mb-4 overflow-hidden rounded-lg border bg-sb-stadium">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50">
+                <thead className="bg-sb-turf/50">
                   <tr>
                     <th className="p-3 text-left font-medium">Cookie</th>
                     <th className="p-3 text-left font-medium">Purpose</th>

@@ -9,9 +9,11 @@ export const AccountDiscovery: React.FC<AccountDiscoveryProps> = ({
   onDiscover,
 }) => {
   return (
-    <div className="mt-4 border-t border-border pt-3">
+    <div className="mt-4 border-t border-sb-border pt-3">
       <div className="mb-3 text-center">
-        <h5 className="mb-1 text-sm font-medium text-foreground/80">Multi-Account Discovery</h5>
+        <h5 className="mb-1 text-sm font-medium text-sb-text-primary/80">
+          Multi-Account Discovery
+        </h5>
         <p className="mb-2 text-xs text-muted-foreground">
           Discover and connect multiple Hive accounts from your wallets
         </p>
@@ -29,14 +31,14 @@ export const AccountDiscovery: React.FC<AccountDiscoveryProps> = ({
       {/* Discovered Accounts List */}
       {discoveredAccounts.length > 0 && (
         <div className="max-h-40 space-y-2 overflow-y-auto">
-          <h6 className="mb-2 text-xs font-medium text-foreground/70">
+          <h6 className="mb-2 text-xs font-medium text-sb-text-primary/70">
             Found {discoveredAccounts.length} account(s):
           </h6>
           {discoveredAccounts.map((account) => (
             <div
               key={`${account.username}-${account.provider}`}
               onClick={() => onAccountSelect(account)}
-              className="cursor-pointer rounded border border-border bg-muted/50 p-2 hover:bg-muted"
+              className="cursor-pointer rounded border border-sb-border bg-sb-turf/50 p-2 hover:bg-sb-turf"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">

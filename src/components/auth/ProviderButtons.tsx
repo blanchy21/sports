@@ -45,7 +45,7 @@ export const ProviderButtons: React.FC<ProviderButtonsProps> = ({
             key={provider}
             onClick={() => onProviderSelect(provider)}
             disabled={isConnecting}
-            className="flex w-full items-center justify-start space-x-3 border border-border bg-card py-2 text-foreground/80 hover:bg-muted/50"
+            className="flex w-full items-center justify-start space-x-3 border border-sb-border bg-sb-stadium py-2 text-sb-text-primary/80 hover:bg-sb-turf/50"
           >
             <div
               className={`flex h-8 w-8 items-center justify-center ${config.color} rounded text-sm font-bold text-white`}

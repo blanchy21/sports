@@ -137,16 +137,18 @@ export default function StartSportsBlogPage() {
             </Link>{' '}
             and choose one of two options:
           </p>
-          <div className="rounded-lg border border-border p-4">
-            <h3 className="mb-2 font-semibold text-foreground">Google Sign-In (Easiest)</h3>
+          <div className="rounded-lg border border-sb-border p-4">
+            <h3 className="mb-2 font-semibold text-sb-text-primary">Google Sign-In (Easiest)</h3>
             <p>
               Sign in with your Google account. Sportsblock will create a Hive blockchain account
               for you automatically during onboarding. You&apos;ll pick a username and download your
               private keys (keep these safe — they&apos;re your account backup).
             </p>
           </div>
-          <div className="rounded-lg border border-border p-4">
-            <h3 className="mb-2 font-semibold text-foreground">Hive Wallet (For Existing Users)</h3>
+          <div className="rounded-lg border border-sb-border p-4">
+            <h3 className="mb-2 font-semibold text-sb-text-primary">
+              Hive Wallet (For Existing Users)
+            </h3>
             <p>
               If you already have a Hive account, connect directly using{' '}
               <a

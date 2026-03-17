@@ -138,7 +138,7 @@ export function CoverImageUpload({
         onClick={() => !isUploading && fileInputRef.current?.click()}
         className={cn(
           'flex cursor-pointer items-center justify-center gap-2 border-b px-4 py-3 transition-colors',
-          isDragging ? 'border-primary bg-primary/10' : 'bg-muted/30 hover:bg-muted/50',
+          isDragging ? 'border-primary bg-primary/10' : 'bg-sb-turf/30 hover:bg-sb-turf/50',
           isUploading && 'pointer-events-none opacity-60'
         )}
       >

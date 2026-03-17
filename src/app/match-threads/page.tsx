@@ -91,8 +91,8 @@ export default function MatchThreadsPage() {
             className={cn(
               'whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors',
               sportFilter === tab.id
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                ? 'bg-primary text-[#051A14]'
+                : 'bg-sb-turf text-muted-foreground hover:bg-sb-turf/80'
             )}
           >
             {tab.label}
@@ -109,8 +109,8 @@ export default function MatchThreadsPage() {
             className={cn(
               'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
               statusFilter === tab.id
-                ? 'bg-foreground/10 text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-foreground/10 text-sb-text-primary'
+                : 'text-muted-foreground hover:text-sb-text-primary'
             )}
           >
             {tab.label}
@@ -122,23 +122,23 @@ export default function MatchThreadsPage() {
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="animate-pulse rounded-xl border bg-card p-4">
+            <div key={i} className="animate-pulse rounded-xl border bg-sb-stadium p-4">
               <div className="space-y-3">
                 <div className="flex gap-2">
-                  <div className="h-4 w-8 rounded bg-muted" />
-                  <div className="h-4 w-20 rounded bg-muted" />
+                  <div className="h-4 w-8 rounded bg-sb-turf" />
+                  <div className="h-4 w-20 rounded bg-sb-turf" />
                 </div>
-                <div className="h-6 w-3/4 rounded bg-muted" />
+                <div className="h-6 w-3/4 rounded bg-sb-turf" />
                 <div className="flex gap-3">
-                  <div className="h-4 w-16 rounded bg-muted" />
-                  <div className="h-4 w-12 rounded bg-muted" />
+                  <div className="h-4 w-16 rounded bg-sb-turf" />
+                  <div className="h-4 w-12 rounded bg-sb-turf" />
                 </div>
               </div>
             </div>
           ))}
         </div>
       ) : error ? (
-        <div className="rounded-xl border bg-card p-8 text-center">
+        <div className="rounded-xl border bg-sb-stadium p-8 text-center">
           <div className="mb-4 flex justify-center">
             <div className="rounded-full bg-destructive/15 p-3">
               <AlertCircle className="h-8 w-8 text-destructive" />
@@ -152,7 +152,7 @@ export default function MatchThreadsPage() {
           </Button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border bg-card p-12 text-center">
+        <div className="rounded-xl border bg-sb-stadium p-12 text-center">
           <div className="mb-4 flex justify-center">
             <div className="rounded-full bg-primary/10 p-4">
               <Swords className="h-12 w-12 text-primary" />

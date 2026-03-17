@@ -33,7 +33,7 @@ const navLinkClass = (isActive: boolean) =>
     'flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
     isActive
       ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
-      : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
+      : 'text-muted-foreground hover:bg-foreground/5 hover:text-sb-text-primary dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white'
   );
 
 export function MobileNavMenu({ onClose }: MobileNavMenuProps) {
@@ -49,7 +49,7 @@ export function MobileNavMenu({ onClose }: MobileNavMenuProps) {
   };
 
   return (
-    <div className="border-t border-border/50 bg-white/80 backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.85)] lg:hidden">
+    <div className="border-t border-sb-border/50 bg-white/80 backdrop-blur-xl dark:border-white/[0.08] dark:bg-[hsl(220_25%_8%/0.85)] lg:hidden">
       <nav className="flex flex-col space-y-2 p-4">
         <Link
           href="/new"
@@ -129,7 +129,7 @@ export function MobileNavMenu({ onClose }: MobileNavMenuProps) {
             <Link
               href="/publish"
               onClick={onClose}
-              className="flex items-center space-x-3 rounded-lg px-4 py-3 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
+              className="flex items-center space-x-3 rounded-lg px-4 py-3 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-sb-text-primary dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
             >
               <Plus className="h-5 w-5" />
               <span>Create Post</span>
@@ -153,7 +153,7 @@ export function MobileNavMenu({ onClose }: MobileNavMenuProps) {
 
         <button
           onClick={toggleTheme}
-          className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
+          className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-sb-text-primary dark:text-white/70 dark:hover:bg-white/[0.08] dark:hover:text-white"
         >
           <div className="flex items-center space-x-3">
             {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}

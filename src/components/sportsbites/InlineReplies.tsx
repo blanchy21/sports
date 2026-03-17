@@ -156,7 +156,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="border-t bg-muted/20 px-3 py-3 sm:px-4 sm:pl-[60px]">
+    <div className="border-t bg-sb-turf/20 px-3 py-3 sm:px-4 sm:pl-[60px]">
       {isLoading ? (
         <div className="flex items-center justify-center py-4">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -239,7 +239,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
               </span>
               <button
                 onClick={clearReplyTarget}
-                className="ml-auto rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="ml-auto rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-sb-turf hover:text-sb-text-primary"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -258,7 +258,7 @@ export function InlineReplies({ author, permlink, source }: InlineRepliesProps) 
               ref={textareaRef}
               placeholder={replyingTo ? `Reply to @${replyingTo.author}...` : 'Write a reply...'}
               className={cn(
-                'flex-1 resize-none rounded-lg border bg-background p-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary',
+                'flex-1 resize-none rounded-lg border bg-background p-2 text-sm text-sb-text-primary focus:outline-none focus:ring-2 focus:ring-primary',
                 isOverLimit && 'border-destructive focus:ring-destructive'
               )}
               rows={1}

@@ -18,17 +18,17 @@ export function RouteError({
 }: RouteErrorProps) {
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6 rounded-lg border border-destructive/50 bg-card p-6 shadow-lg">
+      <div className="w-full max-w-md space-y-6 rounded-lg border border-destructive/50 bg-sb-stadium p-6 shadow-lg">
         <div className="flex items-center space-x-3">
           <AlertCircle className="h-8 w-8 text-destructive" />
-          <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+          <h1 className="text-2xl font-bold text-sb-text-primary">{title}</h1>
         </div>
 
         <p className="text-sm text-muted-foreground">{message}</p>
 
         {process.env.NODE_ENV === 'development' && (
-          <details className="rounded-md bg-muted p-3">
-            <summary className="cursor-pointer text-sm font-medium text-foreground">
+          <details className="rounded-md bg-sb-turf p-3">
+            <summary className="cursor-pointer text-sm font-medium text-sb-text-primary">
               Error Details
             </summary>
             <p className="mt-2 break-all font-mono text-xs text-muted-foreground">

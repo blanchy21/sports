@@ -89,21 +89,21 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         {isLoading ? (
           <div className="animate-pulse space-y-4">
             <div className="flex items-center space-x-4">
-              <div className="h-12 w-12 rounded-full bg-muted sm:h-16 sm:w-16"></div>
+              <div className="h-12 w-12 rounded-full bg-sb-turf sm:h-16 sm:w-16"></div>
               <div className="flex-1">
-                <div className="mb-2 h-6 w-1/3 rounded bg-muted"></div>
-                <div className="h-4 w-1/2 rounded bg-muted"></div>
+                <div className="mb-2 h-6 w-1/3 rounded bg-sb-turf"></div>
+                <div className="h-4 w-1/2 rounded bg-sb-turf"></div>
               </div>
             </div>
             <div className="space-y-2">
-              <div className="h-4 w-full rounded bg-muted"></div>
-              <div className="h-4 w-3/4 rounded bg-muted"></div>
+              <div className="h-4 w-full rounded bg-sb-turf"></div>
+              <div className="h-4 w-3/4 rounded bg-sb-turf"></div>
             </div>
           </div>
         ) : error || !profile ? (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">⚠️</div>
-            <h3 className="mb-2 text-xl font-semibold text-foreground">Profile Not Found</h3>
+            <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">Profile Not Found</h3>
             <p className="text-muted-foreground">Unable to load user profile.</p>
           </div>
         ) : (
@@ -130,11 +130,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
             {/* Profile Stats */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-lg bg-muted/30 p-3 text-center">
+              <div className="rounded-lg bg-sb-turf/30 p-3 text-center">
                 <div className="text-2xl font-bold">{followerCount || 0}</div>
                 <div className="text-sm text-muted-foreground">Followers</div>
               </div>
-              <div className="rounded-lg bg-muted/30 p-3 text-center">
+              <div className="rounded-lg bg-sb-turf/30 p-3 text-center">
                 <div className="text-2xl font-bold">{followingCount || 0}</div>
                 <div className="text-sm text-muted-foreground">Following</div>
               </div>

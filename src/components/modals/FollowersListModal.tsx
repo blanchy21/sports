@@ -57,10 +57,10 @@ export const FollowersListModal: React.FC<FollowersListModalProps> = ({
           <div className="animate-pulse space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="flex items-center space-x-4">
-                <div className="h-12 w-12 rounded-full bg-muted"></div>
+                <div className="h-12 w-12 rounded-full bg-sb-turf"></div>
                 <div className="flex-1">
-                  <div className="mb-2 h-4 w-1/3 rounded bg-muted"></div>
-                  <div className="h-3 w-1/2 rounded bg-muted"></div>
+                  <div className="mb-2 h-4 w-1/3 rounded bg-sb-turf"></div>
+                  <div className="h-3 w-1/2 rounded bg-sb-turf"></div>
                 </div>
               </div>
             ))}
@@ -72,7 +72,7 @@ export const FollowersListModal: React.FC<FollowersListModalProps> = ({
               return (
                 <div
                   key={`${rel.follower}-${rel.following}`}
-                  className="flex cursor-pointer items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-muted/50"
+                  className="flex cursor-pointer items-center space-x-3 rounded-lg p-3 transition-colors hover:bg-sb-turf/50"
                   onClick={() => handleUserClick(displayUsername)}
                 >
                   <Avatar fallback={displayUsername} alt={displayUsername} size="md" />
@@ -86,7 +86,7 @@ export const FollowersListModal: React.FC<FollowersListModalProps> = ({
         ) : (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">{type === 'followers' ? '👥' : '👤'}</div>
-            <h3 className="mb-2 text-xl font-semibold text-foreground">
+            <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">
               {type === 'followers' ? 'No Followers Yet' : 'Not Following Anyone'}
             </h3>
             <p className="text-muted-foreground">

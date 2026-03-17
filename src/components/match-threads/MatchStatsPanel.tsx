@@ -49,7 +49,7 @@ function StatRow({ stat }: { stat: MatchStat }) {
         <span
           className={cn(
             'tabular-nums',
-            homeLeading ? 'font-semibold text-foreground' : 'text-muted-foreground'
+            homeLeading ? 'font-semibold text-sb-text-primary' : 'text-muted-foreground'
           )}
         >
           {stat.home}
@@ -58,7 +58,7 @@ function StatRow({ stat }: { stat: MatchStat }) {
         <span
           className={cn(
             'tabular-nums',
-            awayLeading ? 'font-semibold text-foreground' : 'text-muted-foreground'
+            awayLeading ? 'font-semibold text-sb-text-primary' : 'text-muted-foreground'
           )}
         >
           {stat.away}
@@ -137,7 +137,7 @@ export function MatchStatsPanel({ stats, homeTeam, awayTeam }: MatchStatsPanelPr
       {additionalStats.length > 0 && (
         <button
           onClick={() => setShowAll((prev) => !prev)}
-          className="mt-4 flex w-full items-center justify-center gap-1.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          className="mt-4 flex w-full items-center justify-center gap-1.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-sb-text-primary"
         >
           {showAll ? (
             <>

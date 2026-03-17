@@ -55,7 +55,7 @@ export function LmsSurvivalBoard({ entries, isDeadlinePassed }: LmsSurvivalBoard
 
   if (sorted.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+      <div className="rounded-2xl border border-dashed border-sb-border p-8 text-center">
         <p className="text-sm text-muted-foreground">No entries yet.</p>
       </div>
     );
@@ -68,7 +68,7 @@ export function LmsSurvivalBoard({ entries, isDeadlinePassed }: LmsSurvivalBoard
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-muted/30 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <tr className="border-b bg-sb-turf/30 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <th className="w-12 px-4 py-3">#</th>
                 <th className="px-4 py-3">Player</th>
                 <th className="px-4 py-3 text-center">Status</th>
@@ -76,7 +76,7 @@ export function LmsSurvivalBoard({ entries, isDeadlinePassed }: LmsSurvivalBoard
                 <th className="px-4 py-3 text-center">GWs Survived</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/50">
+            <tbody className="divide-y divide-sb-border/50">
               {sorted.map((entry, i) => {
                 const status = getStatusIndicator(entry.status);
                 return (

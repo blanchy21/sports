@@ -120,7 +120,7 @@ export function TipModal({ isOpen, onClose, author, permlink, senderAccount }: T
             <Coins className="h-7 w-7 text-amber-500" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-foreground">
+            <h3 className="text-base font-semibold text-sb-text-primary">
               Connect a Hive Wallet to Tip
             </h3>
             <p className="mt-1.5 text-sm text-muted-foreground">
@@ -165,9 +165,11 @@ export function TipModal({ isOpen, onClose, author, permlink, senderAccount }: T
       {step === 'select' && (
         <div className="space-y-5">
           {/* Balance */}
-          <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2.5">
+          <div className="flex items-center justify-between rounded-lg bg-sb-turf/50 px-3 py-2.5">
             <span className="text-sm text-muted-foreground">Your balance</span>
-            <span className="font-semibold text-foreground">{liquidBalance.toFixed(3)} MEDALS</span>
+            <span className="font-semibold text-sb-text-primary">
+              {liquidBalance.toFixed(3)} MEDALS
+            </span>
           </div>
 
           {/* Preset amounts */}
@@ -181,7 +183,7 @@ export function TipModal({ isOpen, onClose, author, permlink, senderAccount }: T
                   'rounded-full border px-4 py-2 text-sm font-medium transition-all',
                   selectedPreset === preset
                     ? 'border-amber-500 bg-amber-500/10 text-amber-500'
-                    : 'border-border text-muted-foreground hover:border-amber-500/50 hover:text-amber-500',
+                    : 'border-sb-border text-muted-foreground hover:border-amber-500/50 hover:text-amber-500',
                   preset > liquidBalance && 'cursor-not-allowed opacity-40'
                 )}
               >
@@ -192,7 +194,7 @@ export function TipModal({ isOpen, onClose, author, permlink, senderAccount }: T
 
           {/* Custom amount */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Custom amount</label>
+            <label className="text-sm font-medium text-sb-text-primary">Custom amount</label>
             <div
               className={cn(
                 'flex items-center gap-2 rounded-lg border px-3 py-2',
@@ -205,7 +207,7 @@ export function TipModal({ isOpen, onClose, author, permlink, senderAccount }: T
                 value={customAmount}
                 onChange={handleCustomChange}
                 placeholder="0.000"
-                className="flex-1 bg-transparent font-mono text-lg text-foreground outline-none placeholder:text-muted-foreground/50"
+                className="flex-1 bg-transparent font-mono text-lg text-sb-text-primary outline-none placeholder:text-muted-foreground/50"
               />
               <span className="text-sm font-medium text-muted-foreground">MEDALS</span>
             </div>
@@ -241,7 +243,7 @@ export function TipModal({ isOpen, onClose, author, permlink, senderAccount }: T
           </div>
 
           {/* Warning */}
-          <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+          <div className="flex items-start gap-2 rounded-lg bg-sb-turf/50 p-3 text-sm text-muted-foreground">
             <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <p>This transfer is final and recorded on the blockchain.</p>
           </div>
@@ -291,7 +293,7 @@ export function TipModal({ isOpen, onClose, author, permlink, senderAccount }: T
             <CheckCircle className="h-7 w-7 text-success" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-foreground">Tip Sent!</h3>
+            <h3 className="text-base font-semibold text-sb-text-primary">Tip Sent!</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               You tipped {formatDisplay(amountNum)} MEDALS to @{author}
             </p>

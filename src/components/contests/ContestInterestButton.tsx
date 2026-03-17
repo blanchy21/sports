@@ -37,17 +37,15 @@ export function ContestInterestButton({
       className={cn(
         'inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all',
         isInterested
-          ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20'
-          : 'border-border bg-card text-muted-foreground hover:border-rose-500/30 hover:text-rose-500',
-        isPending && 'opacity-60 pointer-events-none'
+          ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:text-rose-400'
+          : 'border-sb-border bg-sb-stadium text-muted-foreground hover:border-rose-500/30 hover:text-rose-500',
+        isPending && 'pointer-events-none opacity-60'
       )}
     >
-      <Heart
-        className={cn('h-4 w-4 transition-all', isInterested && 'fill-current')}
-      />
+      <Heart className={cn('h-4 w-4 transition-all', isInterested && 'fill-current')} />
       {isInterested ? 'Interested' : "I'm Interested"}
       {interestCount > 0 && (
-        <span className="tabular-nums text-xs opacity-70">{interestCount}</span>
+        <span className="text-xs tabular-nums opacity-70">{interestCount}</span>
       )}
     </button>
   );

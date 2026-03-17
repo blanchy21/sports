@@ -463,7 +463,7 @@ function MoreByAuthor({ author, currentPermlink }: { author: string; currentPerm
           <Link
             key={p.permlink}
             href={`/post/${p.author}/${p.permlink}`}
-            className="rounded-lg border p-4 transition-colors hover:bg-muted/50"
+            className="rounded-lg border p-4 transition-colors hover:bg-sb-turf/50"
           >
             <h3 className="line-clamp-2 text-sm font-medium">{p.title}</h3>
             <p className="mt-1 text-xs text-muted-foreground">{formatDate(new Date(p.created))}</p>

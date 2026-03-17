@@ -79,13 +79,13 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
     return (
       <div className={`space-y-4 ${className}`}>
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="animate-pulse rounded-lg border bg-card p-4 sm:p-6">
+          <div key={i} className="animate-pulse rounded-lg border bg-sb-stadium p-4 sm:p-6">
             <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="h-12 w-12 rounded-full bg-muted sm:h-16 sm:w-16"></div>
+              <div className="h-12 w-12 rounded-full bg-sb-turf sm:h-16 sm:w-16"></div>
               <div className="flex-1">
-                <div className="mb-2 h-6 w-1/3 rounded bg-muted"></div>
-                <div className="mb-2 h-4 w-2/3 rounded bg-muted"></div>
-                <div className="h-4 w-1/2 rounded bg-muted"></div>
+                <div className="mb-2 h-6 w-1/3 rounded bg-sb-turf"></div>
+                <div className="mb-2 h-4 w-2/3 rounded bg-sb-turf"></div>
+                <div className="h-4 w-1/2 rounded bg-sb-turf"></div>
               </div>
             </div>
           </div>
@@ -98,7 +98,9 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
     return (
       <div className={`py-12 text-center ${className}`}>
         <div className="mb-4 text-6xl">⚠️</div>
-        <h3 className="mb-2 text-xl font-semibold text-foreground">Error Loading Communities</h3>
+        <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">
+          Error Loading Communities
+        </h3>
         <p className="mb-6 text-muted-foreground">
           {error instanceof Error
             ? error.message
@@ -223,7 +225,9 @@ export const CommunitiesList: React.FC<CommunitiesListProps> = ({
         ) : (
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">🏘️</div>
-            <h3 className="mb-2 text-xl font-semibold text-foreground">No Communities Found</h3>
+            <h3 className="mb-2 text-xl font-semibold text-sb-text-primary">
+              No Communities Found
+            </h3>
             <p className="text-muted-foreground">
               {filters.search
                 ? `No communities match "${filters.search}"`

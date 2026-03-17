@@ -180,12 +180,12 @@ export default function OnboardingUsernamePage() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-3xl font-black tracking-tight">
-            <span className="text-foreground">SPORTS</span>
+            <span className="text-sb-text-primary">SPORTS</span>
             <span className="bg-gradient-to-r from-accent to-aegean-sky bg-clip-text text-transparent">
               BLOCK
             </span>
           </h1>
-          <h2 className="mb-2 text-xl font-bold text-foreground">Choose your Hive username</h2>
+          <h2 className="mb-2 text-xl font-bold text-sb-text-primary">Choose your Hive username</h2>
           <p className="text-sm text-muted-foreground">
             This creates a real blockchain account. Your username is permanent and cannot be
             changed.
@@ -194,7 +194,10 @@ export default function OnboardingUsernamePage() {
 
         {/* Username input */}
         <div className="mb-6">
-          <label htmlFor="hive-username" className="mb-2 block text-sm font-medium text-foreground">
+          <label
+            htmlFor="hive-username"
+            className="mb-2 block text-sm font-medium text-sb-text-primary"
+          >
             Username
           </label>
           <div className="relative">
@@ -210,7 +213,7 @@ export default function OnboardingUsernamePage() {
               }
               placeholder="your-username"
               maxLength={16}
-              className="h-12 w-full rounded-xl border border-border bg-muted/30 pl-8 pr-10 text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+              className="h-12 w-full rounded-xl border border-sb-border bg-sb-turf/30 pl-8 pr-10 text-sb-text-primary placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               disabled={isCreating}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2">

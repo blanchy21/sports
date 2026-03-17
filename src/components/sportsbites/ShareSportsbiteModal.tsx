@@ -126,7 +126,7 @@ export function ShareSportsbiteModal({
       {/* Preview */}
       <div className="space-y-4">
         {state === 'capturing' && (
-          <div className="flex h-48 items-center justify-center rounded-lg bg-muted">
+          <div className="flex h-48 items-center justify-center rounded-lg bg-sb-turf">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         )}

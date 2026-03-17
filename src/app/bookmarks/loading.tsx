@@ -15,8 +15,8 @@ export default function BookmarksLoading() {
         <div className="mx-auto max-w-4xl space-y-6 px-6 py-6">
           {/* Header Skeleton */}
           <div className="flex animate-pulse items-center space-x-3">
-            <div className="h-6 w-6 rounded bg-muted" />
-            <div className="h-8 w-32 rounded bg-muted" />
+            <div className="h-6 w-6 rounded bg-sb-turf" />
+            <div className="h-8 w-32 rounded bg-sb-turf" />
           </div>
 
           {/* Posts Skeleton */}

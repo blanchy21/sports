@@ -19,7 +19,7 @@ export function SectionCard({
           <Icon className="h-5 w-5 text-primary" />
         </div>
         <div className="min-w-0">
-          <h2 className="mb-3 text-xl font-semibold text-foreground">{title}</h2>
+          <h2 className="mb-3 text-xl font-semibold text-sb-text-primary">{title}</h2>
           <div className="space-y-4 leading-relaxed text-muted-foreground">{children}</div>
         </div>
       </div>
@@ -43,7 +43,7 @@ export function SEOPageLayout({
       <div className="mx-auto max-w-3xl px-4 py-12">
         <Link
           href="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-sb-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to SPORTSBLOCK
@@ -52,7 +52,7 @@ export function SEOPageLayout({
         <h1 className="mb-2 text-3xl font-bold">{title}</h1>
         <p className="mb-10 text-sm text-muted-foreground">{subtitle}</p>
 
-        <div className="prose prose-sm max-w-none space-y-12 text-foreground dark:prose-invert">
+        <div className="prose prose-sm max-w-none space-y-12 text-sb-text-primary dark:prose-invert">
           {children}
         </div>
 

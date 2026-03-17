@@ -17,10 +17,10 @@ export default function NewPostsLoading() {
           {/* Header Skeleton */}
           <div className="flex animate-pulse items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="h-6 w-6 rounded bg-muted" />
-              <div className="h-8 w-32 rounded bg-muted" />
+              <div className="h-6 w-6 rounded bg-sb-turf" />
+              <div className="h-8 w-32 rounded bg-sb-turf" />
             </div>
-            <div className="h-9 w-20 rounded bg-muted" />
+            <div className="h-9 w-20 rounded bg-sb-turf" />
           </div>
 
           {/* Posts Skeleton */}

@@ -82,15 +82,15 @@ export const LatestNewsDropdown: React.FC<LatestNewsDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full z-50 mt-2 max-h-[32rem] w-[420px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-border bg-card shadow-xl"
+      className="absolute right-0 top-full z-50 mt-2 max-h-[32rem] w-[420px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-sb-border bg-sb-stadium shadow-xl"
       data-testid="news-dropdown"
     >
       {/* Header */}
-      <div className="border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 p-4">
+      <div className="border-b border-sb-border bg-gradient-to-r from-primary/5 to-accent/5 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Newspaper className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Latest Sports News</h3>
+            <h3 className="font-semibold text-sb-text-primary">Latest Sports News</h3>
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -98,7 +98,7 @@ export const LatestNewsDropdown: React.FC<LatestNewsDropdownProps> = ({
               size="sm"
               onClick={() => refreshNews()}
               disabled={isRefreshing}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="text-xs text-muted-foreground hover:text-sb-text-primary"
             >
               <RefreshCw className={`mr-1 h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
               {isRefreshing ? 'Updating...' : 'Refresh'}
@@ -134,20 +134,20 @@ export const LatestNewsDropdown: React.FC<LatestNewsDropdownProps> = ({
             <p className="text-sm">No news available</p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-sb-border">
             {articles.map((article) => (
               <a
                 key={article.id}
                 href={article.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group block w-full p-4 text-left transition-colors hover:bg-muted/50"
+                className="group block w-full p-4 text-left transition-colors hover:bg-sb-turf/50"
               >
                 <div className="flex gap-3">
                   {/* Thumbnail */}
                   <div className="flex-shrink-0">
                     {article.image?.url ? (
-                      <div className="relative h-14 w-20 overflow-hidden rounded-md bg-muted">
+                      <div className="relative h-14 w-20 overflow-hidden rounded-md bg-sb-turf">
                         <Image
                           src={article.image.url}
                           alt={article.headline}
@@ -157,7 +157,7 @@ export const LatestNewsDropdown: React.FC<LatestNewsDropdownProps> = ({
                         />
                       </div>
                     ) : (
-                      <div className="flex h-14 w-20 items-center justify-center rounded-md bg-muted text-2xl">
+                      <div className="flex h-14 w-20 items-center justify-center rounded-md bg-sb-turf text-2xl">
                         {getSportIcon(article.sport)}
                       </div>
                     )}
@@ -172,7 +172,7 @@ export const LatestNewsDropdown: React.FC<LatestNewsDropdownProps> = ({
                       </span>
                     </div>
 
-                    <h4 className="line-clamp-2 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                    <h4 className="line-clamp-2 text-sm font-medium text-sb-text-primary transition-colors group-hover:text-primary">
                       {article.headline}
                     </h4>
 
@@ -191,7 +191,7 @@ export const LatestNewsDropdown: React.FC<LatestNewsDropdownProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="border-t border-border bg-muted/30 p-3">
+      <div className="border-t border-sb-border bg-sb-turf/30 p-3">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Powered by ESPN</span>
           <a

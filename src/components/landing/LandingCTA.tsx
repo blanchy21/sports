@@ -45,9 +45,9 @@ export default function LandingCTA() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
               whileHover={{ y: -8 }}
-              className="relative overflow-hidden rounded-3xl border-2 border-primary bg-card p-8"
+              className="relative overflow-hidden rounded-3xl border-2 border-primary bg-sb-stadium p-8"
             >
-              <div className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
+              <div className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-bold text-[#051A14]">
                 RECOMMENDED
               </div>
 
@@ -101,7 +101,7 @@ export default function LandingCTA() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
               whileHover={{ y: -8 }}
-              className="rounded-3xl border bg-card p-8"
+              className="rounded-3xl border bg-sb-stadium p-8"
             >
               <div className="mb-6 w-fit rounded-xl bg-accent/10 p-3">
                 <User className="h-8 w-8 text-accent" />
