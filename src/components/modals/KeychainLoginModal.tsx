@@ -77,7 +77,7 @@ export const KeychainLoginModal: React.FC<KeychainLoginModalProps> = ({ isOpen, 
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
             <Image
-              src="/hive-keychain-logo.svg"
+              src="/icons/hive-keychain-logo.svg"
               alt="Hive Keychain"
               width={22}
               height={22}

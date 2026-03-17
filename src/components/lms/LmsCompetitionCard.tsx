@@ -93,7 +93,7 @@ export const LmsCompetitionCard = React.memo(function LmsCompetitionCard({
         {/* Cover image */}
         <div className="relative h-44 w-full overflow-hidden">
           <Image
-            src="/lms-football-unsplash.jpg"
+            src="/sports/lms-football-unsplash.jpg"
             alt="Last Man Standing"
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"

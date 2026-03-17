@@ -1,0 +1,28 @@
+<svg viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SportsBlock">
+  <title>SportsBlock</title>
+
+  <!-- Mark — centred -->
+  <g id="mark" transform="translate(60, 0)">
+    <polygon points="110,82 60,110 10,82 10,38 60,10 110,38" fill="#00C49A"/>
+    <path d="M34,88 L60,48 L86,88" fill="none" stroke="#051A14" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="60" cy="100" r="7" fill="#051A14"/>
+  </g>
+
+  <!-- Wordmark stacked below -->
+  <text
+    x="120" y="160"
+    text-anchor="middle"
+    font-family="'Barlow Condensed', 'Arial Narrow', sans-serif"
+    font-weight="700"
+    font-size="52"
+    letter-spacing="-0.5"
+    fill="#F0F0F0">SPORTS</text>
+  <text
+    x="120" y="194"
+    text-anchor="middle"
+    font-family="'Barlow Condensed', 'Arial Narrow', sans-serif"
+    font-weight="700"
+    font-size="32"
+    letter-spacing="3"
+    fill="#00C49A">BLOCK</text>
+</svg>

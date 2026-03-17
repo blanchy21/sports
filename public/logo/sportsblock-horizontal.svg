@@ -1,0 +1,28 @@
+<svg viewBox="0 0 480 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SportsBlock">
+  <title>SportsBlock</title>
+
+  <!-- Mark -->
+  <g id="mark">
+    <polygon points="110,82 60,110 10,82 10,38 60,10 110,38" fill="#00C49A"/>
+    <path d="M34,88 L60,48 L86,88" fill="none" stroke="#051A14" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="60" cy="100" r="7" fill="#051A14"/>
+  </g>
+
+  <!-- Wordmark — SPORTS white, BLOCK teal -->
+  <!-- Uses Barlow Condensed 700. Fallback: Arial Narrow Bold -->
+  <text
+    x="132" y="78"
+    font-family="'Barlow Condensed', 'Arial Narrow', sans-serif"
+    font-weight="700"
+    font-size="68"
+    letter-spacing="-1"
+    fill="#F0F0F0">SPORTS</text>
+  <text
+    x="132" y="78"
+    font-family="'Barlow Condensed', 'Arial Narrow', sans-serif"
+    font-weight="700"
+    font-size="68"
+    letter-spacing="-1"
+    fill="#00C49A"
+    dx="258">BLOCK</text>
+</svg>

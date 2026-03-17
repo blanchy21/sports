@@ -38,7 +38,7 @@ export default function LandingShowcase() {
             <span className="text-sm text-sb-text-muted">Powered by</span>
             <div className="flex items-center gap-2">
               <Image
-                src="/hive-logo.svg"
+                src="/icons/hive-logo.svg"
                 alt="Hive"
                 width={28}
                 height={32}
@@ -80,18 +80,18 @@ export default function LandingShowcase() {
         {/* Row 1 — scrolls left */}
         <div className="mb-4 flex animate-marquee-left">
           {[
-            '/enrique-guzman-egas-Q1zq6ZLnRJA-unsplash.jpg',
-            '/david-pisnoy-At5I1OSl_2M-unsplash.jpg',
-            '/markus-spiske-WUehAgqO5hE-unsplash.jpg',
-            '/robert-ruggiero-LUqej0W6BSI-unsplash.jpg',
-            '/moises-alex-WqI-PbYugn4-unsplash.jpg',
-            '/welcome-3Q-2blmd5o8-unsplash.jpg',
-            '/enrique-guzman-egas-Q1zq6ZLnRJA-unsplash.jpg',
-            '/david-pisnoy-At5I1OSl_2M-unsplash.jpg',
-            '/markus-spiske-WUehAgqO5hE-unsplash.jpg',
-            '/robert-ruggiero-LUqej0W6BSI-unsplash.jpg',
-            '/moises-alex-WqI-PbYugn4-unsplash.jpg',
-            '/welcome-3Q-2blmd5o8-unsplash.jpg',
+            '/sports/enrique-guzman-egas-Q1zq6ZLnRJA-unsplash.jpg',
+            '/sports/david-pisnoy-At5I1OSl_2M-unsplash.jpg',
+            '/sports/markus-spiske-WUehAgqO5hE-unsplash.jpg',
+            '/sports/robert-ruggiero-LUqej0W6BSI-unsplash.jpg',
+            '/sports/moises-alex-WqI-PbYugn4-unsplash.jpg',
+            '/sports/welcome-3Q-2blmd5o8-unsplash.jpg',
+            '/sports/enrique-guzman-egas-Q1zq6ZLnRJA-unsplash.jpg',
+            '/sports/david-pisnoy-At5I1OSl_2M-unsplash.jpg',
+            '/sports/markus-spiske-WUehAgqO5hE-unsplash.jpg',
+            '/sports/robert-ruggiero-LUqej0W6BSI-unsplash.jpg',
+            '/sports/moises-alex-WqI-PbYugn4-unsplash.jpg',
+            '/sports/welcome-3Q-2blmd5o8-unsplash.jpg',
           ].map((src, i) => (
             <div
               key={i}
@@ -112,20 +112,20 @@ export default function LandingShowcase() {
         {/* Row 2 — scrolls right */}
         <div className="flex animate-marquee-right">
           {[
-            '/ben-weber-r-krWscXjvQ-unsplash.jpg',
-            '/jeff-cadestin-wRXJuof2eD4-unsplash.jpg',
-            '/jack-hunter-Ph0Aa13k5-c-unsplash.jpg',
-            '/mat-weller-Hk92KV4zU8M-unsplash.jpg',
-            '/muktasim-azlan-pPfOLOK0oeI-unsplash.jpg',
-            '/riley-mccullough-iezcEpGuYdE-unsplash.jpg',
-            '/chris-chow-IuWcgImMY0k-unsplash.jpg',
-            '/ben-weber-r-krWscXjvQ-unsplash.jpg',
-            '/jeff-cadestin-wRXJuof2eD4-unsplash.jpg',
-            '/jack-hunter-Ph0Aa13k5-c-unsplash.jpg',
-            '/mat-weller-Hk92KV4zU8M-unsplash.jpg',
-            '/muktasim-azlan-pPfOLOK0oeI-unsplash.jpg',
-            '/riley-mccullough-iezcEpGuYdE-unsplash.jpg',
-            '/chris-chow-IuWcgImMY0k-unsplash.jpg',
+            '/sports/ben-weber-r-krWscXjvQ-unsplash.jpg',
+            '/sports/jeff-cadestin-wRXJuof2eD4-unsplash.jpg',
+            '/sports/jack-hunter-Ph0Aa13k5-c-unsplash.jpg',
+            '/sports/mat-weller-Hk92KV4zU8M-unsplash.jpg',
+            '/sports/muktasim-azlan-pPfOLOK0oeI-unsplash.jpg',
+            '/sports/riley-mccullough-iezcEpGuYdE-unsplash.jpg',
+            '/sports/chris-chow-IuWcgImMY0k-unsplash.jpg',
+            '/sports/ben-weber-r-krWscXjvQ-unsplash.jpg',
+            '/sports/jeff-cadestin-wRXJuof2eD4-unsplash.jpg',
+            '/sports/jack-hunter-Ph0Aa13k5-c-unsplash.jpg',
+            '/sports/mat-weller-Hk92KV4zU8M-unsplash.jpg',
+            '/sports/muktasim-azlan-pPfOLOK0oeI-unsplash.jpg',
+            '/sports/riley-mccullough-iezcEpGuYdE-unsplash.jpg',
+            '/sports/chris-chow-IuWcgImMY0k-unsplash.jpg',
           ].map((src, i) => (
             <div
               key={i}
@@ -334,7 +334,7 @@ export default function LandingShowcase() {
               <div className="p-8">
                 <div className="mb-4 flex items-center gap-3">
                   <Image
-                    src="/sportsbites-logo.png"
+                    src="/logo/sportsbites-logo.png"
                     alt="Sportsbites"
                     width={32}
                     height={32}

@@ -142,10 +142,10 @@ export default function LandingHero() {
           <div className="flex items-center justify-center gap-6 sm:gap-8">
             <span className="text-xs text-white/40">Connect with</span>
             {[
-              { src: '/hive-keychain-logo.svg', alt: 'Hive Keychain', w: 24, h: 24 },
-              { src: '/hivesigner-icon.png', alt: 'HiveSigner', w: 24, h: 24 },
-              { src: '/hiveauth-logo.png', alt: 'HiveAuth', w: 24, h: 24 },
-              { src: '/ledger-logo.png', alt: 'Ledger', w: 24, h: 24 },
+              { src: '/icons/hive-keychain-logo.svg', alt: 'Hive Keychain', w: 24, h: 24 },
+              { src: '/icons/hivesigner-icon.png', alt: 'HiveSigner', w: 24, h: 24 },
+              { src: '/icons/hiveauth-logo.png', alt: 'HiveAuth', w: 24, h: 24 },
+              { src: '/icons/ledger-logo.png', alt: 'Ledger', w: 24, h: 24 },
             ].map((wallet, i) => (
               <motion.div
                 key={i}

@@ -1,0 +1,9 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SportsBlock mark">
+  <title>SportsBlock</title>
+  <!-- Hexagon dark fill for use on teal or light backgrounds -->
+  <polygon points="110,82 60,110 10,82 10,38 60,10 110,38" fill="#0D0D0D"/>
+  <!-- Upward chevron teal -->
+  <path d="M34,88 L60,48 L86,88" fill="none" stroke="#00C49A" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Base dot -->
+  <circle cx="60" cy="100" r="7" fill="#00C49A"/>
+</svg>

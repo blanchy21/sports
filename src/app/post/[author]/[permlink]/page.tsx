@@ -114,7 +114,7 @@ export default async function PostDetailPage({ params }: PageProps) {
             headline: post.title,
             description: stripMarkdown(post.body).slice(0, 160),
             datePublished: post.created,
-            image: extractFirstImage(post) || `${BASE_URL}/sportsblock-hero.png`,
+            image: extractFirstImage(post) || `${BASE_URL}/x-card-image.png`,
             author: {
               '@type': 'Person',
               name: author,
@@ -125,7 +125,7 @@ export default async function PostDetailPage({ params }: PageProps) {
               name: 'Sportsblock',
               logo: {
                 '@type': 'ImageObject',
-                url: `${BASE_URL}/sportsblock512.png`,
+                url: `${BASE_URL}/favicon.svg`,
               },
             },
             mainEntityOfPage: {

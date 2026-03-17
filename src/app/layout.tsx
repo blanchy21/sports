@@ -51,12 +51,8 @@ export const metadata: Metadata = {
     'Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.',
   keywords: ['sports', 'blogging', 'blockchain', 'hive', 'crypto', 'rewards'],
   icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-    ],
-    apple: '/apple-touch-icon.png',
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: '/favicon.svg',
   },
   manifest: '/site.webmanifest',
   openGraph: {
@@ -68,9 +64,9 @@ export const metadata: Metadata = {
     locale: 'en_US',
     images: [
       {
-        url: '/sportsblock-hero.png',
-        width: 1980,
-        height: 1080,
+        url: '/x-card-image.png',
+        width: 1200,
+        height: 630,
         alt: 'Sportsblock - Where Sports Meets Blockchain',
       },
     ],
@@ -115,7 +111,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   '@type': 'Organization',
                   name: 'Sportsblock',
                   url: 'https://sportsblock.app',
-                  logo: 'https://sportsblock.app/sportsblock512.png',
+                  logo: 'https://sportsblock.app/favicon.svg',
                 },
                 {
                   '@type': 'WebSite',

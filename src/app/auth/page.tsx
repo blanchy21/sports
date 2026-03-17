@@ -25,7 +25,7 @@ const providerConfig: Record<string, { name: string; icon: React.ReactNode; desc
       name: 'Hive Keychain',
       icon: (
         <Image
-          src="/hive-keychain-logo.svg"
+          src="/icons/hive-keychain-logo.svg"
           alt="Hive Keychain"
           width={24}
           height={24}
@@ -38,7 +38,7 @@ const providerConfig: Record<string, { name: string; icon: React.ReactNode; desc
       name: 'HiveSigner',
       icon: (
         <Image
-          src="/hivesigner-icon.png"
+          src="/icons/hivesigner-icon.png"
           alt="HiveSigner"
           width={24}
           height={24}

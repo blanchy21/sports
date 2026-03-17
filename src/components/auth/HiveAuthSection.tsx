@@ -18,7 +18,7 @@ const PROVIDER_CONFIGS: Record<
     description: 'Browser Extension',
     icon: (
       <Image
-        src="/hive-keychain-logo.svg"
+        src="/icons/hive-keychain-logo.svg"
         alt="Hive Keychain"
         width={20}
         height={20}
@@ -31,7 +31,7 @@ const PROVIDER_CONFIGS: Record<
     description: 'Web Wallet',
     icon: (
       <Image
-        src="/hivesigner-icon.png"
+        src="/icons/hivesigner-icon.png"
         alt="HiveSigner"
         width={20}
         height={20}

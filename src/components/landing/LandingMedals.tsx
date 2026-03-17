@@ -29,7 +29,7 @@ export default function LandingMedals() {
       {/* ━━━ Photo Break ━━━ */}
       <section className="relative flex min-h-[50vh] items-center justify-center overflow-hidden">
         <Image
-          src="/john-o-nolan-o_gJAkcKJmM-unsplash.jpg"
+          src="/sports/john-o-nolan-o_gJAkcKJmM-unsplash.jpg"
           alt="Sports stadium"
           fill
           sizes="100vw"

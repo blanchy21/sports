@@ -169,10 +169,10 @@ export default function LandingCommunity({ sports }: LandingCommunityProps) {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
               {[
-                { src: '/hive-keychain-logo.svg', alt: 'Hive Keychain', label: 'Keychain' },
-                { src: '/hivesigner-icon.png', alt: 'HiveSigner', label: 'HiveSigner' },
-                { src: '/hiveauth-logo.png', alt: 'HiveAuth', label: 'HiveAuth' },
-                { src: '/ledger-logo.png', alt: 'Ledger', label: 'Ledger' },
+                { src: '/icons/hive-keychain-logo.svg', alt: 'Hive Keychain', label: 'Keychain' },
+                { src: '/icons/hivesigner-icon.png', alt: 'HiveSigner', label: 'HiveSigner' },
+                { src: '/icons/hiveauth-logo.png', alt: 'HiveAuth', label: 'HiveAuth' },
+                { src: '/icons/ledger-logo.png', alt: 'Ledger', label: 'Ledger' },
               ].map((wallet, i) => (
                 <motion.div
                   key={i}

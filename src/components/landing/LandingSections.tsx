@@ -13,42 +13,42 @@ import LandingCTA from './LandingCTA';
 const sports = [
   {
     name: 'Football',
-    image: '/jason-charters-IorqsMssQH0-unsplash.jpg',
+    image: '/sports/jason-charters-IorqsMssQH0-unsplash.jpg',
     color: 'from-[#3D9B70]/85 to-[#1C5940]/90',
   },
   {
     name: 'Basketball',
-    image: '/basketball-unsplash.jpg',
+    image: '/sports/basketball-unsplash.jpg',
     color: 'from-[#D47838]/85 to-[#7F4822]/90',
   },
   {
     name: 'Tennis',
-    image: '/james-lewis-HqdJzlF89_g-unsplash.jpg',
+    image: '/sports/james-lewis-HqdJzlF89_g-unsplash.jpg',
     color: 'from-[#6B9E3C]/85 to-[#3F5D24]/90',
   },
   {
     name: 'American Football',
-    image: '/american-football-unsplash.jpg',
+    image: '/sports/american-football-unsplash.jpg',
     color: 'from-[#A67A30]/85 to-[#62491D]/90',
   },
   {
     name: 'Cricket',
-    image: '/yogendra-singh-DKcN3Lyuuro-unsplash.jpg',
+    image: '/sports/yogendra-singh-DKcN3Lyuuro-unsplash.jpg',
     color: 'from-[#3880B8]/85 to-[#214B6C]/90',
   },
   {
     name: 'Boxing',
-    image: '/boxing-unsplash.jpg',
+    image: '/sports/boxing-unsplash.jpg',
     color: 'from-[#AD3939]/85 to-[#602020]/90',
   },
   {
     name: 'Rugby',
-    image: '/stefan-lehner-fqrzserMsX4-unsplash.jpg',
+    image: '/sports/stefan-lehner-fqrzserMsX4-unsplash.jpg',
     color: 'from-[#3A8F8F]/85 to-[#225454]/90',
   },
   {
     name: 'Golf',
-    image: '/marcus-santos-A37jWpUFdlo-unsplash.jpg',
+    image: '/sports/marcus-santos-A37jWpUFdlo-unsplash.jpg',
     color: 'from-[#358F54]/85 to-[#1F5431]/90',
   },
 ];

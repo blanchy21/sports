@@ -53,7 +53,7 @@ export default function LandingCTA() {
 
               <div className="mb-6 w-fit rounded-xl bg-sb-teal/10 p-3">
                 <Image
-                  src="/hive-keychain-logo.svg"
+                  src="/icons/hive-keychain-logo.svg"
                   alt="Hive Keychain"
                   width={32}
                   height={32}
