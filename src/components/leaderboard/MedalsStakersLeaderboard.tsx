@@ -4,6 +4,7 @@
  * MedalsStakersLeaderboard Component
  *
  * Full leaderboard of MEDALS token holders ranked by total holdings.
+ * Shows the most recent APR distribution summary and per-user rewards.
  * Used as a tab view on the /leaderboard page.
  */
 
@@ -12,7 +13,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Avatar } from '@/components/core/Avatar';
 import { getHiveAvatarUrl } from '@/lib/utils/avatar';
-import { Loader2, Medal, RefreshCw } from 'lucide-react';
+import { Loader2, Medal, RefreshCw, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
 import { Button } from '@/components/core/Button';
 import { PREMIUM_TIERS } from '@/lib/hive-engine/constants';
 import type { PremiumTier } from '@/lib/hive-engine/constants';
@@ -27,12 +28,24 @@ interface StakerEntry {
   delegatedOut: number;
   total: number;
   premiumTier: PremiumTier | null;
+  lastReward: number | null;
+}
+
+interface DistributionSummary {
+  weekId: string;
+  apr: number;
+  totalStaked: number;
+  totalDistributed: number;
+  eligibleStakerCount: number;
+  status: string;
+  distributedAt: string;
 }
 
 interface LeaderboardResponse {
   holders: StakerEntry[];
   totalHolders: number;
   timestamp: string;
+  latestDistribution: DistributionSummary | null;
 }
 
 const TIER_ASSETS: Record<string, { label: string; src: string }> = {
@@ -63,6 +76,12 @@ function formatAmount(amount: number): string {
   return amount.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
+function formatReward(amount: number): string {
+  if (amount >= 1_000) return `${(amount / 1_000).toFixed(1)}K`;
+  if (amount < 0.01) return '<0.01';
+  return amount.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
 function PremiumBadge({ tier }: { tier: PremiumTier }) {
   const asset = TIER_ASSETS[tier];
   if (!asset) return null;
@@ -75,6 +94,62 @@ function PremiumBadge({ tier }: { tier: PremiumTier }) {
       className="inline-block object-contain"
       title={`${asset.label} tier`}
     />
+  );
+}
+
+function DistributionBanner({ distribution }: { distribution: DistributionSummary }) {
+  const isCompleted = distribution.status === 'completed';
+  const distributedDate = new Date(distribution.distributedAt);
+  const dateStr = distributedDate.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  return (
+    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+      <div className="flex items-center gap-2 text-sm font-medium text-primary">
+        <TrendingUp className="h-4 w-4" />
+        Latest Staking Rewards — {distribution.weekId}
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div>
+          <div className="text-xs text-muted-foreground">APR</div>
+          <div className="text-lg font-bold">{distribution.apr}%</div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">Total Distributed</div>
+          <div className="text-lg font-bold">
+            {formatAmount(distribution.totalDistributed)}{' '}
+            <span className="text-xs font-normal text-muted-foreground">MEDALS</span>
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">Eligible Stakers</div>
+          <div className="text-lg font-bold">{distribution.eligibleStakerCount}</div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">Status</div>
+          <div className="flex items-center gap-1 text-sm font-medium">
+            {isCompleted ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span className="text-green-600 dark:text-green-400">Completed</span>
+              </>
+            ) : (
+              <>
+                <Clock className="h-4 w-4 text-yellow-500" />
+                <span className="capitalize text-yellow-600 dark:text-yellow-400">
+                  {distribution.status}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="mt-2 text-xs text-muted-foreground">Distributed on {dateStr}</div>
+    </div>
   );
 }
 
@@ -133,8 +208,13 @@ export function MedalsStakersLeaderboard() {
     );
   }
 
+  const hasRewards = data.latestDistribution !== null;
+
   return (
     <div className="space-y-4">
+      {/* Distribution Banner */}
+      {data.latestDistribution && <DistributionBanner distribution={data.latestDistribution} />}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
@@ -177,6 +257,7 @@ export function MedalsStakersLeaderboard() {
               <th className="px-4 py-3 text-right">Staked</th>
               <th className="px-4 py-3 text-right">Liquid</th>
               <th className="px-4 py-3 text-right">Total</th>
+              {hasRewards && <th className="px-4 py-3 text-right">Last Reward</th>}
               <th className="px-4 py-3 text-center">Tier</th>
             </tr>
           </thead>
@@ -219,6 +300,17 @@ export function MedalsStakersLeaderboard() {
                 <td className="px-4 py-3 text-right font-mono text-sm font-semibold">
                   {formatAmount(holder.total)}
                 </td>
+                {hasRewards && (
+                  <td className="px-4 py-3 text-right font-mono text-sm">
+                    {holder.lastReward != null ? (
+                      <span className="text-green-600 dark:text-green-400">
+                        +{formatReward(holder.lastReward)}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </td>
+                )}
                 <td className="px-4 py-3 text-center">
                   {holder.premiumTier ? (
                     <PremiumBadge tier={holder.premiumTier} />
@@ -260,7 +352,9 @@ export function MedalsStakersLeaderboard() {
               </Link>
               {holder.premiumTier && <PremiumBadge tier={holder.premiumTier} />}
             </div>
-            <div className="mt-2 grid grid-cols-3 gap-2 pl-10 text-xs">
+            <div
+              className={`mt-2 grid gap-2 pl-10 text-xs ${hasRewards ? 'grid-cols-4' : 'grid-cols-3'}`}
+            >
               <div>
                 <span className="text-muted-foreground">Staked</span>
                 <div className="font-mono font-semibold">{formatAmount(holder.staked)}</div>
@@ -273,6 +367,20 @@ export function MedalsStakersLeaderboard() {
                 <span className="text-muted-foreground">Total</span>
                 <div className="font-mono font-semibold">{formatAmount(holder.total)}</div>
               </div>
+              {hasRewards && (
+                <div>
+                  <span className="text-muted-foreground">Reward</span>
+                  <div className="font-mono font-semibold">
+                    {holder.lastReward != null ? (
+                      <span className="text-green-600 dark:text-green-400">
+                        +{formatReward(holder.lastReward)}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
