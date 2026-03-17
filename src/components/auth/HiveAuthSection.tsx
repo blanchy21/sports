@@ -93,11 +93,11 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
 
       {/* Error Message */}
       {errorMessage && (
-        <div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 p-2">
-          <p className="text-sm text-destructive">{errorMessage}</p>
+        <div className="mb-3 rounded-lg border border-sb-loss/30 bg-sb-loss/10 p-2">
+          <p className="text-sm text-sb-loss">{errorMessage}</p>
           <button
             onClick={() => onError('')}
-            className="mt-1 text-xs text-destructive underline hover:text-destructive/80"
+            className="mt-1 text-xs text-sb-loss underline hover:text-sb-loss/80"
           >
             Dismiss
           </button>
@@ -117,7 +117,7 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
         {/* Loading state */}
         {!wallet.isReady && (
           <div className="flex items-center justify-center p-4">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <Loader2 className="h-6 w-6 animate-spin text-sb-teal" />
             <span className="ml-2 text-sm text-sb-text-primary/70">Loading wallets...</span>
           </div>
         )}
@@ -169,7 +169,7 @@ export const HiveAuthSection: React.FC<HiveAuthSectionProps> = ({
                   key={provider}
                   onClick={() => handleWalletLogin(provider)}
                   disabled={isConnecting || isProcessingLogin}
-                  className="w-full bg-accent py-3 text-base font-semibold text-white hover:bg-accent/90"
+                  className="w-full py-3 text-base font-semibold"
                 >
                   {isProcessingLogin ? (
                     <>

@@ -14,7 +14,7 @@ export const AccountDiscovery: React.FC<AccountDiscoveryProps> = ({
         <h5 className="mb-1 text-sm font-medium text-sb-text-primary/80">
           Multi-Account Discovery
         </h5>
-        <p className="mb-2 text-xs text-muted-foreground">
+        <p className="mb-2 text-xs text-sb-text-muted">
           Discover and connect multiple Hive accounts from your wallets
         </p>
         <Button
@@ -42,19 +42,17 @@ export const AccountDiscovery: React.FC<AccountDiscoveryProps> = ({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-accent">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-sb-teal">
                     <span className="text-xs font-bold text-white">
                       {account.username?.charAt(0).toUpperCase() || '?'}
                     </span>
                   </div>
                   <div>
                     <div className="text-sm font-medium">@{account.username}</div>
-                    <div className="text-xs capitalize text-muted-foreground">
-                      {account.provider}
-                    </div>
+                    <div className="text-xs capitalize text-sb-text-muted">{account.provider}</div>
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground/70">
+                <div className="text-xs text-sb-text-muted/70">
                   {account.balance ? `${account.balance} HIVE` : 'Connect'}
                 </div>
               </div>

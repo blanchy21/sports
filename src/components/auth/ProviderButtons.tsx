@@ -54,7 +54,7 @@ export const ProviderButtons: React.FC<ProviderButtonsProps> = ({
             </div>
             <div className="text-left">
               <div className="font-medium">{config.name}</div>
-              <div className="text-xs text-muted-foreground">{config.description}</div>
+              <div className="text-xs text-sb-text-muted">{config.description}</div>
             </div>
           </Button>
         );

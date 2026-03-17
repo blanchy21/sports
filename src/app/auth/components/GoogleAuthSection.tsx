@@ -52,12 +52,12 @@ export const GoogleAuthSection: React.FC<GoogleAuthSectionProps> = ({
       className="mt-6 rounded-xl border border-sb-border bg-sb-turf/30 p-4"
     >
       <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-primary/10 p-1.5">
-          <Info className="h-4 w-4 text-primary" />
+        <div className="rounded-lg bg-sb-teal/10 p-1.5">
+          <Info className="h-4 w-4 text-sb-teal" />
         </div>
         <div>
           <h4 className="mb-1 text-sm font-medium text-sb-text-primary">Google Account</h4>
-          <p className="text-xs leading-relaxed text-muted-foreground">
+          <p className="text-xs leading-relaxed text-sb-text-muted">
             Get started in seconds! Pick a username and join the community. You can upgrade to a
             Hive account later to unlock earning rewards and full blockchain features.
           </p>

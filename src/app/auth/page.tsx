@@ -79,7 +79,7 @@ function AuthPageContent() {
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-muted-foreground hover:bg-sb-turf/50 hover:text-sb-text-primary"
+          className="flex items-center gap-2 text-sb-text-muted hover:bg-sb-turf/50 hover:text-sb-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back</span>
@@ -100,13 +100,13 @@ function AuthPageContent() {
           >
             {/* Mobile brand header */}
             <div className="mb-8 text-center lg:hidden">
-              <h1 className="mb-2 text-3xl font-black tracking-tight">
+              <h1 className="mb-2 font-display text-3xl font-black tracking-tight">
                 <span className="text-sb-text-primary">SPORTS</span>
-                <span className="bg-gradient-to-r from-accent to-aegean-sky bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-sb-teal to-sb-teal-flash bg-clip-text text-transparent">
                   BLOCK
                 </span>
               </h1>
-              <p className="text-sm text-muted-foreground">The arena where your passion pays off</p>
+              <p className="text-sm text-sb-text-muted">The arena where your passion pays off</p>
             </div>
 
             {/* Heading */}
@@ -115,7 +115,7 @@ function AuthPageContent() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
-                className="mb-2 text-2xl font-bold text-sb-text-primary sm:text-3xl"
+                className="mb-2 font-display text-2xl font-bold text-sb-text-primary sm:text-3xl"
               >
                 Welcome Back
               </motion.h2>
@@ -123,7 +123,7 @@ function AuthPageContent() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.2 }}
-                className="text-muted-foreground"
+                className="text-sb-text-muted"
               >
                 Sign in to continue your journey
               </motion.p>
@@ -165,25 +165,25 @@ function AuthPageContent() {
               <div className="relative">
                 {/* Recommended badge */}
                 <div className="absolute -top-3 left-4 z-10">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white shadow-lg shadow-accent/25">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sb-teal px-3 py-1 text-xs font-semibold text-[#051A14] shadow-lg shadow-sb-teal/25">
                     <Sparkles className="h-3 w-3" />
                     Recommended
                   </span>
                 </div>
 
-                <div className="rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 p-6 pt-8">
+                <div className="rounded-2xl border-2 border-sb-teal/20 bg-gradient-to-br from-sb-teal/5 to-sb-gold/5 p-6 pt-8">
                   <div className="mb-5 text-center">
                     <h3 className="mb-1 text-lg font-semibold text-sb-text-primary">
                       Connect with Hive
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-sb-text-muted">
                       Full access with earning capabilities
                     </p>
                   </div>
 
                   {/* Username input for Keychain */}
                   {showHiveUsernameInput && (
-                    <div className="mb-4 rounded-lg border border-primary/20 bg-background p-4">
+                    <div className="mb-4 rounded-lg border border-sb-teal/20 bg-background p-4">
                       <label className="mb-2 block text-sm font-medium text-sb-text-primary">
                         Enter your Hive username
                       </label>
@@ -193,7 +193,7 @@ function AuthPageContent() {
                           value={hiveUsername}
                           onChange={(e) => onHiveUsernameChange(e.target.value)}
                           placeholder="e.g., blanchy"
-                          className="flex-1 rounded-lg border border-sb-border bg-background px-3 py-2 text-sm text-sb-text-primary placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="flex-1 rounded-lg border border-sb-border bg-background px-3 py-2 text-sm text-sb-text-primary placeholder:text-sb-text-muted focus:border-sb-teal focus:outline-none focus:ring-1 focus:ring-sb-teal"
                           onKeyDown={(e) => e.key === 'Enter' && onHiveUsernameSubmit()}
                           autoFocus
                         />
@@ -207,7 +207,7 @@ function AuthPageContent() {
                       </div>
                       <button
                         onClick={onHiveUsernameCancel}
-                        className="mt-2 text-xs text-muted-foreground hover:text-sb-text-primary"
+                        className="mt-2 text-xs text-sb-text-muted hover:text-sb-text-primary"
                       >
                         Cancel
                       </button>
@@ -224,7 +224,7 @@ function AuthPageContent() {
                           key={provider}
                           onClick={() => onProviderSelect(provider)}
                           disabled={isConnecting || !isWalletReady}
-                          className="flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-primary text-base font-semibold text-[#051A14] shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-primary/30"
+                          className="flex h-14 w-full items-center justify-center gap-3 rounded-xl text-base font-semibold shadow-lg shadow-sb-teal/20 transition-all duration-300 hover:scale-[1.02] hover:shadow-sb-teal/30"
                         >
                           {config.icon}
                           <div className="flex flex-col items-start">
@@ -252,7 +252,7 @@ function AuthPageContent() {
                 <div className="w-full border-t border-sb-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-background px-4 text-muted-foreground">
+                <span className="bg-background px-4 text-sb-text-muted">
                   Or continue with Google
                 </span>
               </div>

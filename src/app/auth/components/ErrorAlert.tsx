@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 interface ErrorAlertProps {
   message: string;
@@ -6,11 +6,11 @@ interface ErrorAlertProps {
 }
 
 export const ErrorAlert: React.FC<ErrorAlertProps> = ({ message, onDismiss }) => (
-  <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-    <p className="text-destructive text-sm">{message}</p>
+  <div className="mb-6 rounded-lg border border-sb-loss/20 bg-sb-loss/10 p-4">
+    <p className="text-sm text-sb-loss">{message}</p>
     <button
       onClick={onDismiss}
-      className="text-destructive/80 hover:text-destructive text-xs mt-1 underline"
+      className="mt-1 text-xs text-sb-loss/80 underline hover:text-sb-loss"
     >
       Dismiss
     </button>
@@ -18,4 +18,3 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({ message, onDismiss }) =>
 );
 
 export default ErrorAlert;
-
