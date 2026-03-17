@@ -257,6 +257,19 @@ nav {
   animation: sb-pulse 1.4s ease-in-out infinite;
 }
 
+/* SportsBlock button press feedback */
+@keyframes sb-btn-press {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 /* TikTok placeholder (hidden — replaced by React component) */
 .tiktok-placeholder {
   display: none;

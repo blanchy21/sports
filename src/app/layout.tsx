@@ -23,6 +23,7 @@ const displayFont = Barlow_Condensed({
 
 const bodyFont = Inter({
   subsets: ['latin'],
+  weight: ['400', '500', '600'],
   variable: '--font-body',
   display: 'swap',
 });
