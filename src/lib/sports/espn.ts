@@ -241,13 +241,71 @@ export async function fetchAllEvents(): Promise<{
 }
 
 /**
+ * Fetch events with a broader date range for settlement purposes.
+ * Looks back 3 days to catch recently finished events that auto-settlement
+ * needs to resolve, plus 7 days forward for upcoming events.
+ */
+export async function fetchEventsForSettlement(): Promise<{
+  events: SportsEvent[];
+  liveEventIds: Set<string>;
+}> {
+  const now = new Date();
+  const start = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const end = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const dateRange = `${formatDate(start)}-${formatDate(end)}`;
+
+  const fetchPromises: Promise<{
+    events: ESPNEvent[];
+    leagueName: string;
+    config: (typeof SPORTS_CONFIG)['football'];
+    configLeagueName: string;
+    leagueSlug: string;
+  }>[] = [];
+
+  for (const sportConfig of Object.values(SPORTS_CONFIG)) {
+    for (const league of sportConfig.leagues) {
+      fetchPromises.push(
+        fetchLeagueScoreboard(sportConfig.espnSport, league.slug, dateRange).then(
+          ({ events, leagueName }) => ({
+            events,
+            leagueName,
+            config: sportConfig,
+            configLeagueName: league.name,
+            leagueSlug: league.slug,
+          })
+        )
+      );
+    }
+  }
+
+  const results = await Promise.all(fetchPromises);
+
+  const allEvents: SportsEvent[] = [];
+  const liveEventIds = new Set<string>();
+
+  for (const { events, leagueName, config, configLeagueName, leagueSlug } of results) {
+    const displayLeague = leagueName || configLeagueName;
+    for (const event of events) {
+      const sportsEvent = convertESPNEvent(event, displayLeague, config, leagueSlug);
+      allEvents.push(sportsEvent);
+      if (sportsEvent.status === 'live') {
+        liveEventIds.add(sportsEvent.id);
+      }
+    }
+  }
+
+  return { events: allEvents, liveEventIds };
+}
+
+/**
  * Fetch ESPN events and return a map keyed by event ID.
  * Used by the auto-settlement cron to look up match results.
+ * Uses a broader date range (3 days back) to catch recently finished events.
  */
 export async function fetchEventsByIds(eventIds: string[]): Promise<Map<string, SportsEvent>> {
   if (eventIds.length === 0) return new Map();
 
-  const { events } = await fetchAllEvents();
+  const { events } = await fetchEventsForSettlement();
   const map = new Map<string, SportsEvent>();
 
   const idSet = new Set(eventIds);

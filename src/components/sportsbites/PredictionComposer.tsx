@@ -10,6 +10,7 @@ import { SPORT_CATEGORIES } from '@/types';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { usePlaceStake } from '@/hooks/usePredictionStake';
 import { logger } from '@/lib/logger';
+import { MatchPicker, ESPN_COVERED_SPORTS } from '@/components/predictions/MatchPicker';
 
 /** Format a Date as a local datetime-local string (YYYY-MM-DDTHH:MM) */
 function toLocalDateTimeString(d: Date): string {
@@ -37,6 +38,7 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
   const [creatorStakeAmount, setCreatorStakeAmount] = useState<number>(
     PREDICTION_CONFIG.MIN_CREATOR_STAKE
   );
+  const [matchReference, setMatchReference] = useState('');
   const [showPredictionSportPicker, setShowPredictionSportPicker] = useState(false);
 
   const addOutcome = () => {
@@ -116,6 +118,7 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
           title: predictionTitle.trim(),
           outcomes: validOutcomes.map((o) => o.trim()),
           sportCategory: predictionSportCategory || undefined,
+          matchReference: matchReference || undefined,
           locksAt: locksAtDate.toISOString(),
           creatorStake: {
             outcomeIndex: creatorStakeOutcome,
@@ -156,6 +159,7 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
       setPredictionOutcomes(['', '']);
       setPredictionLocksAt('');
       setPredictionSportCategory('');
+      setMatchReference('');
       setCreatorStakeOutcome(0);
       setCreatorStakeAmount(PREDICTION_CONFIG.MIN_CREATOR_STAKE);
 
@@ -174,6 +178,7 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
     predictionOutcomes,
     predictionLocksAt,
     predictionSportCategory,
+    matchReference,
     creatorStakeOutcome,
     creatorStakeAmount,
     touchSession,
@@ -270,6 +275,9 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
               <button
                 key={sport.id}
                 onClick={() => {
+                  if (sport.id !== predictionSportCategory) {
+                    setMatchReference('');
+                  }
                   setPredictionSportCategory(sport.id);
                   setShowPredictionSportPicker(false);
                 }}
@@ -285,6 +293,22 @@ export function PredictionComposer({ onSuccess, onError }: PredictionComposerPro
           </div>
         )}
       </div>
+
+      {/* Match picker — shown for ESPN-covered sports */}
+      {ESPN_COVERED_SPORTS.has(predictionSportCategory) && (
+        <MatchPicker
+          sportCategory={predictionSportCategory}
+          selectedEventId={matchReference}
+          onSelect={(eventId, eventDate) => {
+            setMatchReference(eventId);
+            // Auto-fill lock time from event start
+            const lockDate = toLocalDateTimeString(new Date(eventDate));
+            setPredictionLocksAt(lockDate);
+          }}
+          onClear={() => setMatchReference('')}
+          disabled={isPublishing}
+        />
+      )}
 
       {/* Lock time */}
       <div>

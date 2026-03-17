@@ -8,6 +8,7 @@ import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { SPORT_CATEGORIES } from '@/types';
 import { Loader2 } from 'lucide-react';
 import type { PredictionBite } from '@/lib/predictions/types';
+import { MatchPicker, ESPN_COVERED_SPORTS } from '@/components/predictions/MatchPicker';
 
 interface PredictionEditModalProps {
   prediction: PredictionBite;
@@ -130,7 +131,10 @@ export function PredictionEditModal({
           <select
             id="pred-sport"
             value={sportCategory}
-            onChange={(e) => setSportCategory(e.target.value)}
+            onChange={(e) => {
+              if (e.target.value !== sportCategory) setMatchReference('');
+              setSportCategory(e.target.value);
+            }}
             className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-warning"
           >
             <option value="">None</option>
@@ -142,20 +146,19 @@ export function PredictionEditModal({
           </select>
         </div>
 
-        {/* Match Reference */}
-        <div>
-          <label htmlFor="pred-match" className="mb-1 block text-sm font-medium">
-            Match Reference
-          </label>
-          <input
-            id="pred-match"
-            type="text"
-            value={matchReference}
-            onChange={(e) => setMatchReference(e.target.value)}
-            className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-warning"
-            placeholder="e.g. Lakers vs Celtics"
+        {/* Match Reference — picker for ESPN-covered sports, hidden otherwise */}
+        {ESPN_COVERED_SPORTS.has(sportCategory) && (
+          <MatchPicker
+            sportCategory={sportCategory}
+            selectedEventId={matchReference}
+            onSelect={(eventId, eventDate) => {
+              setMatchReference(eventId);
+              setLocksAt(toLocalDateTimeString(new Date(eventDate)));
+            }}
+            onClear={() => setMatchReference('')}
+            disabled={saving}
           />
-        </div>
+        )}
 
         {/* Lock Time */}
         <div>
