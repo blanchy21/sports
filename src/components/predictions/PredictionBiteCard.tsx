@@ -159,7 +159,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
       <div
         className={cn(
           'overflow-hidden rounded-xl border bg-card transition-all',
-          'border-l-4 border-l-amber-500',
+          'border-l-4 border-l-sb-gold',
           isNew && 'duration-500 animate-in fade-in slide-in-from-top-2'
         )}
       >
@@ -258,17 +258,19 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
 
         {/* Pool display */}
         <div className="flex items-center gap-2 px-4 pt-3 text-sm text-muted-foreground">
-          <Trophy className="h-4 w-4 text-warning" />
+          <Trophy className="h-4 w-4 text-sb-gold" />
           <span>
             Total Pool:{' '}
-            <span className="font-semibold text-foreground">{prediction.totalPool} MEDALS</span>
+            <span className="font-mono font-semibold text-sb-gold">
+              {prediction.totalPool} MEDALS
+            </span>
           </span>
         </div>
 
         {/* User stake summary */}
         {totalUserStake > 0 && (
-          <div className="mx-4 mt-2 rounded-lg bg-warning/10 px-3 py-2 text-sm">
-            <span className="text-warning">
+          <div className="mx-4 mt-2 rounded-lg bg-sb-gold/10 px-3 py-2 text-sm">
+            <span className="text-sb-gold">
               Your stake: {totalUserStake} MEDALS
               {prediction.status === 'SETTLED' && userPayout > 0 && (
                 <> — Won {userPayout.toFixed(2)} MEDALS</>
@@ -302,7 +304,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
               </div>
               <Button
                 size="sm"
-                className="bg-warning text-white hover:bg-warning/90"
+                className="bg-sb-gold text-[#1A0A00] hover:bg-sb-gold/90"
                 onClick={() => {
                   const firstOutcome = prediction.outcomes[0];
                   if (firstOutcome) openStakeModal(prediction.id, firstOutcome.id);
@@ -322,21 +324,21 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
           )}
 
           {prediction.status === 'PENDING_APPROVAL' && (
-            <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+            <div className="flex items-center gap-2 rounded-lg bg-sb-gold/10 px-3 py-2 text-sm text-sb-gold">
               <Clock className="h-4 w-4" />
               Settlement proposed — awaiting admin approval
             </div>
           )}
 
           {prediction.status === 'SETTLING' && (
-            <div className="flex items-center gap-2 rounded-lg bg-purple-500/10 px-3 py-2 text-sm text-purple-700 dark:text-purple-400">
+            <div className="flex items-center gap-2 rounded-lg bg-sb-teal/10 px-3 py-2 text-sm text-sb-teal">
               <Loader2 className="h-4 w-4 animate-spin" />
               Settling...
             </div>
           )}
 
           {prediction.status === 'SETTLED' && winningOutcome && (
-            <div className="space-y-2 rounded-lg bg-success/10 px-3 py-2 text-sm text-success">
+            <div className="space-y-2 rounded-lg bg-sb-win-bg px-3 py-2 text-sm text-sb-win">
               <div className="flex items-center justify-between">
                 <div>
                   Winner: <span className="font-semibold">{winningOutcome.label}</span>
@@ -345,7 +347,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-success/30 text-success hover:bg-success/10"
+                    className="border-sb-win/30 text-sb-win hover:bg-sb-win/10"
                     onClick={() => setShareOpen(true)}
                   >
                     <Share2 className="mr-1.5 h-3.5 w-3.5" />
@@ -354,8 +356,8 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
                 )}
               </div>
               {winningOutcome.stakers && winningOutcome.stakers.length > 0 && (
-                <div className="space-y-1 border-t border-success/20 pt-2">
-                  <p className="text-xs font-medium text-success/80">Payouts</p>
+                <div className="space-y-1 border-t border-sb-win/20 pt-2">
+                  <p className="text-xs font-medium text-sb-win/80">Payouts</p>
                   {winningOutcome.stakers.map((s) => (
                     <div key={s.username} className="flex items-center justify-between text-xs">
                       <Link href={`/user/${s.username}`} className="hover:underline">
@@ -372,7 +374,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
           )}
 
           {prediction.status === 'VOID' && (
-            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div className="flex items-center gap-2 rounded-lg bg-sb-loss/10 px-3 py-2 text-sm text-sb-loss">
               <AlertCircle className="h-4 w-4" />
               <span>Voided{prediction.voidReason ? `: ${prediction.voidReason}` : ''}</span>
             </div>
@@ -482,19 +484,19 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string }> = {
-    OPEN: { label: 'Open', className: 'bg-success/15 text-success' },
-    LOCKED: { label: 'Locked', className: 'bg-info/15 text-info' },
+    OPEN: { label: 'Open', className: 'bg-sb-teal/12 text-sb-teal' },
+    LOCKED: { label: 'Locked', className: 'bg-sb-teal-shadow text-sb-teal-deep' },
     PENDING_APPROVAL: {
       label: 'Pending',
-      className: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+      className: 'bg-sb-gold/12 text-sb-gold',
     },
     SETTLING: {
       label: 'Settling',
-      className: 'bg-purple-500/15 text-purple-700 dark:text-purple-400',
+      className: 'bg-sb-teal/12 text-sb-teal',
     },
     SETTLED: { label: 'Settled', className: 'bg-muted text-muted-foreground' },
-    VOID: { label: 'Void', className: 'bg-destructive/15 text-destructive' },
-    REFUNDED: { label: 'Refunded', className: 'bg-destructive/15 text-destructive' },
+    VOID: { label: 'Void', className: 'bg-sb-loss/12 text-sb-loss' },
+    REFUNDED: { label: 'Refunded', className: 'bg-sb-loss/12 text-sb-loss' },
   };
 
   const c = config[status] ?? { label: status, className: 'bg-muted text-muted-foreground' };

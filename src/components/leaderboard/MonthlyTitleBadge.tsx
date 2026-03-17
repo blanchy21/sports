@@ -19,16 +19,16 @@ export function MonthlyTitleBadge({ username, sportId, score, monthId }: Monthly
   const sportIcon = sport?.icon ?? '';
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/5 p-4">
+    <div className="flex items-center gap-3 rounded-lg border border-sb-gold/30 bg-sb-gold/5 p-4">
       <div className="relative">
         <Avatar alt={username} fallback={username} size="lg" className="h-12 w-12" />
-        <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-warning text-[10px] text-warning-foreground">
+        <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-sb-gold text-[10px] text-[#1A0A00]">
           <Crown className="h-3 w-3" />
         </div>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-warning">
+          <span className="text-sm font-medium text-sb-gold">
             {sportIcon} {sportName} Writer of the Month
           </span>
         </div>

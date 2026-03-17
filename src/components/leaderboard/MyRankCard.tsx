@@ -38,7 +38,7 @@ export function MyRankCard({ username, compact = false }: MyRankCardProps) {
     return (
       <div className="rounded-lg border bg-card p-4">
         <div className="flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-warning" />
+          <Trophy className="h-5 w-5 text-sb-gold" />
           <h3 className="font-semibold">Your Rankings</h3>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">Unable to load rankings right now.</p>
@@ -51,7 +51,7 @@ export function MyRankCard({ username, compact = false }: MyRankCardProps) {
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-warning" />
+          <Trophy className="h-5 w-5 text-sb-gold" />
           <h3 className="font-semibold">Your Rankings This Week</h3>
         </div>
         <span className="text-xs text-muted-foreground">{data.weekId}</span>
@@ -69,7 +69,7 @@ export function MyRankCard({ username, compact = false }: MyRankCardProps) {
           return (
             <div
               key={category}
-              className="flex items-center justify-between rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50"
+              className="flex items-center justify-between rounded-md px-2 py-1.5 transition-colors hover:bg-sb-turf"
             >
               <div className="flex items-center gap-2">
                 <Icon className={`h-4 w-4 ${config.color}`} />
@@ -80,7 +80,7 @@ export function MyRankCard({ username, compact = false }: MyRankCardProps) {
               </div>
               <div className="flex items-center gap-3">
                 {rank.rank ? (
-                  <span className={`text-sm font-bold ${rank.rank <= 3 ? 'text-warning' : ''}`}>
+                  <span className={`text-sm font-bold ${rank.rank <= 3 ? 'text-sb-gold' : ''}`}>
                     #{rank.rank}
                   </span>
                 ) : (

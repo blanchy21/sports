@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Barlow_Condensed, Inter, JetBrains_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -14,7 +14,25 @@ import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { NavigationProgress } from '@/components/feedback/NavigationProgress';
 import { AdSenseScript } from '@/components/ads/AdSenseScript';
 
-const inter = Inter({ subsets: ['latin'] });
+const displayFont = Barlow_Condensed({
+  subsets: ['latin'],
+  weight: ['400', '600', '700', '800'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const bodyFont = Inter({
+  subsets: ['latin'],
+  variable: '--font-body',
+  display: 'swap',
+});
+
+const monoFont = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -66,15 +84,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`dark ${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}
+    >
       <head>
-        {/* Inline script to prevent dark mode FOUC — reads localStorage before first paint.
-            Content is a static string literal (no user input), safe for dangerouslySetInnerHTML. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`,
-          }}
-        />
         <link
           rel="preconnect"
           href="https://pagead2.googlesyndication.com"
@@ -113,7 +127,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className={inter.className}>
+      <body className={bodyFont.className}>
         <ErrorBoundary>
           <QueryClientProvider>
             <ThemeProvider>

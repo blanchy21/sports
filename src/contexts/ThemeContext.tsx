@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { ThemeState } from '@/types';
 import { logger } from '@/lib/logger';
 
@@ -19,58 +19,30 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  // Start with null to prevent hydration mismatch
-  const [theme, setThemeState] = useState<'light' | 'dark' | null>(null);
-  const [mounted, setMounted] = useState(false);
-
+  // Brand is dark-only — always dark
   useEffect(() => {
-    setMounted(true);
-    // Check for saved theme preference
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    if (savedTheme) {
-      setThemeState(savedTheme);
-    } else {
-      // Default to dark on mobile devices, follow system preference on desktop
-      const isMobile = window.innerWidth < 1024;
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setThemeState(isMobile || prefersDark ? 'dark' : 'light');
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!mounted || !theme) return;
-
-    // Update the DOM
     const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-
-    // Save to localStorage
+    root.classList.add('dark');
     try {
-      localStorage.setItem('theme', theme);
+      localStorage.setItem('theme', 'dark');
     } catch (error) {
       logger.error('Error saving theme to localStorage', 'ThemeContext', error);
     }
-  }, [theme, mounted]);
+  }, []);
 
-  const setTheme = (newTheme: 'light' | 'dark') => {
-    setThemeState(newTheme);
+  const setTheme = (_newTheme: 'light' | 'dark') => {
+    // No-op: brand is dark-only
   };
 
   const toggleTheme = () => {
-    setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'));
+    // No-op: brand is dark-only
   };
 
   const value: ThemeState = {
-    theme: theme || 'light', // Default to light for SSR
+    theme: 'dark',
     setTheme,
     toggleTheme,
   };
-
-  // Prevent hydration mismatch by not rendering theme-dependent content until mounted
-  if (!mounted) {
-    return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
-  }
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };

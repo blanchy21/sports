@@ -13,13 +13,45 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Named palette colors (CSS-var-backed for theming)
-        'bright-cobalt': 'hsl(var(--cobalt))',
-        'fibonacci-blue': 'hsl(var(--deep-navy))',
-        'aegean-sky': 'hsl(var(--warm-accent))',
-        'landing-green': 'hsl(var(--landing-green))',
-        'landing-blue': 'hsl(var(--landing-blue))',
-        // Theme colors
+        // SportsBlock brand palette (dark-only, teal=action, gold=reward)
+        'sb-void': '#0D0D0D',
+        'sb-pitch': '#111518',
+        'sb-stadium': '#161B1E',
+        'sb-turf': '#1E2A2F',
+        'sb-floodlight': '#243038',
+
+        'sb-teal': '#00C49A',
+        'sb-teal-deep': '#00A882',
+        'sb-teal-flash': '#00E5B4',
+        'sb-teal-shadow': '#0A3D30',
+
+        'sb-gold': '#E8A020',
+        'sb-gold-shine': '#F5C355',
+        'sb-gold-deep': '#C07A10',
+        'sb-gold-shadow': '#3D2800',
+
+        'sb-text-primary': '#F0F0F0',
+        'sb-text-body': '#C8CDD0',
+        'sb-text-muted': '#888E94',
+
+        'sb-border': '#3A4248',
+        'sb-border-subtle': '#2A3238',
+
+        'sb-win': '#00C49A',
+        'sb-win-bg': '#0A3D30',
+        'sb-loss': '#E84040',
+        'sb-loss-bg': '#3D0A0A',
+        'sb-pending': '#E8A020',
+        'sb-pending-bg': '#3D2800',
+
+        // Legacy aliases (remap old palette → new brand tokens)
+        'bright-cobalt': '#00C49A',
+        'fibonacci-blue': '#111518',
+        'aegean-sky': '#E8A020',
+        'landing-green': '#00C49A',
+        'landing-blue': '#00A882',
+
+        // Semantic theme colors (CSS-var-backed)
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -66,6 +98,29 @@ const config: Config = {
           foreground: 'hsl(var(--info-foreground))',
         },
       },
+      fontFamily: {
+        display: ['var(--font-display)', 'Arial Narrow', 'sans-serif'],
+        body: ['var(--font-body)', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
+      },
+      fontSize: {
+        'display-xl': ['72px', { lineHeight: '0.9', letterSpacing: '-0.01em', fontWeight: '700' }],
+        'display-l': ['48px', { lineHeight: '0.95', letterSpacing: '-0.01em', fontWeight: '700' }],
+        'display-m': ['36px', { lineHeight: '1.0', letterSpacing: '-0.01em', fontWeight: '700' }],
+        'display-s': ['24px', { lineHeight: '1.1', letterSpacing: '0', fontWeight: '600' }],
+      },
+      transitionTimingFunction: {
+        snap: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        exit: 'cubic-bezier(0.4, 0, 1, 1)',
+        enter: 'cubic-bezier(0, 0, 0.2, 1)',
+      },
+      transitionDuration: {
+        '80': '80ms',
+        '350': '350ms',
+        '500': '500ms',
+        '800': '800ms',
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
@@ -81,6 +136,9 @@ const config: Config = {
         float: 'float 3s ease-in-out infinite',
         'marquee-left': 'marquee-left 40s linear infinite',
         'marquee-right': 'marquee-right 40s linear infinite',
+        'sb-pulse': 'sb-live-pulse 1400ms ease-in-out infinite',
+        'sb-shimmer': 'sb-shimmer 1600ms ease-in-out infinite',
+        'sb-spin': 'sb-spin 700ms linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -106,13 +164,13 @@ const config: Config = {
           '100%': { boxShadow: '0 0 20px rgba(var(--primary), 0.4)' },
         },
         borderPulse: {
-          /* rgba(228, 139, 89) = aegean-sky / --warm-accent */
+          /* sb-gold (#E8A020) = brand gold accent */
           '0%, 100%': {
-            boxShadow: '0 0 0 0 rgba(228, 139, 89, 0.3), inset 0 0 0 0 rgba(228, 139, 89, 0.05)',
+            boxShadow: '0 0 0 0 rgba(232, 160, 32, 0.3), inset 0 0 0 0 rgba(232, 160, 32, 0.05)',
           },
           '50%': {
             boxShadow:
-              '0 0 15px 2px rgba(228, 139, 89, 0.4), inset 0 0 10px 0 rgba(228, 139, 89, 0.1)',
+              '0 0 15px 2px rgba(232, 160, 32, 0.4), inset 0 0 10px 0 rgba(232, 160, 32, 0.1)',
           },
         },
         float: {
@@ -126,6 +184,17 @@ const config: Config = {
         'marquee-right': {
           '0%': { transform: 'translateX(-50%)' },
           '100%': { transform: 'translateX(0)' },
+        },
+        'sb-live-pulse': {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.35', transform: 'scale(0.85)' },
+        },
+        'sb-shimmer': {
+          '0%, 100%': { opacity: '0.4' },
+          '50%': { opacity: '1' },
+        },
+        'sb-spin': {
+          to: { transform: 'rotate(360deg)' },
         },
       },
     },

@@ -32,10 +32,10 @@ export function PredictionOutcomeBar({
       disabled={!isClickable}
       className={cn(
         'relative w-full overflow-hidden rounded-lg border p-3 text-left transition-all',
-        isClickable && 'cursor-pointer hover:border-warning/60 hover:bg-warning/5',
+        isClickable && 'cursor-pointer hover:border-sb-teal/60 hover:bg-sb-teal/5',
         !isClickable && 'cursor-default',
-        isWinner && 'border-success bg-success/10',
-        isSelected && !isWinner && 'border-warning bg-warning/10',
+        isWinner && 'border-sb-win bg-sb-win-bg',
+        isSelected && !isWinner && 'border-sb-gold bg-sb-gold/10',
         !isWinner && !isSelected && 'border-border bg-card'
       )}
     >
@@ -43,7 +43,7 @@ export function PredictionOutcomeBar({
       <div
         className={cn(
           'absolute inset-y-0 left-0 transition-all duration-500',
-          isWinner ? 'bg-success/15' : isSelected ? 'bg-warning/10' : 'bg-muted/50'
+          isWinner ? 'bg-sb-win/15' : isSelected ? 'bg-sb-gold/10' : 'bg-muted/50'
         )}
         style={{ width: `${Math.max(percentage, 2)}%` }}
       />
@@ -52,21 +52,21 @@ export function PredictionOutcomeBar({
       <div className="relative flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           {isWinner && (
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success text-xs text-white">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sb-win text-xs text-white">
               &#10003;
             </span>
           )}
           <span
             className={cn(
               'truncate text-sm font-medium',
-              isWinner && 'text-success',
-              isSelected && !isWinner && 'text-warning'
+              isWinner && 'text-sb-win',
+              isSelected && !isWinner && 'text-sb-gold'
             )}
           >
             {outcome.label}
           </span>
           {userStake != null && userStake > 0 && (
-            <span className="shrink-0 rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
+            <span className="shrink-0 rounded-full bg-sb-gold/20 px-2 py-0.5 text-xs font-medium text-sb-gold">
               {userStake} staked
             </span>
           )}
@@ -77,7 +77,9 @@ export function PredictionOutcomeBar({
           <span className="hidden sm:inline">
             {outcome.backerCount} {outcome.backerCount === 1 ? 'backer' : 'backers'}
           </span>
-          <span className={cn('font-semibold', isWinner ? 'text-success' : 'text-foreground')}>
+          <span
+            className={cn('font-mono font-semibold', isWinner ? 'text-sb-win' : 'text-foreground')}
+          >
             {outcome.odds.toFixed(2)}x
           </span>
         </div>

@@ -39,29 +39,29 @@ const TIER_ORDER: {
     key: 'BRONZE',
     threshold: PREMIUM_TIERS.BRONZE,
     icon: Medal,
-    color: 'text-amber-700 dark:text-primary',
-    bgColor: 'bg-amber-100 dark:bg-amber-900/30',
+    color: 'text-sb-gold-deep',
+    bgColor: 'bg-sb-gold/10',
   },
   {
     key: 'SILVER',
     threshold: PREMIUM_TIERS.SILVER,
     icon: Star,
-    color: 'text-slate-500 dark:text-slate-400',
-    bgColor: 'bg-slate-100 dark:bg-slate-800',
+    color: 'text-sb-text-body',
+    bgColor: 'bg-sb-turf',
   },
   {
     key: 'GOLD',
     threshold: PREMIUM_TIERS.GOLD,
     icon: Award,
-    color: 'text-yellow-600 dark:text-yellow-400',
-    bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
+    color: 'text-sb-gold',
+    bgColor: 'bg-sb-gold/15',
   },
   {
     key: 'PLATINUM',
     threshold: PREMIUM_TIERS.PLATINUM,
     icon: Crown,
-    color: 'text-purple-600 dark:text-purple-400',
-    bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+    color: 'text-sb-teal',
+    bgColor: 'bg-sb-teal/10',
   },
 ];
 
@@ -118,9 +118,9 @@ export const StakingRankCard: React.FC<StakingRankCardProps> = ({ account, class
           </div>
 
           {/* Stake Share */}
-          <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 dark:from-blue-900/20 dark:to-blue-800/10">
+          <div className="rounded-lg bg-sb-turf p-3">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <PieChart className="h-3.5 w-3.5 text-blue-500" />
+              <PieChart className="h-3.5 w-3.5 text-sb-teal" />
               Stake Share
             </div>
             <div className="mt-1 text-xl font-bold text-foreground">
@@ -130,9 +130,9 @@ export const StakingRankCard: React.FC<StakingRankCardProps> = ({ account, class
           </div>
 
           {/* Weekly Rewards */}
-          <div className="rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-3 dark:from-emerald-900/20 dark:to-emerald-800/10">
+          <div className="rounded-lg bg-sb-teal-shadow p-3">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Gift className="h-3.5 w-3.5 text-emerald-500" />
+              <Gift className="h-3.5 w-3.5 text-sb-teal" />
               Weekly
             </div>
             <div className="mt-1 text-xl font-bold text-foreground">
@@ -166,7 +166,7 @@ export const StakingRankCard: React.FC<StakingRankCardProps> = ({ account, class
                     isCurrentTier
                       ? 'border-primary/40 bg-primary/5 dark:border-primary/30 dark:bg-primary/10'
                       : isAchieved
-                        ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-900/10'
+                        ? 'border-sb-teal/30 bg-sb-teal/5'
                         : isNext
                           ? 'border-border bg-muted/30'
                           : 'border-border/50 bg-background opacity-60'
@@ -200,7 +200,7 @@ export const StakingRankCard: React.FC<StakingRankCardProps> = ({ account, class
                   {/* Status */}
                   <div className="flex-shrink-0 text-right">
                     {isAchieved ? (
-                      <Check className="h-5 w-5 text-emerald-500" />
+                      <Check className="h-5 w-5 text-sb-teal" />
                     ) : isNext ? (
                       <div className="text-right">
                         <div className="flex items-center gap-1 text-xs font-medium text-primary">

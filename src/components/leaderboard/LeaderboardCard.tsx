@@ -24,13 +24,13 @@ interface LeaderboardCardProps {
 function getRankBadgeClass(rank: number): string {
   switch (rank) {
     case 1:
-      return 'bg-warning/15 text-warning';
+      return 'bg-[rgba(245,195,85,0.18)] text-sb-gold-shine';
     case 2:
-      return 'bg-muted text-foreground/80';
+      return 'bg-[rgba(200,205,208,0.12)] text-sb-text-body';
     case 3:
-      return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
+      return 'bg-[rgba(205,140,60,0.14)] text-[#CD8C3C]';
     default:
-      return 'bg-muted text-muted-foreground';
+      return 'bg-sb-turf text-sb-text-muted';
   }
 }
 
@@ -68,7 +68,7 @@ export function LeaderboardCard({
           <h3 className="font-semibold">{config.title}</h3>
         </div>
         {showReward && reward && (
-          <div className="flex items-center gap-1 rounded-full bg-accent/10 px-2 py-1 text-sm text-accent">
+          <div className="bg-sb-gold/12 flex items-center gap-1 rounded-full px-2 py-1 font-mono text-sm text-sb-gold">
             <Trophy className="h-3.5 w-3.5" />
             <span>{reward.toLocaleString()} MEDALS</span>
           </div>
@@ -82,7 +82,7 @@ export function LeaderboardCard({
             key={`${entry.account}-${entry.postId || entry.rank}`}
             className={`flex items-center gap-3 ${
               compact ? 'py-1' : 'py-2'
-            } ${entry.rank === 1 ? '-mx-2 rounded-lg bg-accent/5 px-2' : ''}`}
+            } ${entry.rank === 1 ? '-mx-2 rounded-lg bg-sb-gold/5 px-2' : ''}`}
           >
             {/* Rank Badge */}
             <div

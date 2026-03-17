@@ -2,7 +2,6 @@
 
 import React, { useState, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
@@ -29,6 +28,7 @@ import { UpgradePrompt } from '@/components/user/AccountBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { cn } from '@/lib/utils/client';
+import { Logo } from '@/components/ui/Logo';
 import { SearchModal } from './SearchModal';
 import { MobileNavMenu } from './MobileNavMenu';
 
@@ -77,21 +77,10 @@ export const TopNavigation: React.FC = () => {
 
           {/* Left - Logo */}
           <div className="flex-shrink-0 lg:w-80">
-            <Link
-              href="/"
-              className="flex items-center space-x-2 sm:space-x-3"
-              suppressHydrationWarning
-            >
-              <Image
-                src="/sportsblock-logo-trans.png"
-                alt="SportsBlock Logo"
-                width={72}
-                height={72}
-                className="lg:w-18 lg:h-18 h-10 w-10 sm:h-14 sm:w-14"
-              />
-              <div className="hidden text-xl font-bold text-foreground sm:block sm:text-2xl lg:text-3xl">
-                Sportsblock
-              </div>
+            <Link href="/" className="flex items-center" suppressHydrationWarning>
+              {/* Mark only on mobile, full horizontal lockup on sm+ */}
+              <Logo variant="mark" size={36} className="sm:hidden" />
+              <Logo variant="horizontal" size={36} className="hidden sm:block" />
             </Link>
           </div>
 

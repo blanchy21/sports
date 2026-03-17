@@ -21,9 +21,7 @@ export function StreakBadge({ username, className }: StreakBadgeProps) {
     <span
       className={cn(
         'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
-        isWinning
-          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-          : 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+        isWinning ? 'bg-sb-gold/15 text-sb-gold' : 'bg-sb-loss/15 text-sb-loss',
         className
       )}
       title={isWinning ? `${count} win streak` : `${count} loss streak`}

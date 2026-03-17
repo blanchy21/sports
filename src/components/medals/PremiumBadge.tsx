@@ -26,29 +26,29 @@ const TIER_ASSETS: Record<
   BRONZE: {
     label: 'Bronze',
     src: '/badges/staking/badge-bronze.png',
-    borderColor: 'border-amber-600',
-    iconColor: 'text-amber-700',
-    textColor: 'text-amber-900',
+    borderColor: 'border-sb-gold-deep',
+    iconColor: 'text-sb-gold-deep',
+    textColor: 'text-sb-gold',
   },
   SILVER: {
     label: 'Silver',
     src: '/badges/staking/badge-silver.png',
-    borderColor: 'border-slate-400',
-    iconColor: 'text-slate-500',
-    textColor: 'text-slate-700',
+    borderColor: 'border-sb-border',
+    iconColor: 'text-sb-text-body',
+    textColor: 'text-sb-text-body',
   },
   GOLD: {
     label: 'Gold',
     src: '/badges/staking/badge-gold.png',
-    borderColor: 'border-yellow-500',
-    iconColor: 'text-yellow-600',
-    textColor: 'text-yellow-900',
+    borderColor: 'border-sb-gold',
+    iconColor: 'text-sb-gold',
+    textColor: 'text-sb-gold-shine',
   },
   PLATINUM: {
     label: 'Platinum',
     src: '/badges/staking/badge-platinum.png',
-    borderColor: 'border-purple-400',
-    iconColor: 'text-purple-500',
+    borderColor: 'border-sb-teal',
+    iconColor: 'text-sb-teal',
     textColor: 'text-white',
   },
 };
@@ -62,10 +62,10 @@ const SIZE_PX: Record<string, number> = {
 
 // Progress bar gradient colours (kept for PremiumTierProgress)
 const TIER_BG_GRADIENT: Record<PremiumTier, string> = {
-  BRONZE: 'bg-gradient-to-r from-amber-700 to-amber-600',
-  SILVER: 'bg-gradient-to-r from-slate-400 to-slate-300',
-  GOLD: 'bg-gradient-to-r from-yellow-500 to-amber-400',
-  PLATINUM: 'bg-gradient-to-r from-purple-500 via-indigo-400 to-cyan-400',
+  BRONZE: 'bg-gradient-to-r from-sb-gold-deep to-sb-gold',
+  SILVER: 'bg-gradient-to-r from-sb-border to-sb-text-muted',
+  GOLD: 'bg-gradient-to-r from-sb-gold to-sb-gold-shine',
+  PLATINUM: 'bg-gradient-to-r from-sb-teal-deep via-sb-teal to-sb-teal-flash',
 };
 
 /**
@@ -180,8 +180,8 @@ export const PremiumTierProgress: React.FC<PremiumTierProgressProps> = ({
     return (
       <div className={cn('text-center', className)}>
         <div className="mb-2 flex items-center justify-center gap-2">
-          <Sparkles className="h-5 w-5 text-purple-500" />
-          <span className="font-semibold text-purple-600">Maximum Tier Achieved!</span>
+          <Sparkles className="h-5 w-5 text-sb-teal" />
+          <span className="font-semibold text-sb-teal">Maximum Tier Achieved!</span>
         </div>
         <PremiumBadge tier="PLATINUM" size="lg" />
       </div>
