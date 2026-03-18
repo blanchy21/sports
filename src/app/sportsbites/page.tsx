@@ -104,7 +104,11 @@ function SportsBitesContent() {
         {/* Header */}
         <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-sb-border bg-background/95 px-4 backdrop-blur-xl">
           <div className="flex items-center justify-between py-3">
-            <h1 className="text-xl font-bold">Sportsbites</h1>
+            <img
+              src="/logo/sportsbites/sportsbites-horizontal.svg"
+              alt="Sportsbites"
+              className="h-8"
+            />
 
             <div className="flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1">
               <span className="relative flex h-1.5 w-1.5">

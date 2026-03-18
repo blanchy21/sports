@@ -1,0 +1,12 @@
+<svg viewBox="0 0 1500 500" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1500" height="500" fill="#0D0D0D"/>
+  <rect width="1500" height="4" fill="#00C49A"/>
+  <g transform="translate(180,150) scale(1.67)">
+    <polygon points="110,82 60,110 10,82 10,38 60,10 110,38" fill="#00C49A"/>
+    <path d="M68,22 L44,66 L62,66 L52,98 L76,54 L58,54 Z" fill="#051A14"/>
+  </g>
+  <text x="450" y="250" font-family="Arial Narrow, Arial, sans-serif" font-weight="700" font-size="160" letter-spacing="-2" fill="#F0F0F0">SPORTS</text>
+  <text x="450" y="380" font-family="Arial Narrow, Arial, sans-serif" font-weight="700" font-size="100" letter-spacing="8" fill="#E8A020">BITES</text>
+  <text x="453" y="432" font-family="Arial, sans-serif" font-weight="400" font-size="28" letter-spacing="4" fill="#555555">by SportsBlock</text>
+  <rect y="496" width="1500" height="4" fill="#00C49A"/>
+</svg>

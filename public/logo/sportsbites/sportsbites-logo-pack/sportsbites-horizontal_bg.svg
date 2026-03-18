@@ -1,0 +1,12 @@
+<svg viewBox="0 0 520 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sportsbites">
+  <rect width="520" height="120" fill="#0D0D0D"/>
+  <title>Sportsbites</title>
+  <!-- Mark -->
+  <polygon points="110,82 60,110 10,82 10,38 60,10 110,38" fill="#00C49A"/>
+  <path d="M68,22 L44,66 L62,66 L52,98 L76,54 L58,54 Z" fill="#051A14"/>
+  <!-- Wordmark: SPORTS white, BITES gold -->
+  <text x="132" y="78" font-family="'Barlow Condensed', 'Arial Narrow', sans-serif" font-weight="700" font-size="68" letter-spacing="-1" fill="#F0F0F0">SPORTS</text>
+  <text x="392" y="78" font-family="'Barlow Condensed', 'Arial Narrow', sans-serif" font-weight="700" font-size="68" letter-spacing="-1" fill="#E8A020">BITES</text>
+  <!-- Sub-label -->
+  <text x="132" y="100" font-family="'Inter', 'Arial', sans-serif" font-weight="500" font-size="13" letter-spacing="2" fill="#555555">by SportsBlock</text>
+</svg>

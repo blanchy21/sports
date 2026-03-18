@@ -1,0 +1,12 @@
+<svg viewBox="0 0 240 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sportsbites">
+  <rect width="240" height="210" fill="#0D0D0D"/>
+  <title>Sportsbites</title>
+  <!-- Mark centred -->
+  <g transform="translate(60, 0)">
+    <polygon points="110,82 60,110 10,82 10,38 60,10 110,38" fill="#00C49A"/>
+    <path d="M68,22 L44,66 L62,66 L52,98 L76,54 L58,54 Z" fill="#051A14"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="120" y="160" text-anchor="middle" font-family="'Barlow Condensed', 'Arial Narrow', sans-serif" font-weight="700" font-size="52" letter-spacing="-0.5" fill="#F0F0F0">SPORTS</text>
+  <text x="120" y="194" text-anchor="middle" font-family="'Barlow Condensed', 'Arial Narrow', sans-serif" font-weight="700" font-size="32" letter-spacing="3" fill="#E8A020">BITES</text>
+</svg>

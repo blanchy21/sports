@@ -1,0 +1,7 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sportsbites mark">
+  <title>Sportsbites</title>
+  <!-- Hexagon — same shape as SportsBlock -->
+  <polygon points="110,82 60,110 10,82 10,38 60,10 110,38" fill="#00C49A"/>
+  <!-- Lightning bolt — faster energy -->
+  <path d="M68,22 L44,66 L62,66 L52,98 L76,54 L58,54 Z" fill="#051A14"/>
+</svg>
