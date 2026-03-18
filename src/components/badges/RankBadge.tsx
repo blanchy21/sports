@@ -22,16 +22,16 @@ const RANK_ASSETS: Record<MedalsRank, { label: string; src: string }> = {
 
 // Responsive height classes: smaller on mobile, full size on sm+ breakpoint
 const SIZE_CLASSES: Record<string, string> = {
-  sm: 'h-[56px] sm:h-[96px]',
-  md: 'h-[64px] sm:h-[112px]',
-  lg: 'h-[80px] sm:h-[140px]',
+  sm: 'h-[20px] sm:h-[24px]',
+  md: 'h-[28px] sm:h-[32px]',
+  lg: 'h-[36px] sm:h-[44px]',
 };
 
 // Render at largest size — CSS constrains the visual height
 const RENDER_PX: Record<string, number> = {
-  sm: 96,
-  md: 112,
-  lg: 140,
+  sm: 24,
+  md: 32,
+  lg: 44,
 };
 
 export const RankBadge: React.FC<RankBadgeProps> = ({ rank, size = 'sm', className }) => {
