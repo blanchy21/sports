@@ -56,7 +56,31 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
   if (params.creator) where.creatorUsername = params.creator;
   if (params.cursor) {
     if (sortByLocksAt) {
-      where.locksAt = { gt: new Date(params.cursor) };
+      // Composite cursor: status + locksAt for multi-column keyset pagination
+      // Format: base64url JSON { s: status, l: locksAt ISO }
+      // Backwards compat: plain ISO string → locksAt-only cursor
+      let cursorStatus: string | null = null;
+      let cursorLocksAt: string;
+      try {
+        const decoded = JSON.parse(Buffer.from(params.cursor, 'base64url').toString());
+        cursorStatus = decoded.s;
+        cursorLocksAt = decoded.l;
+      } catch {
+        cursorLocksAt = params.cursor;
+      }
+      if (cursorStatus) {
+        // Keyset: (status after cursorStatus) OR (status = cursorStatus AND locksAt > cursorLocksAt)
+        // Enum order: OPEN < LOCKED < PENDING_APPROVAL < SETTLING
+        const statusOrder: PredictionStatus[] = ACTIVE_STATUSES;
+        const cursorIdx = statusOrder.indexOf(cursorStatus as PredictionStatus);
+        const laterStatuses = cursorIdx >= 0 ? statusOrder.slice(cursorIdx + 1) : [];
+        where.OR = [
+          ...(laterStatuses.length > 0 ? [{ status: { in: laterStatuses } }] : []),
+          { status: cursorStatus as PredictionStatus, locksAt: { gt: new Date(cursorLocksAt) } },
+        ];
+      } else {
+        where.locksAt = { gt: new Date(cursorLocksAt) };
+      }
     } else {
       where.createdAt = { lt: new Date(params.cursor) };
     }
@@ -68,7 +92,7 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
       outcomes: true,
       stakes: true,
     },
-    orderBy: sortByLocksAt ? { locksAt: 'asc' } : { createdAt: 'desc' },
+    orderBy: sortByLocksAt ? [{ status: 'asc' }, { locksAt: 'asc' }] : { createdAt: 'desc' },
     take: params.limit + 1,
   });
 
@@ -77,7 +101,11 @@ export const GET = createApiHandler('/api/predictions', async (request, _ctx) =>
   const lastItem = items[items.length - 1];
   const nextCursor =
     hasMore && lastItem
-      ? (sortByLocksAt ? lastItem.locksAt : lastItem.createdAt).toISOString()
+      ? sortByLocksAt
+        ? Buffer.from(
+            JSON.stringify({ s: lastItem.status, l: lastItem.locksAt.toISOString() })
+          ).toString('base64url')
+        : lastItem.createdAt.toISOString()
       : null;
 
   const serialized = items.map((p) => serializePrediction(p, user?.username));
