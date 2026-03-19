@@ -1,72 +1,21 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils/client';
 import type { BadgeDefinition } from '@/lib/badges/types';
-import {
-  PenLine,
-  BookOpen,
-  Newspaper,
-  Zap,
-  Flame,
-  MessageSquare,
-  MessagesSquare,
-  Users,
-  TrendingUp,
-  Target,
-  Crosshair,
-  Eye,
-  Trophy,
-  Clock,
-  Shield,
-  Gem,
-} from 'lucide-react';
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  PenLine,
-  BookOpen,
-  Newspaper,
-  Zap,
-  Flame,
-  MessageSquare,
-  MessagesSquare,
-  Users,
-  TrendingUp,
-  Target,
-  Crosshair,
-  Eye,
-  Trophy,
-  Clock,
-  Shield,
-  Gem,
-};
 
 interface AchievementBadgeProps {
-  badge: Pick<
-    BadgeDefinition,
-    'id' | 'name' | 'description' | 'icon' | 'bgGradient' | 'textColor' | 'glowColor'
-  >;
+  badge: Pick<BadgeDefinition, 'id' | 'name' | 'description' | 'color' | 'glow' | 'imageSrc'>;
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   className?: string;
 }
 
-const SIZE_CONFIG = {
-  sm: {
-    badge: 'px-2 py-0.5 text-xs',
-    icon: 'h-3 w-3',
-    iconOnly: 'w-5 h-5',
-  },
-  md: {
-    badge: 'px-2.5 py-1 text-sm',
-    icon: 'h-4 w-4',
-    iconOnly: 'w-6 h-6',
-  },
-  lg: {
-    badge: 'px-3 py-1.5 text-base',
-    icon: 'h-5 w-5',
-    iconOnly: 'w-8 h-8',
-  },
+const SIZE_PX = {
+  sm: 28,
+  md: 36,
+  lg: 52,
 };
 
 export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
@@ -75,60 +24,47 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   showLabel = true,
   className,
 }) => {
-  const Icon = ICON_MAP[badge.icon] ?? Trophy;
-  const sizeConfig = SIZE_CONFIG[size];
+  const px = SIZE_PX[size];
 
-  if (!showLabel) {
+  if (badge.imageSrc) {
     return (
-      <div
-        className={cn(
-          'inline-flex items-center justify-center rounded-full',
-          badge.bgGradient,
-          `shadow-lg ${badge.glowColor}`,
-          sizeConfig.iconOnly,
-          className
-        )}
+      <span
+        className={cn('inline-flex items-center gap-1.5', className)}
         title={`${badge.name} — ${badge.description}`}
       >
-        <Icon className={cn(sizeConfig.icon, 'text-white drop-shadow-sm')} />
-      </div>
-    );
-  }
-
-  if (size === 'lg') {
-    return (
-      <div
-        className={cn(
-          'inline-flex items-center gap-2 rounded-full font-semibold',
-          badge.bgGradient,
-          `shadow-md ${badge.glowColor}`,
-          sizeConfig.badge,
-          className
+        <Image
+          src={badge.imageSrc}
+          alt={badge.name}
+          width={px}
+          height={px}
+          className="object-contain"
+        />
+        {showLabel && (
+          <span className="text-xs font-medium" style={{ color: badge.color }}>
+            {badge.name}
+          </span>
         )}
-        title={badge.description}
-      >
-        <Icon className={cn(sizeConfig.icon, 'text-white drop-shadow-sm')} />
-        <div className="flex flex-col leading-tight">
-          <span className="text-white drop-shadow-sm">{badge.name}</span>
-          <span className="text-xs text-white/80">{badge.description}</span>
-        </div>
-      </div>
+      </span>
     );
   }
 
+  // Fallback: colored pill for badges without a PNG asset
   return (
-    <div
+    <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full font-semibold',
-        badge.bgGradient,
-        `shadow-md ${badge.glowColor}`,
-        sizeConfig.badge,
+        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
+        badge.glow && 'shadow-md',
         className
       )}
-      title={badge.description}
+      style={{
+        background: `${badge.color}18`,
+        border: `1px solid ${badge.color}40`,
+        color: badge.color,
+        ...(badge.glow ? { boxShadow: `0 0 8px ${badge.color}30` } : {}),
+      }}
+      title={`${badge.name} — ${badge.description}`}
     >
-      <Icon className={cn(sizeConfig.icon, 'text-white drop-shadow-sm')} />
-      <span className="text-white drop-shadow-sm">{badge.name}</span>
-    </div>
+      {badge.name}
+    </span>
   );
 };

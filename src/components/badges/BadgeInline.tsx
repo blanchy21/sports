@@ -33,11 +33,12 @@ export const BadgeInline: React.FC<BadgeInlineProps> = ({ username, maxBadges = 
       {topBadges.map((badge) => (
         <span
           key={badge.id}
-          className={cn(
-            'inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-semibold text-white',
-            badge.bgGradient,
-            `shadow-sm ${badge.glowColor}`
-          )}
+          className="inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-semibold"
+          style={{
+            background: `${badge.color}18`,
+            border: `1px solid ${badge.color}40`,
+            color: badge.color,
+          }}
           title={`${badge.name} — ${badge.description}`}
         >
           {badge.name}

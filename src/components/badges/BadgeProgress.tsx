@@ -115,8 +115,11 @@ export const BadgeProgress: React.FC<BadgeProgressProps> = ({ username, classNam
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-sb-turf">
               <div
-                className={cn('h-full rounded-full transition-all', badge.bgGradient)}
-                style={{ width: `${Math.round(progress * 100)}%` }}
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${Math.round(progress * 100)}%`,
+                  background: badge.color,
+                }}
               />
             </div>
           </div>

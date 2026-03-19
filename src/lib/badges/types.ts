@@ -13,6 +13,8 @@ export type BadgeTrigger =
   | 'prediction_settled'
   | 'streak_updated';
 
+export type BadgeShape = 'circle' | 'hexagon' | 'shield' | 'diamond' | 'star';
+
 export type MedalsRank = 'rookie' | 'contender' | 'analyst' | 'pundit' | 'legend' | 'hall-of-fame';
 
 export interface BadgeDefinition {
@@ -20,10 +22,14 @@ export interface BadgeDefinition {
   name: string;
   description: string;
   category: BadgeCategory;
-  icon: string; // Lucide icon component name
-  bgGradient: string;
-  textColor: string;
-  glowColor: string;
+  /** PNG asset path relative to /badges/ */
+  imageSrc?: string;
+  /** Badge shape for SVG fallback rendering */
+  shape: BadgeShape;
+  /** Primary accent hex color */
+  color: string;
+  /** Adds radial glow behind badge on profile */
+  glow: boolean;
   /** Dot-path to stat field, e.g. 'totalPosts' or 'predictions.winRate' */
   metric: string;
   threshold: number;
@@ -49,10 +55,10 @@ export interface UserBadgeData {
   name: string;
   description: string;
   category: BadgeCategory;
-  icon: string;
-  bgGradient: string;
-  textColor: string;
-  glowColor: string;
+  imageSrc?: string;
+  shape: BadgeShape;
+  color: string;
+  glow: boolean;
   awardedAt: string;
 }
 

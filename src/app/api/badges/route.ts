@@ -52,8 +52,8 @@ export const GET = createApiHandler('/api/badges', async (request) => {
   const userStats = fullStats;
 
   // Join badge rows with catalogue definitions
-  const badges: UserBadgeData[] = userBadges
-    .map((ub) => {
+  const badges = userBadges
+    .map((ub): UserBadgeData | null => {
       const def = BADGE_CATALOGUE.find((b) => b.id === ub.badgeId);
       if (!def) return null;
       return {
@@ -61,10 +61,10 @@ export const GET = createApiHandler('/api/badges', async (request) => {
         name: def.name,
         description: def.description,
         category: def.category,
-        icon: def.icon,
-        bgGradient: def.bgGradient,
-        textColor: def.textColor,
-        glowColor: def.glowColor,
+        ...(def.imageSrc ? { imageSrc: def.imageSrc } : {}),
+        shape: def.shape,
+        color: def.color,
+        glow: def.glow,
         awardedAt: ub.awardedAt.toISOString(),
       };
     })
