@@ -9,7 +9,9 @@
  */
 export function generatePermlink(title: string, parentAuthor?: string): string {
   if (parentAuthor) {
-    return `re-${parentAuthor}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    // Sanitize parentAuthor: Hive usernames can contain dots, but permlinks only allow a-z, 0-9, -
+    const sanitizedAuthor = parentAuthor.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    return `re-${sanitizedAuthor}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
   const basePermlink = title
