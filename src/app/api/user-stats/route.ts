@@ -1,6 +1,10 @@
+import { NextRequest } from 'next/server';
 import { createApiHandler, apiSuccess, apiError } from '@/lib/api/response';
 import { prisma } from '@/lib/db/prisma';
 import { getRankTierForScore, RANK_TIERS } from '@/lib/badges/catalogue';
+import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { incrementUserStat } from '@/lib/metrics/user-stats';
+import { evaluateBadgesForAction } from '@/lib/badges/evaluator';
 import { z } from 'zod';
 
 const querySchema = z.object({
@@ -93,4 +97,33 @@ export const GET = createApiHandler('/api/user-stats', async (request, ctx) => {
     },
     { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
   );
+});
+
+// ── POST /api/user-stats — Track stat increment (e.g. sportsbite posted via Hive) ──
+
+const trackSchema = z.object({
+  action: z.enum(['sportsbite_created']),
+});
+
+export const POST = createApiHandler('/api/user-stats', async (request, ctx) => {
+  const user = await getAuthenticatedUserFromSession(request as NextRequest);
+  if (!user) {
+    return apiError('Unauthorized', 'UNAUTHORIZED', 401);
+  }
+
+  const body = await request.json();
+  const parsed = trackSchema.safeParse(body);
+  if (!parsed.success) {
+    return apiError('Invalid action', 'VALIDATION_ERROR', 400);
+  }
+
+  const { action } = parsed.data;
+
+  if (action === 'sportsbite_created') {
+    incrementUserStat(user.username, 'totalSportsbites');
+    evaluateBadgesForAction(user.username, 'sportsbite_created').catch(() => {});
+    ctx.log.info('Tracked sportsbite creation', { username: user.username });
+  }
+
+  return apiSuccess({ tracked: true });
 });

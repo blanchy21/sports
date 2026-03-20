@@ -231,6 +231,14 @@ export function ComposeSportsbite({
           confirmTx(result.transactionId);
         }
 
+        // Fire-and-forget: track sportsbite stat + badge evaluation
+        fetch('/api/user-stats', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'sportsbite_created' }),
+        }).catch(() => {});
+
         // Build optimistic sportsbite for immediate display
         const optimisticBite: Sportsbite = {
           id: `${hiveUser.username}/${operation.permlink}`,
