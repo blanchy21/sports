@@ -283,6 +283,13 @@ function buildSignURL(operation: HiveOperation): string {
       params.set('required_posting_auths', JSON.stringify(body.required_posting_auths));
     if (body.id) params.set('id', String(body.id));
     if (body.json) params.set('json', String(body.json));
+
+    // HiveSigner needs explicit authority hint to sign with the correct key.
+    // Without this, it defaults to posting key — causing "Missing Active Authority".
+    const requiredAuths = body.required_auths as string[] | undefined;
+    if (requiredAuths && requiredAuths.length > 0) {
+      params.set('authority', 'active');
+    }
   }
 
   const callbackURL = `${window.location.origin}/hivesigner-sign.html`;
