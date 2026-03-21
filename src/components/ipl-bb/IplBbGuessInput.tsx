@@ -214,7 +214,7 @@ export const IplBbGuessInput = React.memo(function IplBbGuessInput({
             }}
             className="mt-2 text-xs font-medium text-amber-600 hover:underline dark:text-amber-400"
           >
-            Update before {timeStr}
+            Update before {dateStr} {timeStr}
           </button>
         </div>
       )}
