@@ -16,7 +16,8 @@ import {
   useIplBbPick,
 } from '@/lib/react-query/queries/useIplBb';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft } from 'lucide-react';
+import { isAdminAccount } from '@/lib/admin/config';
+import { ArrowLeft, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from '@/components/core/Toast';
 
@@ -105,14 +106,25 @@ export default function IplBbCompetitionPage() {
   return (
     <MainLayout>
       <div className="mx-auto max-w-2xl px-4 py-4">
-        {/* Back link */}
-        <Link
-          href="/contests"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          All Contests
-        </Link>
+        {/* Back link + admin link */}
+        <div className="mb-4 flex items-center justify-between">
+          <Link
+            href="/contests"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            All Contests
+          </Link>
+          {user && isAdminAccount(user.username) && (
+            <Link
+              href="/admin/ipl-bb"
+              className="inline-flex items-center gap-1 rounded-lg bg-sb-turf px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-sb-turf/80 hover:text-foreground"
+            >
+              <Settings className="h-3.5 w-3.5" />
+              Admin
+            </Link>
+          )}
+        </div>
 
         {/* Hero */}
         <IplBbHero

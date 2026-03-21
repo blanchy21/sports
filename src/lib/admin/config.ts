@@ -9,7 +9,7 @@ export const ADMIN_ACCOUNTS: readonly string[] = process.env.ADMIN_ACCOUNTS
   ? process.env.ADMIN_ACCOUNTS.split(',')
       .map((s) => s.trim())
       .filter(Boolean)
-  : ['sportsblock', 'blanchy', 'niallon11'];
+  : ['sportsblock', 'blanchy', 'niallon11', 'talesfrmthecrypt'];
 
 /** Check if a username has admin access */
 export function isAdminAccount(username: string): boolean {
