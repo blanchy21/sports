@@ -89,12 +89,12 @@ async function verifyHivesignerToken(
   expectedUsername: string
 ): Promise<{ valid: boolean; reason?: string }> {
   try {
-    // HiveSigner OAuth returns token_type=bearer; use standard Bearer prefix.
-    // Accept tokens with or without existing prefix for backwards compatibility.
-    const authHeader = token.toLowerCase().startsWith('bearer ') ? token : `Bearer ${token}`;
+    // HiveSigner SDK sends the raw token without Bearer prefix.
+    // Strip any existing prefix for consistency.
+    const rawToken = token.toLowerCase().startsWith('bearer ') ? token.slice(7) : token;
 
     const res = await fetch('https://hivesigner.com/api/me', {
-      headers: { Authorization: authHeader },
+      headers: { Authorization: rawToken },
     });
 
     if (!res.ok) {

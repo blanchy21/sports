@@ -297,3 +297,26 @@ Changed `DEPOSIT_MEMO` from `'SWAP.HIVE'` to `JSON.stringify({ id: 'ssc-mainnet-
 ### Rule
 **Always use the full Hive Engine JSON memo format for honey-swap deposits.** The short `"SWAP.HIVE"` memo is NOT valid. Verify memo formats against actual successful on-chain transactions, not documentation or assumptions.
 
+---
+
+## HiveSigner: OAuth tokens must persist across browser sessions
+
+**Date:** 2026-03-20
+**Severity:** Critical — broke voting, tipping, predictions for all HiveSigner users
+
+### Problem
+HiveSigner OAuth token was stored in `sessionStorage`, which is tab-scoped and cleared on browser close. The httpOnly session cookie (7 days) and localStorage wallet hint persisted, so the app showed HiveSigner users as logged in — but every broadcast silently failed with "token not available." Four compounding issues:
+1. `sessionStorage` for token (lost on browser close/new tab)
+2. No re-auth flow when token expired
+3. `Authorization: Bearer ${token}` prefix (SDK sends raw token)
+4. Invalid OAuth scopes `login` and `post` (not recognized by HiveSigner)
+
+### Fix
+1. Moved token to `localStorage` (persists across sessions, shared across tabs)
+2. Added automatic re-auth: `hivesignerBroadcast()` detects missing/expired token, opens OAuth popup to get fresh token, retries broadcast
+3. Removed `Bearer` prefix to match ecency HiveSigner SDK
+4. Fixed scopes to `['vote', 'comment', 'custom_json']`
+
+### Rule
+**Never store OAuth tokens needed for broadcasting in `sessionStorage`.** If the session cookie outlives the token storage, users appear logged in but can't do anything. For web OAuth providers without browser extensions, the token must survive as long as the session. Always verify your SDK integration matches the official SDK's Authorization header format.
+

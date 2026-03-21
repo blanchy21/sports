@@ -42,41 +42,60 @@
     <script>
       (function () {
         try {
-          const hash = window.location.hash.startsWith('#')
+          var hash = window.location.hash.startsWith('#')
             ? window.location.hash.substring(1)
             : window.location.search.substring(1);
-          const params = new URLSearchParams(hash);
+          var params = new URLSearchParams(hash);
 
-          const accessToken = params.get('access_token');
-          const expiresIn = params.get('expires_in');
-          const username = params.get('username');
-          const state = params.get('state');
-          const tokenType = params.get('token_type');
+          var accessToken = params.get('access_token');
+          var expiresIn = params.get('expires_in');
+          var username = params.get('username');
 
           if (!accessToken || !username) {
             throw new Error('Missing HiveSigner authentication details');
           }
 
-          const expiryTimestamp = expiresIn ? Date.now() + Number(expiresIn) * 1000 : null;
+          var expiryTimestamp = expiresIn ? Date.now() + Number(expiresIn) * 1000 : null;
 
-          sessionStorage.setItem('hivesignerToken', accessToken);
+          // Log token lifetime for diagnostics
+          console.log('[HiveSigner callback] username:', username,
+            '| expires_in:', expiresIn, 'seconds',
+            '| expires_at:', expiryTimestamp ? new Date(expiryTimestamp).toISOString() : 'unknown');
+
+          // Store token in localStorage (persists across tabs & browser sessions).
+          // Keys match hivesigner.ts constants.
+          localStorage.setItem('hs_token', accessToken);
+          localStorage.setItem('hs_username', username);
           if (expiryTimestamp) {
-            sessionStorage.setItem('hivesignerExpiry', String(expiryTimestamp));
-          }
-          sessionStorage.setItem('hivesignerUsername', username);
-          if (state) {
-            sessionStorage.setItem('hivesignerState', state);
-          }
-          if (tokenType) {
-            sessionStorage.setItem('hivesignerTokenType', tokenType);
+            localStorage.setItem('hs_expiry', String(expiryTimestamp));
           }
 
           // Save wallet session keys for WalletProvider to restore.
           localStorage.setItem('sportsblock:walletProvider', 'hivesigner');
           localStorage.setItem('sportsblock:walletUsername', username);
 
-          // Save auth state in the format AuthContext expects
-          const authState = {
+          // Notify opener if available (desktop popup flow).
+          if (window.opener && typeof window.opener.postMessage === 'function') {
+            window.opener.postMessage({
+              source: 'hivesigner-callback',
+              success: true,
+              username: username,
+              accessToken: accessToken,
+              expiryTimestamp: expiryTimestamp,
+            }, window.location.origin);
+          }
+
+          // In popup mode the opener handles login via the postMessage above.
+          // Close the popup so the opener can detect completion.
+          if (window.opener) {
+            document.getElementById('status').textContent = 'Login successful! This window will close\u2026';
+            setTimeout(function () { window.close(); }, 1500);
+            return;
+          }
+
+          // Mobile / redirect mode (no opener) — create session cookie and redirect.
+          // Save auth state for AuthContext hydration.
+          var authState = {
             user: {
               id: username,
               username: username,
@@ -95,32 +114,14 @@
             loginAt: Date.now(),
           };
           localStorage.setItem('authState', JSON.stringify(authState));
-
-          // UI hint for AuthContext hydration (shows username during loading)
           localStorage.setItem('authHint', JSON.stringify({
             wasLoggedIn: true,
             displayHint: username,
             authTypeHint: 'hive',
           }));
 
-          // Notify opener if available (desktop popup flow).
-          if (window.opener && typeof window.opener.postMessage === 'function') {
-            window.opener.postMessage({ source: 'hivesigner-callback', success: true, username, accessToken: accessToken, expiryTimestamp: expiryTimestamp }, window.location.origin);
-          }
-
           document.getElementById('status').textContent = 'Login information saved. Redirecting\u2026';
 
-          // In popup mode the opener handles login via the postMessage above.
-          // Close the popup so the opener can detect completion.
-          // Small delay ensures localStorage is written before the window closes.
-          if (window.opener) {
-            document.getElementById('status').textContent = 'Login successful! This window will close\u2026';
-            setTimeout(function () { window.close(); }, 1500);
-            return;
-          }
-
-          // Mobile / redirect mode (no opener) — create session cookie and redirect.
-          // Include the OAuth access token so the server can verify identity.
           fetch('/api/auth/sb-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -160,4 +161,3 @@
     </script>
   </body>
 </html>
-

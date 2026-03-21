@@ -57,6 +57,10 @@ export interface WalletState {
   availableProviders: WalletProvider[];
   isReady: boolean;
   error: string | null;
+  /** Whether the current wallet provider has a valid token for broadcasting.
+   *  Always true for Keychain (uses extension API). For HiveSigner, checks
+   *  whether the OAuth token is present and not expired. */
+  hasValidToken: boolean;
 }
 
 export interface WalletActions {

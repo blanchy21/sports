@@ -25,6 +25,7 @@ import {
   hivesignerBroadcast,
   hivesignerSignPopup,
   clearHivesignerSession,
+  isHivesignerTokenValid,
 } from '@/lib/wallet/hivesigner';
 import { logger } from '@/lib/logger';
 
@@ -185,6 +186,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   // Value
   // -------------------------------------------------------------------------
 
+  // Keychain always has a valid token (uses extension API).
+  // HiveSigner needs the OAuth token in localStorage.
+  const hasValidToken =
+    currentProvider === 'hivesigner' ? isHivesignerTokenValid() : currentProvider !== null;
+
   const value: WalletContextValue = useMemo(
     () => ({
       currentUser,
@@ -192,6 +198,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       availableProviders,
       isReady,
       error,
+      hasValidToken,
       login,
       logout,
       signMessage,
@@ -203,6 +210,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       availableProviders,
       isReady,
       error,
+      hasValidToken,
       login,
       logout,
       signMessage,

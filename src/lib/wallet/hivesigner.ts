@@ -6,6 +6,10 @@
  *   2. User approves in the popup
  *   3. Popup redirects to /hivesigner.html which stores token and sends postMessage
  *   4. We resolve the login Promise when we receive the postMessage
+ *
+ * Token is stored in localStorage (persists across tabs and browser sessions).
+ * The httpOnly session cookie is the real auth — this token is only used for
+ * client-side HiveSigner API calls (posting-key broadcasts).
  */
 
 import type { WalletLoginOutcome } from './types';
@@ -17,7 +21,7 @@ import type { HiveOperation } from '@/types/hive-operations';
 // ---------------------------------------------------------------------------
 
 const HIVESIGNER_APP = 'sportsblock';
-const HIVESIGNER_SCOPES = ['login', 'vote', 'comment', 'post', 'custom_json'];
+const HIVESIGNER_SCOPES = ['vote', 'comment', 'custom_json'];
 
 function getCallbackURL(): string {
   if (typeof window === 'undefined') return '';
@@ -35,16 +39,69 @@ function getOAuthURL(): string {
 }
 
 // ---------------------------------------------------------------------------
-// Token management
+// Token management (localStorage — persists across tabs & browser sessions)
 // ---------------------------------------------------------------------------
 
-const LS_TOKEN = 'hivesignerToken';
-const LS_EXPIRY = 'hivesignerExpiry';
-const LS_USERNAME = 'hivesignerUsername';
+const LS_TOKEN = 'hs_token';
+const LS_EXPIRY = 'hs_expiry';
+const LS_USERNAME = 'hs_username';
+
+// Legacy sessionStorage keys (for migration)
+const LEGACY_TOKEN = 'hivesignerToken';
+const LEGACY_EXPIRY = 'hivesignerExpiry';
+const LEGACY_USERNAME = 'hivesignerUsername';
+
+/**
+ * Migrate token from legacy sessionStorage to localStorage (one-time).
+ * Existing users who logged in before this change will have their token
+ * in sessionStorage — this transparently moves it to localStorage.
+ */
+function migrateLegacyToken(): void {
+  try {
+    if (localStorage.getItem(LS_TOKEN)) return; // already migrated
+
+    const legacyToken = sessionStorage.getItem(LEGACY_TOKEN);
+    if (!legacyToken) return;
+
+    const username = sessionStorage.getItem(LEGACY_USERNAME);
+    const expiry = sessionStorage.getItem(LEGACY_EXPIRY);
+
+    localStorage.setItem(LS_TOKEN, legacyToken);
+    if (username) localStorage.setItem(LS_USERNAME, username);
+    if (expiry) localStorage.setItem(LS_EXPIRY, expiry);
+
+    // Clean up legacy
+    sessionStorage.removeItem(LEGACY_TOKEN);
+    sessionStorage.removeItem(LEGACY_EXPIRY);
+    sessionStorage.removeItem(LEGACY_USERNAME);
+    sessionStorage.removeItem('hivesignerState');
+    sessionStorage.removeItem('hivesignerTokenType');
+  } catch {
+    // Storage unavailable
+  }
+}
+
+/** Store HiveSigner token and metadata in localStorage. */
+export function storeHivesignerToken(
+  token: string,
+  username: string,
+  expiryTimestamp?: number | null
+): void {
+  try {
+    localStorage.setItem(LS_TOKEN, token);
+    localStorage.setItem(LS_USERNAME, username);
+    if (expiryTimestamp) {
+      localStorage.setItem(LS_EXPIRY, String(expiryTimestamp));
+    }
+  } catch {
+    // localStorage unavailable
+  }
+}
 
 export function getHivesignerToken(): string | null {
   try {
-    return sessionStorage.getItem(LS_TOKEN);
+    migrateLegacyToken();
+    return localStorage.getItem(LS_TOKEN);
   } catch {
     return null;
   }
@@ -52,7 +109,8 @@ export function getHivesignerToken(): string | null {
 
 export function getHivesignerUsername(): string | null {
   try {
-    return sessionStorage.getItem(LS_USERNAME);
+    migrateLegacyToken();
+    return localStorage.getItem(LS_USERNAME);
   } catch {
     return null;
   }
@@ -60,10 +118,11 @@ export function getHivesignerUsername(): string | null {
 
 export function isHivesignerTokenValid(): boolean {
   try {
-    const token = sessionStorage.getItem(LS_TOKEN);
+    migrateLegacyToken();
+    const token = localStorage.getItem(LS_TOKEN);
     if (!token) return false;
 
-    const expiry = sessionStorage.getItem(LS_EXPIRY);
+    const expiry = localStorage.getItem(LS_EXPIRY);
     if (!expiry) return true; // no expiry set, assume valid
 
     return Date.now() < Number(expiry);
@@ -74,21 +133,35 @@ export function isHivesignerTokenValid(): boolean {
 
 export function clearHivesignerSession(): void {
   try {
-    sessionStorage.removeItem(LS_TOKEN);
-    sessionStorage.removeItem(LS_EXPIRY);
-    sessionStorage.removeItem(LS_USERNAME);
+    // Clear current localStorage keys
+    localStorage.removeItem(LS_TOKEN);
+    localStorage.removeItem(LS_EXPIRY);
+    localStorage.removeItem(LS_USERNAME);
+    // Clear legacy sessionStorage keys
+    sessionStorage.removeItem(LEGACY_TOKEN);
+    sessionStorage.removeItem(LEGACY_EXPIRY);
+    sessionStorage.removeItem(LEGACY_USERNAME);
     sessionStorage.removeItem('hivesignerState');
     sessionStorage.removeItem('hivesignerTokenType');
   } catch {
-    // sessionStorage unavailable
+    // Storage unavailable
   }
 }
 
 // ---------------------------------------------------------------------------
-// Login — open OAuth popup, resolve via postMessage
+// Shared popup helper — used by both login and re-auth flows
 // ---------------------------------------------------------------------------
 
-export function hivesignerLogin(): Promise<WalletLoginOutcome> {
+interface PopupResult {
+  success: boolean;
+  username?: string;
+  accessToken?: string;
+  expiryTimestamp?: number;
+  error?: string;
+  cancelled?: boolean;
+}
+
+function openHivesignerPopup(): Promise<PopupResult> {
   return new Promise((resolve) => {
     const url = getOAuthURL();
 
@@ -122,21 +195,16 @@ export function hivesignerLogin(): Promise<WalletLoginOutcome> {
       cleanup();
 
       if (data.success && data.username) {
-        // Store the OAuth token in the opener's sessionStorage so that
-        // loginWithWallet → getHivesignerToken() can find it for server verification.
-        // The popup's sessionStorage is isolated and inaccessible from the opener.
+        // Store the token in localStorage so it persists across tabs/sessions
         if (data.accessToken) {
-          try {
-            sessionStorage.setItem(LS_TOKEN, data.accessToken);
-            sessionStorage.setItem(LS_USERNAME, data.username);
-            if (data.expiryTimestamp) {
-              sessionStorage.setItem(LS_EXPIRY, String(data.expiryTimestamp));
-            }
-          } catch {
-            // sessionStorage unavailable
-          }
+          storeHivesignerToken(data.accessToken, data.username, data.expiryTimestamp);
         }
-        resolve({ success: true, username: data.username, provider: 'hivesigner' });
+        resolve({
+          success: true,
+          username: data.username,
+          accessToken: data.accessToken,
+          expiryTimestamp: data.expiryTimestamp,
+        });
       } else {
         resolve({
           success: false,
@@ -152,7 +220,7 @@ export function hivesignerLogin(): Promise<WalletLoginOutcome> {
         // Check if token was saved (popup closed after completing)
         const username = getHivesignerUsername();
         if (username && isHivesignerTokenValid()) {
-          resolve({ success: true, username, provider: 'hivesigner' });
+          resolve({ success: true, username });
         } else {
           resolve({ success: false, error: 'HiveSigner popup was closed', cancelled: true });
         }
@@ -168,6 +236,33 @@ export function hivesignerLogin(): Promise<WalletLoginOutcome> {
 
     window.addEventListener('message', handleMessage);
   });
+}
+
+// ---------------------------------------------------------------------------
+// Login — open OAuth popup, resolve via postMessage
+// ---------------------------------------------------------------------------
+
+export async function hivesignerLogin(): Promise<WalletLoginOutcome> {
+  const result = await openHivesignerPopup();
+
+  if (result.success && result.username) {
+    return { success: true, username: result.username, provider: 'hivesigner' };
+  }
+
+  return {
+    success: false,
+    error: result.error || 'HiveSigner authentication failed',
+    cancelled: result.cancelled,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Re-auth — silently refresh token when expired/missing, then retry
+// ---------------------------------------------------------------------------
+
+async function hivesignerReauth(): Promise<boolean> {
+  const result = await openHivesignerPopup();
+  return result.success && !!getHivesignerToken();
 }
 
 // ---------------------------------------------------------------------------
@@ -263,47 +358,79 @@ export function hivesignerSignPopup(operations: HiveOperation[]): Promise<Broadc
 
 // ---------------------------------------------------------------------------
 // Broadcast — POST to HiveSigner API with OAuth token (posting-key ops only)
+//
+// If the token is missing or expired, automatically triggers re-auth via
+// the OAuth popup and retries the broadcast once.
 // ---------------------------------------------------------------------------
 
-export async function hivesignerBroadcast(operations: HiveOperation[]): Promise<BroadcastResult> {
-  const token = getHivesignerToken();
-  if (!token) {
-    return { success: false, error: 'HiveSigner token not available. Please log in again.' };
+async function executeBroadcast(
+  token: string,
+  operations: HiveOperation[]
+): Promise<BroadcastResult> {
+  const response = await fetch('https://hivesigner.com/api/broadcast', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      // HiveSigner SDK sends the raw token without Bearer prefix.
+      // See: https://github.com/ecency/hivesigner-sdk
+      Authorization: token,
+    },
+    body: JSON.stringify({ operations }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    return {
+      success: false,
+      error: `HiveSigner broadcast failed (${response.status}): ${body}`,
+    };
   }
 
-  if (!isHivesignerTokenValid()) {
-    return { success: false, error: 'HiveSigner token has expired. Please log in again.' };
+  const result = await response.json();
+
+  if (result.error) {
+    return { success: false, error: result.error_description || result.error };
+  }
+
+  const txId = result.result?.id || result.id || 'unknown';
+  return { success: true, transactionId: String(txId) };
+}
+
+export async function hivesignerBroadcast(operations: HiveOperation[]): Promise<BroadcastResult> {
+  let token = getHivesignerToken();
+  const expiry = typeof localStorage !== 'undefined' ? localStorage.getItem(LS_EXPIRY) : null;
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log(
+      '[HiveSigner broadcast] token present:',
+      !!token,
+      '| valid:',
+      isHivesignerTokenValid(),
+      '| expires:',
+      expiry ? new Date(Number(expiry)).toISOString() : 'unknown',
+      '| ops:',
+      operations.map(([t]) => t).join(',')
+    );
+  }
+
+  // If token is missing or expired, attempt automatic re-auth
+  if (!token || !isHivesignerTokenValid()) {
+    console.log('[HiveSigner] Token missing/expired — triggering re-auth popup');
+    const reauthOk = await hivesignerReauth();
+    if (!reauthOk) {
+      return {
+        success: false,
+        error: 'HiveSigner session expired. Please log in again.',
+      };
+    }
+    token = getHivesignerToken();
+    if (!token) {
+      return { success: false, error: 'Failed to refresh HiveSigner token.' };
+    }
   }
 
   try {
-    // Use standard Bearer prefix (HiveSigner returns token_type=bearer)
-    const authHeader = token.toLowerCase().startsWith('bearer ') ? token : `Bearer ${token}`;
-
-    const response = await fetch('https://hivesigner.com/api/broadcast', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: authHeader,
-      },
-      body: JSON.stringify({ operations }),
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      return {
-        success: false,
-        error: `HiveSigner broadcast failed (${response.status}): ${body}`,
-      };
-    }
-
-    const result = await response.json();
-
-    if (result.error) {
-      return { success: false, error: result.error_description || result.error };
-    }
-
-    const txId = result.result?.id || result.id || 'unknown';
-    return { success: true, transactionId: String(txId) };
+    return await executeBroadcast(token, operations);
   } catch (err) {
     return {
       success: false,
