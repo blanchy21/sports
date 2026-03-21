@@ -41,8 +41,8 @@ export default function IplBbCompetitionPage() {
     return leaderboard.find((e) => e.username === user.username) ?? null;
   }, [leaderboard, user]);
 
-  // Check if user has entered (has picks data or is in leaderboard)
-  const hasEntered = !!userEntry || (myPicks != null && myPicks.length > 0);
+  // Check if user has entered — myPicks is null when not entered, array when entered
+  const hasEntered = !!userEntry || Array.isArray(myPicks);
 
   // Open matches (status 'open' and kickoff in the future)
   const openMatches = useMemo(() => {

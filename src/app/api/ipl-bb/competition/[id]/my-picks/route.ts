@@ -18,6 +18,16 @@ export const GET = createApiHandler('/api/ipl-bb/competition/[id]/my-picks', asy
   const competition = await prisma.iplBbCompetition.findUnique({ where: { id } });
   if (!competition) throw new NotFoundError('Competition not found');
 
+  // Check if user has actually entered this competition
+  const entry = await prisma.iplBbEntry.findUnique({
+    where: { competitionId_username: { competitionId: id, username: user.username } },
+  });
+
+  if (!entry) {
+    // Return null to signal "not entered" — distinct from empty picks array
+    return apiSuccess(null);
+  }
+
   const matches = await prisma.iplBbMatch.findMany({
     where: { competitionId: id },
     orderBy: { matchNumber: 'asc' },

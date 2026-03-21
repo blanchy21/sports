@@ -34,7 +34,8 @@ async function fetchIplBbMyPicks(id: string) {
   const res = await fetch(`/api/ipl-bb/competition/${id}/my-picks`);
   if (!res.ok) throw new Error('Failed to fetch picks');
   const json = await res.json();
-  return json.data as IplBbPickWithResult[];
+  // null means user hasn't entered, array means they have
+  return json.data as IplBbPickWithResult[] | null;
 }
 
 export function useIplBbCompetitions() {
