@@ -935,3 +935,94 @@ model LmsGameweek {
   @@unique([competitionId, gameweek])
   @@map("lms_gameweeks")
 }
+
+// ============================================================================
+// Phase 7 — IPL Boundary Blackjack
+// ============================================================================
+
+model IplBbCompetition {
+  id              String           @id @default(cuid())
+  title           String
+  season          String
+  roundNumber     Int              @map("round_number")
+  status          String           @default("open")  // open | active | complete
+  dateFrom        DateTime         @map("date_from")
+  dateTo          DateTime         @map("date_to")
+  prizeFirst      Int              @default(2500) @map("prize_first")
+  prizeSecond     Int              @default(1500) @map("prize_second")
+  prizeThird      Int              @default(1000) @map("prize_third")
+  totalMatches    Int              @default(0)    @map("total_matches")
+  totalEntries    Int              @default(0)    @map("total_entries")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt      @map("updated_at")
+
+  matches         IplBbMatch[]
+  entries         IplBbEntry[]
+
+  @@map("ipl_bb_competitions")
+}
+
+model IplBbMatch {
+  id                 String           @id @default(cuid())
+  competitionId      String           @map("competition_id")
+  competition        IplBbCompetition @relation(fields: [competitionId], references: [id])
+  matchNumber        Int              @map("match_number")
+  cricketDataMatchId String?          @map("cricket_data_match_id")
+  homeTeam           String           @map("home_team")
+  awayTeam           String           @map("away_team")
+  venue              String?
+  kickoffTime        DateTime         @map("kickoff_time")
+  status             String           @default("upcoming")  // upcoming | open | locked | resolved | abandoned
+
+  actualBoundaries   Int?             @map("actual_boundaries")
+  fours              Int?
+  sixes              Int?
+  resolvedAt         DateTime?        @map("resolved_at")
+  resolvedBy         String?          @map("resolved_by")
+
+  picks              IplBbPick[]
+
+  @@index([competitionId])
+  @@map("ipl_bb_matches")
+}
+
+model IplBbEntry {
+  id              String           @id @default(cuid())
+  competitionId   String           @map("competition_id")
+  competition     IplBbCompetition @relation(fields: [competitionId], references: [id])
+  username        String
+  totalPoints     Int              @default(0)  @map("total_points")
+  bustCount       Int              @default(0)  @map("bust_count")
+  hitCount        Int              @default(0)  @map("hit_count")
+  submittedCount  Int              @default(0)  @map("submitted_count")
+  finalRank       Int?             @map("final_rank")
+  prizeAwarded    Int?             @map("prize_awarded")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  picks           IplBbPick[]
+
+  @@unique([competitionId, username])
+  @@index([competitionId, totalPoints(sort: Desc)])
+  @@map("ipl_bb_entries")
+}
+
+model IplBbPick {
+  id               String       @id @default(cuid())
+  competitionId    String       @map("competition_id")
+  matchId          String       @map("match_id")
+  match            IplBbMatch   @relation(fields: [matchId], references: [id])
+  entryId          String       @map("entry_id")
+  entry            IplBbEntry   @relation(fields: [entryId], references: [id])
+  username         String
+
+  guess            Int
+  pointsScored     Int?         @map("points_scored")
+  isBust           Boolean?     @map("is_bust")
+  firstSubmittedAt DateTime     @default(now()) @map("first_submitted_at")
+  updatedAt        DateTime     @updatedAt     @map("updated_at")
+
+  @@unique([matchId, username])
+  @@index([matchId])
+  @@index([entryId])
+  @@map("ipl_bb_picks")
+}

@@ -130,4 +130,12 @@ export const queryKeys = {
     board: (id: string) => [...queryKeys.lms.detail(id), 'board'] as const,
     myPick: (id: string) => [...queryKeys.lms.detail(id), 'myPick'] as const,
   },
+  iplBb: {
+    all: ['iplBb'] as const,
+    competitions: () => [...queryKeys.iplBb.all, 'competitions'] as const,
+    details: () => [...queryKeys.iplBb.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.iplBb.details(), id] as const,
+    leaderboard: (id: string) => [...queryKeys.iplBb.detail(id), 'leaderboard'] as const,
+    myPicks: (id: string) => [...queryKeys.iplBb.detail(id), 'myPicks'] as const,
+  },
 } as const;

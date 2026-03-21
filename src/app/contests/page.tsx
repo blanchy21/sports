@@ -4,13 +4,16 @@ import React from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ContestCard } from '@/components/contests/ContestCard';
 import { LmsCompetitionCard } from '@/components/lms/LmsCompetitionCard';
+import { IplBbCompetitionCard } from '@/components/ipl-bb/IplBbCompetitionCard';
 import { useContestList } from '@/lib/react-query/queries/useContests';
 import { useLmsCompetitions } from '@/lib/react-query/queries/useLms';
+import { useIplBbCompetitions } from '@/lib/react-query/queries/useIplBb';
 import { Trophy } from 'lucide-react';
 
 export default function ContestsPage() {
   const { data: contests, isLoading, error } = useContestList();
   const { data: lmsCompetitions, isLoading: lmsLoading } = useLmsCompetitions();
+  const { data: iplBbCompetitions, isLoading: iplBbLoading } = useIplBbCompetitions();
 
   return (
     <MainLayout>
@@ -52,6 +55,23 @@ export default function ContestsPage() {
           <div className="mb-4 space-y-4">
             {lmsCompetitions.map((comp) => (
               <LmsCompetitionCard key={comp.id} competition={comp} />
+            ))}
+          </div>
+        )}
+
+        {/* IPL Boundary Blackjack */}
+        {iplBbLoading && (
+          <div className="mb-4 animate-pulse overflow-hidden rounded-2xl border bg-sb-stadium">
+            <div className="px-5 pb-4 pt-5">
+              <div className="mb-2 h-5 w-3/4 rounded bg-sb-turf" />
+              <div className="h-3.5 w-1/2 rounded bg-sb-turf/60" />
+            </div>
+          </div>
+        )}
+        {iplBbCompetitions && iplBbCompetitions.length > 0 && (
+          <div className="mb-4 space-y-4">
+            {iplBbCompetitions.map((comp) => (
+              <IplBbCompetitionCard key={comp.id} competition={comp} />
             ))}
           </div>
         )}
@@ -102,8 +122,10 @@ export default function ContestsPage() {
         {/* Empty state */}
         {!isLoading &&
           !lmsLoading &&
+          !iplBbLoading &&
           contests?.length === 0 &&
-          (!lmsCompetitions || lmsCompetitions.length === 0) && (
+          (!lmsCompetitions || lmsCompetitions.length === 0) &&
+          (!iplBbCompetitions || iplBbCompetitions.length === 0) && (
             <div className="rounded-2xl border border-dashed border-sb-border p-12 text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-sb-turf/50">
                 <Trophy className="h-8 w-8 text-muted-foreground/40" />
