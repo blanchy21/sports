@@ -91,6 +91,7 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
   const isCreator = hiveUsername === prediction.creatorUsername;
   const canSettle = (isCreator || isAdmin) && prediction.status === 'LOCKED';
   const canApprove = isAdmin && prediction.status === 'PENDING_APPROVAL';
+  const canRetry = isAdmin && prediction.status === 'SETTLING';
 
   // Map user stakes by outcomeId
   const userStakeMap = useMemo(() => {
@@ -403,7 +404,9 @@ export const PredictionBiteCard = React.memo(function PredictionBiteCard({
         </div>
 
         {/* Settlement panel for creators/admins */}
-        {(canSettle || canApprove) && <PredictionSettlementPanel prediction={prediction} />}
+        {(canSettle || canApprove || canRetry) && (
+          <PredictionSettlementPanel prediction={prediction} />
+        )}
 
         {/* Expanded comments */}
         {commentsExpanded && <PredictionComments predictionId={prediction.id} />}
