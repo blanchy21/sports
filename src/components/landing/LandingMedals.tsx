@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Trophy,
@@ -18,12 +17,11 @@ import {
   FileText,
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/core/Button';
 import { AnimatedCounter, containerVariants, itemVariants } from './LandingSections';
 
 export default function LandingMedals() {
-  const router = useRouter();
-
   return (
     <>
       {/* ━━━ Photo Break ━━━ */}
@@ -203,15 +201,13 @@ export default function LandingMedals() {
             <p className="mb-6 text-sb-text-muted">
               Get in early. Stake for rewards and unlock premium features.
             </p>
-            <Button
-              variant="outline"
-              className="group border-sb-gold/50 hover:bg-sb-gold/10"
-              onClick={() => router.push('/whitepaper')}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              Learn More in Whitepaper
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Button>
+            <Link href="/whitepaper">
+              <Button variant="outline" className="group border-sb-gold/50 hover:bg-sb-gold/10">
+                <FileText className="mr-2 h-4 w-4" />
+                Learn More in Whitepaper
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </section>

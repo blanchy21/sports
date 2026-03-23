@@ -67,7 +67,7 @@ export const LazyLandingHero = dynamic(() => import('@/components/landing/Landin
 });
 
 // Lazy load the heavy landing page sections (framer-motion animations)
+// SSR enabled so footer links + CTA links are in initial HTML for search engine crawlers.
 export const LazyLandingSections = dynamic(() => import('@/components/landing/LandingSections'), {
-  ssr: false,
   loading: () => <LandingSectionSkeleton />,
 });

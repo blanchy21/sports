@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Shield, CheckCircle, ArrowRight, User, FileText } from 'lucide-react';
 import Image from 'next/image';
@@ -12,7 +11,6 @@ import { Logo } from '@/components/ui/Logo';
 import { useModal } from '@/components/modals/ModalProvider';
 
 export default function LandingCTA() {
-  const router = useRouter();
   const { openModal } = useModal();
 
   return (
@@ -123,15 +121,13 @@ export default function LandingCTA() {
                 )}
               </ul>
 
-              <Button
-                variant="outline"
-                className="group w-full py-6 text-lg"
-                onClick={() => router.push('/auth')}
-              >
-                <User className="mr-2 h-5 w-5" />
-                Quick Start with Email
-                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Button>
+              <Link href="/auth">
+                <Button variant="outline" className="group w-full py-6 text-lg">
+                  <User className="mr-2 h-5 w-5" />
+                  Quick Start with Email
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
 
               <p className="mt-4 text-center text-xs text-sb-text-muted">
                 Email &bull; Google &bull; Upgrade to earn later
@@ -203,6 +199,114 @@ export default function LandingCTA() {
           </div>
         </motion.div>
       </section>
+
+      {/* ━━━ Site Footer ━━━ */}
+      <footer className="border-t border-white/10 bg-sb-pitch px-6 py-12">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/40">
+                Explore
+              </h3>
+              <nav className="flex flex-col gap-2">
+                <Link href="/discover" className="text-sm text-white/60 hover:text-white/90">
+                  Discover
+                </Link>
+                <Link href="/feed" className="text-sm text-white/60 hover:text-white/90">
+                  Feed
+                </Link>
+                <Link href="/communities" className="text-sm text-white/60 hover:text-white/90">
+                  Communities
+                </Link>
+                <Link href="/sportsbites" className="text-sm text-white/60 hover:text-white/90">
+                  Sportsbites
+                </Link>
+                <Link href="/leaderboard" className="text-sm text-white/60 hover:text-white/90">
+                  Leaderboard
+                </Link>
+              </nav>
+            </div>
+            <div>
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/40">
+                Learn
+              </h3>
+              <nav className="flex flex-col gap-2">
+                <Link href="/about" className="text-sm text-white/60 hover:text-white/90">
+                  About
+                </Link>
+                <Link href="/whitepaper" className="text-sm text-white/60 hover:text-white/90">
+                  Whitepaper
+                </Link>
+                <Link href="/medals-token" className="text-sm text-white/60 hover:text-white/90">
+                  MEDALS Token
+                </Link>
+                <Link
+                  href="/earn-crypto-sports"
+                  className="text-sm text-white/60 hover:text-white/90"
+                >
+                  Earn Crypto
+                </Link>
+                <Link
+                  href="/start-sports-blog"
+                  className="text-sm text-white/60 hover:text-white/90"
+                >
+                  Start a Sports Blog
+                </Link>
+                <Link href="/blog" className="text-sm text-white/60 hover:text-white/90">
+                  Blog
+                </Link>
+              </nav>
+            </div>
+            <div>
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/40">
+                Legal
+              </h3>
+              <nav className="flex flex-col gap-2">
+                <Link href="/legal/terms" className="text-sm text-white/60 hover:text-white/90">
+                  Terms of Service
+                </Link>
+                <Link href="/legal/privacy" className="text-sm text-white/60 hover:text-white/90">
+                  Privacy Policy
+                </Link>
+                <Link href="/legal/cookies" className="text-sm text-white/60 hover:text-white/90">
+                  Cookie Policy
+                </Link>
+                <Link
+                  href="/legal/community-guidelines"
+                  className="text-sm text-white/60 hover:text-white/90"
+                >
+                  Community Guidelines
+                </Link>
+                <Link href="/legal/dmca" className="text-sm text-white/60 hover:text-white/90">
+                  DMCA
+                </Link>
+              </nav>
+            </div>
+            <div>
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/40">
+                Get Started
+              </h3>
+              <nav className="flex flex-col gap-2">
+                <Link href="/auth" className="text-sm text-white/60 hover:text-white/90">
+                  Sign Up
+                </Link>
+                <Link href="/getting-started" className="text-sm text-white/60 hover:text-white/90">
+                  Getting Started
+                </Link>
+                <Link
+                  href="/sportsblock-vs-chiliz"
+                  className="text-sm text-white/60 hover:text-white/90"
+                >
+                  Sportsblock vs Chiliz
+                </Link>
+              </nav>
+            </div>
+          </div>
+          <div className="mt-8 border-t border-white/10 pt-6 text-center text-xs text-white/30">
+            &copy; {new Date().getFullYear()} Sportsblock. Powered by the Hive blockchain.
+          </div>
+        </div>
+      </footer>
     </>
   );
 }

@@ -3,8 +3,9 @@
 import React from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { signIn } from 'next-auth/react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Compass } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/core/Button';
 import { Logo } from '@/components/ui/Logo';
 import { useModal } from '@/components/modals/ModalProvider';
@@ -121,6 +122,22 @@ export default function LandingHero() {
           >
             Sign In
           </Button>
+        </motion.div>
+
+        {/* Explore link for SEO — crawlable anchor tag */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 1.0 }}
+          className="mb-6"
+        >
+          <Link
+            href="/discover"
+            className="inline-flex items-center gap-2 text-sm text-white/50 transition-colors hover:text-white/80"
+          >
+            <Compass className="h-4 w-4" />
+            Explore Sports Content
+          </Link>
         </motion.div>
 
         {/* Trust indicators */}

@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   TrendingUp,
@@ -16,12 +15,11 @@ import {
   Ban,
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/core/Button';
 import { containerVariants, itemVariants } from './LandingSections';
 
 export default function LandingShowcase() {
-  const router = useRouter();
-
   return (
     <>
       {/* ━━━ Trust Bar ━━━ */}
@@ -429,15 +427,13 @@ export default function LandingShowcase() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="text-center"
           >
-            <Button
-              size="lg"
-              className="group px-8 py-6 text-lg"
-              onClick={() => router.push('/sportsbites')}
-            >
-              <Zap className="mr-2 h-5 w-5" />
-              Try Sportsbites
-              <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Button>
+            <Link href="/sportsbites">
+              <Button size="lg" className="group px-8 py-6 text-lg">
+                <Zap className="mr-2 h-5 w-5" />
+                Try Sportsbites
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </section>
