@@ -292,7 +292,9 @@ function buildSignURL(operation: HiveOperation): string {
     }
   }
 
-  const callbackURL = `${window.location.origin}/hivesigner-sign.html`;
+  // Use hive-uri template syntax so HiveSigner injects the tx hash into the
+  // redirect URL.  The callback page reads `id` from the query string.
+  const callbackURL = `${window.location.origin}/hivesigner-sign.html?id={{id}}&block={{block}}`;
   params.set('redirect_uri', callbackURL);
 
   return `https://hivesigner.com/sign/${opType}?${params.toString()}`;

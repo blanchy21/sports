@@ -171,6 +171,21 @@ export const POST = createApiHandler('/api/predictions', async (request, _ctx) =
       );
     }
 
+    // Dedup guard: reject if the same user created a prediction with the same
+    // title in the last 60 seconds (prevents double-submit on mobile Keychain)
+    const recentDuplicate = await prisma.prediction.findFirst({
+      where: {
+        creatorUsername: user.username,
+        title: body.title,
+        createdAt: { gte: new Date(Date.now() - 60_000) },
+      },
+    });
+    if (recentDuplicate) {
+      throw new ValidationError(
+        'A prediction with this title was just created. Please wait before creating another.'
+      );
+    }
+
     const prediction = await prisma.$transaction(async (tx) => {
       const created = await tx.prediction.create({
         data: {

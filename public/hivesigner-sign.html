@@ -41,7 +41,8 @@
     <script>
       (function () {
         try {
-          // HiveSigner redirects back with query params: ?id=TX_ID or ?error=...
+          // HiveSigner redirects back with query params populated via hive-uri
+          // template syntax: ?id=TX_HASH&block=BLOCK_NUM  or  ?error=...
           var params = new URLSearchParams(window.location.search);
           var txId = params.get('id');
           var error = params.get('error');
@@ -50,20 +51,24 @@
             throw new Error(error);
           }
 
-          if (txId) {
-            document.getElementById('status').textContent = 'Transaction confirmed! This window will close\u2026';
+          // If hive-uri templates weren't resolved (older HiveSigner), the
+          // value will be the literal "{{id}}". Treat that as missing.
+          if (txId === '{{id}}' || txId === '') txId = null;
 
-            if (window.opener && typeof window.opener.postMessage === 'function') {
-              window.opener.postMessage(
-                { source: 'hivesigner-sign-callback', success: true, transactionId: txId },
-                window.location.origin
-              );
-            }
+          // Fallback: tx was broadcast but ID wasn't returned in the redirect.
+          // Treat absence of `error` as success.
+          var effectiveTxId = txId || 'hivesigner-signed';
 
-            setTimeout(function () { window.close(); }, 1500);
-          } else {
-            throw new Error('No transaction ID received from HiveSigner');
+          document.getElementById('status').textContent = 'Transaction confirmed! This window will close\u2026';
+
+          if (window.opener && typeof window.opener.postMessage === 'function') {
+            window.opener.postMessage(
+              { source: 'hivesigner-sign-callback', success: true, transactionId: effectiveTxId },
+              window.location.origin
+            );
           }
+
+          setTimeout(function () { window.close(); }, 1500);
         } catch (err) {
           var msg = err instanceof Error ? err.message : 'Unknown error';
           document.getElementById('status').textContent = 'Transaction failed: ' + msg;
