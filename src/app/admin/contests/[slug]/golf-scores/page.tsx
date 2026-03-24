@@ -231,7 +231,7 @@ export default function GolfScoresAdminPage() {
         {isLoading ? (
           <div className="h-40 animate-pulse rounded-lg bg-sb-turf/50" />
         ) : hasDraft ? (
-          <DraftScoresTable scores={draftScores} teams={teams} />
+          <DraftScoresTable scores={draftScores} />
         ) : (
           <PublishedScoresTable teams={teams} />
         )}
@@ -294,13 +294,7 @@ function UnmatchedSection({
   );
 }
 
-function DraftScoresTable({
-  scores,
-  teams,
-}: {
-  scores: EspnGolferData[];
-  teams: Array<{ code: string; name: string }>;
-}) {
+function DraftScoresTable({ scores }: { scores: EspnGolferData[] }) {
   const sorted = [...scores].sort((a, b) => a.order - b.order);
 
   return (

@@ -20,7 +20,6 @@ import {
   fetchEspnGolfScores,
   matchGolfersToTeams,
   getGolfScoringState,
-  DEFAULT_GOLF_SCORING_STATE,
   type GolfScoringState,
   type GolferTeamMetadata,
 } from '@/lib/contests/espn-golf';

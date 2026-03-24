@@ -4,7 +4,17 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/core/Button';
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Info } from 'lucide-react';
-import type { AuthMode, EmailFormState } from '../hooks/useAuthPage';
+type AuthMode = 'login' | 'signup';
+
+interface EmailFormState {
+  email: string;
+  password: string;
+  username: string;
+  displayName: string;
+  showPassword: boolean;
+  acceptTerms: boolean;
+  subscribeNewsletter: boolean;
+}
 
 interface EmailAuthSectionProps {
   mode: AuthMode;

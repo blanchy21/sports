@@ -1,5 +1,6 @@
 import React from 'react';
-import type { AuthMode } from '../hooks/useAuthPage';
+
+type AuthMode = 'login' | 'signup';
 
 interface AuthHeadingProps {
   mode: AuthMode;

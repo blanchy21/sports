@@ -9,7 +9,7 @@ import { prisma } from '@/lib/db/prisma';
 import { calculateContestScore } from './scoring';
 import { logger } from '@/lib/logger';
 import { CONTEST_TYPES } from './constants';
-import type { MatchResult, GolfFantasyEntryData } from './types';
+import type { MatchResult } from './types';
 import type { GolferScoreInfo } from './scoring/golf';
 import { getGolfScoringState, type GolferTeamMetadata } from './espn-golf';
 import { Prisma } from '@/generated/prisma/client';
