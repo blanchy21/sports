@@ -52,24 +52,31 @@ export default function AdminContestsPage() {
         {contests && contests.length > 0 && (
           <div className="space-y-2">
             {contests.map((contest) => (
-              <Link
+              <div
                 key={contest.id}
-                href={`/contests/${contest.slug}`}
                 className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-sb-turf/50"
               >
-                <div className="flex items-center gap-3">
+                <Link href={`/contests/${contest.slug}`} className="flex flex-1 items-center gap-3">
                   <div>
                     <div className="text-sm font-medium">{contest.title}</div>
                     <div className="text-xs text-muted-foreground">
                       {contest.entryCount} entries | {contest.prizePool.toFixed(0)} MEDALS pool
                     </div>
                   </div>
-                </div>
+                </Link>
                 <div className="flex items-center gap-2">
+                  {contest.contestType === 'GOLF_FANTASY' && (
+                    <Link
+                      href={`/admin/contests/${contest.slug}/golf-scores`}
+                      className="rounded bg-green-500/20 px-2 py-1 text-xs font-medium text-green-400 hover:bg-green-500/30"
+                    >
+                      Scores
+                    </Link>
+                  )}
                   <ContestStatusBadge status={contest.status} />
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}

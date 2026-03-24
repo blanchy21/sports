@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ContestStatusBadge } from '@/components/contests/ContestStatusBadge';
 import { ContestLeaderboard } from '@/components/contests/ContestLeaderboard';
+import { GolfLeaderboard } from '@/components/contests/GolfLeaderboard';
 import { ContestMatchSchedule } from '@/components/contests/ContestMatchSchedule';
 import { ContestEntryForm } from '@/components/contests/ContestEntryForm';
 import { ContestCountdown } from '@/components/contests/ContestCountdown';
@@ -279,7 +280,12 @@ export default function ContestDetailPage() {
           </div>
         )}
 
-        {activeTab === 'leaderboard' && <ContestLeaderboard slug={slug} />}
+        {activeTab === 'leaderboard' &&
+          (contest.contestType === CONTEST_TYPES.GOLF_FANTASY ? (
+            <GolfLeaderboard slug={slug} />
+          ) : (
+            <ContestLeaderboard slug={slug} />
+          ))}
         {activeTab === 'matches' && <ContestMatchSchedule slug={slug} />}
       </div>
     </MainLayout>

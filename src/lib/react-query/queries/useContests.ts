@@ -55,6 +55,7 @@ async function fetchContestLeaderboard(slug: string, limit = 50, offset = 0) {
   const json = await res.json();
   return {
     entries: json.data as ContestLeaderboardEntry[],
+    golferScores: json.golferScores as Record<string, unknown> | undefined,
     pagination: json.pagination as { total: number; hasMore: boolean },
   };
 }
@@ -147,9 +148,8 @@ export function useContestInterestToggle(slug: string) {
     },
     onSuccess: (data) => {
       // Optimistic update detail cache
-      queryClient.setQueryData<ContestResponse>(
-        queryKeys.contests.detail(slug),
-        (old) => old ? { ...old, isInterested: data.isInterested, interestCount: data.interestCount } : old
+      queryClient.setQueryData<ContestResponse>(queryKeys.contests.detail(slug), (old) =>
+        old ? { ...old, isInterested: data.isInterested, interestCount: data.interestCount } : old
       );
       // Invalidate list to refresh counts
       queryClient.invalidateQueries({ queryKey: queryKeys.contests.lists() });
