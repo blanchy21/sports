@@ -43,6 +43,16 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   // Focus trap, escape key, and focus restoration
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<Element | null>(null);
+  const onCloseRef = useRef(onClose);
+  const closeOnEscapeRef = useRef(closeOnEscape);
+
+  // Keep refs current without re-triggering the effect
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+  useEffect(() => {
+    closeOnEscapeRef.current = closeOnEscape;
+  }, [closeOnEscape]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -51,8 +61,8 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     modalRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && closeOnEscape) {
-        onClose();
+      if (event.key === 'Escape' && closeOnEscapeRef.current) {
+        onCloseRef.current();
         return;
       }
 
@@ -93,7 +103,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
         previousActiveElement.current.focus();
       }
     };
-  }, [isOpen, onClose, closeOnEscape]);
+  }, [isOpen]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
