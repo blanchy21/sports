@@ -119,20 +119,62 @@ sportsblock.app
 74,prediction-card,1200x630,stadium,ipl-contest,IPL Contest,PREDICTION BITES,,,,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Prediction Card — Stadium — ""IPL Contest""",,
 75,prediction-card,1200x630,teal,ipl-contest,IPL Contest,PREDICTION BITES,,,,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Prediction Card — Teal Accent — ""IPL Contest""",,
 76,prediction-card,1200x630,prestige,ipl-contest,IPL Contest,PREDICTION BITES,,,,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Prediction Card — Gold Prestige — ""IPL Contest""",,
-77,contest-card,1200x630,void,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS 2026 PREDICTION CONTEST,Pick the winner. Predict the cut. Win 5000 MEDALS.,FREE ENTRY,,,,MASTERS,CONTEST,LIVE.,Predict the Masters 2026. Tournament winner top 5 cut line and round leaders. 5000 MEDALS prize.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Void — ""Masters Contest""","Masters Prediction Contest — LIVE.
+77,contest-card,1200x630,void,masters-contest,Masters Contest,MASTERS 2026,THE MASTERS GOLF CONTEST,Pick 3 golfers. Combined odds 90/1+. Lowest score wins. Miss the cut = eliminated.,ENTER NOW,,,,MASTERS,CONTEST,LIVE.,Pick 3 golfers — combined odds must total 90/1+. Lowest tournament score wins. 6000 MEDALS to 1st.,ENTER NOW,sportsblock.app,Twitter/X,"Contest Card — Void — ""Masters Contest""","⛳ The Masters Golf Contest is LIVE on SportsBlock.
 
-Pick the winner. Win 5,000 MEDALS. Free entry.
+Pick 3 golfers. Combined odds must total 90/1+. Lowest score wins. Miss the cut = eliminated.
+
+6,000 MEDALS to 1st place. Registration opens April 1.
 
 sportsblock.app
 
 #SportsBlock #TheMasters #Masters2026 #Golf",10
-78,contest-card,1200x630,stadium,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS 2026 PREDICTION CONTEST,Pick the winner. Predict the cut. Win 5000 MEDALS.,FREE ENTRY,,,,MASTERS,CONTEST,LIVE.,Predict the Masters 2026. Tournament winner top 5 cut line and round leaders. 5000 MEDALS prize.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Stadium — ""Masters Contest""",,
-79,contest-card,1200x630,teal,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS 2026 PREDICTION CONTEST,Pick the winner. Predict the cut. Win 5000 MEDALS.,FREE ENTRY,,,,MASTERS,CONTEST,LIVE.,Predict the Masters 2026. Tournament winner top 5 cut line and round leaders. 5000 MEDALS prize.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Teal Accent — ""Masters Contest""",,
-80,contest-card,1200x630,prestige,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS 2026 PREDICTION CONTEST,Pick the winner. Predict the cut. Win 5000 MEDALS.,FREE ENTRY,,,,MASTERS,CONTEST,LIVE.,Predict the Masters 2026. Tournament winner top 5 cut line and round leaders. 5000 MEDALS prize.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Gold Prestige — ""Masters Contest""",,
-81,social-post,1200x630,void,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS PREDICTION CONTEST,Pick the green jacket winner. Call the cut. Most accurate predictions win 5000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Void — ""Masters Contest""",,
-82,social-post,1200x630,stadium,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS PREDICTION CONTEST,Pick the green jacket winner. Call the cut. Most accurate predictions win 5000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Stadium — ""Masters Contest""",,
-83,social-post,1200x630,teal,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS PREDICTION CONTEST,Pick the green jacket winner. Call the cut. Most accurate predictions win 5000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Teal Accent — ""Masters Contest""",,
-84,social-post,1200x630,prestige,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS PREDICTION CONTEST,Pick the green jacket winner. Call the cut. Most accurate predictions win 5000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Gold Prestige — ""Masters Contest""",,
+78,contest-card,1200x630,stadium,masters-contest,Masters Contest,MASTERS 2026,THE MASTERS GOLF CONTEST,Pick 3 golfers. Combined odds 90/1+. Lowest score wins. Miss the cut = eliminated.,ENTER NOW,,,,MASTERS,CONTEST,LIVE.,Pick 3 golfers — combined odds must total 90/1+. Lowest tournament score wins. 6000 MEDALS to 1st.,ENTER NOW,sportsblock.app,Twitter/X,"Contest Card — Stadium — ""Masters Contest""","⛳ Think you know Augusta better than everyone?
+
+Pick 3 golfers. Combined odds 90/1+. Lowest combined score wins.
+
+Miss the cut on any pick? You're out.
+
+6,000 MEDALS to 1st. April 9–12.
+
+sportsblock.app
+
+#SportsBlock #TheMasters #Golf",11
+79,contest-card,1200x630,teal,masters-contest,Masters Contest,MASTERS 2026,THE MASTERS GOLF CONTEST,Pick 3 golfers. Combined odds 90/1+. Lowest score wins. Miss the cut = eliminated.,ENTER NOW,,,,MASTERS,CONTEST,LIVE.,Pick 3 golfers — combined odds must total 90/1+. Lowest tournament score wins. 6000 MEDALS to 1st.,ENTER NOW,sportsblock.app,Twitter/X,"Contest Card — Teal Accent — ""Masters Contest""","⛳ Masters 2026 Golf Contest — Pick your 3.
+
+Combined odds must total 90/1+. Lowest score takes the green jacket and 6,000 MEDALS.
+
+Registration: April 1–9. Tournament: April 9–12.
+
+sportsblock.app
+
+#SportsBlock #Masters2026 #Augusta #Golf",12
+80,contest-card,1200x630,prestige,masters-contest,Masters Contest,MASTERS 2026,THE MASTERS GOLF CONTEST,Pick 3 golfers. Combined odds 90/1+. Lowest score wins. Miss the cut = eliminated.,ENTER NOW,,,,MASTERS,CONTEST,LIVE.,Pick 3 golfers — combined odds must total 90/1+. Lowest tournament score wins. 6000 MEDALS to 1st.,ENTER NOW,sportsblock.app,Twitter/X,"Contest Card — Gold Prestige — ""Masters Contest""","⛳ 6,000 MEDALS. 3 golfers. 1 winner.
+
+The Masters Golf Contest on SportsBlock:
+→ Pick 3 golfers (combined odds 90/1+)
+→ Lowest combined score wins
+→ Miss the cut = eliminated
+→ 60% to 1st · 25% to 2nd · 15% to 3rd
+
+April 9–12. Augusta National.
+
+sportsblock.app
+
+#SportsBlock #TheMasters #Golf",13
+81,social-post,1200x630,void,masters-contest,Masters Contest,MASTERS 2026,THE MASTERS GOLF CONTEST,Pick 3 golfers. Combined odds 90/1+. Lowest score wins. 6000 MEDALS to 1st place.,ENTER NOW,,,,,,,,ENTER NOW,sportsblock.app,Twitter/X,"Social Post — Void — ""Masters Contest""","⛳ Augusta. 3 picks. 6,000 MEDALS.
+
+SportsBlock Masters Contest: pick 3 golfers, combined odds 90/1+, lowest score wins.
+
+Miss the cut on any pick? Eliminated.
+
+Registration opens April 1.
+
+sportsblock.app
+
+#SportsBlock #Masters2026 #Golf",14
+82,social-post,1200x630,stadium,masters-contest,Masters Contest,MASTERS 2026,THE MASTERS GOLF CONTEST,Pick 3 golfers. Combined odds 90/1+. Lowest score wins. 6000 MEDALS to 1st place.,ENTER NOW,,,,,,,,ENTER NOW,sportsblock.app,Twitter/X,"Social Post — Stadium — ""Masters Contest""",,
+83,social-post,1200x630,teal,masters-contest,Masters Contest,MASTERS 2026,THE MASTERS GOLF CONTEST,Pick 3 golfers. Combined odds 90/1+. Lowest score wins. 6000 MEDALS to 1st place.,ENTER NOW,,,,,,,,ENTER NOW,sportsblock.app,Twitter/X,"Social Post — Teal Accent — ""Masters Contest""",,
+84,social-post,1200x630,prestige,masters-contest,Masters Contest,MASTERS 2026,THE MASTERS GOLF CONTEST,Pick 3 golfers. Combined odds 90/1+. Lowest score wins. 6000 MEDALS to 1st place.,ENTER NOW,,,,,,,,ENTER NOW,sportsblock.app,Twitter/X,"Social Post — Gold Prestige — ""Masters Contest""",,
 85,social-post,1200x630,void,sportsbites,Sportsbites,SPORTSBITES,YOUR HOT TAKES. PAID.,Drop a sportsbite. The community votes. Best takes earn MEDALS.,DROP A BITE,,,,,,,,POST YOUR TAKE,sportsblock.app,Twitter/X,"Social Post — Void — ""Sportsbites""","Your hot take. 280 characters. Real MEDALS.
 
 Sportsbites on SportsBlock.
