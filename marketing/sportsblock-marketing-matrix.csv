@@ -1,0 +1,155 @@
+id,template,dimensions,theme,cta_id,cta_angle,category_tag,headline,subtext,badge_text,ig_line1,ig_line2,ig_line3,story_line1,story_line2,story_line3,story_body,story_cta,url,platform_target,figma_frame_name,tweet_text,buffer_priority
+1,social-post,1200x630,void,earn,Earn Rewards,EARN REWARDS,PREDICT. EARN. DOMINATE.,Stake your prediction on today's match and earn real MEDALS rewards.,MEDALS LIVE,,,,,,,,START EARNING TODAY,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Void — ""Earn""",,
+2,social-post,1200x630,stadium,earn,Earn Rewards,EARN REWARDS,PREDICT. EARN. DOMINATE.,Stake your prediction on today's match and earn real MEDALS rewards.,MEDALS LIVE,,,,,,,,START EARNING TODAY,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Stadium — ""Earn""","They profit from your takes. You get nothing.
+
+Flip the script. Earn MEDALS on SportsBlock.
+
+sportsblock.app
+
+#SportsBlock #EarnCrypto #HIVE #SportsBetting",5
+3,social-post,1200x630,teal,earn,Earn Rewards,EARN REWARDS,PREDICT. EARN. DOMINATE.,Stake your prediction on today's match and earn real MEDALS rewards.,MEDALS LIVE,,,,,,,,START EARNING TODAY,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Teal Accent — ""Earn""",,
+4,social-post,1200x630,prestige,earn,Earn Rewards,EARN REWARDS,PREDICT. EARN. DOMINATE.,Stake your prediction on today's match and earn real MEDALS rewards.,MEDALS LIVE,,,,,,,,START EARNING TODAY,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Gold Prestige — ""Earn""",,
+5,instagram,1080x1080,void,earn,Earn Rewards,EARN REWARDS,,,,WRITE.,PREDICT.,EARN.,YOUR HOT,TAKES.,PAID.,The sports platform that rewards you for what you already do — talk sport.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Void — ""Earn""",,
+6,instagram,1080x1080,stadium,earn,Earn Rewards,EARN REWARDS,,,,WRITE.,PREDICT.,EARN.,YOUR HOT,TAKES.,PAID.,The sports platform that rewards you for what you already do — talk sport.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Stadium — ""Earn""",,
+7,instagram,1080x1080,teal,earn,Earn Rewards,EARN REWARDS,,,,WRITE.,PREDICT.,EARN.,YOUR HOT,TAKES.,PAID.,The sports platform that rewards you for what you already do — talk sport.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Teal Accent — ""Earn""",,
+8,instagram,1080x1080,prestige,earn,Earn Rewards,EARN REWARDS,,,,WRITE.,PREDICT.,EARN.,YOUR HOT,TAKES.,PAID.,The sports platform that rewards you for what you already do — talk sport.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Gold Prestige — ""Earn""",,
+9,story,1080x1920,void,earn,Earn Rewards,EARN REWARDS,,,,,,,YOUR HOT,TAKES.,PAID.,Sportsbites match threads predictions — everything you post on SportsBlock earns MEDALS.,START EARNING TODAY,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Void — ""Earn""",,
+10,story,1080x1920,stadium,earn,Earn Rewards,EARN REWARDS,,,,,,,YOUR HOT,TAKES.,PAID.,Sportsbites match threads predictions — everything you post on SportsBlock earns MEDALS.,START EARNING TODAY,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Stadium — ""Earn""",,
+11,story,1080x1920,teal,earn,Earn Rewards,EARN REWARDS,,,,,,,YOUR HOT,TAKES.,PAID.,Sportsbites match threads predictions — everything you post on SportsBlock earns MEDALS.,START EARNING TODAY,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Teal Accent — ""Earn""",,
+12,story,1080x1920,prestige,earn,Earn Rewards,EARN REWARDS,,,,,,,YOUR HOT,TAKES.,PAID.,Sportsbites match threads predictions — everything you post on SportsBlock earns MEDALS.,START EARNING TODAY,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Gold Prestige — ""Earn""",,
+13,prediction-card,1200x630,void,earn,Earn Rewards,PREDICTION BITES,,,,,,,,,,,START EARNING TODAY,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Void — ""Earn""",,
+14,prediction-card,1200x630,stadium,earn,Earn Rewards,PREDICTION BITES,,,,,,,,,,,START EARNING TODAY,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Stadium — ""Earn""",,
+15,prediction-card,1200x630,teal,earn,Earn Rewards,PREDICTION BITES,,,,,,,,,,,START EARNING TODAY,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Teal Accent — ""Earn""",,
+16,prediction-card,1200x630,prestige,earn,Earn Rewards,PREDICTION BITES,,,,,,,,,,,START EARNING TODAY,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Gold Prestige — ""Earn""",,
+17,social-post,1200x630,void,community,Pure Community,PURE SPORTS,NO NOISE. JUST SPORT.,No politics. No drama. A community built by fans for fans.,JOIN FREE,,,,,,,,JOIN THE COMMUNITY,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Void — ""Community""","No politics. No drama. Just sport.
+
+SportsBlock — the community you've been looking for.
+
+sportsblock.app
+
+#SportsBlock #Web3Sports #SportsCommunity #HIVE",6
+18,social-post,1200x630,stadium,community,Pure Community,PURE SPORTS,NO NOISE. JUST SPORT.,No politics. No drama. A community built by fans for fans.,JOIN FREE,,,,,,,,JOIN THE COMMUNITY,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Stadium — ""Community""",,
+19,social-post,1200x630,teal,community,Pure Community,PURE SPORTS,NO NOISE. JUST SPORT.,No politics. No drama. A community built by fans for fans.,JOIN FREE,,,,,,,,JOIN THE COMMUNITY,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Teal Accent — ""Community""",,
+20,social-post,1200x630,prestige,community,Pure Community,PURE SPORTS,NO NOISE. JUST SPORT.,No politics. No drama. A community built by fans for fans.,JOIN FREE,,,,,,,,JOIN THE COMMUNITY,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Gold Prestige — ""Community""",,
+21,instagram,1080x1080,void,community,Pure Community,PURE SPORTS,,,,PURE.,SPORTS.,ONLY.,YOUR,TRIBE.,FOUND.,No politics. No drama. Just fans who love the game.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Void — ""Community""",,
+22,instagram,1080x1080,stadium,community,Pure Community,PURE SPORTS,,,,PURE.,SPORTS.,ONLY.,YOUR,TRIBE.,FOUND.,No politics. No drama. Just fans who love the game.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Stadium — ""Community""",,
+23,instagram,1080x1080,teal,community,Pure Community,PURE SPORTS,,,,PURE.,SPORTS.,ONLY.,YOUR,TRIBE.,FOUND.,No politics. No drama. Just fans who love the game.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Teal Accent — ""Community""",,
+24,instagram,1080x1080,prestige,community,Pure Community,PURE SPORTS,,,,PURE.,SPORTS.,ONLY.,YOUR,TRIBE.,FOUND.,No politics. No drama. Just fans who love the game.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Gold Prestige — ""Community""",,
+25,story,1080x1920,void,community,Pure Community,PURE SPORTS,,,,,,,YOUR,TRIBE.,FOUND.,Match threads live takes hot debates — all sport all the time. Join the community.,JOIN THE COMMUNITY,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Void — ""Community""",,
+26,story,1080x1920,stadium,community,Pure Community,PURE SPORTS,,,,,,,YOUR,TRIBE.,FOUND.,Match threads live takes hot debates — all sport all the time. Join the community.,JOIN THE COMMUNITY,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Stadium — ""Community""",,
+27,story,1080x1920,teal,community,Pure Community,PURE SPORTS,,,,,,,YOUR,TRIBE.,FOUND.,Match threads live takes hot debates — all sport all the time. Join the community.,JOIN THE COMMUNITY,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Teal Accent — ""Community""",,
+28,story,1080x1920,prestige,community,Pure Community,PURE SPORTS,,,,,,,YOUR,TRIBE.,FOUND.,Match threads live takes hot debates — all sport all the time. Join the community.,JOIN THE COMMUNITY,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Gold Prestige — ""Community""",,
+29,prediction-card,1200x630,void,community,Pure Community,PREDICTION BITES,,,,,,,,,,,JOIN THE COMMUNITY,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Void — ""Community""",,
+30,prediction-card,1200x630,stadium,community,Pure Community,PREDICTION BITES,,,,,,,,,,,JOIN THE COMMUNITY,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Stadium — ""Community""",,
+31,prediction-card,1200x630,teal,community,Pure Community,PREDICTION BITES,,,,,,,,,,,JOIN THE COMMUNITY,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Teal Accent — ""Community""",,
+32,prediction-card,1200x630,prestige,community,Pure Community,PREDICTION BITES,,,,,,,,,,,JOIN THE COMMUNITY,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Gold Prestige — ""Community""",,
+33,social-post,1200x630,void,ownership,True Ownership,TRUE OWNERSHIP,YOUR CONTENT. YOUR RULES.,Built on blockchain. Zero fees. Your posts your wallet your rewards.,ZERO FEES,,,,,,,,OWN YOUR CONTENT,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Void — ""Ownership""",,
+34,social-post,1200x630,stadium,ownership,True Ownership,TRUE OWNERSHIP,YOUR CONTENT. YOUR RULES.,Built on blockchain. Zero fees. Your posts your wallet your rewards.,ZERO FEES,,,,,,,,OWN YOUR CONTENT,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Stadium — ""Ownership""",,
+35,social-post,1200x630,teal,ownership,True Ownership,TRUE OWNERSHIP,YOUR CONTENT. YOUR RULES.,Built on blockchain. Zero fees. Your posts your wallet your rewards.,ZERO FEES,,,,,,,,OWN YOUR CONTENT,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Teal Accent — ""Ownership""",,
+36,social-post,1200x630,prestige,ownership,True Ownership,TRUE OWNERSHIP,YOUR CONTENT. YOUR RULES.,Built on blockchain. Zero fees. Your posts your wallet your rewards.,ZERO FEES,,,,,,,,OWN YOUR CONTENT,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Gold Prestige — ""Ownership""",,
+37,instagram,1080x1080,void,ownership,True Ownership,TRUE OWNERSHIP,,,,YOUR.,CONTENT.,FOREVER.,OWN,YOUR,VOICE.,On-chain. Uncensorable. Yours. No platform can take it away.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Void — ""Ownership""",,
+38,instagram,1080x1080,stadium,ownership,True Ownership,TRUE OWNERSHIP,,,,YOUR.,CONTENT.,FOREVER.,OWN,YOUR,VOICE.,On-chain. Uncensorable. Yours. No platform can take it away.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Stadium — ""Ownership""",,
+39,instagram,1080x1080,teal,ownership,True Ownership,TRUE OWNERSHIP,,,,YOUR.,CONTENT.,FOREVER.,OWN,YOUR,VOICE.,On-chain. Uncensorable. Yours. No platform can take it away.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Teal Accent — ""Ownership""",,
+40,instagram,1080x1080,prestige,ownership,True Ownership,TRUE OWNERSHIP,,,,YOUR.,CONTENT.,FOREVER.,OWN,YOUR,VOICE.,On-chain. Uncensorable. Yours. No platform can take it away.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Gold Prestige — ""Ownership""",,
+41,story,1080x1920,void,ownership,True Ownership,TRUE OWNERSHIP,,,,,,,OWN,YOUR,VOICE.,Your content lives on the blockchain. No algorithm. No shadowbans. True ownership.,OWN YOUR CONTENT,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Void — ""Ownership""",,
+42,story,1080x1920,stadium,ownership,True Ownership,TRUE OWNERSHIP,,,,,,,OWN,YOUR,VOICE.,Your content lives on the blockchain. No algorithm. No shadowbans. True ownership.,OWN YOUR CONTENT,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Stadium — ""Ownership""",,
+43,story,1080x1920,teal,ownership,True Ownership,TRUE OWNERSHIP,,,,,,,OWN,YOUR,VOICE.,Your content lives on the blockchain. No algorithm. No shadowbans. True ownership.,OWN YOUR CONTENT,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Teal Accent — ""Ownership""",,
+44,story,1080x1920,prestige,ownership,True Ownership,TRUE OWNERSHIP,,,,,,,OWN,YOUR,VOICE.,Your content lives on the blockchain. No algorithm. No shadowbans. True ownership.,OWN YOUR CONTENT,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Gold Prestige — ""Ownership""",,
+45,prediction-card,1200x630,void,ownership,True Ownership,PREDICTION BITES,,,,,,,,,,,OWN YOUR CONTENT,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Void — ""Ownership""",,
+46,prediction-card,1200x630,stadium,ownership,True Ownership,PREDICTION BITES,,,,,,,,,,,OWN YOUR CONTENT,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Stadium — ""Ownership""",,
+47,prediction-card,1200x630,teal,ownership,True Ownership,PREDICTION BITES,,,,,,,,,,,OWN YOUR CONTENT,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Teal Accent — ""Ownership""",,
+48,prediction-card,1200x630,prestige,ownership,True Ownership,PREDICTION BITES,,,,,,,,,,,OWN YOUR CONTENT,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Gold Prestige — ""Ownership""",,
+49,social-post,1200x630,void,predictions,Prediction Bites,PREDICTION BITES,BACK YOUR TAKES.,Put MEDALS behind your predictions. Right call? Get rewarded.,STAKE NOW,,,,,,,,MAKE YOUR PREDICTION,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Void — ""Predictions""",,
+50,social-post,1200x630,stadium,predictions,Prediction Bites,PREDICTION BITES,BACK YOUR TAKES.,Put MEDALS behind your predictions. Right call? Get rewarded.,STAKE NOW,,,,,,,,MAKE YOUR PREDICTION,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Stadium — ""Predictions""",,
+51,social-post,1200x630,teal,predictions,Prediction Bites,PREDICTION BITES,BACK YOUR TAKES.,Put MEDALS behind your predictions. Right call? Get rewarded.,STAKE NOW,,,,,,,,MAKE YOUR PREDICTION,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Teal Accent — ""Predictions""",,
+52,social-post,1200x630,prestige,predictions,Prediction Bites,PREDICTION BITES,BACK YOUR TAKES.,Put MEDALS behind your predictions. Right call? Get rewarded.,STAKE NOW,,,,,,,,MAKE YOUR PREDICTION,sportsblock.app,"Twitter/X, LinkedIn, Facebook","Social Post — Gold Prestige — ""Predictions""",,
+53,instagram,1080x1080,void,predictions,Prediction Bites,PREDICTION BITES,,,,STAKE.,PREDICT.,WIN.,STAKE,YOUR,CLAIM.,Back your hot takes with MEDALS. Right call = real rewards.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Void — ""Predictions""",,
+54,instagram,1080x1080,stadium,predictions,Prediction Bites,PREDICTION BITES,,,,STAKE.,PREDICT.,WIN.,STAKE,YOUR,CLAIM.,Back your hot takes with MEDALS. Right call = real rewards.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Stadium — ""Predictions""",,
+55,instagram,1080x1080,teal,predictions,Prediction Bites,PREDICTION BITES,,,,STAKE.,PREDICT.,WIN.,STAKE,YOUR,CLAIM.,Back your hot takes with MEDALS. Right call = real rewards.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Teal Accent — ""Predictions""",,
+56,instagram,1080x1080,prestige,predictions,Prediction Bites,PREDICTION BITES,,,,STAKE.,PREDICT.,WIN.,STAKE,YOUR,CLAIM.,Back your hot takes with MEDALS. Right call = real rewards.,,sportsblock.app,"Instagram Feed, Threads","Instagram — Gold Prestige — ""Predictions""",,
+57,story,1080x1920,void,predictions,Prediction Bites,PREDICTION BITES,,,,,,,STAKE,YOUR,CLAIM.,Prediction Bites let you put MEDALS behind your calls. Right prediction = multiplied rewards.,MAKE YOUR PREDICTION,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Void — ""Predictions""",,
+58,story,1080x1920,stadium,predictions,Prediction Bites,PREDICTION BITES,,,,,,,STAKE,YOUR,CLAIM.,Prediction Bites let you put MEDALS behind your calls. Right prediction = multiplied rewards.,MAKE YOUR PREDICTION,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Stadium — ""Predictions""",,
+59,story,1080x1920,teal,predictions,Prediction Bites,PREDICTION BITES,,,,,,,STAKE,YOUR,CLAIM.,Prediction Bites let you put MEDALS behind your calls. Right prediction = multiplied rewards.,MAKE YOUR PREDICTION,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Teal Accent — ""Predictions""",,
+60,story,1080x1920,prestige,predictions,Prediction Bites,PREDICTION BITES,,,,,,,STAKE,YOUR,CLAIM.,Prediction Bites let you put MEDALS behind your calls. Right prediction = multiplied rewards.,MAKE YOUR PREDICTION,sportsblock.app,"Instagram Stories, TikTok, Reels","Story — Gold Prestige — ""Predictions""",,
+61,prediction-card,1200x630,void,predictions,Prediction Bites,PREDICTION BITES,,,,,,,,,,,MAKE YOUR PREDICTION,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Void — ""Predictions""","The smart money is on SportsBlock Prediction Bites.
+
+Stake. Predict. Earn.
+
+sportsblock.app
+
+#SportsBlock #PredictionMarkets #SportsBetting #EarnCrypto",8
+62,prediction-card,1200x630,stadium,predictions,Prediction Bites,PREDICTION BITES,,,,,,,,,,,MAKE YOUR PREDICTION,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Stadium — ""Predictions""",,
+63,prediction-card,1200x630,teal,predictions,Prediction Bites,PREDICTION BITES,,,,,,,,,,,MAKE YOUR PREDICTION,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Teal Accent — ""Predictions""",,
+64,prediction-card,1200x630,prestige,predictions,Prediction Bites,PREDICTION BITES,,,,,,,,,,,MAKE YOUR PREDICTION,sportsblock.app,"Twitter/X, Discord, Hive","Prediction Card — Gold Prestige — ""Predictions""",,
+65,contest-card,1200x630,void,ipl-contest,IPL Contest,IPL CONTEST,IPL 2026 PREDICTION CONTEST,Predict every IPL match. Top the leaderboard. Win 10000 MEDALS.,FREE ENTRY,,,,IPL,CONTEST,LIVE.,Predict every IPL 2026 match. Top the leaderboard. 10000 MEDALS to the sharpest cricket mind.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Void — ""IPL Contest""","🏏 IPL Prediction Contest is LIVE.
+
+Predict every match. Win 10,000 MEDALS. Free entry.
+
+sportsblock.app
+
+#SportsBlock #IPL2026 #IPL #Cricket",1
+66,contest-card,1200x630,stadium,ipl-contest,IPL Contest,IPL CONTEST,IPL 2026 PREDICTION CONTEST,Predict every IPL match. Top the leaderboard. Win 10000 MEDALS.,FREE ENTRY,,,,IPL,CONTEST,LIVE.,Predict every IPL 2026 match. Top the leaderboard. 10000 MEDALS to the sharpest cricket mind.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Stadium — ""IPL Contest""","Think you know cricket better than everyone?
+
+Prove it. IPL Contest on SportsBlock. Free entry.
+
+sportsblock.app
+
+#SportsBlock #IPL2026 #CricketPredictions #MEDALS",2
+67,contest-card,1200x630,teal,ipl-contest,IPL Contest,IPL CONTEST,IPL 2026 PREDICTION CONTEST,Predict every IPL match. Top the leaderboard. Win 10000 MEDALS.,FREE ENTRY,,,,IPL,CONTEST,LIVE.,Predict every IPL 2026 match. Top the leaderboard. 10000 MEDALS to the sharpest cricket mind.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Teal Accent — ""IPL Contest""",,
+68,contest-card,1200x630,prestige,ipl-contest,IPL Contest,IPL CONTEST,IPL 2026 PREDICTION CONTEST,Predict every IPL match. Top the leaderboard. Win 10000 MEDALS.,FREE ENTRY,,,,IPL,CONTEST,LIVE.,Predict every IPL 2026 match. Top the leaderboard. 10000 MEDALS to the sharpest cricket mind.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Gold Prestige — ""IPL Contest""","The IPL Prediction Contest prize pool: 10,000 MEDALS.
+
+The entry fee: zero.
+
+Predict every IPL 2026 match on SportsBlock. Climb the leaderboard. The sharpest cricket mind takes the pot.
+
+sportsblock.app
+
+#SportsBlock #IPL2026 #IPL",3
+69,social-post,1200x630,void,ipl-contest,IPL Contest,IPL CONTEST,IPL PREDICTION CONTEST,Predict every IPL match. Top the leaderboard. The sharpest cricket mind wins 10000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Void — ""IPL Contest""",,
+70,social-post,1200x630,stadium,ipl-contest,IPL Contest,IPL CONTEST,IPL PREDICTION CONTEST,Predict every IPL match. Top the leaderboard. The sharpest cricket mind wins 10000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Stadium — ""IPL Contest""",,
+71,social-post,1200x630,teal,ipl-contest,IPL Contest,IPL CONTEST,IPL PREDICTION CONTEST,Predict every IPL match. Top the leaderboard. The sharpest cricket mind wins 10000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Teal Accent — ""IPL Contest""","IPL season + SportsBlock = MEDALS.
+
+Free prediction contest. 10,000 MEDALS prize.
+
+sportsblock.app
+
+#SportsBlock #IPL2026 #Cricket #T20",7
+72,social-post,1200x630,prestige,ipl-contest,IPL Contest,IPL CONTEST,IPL PREDICTION CONTEST,Predict every IPL match. Top the leaderboard. The sharpest cricket mind wins 10000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Gold Prestige — ""IPL Contest""",,
+73,prediction-card,1200x630,void,ipl-contest,IPL Contest,PREDICTION BITES,,,,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Prediction Card — Void — ""IPL Contest""",,
+74,prediction-card,1200x630,stadium,ipl-contest,IPL Contest,PREDICTION BITES,,,,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Prediction Card — Stadium — ""IPL Contest""",,
+75,prediction-card,1200x630,teal,ipl-contest,IPL Contest,PREDICTION BITES,,,,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Prediction Card — Teal Accent — ""IPL Contest""",,
+76,prediction-card,1200x630,prestige,ipl-contest,IPL Contest,PREDICTION BITES,,,,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Prediction Card — Gold Prestige — ""IPL Contest""",,
+77,contest-card,1200x630,void,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS 2026 PREDICTION CONTEST,Pick the winner. Predict the cut. Win 5000 MEDALS.,FREE ENTRY,,,,MASTERS,CONTEST,LIVE.,Predict the Masters 2026. Tournament winner top 5 cut line and round leaders. 5000 MEDALS prize.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Void — ""Masters Contest""","Masters Prediction Contest — LIVE.
+
+Pick the winner. Win 5,000 MEDALS. Free entry.
+
+sportsblock.app
+
+#SportsBlock #TheMasters #Masters2026 #Golf",10
+78,contest-card,1200x630,stadium,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS 2026 PREDICTION CONTEST,Pick the winner. Predict the cut. Win 5000 MEDALS.,FREE ENTRY,,,,MASTERS,CONTEST,LIVE.,Predict the Masters 2026. Tournament winner top 5 cut line and round leaders. 5000 MEDALS prize.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Stadium — ""Masters Contest""",,
+79,contest-card,1200x630,teal,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS 2026 PREDICTION CONTEST,Pick the winner. Predict the cut. Win 5000 MEDALS.,FREE ENTRY,,,,MASTERS,CONTEST,LIVE.,Predict the Masters 2026. Tournament winner top 5 cut line and round leaders. 5000 MEDALS prize.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Teal Accent — ""Masters Contest""",,
+80,contest-card,1200x630,prestige,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS 2026 PREDICTION CONTEST,Pick the winner. Predict the cut. Win 5000 MEDALS.,FREE ENTRY,,,,MASTERS,CONTEST,LIVE.,Predict the Masters 2026. Tournament winner top 5 cut line and round leaders. 5000 MEDALS prize.,ENTER FREE NOW,sportsblock.app,Twitter/X,"Contest Card — Gold Prestige — ""Masters Contest""",,
+81,social-post,1200x630,void,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS PREDICTION CONTEST,Pick the green jacket winner. Call the cut. Most accurate predictions win 5000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Void — ""Masters Contest""",,
+82,social-post,1200x630,stadium,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS PREDICTION CONTEST,Pick the green jacket winner. Call the cut. Most accurate predictions win 5000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Stadium — ""Masters Contest""",,
+83,social-post,1200x630,teal,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS PREDICTION CONTEST,Pick the green jacket winner. Call the cut. Most accurate predictions win 5000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Teal Accent — ""Masters Contest""",,
+84,social-post,1200x630,prestige,masters-contest,Masters Contest,MASTERS CONTEST,MASTERS PREDICTION CONTEST,Pick the green jacket winner. Call the cut. Most accurate predictions win 5000 MEDALS.,FREE ENTRY,,,,,,,,ENTER FREE NOW,sportsblock.app,Twitter/X,"Social Post — Gold Prestige — ""Masters Contest""",,
+85,social-post,1200x630,void,sportsbites,Sportsbites,SPORTSBITES,YOUR HOT TAKES. PAID.,Drop a sportsbite. The community votes. Best takes earn MEDALS.,DROP A BITE,,,,,,,,POST YOUR TAKE,sportsblock.app,Twitter/X,"Social Post — Void — ""Sportsbites""","Your hot take. 280 characters. Real MEDALS.
+
+Sportsbites on SportsBlock.
+
+sportsblock.app
+
+#SportsBlock #SportsBites #HotTake #MatchDay",4
+86,social-post,1200x630,stadium,sportsbites,Sportsbites,SPORTSBITES,YOUR HOT TAKES. PAID.,Drop a sportsbite. The community votes. Best takes earn MEDALS.,DROP A BITE,,,,,,,,POST YOUR TAKE,sportsblock.app,Twitter/X,"Social Post — Stadium — ""Sportsbites""",,
+87,social-post,1200x630,teal,sportsbites,Sportsbites,SPORTSBITES,YOUR HOT TAKES. PAID.,Drop a sportsbite. The community votes. Best takes earn MEDALS.,DROP A BITE,,,,,,,,POST YOUR TAKE,sportsblock.app,Twitter/X,"Social Post — Teal Accent — ""Sportsbites""",,
+88,social-post,1200x630,prestige,sportsbites,Sportsbites,SPORTSBITES,YOUR HOT TAKES. PAID.,Drop a sportsbite. The community votes. Best takes earn MEDALS.,DROP A BITE,,,,,,,,POST YOUR TAKE,sportsblock.app,Twitter/X,"Social Post — Gold Prestige — ""Sportsbites""",,
+89,social-post,1200x630,void,longform,Long-Form Analysis,LONG-FORM,DEEP ANALYSIS. REAL REWARDS.,Write match previews tactical breakdowns and season analysis. Earn MEDALS for quality.,PUBLISH NOW,,,,,,,,START WRITING,sportsblock.app,Twitter/X,"Social Post — Void — ""Long Form""",,
+90,social-post,1200x630,stadium,longform,Long-Form Analysis,LONG-FORM,DEEP ANALYSIS. REAL REWARDS.,Write match previews tactical breakdowns and season analysis. Earn MEDALS for quality.,PUBLISH NOW,,,,,,,,START WRITING,sportsblock.app,Twitter/X,"Social Post — Stadium — ""Long Form""","Sports writers deserve to get paid.
+
+Long-form content earns MEDALS on SportsBlock.
+
+sportsblock.app
+
+#SportsBlock #SportsAnalysis #DeepDive #MEDALS",9
+91,social-post,1200x630,teal,longform,Long-Form Analysis,LONG-FORM,DEEP ANALYSIS. REAL REWARDS.,Write match previews tactical breakdowns and season analysis. Earn MEDALS for quality.,PUBLISH NOW,,,,,,,,START WRITING,sportsblock.app,Twitter/X,"Social Post — Teal Accent — ""Long Form""",,
+92,social-post,1200x630,prestige,longform,Long-Form Analysis,LONG-FORM,DEEP ANALYSIS. REAL REWARDS.,Write match previews tactical breakdowns and season analysis. Earn MEDALS for quality.,PUBLISH NOW,,,,,,,,START WRITING,sportsblock.app,Twitter/X,"Social Post — Gold Prestige — ""Long Form""",,
