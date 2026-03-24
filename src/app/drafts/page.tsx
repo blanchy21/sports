@@ -3,7 +3,7 @@
 import React, { Suspense } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { AlertCircle, Loader2, FileEdit, Calendar } from 'lucide-react';
+import { AlertCircle, FileEdit, Calendar } from 'lucide-react';
 import { DraftsContent } from '@/components/profile/DraftsContent';
 import { ScheduledPostsContent } from '@/components/profile/ScheduledPostsContent';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -23,9 +23,10 @@ function DraftsPageContent() {
     return (
       <MainLayout>
         <div className="mx-auto max-w-4xl space-y-6">
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2 text-muted-foreground">Loading...</span>
+          <div className="space-y-4 py-4">
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
           </div>
         </div>
       </MainLayout>
@@ -92,10 +93,10 @@ export default function DraftsPage() {
     <Suspense
       fallback={
         <MainLayout>
-          <div className="mx-auto max-w-4xl">
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
+          <div className="mx-auto max-w-4xl space-y-4 py-4">
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
           </div>
         </MainLayout>
       }

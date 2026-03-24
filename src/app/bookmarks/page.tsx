@@ -3,7 +3,7 @@
 import React from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { BookmarksContent } from '@/components/profile/BookmarksContent';
 
 export default function BookmarksPage() {
@@ -13,9 +13,10 @@ export default function BookmarksPage() {
     return (
       <MainLayout>
         <div className="mx-auto max-w-4xl space-y-6">
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2 text-muted-foreground">Loading...</span>
+          <div className="space-y-4 py-4">
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
           </div>
         </div>
       </MainLayout>

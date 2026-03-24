@@ -39,6 +39,12 @@ interface LoadingProps {
    * Inline loading (smaller, for buttons/inline use)
    */
   inline?: boolean;
+
+  /**
+   * Blockchain write spinner — only use for Hive broadcasts, signing, etc.
+   * Brand rule: spinners only during blockchain writes.
+   */
+  blockchain?: boolean;
 }
 
 /**
@@ -54,6 +60,7 @@ export function Loading({
   skeletonLines = 3,
   className,
   inline = false,
+  blockchain = false,
 }: LoadingProps) {
   const sizeClasses = {
     sm: 'h-4 w-4',
@@ -82,28 +89,59 @@ export function Loading({
     );
   }
 
-  // Inline loading (for buttons, etc.)
+  // Inline loading (for buttons, etc.) — keeps spinner for button submit states
   if (inline) {
     return <Loader2 className={cn('animate-spin', sizeClasses[size], className)} />;
   }
 
-  // Full page loading
+  // Blockchain write spinner — the only non-inline case that uses a spinner
+  if (blockchain) {
+    if (fullPage) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className={cn('animate-spin text-primary', sizeClasses.lg)} />
+            {text && <p className={cn('text-muted-foreground', textSizeClasses.md)}>{text}</p>}
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className={cn('flex flex-col items-center justify-center space-y-4 py-8', className)}>
+        <Loader2 className={cn('animate-spin text-primary', sizeClasses[size])} />
+        {text && <p className={cn('text-muted-foreground', textSizeClasses[size])}>{text}</p>}
+      </div>
+    );
+  }
+
+  // Shimmer skeleton card count based on size
+  const shimmerCount = size === 'sm' ? 2 : size === 'lg' ? 4 : 3;
+
+  // Full page shimmer
   if (fullPage) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader2 className={cn('animate-spin text-primary', sizeClasses.lg)} />
-          {text && <p className={cn('text-muted-foreground', textSizeClasses.md)}>{text}</p>}
+        <div className="w-full max-w-md space-y-4 px-6">
+          {Array.from({ length: shimmerCount }).map((_, i) => (
+            <div key={i} className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+          ))}
+          {text && (
+            <p className={cn('text-center text-muted-foreground', textSizeClasses.md)}>{text}</p>
+          )}
         </div>
       </div>
     );
   }
 
-  // Default loading (centered in container)
+  // Default loading — skeleton shimmer (brand rule: no spinners for data fetching)
   return (
-    <div className={cn('flex flex-col items-center justify-center space-y-4 py-8', className)}>
-      <Loader2 className={cn('animate-spin text-primary', sizeClasses[size])} />
-      {text && <p className={cn('text-muted-foreground', textSizeClasses[size])}>{text}</p>}
+    <div className={cn('space-y-4 py-4', className)}>
+      {Array.from({ length: shimmerCount }).map((_, i) => (
+        <div key={i} className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+      ))}
+      {text && (
+        <p className={cn('text-center text-muted-foreground', textSizeClasses[size])}>{text}</p>
+      )}
     </div>
   );
 }

@@ -127,18 +127,19 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-in-out',
-        'slide-in': 'slideIn 0.3s ease-out',
-        'slide-in-top': 'slideInTop 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-        'bounce-in': 'bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-        glow: 'glow 2s ease-in-out infinite alternate',
+        'fade-in': 'fadeIn 350ms cubic-bezier(0.4, 0, 0.2, 1)',
+        'slide-in': 'slideIn 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+        'slide-in-top': 'slideInTop 350ms cubic-bezier(0, 0, 0.2, 1)',
+        'bounce-in': 'bounceIn 350ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+        glow: 'glow 2s ease-in-out infinite alternate', // intentionally 2s — decorative ambient only
         'border-pulse': 'borderPulse 2s ease-in-out infinite',
         float: 'float 3s ease-in-out infinite',
         'marquee-left': 'marquee-left 40s linear infinite',
         'marquee-right': 'marquee-right 40s linear infinite',
         'sb-pulse': 'sb-live-pulse 1400ms ease-in-out infinite',
-        'sb-shimmer': 'sb-shimmer 1600ms ease-in-out infinite',
-        'sb-spin': 'sb-spin 700ms linear infinite',
+        'sb-shimmer': 'sb-shimmer 1400ms ease-in-out infinite',
+        'sb-spin': 'sb-spin 800ms linear infinite',
+        'sb-blockchain-spin': 'sb-blockchain-spin 800ms cubic-bezier(0.4, 0, 0.2, 1) infinite',
       },
       keyframes: {
         fadeIn: {
@@ -195,6 +196,11 @@ const config: Config = {
         },
         'sb-spin': {
           to: { transform: 'rotate(360deg)' },
+        },
+        'sb-blockchain-spin': {
+          '0%': { transform: 'rotate(0deg)', opacity: '0.7' },
+          '50%': { opacity: '1' },
+          '100%': { transform: 'rotate(360deg)', opacity: '0.7' },
         },
       },
     },

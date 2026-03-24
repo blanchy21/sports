@@ -239,8 +239,10 @@ export default function SportsBitesPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className="mx-auto max-w-4xl space-y-4 px-4 py-8">
+          <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+          <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+          <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
         </div>
       }
     >

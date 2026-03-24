@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PostCard } from '@/components/posts/PostCard';
 import { Button } from '@/components/core/Button';
-import { Clock, Filter, Loader2 } from 'lucide-react';
+import { Clock, Filter } from 'lucide-react';
 // fetchSportsblockPosts is now accessed via API route
 import { SportsblockPost } from '@/lib/shared/types';
 import { logger } from '@/lib/logger';
@@ -70,9 +70,10 @@ export default function NewPostsPage() {
 
         {/* Posts Feed */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2 text-muted-foreground">Loading posts...</span>
+          <div className="space-y-4 py-4">
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+            <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
           </div>
         ) : error ? (
           <div className="py-12 text-center">

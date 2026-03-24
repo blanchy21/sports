@@ -144,9 +144,10 @@ export default function DiscoverClient({ initialPosts }: DiscoverClientProps) {
           </div>
 
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="ml-2 text-muted-foreground">Loading trending posts...</span>
+            <div className="space-y-4 py-4">
+              <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+              <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+              <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
             </div>
           ) : error ? (
             <div className="py-12 text-center">

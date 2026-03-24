@@ -9,7 +9,7 @@
 import React from 'react';
 import { LeaderboardCard } from './LeaderboardCard';
 import type { WeeklyLeaderboards, RewardCategory } from '@/lib/metrics/types';
-import { Loader2, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 
 interface LeaderboardGridProps {
   leaderboards: WeeklyLeaderboards | null;
@@ -39,9 +39,10 @@ export function LeaderboardGrid({
 }: LeaderboardGridProps) {
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="mb-4 h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Loading leaderboards...</p>
+      <div className="space-y-4 py-4">
+        <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+        <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+        <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
       </div>
     );
   }

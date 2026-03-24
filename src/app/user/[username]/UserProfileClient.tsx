@@ -252,9 +252,10 @@ export default function UserProfileClient({ initialProfile }: UserProfileClientP
   const renderPostsContent = () => (
     <>
       {isLoadingPosts ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <span className="ml-2 text-muted-foreground">Loading posts...</span>
+        <div className="space-y-4 py-4">
+          <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+          <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
+          <div className="h-24 animate-pulse rounded-lg bg-sb-stadium" />
         </div>
       ) : postsError ? (
         <div className="py-12 text-center">

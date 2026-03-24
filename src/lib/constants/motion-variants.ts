@@ -33,3 +33,23 @@ export const itemVariants: Variants = {
     transition: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
   },
 };
+
+/** Win state — spring bounce for reward/success reveals */
+export const winVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.35, ease: [0.34, 1.56, 0.64, 1] },
+  },
+};
+
+/** MEDALS counter — animate value change over 800ms */
+export const medalsCounterVariants: Variants = {
+  initial: { opacity: 0, y: 10 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.8, ease: [0.4, 0, 0.2, 1] },
+  },
+};
