@@ -84,7 +84,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   } = useAuthActions({ dispatch, getState });
 
   // Bridge NextAuth Google session → AuthContext (one-shot after mount)
-  useGoogleAuthBridge({ login, isAuthenticated: !!user, hasMounted });
+  // isPending is true while the NextAuth session check is in-flight,
+  // preventing premature "not authenticated" redirects on protected pages.
+  const { isPending: isGoogleBridgePending } = useGoogleAuthBridge({
+    login,
+    isAuthenticated: !!user,
+    hasMounted,
+  });
 
   // ============================================================================
   // Session Restoration Effect
@@ -303,12 +309,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Context Value
   // ============================================================================
 
+  // Keep isLoading true while the Google auth bridge is still checking NextAuth session.
+  // This prevents pages from seeing isLoading=false + user=null prematurely
+  // and redirecting to landing before the Google session can be picked up.
+  const effectiveIsLoading = isLoading || isGoogleBridgePending;
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       authType,
       isAuthenticated: !!user,
-      isLoading,
+      isLoading: effectiveIsLoading,
       login,
       loginWithHiveUser,
       loginWithWallet,
@@ -326,7 +337,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     [
       user,
       authType,
-      isLoading,
+      effectiveIsLoading,
       login,
       loginWithHiveUser,
       loginWithWallet,
