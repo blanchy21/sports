@@ -233,4 +233,35 @@ describe('useGoogleAuthBridge', () => {
     expect(user.hiveUsername).toBe('sb-hiver');
     expect(user.keysDownloaded).toBe(true);
   });
+
+  it('returns isPending=true while getSession is in-flight, then false', async () => {
+    let resolveSession: (value: unknown) => void;
+    mockGetSession.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSession = resolve;
+        })
+    );
+    const props = defaultProps();
+
+    const { result } = renderHook(() => useGoogleAuthBridge(props));
+
+    // Should be pending while getSession hasn't resolved
+    await waitFor(() => {
+      expect(result.current.isPending).toBe(true);
+    });
+
+    // Resolve getSession
+    resolveSession!(fullSession);
+
+    await waitFor(() => {
+      expect(result.current.isPending).toBe(false);
+    });
+  });
+
+  it('returns isPending=false when already authenticated (no getSession call)', () => {
+    const props = defaultProps({ isAuthenticated: true });
+    const { result } = renderHook(() => useGoogleAuthBridge(props));
+    expect(result.current.isPending).toBe(false);
+  });
 });

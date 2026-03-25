@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getSession } from 'next-auth/react';
 import { AuthType, User } from '@/types';
 import { logger } from '@/lib/logger';
@@ -16,13 +16,17 @@ interface UseGoogleAuthBridgeOptions {
  * Runs once per mount — no SessionProvider needed.
  * Uses a ref to track current auth state so the async getSession()
  * callback doesn't override a Hive login that completed in the meantime.
+ *
+ * Returns `isPending: true` while the NextAuth session check is in-flight,
+ * so AuthContext can keep isLoading=true and prevent premature redirects.
  */
 export function useGoogleAuthBridge({
   login,
   isAuthenticated,
   hasMounted,
-}: UseGoogleAuthBridgeOptions) {
+}: UseGoogleAuthBridgeOptions): { isPending: boolean } {
   const attempted = useRef(false);
+  const [isPending, setIsPending] = useState(false);
   // Track latest auth state via ref so the async callback can check it
   const isAuthenticatedRef = useRef(isAuthenticated);
   isAuthenticatedRef.current = isAuthenticated;
@@ -30,6 +34,7 @@ export function useGoogleAuthBridge({
   useEffect(() => {
     if (!hasMounted || isAuthenticated || attempted.current) return;
     attempted.current = true;
+    setIsPending(true);
 
     getSession()
       .then((session) => {
@@ -71,6 +76,11 @@ export function useGoogleAuthBridge({
         );
         // Allow retry on next mount — session fetch may have failed transiently
         attempted.current = false;
+      })
+      .finally(() => {
+        setIsPending(false);
       });
   }, [hasMounted, isAuthenticated, login]);
+
+  return { isPending };
 }
