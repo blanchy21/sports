@@ -103,34 +103,20 @@ export function usePublishForm() {
     }
   }, [user, isAuthLoading, router]);
 
-  // Load draft function
-  const loadDraft = useCallback((draftId: string) => {
-    if (typeof window === 'undefined') return;
-
+  // Load draft from server
+  const loadDraft = useCallback(async (draftId: string) => {
     try {
-      const savedDrafts = localStorage.getItem('drafts');
-      if (savedDrafts) {
-        const parsedDrafts = JSON.parse(savedDrafts);
-        let draft = parsedDrafts.find((d: { id?: string }) => d.id === draftId);
-
-        if (!draft) {
-          const match = draftId.match(/draft-(\d+)-(\d+)/);
-          if (match) {
-            const index = parseInt(match[2]);
-            if (index >= 0 && index < parsedDrafts.length) {
-              draft = parsedDrafts[index];
-            }
-          }
-        }
-
-        if (draft) {
-          setTitle(draft.title || '');
-          setContent(draft.content || '');
-          setExcerpt(draft.excerpt || '');
-          setSelectedSport(draft.sport || '');
-          setTags(Array.isArray(draft.tags) ? draft.tags : []);
-          setCoverImage(draft.imageUrl || '');
-        }
+      const res = await fetch(`/api/drafts/${encodeURIComponent(draftId)}`, {
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success && data.draft) {
+        setTitle(data.draft.title || '');
+        setContent(data.draft.content || '');
+        setExcerpt('');
+        setSelectedSport(data.draft.sport || '');
+        setTags(Array.isArray(data.draft.tags) ? data.draft.tags : []);
+        setCoverImage(data.draft.imageUrl || '');
       }
     } catch (err) {
       logger.error('Error loading draft', 'PublishPage', err);
