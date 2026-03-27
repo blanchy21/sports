@@ -9,6 +9,7 @@ import { SPORT_CATEGORIES } from '@/types';
 import { SportsblockPost } from '@/lib/shared/types';
 import { logger } from '@/lib/logger';
 import { FeedItemErrorBoundary } from '@/components/core/FeedItemErrorBoundary';
+import { interleaveAds } from '@/lib/utils/interleave-ads';
 
 const VISIBLE_SPORT_COUNT = 8;
 
@@ -156,11 +157,13 @@ export default function DiscoverClient({ initialPosts }: DiscoverClientProps) {
             </div>
           ) : posts.length > 0 ? (
             <div className="space-y-6">
-              {posts.map((post, index) => (
-                <FeedItemErrorBoundary key={`${post.author}-${post.permlink}`}>
-                  <PostCard post={post} priority={index < 2} />
-                </FeedItemErrorBoundary>
-              ))}
+              {interleaveAds(
+                posts.map((post, index) => (
+                  <FeedItemErrorBoundary key={`${post.author}-${post.permlink}`}>
+                    <PostCard post={post} priority={index < 2} />
+                  </FeedItemErrorBoundary>
+                ))
+              )}
             </div>
           ) : (
             <div className="py-12 text-center">
