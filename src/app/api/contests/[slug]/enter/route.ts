@@ -93,7 +93,7 @@ export const POST = createApiHandler('/api/contests/[slug]/enter', async (reques
             contestId: contest.id,
             username: user.username,
             entryData: entryData || {},
-            entryFeeTxId: 'free',
+            entryFeeTxId: `free-${contest.id}-${user.username}`,
           },
         });
 
