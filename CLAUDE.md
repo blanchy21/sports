@@ -665,6 +665,25 @@ All imports use `@/*` alias mapped to `src/*`:
 import { useAuth } from '@/contexts/AuthContext';
 ```
 
+### CSRF Protection on Write Routes (MANDATORY)
+**Every POST, PUT, DELETE, PATCH route MUST have CSRF protection.** Use `withCsrfProtection` from `@/lib/api/csrf` inside `createApiHandler` handlers:
+```typescript
+import { withCsrfProtection } from '@/lib/api/csrf';
+
+export const POST = createApiHandler('/api/example', async (request) => {
+  return withCsrfProtection(request as NextRequest, async () => {
+    // handler body here
+  });
+});
+```
+GET/HEAD routes do NOT need CSRF. This was missed on IPL BB, LMS, and Drafts routes — caught in the 2026-03-29 code review. Do not repeat this.
+
+### Input Validation on API Routes
+All routes that accept request bodies MUST use Zod schemas (not manual `typeof` checks). Use `.parse()` inside `createApiHandler` — ZodError is automatically caught and returned as 400.
+
+### Dynamic Route Params
+Use `extractPathParam(request.url, 'segmentName')` from `@/lib/api/route-params` to extract dynamic URL segments. Do NOT use `.split('/api/...')[1]?.split('/')[0]` string splitting.
+
 ### Error Handling in API Routes
 Use `src/lib/utils/api-retry.ts` for retryable Hive node calls.
 Use `src/lib/api/response.ts` for standardized API responses (`createApiHandler`, `apiSuccess`, `apiError`).
