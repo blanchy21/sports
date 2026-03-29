@@ -12,6 +12,7 @@ import { prisma } from '@/lib/db/prisma';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { proposeVoid } from '@/lib/predictions/settlement';
 import { notifyAdminsOfProposal } from '@/lib/predictions/notifications';
+import { logger } from '@/lib/logger';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -34,9 +35,12 @@ export const POST = createApiHandler('/api/predictions/[id]/void', async (reques
     if (!prediction) throw new NotFoundError('Prediction not found');
 
     const isCreator = prediction.creatorUsername === user.username;
-    const isAdmin = PREDICTION_CONFIG.ADMIN_ACCOUNTS.includes(user.username) && user.authType === 'hive';
+    const isAdmin =
+      PREDICTION_CONFIG.ADMIN_ACCOUNTS.includes(user.username) && user.authType === 'hive';
     if (!isCreator && !isAdmin) {
-      throw new ForbiddenError('Only the creator or Hive-authenticated admins can void predictions');
+      throw new ForbiddenError(
+        'Only the creator or Hive-authenticated admins can void predictions'
+      );
     }
 
     if (!['OPEN', 'LOCKED', 'PENDING_APPROVAL'].includes(prediction.status)) {
@@ -49,7 +53,7 @@ export const POST = createApiHandler('/api/predictions/[id]/void', async (reques
     notifyAdminsOfProposal(prediction, user.username, {
       action: 'void',
       reason: body.reason,
-    }).catch(() => {});
+    }).catch((err) => logger.error('Prediction notification failed', 'predictions', err));
 
     return apiSuccess({ status: 'PENDING_APPROVAL' });
   });

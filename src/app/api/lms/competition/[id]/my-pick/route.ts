@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createApiHandler, apiSuccess, NotFoundError, AuthError } from '@/lib/api/response';
+import { extractPathParam } from '@/lib/api/route-params';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { prisma } from '@/lib/db/prisma';
 import { getAvailableTeams } from '@/lib/lms/utils';
@@ -12,7 +13,7 @@ export const GET = createApiHandler('/api/lms/competition/[id]/my-pick', async (
   const user = await getAuthenticatedUserFromSession(request as NextRequest);
   if (!user) throw new AuthError();
 
-  const id = new URL(request.url).pathname.split('/api/lms/competition/')[1]?.split('/')[0];
+  const id = extractPathParam(request.url, 'competition');
   if (!id) throw new NotFoundError('Competition not found');
 
   const competition = await prisma.lmsCompetition.findUnique({

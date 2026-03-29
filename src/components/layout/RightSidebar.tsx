@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { TrendingUp, Users, Calendar, Trophy, Star, AlertCircle, RefreshCw } from 'lucide-react';
-import { useRealtimeEvents } from '@/features/sports/hooks/useUpcomingEvents';
+import { useRealtimeEvents } from '@/hooks/useUpcomingEvents';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFollowUser, useUnfollowUser } from '@/lib/react-query/queries/useFollowers';
 import { useBatchFollowStatus } from '@/lib/react-query/queries/useUserProfile';

@@ -13,6 +13,7 @@ import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { proposeSettlement } from '@/lib/predictions/settlement';
 import { checkAutoSettleEligibility } from '@/lib/predictions/auto-settle';
 import { notifyAdminsOfProposal } from '@/lib/predictions/notifications';
+import { logger } from '@/lib/logger';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -36,9 +37,12 @@ export const POST = createApiHandler('/api/predictions/[id]/settle', async (requ
     if (!prediction) throw new NotFoundError('Prediction not found');
 
     const isCreator = prediction.creatorUsername === user.username;
-    const isAdmin = PREDICTION_CONFIG.ADMIN_ACCOUNTS.includes(user.username) && user.authType === 'hive';
+    const isAdmin =
+      PREDICTION_CONFIG.ADMIN_ACCOUNTS.includes(user.username) && user.authType === 'hive';
     if (!isCreator && !isAdmin) {
-      throw new ForbiddenError('Only the creator or Hive-authenticated admins can settle predictions');
+      throw new ForbiddenError(
+        'Only the creator or Hive-authenticated admins can settle predictions'
+      );
     }
 
     if (prediction.status !== 'LOCKED') {
@@ -65,7 +69,7 @@ export const POST = createApiHandler('/api/predictions/[id]/settle', async (requ
     notifyAdminsOfProposal(prediction, user.username, {
       action: 'settle',
       outcomeLabel: validOutcome.label,
-    }).catch(() => {});
+    }).catch((err) => logger.error('Prediction notification failed', 'predictions', err));
 
     return apiSuccess({ status: 'PENDING_APPROVAL' });
   });

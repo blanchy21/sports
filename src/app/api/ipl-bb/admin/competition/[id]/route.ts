@@ -5,49 +5,47 @@ import {
   NotFoundError,
   AuthError,
   ForbiddenError,
-  ValidationError,
 } from '@/lib/api/response';
+import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { extractPathParam } from '@/lib/api/route-params';
 import { isAdminAccount } from '@/lib/admin/config';
 import { prisma } from '@/lib/db/prisma';
-import type { CompetitionStatus } from '@/lib/ipl-bb/types';
+import { z } from 'zod';
 
-const VALID_STATUSES: CompetitionStatus[] = ['open', 'active', 'complete'];
+const statusSchema = z.object({
+  status: z.enum(['open', 'active', 'complete']),
+});
 
 /**
  * PUT /api/ipl-bb/admin/competition/[id]
  * Update competition status. Admin only.
  */
 export const PUT = createApiHandler('/api/ipl-bb/admin/competition/[id]', async (request, ctx) => {
-  const user = await getAuthenticatedUserFromSession(request as NextRequest);
-  if (!user) throw new AuthError();
-  if (!isAdminAccount(user.username)) throw new ForbiddenError('Admin access required');
+  return withCsrfProtection(request as NextRequest, async () => {
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
+    if (!user) throw new AuthError();
+    if (!isAdminAccount(user.username)) throw new ForbiddenError('Admin access required');
 
-  const id = new URL(request.url).pathname
-    .split('/api/ipl-bb/admin/competition/')[1]
-    ?.split('/')[0];
-  if (!id) throw new NotFoundError('Competition not found');
+    const id = extractPathParam(request.url, 'competition');
+    if (!id) throw new NotFoundError('Competition not found');
 
-  const body = await request.json();
-  const { status } = body;
+    const { status } = statusSchema.parse(await request.json());
 
-  if (!status || !VALID_STATUSES.includes(status)) {
-    throw new ValidationError(`status must be one of: ${VALID_STATUSES.join(', ')}`);
-  }
+    const existing = await prisma.iplBbCompetition.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundError('Competition not found');
 
-  const existing = await prisma.iplBbCompetition.findUnique({ where: { id } });
-  if (!existing) throw new NotFoundError('Competition not found');
+    const competition = await prisma.iplBbCompetition.update({
+      where: { id },
+      data: { status },
+    });
 
-  const competition = await prisma.iplBbCompetition.update({
-    where: { id },
-    data: { status },
+    ctx.log.info('Competition status updated', {
+      competitionId: id,
+      oldStatus: existing.status,
+      newStatus: status,
+    });
+
+    return apiSuccess({ id: competition.id, title: competition.title, status: competition.status });
   });
-
-  ctx.log.info('Competition status updated', {
-    competitionId: id,
-    oldStatus: existing.status,
-    newStatus: status,
-  });
-
-  return apiSuccess({ id: competition.id, title: competition.title, status: competition.status });
 });

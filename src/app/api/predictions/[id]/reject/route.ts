@@ -12,6 +12,7 @@ import { prisma } from '@/lib/db/prisma';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { rejectProposal } from '@/lib/predictions/settlement';
 import { notifyProposerOfRejection } from '@/lib/predictions/notifications';
+import { logger } from '@/lib/logger';
 import { NextRequest } from 'next/server';
 
 export const POST = createApiHandler('/api/predictions/[id]/reject', async (request, _ctx) => {
@@ -38,7 +39,9 @@ export const POST = createApiHandler('/api/predictions/[id]/reject', async (requ
     await rejectProposal(predictionId);
 
     // Notify proposer (fire-and-forget)
-    notifyProposerOfRejection(prediction, user.username).catch(() => {});
+    notifyProposerOfRejection(prediction, user.username).catch((err) =>
+      logger.error('Prediction notification failed', 'predictions', err)
+    );
 
     return apiSuccess({ message: 'Proposal rejected — prediction returned to LOCKED' });
   });

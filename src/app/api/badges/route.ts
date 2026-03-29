@@ -3,6 +3,7 @@ import { createApiHandler, apiSuccess } from '@/lib/api/response';
 import { BADGE_CATALOGUE, RANK_TIERS, getRankTierForScore } from '@/lib/badges/catalogue';
 import type { UserBadgeData, UserRankData, UserSportRankData } from '@/lib/badges/types';
 import { reconcileStatsFromHive, evaluateBadgesForAction } from '@/lib/badges/evaluator';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -46,7 +47,7 @@ export const GET = createApiHandler('/api/badges', async (request) => {
           return evaluateBadgesForAction(username, 'post_created');
         }
       })
-      .catch(() => {});
+      .catch((err) => logger.error('Async badge refresh failed', 'badges', err));
   }
 
   const userStats = fullStats;
