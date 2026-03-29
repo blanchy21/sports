@@ -192,13 +192,18 @@ export function createCommentOperation(commentData: {
   let parsedJsonMetadata: Record<string, unknown> = {};
   try {
     parsedJsonMetadata = commentData.jsonMetadata ? JSON.parse(commentData.jsonMetadata) : {};
-  } catch { /* malformed JSON — use defaults */ }
+  } catch {
+    /* malformed JSON — use defaults */
+  }
+
+  const users = extractMentions(commentData.body, commentData.author);
 
   const metadata = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
     format: 'markdown',
     tags: ['sportsblock'],
     ...parsedJsonMetadata,
+    ...(users.length > 0 ? { users } : {}),
   };
 
   return {
@@ -267,7 +272,9 @@ export function createPostOperation(postData: {
   let parsedJsonMetadata: Record<string, unknown> = {};
   try {
     parsedJsonMetadata = postData.jsonMetadata ? JSON.parse(postData.jsonMetadata) : {};
-  } catch { /* malformed JSON — use defaults */ }
+  } catch {
+    /* malformed JSON — use defaults */
+  }
 
   const metadata: Record<string, unknown> = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,

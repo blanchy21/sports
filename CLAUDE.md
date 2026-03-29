@@ -80,10 +80,25 @@ When given:
 - **No Laziness** — hunt **root causes**. No band-aids. Senior developer bar.
 - **Minimal Impact** — touch only what must be touched. Minimize new risk.
 
+## Git Workflow
+
+**All changes go through PRs — never push directly to main.**
+
+Branch protection is enforced (`enforce_admins: true`). Required CI checks: `Lint & Type Check`, `Unit Tests`, `Build`.
+
+1. **Branch** → `git checkout -b fix/short-description` (or `feat/`, `chore/`)
+2. **Commit** → commit to the feature branch
+3. **Verify locally** → `npx tsc --noEmit` before pushing (catches type errors in ~20s vs 7min build)
+4. **Push** → `git push -u origin fix/short-description`
+5. **PR** → `gh pr create --title "..." --body "..."`
+6. **CI passes** → all 3 checks must be green
+7. **Merge** → `gh pr merge --squash` (or ask user)
+8. **Deploy** → merging to `main` auto-deploys via Vercel. Do NOT prompt the user to deploy.
+
 ## Deployment
 
 - Production URL: **https://sportsblock.app** (NOT sportsblock.xyz)
-- Pushing to `main` triggers an automatic deploy via Vercel. Do NOT prompt the user to deploy — it happens on push.
+- Merging to `main` triggers an automatic deploy via Vercel. Do NOT prompt the user to deploy — it happens on merge.
 
 ## Project Overview
 
