@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, FileText, Trash2 } from 'lucide-react';
+import { X, FileText, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils/client';
 import { Button } from '@/components/core/Button';
 
@@ -41,27 +41,38 @@ function formatTimeAgo(dateStr: string): string {
 
 export function DraftsDrawer({ isOpen, onClose, onRestore }: DraftsDrawerProps) {
   const [drafts, setDrafts] = React.useState<Draft[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
     if (!isOpen) return;
-    try {
-      const saved = localStorage.getItem('drafts');
-      if (saved) {
-        const parsed: Draft[] = JSON.parse(saved);
-        // Sort by updatedAt descending
-        parsed.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-        setDrafts(parsed);
-      }
-    } catch {
-      setDrafts([]);
-    }
+    setIsLoading(true);
+    fetch('/api/drafts', { credentials: 'include' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.drafts)) {
+          setDrafts(data.drafts);
+        } else {
+          setDrafts([]);
+        }
+      })
+      .catch(() => setDrafts([]))
+      .finally(() => setIsLoading(false));
   }, [isOpen]);
 
-  const handleDelete = (draftId: string, e: React.MouseEvent) => {
+  const handleDelete = async (draftId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const updated = drafts.filter((d) => d.id !== draftId);
-    setDrafts(updated);
-    localStorage.setItem('drafts', JSON.stringify(updated));
+    try {
+      const res = await fetch(`/api/drafts/${encodeURIComponent(draftId)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDrafts((prev) => prev.filter((d) => d.id !== draftId));
+      }
+    } catch {
+      // Silently fail — draft stays in list
+    }
   };
 
   return (
@@ -92,7 +103,11 @@ export function DraftsDrawer({ isOpen, onClose, onRestore }: DraftsDrawerProps) 
           className="flex-1 space-y-2 overflow-auto p-3"
           style={{ maxHeight: 'calc(100vh - 52px)' }}
         >
-          {drafts.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : drafts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <FileText className="mb-3 h-10 w-10 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">No drafts yet</p>

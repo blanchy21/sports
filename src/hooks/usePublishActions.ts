@@ -8,50 +8,42 @@ import type { usePublishForm } from './usePublishForm';
 type FormState = ReturnType<typeof usePublishForm>;
 
 export function usePublishActions(form: FormState) {
-  const handleSaveDraft = useCallback(() => {
-    if (typeof window === 'undefined') return;
-
+  const handleSaveDraft = useCallback(async () => {
     const draftId = form.searchParams.get('draft');
-    const existingDrafts = JSON.parse(localStorage.getItem('drafts') || '[]');
 
-    const draftData = {
-      id: draftId || Date.now().toString(),
-      title: form.title,
-      content: form.content,
-      excerpt: form.excerpt,
-      sport: form.selectedSport,
-      tags: form.tags,
-      imageUrl: form.coverImage,
-      createdAt: draftId
-        ? existingDrafts.find((d: { id: string }) => d.id === draftId)?.createdAt ||
-          new Date().toISOString()
-        : new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      wordCount: form.content.split(/\s+/).filter((word: string) => word.length > 0).length,
-    };
+    try {
+      const res = await fetch('/api/drafts', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: draftId || undefined,
+          title: form.title,
+          content: form.content,
+          tags: form.tags,
+          sportCategory: form.selectedSport,
+          featuredImage: form.coverImage || undefined,
+          communityId: form.selectedCommunity?.id || undefined,
+        }),
+      });
 
-    if (draftId) {
-      const updatedDrafts = existingDrafts.map((draft: { id: string }) =>
-        draft.id === draftId ? draftData : draft
-      );
-      try {
-        localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
-        form.setIsDraftSaved(true);
-        form.addToast(toast.success('Success', 'Draft updated!'));
-      } catch (error) {
-        logger.error('Error saving draft', 'PublishPage', error);
-        form.addToast(toast.error('Error', 'Failed to save draft.'));
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to save draft');
       }
-    } else {
-      existingDrafts.push(draftData);
-      try {
-        localStorage.setItem('drafts', JSON.stringify(existingDrafts));
-        form.setIsDraftSaved(true);
-        form.addToast(toast.success('Success', 'Draft saved!'));
-      } catch (error) {
-        logger.error('Error saving draft', 'PublishPage', error);
-        form.addToast(toast.error('Error', 'Failed to save draft.'));
+
+      form.setIsDraftSaved(true);
+      form.addToast(toast.success('Success', draftId ? 'Draft updated!' : 'Draft saved!'));
+
+      // Update URL to include the draft ID so subsequent saves update the same draft
+      if (!draftId && data.draft?.id) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('draft', data.draft.id);
+        window.history.replaceState({}, '', url.toString());
       }
+    } catch (error) {
+      logger.error('Error saving draft', 'PublishPage', error);
+      form.addToast(toast.error('Error', 'Failed to save draft.'));
     }
   }, [form]);
 

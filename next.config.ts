@@ -17,6 +17,16 @@ const nextConfig: NextConfig = {
         destination: '/sportsbites',
         permanent: true,
       },
+      {
+        source: '/privacy',
+        destination: '/legal/privacy',
+        permanent: true,
+      },
+      {
+        source: '/terms',
+        destination: '/legal/terms',
+        permanent: true,
+      },
     ];
   },
   // Security headers including CSP

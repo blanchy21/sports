@@ -46,9 +46,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: './',
   },
-  title: 'Sportsblock - Where Sports Meets Blockchain',
+  title: 'SportsBlock — Pure Sports. Real Rewards.',
   description:
-    'Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.',
+    'Your sports knowledge is worth real money. Post takes, nail predictions, earn MEDALS. Zero fees. Built on HIVE blockchain.',
   keywords: ['sports', 'blogging', 'blockchain', 'hive', 'crypto', 'rewards'],
   icons: {
     icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
@@ -56,27 +56,27 @@ export const metadata: Metadata = {
   },
   manifest: '/site.webmanifest',
   openGraph: {
-    title: 'Sportsblock - Where Sports Meets Blockchain',
+    title: 'SportsBlock — Pure Sports. Real Rewards.',
     description:
-      'Share your sports stories, insights, and analysis while earning rewards on the Hive blockchain.',
-    siteName: 'Sportsblock',
+      'Your sports knowledge is worth real money. Post takes, nail predictions, earn MEDALS. Zero fees. Built on HIVE blockchain.',
+    siteName: 'SportsBlock',
     type: 'website',
     locale: 'en_US',
     images: [
       {
-        url: '/x-card-image.png',
+        url: '/x-card-image.png?v=2',
         width: 1200,
         height: 630,
-        alt: 'Sportsblock - Where Sports Meets Blockchain',
+        alt: 'SportsBlock — Pure Sports. Real Rewards.',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sportsblock - Cut Out The Noise. Earn.',
+    title: 'SportsBlock — Pure Sports. Real Rewards.',
     description:
-      'Your sports knowledge has real value. Write about the game you love and earn crypto rewards on the Hive blockchain.',
-    images: ['/x-card-image.png'],
+      'Your sports knowledge is worth real money. Post takes, nail predictions, earn MEDALS. Zero fees.',
+    images: ['/x-card-image.png?v=2'],
   },
 };
 

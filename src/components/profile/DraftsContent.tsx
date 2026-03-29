@@ -11,7 +11,6 @@ interface Draft {
   id: string;
   title: string;
   content: string;
-  excerpt: string;
   sport: string;
   tags: string[];
   updatedAt: string;
@@ -30,54 +29,11 @@ export function DraftsContent() {
     setIsLoading(true);
     setError(null);
 
-    if (typeof window === 'undefined') {
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const savedDrafts = localStorage.getItem('drafts');
-      if (savedDrafts) {
-        const parsedDrafts = JSON.parse(savedDrafts);
-        const validDrafts = parsedDrafts.map((draft: Record<string, unknown>, index: number) => ({
-          id: (draft.id as string) || `draft-${Date.now()}-${index}`,
-          title: (draft.title as string) || 'Untitled Draft',
-          content: (draft.content as string) || '',
-          excerpt:
-            (draft.excerpt as string) ||
-            ((draft.content as string)
-              ? (draft.content as string).substring(0, 150) +
-                ((draft.content as string).length > 150 ? '...' : '')
-              : ''),
-          sport: (draft.sport as string) || '',
-          tags: Array.isArray(draft.tags)
-            ? (draft.tags as string[])
-            : (draft.tags as string)
-              ? (draft.tags as string)
-                  .split(',')
-                  .map((t: string) => t.trim())
-                  .filter((t: string) => t.length > 0)
-              : [],
-          updatedAt:
-            (draft.updatedAt as string) || (draft.createdAt as string) || new Date().toISOString(),
-          wordCount:
-            (draft.wordCount as number) ||
-            ((draft.content as string)
-              ? (draft.content as string).split(/\s+/).filter((word: string) => word.length > 0)
-                  .length
-              : 0),
-        }));
-
-        const needsUpdate = parsedDrafts.some((draft: Record<string, unknown>) => !draft.id);
-        if (needsUpdate) {
-          try {
-            localStorage.setItem('drafts', JSON.stringify(validDrafts));
-          } catch {
-            // Storage update failed silently - drafts still in memory
-          }
-        }
-
-        setDrafts(validDrafts);
+      const res = await fetch('/api/drafts', { credentials: 'include' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.drafts)) {
+        setDrafts(data.drafts);
       } else {
         setDrafts([]);
       }
@@ -96,24 +52,16 @@ export function DraftsContent() {
 
     setDeletingDraftId(draftId);
 
-    if (typeof window === 'undefined') {
-      return;
-    }
-
     try {
-      const savedDrafts = localStorage.getItem('drafts');
-      if (savedDrafts) {
-        const parsedDrafts = JSON.parse(savedDrafts);
-        const updatedDrafts = parsedDrafts.filter(
-          (draft: Record<string, unknown>) => draft.id !== draftId
-        );
-        try {
-          localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
-        } catch (error) {
-          logger.error('Error saving drafts', 'DraftsContent', error);
-          throw error;
-        }
-        setDrafts(updatedDrafts);
+      const res = await fetch(`/api/drafts/${encodeURIComponent(draftId)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDrafts((prev) => prev.filter((d) => d.id !== draftId));
+      } else {
+        setError('Failed to delete draft. Please try again.');
       }
     } catch (err) {
       logger.error('Error deleting draft', 'DraftsContent', err);
@@ -165,18 +113,30 @@ export function DraftsContent() {
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h3 className="mb-2 text-lg font-semibold">{draft.title}</h3>
-                  <p className="mb-3 line-clamp-2 text-muted-foreground">{draft.excerpt}</p>
+                  <h3 className="mb-2 text-lg font-semibold">{draft.title || 'Untitled'}</h3>
+                  <p className="mb-3 line-clamp-2 text-muted-foreground">
+                    {draft.content
+                      ? draft.content.substring(0, 150) + (draft.content.length > 150 ? '...' : '')
+                      : ''}
+                  </p>
 
                   <div className="mb-4 flex items-center space-x-4 text-sm text-muted-foreground">
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-4 w-4" />
-                      <span>Updated {draft.updatedAt}</span>
+                      <span>Updated {new Date(draft.updatedAt).toLocaleDateString()}</span>
                     </div>
-                    <span>&bull;</span>
-                    <span>{draft.sport}</span>
-                    <span>&bull;</span>
-                    <span>{draft.wordCount} words</span>
+                    {draft.sport && (
+                      <>
+                        <span>&bull;</span>
+                        <span>{draft.sport}</span>
+                      </>
+                    )}
+                    {draft.wordCount > 0 && (
+                      <>
+                        <span>&bull;</span>
+                        <span>{draft.wordCount} words</span>
+                      </>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
