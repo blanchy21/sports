@@ -88,6 +88,17 @@ export const POST = createApiHandler('/api/contests/[slug]/enter', async (reques
     // Free entry — create directly, no token transfer needed
     if (entryFee === 0) {
       const entry = await prisma.$transaction(async (tx) => {
+        // Re-check maxEntries inside transaction to prevent race condition
+        if (contest.maxEntries) {
+          const freshContest = await tx.contest.findUnique({
+            where: { id: contest.id },
+            select: { entryCount: true },
+          });
+          if (freshContest && freshContest.entryCount >= contest.maxEntries) {
+            throw new ValidationError('Contest is full');
+          }
+        }
+
         const newEntry = await tx.contestEntry.create({
           data: {
             contestId: contest.id,

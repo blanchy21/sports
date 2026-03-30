@@ -100,38 +100,41 @@ export const POST = createApiHandler('/api/lms/competition/[id]/pick', async (re
       throw new ValidationError(`${teamPicked} does not have a fixture this gameweek`);
     }
 
-    // Upsert the pick
-    const pick = await prisma.lmsPick.upsert({
-      where: {
-        competitionId_username_gameweek: {
+    // Upsert pick + update usedTeams atomically
+    const pick = await prisma.$transaction(async (tx) => {
+      const upserted = await tx.lmsPick.upsert({
+        where: {
+          competitionId_username_gameweek: {
+            competitionId: id,
+            username: user.username,
+            gameweek: competition.currentGameweek,
+          },
+        },
+        create: {
           competitionId: id,
           username: user.username,
           gameweek: competition.currentGameweek,
+          teamPicked,
+          isAutoPick: false,
         },
-      },
-      create: {
-        competitionId: id,
-        username: user.username,
-        gameweek: competition.currentGameweek,
-        teamPicked,
-        isAutoPick: false,
-      },
-      update: {
-        teamPicked,
-        isAutoPick: false,
-        submittedAt: new Date(),
-      },
-    });
+        update: {
+          teamPicked,
+          isAutoPick: false,
+          submittedAt: new Date(),
+        },
+      });
 
-    // Recalculate usedTeams on the entry
-    await prisma.lmsEntry.update({
-      where: {
-        competitionId_username: {
-          competitionId: id,
-          username: user.username,
+      await tx.lmsEntry.update({
+        where: {
+          competitionId_username: {
+            competitionId: id,
+            username: user.username,
+          },
         },
-      },
-      data: { usedTeams: wouldUse },
+        data: { usedTeams: wouldUse },
+      });
+
+      return upserted;
     });
 
     return apiSuccess({

@@ -209,7 +209,12 @@ export const GET = createApiHandler(ROUTE, async (request, ctx) => {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error:
+          process.env.NODE_ENV === 'production'
+            ? 'Price fetch failed'
+            : error instanceof Error
+              ? error.message
+              : String(error),
         message: 'Failed to fetch cryptocurrency prices',
       },
       { status: 500 }
