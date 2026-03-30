@@ -43,6 +43,12 @@ export const SPORTS_CONFIG = {
     espnSport: 'golf',
     leagues: [{ slug: 'pga', name: 'PGA Tour' }],
   },
+  cricket: {
+    icon: '\uD83C\uDFCF',
+    sportName: 'Cricket',
+    espnSport: 'cricket',
+    leagues: [{ slug: '8048', name: 'Indian Premier League' }],
+  },
 };
 
 // -----------------------------------------------------------------------
