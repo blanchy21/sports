@@ -94,8 +94,11 @@ function mapSeverityToSentry(severity: ErrorSeverity): Sentry.SeverityLevel {
 
 /**
  * Send error to Sentry
+ *
+ * @param report - Structured error report
+ * @param originalError - The original Error object (preserves stack trace and type for Sentry)
  */
-async function sendToExternalService(report: ErrorReport): Promise<void> {
+async function sendToExternalService(report: ErrorReport, originalError?: Error): Promise<void> {
   // Only send to Sentry in production with DSN configured
   if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_SENTRY_DSN) {
     try {
@@ -116,8 +119,11 @@ async function sendToExternalService(report: ErrorReport): Promise<void> {
         ...report.context.extra,
       });
 
-      // Capture the exception with proper severity
-      Sentry.captureException(new Error(report.message), {
+      // Pass the original error to preserve stack trace, type, and message.
+      // Fall back to a reconstructed Error if no original is available.
+      const exception = originalError ?? new Error(report.message || 'Unknown error');
+
+      Sentry.captureException(exception, {
         level: mapSeverityToSentry(report.severity),
         extra: {
           componentStack: report.componentStack,
@@ -149,7 +155,7 @@ export function reportErrorBoundary(
   context: Partial<ErrorContext> = {}
 ): void {
   const report: ErrorReport = {
-    message: error.message,
+    message: error.message || error.toString() || 'Unknown error',
     stack: error.stack,
     componentStack: errorInfo.componentStack || undefined,
     severity: 'fatal',
@@ -166,8 +172,8 @@ export function reportErrorBoundary(
     console.error('Component stack:', errorInfo.componentStack);
   }
 
-  // Send to external service in production
-  sendToExternalService(report).catch((reportingError) => {
+  // Send to external service in production — pass original error for proper Sentry grouping
+  sendToExternalService(report, error).catch((reportingError) => {
     console.error('[CRITICAL] Error reporting failed:', reportingError);
   });
 }
@@ -183,7 +189,7 @@ export function reportError(
   const errorObj = typeof error === 'string' ? new Error(error) : error;
 
   const report: ErrorReport = {
-    message: errorObj.message,
+    message: errorObj.message || errorObj.toString() || 'Unknown error',
     stack: errorObj.stack,
     severity,
     context: {
@@ -196,7 +202,7 @@ export function reportError(
     console.error(formatErrorReport(report));
   }
 
-  sendToExternalService(report).catch((reportingError) => {
+  sendToExternalService(report, errorObj).catch((reportingError) => {
     console.error('[CRITICAL] Error reporting failed:', reportingError);
   });
 }
