@@ -4,6 +4,7 @@ import { Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { createApiHandler, ValidationError, AuthError } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { withCsrfProtection } from '@/lib/api/csrf';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -50,62 +51,64 @@ export const GET = createApiHandler(ROUTE, async (request) => {
 
 // POST /api/drafts — create or update a draft
 export const POST = createApiHandler(ROUTE, async (request) => {
-  const user = await getAuthenticatedUserFromSession(request as NextRequest);
-  if (!user) throw new AuthError('Authentication required');
+  return withCsrfProtection(request as NextRequest, async () => {
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
+    if (!user) throw new AuthError('Authentication required');
 
-  const body = await request.json();
-  const parsed = saveDraftSchema.safeParse(body);
-  if (!parsed.success) {
-    throw new ValidationError(parsed.error.issues.map((e) => e.message).join(', '));
-  }
-
-  const { id, title, content, tags, sportCategory, featuredImage, communityId, metadata } =
-    parsed.data;
-
-  const draftData = {
-    title,
-    content,
-    tags,
-    sportCategory: sportCategory || null,
-    featuredImage: featuredImage || null,
-    communityId: communityId || null,
-    metadata: metadata ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
-  };
-
-  let draft;
-
-  if (id) {
-    // Update existing — verify ownership
-    const existing = await prisma.draft.findUnique({ where: { id } });
-    if (!existing || existing.userId !== user.userId) {
-      throw new ValidationError('Draft not found');
+    const body = await request.json();
+    const parsed = saveDraftSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new ValidationError(parsed.error.issues.map((e) => e.message).join(', '));
     }
-    draft = await prisma.draft.update({
-      where: { id },
-      data: draftData,
-    });
-  } else {
-    // Create new
-    draft = await prisma.draft.create({
-      data: {
-        userId: user.userId,
-        ...draftData,
+
+    const { id, title, content, tags, sportCategory, featuredImage, communityId, metadata } =
+      parsed.data;
+
+    const draftData = {
+      title,
+      content,
+      tags,
+      sportCategory: sportCategory || null,
+      featuredImage: featuredImage || null,
+      communityId: communityId || null,
+      metadata: metadata ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
+    };
+
+    let draft;
+
+    if (id) {
+      // Update existing — verify ownership
+      const existing = await prisma.draft.findUnique({ where: { id } });
+      if (!existing || existing.userId !== user.userId) {
+        throw new ValidationError('Draft not found');
+      }
+      draft = await prisma.draft.update({
+        where: { id },
+        data: draftData,
+      });
+    } else {
+      // Create new
+      draft = await prisma.draft.create({
+        data: {
+          userId: user.userId,
+          ...draftData,
+        },
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      draft: {
+        id: draft.id,
+        title: draft.title,
+        content: draft.content,
+        tags: draft.tags,
+        sport: draft.sportCategory ?? '',
+        imageUrl: draft.featuredImage ?? '',
+        communityId: draft.communityId ?? '',
+        createdAt: draft.createdAt.toISOString(),
+        updatedAt: draft.updatedAt.toISOString(),
       },
     });
-  }
-
-  return NextResponse.json({
-    success: true,
-    draft: {
-      id: draft.id,
-      title: draft.title,
-      content: draft.content,
-      tags: draft.tags,
-      sport: draft.sportCategory ?? '',
-      imageUrl: draft.featuredImage ?? '',
-      communityId: draft.communityId ?? '',
-      createdAt: draft.createdAt.toISOString(),
-      updatedAt: draft.updatedAt.toISOString(),
-    },
   });
 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { createApiHandler, AuthError, ValidationError } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { withCsrfProtection } from '@/lib/api/csrf';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -40,19 +41,21 @@ export const GET = createApiHandler(ROUTE, async (request) => {
 
 // DELETE /api/drafts/[id] — delete a draft
 export const DELETE = createApiHandler(ROUTE, async (request) => {
-  const user = await getAuthenticatedUserFromSession(request as NextRequest);
-  if (!user) throw new AuthError('Authentication required');
+  return withCsrfProtection(request as NextRequest, async () => {
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
+    if (!user) throw new AuthError('Authentication required');
 
-  const url = new URL(request.url);
-  const id = url.pathname.split('/').pop();
-  if (!id) throw new ValidationError('Draft ID required');
+    const url = new URL(request.url);
+    const id = url.pathname.split('/').pop();
+    if (!id) throw new ValidationError('Draft ID required');
 
-  const draft = await prisma.draft.findUnique({ where: { id } });
-  if (!draft || draft.userId !== user.userId) {
-    throw new ValidationError('Draft not found');
-  }
+    const draft = await prisma.draft.findUnique({ where: { id } });
+    if (!draft || draft.userId !== user.userId) {
+      throw new ValidationError('Draft not found');
+    }
 
-  await prisma.draft.delete({ where: { id } });
+    await prisma.draft.delete({ where: { id } });
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  });
 });

@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Newspaper, ExternalLink, RefreshCw, Clock, AlertCircle } from 'lucide-react';
-import { useESPNNews } from '@/features/sports/hooks/useESPNNews';
+import { useESPNNews } from '@/hooks/useESPNNews';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/core/Button';
 

@@ -8,7 +8,7 @@ const mockDownvote = jest.fn();
 const mockRemoveVote = jest.fn();
 const mockCheckVoteStatus = jest.fn();
 
-jest.mock('@/features/hive/hooks/useVoting', () => ({
+jest.mock('@/hooks/useVoting', () => ({
   useVoting: () => ({
     voteState: {
       isVoting: false,

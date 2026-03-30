@@ -1,4 +1,5 @@
 import { createApiHandler, apiSuccess, NotFoundError } from '@/lib/api/response';
+import { extractPathParam } from '@/lib/api/route-params';
 import { prisma } from '@/lib/db/prisma';
 import { rankEntries } from '@/lib/ipl-bb/utils';
 
@@ -7,7 +8,7 @@ import { rankEntries } from '@/lib/ipl-bb/utils';
  * Live standings. Public.
  */
 export const GET = createApiHandler('/api/ipl-bb/competition/[id]/leaderboard', async (request) => {
-  const id = new URL(request.url).pathname.split('/api/ipl-bb/competition/')[1]?.split('/')[0];
+  const id = extractPathParam(request.url, 'competition');
   if (!id) throw new NotFoundError('Competition not found');
 
   const competition = await prisma.iplBbCompetition.findUnique({ where: { id } });

@@ -7,60 +7,66 @@ import {
   ForbiddenError,
   ValidationError,
 } from '@/lib/api/response';
+import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { extractPathParam } from '@/lib/api/route-params';
 import { isAdminAccount } from '@/lib/admin/config';
 import { prisma } from '@/lib/db/prisma';
+import { z } from 'zod';
 
-const EDITABLE_STATUSES = ['open', 'locked', 'abandoned'];
+const updateMatchSchema = z
+  .object({
+    status: z.enum(['open', 'locked', 'abandoned']).optional(),
+    homeTeam: z.string().optional(),
+    awayTeam: z.string().optional(),
+    venue: z.string().nullable().optional(),
+    kickoffTime: z.string().datetime().optional(),
+    cricketDataMatchId: z.string().nullable().optional(),
+  })
+  .refine((data) => Object.values(data).some((v) => v !== undefined), {
+    message: 'No fields to update',
+  });
 
 /**
  * PUT /api/ipl-bb/admin/match/[matchId]
  * Update match status or details. Admin only.
  */
 export const PUT = createApiHandler('/api/ipl-bb/admin/match/[matchId]', async (request, ctx) => {
-  const user = await getAuthenticatedUserFromSession(request as NextRequest);
-  if (!user) throw new AuthError();
-  if (!isAdminAccount(user.username)) throw new ForbiddenError('Admin access required');
+  return withCsrfProtection(request as NextRequest, async () => {
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
+    if (!user) throw new AuthError();
+    if (!isAdminAccount(user.username)) throw new ForbiddenError('Admin access required');
 
-  const matchId = new URL(request.url).pathname.split('/api/ipl-bb/admin/match/')[1]?.split('/')[0];
-  if (!matchId) throw new NotFoundError('Match not found');
+    const matchId = extractPathParam(request.url, 'match');
+    if (!matchId) throw new NotFoundError('Match not found');
 
-  const existing = await prisma.iplBbMatch.findUnique({ where: { id: matchId } });
-  if (!existing) throw new NotFoundError('Match not found');
-  if (existing.status === 'resolved') throw new ValidationError('Cannot edit a resolved match');
+    const existing = await prisma.iplBbMatch.findUnique({ where: { id: matchId } });
+    if (!existing) throw new NotFoundError('Match not found');
+    if (existing.status === 'resolved') throw new ValidationError('Cannot edit a resolved match');
 
-  const body = await request.json();
-  const { status, homeTeam, awayTeam, venue, kickoffTime, cricketDataMatchId } = body;
+    const { status, homeTeam, awayTeam, venue, kickoffTime, cricketDataMatchId } =
+      updateMatchSchema.parse(await request.json());
 
-  if (status !== undefined && !EDITABLE_STATUSES.includes(status)) {
-    throw new ValidationError(`status must be one of: ${EDITABLE_STATUSES.join(', ')}`);
-  }
+    const updateData: Record<string, unknown> = {};
+    if (status !== undefined) updateData.status = status;
+    if (homeTeam !== undefined) updateData.homeTeam = homeTeam.trim();
+    if (awayTeam !== undefined) updateData.awayTeam = awayTeam.trim();
+    if (venue !== undefined) updateData.venue = venue?.trim() || null;
+    if (kickoffTime !== undefined) updateData.kickoffTime = new Date(kickoffTime);
+    if (cricketDataMatchId !== undefined)
+      updateData.cricketDataMatchId = cricketDataMatchId?.trim() || null;
 
-  const updateData: Record<string, unknown> = {};
-  if (status !== undefined) updateData.status = status;
-  if (homeTeam !== undefined) updateData.homeTeam = homeTeam.trim();
-  if (awayTeam !== undefined) updateData.awayTeam = awayTeam.trim();
-  if (venue !== undefined) updateData.venue = venue?.trim() || null;
-  if (kickoffTime !== undefined) {
-    const kickoff = new Date(kickoffTime);
-    if (isNaN(kickoff.getTime())) throw new ValidationError('kickoffTime is not a valid date');
-    updateData.kickoffTime = kickoff;
-  }
-  if (cricketDataMatchId !== undefined)
-    updateData.cricketDataMatchId = cricketDataMatchId?.trim() || null;
+    const match = await prisma.iplBbMatch.update({ where: { id: matchId }, data: updateData });
 
-  if (Object.keys(updateData).length === 0) throw new ValidationError('No fields to update');
+    ctx.log.info('Match updated', { matchId, fields: Object.keys(updateData) });
 
-  const match = await prisma.iplBbMatch.update({ where: { id: matchId }, data: updateData });
-
-  ctx.log.info('Match updated', { matchId, fields: Object.keys(updateData) });
-
-  return apiSuccess({
-    id: match.id,
-    matchNumber: match.matchNumber,
-    homeTeam: match.homeTeam,
-    awayTeam: match.awayTeam,
-    kickoffTime: match.kickoffTime.toISOString(),
-    status: match.status,
+    return apiSuccess({
+      id: match.id,
+      matchNumber: match.matchNumber,
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      kickoffTime: match.kickoffTime.toISOString(),
+      status: match.status,
+    });
   });
 });

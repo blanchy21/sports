@@ -6,7 +6,9 @@ import {
   AuthError,
   ValidationError,
 } from '@/lib/api/response';
+import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { extractPathParam } from '@/lib/api/route-params';
 import { prisma } from '@/lib/db/prisma';
 
 /**
@@ -14,58 +16,60 @@ import { prisma } from '@/lib/db/prisma';
  * Auth required. Join a free-entry competition.
  */
 export const POST = createApiHandler('/api/lms/competition/[id]/join', async (request) => {
-  const user = await getAuthenticatedUserFromSession(request as NextRequest);
-  if (!user) throw new AuthError();
+  return withCsrfProtection(request as NextRequest, async () => {
+    const user = await getAuthenticatedUserFromSession(request as NextRequest);
+    if (!user) throw new AuthError();
 
-  const id = new URL(request.url).pathname.split('/api/lms/competition/')[1]?.split('/')[0];
-  if (!id) throw new NotFoundError('Competition not found');
+    const id = extractPathParam(request.url, 'competition');
+    if (!id) throw new NotFoundError('Competition not found');
 
-  const competition = await prisma.lmsCompetition.findUnique({ where: { id } });
-  if (!competition) throw new NotFoundError('Competition not found');
+    const competition = await prisma.lmsCompetition.findUnique({ where: { id } });
+    if (!competition) throw new NotFoundError('Competition not found');
 
-  // Only allow joining during the first gameweek (open or picking)
-  if (competition.status !== 'open' && competition.status !== 'picking') {
-    throw new ValidationError('Competition is not accepting entries');
-  }
-  if (competition.currentGameweek > competition.startGameweek) {
-    throw new ValidationError('Registration is closed — competition is already underway');
-  }
+    // Only allow joining during the first gameweek (open or picking)
+    if (competition.status !== 'open' && competition.status !== 'picking') {
+      throw new ValidationError('Competition is not accepting entries');
+    }
+    if (competition.currentGameweek > competition.startGameweek) {
+      throw new ValidationError('Registration is closed — competition is already underway');
+    }
 
-  // Check registration deadline
-  if (competition.registrationDeadline && new Date() > competition.registrationDeadline) {
-    throw new ValidationError('Registration deadline has passed');
-  }
+    // Check registration deadline
+    if (competition.registrationDeadline && new Date() > competition.registrationDeadline) {
+      throw new ValidationError('Registration deadline has passed');
+    }
 
-  // Check not already entered
-  const existing = await prisma.lmsEntry.findUnique({
-    where: {
-      competitionId_username: {
-        competitionId: id,
-        username: user.username,
+    // Check not already entered
+    const existing = await prisma.lmsEntry.findUnique({
+      where: {
+        competitionId_username: {
+          competitionId: id,
+          username: user.username,
+        },
       },
-    },
-  });
-  if (existing) throw new ValidationError('You have already entered this competition');
+    });
+    if (existing) throw new ValidationError('You have already entered this competition');
 
-  // Create entry and increment total entries atomically
-  const [entry] = await prisma.$transaction([
-    prisma.lmsEntry.create({
-      data: {
-        competitionId: id,
-        username: user.username,
-        status: 'alive',
-      },
-    }),
-    prisma.lmsCompetition.update({
-      where: { id },
-      data: { totalEntries: { increment: 1 } },
-    }),
-  ]);
+    // Create entry and increment total entries atomically
+    const [entry] = await prisma.$transaction([
+      prisma.lmsEntry.create({
+        data: {
+          competitionId: id,
+          username: user.username,
+          status: 'alive',
+        },
+      }),
+      prisma.lmsCompetition.update({
+        where: { id },
+        data: { totalEntries: { increment: 1 } },
+      }),
+    ]);
 
-  return apiSuccess({
-    id: entry.id,
-    competitionId: entry.competitionId,
-    username: entry.username,
-    status: entry.status,
+    return apiSuccess({
+      id: entry.id,
+      competitionId: entry.competitionId,
+      username: entry.username,
+      status: entry.status,
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createApiHandler, apiSuccess, NotFoundError, AuthError } from '@/lib/api/response';
+import { extractPathParam } from '@/lib/api/route-params';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { prisma } from '@/lib/db/prisma';
 import type { IplBbPickWithResult } from '@/lib/ipl-bb/types';
@@ -12,7 +13,7 @@ export const GET = createApiHandler('/api/ipl-bb/competition/[id]/my-picks', asy
   const user = await getAuthenticatedUserFromSession(request as NextRequest);
   if (!user) throw new AuthError();
 
-  const id = new URL(request.url).pathname.split('/api/ipl-bb/competition/')[1]?.split('/')[0];
+  const id = extractPathParam(request.url, 'competition');
   if (!id) throw new NotFoundError('Competition not found');
 
   const competition = await prisma.iplBbCompetition.findUnique({ where: { id } });

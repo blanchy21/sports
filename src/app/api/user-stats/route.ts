@@ -5,6 +5,7 @@ import { getRankTierForScore, RANK_TIERS } from '@/lib/badges/catalogue';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { incrementUserStat } from '@/lib/metrics/user-stats';
 import { evaluateBadgesForAction } from '@/lib/badges/evaluator';
+import { logger } from '@/lib/logger';
 import { z } from 'zod';
 
 const querySchema = z.object({
@@ -121,7 +122,9 @@ export const POST = createApiHandler('/api/user-stats', async (request, ctx) => 
 
   if (action === 'sportsbite_created') {
     incrementUserStat(user.username, 'totalSportsbites');
-    evaluateBadgesForAction(user.username, 'sportsbite_created').catch(() => {});
+    evaluateBadgesForAction(user.username, 'sportsbite_created').catch((err) =>
+      logger.error('Badge evaluation failed', 'badges', err)
+    );
     ctx.log.info('Tracked sportsbite creation', { username: user.username });
   }
 

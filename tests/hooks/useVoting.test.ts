@@ -1,7 +1,7 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import React, { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useVoting } from '@/features/hive/hooks/useVoting';
+import { useVoting } from '@/hooks/useVoting';
 
 // Mock dependencies - order matters to prevent Wax WASM import chain
 jest.mock('@/contexts/AuthContext');

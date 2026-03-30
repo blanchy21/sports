@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Star, Loader2 } from 'lucide-react';
-import { useVoting } from '@/features/hive/hooks/useVoting';
+import { useVoting } from '@/hooks/useVoting';
 import { cn } from '@/lib/utils/client';
 import type { VoteResult } from '@/lib/hive-workerbee/shared';
 

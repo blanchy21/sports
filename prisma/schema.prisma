@@ -917,6 +917,7 @@ model LmsPick {
   @@unique([competitionId, username, gameweek])
   @@index([competitionId, gameweek])
   @@index([competitionId, username])
+  @@index([competitionId, result])
   @@map("lms_picks")
 }
 
@@ -983,6 +984,7 @@ model IplBbMatch {
   picks              IplBbPick[]
 
   @@index([competitionId])
+  @@index([competitionId, status])
   @@map("ipl_bb_matches")
 }
 
@@ -1024,5 +1026,6 @@ model IplBbPick {
   @@unique([matchId, username])
   @@index([matchId])
   @@index([entryId])
+  @@index([username])
   @@map("ipl_bb_picks")
 }

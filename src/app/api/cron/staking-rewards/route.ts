@@ -88,8 +88,9 @@ async function storeDistributionRecord(
           error: error || null,
           createdAt: result.timestamp.toISOString(),
           updatedAt: new Date().toISOString(),
-          // Store top 100 distributions for review (full list can be large)
-          topDistributions: result.distributions.slice(0, 100) as unknown as Prisma.InputJsonValue,
+          // Store all distributions for retry correctness; top 10 separately for dashboard display
+          distributions: result.distributions as unknown as Prisma.InputJsonValue,
+          topDistributions: result.distributions.slice(0, 10) as unknown as Prisma.InputJsonValue,
         } as unknown as Prisma.InputJsonValue,
       },
     });
@@ -438,6 +439,8 @@ async function retryFailedBroadcast(weekId: string, activeKey: PrivateKey) {
   }
 
   const distributions =
+    (metadata.distributions as Array<{ account: string; amount: number; percentage: number }>) ||
+    // Fallback for records stored before the fix (only had top 100)
     (metadata.topDistributions as Array<{ account: string; amount: number; percentage: number }>) ||
     [];
   if (distributions.length === 0) {
