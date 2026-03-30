@@ -164,11 +164,7 @@ export const POST = csrfProtected(
     }
 
     // Rate limiting check
-    const rateLimit = await checkRateLimit(
-      authenticatedUserId,
-      RATE_LIMITS.softPosts,
-      'softPosts'
-    );
+    const rateLimit = await checkRateLimit(authenticatedUserId, RATE_LIMITS.softPosts, 'softPosts');
     if (!rateLimit.success) {
       ctx.log.warn('Rate limit exceeded', {
         authorId: authenticatedUserId,
@@ -286,7 +282,9 @@ export const POST = csrfProtected(
 
     // Track post creation for leaderboard metrics (fire-and-forget)
     trackPostCreation(data.authorUsername);
-    evaluateBadgesForAction(data.authorUsername, 'post_created').catch(() => {});
+    evaluateBadgesForAction(data.authorUsername, 'post_created').catch((err) =>
+      logger.error('Badge evaluation failed', 'badges', err)
+    );
 
     // Update user's lastActiveAt timestamp (fire-and-forget)
     prisma.profile

@@ -1,12 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  useRealtime,
-  useNewPosts,
-  useNewVotes,
-  useNewComments,
-} from '@/features/hive/hooks/useRealtime';
+import { useRealtime, useNewPosts, useNewVotes, useNewComments } from '@/hooks/useRealtime';
 import type { RealtimeEvent } from '@/lib/hive-workerbee/shared';
 import { Button } from '@/components/core/Button';
 import { Card } from '@/components/core/Card';

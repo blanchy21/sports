@@ -346,7 +346,9 @@ export const POST = csrfProtected(
     }
 
     // Badge evaluation (fire-and-forget)
-    evaluateBadgesForAction(user.username, 'comment_created').catch(() => {});
+    evaluateBadgesForAction(user.username, 'comment_created').catch((err) =>
+      logger.error('Badge evaluation failed', 'badges', err)
+    );
 
     const comment: SoftComment = {
       id: newComment.id,

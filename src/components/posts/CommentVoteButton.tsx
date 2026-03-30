@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/core/Button';
 import { ChevronUp, Loader2 } from 'lucide-react';
-import { useVoting } from '@/features/hive/hooks/useVoting';
+import { useVoting } from '@/hooks/useVoting';
 import { cn } from '@/lib/utils/client';
 import type { VoteResult } from '@/lib/hive-workerbee/shared';
 

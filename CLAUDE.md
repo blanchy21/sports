@@ -80,10 +80,25 @@ When given:
 - **No Laziness** — hunt **root causes**. No band-aids. Senior developer bar.
 - **Minimal Impact** — touch only what must be touched. Minimize new risk.
 
+## Git Workflow
+
+**All changes go through PRs — never push directly to main.**
+
+Branch protection is enforced (`enforce_admins: true`). Required CI checks: `Lint & Type Check`, `Unit Tests`, `Build`.
+
+1. **Branch** → `git checkout -b fix/short-description` (or `feat/`, `chore/`)
+2. **Commit** → commit to the feature branch
+3. **Verify locally** → `npx tsc --noEmit` before pushing (catches type errors in ~20s vs 7min build)
+4. **Push** → `git push -u origin fix/short-description`
+5. **PR** → `gh pr create --title "..." --body "..."`
+6. **CI passes** → all 3 checks must be green
+7. **Merge** → `gh pr merge --squash` (or ask user)
+8. **Deploy** → merging to `main` auto-deploys via Vercel. Do NOT prompt the user to deploy.
+
 ## Deployment
 
 - Production URL: **https://sportsblock.app** (NOT sportsblock.xyz)
-- Pushing to `main` triggers an automatic deploy via Vercel. Do NOT prompt the user to deploy — it happens on push.
+- Merging to `main` triggers an automatic deploy via Vercel. Do NOT prompt the user to deploy — it happens on merge.
 
 ## Project Overview
 
@@ -649,6 +664,25 @@ All imports use `@/*` alias mapped to `src/*`:
 ```typescript
 import { useAuth } from '@/contexts/AuthContext';
 ```
+
+### CSRF Protection on Write Routes (MANDATORY)
+**Every POST, PUT, DELETE, PATCH route MUST have CSRF protection.** Use `withCsrfProtection` from `@/lib/api/csrf` inside `createApiHandler` handlers:
+```typescript
+import { withCsrfProtection } from '@/lib/api/csrf';
+
+export const POST = createApiHandler('/api/example', async (request) => {
+  return withCsrfProtection(request as NextRequest, async () => {
+    // handler body here
+  });
+});
+```
+GET/HEAD routes do NOT need CSRF. This was missed on IPL BB, LMS, and Drafts routes — caught in the 2026-03-29 code review. Do not repeat this.
+
+### Input Validation on API Routes
+All routes that accept request bodies MUST use Zod schemas (not manual `typeof` checks). Use `.parse()` inside `createApiHandler` — ZodError is automatically caught and returned as 400.
+
+### Dynamic Route Params
+Use `extractPathParam(request.url, 'segmentName')` from `@/lib/api/route-params` to extract dynamic URL segments. Do NOT use `.split('/api/...')[1]?.split('/')[0]` string splitting.
 
 ### Error Handling in API Routes
 Use `src/lib/utils/api-retry.ts` for retryable Hive node calls.

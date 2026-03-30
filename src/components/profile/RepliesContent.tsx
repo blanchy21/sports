@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { MessageSquare, Reply, ThumbsUp, Loader2, Wifi, Zap } from 'lucide-react';
 import { useUserComments } from '@/lib/react-query/queries/useComments';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRealtimeReplies } from '@/features/hive/hooks/useRealtimeReplies';
+import { useRealtimeReplies } from '@/hooks/useRealtimeReplies';
 import { formatDistanceToNow } from 'date-fns';
 import { CommentVoteButton } from '@/components/posts/CommentVoteButton';
 import { sanitizePostContent } from '@/lib/utils/sanitize';
