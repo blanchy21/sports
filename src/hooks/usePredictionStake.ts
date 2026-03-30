@@ -8,11 +8,61 @@ interface PlaceStakeParams {
   amount: number;
 }
 
+const CONFIRM_MAX_RETRIES = 3;
+const CONFIRM_BASE_DELAY_MS = 2000;
+
+/** Retry the confirm call with exponential backoff — tokens are already on-chain at this point */
+async function confirmStakeWithRetry(
+  predictionId: string,
+  stakeToken: string,
+  txId: string
+): Promise<Record<string, unknown>> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= CONFIRM_MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(`/api/predictions/${predictionId}/stake/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ stakeToken, txId }),
+      });
+      const data = await res.json();
+
+      if (data.success) return data.data;
+
+      const errMsg = typeof data.error === 'string' ? data.error : data.error?.message;
+
+      // "already confirmed" means a previous retry succeeded — treat as success
+      if (errMsg?.includes('already confirmed')) return data.data ?? {};
+
+      lastError = new Error(errMsg || 'Failed to confirm stake');
+
+      // Don't retry client-side validation errors (bad token, expired, etc.)
+      if (res.status === 400 || res.status === 401 || res.status === 403) throw lastError;
+    } catch (err) {
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        // Network error — retryable
+        lastError = err;
+      } else if (lastError !== err) {
+        throw err; // Non-retryable error thrown above
+      }
+    }
+
+    if (attempt < CONFIRM_MAX_RETRIES) {
+      const delay = CONFIRM_BASE_DELAY_MS * Math.pow(2, attempt);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+
+  throw lastError ?? new Error('Failed to confirm stake after retries');
+}
+
 /**
  * Two-step stake flow:
  * 1. POST /api/predictions/:id/stake → get operation + stakeToken
  * 2. Sign operation via wallet (active key)
- * 3. POST /api/predictions/:id/stake/confirm → finalize
+ * 3. POST /api/predictions/:id/stake/confirm → finalize (with retry)
  */
 export function usePlaceStake() {
   const { broadcast } = useBroadcast();
@@ -42,21 +92,8 @@ export function usePlaceStake() {
         throw new Error(broadcastResult.error);
       }
 
-      // Step 3: Confirm stake
-      const confirmRes = await fetch(`/api/predictions/${predictionId}/stake/confirm`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ stakeToken, txId: broadcastResult.transactionId }),
-      });
-      const confirmData = await confirmRes.json();
-      if (!confirmData.success) {
-        const confirmErr =
-          typeof confirmData.error === 'string' ? confirmData.error : confirmData.error?.message;
-        throw new Error(confirmErr || 'Failed to confirm stake');
-      }
-
-      return confirmData.data;
+      // Step 3: Confirm stake (with retry — tokens are already on-chain)
+      return confirmStakeWithRetry(predictionId, stakeToken, broadcastResult.transactionId!);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: predictionKeys.detail(variables.predictionId) });

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>SportsBlock OG Card</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .card {
+    width: 1200px;
+    height: 630px;
+    background: #0D0D0D;
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 64px;
+  }
+
+  /* Teal accent bar */
+  .top-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #00C49A 0%, #00E5B4 50%, #00C49A 100%);
+    z-index: 10;
+  }
+
+  /* Subtle radial glow */
+  .glow {
+    position: absolute;
+    top: -80px;
+    right: -80px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(0,196,154,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ── LEFT COLUMN ── */
+  .left {
+    padding: 56px 48px 32px 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .wordmark {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: 6px;
+    margin-bottom: 28px;
+  }
+  .wordmark .sports { color: #F0F0F0; }
+  .wordmark .block { color: #00C49A; }
+
+  .headline {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 64px;
+    line-height: 0.92;
+    color: #F0F0F0;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .tagline {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    color: #00C49A;
+    margin-bottom: 28px;
+  }
+
+  .description {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #C8CDD0;
+    max-width: 460px;
+  }
+
+  /* ── RIGHT COLUMN ── */
+  .right {
+    padding: 56px 60px 32px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+  }
+
+  .hex-mark {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 24px;
+  }
+
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 320px;
+  }
+
+  .feature-pill {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #161B1E;
+    border: 1px solid #2A3238;
+    border-radius: 12px;
+    padding: 14px 20px;
+    width: 320px;
+  }
+
+  .feature-icon {
+    font-size: 20px;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .feature-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: #F0F0F0;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .feature-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: #888E94;
+    margin-top: 1px;
+  }
+
+  .feature-pill.gold .feature-label {
+    color: #E8A020;
+  }
+
+  /* ── BOTTOM BAR ── */
+  .bottom {
+    grid-column: 1 / -1;
+    background: #111518;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 64px;
+    border-top: 1px solid #2A3238;
+  }
+
+  .bottom-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: #00C49A;
+  }
+
+  .bottom-tag {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: #888E94;
+  }
+  .bottom-tag span { color: #00C49A; }
+
+  .hive-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1E2A2F;
+    border-radius: 8px;
+    padding: 6px 14px;
+  }
+
+  .hive-badge-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    color: #C8CDD0;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top-bar"></div>
+  <div class="glow"></div>
+
+  <!-- LEFT -->
+  <div class="left">
+    <div class="wordmark">
+      <span class="sports">SPORTS</span><span class="block">BLOCK</span>
+    </div>
+    <div class="headline">YOUR SPORTS<br>KNOWLEDGE.<br>PAID.</div>
+    <div class="tagline">Pure Sports. Real Rewards.</div>
+    <div class="description">
+      Post takes. Nail predictions. Earn MEDALS.<br>
+      A blockchain-powered platform where your sports brain earns you real crypto. Zero fees.
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div class="hex-mark">
+      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="110,82 60,110 10,82 10,38 60,10 110,38" fill="#00C49A"/>
+        <path d="M60,35 L80,65 L68,65 L68,85 L52,85 L52,65 L40,65 Z" fill="#051A14"/>
+        <circle cx="60" cy="92" r="4" fill="#051A14"/>
+      </svg>
+    </div>
+
+    <div class="features">
+      <div class="feature-pill">
+        <div class="feature-icon">&#9917;</div>
+        <div class="feature-text">
+          <div class="feature-label">SPORTSBITES</div>
+          <div class="feature-sub">Hot takes that earn MEDALS</div>
+        </div>
+      </div>
+
+      <div class="feature-pill">
+        <div class="feature-icon">&#127919;</div>
+        <div class="feature-text">
+          <div class="feature-label">PREDICTIONS</div>
+          <div class="feature-sub">Stake on outcomes, win the pool</div>
+        </div>
+      </div>
+
+      <div class="feature-pill">
+        <div class="feature-icon">&#128293;</div>
+        <div class="feature-text">
+          <div class="feature-label">MATCH THREADS</div>
+          <div class="feature-sub">Live reactions, zero noise</div>
+        </div>
+      </div>
+
+      <div class="feature-pill gold">
+        <div class="feature-icon">&#127942;</div>
+        <div class="feature-text">
+          <div class="feature-label">MEDALS</div>
+          <div class="feature-sub">Real crypto rewards for every post</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="bottom">
+    <div class="bottom-left">
+      <div class="url">sportsblock.app</div>
+      <div class="bottom-tag">Free to join <span>&middot;</span> Free to earn</div>
+    </div>
+    <div class="hive-badge">
+      <span class="hive-badge-text">Built on HIVE</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>
