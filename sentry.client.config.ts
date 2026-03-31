@@ -48,6 +48,7 @@ Sentry.init({
     // Browser extension / injected script noise (not from our code)
     /Error invoking.*Method not found/,
     'Failed to connect to MetaMask',
+    /reading 'sendMessage'/,
     // Webpack stale chunk errors after deployments (user just needs to refresh)
     /Cannot read properties of undefined \(reading 'call'\)/,
     'Loading chunk',
@@ -90,8 +91,7 @@ Sentry.init({
 // Lazy-load the heavy replay integration after the page is interactive.
 // This keeps ~30-40KB of replay SDK out of the critical rendering path.
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-  const schedule =
-    window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 3000));
+  const schedule = window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 3000));
   schedule(() => {
     Sentry.addIntegration(
       Sentry.replayIntegration({

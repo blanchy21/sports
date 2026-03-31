@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queryClient';
 import type {
   UserBadgeData,
@@ -63,4 +63,52 @@ export function useUserRank(username: string | undefined): {
   });
 
   return { rank: data ?? null, isLoading };
+}
+
+/**
+ * Batch prefetch user ranks using a single batch API request.
+ * Populates the React Query cache so individual useUserRank hooks
+ * get instant cache hits instead of N individual requests.
+ */
+export async function prefetchUserBadges(
+  usernames: string[],
+  queryClient: QueryClient
+): Promise<void> {
+  const uniqueUsernames = [...new Set(usernames.filter(Boolean))];
+  if (uniqueUsernames.length === 0) return;
+
+  // Only fetch usernames not already cached
+  const uncachedUsernames = uniqueUsernames.filter((username) => {
+    const cached = queryClient.getQueryData(queryKeys.badges.user(username));
+    return cached === undefined;
+  });
+
+  if (uncachedUsernames.length === 0) return;
+
+  try {
+    const response = await fetch(
+      `/api/badges/batch?usernames=${encodeURIComponent(uncachedUsernames.join(','))}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Batch badges fetch failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data.success || !data.data?.ranks) return;
+
+    for (const username of uncachedUsernames) {
+      const rankData = data.data.ranks[username];
+      // Populate cache with minimal shape that useUserRank's select() can extract from
+      queryClient.setQueryData(queryKeys.badges.user(username), {
+        badges: [],
+        rank: rankData,
+        sportRanks: [],
+        monthlyTitles: [],
+        stats: { totalBadges: 0 },
+      });
+    }
+  } catch (error) {
+    console.warn('[UserBadges] Batch prefetch failed:', error);
+  }
 }

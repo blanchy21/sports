@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils/client';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { interleaveAds } from '@/lib/utils/interleave-ads';
 import { prefetchUserProfiles } from '@/lib/react-query/queries/useUserProfile';
+import { prefetchUserBadges } from '@/lib/react-query/queries/useUserBadges';
 import {
   useSportsbitesFeed,
   flattenSportsbitePages,
@@ -234,11 +235,12 @@ export function SportsbitesFeed({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayBites]);
 
-  // Batch-prefetch author profiles
+  // Batch-prefetch author profiles and ranks (prevents N+1 API calls per card)
   useEffect(() => {
     if (displayBites.length === 0) return;
     const authors = displayBites.map((b) => b.author);
     prefetchUserProfiles(authors, queryClient);
+    prefetchUserBadges(authors, queryClient);
   }, [displayBites, queryClient]);
 
   // Cleanup animation timeout on unmount

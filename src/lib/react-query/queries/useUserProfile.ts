@@ -128,9 +128,9 @@ export function useUserProfileCard(username: string | null) {
 }
 
 /**
- * Batch prefetch user profiles using parallel API requests.
+ * Batch prefetch user profiles using a single batch API request.
  * Populates the React Query cache so individual useUserProfile/useUserProfileCard
- * hooks get instant cache hits.
+ * hooks get instant cache hits instead of N individual requests.
  */
 export async function prefetchUserProfiles(
   usernames: string[],
@@ -148,14 +148,22 @@ export async function prefetchUserProfiles(
   if (uncachedUsernames.length === 0) return;
 
   try {
-    const results = await Promise.allSettled(
-      uncachedUsernames.map((username) => fetchAccountViaApi(username))
+    const response = await fetch(
+      `/api/hive/account/summary/batch?usernames=${encodeURIComponent(uncachedUsernames.join(','))}`
     );
 
-    for (let i = 0; i < uncachedUsernames.length; i++) {
-      const result = results[i];
-      if (result.status !== 'fulfilled' || !result.value) continue;
-      queryClient.setQueryData(queryKeys.users.detail(uncachedUsernames[i]), result.value);
+    if (!response.ok) {
+      throw new Error(`Batch fetch failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data.success || !data.accounts) return;
+
+    for (const username of uncachedUsernames) {
+      const account = data.accounts[username];
+      if (account) {
+        queryClient.setQueryData(queryKeys.users.detail(username), account as UserAccountData);
+      }
     }
   } catch (error) {
     // Silently fail — individual hooks will fetch on their own
