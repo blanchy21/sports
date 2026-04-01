@@ -271,34 +271,20 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
         className="block cursor-pointer space-y-3 p-3 sm:p-4"
       >
         {(() => {
-          // For Hive posts, extract image from body or metadata
-          if (isHivePost) {
-            const imageUrl = extractFirstImageUrl(post.body, post.json_metadata);
-            if (imageUrl) {
-              // Use direct URL — Next.js Image fetches server-side (no CORS issues).
-              // Only optimize if domain is in next.config remotePatterns.
-              const optimizable = canOptimizeImage(imageUrl);
-              return (
-                <div className="relative aspect-video w-full overflow-hidden rounded-md">
-                  <Image
-                    src={imageUrl}
-                    alt={post.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-200 hover:scale-105"
-                    loading={priority ? 'eager' : 'lazy'}
-                    priority={priority}
-                    unoptimized={!optimizable}
-                  />
-                </div>
-              );
-            }
-          } else if (post.featuredImage) {
-            const optimizable = canOptimizeImage(post.featuredImage);
+          // Resolve image URL: featuredImage (from API), then body/metadata extraction
+          const postBody = 'body' in post ? post.body : undefined;
+          const imageUrl =
+            ('featuredImage' in post && post.featuredImage) ||
+            (isHivePost && extractFirstImageUrl(post.body, post.json_metadata)) ||
+            (postBody && extractFirstImageUrl(postBody)) ||
+            null;
+
+          if (imageUrl) {
+            const optimizable = canOptimizeImage(imageUrl);
             return (
               <div className="relative aspect-video w-full overflow-hidden rounded-md">
                 <Image
-                  src={post.featuredImage}
+                  src={imageUrl}
                   alt={post.title}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
