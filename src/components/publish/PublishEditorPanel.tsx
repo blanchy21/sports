@@ -18,9 +18,16 @@ type FormState = ReturnType<typeof usePublishForm>;
 interface PublishEditorPanelProps {
   form: FormState;
   viewMode: ViewMode;
+  onPaste?: (e: React.ClipboardEvent) => void;
+  isPasteUploading?: boolean;
 }
 
-export function PublishEditorPanel({ form, viewMode }: PublishEditorPanelProps) {
+export function PublishEditorPanel({
+  form,
+  viewMode,
+  onPaste,
+  isPasteUploading,
+}: PublishEditorPanelProps) {
   return (
     <div
       className={cn(
@@ -55,10 +62,14 @@ export function PublishEditorPanel({ form, viewMode }: PublishEditorPanelProps) 
             ref={form.textareaRef}
             value={form.content}
             onChange={(e) => form.setContent(e.target.value)}
+            onPaste={onPaste}
             placeholder="Write your post using Markdown..."
             className="min-h-[60vh] w-full resize-none border-none bg-transparent text-base leading-relaxed outline-none"
             style={{ overflow: 'hidden' }}
           />
+          {isPasteUploading && (
+            <p className="animate-pulse text-xs text-muted-foreground">Uploading pasted image...</p>
+          )}
         </div>
 
         {/* Bottom Fields */}
