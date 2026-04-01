@@ -85,6 +85,24 @@ export function CoverImageUpload({
     [handleUpload]
   );
 
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            handleUpload(file);
+            return;
+          }
+        }
+      }
+    },
+    [handleUpload]
+  );
+
   // Show the cover image if set
   if (coverImage) {
     return (
@@ -135,6 +153,7 @@ export function CoverImageUpload({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onPaste={handlePaste}
         onClick={() => !isUploading && fileInputRef.current?.click()}
         className={cn(
           'flex cursor-pointer items-center justify-center gap-2 border-b px-4 py-3 transition-colors',

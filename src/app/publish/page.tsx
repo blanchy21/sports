@@ -34,6 +34,7 @@ function PublishPageContent() {
     setShowImageDialog: form.setShowImageDialog,
     setShowLinkDialog: form.setShowLinkDialog,
     setPublishError: form.setPublishError,
+    username: form.hiveUser?.username || form.user?.username,
   });
   const { handleSaveDraft, handleScheduleClick, handleSchedule, handlePublish } =
     usePublishActions(form);
@@ -190,7 +191,12 @@ function PublishPageContent() {
           <div className="absolute right-0 top-10 h-[600px] w-[50%] rounded-full bg-emerald-200/[0.1] blur-[100px]" />
           <div className="absolute bottom-0 left-1/4 h-[300px] w-[600px] rounded-full bg-rose-200/[0.12] blur-[120px]" />
         </div>
-        <PublishEditorPanel form={form} viewMode={viewMode} />
+        <PublishEditorPanel
+          form={form}
+          viewMode={viewMode}
+          onPaste={editor.handlePaste}
+          isPasteUploading={editor.isPasteUploading}
+        />
 
         {/* Right Side - Preview */}
         <div
