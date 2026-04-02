@@ -29,15 +29,18 @@ export function CurateButton({
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [curated, setCurated] = useState(alreadyCurated);
+  const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const handleCurate = useCallback(async () => {
     if (!confirming) {
       setConfirming(true);
+      setError(null);
       return;
     }
 
     setSubmitting(true);
+    setError(null);
     try {
       const res = await fetch('/api/curation/curate', {
         method: 'POST',
@@ -48,8 +51,9 @@ export function CurateButton({
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Curation failed');
-        setConfirming(false);
+        const errorMsg = data.error || 'Curation failed';
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
@@ -100,26 +104,29 @@ export function CurateButton({
   // Confirmation state
   if (confirming) {
     return (
-      <span className={cn('inline-flex items-center gap-1', className)}>
-        <button
-          onClick={handleCurate}
-          disabled={submitting}
-          className="inline-flex items-center gap-1 rounded-full bg-sb-gold px-2.5 py-1 text-xs font-semibold text-black transition-colors hover:bg-sb-gold-shine disabled:opacity-50"
-        >
-          {submitting ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <Award className="h-3 w-3" />
-          )}
-          {submitting ? 'Awarding...' : `Award ${CURATION_MEDALS_AMOUNT} MEDALS`}
-        </button>
-        <button
-          onClick={handleCancel}
-          disabled={submitting}
-          className="rounded-full px-2 py-1 text-xs text-sb-text-muted transition-colors hover:text-sb-text-primary"
-        >
-          Cancel
-        </button>
+      <span className={cn('inline-flex flex-col gap-1', className)}>
+        <span className="inline-flex items-center gap-1">
+          <button
+            onClick={handleCurate}
+            disabled={submitting}
+            className="inline-flex items-center gap-1 rounded-full bg-sb-gold px-2.5 py-1 text-xs font-semibold text-black transition-colors hover:bg-sb-gold-shine disabled:opacity-50"
+          >
+            {submitting ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Award className="h-3 w-3" />
+            )}
+            {submitting ? 'Awarding...' : `Award ${CURATION_MEDALS_AMOUNT} MEDALS`}
+          </button>
+          <button
+            onClick={handleCancel}
+            disabled={submitting}
+            className="rounded-full px-2 py-1 text-xs text-sb-text-muted transition-colors hover:text-sb-text-primary"
+          >
+            Cancel
+          </button>
+        </span>
+        {error && <span className="text-[10px] text-red-400">{error}</span>}
       </span>
     );
   }

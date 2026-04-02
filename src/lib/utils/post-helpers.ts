@@ -209,6 +209,18 @@ export function getPostTags(post: AnyPost): string[] {
 }
 
 /**
+ * Get the post beneficiaries (only available on Hive posts)
+ */
+export function getPostBeneficiaries(
+  post: AnyPost
+): Array<{ account: string; weight: number }> | undefined {
+  if (isSportsblockPost(post) && 'beneficiaries' in post) {
+    return post.beneficiaries as Array<{ account: string; weight: number }>;
+  }
+  return undefined;
+}
+
+/**
  * Get the post URL path
  */
 export function getPostUrl(post: AnyPost): string {
