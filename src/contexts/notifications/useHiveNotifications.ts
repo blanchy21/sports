@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { logger } from '@/lib/logger';
 import type { Notification } from './types';
 
-const NOTIFICATION_POLL_INTERVAL = 30000;
+const NOTIFICATION_POLL_INTERVAL = 60000;
 const MAX_POLL_INTERVAL = 5 * 60 * 1000; // 5 min max backoff
 const NOTIFICATION_LAST_CHECK_KEY = 'sportsblock-notifications-last-check';
 
