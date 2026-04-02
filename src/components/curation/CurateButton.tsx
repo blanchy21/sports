@@ -4,9 +4,10 @@ import React, { useState, useCallback } from 'react';
 import { Award, Loader2, CheckCircle } from 'lucide-react';
 import { useCuratorStatus } from '@/hooks/useCuratorStatus';
 import { CURATION_MEDALS_AMOUNT } from '@/lib/curation/config';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils/client';
 import { toast } from '@/components/core/Toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CurateButtonProps {
   author: string;
@@ -18,6 +19,7 @@ interface CurateButtonProps {
 
 /**
  * Button for curators to award MEDALS to a post. Hidden for non-curators.
+ * Checks the curation status API on mount to persist "Curated" state across page loads.
  */
 export function CurateButton({
   author,
@@ -26,11 +28,34 @@ export function CurateButton({
   className,
 }: CurateButtonProps) {
   const { isCurator, remaining, isLoading: statusLoading } = useCuratorStatus();
+  const { user } = useAuth();
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [curated, setCurated] = useState(alreadyCurated);
+  const [justCurated, setJustCurated] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  // Check if this post has already been curated by the current user
+  const { data: curationStatus } = useQuery({
+    queryKey: ['curationStatus', author, permlink],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/curation/status?author=${encodeURIComponent(author)}&permlink=${encodeURIComponent(permlink)}`
+      );
+      if (!res.ok) return { curated: false, curations: [] };
+      return res.json();
+    },
+    enabled: isCurator && !alreadyCurated,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Check if current user has curated this post
+  const isCuratedByMe =
+    alreadyCurated ||
+    justCurated ||
+    (curationStatus?.curations ?? []).some(
+      (c: { curator: string }) => c.curator === user?.username
+    );
 
   const handleCurate = useCallback(async () => {
     if (!confirming) {
@@ -57,12 +82,13 @@ export function CurateButton({
         return;
       }
 
-      setCurated(true);
+      setJustCurated(true);
       setConfirming(false);
       toast.success(`${CURATION_MEDALS_AMOUNT} MEDALS awarded to @${author}`);
 
-      // Invalidate curator status to update remaining count
+      // Invalidate queries to update counts and status
       queryClient.invalidateQueries({ queryKey: ['curatorStatus'] });
+      queryClient.invalidateQueries({ queryKey: ['curationStatus', author, permlink] });
     } catch {
       toast.error('Network error. Please try again.');
     } finally {
@@ -72,13 +98,14 @@ export function CurateButton({
 
   const handleCancel = useCallback(() => {
     setConfirming(false);
+    setError(null);
   }, []);
 
   // Don't render for non-curators
   if (statusLoading || !isCurator) return null;
 
   // Already curated state
-  if (curated) {
+  if (isCuratedByMe) {
     return (
       <span
         className={cn('inline-flex items-center gap-1 text-xs font-medium text-sb-gold', className)}
