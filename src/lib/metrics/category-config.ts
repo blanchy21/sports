@@ -5,7 +5,7 @@
  * that needs to display category metadata.
  */
 
-import { TrendingUp, Eye, MessageCircle, Share2, Star, Sparkles } from 'lucide-react';
+import { TrendingUp, Eye, MessageCircle, Share2, Star, Sparkles, Award } from 'lucide-react';
 import type { RewardCategory } from './types';
 import { CONTENT_REWARDS } from '@/lib/rewards/config';
 
@@ -41,6 +41,12 @@ export const CATEGORY_CONFIG: Record<RewardCategory, CategoryDisplayConfig> = {
     color: 'text-orange-500',
     metric: 'engagements',
   },
+  MOST_CURATED: {
+    title: 'Most Curated',
+    icon: Award,
+    color: 'text-sb-gold',
+    metric: 'curations',
+  },
   POST_OF_THE_WEEK: {
     title: 'Post of the Week',
     icon: Star,
@@ -63,6 +69,7 @@ export const ACTIVE_CATEGORIES: RewardCategory[] = [
   'MOST_VIEWED_POST',
   'MOST_COMMENTS',
   'MOST_ENGAGED_POST',
+  'MOST_CURATED',
 ];
 
 /**

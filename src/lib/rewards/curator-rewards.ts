@@ -6,6 +6,8 @@
  */
 
 import { getCuratorRewardAmount, CURATOR_REWARDS, MEDALS_ACCOUNTS } from './config';
+import { prisma } from '@/lib/db/prisma';
+import { logger } from '@/lib/logger';
 
 /**
  * Curator vote information
@@ -44,9 +46,12 @@ export interface CuratorDailyStats {
   totalRewarded: number;
 }
 
+/** Default curators (fallback if DB is empty) */
+const DEFAULT_CURATORS = ['niallon11', 'bozz', 'talesfrmthecrypt', 'blanchy', 'fullcoverbetting'];
+
 /**
- * Get list of designated curator accounts
- * In production, this is configured via CURATOR_ACCOUNTS env var
+ * Get list of designated curator accounts.
+ * Synchronous fallback — uses env var or defaults. Prefer getCuratorAccountsAsync().
  */
 export function getCuratorAccounts(): string[] {
   const envCurators = process.env.CURATOR_ACCOUNTS;
@@ -57,22 +62,55 @@ export function getCuratorAccounts(): string[] {
       .filter(Boolean);
   }
 
-  // Default curators
-  return ['niallon11', 'bozz', 'talesfrmthecrypt', 'ablaze'];
+  return DEFAULT_CURATORS;
 }
 
 /**
- * Get curator accounts (async). Uses env/defaults.
+ * Get curator accounts from the database (primary source).
+ * Falls back to env var / defaults if the CuratorRoster table is empty.
  */
 export async function getCuratorAccountsAsync(): Promise<string[]> {
+  try {
+    const curators = await prisma.curatorRoster.findMany({
+      where: { isActive: true },
+      select: { username: true },
+    });
+
+    if (curators.length > 0) {
+      return curators.map((c) => c.username);
+    }
+  } catch (error) {
+    logger.warn(
+      'Failed to query CuratorRoster, falling back to defaults',
+      'curator-rewards',
+      error
+    );
+  }
+
   return getCuratorAccounts();
 }
 
 /**
- * Check if an account is a designated curator
+ * Check if an account is a designated curator (sync — uses env/defaults).
  */
 export function isCurator(account: string): boolean {
   return getCuratorAccounts().includes(account);
+}
+
+/**
+ * Check if an account is a designated curator (async — uses DB).
+ */
+export async function isCuratorAsync(account: string): Promise<boolean> {
+  try {
+    const curator = await prisma.curatorRoster.findUnique({
+      where: { username: account },
+      select: { isActive: true },
+    });
+    if (curator !== null) return curator.isActive;
+  } catch {
+    // Fall back to sync check
+  }
+  return isCurator(account);
 }
 
 /**

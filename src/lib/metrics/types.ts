@@ -82,6 +82,7 @@ export type RewardCategory =
   | 'MOST_VIEWED_POST'
   | 'MOST_COMMENTS'
   | 'MOST_ENGAGED_POST'
+  | 'MOST_CURATED'
   | 'POST_OF_THE_WEEK'
   | 'BEST_NEWCOMER';
 
