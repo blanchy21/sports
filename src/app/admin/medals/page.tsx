@@ -363,13 +363,18 @@ export default function MedalsAdminDashboard() {
                 <BarChart3 className="h-4 w-4 text-info" />
                 <span>Today: {metrics?.curatorRewards.todayVotes || 0} votes processed</span>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleTriggerCron('curator-rewards')}
-              >
-                Trigger Manually
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleTriggerCron('curator-rewards')}
+                >
+                  Trigger Manually
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => router.push('/curation')}>
+                  Curation Dashboard
+                </Button>
+              </div>
             </div>
 
             {/* Weekly Content Rewards */}
