@@ -128,26 +128,52 @@ export default function CurationDashboard() {
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-sb-text-muted">
               Your Curations Today
             </h2>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:gap-8">
+              {/* Posts */}
               <div>
-                <span className="font-mono text-3xl font-bold text-sb-gold">
-                  {curatorStatus.remaining}
-                </span>
-                <span className="text-sm text-sb-text-muted">
-                  {' '}
-                  / {curatorStatus.limit} remaining
-                </span>
+                <span className="text-xs text-sb-text-muted">Posts (100 MEDALS)</span>
+                <div className="mt-1 flex items-center gap-3">
+                  <span className="font-mono text-2xl font-bold text-sb-gold">
+                    {curatorStatus.posts.remaining}
+                  </span>
+                  <span className="text-xs text-sb-text-muted">/ {curatorStatus.posts.limit}</span>
+                  <div className="flex gap-1">
+                    {Array.from({ length: curatorStatus.posts.limit }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          'h-2.5 w-6 rounded-full',
+                          i < curatorStatus.posts.dailyCount ? 'bg-sb-gold' : 'bg-sb-floodlight'
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-1">
-                {Array.from({ length: curatorStatus.limit }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      'h-3 w-8 rounded-full',
-                      i < curatorStatus.dailyCount ? 'bg-sb-gold' : 'bg-sb-floodlight'
-                    )}
-                  />
-                ))}
+              {/* Sportsbites */}
+              <div>
+                <span className="text-xs text-sb-text-muted">Sportsbites (10 MEDALS)</span>
+                <div className="mt-1 flex items-center gap-3">
+                  <span className="font-mono text-2xl font-bold text-sb-teal">
+                    {curatorStatus.sportsbites.remaining}
+                  </span>
+                  <span className="text-xs text-sb-text-muted">
+                    / {curatorStatus.sportsbites.limit}
+                  </span>
+                  <div className="flex gap-1">
+                    {Array.from({ length: curatorStatus.sportsbites.limit }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          'h-2.5 w-6 rounded-full',
+                          i < curatorStatus.sportsbites.dailyCount
+                            ? 'bg-sb-teal'
+                            : 'bg-sb-floodlight'
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
