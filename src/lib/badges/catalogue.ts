@@ -268,13 +268,13 @@ export const BADGE_CATALOGUE: BadgeDefinition[] = [
   {
     id: 'og-member',
     name: 'OG Member',
-    description: 'Active member for 6 months',
+    description: 'Joined before launch. Day one status.',
     category: 'milestone',
     shape: 'shield',
     color: '#00C49A',
     glow: false,
-    metric: 'tenure_months',
-    threshold: 6,
+    metric: 'pre_launch',
+    threshold: 1,
     triggers: [],
   },
   {

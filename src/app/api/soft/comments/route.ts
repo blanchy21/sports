@@ -10,6 +10,7 @@ import { logger } from '@/lib/logger';
 import { touchLastActive } from '@/lib/api/activity';
 import { stripSoftPrefix } from '@/lib/utils/soft-post';
 import { evaluateBadgesForAction } from '@/lib/badges/evaluator';
+import { incrementUserStat } from '@/lib/metrics/user-stats';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -345,7 +346,8 @@ export const POST = csrfProtected(
       logger.error('Failed to create notifications', 'soft-comments', notifError);
     }
 
-    // Badge evaluation (fire-and-forget)
+    // Lifetime stats + badge evaluation (fire-and-forget)
+    incrementUserStat(user.username, 'totalComments');
     evaluateBadgesForAction(user.username, 'comment_created').catch((err) =>
       logger.error('Badge evaluation failed', 'badges', err)
     );
