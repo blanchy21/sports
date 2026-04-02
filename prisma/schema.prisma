@@ -1053,6 +1053,7 @@ model Curation {
   author              String
   permlink            String
   amount              Decimal  @db.Decimal(12, 3)
+  type                String   @default("post") // 'post' | 'sportsbite'
   source              String   @default("in_app") // 'in_app' | 'hive_comment' | 'auto_engagement'
   hiveCommentPermlink String?  @map("hive_comment_permlink")
   txId                String?  @map("tx_id")
@@ -1064,5 +1065,6 @@ model Curation {
   @@index([curatorUsername])
   @@index([createdAt])
   @@index([status])
+  @@index([type])
   @@map("curations")
 }

@@ -68,20 +68,44 @@ export const GET = createApiHandler(ROUTE, async (request) => {
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
 
-    const dailyCount = await prisma.curation.count({
-      where: {
-        curatorUsername: curatorParam,
-        createdAt: { gte: todayStart },
-        status: { not: 'failed' },
-      },
-    });
+    const [postCount, sportsbiteCount] = await Promise.all([
+      prisma.curation.count({
+        where: {
+          curatorUsername: curatorParam,
+          type: 'post',
+          createdAt: { gte: todayStart },
+          status: { not: 'failed' },
+        },
+      }),
+      prisma.curation.count({
+        where: {
+          curatorUsername: curatorParam,
+          type: 'sportsbite',
+          createdAt: { gte: todayStart },
+          status: { not: 'failed' },
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,
       isCurator: true,
       curator: curatorParam,
-      dailyCount,
-      remaining: Math.max(0, MAX_CURATIONS_PER_DAY - dailyCount),
+      posts: {
+        dailyCount: postCount,
+        remaining: Math.max(0, MAX_CURATIONS_PER_DAY - postCount),
+        limit: MAX_CURATIONS_PER_DAY,
+      },
+      sportsbites: {
+        dailyCount: sportsbiteCount,
+        remaining: Math.max(0, MAX_CURATIONS_PER_DAY - sportsbiteCount),
+        limit: MAX_CURATIONS_PER_DAY,
+      },
+      // Backward compat — total across both
+      dailyCount: postCount + sportsbiteCount,
+      remaining:
+        Math.max(0, MAX_CURATIONS_PER_DAY - postCount) +
+        Math.max(0, MAX_CURATIONS_PER_DAY - sportsbiteCount),
       limit: MAX_CURATIONS_PER_DAY,
     });
   }

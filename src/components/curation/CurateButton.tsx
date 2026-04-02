@@ -30,7 +30,8 @@ export function CurateButton({
   alreadyCurated = false,
   className,
 }: CurateButtonProps) {
-  const { isCurator, remaining, isLoading: statusLoading } = useCuratorStatus();
+  const { isCurator, forType, isLoading: statusLoading } = useCuratorStatus();
+  const remaining = forType(type).remaining;
   const { user } = useAuth();
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);

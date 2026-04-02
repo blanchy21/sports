@@ -73,23 +73,25 @@ export const POST = createApiHandler(ROUTE, async (request) => {
       );
     }
 
-    // Check daily limit (shared across posts and sportsbites)
+    // Check daily limit — separate pools for posts and sportsbites
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
 
     const dailyCount = await prisma.curation.count({
       where: {
         curatorUsername: user.username,
+        type,
         createdAt: { gte: todayStart },
         status: { not: 'failed' },
       },
     });
 
     if (dailyCount >= MAX_CURATIONS_PER_DAY) {
+      const label = type === 'sportsbite' ? 'sportsbite' : 'post';
       return NextResponse.json(
         {
           success: false,
-          error: `Daily curation limit reached (${MAX_CURATIONS_PER_DAY} per day)`,
+          error: `Daily ${label} curation limit reached (${MAX_CURATIONS_PER_DAY} per day)`,
           dailyCount,
           limit: MAX_CURATIONS_PER_DAY,
         },
@@ -144,6 +146,7 @@ export const POST = createApiHandler(ROUTE, async (request) => {
         author,
         permlink,
         amount: medalsAmount,
+        type,
         source: 'in_app',
         status: 'pending',
       },
