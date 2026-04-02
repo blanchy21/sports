@@ -53,6 +53,7 @@ import { RankBadge } from '@/components/badges/RankBadge';
 import { useUserRank } from '@/lib/react-query/queries/useUserBadges';
 import { QuickPoll } from '@/components/sportsbites/QuickPoll';
 import { TipButton } from '@/components/sportsbites/TipButton';
+import { CurateButton } from '@/components/curation/CurateButton';
 import { TikTokEmbed } from '@/components/embeds/TikTokEmbed';
 
 interface SportsbiteCardProps {
@@ -703,7 +704,14 @@ export const SportsbiteCard = React.memo(function SportsbiteCard({
           </div>
 
           {!isOwner && sportsbite.source !== 'soft' && (
-            <TipButton author={sportsbite.author} permlink={sportsbite.permlink} />
+            <>
+              <TipButton author={sportsbite.author} permlink={sportsbite.permlink} />
+              <CurateButton
+                author={sportsbite.author}
+                permlink={sportsbite.permlink}
+                type="sportsbite"
+              />
+            </>
           )}
 
           <EmojiReactions

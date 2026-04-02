@@ -1,13 +1,15 @@
 /**
- * Curation API — Curate a Post
+ * Curation API — Curate a Post or Sportsbite
  *
- * POST: Curator allocates MEDALS to a post author.
- * 1. Verifies curator authorization via CuratorRoster
- * 2. Checks daily limit
- * 3. Verifies post has sportsblock 5% beneficiary
- * 4. Transfers MEDALS from @sportsblock → author
- * 5. Posts !medals comment on-chain
- * 6. Creates notification for author
+ * POST: Curator allocates MEDALS to content.
+ *
+ * For posts (type: 'post', default):
+ *   - 100 MEDALS, requires sportsblock 5% beneficiary
+ *   - Posts !medals comment on-chain
+ *
+ * For sportsbites (type: 'sportsbite'):
+ *   - 10 MEDALS, no beneficiary requirement
+ *   - No on-chain comment (sportsbites are already Hive comments)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -19,9 +21,10 @@ import { isCuratorAsync } from '@/lib/rewards/curator-rewards';
 import { fetchPostWithBeneficiaries } from '@/lib/curation/beneficiary-check';
 import { checkCurationEligibility } from '@/lib/curation/eligibility';
 import {
-  CURATION_MEDALS_AMOUNT,
+  CURATION_MEDALS,
   MAX_CURATIONS_PER_DAY,
   buildCurationComment,
+  type CurationType,
 } from '@/lib/curation/config';
 import { transferCurationMedals } from '@/lib/curation/transfer';
 import { prisma } from '@/lib/db/prisma';
@@ -38,6 +41,7 @@ const curateSchema = z.object({
     .min(1)
     .regex(/^[a-z][a-z0-9.-]{2,15}$/, 'Invalid Hive username'),
   permlink: z.string().min(1).max(256),
+  type: z.enum(['post', 'sportsbite']).default('post'),
 });
 
 export const POST = createApiHandler(ROUTE, async (request) => {
@@ -58,17 +62,18 @@ export const POST = createApiHandler(ROUTE, async (request) => {
 
     // Parse input
     const body = await request.json();
-    const { author, permlink } = curateSchema.parse(body);
+    const { author, permlink, type } = curateSchema.parse(body);
+    const medalsAmount = CURATION_MEDALS[type];
 
-    // Can't curate your own posts
+    // Can't curate your own content
     if (author === user.username) {
       return NextResponse.json(
-        { success: false, error: 'Cannot curate your own posts' },
+        { success: false, error: 'Cannot curate your own content' },
         { status: 400 }
       );
     }
 
-    // Check daily limit
+    // Check daily limit (shared across posts and sportsbites)
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
 
@@ -92,23 +97,26 @@ export const POST = createApiHandler(ROUTE, async (request) => {
       );
     }
 
-    // Fetch post from Hive and verify eligibility
-    const post = await fetchPostWithBeneficiaries(author, permlink);
-    if (!post) {
-      return NextResponse.json(
-        { success: false, error: 'Post not found on the Hive blockchain' },
-        { status: 404 }
-      );
-    }
+    // For posts: verify beneficiary eligibility
+    // For sportsbites: no beneficiary check required
+    if (type === 'post') {
+      const post = await fetchPostWithBeneficiaries(author, permlink);
+      if (!post) {
+        return NextResponse.json(
+          { success: false, error: 'Post not found on the Hive blockchain' },
+          { status: 404 }
+        );
+      }
 
-    const eligibility = checkCurationEligibility({
-      beneficiaries: post.beneficiaries,
-      category: post.category,
-      parent_author: post.parentAuthor,
-    });
+      const eligibility = checkCurationEligibility({
+        beneficiaries: post.beneficiaries,
+        category: post.category,
+        parent_author: post.parentAuthor,
+      });
 
-    if (!eligibility.eligible) {
-      return NextResponse.json({ success: false, error: eligibility.reason }, { status: 400 });
+      if (!eligibility.eligible) {
+        return NextResponse.json({ success: false, error: eligibility.reason }, { status: 400 });
+      }
     }
 
     // Check for duplicate (unique constraint will also catch this)
@@ -124,7 +132,7 @@ export const POST = createApiHandler(ROUTE, async (request) => {
 
     if (existing) {
       return NextResponse.json(
-        { success: false, error: 'You have already curated this post' },
+        { success: false, error: `You have already curated this ${type}` },
         { status: 409 }
       );
     }
@@ -135,7 +143,7 @@ export const POST = createApiHandler(ROUTE, async (request) => {
         curatorUsername: user.username,
         author,
         permlink,
-        amount: CURATION_MEDALS_AMOUNT,
+        amount: medalsAmount,
         source: 'in_app',
         status: 'pending',
       },
@@ -146,8 +154,8 @@ export const POST = createApiHandler(ROUTE, async (request) => {
     try {
       txId = await transferCurationMedals(
         author,
-        CURATION_MEDALS_AMOUNT,
-        `Curation reward from @${user.username} for ${permlink}`
+        medalsAmount,
+        `${type === 'sportsbite' ? 'Sportsbite' : 'Curation'} reward from @${user.username} for ${permlink}`
       );
 
       await prisma.curation.update({
@@ -172,21 +180,29 @@ export const POST = createApiHandler(ROUTE, async (request) => {
       );
     }
 
-    // Fire-and-forget: post !medals comment on-chain, notify author, update stats
-    Promise.all([
-      postCurationComment(user.username, author, permlink).catch((err) =>
-        logger.error('Failed to post curation comment', 'curation:curate', err)
+    // Fire-and-forget: post on-chain comment (posts only), notify author, update stats
+    const tasks: Promise<void>[] = [
+      createCurationNotification(user.username, author, permlink, medalsAmount, type).catch((err) =>
+        logger.error('Failed to create curation notification', 'curation:curate', err)
       ),
-      createCurationNotification(user.username, author, permlink, CURATION_MEDALS_AMOUNT).catch(
-        (err) => logger.error('Failed to create curation notification', 'curation:curate', err)
-      ),
-      updateAuthorStats(author, CURATION_MEDALS_AMOUNT).catch((err) =>
+      updateAuthorStats(author, medalsAmount).catch((err) =>
         logger.error('Failed to update author stats', 'curation:curate', err)
       ),
-    ]).catch(() => {});
+    ];
+
+    // Only post on-chain comment for root posts (not sportsbites)
+    if (type === 'post') {
+      tasks.push(
+        postCurationComment(user.username, author, permlink, medalsAmount).catch((err) =>
+          logger.error('Failed to post curation comment', 'curation:curate', err)
+        )
+      );
+    }
+
+    Promise.all(tasks).catch(() => {});
 
     logger.info(
-      `Curation: @${user.username} → @${author}/${permlink} (${CURATION_MEDALS_AMOUNT} MEDALS, tx: ${txId})`,
+      `Curation [${type}]: @${user.username} → @${author}/${permlink} (${medalsAmount} MEDALS, tx: ${txId})`,
       'curation:curate'
     );
 
@@ -197,7 +213,8 @@ export const POST = createApiHandler(ROUTE, async (request) => {
         curator: user.username,
         author,
         permlink,
-        amount: CURATION_MEDALS_AMOUNT,
+        amount: medalsAmount,
+        type,
         txId,
       },
       remaining: MAX_CURATIONS_PER_DAY - dailyCount - 1,
@@ -211,7 +228,8 @@ export const POST = createApiHandler(ROUTE, async (request) => {
 async function postCurationComment(
   curator: string,
   author: string,
-  permlink: string
+  permlink: string,
+  amount: number
 ): Promise<void> {
   const activeKeyWif = process.env.SPORTSBLOCK_ACTIVE_KEY;
   if (!activeKeyWif) return;
@@ -223,7 +241,7 @@ async function postCurationComment(
   const postingKey = PrivateKey.fromString(process.env.SPORTSBLOCK_POSTING_KEY || activeKeyWif);
 
   const commentPermlink = `re-${permlink}-medals-${Date.now()}`.slice(0, 255);
-  const commentBody = buildCurationComment(curator, CURATION_MEDALS_AMOUNT);
+  const commentBody = buildCurationComment(curator, amount);
 
   const op: [string, Record<string, unknown>] = [
     'comment',
@@ -251,28 +269,30 @@ async function postCurationComment(
 }
 
 /**
- * Create a notification for the post author about their curation.
+ * Create a notification for the content author about their curation.
  */
 async function createCurationNotification(
   curator: string,
   author: string,
   permlink: string,
-  amount: number
+  amount: number,
+  type: CurationType
 ): Promise<void> {
-  // Try to find author in our DB (they may be Hive-only with no local profile)
   const authorUser = await prisma.custodialUser.findFirst({
     where: { hiveUsername: author },
     select: { id: true },
   });
+
+  const label = type === 'sportsbite' ? 'sportsbite' : 'post';
 
   await prisma.notification.create({
     data: {
       recipientUsername: author,
       ...(authorUser ? { recipientId: authorUser.id } : {}),
       type: 'curation',
-      title: 'Your post was curated!',
-      message: `@${curator} awarded you ${amount} MEDALS for your post`,
-      data: { curator, author, permlink, amount },
+      title: `Your ${label} was curated!`,
+      message: `@${curator} awarded you ${amount} MEDALS for your ${label}`,
+      data: { curator, author, permlink, amount, type },
       sourceUsername: curator,
     },
   });

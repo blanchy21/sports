@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { Award, Loader2, CheckCircle } from 'lucide-react';
 import { useCuratorStatus } from '@/hooks/useCuratorStatus';
-import { CURATION_MEDALS_AMOUNT } from '@/lib/curation/config';
+import { CURATION_MEDALS, type CurationType } from '@/lib/curation/config';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils/client';
 import { toast } from '@/components/core/Toast';
@@ -12,18 +12,21 @@ import { useAuth } from '@/contexts/AuthContext';
 interface CurateButtonProps {
   author: string;
   permlink: string;
+  /** Content type — determines MEDALS amount (100 for posts, 10 for sportsbites) */
+  type?: CurationType;
   /** If already curated, show as curated state */
   alreadyCurated?: boolean;
   className?: string;
 }
 
 /**
- * Button for curators to award MEDALS to a post. Hidden for non-curators.
+ * Button for curators to award MEDALS to content. Hidden for non-curators.
  * Checks the curation status API on mount to persist "Curated" state across page loads.
  */
 export function CurateButton({
   author,
   permlink,
+  type = 'post',
   alreadyCurated = false,
   className,
 }: CurateButtonProps) {
@@ -35,7 +38,9 @@ export function CurateButton({
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  // Check if this post has already been curated by the current user
+  const medalsAmount = CURATION_MEDALS[type];
+
+  // Check if this content has already been curated by the current user
   const { data: curationStatus } = useQuery({
     queryKey: ['curationStatus', author, permlink],
     queryFn: async () => {
@@ -49,7 +54,7 @@ export function CurateButton({
     staleTime: 5 * 60 * 1000,
   });
 
-  // Check if current user has curated this post
+  // Check if current user has curated this content
   const isCuratedByMe =
     alreadyCurated ||
     justCurated ||
@@ -70,7 +75,7 @@ export function CurateButton({
       const res = await fetch('/api/curation/curate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ author, permlink }),
+        body: JSON.stringify({ author, permlink, type }),
       });
 
       const data = await res.json();
@@ -84,7 +89,7 @@ export function CurateButton({
 
       setJustCurated(true);
       setConfirming(false);
-      toast.success(`${CURATION_MEDALS_AMOUNT} MEDALS awarded to @${author}`);
+      toast.success(`${medalsAmount} MEDALS awarded to @${author}`);
 
       // Invalidate queries to update counts and status
       queryClient.invalidateQueries({ queryKey: ['curatorStatus'] });
@@ -94,7 +99,7 @@ export function CurateButton({
     } finally {
       setSubmitting(false);
     }
-  }, [confirming, author, permlink, queryClient]);
+  }, [confirming, author, permlink, type, medalsAmount, queryClient]);
 
   const handleCancel = useCallback(() => {
     setConfirming(false);
@@ -143,7 +148,7 @@ export function CurateButton({
             ) : (
               <Award className="h-3 w-3" />
             )}
-            {submitting ? 'Awarding...' : `Award ${CURATION_MEDALS_AMOUNT} MEDALS`}
+            {submitting ? 'Awarding...' : `Award ${medalsAmount} MEDALS`}
           </button>
           <button
             onClick={handleCancel}
