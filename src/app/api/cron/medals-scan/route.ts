@@ -108,7 +108,7 @@ export async function GET() {
             continue;
           }
 
-          const eligibility = checkCurationEligibility({
+          const eligibility = await checkCurationEligibility({
             beneficiaries: post.beneficiaries,
             category: post.category,
             parent_author: post.parentAuthor,

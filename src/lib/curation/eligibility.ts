@@ -1,11 +1,11 @@
 /**
  * Curation Eligibility Checks
  *
- * Determines whether a post qualifies for MEDALS curation.
+ * hasSportsblockBeneficiary — client-safe, no server imports
+ * checkCurationEligibility  — server-only (imports SPORTS_ARENA_CONFIG)
  */
 
 import { BENEFICIARY_REQUIREMENTS } from './config';
-import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
 
 interface Beneficiary {
   account: string;
@@ -14,6 +14,7 @@ interface Beneficiary {
 
 /**
  * Check if a post has the required sportsblock beneficiary.
+ * Client-safe — no server-side imports.
  */
 export function hasSportsblockBeneficiary(
   beneficiaries: Beneficiary[] | undefined | null
@@ -29,13 +30,14 @@ export function hasSportsblockBeneficiary(
 
 /**
  * Full eligibility check for a post. Returns reason if ineligible.
+ * Server-only — uses dynamic import to avoid pulling WorkerBee into client bundles.
  */
-export function checkCurationEligibility(post: {
+export async function checkCurationEligibility(post: {
   beneficiaries?: Beneficiary[] | null;
   category?: string;
   parent_author?: string;
   depth?: number;
-}): { eligible: boolean; reason?: string } {
+}): Promise<{ eligible: boolean; reason?: string }> {
   // Must be a root post (not a comment/reply)
   if (post.parent_author && post.parent_author !== '') {
     return { eligible: false, reason: 'Comments/replies are not eligible for curation' };
@@ -45,6 +47,7 @@ export function checkCurationEligibility(post: {
   }
 
   // Must be in the sportsblock community
+  const { SPORTS_ARENA_CONFIG } = await import('@/lib/hive-workerbee/client');
   const community = post.category || '';
   if (community !== SPORTS_ARENA_CONFIG.COMMUNITY_ID) {
     return { eligible: false, reason: 'Post is not in the SportsBlock community' };
