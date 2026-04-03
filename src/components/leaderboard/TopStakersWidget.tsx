@@ -52,7 +52,12 @@ export function TopStakersWidget({ className }: { className?: string }) {
         const response = await fetch('/api/hive-engine/leaderboard');
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
-        setHolders(data.holders?.slice(0, 5) || []);
+        const sorted = (data.holders || [])
+          .slice()
+          .sort((a: StakerEntry, b: StakerEntry) => b.staked - a.staked)
+          .slice(0, 5)
+          .map((h: StakerEntry, i: number) => ({ ...h, rank: i + 1 }));
+        setHolders(sorted);
       } catch (err) {
         logger.error('Error fetching top stakers', 'TopStakersWidget', err);
         setError(true);
