@@ -15,6 +15,11 @@ jest.mock('next-auth/providers/google', () => ({
   default: jest.fn(() => ({ id: 'google', name: 'Google', type: 'oauth' })),
 }));
 
+jest.mock('next-auth/providers/twitter', () => ({
+  __esModule: true,
+  default: jest.fn(() => ({ id: 'twitter', name: 'Twitter', type: 'oauth' })),
+}));
+
 import { authOptions, jwtFieldsCache } from '@/lib/auth/next-auth-options';
 import { prisma } from '@/lib/db/prisma';
 
@@ -51,7 +56,7 @@ describe('next-auth-options', () => {
       picture: 'https://example.com/avatar.jpg',
     };
 
-    const baseAccount = { providerAccountId: 'google-123' };
+    const baseAccount = { provider: 'google', providerAccountId: 'google-123' };
 
     const upsertedUser = {
       id: 'cust-001',

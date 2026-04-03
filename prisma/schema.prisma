@@ -11,11 +11,13 @@ datasource db {
 // Phase 1 — Custodial onboarding models
 // ============================================================================
 
-// Google OAuth users with server-side custodial Hive keys
+// OAuth users with server-side custodial Hive keys (Google, Twitter/X)
 model CustodialUser {
   id              String    @id @default(uuid())
-  email           String    @unique
-  googleId        String    @unique @map("google_id")
+  email           String?   @unique
+  googleId        String?   @unique @map("google_id")
+  twitterId       String?   @unique @map("twitter_id")
+  twitterHandle   String?   @map("twitter_handle")
   displayName     String?   @map("display_name")
   avatarUrl       String?   @map("avatar_url")
   hiveUsername    String?   @unique @map("hive_username")

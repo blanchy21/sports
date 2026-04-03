@@ -31,7 +31,7 @@ jest.mock('@/lib/utils/rate-limit', () => ({
 }));
 
 jest.mock('@/lib/db/prisma', () => ({
-  prisma: { custodialUser: { findFirst: jest.fn() } },
+  prisma: { custodialUser: { findUnique: jest.fn() } },
 }));
 
 jest.mock('@/lib/auth/next-auth-options', () => ({
@@ -65,7 +65,7 @@ describe('POST /api/hive/create-account', () => {
       reset: Date.now() + 86400000,
     });
 
-    mockPrisma.custodialUser.findFirst.mockResolvedValue({
+    mockPrisma.custodialUser.findUnique.mockResolvedValue({
       id: 'cust-123',
       hiveUsername: null,
     } as never);
@@ -175,7 +175,7 @@ describe('POST /api/hive/create-account', () => {
   });
 
   it('returns 404 when custodialUser not found in DB', async () => {
-    mockPrisma.custodialUser.findFirst.mockResolvedValue(null as never);
+    mockPrisma.custodialUser.findUnique.mockResolvedValue(null as never);
 
     const response = await request(server)
       .post('/api/hive/create-account')
@@ -188,7 +188,7 @@ describe('POST /api/hive/create-account', () => {
   });
 
   it('returns 400 when custodialUser already has hiveUsername in DB', async () => {
-    mockPrisma.custodialUser.findFirst.mockResolvedValue({
+    mockPrisma.custodialUser.findUnique.mockResolvedValue({
       id: 'cust-123',
       hiveUsername: 'sb-existing',
     } as never);

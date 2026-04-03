@@ -68,11 +68,9 @@ export const POST = createApiHandler('/api/hive/create-account', async (request:
     return apiError('Username must start with "sb-"', 'VALIDATION_ERROR', 400);
   }
 
-  // Look up the custodial user record
-  const custodialUser = await prisma.custodialUser.findFirst({
-    where: {
-      OR: [{ id: user.userId }, { email: user.username }],
-    },
+  // Look up the custodial user record by ID (works for all OAuth providers)
+  const custodialUser = await prisma.custodialUser.findUnique({
+    where: { id: user.userId },
   });
 
   if (!custodialUser) {
