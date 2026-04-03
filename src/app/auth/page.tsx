@@ -9,6 +9,7 @@ import { Button } from '@/components/core/Button';
 import { AuthHero } from './components/AuthHero';
 import { ErrorAlert } from './components/ErrorAlert';
 import { GoogleAuthSection } from './components/GoogleAuthSection';
+import { TwitterAuthSection } from './components/TwitterAuthSection';
 import { useAuthPage } from './hooks/useAuthPage';
 
 export default function AuthPage() {
@@ -65,6 +66,7 @@ function AuthPageContent() {
     onHiveUsernameCancel,
     onProviderSelect,
     handleGoogleSignIn,
+    handleTwitterSignIn,
   } = useAuthPage();
 
   return (
@@ -252,19 +254,22 @@ function AuthPageContent() {
                 <div className="w-full border-t border-sb-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-background px-4 text-sb-text-muted">
-                  Or continue with Google
-                </span>
+                <span className="bg-background px-4 text-sb-text-muted">Or continue with</span>
               </div>
             </motion.div>
 
-            {/* Google Auth Section */}
+            {/* Social Auth Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.5 }}
+              className="space-y-3"
             >
               <GoogleAuthSection isConnecting={isConnecting} onGoogleSignIn={handleGoogleSignIn} />
+              <TwitterAuthSection
+                isConnecting={isConnecting}
+                onTwitterSignIn={handleTwitterSignIn}
+              />
             </motion.div>
           </motion.div>
         </div>

@@ -48,7 +48,7 @@ async function mockSession(
     return route.continue();
   });
 
-  // Intercept NextAuth's getSession() to prevent server errors from useGoogleAuthBridge.
+  // Intercept NextAuth's getSession() to prevent server errors from useOAuthBridge.
   // next-auth/react calls /api/auth/[...nextauth] paths; return null = no NextAuth session.
   await page.route('**/api/auth/csrf*', async (route) => {
     return route.fulfill({

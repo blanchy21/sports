@@ -3,15 +3,15 @@ import { getSession } from 'next-auth/react';
 import { AuthType, User } from '@/types';
 import { logger } from '@/lib/logger';
 
-interface UseGoogleAuthBridgeOptions {
+interface UseOAuthBridgeOptions {
   login: (user: User, authType: AuthType) => void;
   isAuthenticated: boolean;
   hasMounted: boolean;
 }
 
 /**
- * Bridge hook: detects a NextAuth Google session after OAuth redirect
- * and feeds it into AuthContext via login('soft').
+ * Bridge hook: detects a NextAuth OAuth session (Google, Twitter/X, etc.)
+ * after OAuth redirect and feeds it into AuthContext via login('soft').
  *
  * Runs once per mount — no SessionProvider needed.
  * Uses a ref to track current auth state so the async getSession()
@@ -20,11 +20,9 @@ interface UseGoogleAuthBridgeOptions {
  * Returns `isPending: true` while the NextAuth session check is in-flight,
  * so AuthContext can keep isLoading=true and prevent premature redirects.
  */
-export function useGoogleAuthBridge({
-  login,
-  isAuthenticated,
-  hasMounted,
-}: UseGoogleAuthBridgeOptions): { isPending: boolean } {
+export function useOAuthBridge({ login, isAuthenticated, hasMounted }: UseOAuthBridgeOptions): {
+  isPending: boolean;
+} {
   const attempted = useRef(false);
   const [isPending, setIsPending] = useState(false);
   // Track latest auth state via ref so the async callback can check it
@@ -66,14 +64,10 @@ export function useGoogleAuthBridge({
         };
 
         login(user, 'soft');
-        logger.info('Google auth bridge: logged in via NextAuth session', 'useGoogleAuthBridge');
+        logger.info('OAuth bridge: logged in via NextAuth session', 'useOAuthBridge');
       })
       .catch((err) => {
-        logger.error(
-          'Google auth bridge: failed to fetch NextAuth session',
-          'useGoogleAuthBridge',
-          err
-        );
+        logger.error('OAuth bridge: failed to fetch NextAuth session', 'useOAuthBridge', err);
         // Allow retry on next mount — session fetch may have failed transiently
         attempted.current = false;
       })

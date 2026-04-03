@@ -31,7 +31,7 @@ import {
 } from './auth/auth-persistence';
 import { authReducer } from './auth/auth-reducer';
 import { useAuthActions } from './auth/useAuthActions';
-import { useGoogleAuthBridge } from './auth/useGoogleAuthBridge';
+import { useOAuthBridge } from './auth/useOAuthBridge';
 import { createUserWithAccountData, getHiveAvatarUrl } from './auth/useAuthProfile';
 
 // Re-export types for backwards compatibility
@@ -83,10 +83,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setHiveUser,
   } = useAuthActions({ dispatch, getState });
 
-  // Bridge NextAuth Google session → AuthContext (one-shot after mount)
+  // Bridge NextAuth OAuth session (Google, Twitter/X) → AuthContext (one-shot after mount)
   // isPending is true while the NextAuth session check is in-flight,
   // preventing premature "not authenticated" redirects on protected pages.
-  const { isPending: isGoogleBridgePending } = useGoogleAuthBridge({
+  const { isPending: isOAuthBridgePending } = useOAuthBridge({
     login,
     isAuthenticated: !!user,
     hasMounted,
@@ -312,7 +312,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Keep isLoading true while the Google auth bridge is still checking NextAuth session.
   // This prevents pages from seeing isLoading=false + user=null prematurely
   // and redirecting to landing before the Google session can be picked up.
-  const effectiveIsLoading = isLoading || isGoogleBridgePending;
+  const effectiveIsLoading = isLoading || isOAuthBridgePending;
 
   const value = useMemo<AuthContextValue>(
     () => ({

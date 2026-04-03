@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { useGoogleAuthBridge } from '@/contexts/auth/useGoogleAuthBridge';
+import { useOAuthBridge } from '@/contexts/auth/useOAuthBridge';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -46,7 +46,7 @@ function defaultProps(overrides?: { isAuthenticated?: boolean; hasMounted?: bool
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('useGoogleAuthBridge', () => {
+describe('useOAuthBridge', () => {
   beforeEach(() => {
     mockGetSession.mockReset();
   });
@@ -55,7 +55,7 @@ describe('useGoogleAuthBridge', () => {
     mockGetSession.mockResolvedValue(fullSession);
     const props = defaultProps();
 
-    renderHook(() => useGoogleAuthBridge(props));
+    renderHook(() => useOAuthBridge(props));
 
     await waitFor(() => {
       expect(props.login).toHaveBeenCalledTimes(1);
@@ -78,7 +78,7 @@ describe('useGoogleAuthBridge', () => {
     mockGetSession.mockResolvedValue(fullSession);
     const props = defaultProps();
 
-    renderHook(() => useGoogleAuthBridge(props));
+    renderHook(() => useOAuthBridge(props));
 
     await waitFor(() => {
       expect(props.login).toHaveBeenCalled();
@@ -98,7 +98,7 @@ describe('useGoogleAuthBridge', () => {
     mockGetSession.mockResolvedValue(fullSession);
     const props = defaultProps({ isAuthenticated: true });
 
-    renderHook(() => useGoogleAuthBridge(props));
+    renderHook(() => useOAuthBridge(props));
 
     // Give time for any async call to settle
     await new Promise((r) => setTimeout(r, 50));
@@ -110,7 +110,7 @@ describe('useGoogleAuthBridge', () => {
     mockGetSession.mockResolvedValue(fullSession);
     const props = defaultProps({ hasMounted: false });
 
-    renderHook(() => useGoogleAuthBridge(props));
+    renderHook(() => useOAuthBridge(props));
 
     await new Promise((r) => setTimeout(r, 50));
     expect(mockGetSession).not.toHaveBeenCalled();
@@ -121,7 +121,7 @@ describe('useGoogleAuthBridge', () => {
     mockGetSession.mockResolvedValue(null);
     const props = defaultProps();
 
-    renderHook(() => useGoogleAuthBridge(props));
+    renderHook(() => useOAuthBridge(props));
 
     await waitFor(() => {
       expect(mockGetSession).toHaveBeenCalled();
@@ -135,7 +135,7 @@ describe('useGoogleAuthBridge', () => {
     mockGetSession.mockResolvedValue({ user: { email: 'test@example.com' } });
     const props = defaultProps();
 
-    renderHook(() => useGoogleAuthBridge(props));
+    renderHook(() => useOAuthBridge(props));
 
     await waitFor(() => {
       expect(mockGetSession).toHaveBeenCalled();
@@ -152,7 +152,7 @@ describe('useGoogleAuthBridge', () => {
     const props = defaultProps();
 
     const { rerender } = renderHook(
-      (p: Parameters<typeof useGoogleAuthBridge>[0]) => useGoogleAuthBridge(p),
+      (p: Parameters<typeof useOAuthBridge>[0]) => useOAuthBridge(p),
       { initialProps: props }
     );
 
@@ -169,7 +169,7 @@ describe('useGoogleAuthBridge', () => {
     const props = defaultProps();
 
     const { rerender } = renderHook(
-      (p: Parameters<typeof useGoogleAuthBridge>[0]) => useGoogleAuthBridge(p),
+      (p: Parameters<typeof useOAuthBridge>[0]) => useOAuthBridge(p),
       { initialProps: props }
     );
 
@@ -200,7 +200,7 @@ describe('useGoogleAuthBridge', () => {
     });
     const props = defaultProps();
 
-    renderHook(() => useGoogleAuthBridge(props));
+    renderHook(() => useOAuthBridge(props));
 
     await waitFor(() => {
       expect(props.login).toHaveBeenCalled();
@@ -223,7 +223,7 @@ describe('useGoogleAuthBridge', () => {
     });
     const props = defaultProps();
 
-    renderHook(() => useGoogleAuthBridge(props));
+    renderHook(() => useOAuthBridge(props));
 
     await waitFor(() => {
       expect(props.login).toHaveBeenCalled();
@@ -244,7 +244,7 @@ describe('useGoogleAuthBridge', () => {
     );
     const props = defaultProps();
 
-    const { result } = renderHook(() => useGoogleAuthBridge(props));
+    const { result } = renderHook(() => useOAuthBridge(props));
 
     // Should be pending while getSession hasn't resolved
     await waitFor(() => {
@@ -261,7 +261,7 @@ describe('useGoogleAuthBridge', () => {
 
   it('returns isPending=false when already authenticated (no getSession call)', () => {
     const props = defaultProps({ isAuthenticated: true });
-    const { result } = renderHook(() => useGoogleAuthBridge(props));
+    const { result } = renderHook(() => useOAuthBridge(props));
     expect(result.current.isPending).toBe(false);
   });
 });
