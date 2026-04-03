@@ -13,15 +13,10 @@ export function isKeychainAvailable(): boolean {
 }
 
 /**
- * Get the list of available wallet providers.
- * HiveSigner is always available (web-based OAuth).
- * Keychain requires the browser extension.
+ * Get the list of wallet providers to display on the auth page.
+ * Both are always shown — Keychain availability is checked at login time,
+ * not at render time, so users know the option exists even without the extension.
  */
 export function getAvailableProviders(): WalletProvider[] {
-  const providers: WalletProvider[] = [];
-  if (isKeychainAvailable()) {
-    providers.push('keychain');
-  }
-  providers.push('hivesigner');
-  return providers;
+  return ['keychain', 'hivesigner'];
 }
