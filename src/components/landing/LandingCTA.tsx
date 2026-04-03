@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import { Shield, CheckCircle, ArrowRight, User, FileText } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { signIn } from 'next-auth/react';
 import { Button } from '@/components/core/Button';
 import { Logo } from '@/components/ui/Logo';
 import { useModal } from '@/components/modals/ModalProvider';
@@ -107,30 +106,32 @@ export default function LandingCTA() {
 
               <h3 className="mb-3 font-display text-2xl font-bold">Quick Start</h3>
               <p className="mb-6 text-sb-text-muted">
-                Jump in instantly with your email or Google account.
+                Jump in instantly with your Google or X account.
               </p>
 
               <ul className="mb-8 space-y-3">
-                {['Instant access', 'Read & explore content', 'Upgrade to Hive anytime'].map(
-                  (benefit, i) => (
-                    <li key={i} className="flex items-center gap-3 text-sm">
-                      <CheckCircle className="h-5 w-5 flex-shrink-0 text-sb-teal" />
-                      <span>{benefit}</span>
-                    </li>
-                  )
-                )}
+                {[
+                  'Instant sign-up',
+                  'Full earning capabilities',
+                  'Your own blockchain account',
+                ].map((benefit, i) => (
+                  <li key={i} className="flex items-center gap-3 text-sm">
+                    <CheckCircle className="h-5 w-5 flex-shrink-0 text-sb-teal" />
+                    <span>{benefit}</span>
+                  </li>
+                ))}
               </ul>
 
               <Link href="/auth">
                 <Button variant="outline" className="group w-full py-6 text-lg">
                   <User className="mr-2 h-5 w-5" />
-                  Quick Start with Email
+                  Quick Start
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
 
               <p className="mt-4 text-center text-xs text-sb-text-muted">
-                Email &bull; Google &bull; Upgrade to earn later
+                Google &bull; X &bull; Full earning &amp; blockchain features
               </p>
             </motion.div>
           </div>
@@ -180,14 +181,15 @@ export default function LandingCTA() {
           <p className="mx-auto mb-10 max-w-2xl text-lg text-white/80 sm:text-xl">
             Free to join. Free to post. Free to earn.
           </p>
-          <Button
-            size="lg"
-            className="group px-12 py-7 text-lg font-semibold shadow-2xl shadow-sb-teal/30 transition-all duration-300 hover:scale-105 hover:shadow-sb-teal/50"
-            onClick={() => signIn('google', { callbackUrl: '/auth/google-callback' })}
-          >
-            Sign Up Free
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+          <Link href="/auth">
+            <Button
+              size="lg"
+              className="group px-12 py-7 text-lg font-semibold shadow-2xl shadow-sb-teal/30 transition-all duration-300 hover:scale-105 hover:shadow-sb-teal/50"
+            >
+              Sign Up Free
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
           <div className="mt-6">
             <Link
               href="/whitepaper"
