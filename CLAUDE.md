@@ -337,31 +337,38 @@ import { getWorkerBeeClient } from '@/lib/hive-workerbee/client';
 
 ### Authentication Flow
 
-Two sign-up methods converge in `AuthContext` — every user ends up with a real Hive account and their own keys:
+Three sign-up methods converge in `AuthContext` — every user ends up with a real Hive account:
 1. **Hive Auth** (WalletProvider): Keychain, HiveSigner → existing Hive users connect directly
-2. **Google OAuth** (NextAuth): Google sign-in → Hive account created during onboarding, keys downloaded by user
+2. **Google OAuth** (NextAuth): Google sign-in → Hive account created during onboarding
+3. **Twitter/X OAuth** (NextAuth): Twitter sign-in → same flow as Google
+
+OAuth users (Google/Twitter) use the **signing relay** for all posting-key operations (vote, comment, post, claim rewards). Keys stay encrypted on the server — no key download required. Users can optionally download keys later via `/onboarding/guide` to use Keychain or other Hive apps.
 
 `src/contexts/WalletProvider.tsx` provides client-side wallet interactions (Keychain + HiveSigner).
 `src/contexts/AuthContext.tsx` manages auth state and persists to localStorage.
 `src/lib/hive/broadcast-client.ts` abstracts transaction broadcasting (routes to wallet or signing relay).
 
-### Google OAuth Onboarding Flow
+### OAuth Onboarding Flow (Google + Twitter/X)
 
-Google OAuth users go through this flow:
-1. Sign in with Google → NextAuth creates session → Prisma stores user
+OAuth users go through this flow:
+1. Sign in with Google or Twitter/X → NextAuth creates session → Prisma stores `CustodialUser`
 2. Redirect to `/onboarding/username` → user picks a Hive username (`sb-` prefix)
 3. Server calls `create_claimed_account` using account creation tokens → real Hive account created
-4. User downloads their Hive keys during onboarding
-5. Managed signing relay available as a convenience for blockchain operations
+4. User lands directly on `/sportsbites` — no key download step
+5. Signing relay handles all posting-key operations (vote, comment, post, claim rewards)
+6. Key download available optionally at `/onboarding/guide` for power users who want Keychain
+
+**Twitter/X note:** Twitter OAuth 2.0 does not provide email addresses. `CustodialUser.email` and `googleId` are nullable — Twitter users have `twitterId` + `twitterHandle` instead.
 
 Key files:
 - `src/app/api/hive/create-account/route.ts` — Account creation endpoint
 - `src/app/api/hive/sign/route.ts` — Managed signing relay endpoint
-- `src/app/api/hive/download-keys/route.ts` — Key download endpoint
+- `src/app/api/hive/download-keys/route.ts` — Key download endpoint (optional)
 - `src/lib/hive/signing-relay.ts` — Signing relay logic (validates + broadcasts)
 - `src/lib/hive/account-creation.ts` — Account creation logic
 - `src/hooks/useBroadcast.ts` — Unified broadcast abstraction (handles both auth types)
 - `src/app/onboarding/username/page.tsx` — Username picker page
+- `src/contexts/auth/useOAuthBridge.ts` — Bridges NextAuth session → AuthContext (all OAuth providers)
 
 ### Database (Prisma + PostgreSQL)
 
