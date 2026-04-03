@@ -121,20 +121,24 @@ export const POST = createApiHandler(ROUTE, async (request) => {
       }
     }
 
-    // Check for duplicate (unique constraint will also catch this)
-    const existing = await prisma.curation.findUnique({
+    // One curation per post — check if ANY curator has already curated this
+    const existing = await prisma.curation.findFirst({
       where: {
-        curatorUsername_author_permlink: {
-          curatorUsername: user.username,
-          author,
-          permlink,
-        },
+        author,
+        permlink,
+        status: { not: 'failed' },
       },
+      select: { curatorUsername: true },
     });
 
     if (existing) {
+      const label = type === 'sportsbite' ? 'sportsbite' : 'post';
+      const who =
+        existing.curatorUsername === user.username
+          ? 'You have'
+          : `@${existing.curatorUsername} has`;
       return NextResponse.json(
-        { success: false, error: `You have already curated this ${type}` },
+        { success: false, error: `${who} already curated this ${label}` },
         { status: 409 }
       );
     }

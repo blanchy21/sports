@@ -55,13 +55,11 @@ export function CurateButton({
     staleTime: 5 * 60 * 1000,
   });
 
-  // Check if current user has curated this content
-  const isCuratedByMe =
-    alreadyCurated ||
-    justCurated ||
-    (curationStatus?.curations ?? []).some(
-      (c: { curator: string }) => c.curator === user?.username
-    );
+  // Check if ANY curator has already curated this content (one curation per post)
+  const isCurated = alreadyCurated || justCurated || (curationStatus?.curations ?? []).length > 0;
+
+  // Who curated it (for display)
+  const curatedBy = (curationStatus?.curations ?? []).map((c: { curator: string }) => c.curator);
 
   const handleCurate = useCallback(async () => {
     if (!confirming) {
@@ -110,11 +108,13 @@ export function CurateButton({
   // Don't render for non-curators
   if (statusLoading || !isCurator) return null;
 
-  // Already curated state
-  if (isCuratedByMe) {
+  // Already curated state — show who curated it
+  if (isCurated) {
+    const curatorLabel = curatedBy.length > 0 ? `by @${curatedBy[0]}` : '';
     return (
       <span
         className={cn('inline-flex items-center gap-1 text-xs font-medium text-sb-gold', className)}
+        title={curatorLabel ? `Curated ${curatorLabel}` : 'Curated'}
       >
         <CheckCircle className="h-3.5 w-3.5" />
         Curated
