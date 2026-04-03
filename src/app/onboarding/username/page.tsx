@@ -28,7 +28,7 @@ export default function OnboardingUsernamePage() {
     if (!isClient) return;
     if (user?.username) {
       if (user.hiveUsername) {
-        router.replace('/onboarding/guide');
+        router.replace('/sportsbites');
       }
       // User is set and has no hiveUsername — stay on this page
       return;
@@ -157,8 +157,11 @@ export default function OnboardingUsernamePage() {
         return;
       }
 
-      // Success — redirect to onboarding guide
-      router.replace('/onboarding/guide');
+      // Mark onboarding complete — keys stay on server, user can download later
+      await fetch('/api/hive/complete-onboarding', { method: 'POST' });
+
+      // Success — go straight to the app
+      router.replace('/sportsbites');
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {

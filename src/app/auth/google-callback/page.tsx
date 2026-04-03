@@ -50,9 +50,9 @@ export default function GoogleCallbackPage() {
 
       if (!user.hiveUsername) {
         router.replace('/onboarding/username');
-      } else if (!user.onboardingCompleted) {
-        router.replace('/onboarding/guide');
       } else {
+        // User has a Hive account — go straight to the app
+        // (key download is optional, available in Settings)
         router.replace('/sportsbites');
       }
     };
