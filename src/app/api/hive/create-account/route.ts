@@ -37,11 +37,11 @@ export const POST = createApiHandler('/api/hive/create-account', async (request:
   }
 
   // Rate limit — prevent rapid ACT exhaustion (3 per day per user)
+  // Not strict: falls back to in-memory when Redis is unavailable/over quota
   const rateLimit = await checkRateLimit(
     user.userId,
     RATE_LIMITS.accountCreation,
-    'accountCreation',
-    { strict: true }
+    'accountCreation'
   );
   if (!rateLimit.success) {
     return apiError(
