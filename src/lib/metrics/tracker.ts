@@ -259,9 +259,9 @@ export async function trackPostCreation(author: string): Promise<void> {
       },
     });
 
-    // Lifetime stats
-    incrementUserStat(author, 'totalPosts');
-    updatePostingStreak(author);
+    // Lifetime stats — await increments so badge evaluator sees updated values
+    await Promise.all([incrementUserStat(author, 'totalPosts'), updatePostingStreak(author)]);
+    evaluateBadgesForAction(author, 'post_created').catch(() => {});
     evaluateBadgesForAction(author, 'streak_updated').catch(() => {});
   } catch (error) {
     console.error('Error tracking post creation:', error);

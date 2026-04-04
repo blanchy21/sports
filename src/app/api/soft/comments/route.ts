@@ -347,9 +347,11 @@ export const POST = csrfProtected(
     }
 
     // Lifetime stats + badge evaluation (fire-and-forget)
-    incrementUserStat(user.username, 'totalComments');
-    evaluateBadgesForAction(user.username, 'comment_created').catch((err) =>
-      logger.error('Badge evaluation failed', 'badges', err)
+    // await stat increment so the row exists before badge evaluation reads it
+    incrementUserStat(user.username, 'totalComments').then(() =>
+      evaluateBadgesForAction(user.username, 'comment_created').catch((err) =>
+        logger.error('Badge evaluation failed', 'badges', err)
+      )
     );
 
     const comment: SoftComment = {

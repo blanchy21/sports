@@ -240,9 +240,11 @@ export const POST = csrfProtected(
     });
 
     // Lifetime stats + badge evaluation (fire-and-forget)
-    incrementUserStat(user.username, 'totalSportsbites');
-    evaluateBadgesForAction(user.username, 'sportsbite_created').catch((err) =>
-      logger.error('Badge evaluation failed', 'badges', err)
+    // await stat increment so the row exists before badge evaluation reads it
+    incrementUserStat(user.username, 'totalSportsbites').then(() =>
+      evaluateBadgesForAction(user.username, 'sportsbite_created').catch((err) =>
+        logger.error('Badge evaluation failed', 'badges', err)
+      )
     );
 
     // Keep function alive for lastActiveAt update via after()
