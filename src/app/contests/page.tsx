@@ -53,9 +53,20 @@ export default function ContestsPage() {
         )}
         {lmsCompetitions && lmsCompetitions.length > 0 && (
           <div className="mb-4 space-y-4">
-            {lmsCompetitions.map((comp) => (
-              <LmsCompetitionCard key={comp.id} competition={comp} />
-            ))}
+            {[...lmsCompetitions]
+              .sort((a, b) => {
+                const order: Record<string, number> = {
+                  picking: 0,
+                  open: 1,
+                  locked: 2,
+                  results: 3,
+                  complete: 4,
+                };
+                return (order[a.status] ?? 1) - (order[b.status] ?? 1);
+              })
+              .map((comp) => (
+                <LmsCompetitionCard key={comp.id} competition={comp} />
+              ))}
           </div>
         )}
 
@@ -70,9 +81,14 @@ export default function ContestsPage() {
         )}
         {iplBbCompetitions && iplBbCompetitions.length > 0 && (
           <div className="mb-4 space-y-4">
-            {iplBbCompetitions.map((comp) => (
-              <IplBbCompetitionCard key={comp.id} competition={comp} />
-            ))}
+            {[...iplBbCompetitions]
+              .sort((a, b) => {
+                const order: Record<string, number> = { active: 0, open: 1, complete: 2 };
+                return (order[a.status] ?? 1) - (order[b.status] ?? 1);
+              })
+              .map((comp) => (
+                <IplBbCompetitionCard key={comp.id} competition={comp} />
+              ))}
           </div>
         )}
 
