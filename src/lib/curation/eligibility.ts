@@ -23,7 +23,7 @@ export function hasSportsblockBeneficiary(
 
   return beneficiaries.some(
     (b) =>
-      b.account === BENEFICIARY_REQUIREMENTS.ACCOUNT &&
+      BENEFICIARY_REQUIREMENTS.ACCOUNTS.includes(b.account) &&
       b.weight >= BENEFICIARY_REQUIREMENTS.MIN_WEIGHT
   );
 }
@@ -57,7 +57,7 @@ export async function checkCurationEligibility(post: {
   if (!hasSportsblockBeneficiary(post.beneficiaries)) {
     return {
       eligible: false,
-      reason: `Post does not have the required ${BENEFICIARY_REQUIREMENTS.ACCOUNT} beneficiary (${BENEFICIARY_REQUIREMENTS.MIN_WEIGHT / 100}%)`,
+      reason: `Post does not have the required sportsblock or community beneficiary (${BENEFICIARY_REQUIREMENTS.MIN_WEIGHT / 100}%)`,
     };
   }
 
