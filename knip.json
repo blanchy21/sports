@@ -38,6 +38,7 @@
     "pg",
     "@types/pg",
     "eslint-config-next",
+    "critters",
     "husky",
     "lint-staged",
     "ts-node"
