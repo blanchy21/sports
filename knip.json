@@ -1,0 +1,55 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/app/**/{page,layout,route,loading,error,not-found,template,default,global-error}.{ts,tsx}",
+    "src/middleware.ts",
+    "src/instrumentation.ts",
+    "next.config.ts",
+    "sentry.{client,server,edge}.config.ts",
+    "jest.config.ts",
+    "jest.setup.ts",
+    "playwright.config.ts",
+    "postcss.config.{js,mjs,cjs,ts}",
+    "tailwind.config.{js,mjs,cjs,ts}"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "!src/generated/**",
+    "!src/**/*.test.{ts,tsx}",
+    "!src/**/*.spec.{ts,tsx}"
+  ],
+  "ignore": [
+    "src/generated/**",
+    "scripts/**",
+    "tests/**",
+    "**/*.test.{ts,tsx}",
+    "**/*.spec.{ts,tsx}"
+  ],
+  "ignoreDependencies": [
+    "autoprefixer",
+    "postcss",
+    "tailwindcss",
+    "tailwindcss-animate",
+    "@tailwindcss/typography",
+    "prettier-plugin-tailwindcss",
+    "prisma",
+    "@prisma/client",
+    "@prisma/adapter-pg",
+    "pg",
+    "@types/pg",
+    "eslint-config-next",
+    "critters",
+    "husky",
+    "lint-staged",
+    "ts-node"
+  ],
+  "ignoreBinaries": ["prisma"],
+  "next": {
+    "entry": [
+      "src/app/**/{page,layout,route,loading,error,not-found,template,default,global-error}.{ts,tsx}",
+      "src/middleware.ts",
+      "src/instrumentation.ts",
+      "next.config.ts"
+    ]
+  }
+}

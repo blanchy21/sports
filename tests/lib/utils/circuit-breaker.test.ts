@@ -5,7 +5,6 @@ import {
   CircuitBreakerRegistry,
   CircuitState,
   CircuitOpenError,
-  withCircuitBreaker,
 } from '@/lib/utils/circuit-breaker';
 import { isOk, isErr } from '@/lib/utils/result';
 
@@ -187,13 +186,5 @@ describe('CircuitBreakerRegistry', () => {
     expect(stats.has('x')).toBe(true);
     expect(stats.has('y')).toBe(true);
     expect(stats.get('x')!.state).toBe(CircuitState.CLOSED);
-  });
-});
-
-describe('withCircuitBreaker convenience', () => {
-  it('uses global registry to execute through named circuit', async () => {
-    const r = await withCircuitBreaker('test-convenience', async () => 42);
-    expect(isOk(r)).toBe(true);
-    if (isOk(r)) expect(r.data).toBe(42);
   });
 });

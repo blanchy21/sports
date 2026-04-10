@@ -398,16 +398,3 @@ export function getCircuitBreakerRegistry(): CircuitBreakerRegistry {
   }
   return globalRegistry;
 }
-
-/**
- * Convenience function to execute through a named circuit
- */
-export async function withCircuitBreaker<T>(
-  name: string,
-  fn: () => Promise<T>,
-  config?: Partial<CircuitBreakerConfig>
-): Promise<Result<T, CircuitOpenError | Error>> {
-  const registry = getCircuitBreakerRegistry();
-  const circuit = registry.getOrCreate(name, config);
-  return circuit.execute(fn);
-}
