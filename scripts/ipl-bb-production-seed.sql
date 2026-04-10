@@ -75,7 +75,7 @@ INSERT INTO ipl_bb_competitions (id, title, season, round_number, status, date_f
 VALUES
   ('ipl-bb-2026-r1', 'IPL Boundary Blackjack — Round 1', 'IPL 2026', 1, 'active', '2026-03-28T00:00:00Z', '2026-04-03T23:59:59Z', 2500, 1500, 1000, 7),
   ('ipl-bb-2026-r2', 'IPL Boundary Blackjack — Round 2', 'IPL 2026', 2, 'open', '2026-04-04T00:00:00Z', '2026-04-08T23:59:59Z', 2500, 1500, 1000, 7),
-  ('ipl-bb-2026-r3', 'IPL Boundary Blackjack — Round 3', 'IPL 2026', 3, 'open', '2026-04-09T00:00:00Z', '2026-04-12T23:59:59Z', 2500, 1500, 1000, 6)
+  ('ipl-bb-2026-r3', 'IPL Boundary Blackjack — Round 3', 'IPL 2026', 3, 'open', '2026-04-09T00:00:00Z', '2026-04-13T23:59:59Z', 2500, 1500, 1000, 7)
 ON CONFLICT (id) DO NOTHING;
 
 -- 4. Round 1 matches (28 Mar – 3 Apr) — ALL OPEN
@@ -102,15 +102,16 @@ VALUES
   ('ipl-bb-r2-m7', 'ipl-bb-2026-r2', 7, 'CSK', 'DC', 'MA Chidambaram Stadium, Chennai', '2026-04-08T14:00:00Z', 'upcoming')
 ON CONFLICT (id) DO NOTHING;
 
--- 6. Round 3 matches (9–12 Apr, double-headers on Sat 11 & Sun 12) — UPCOMING
+-- 6. Round 3 matches (9–13 Apr) — UPCOMING
 INSERT INTO ipl_bb_matches (id, competition_id, match_number, home_team, away_team, venue, kickoff_time, status)
 VALUES
   ('ipl-bb-r3-m1', 'ipl-bb-2026-r3', 1, 'LSG', 'KKR', 'Ekana Cricket Stadium, Lucknow', '2026-04-09T14:00:00Z', 'upcoming'),
-  ('ipl-bb-r3-m2', 'ipl-bb-2026-r3', 2, 'GT', 'RCB', 'Narendra Modi Stadium, Ahmedabad', '2026-04-10T14:00:00Z', 'upcoming'),
-  ('ipl-bb-r3-m3', 'ipl-bb-2026-r3', 3, 'PBKS', 'SRH', 'PCA Stadium, Mohali', '2026-04-11T10:00:00Z', 'upcoming'),
-  ('ipl-bb-r3-m4', 'ipl-bb-2026-r3', 4, 'CSK', 'DC', 'MA Chidambaram Stadium, Chennai', '2026-04-11T14:00:00Z', 'upcoming'),
-  ('ipl-bb-r3-m5', 'ipl-bb-2026-r3', 5, 'LSG', 'GT', 'Ekana Cricket Stadium, Lucknow', '2026-04-12T10:00:00Z', 'upcoming'),
-  ('ipl-bb-r3-m6', 'ipl-bb-2026-r3', 6, 'MI', 'RCB', 'Wankhede Stadium, Mumbai', '2026-04-12T14:00:00Z', 'upcoming')
+  ('ipl-bb-r3-m2', 'ipl-bb-2026-r3', 2, 'RCB', 'RR', 'Narendra Modi Stadium, Ahmedabad', '2026-04-10T14:00:00Z', 'upcoming'),
+  ('ipl-bb-r3-m3', 'ipl-bb-2026-r3', 3, 'SRH', 'PBKS', 'PCA Stadium, Mohali', '2026-04-11T10:00:00Z', 'upcoming'),
+  ('ipl-bb-r3-m4', 'ipl-bb-2026-r3', 4, 'DC', 'CSK', 'MA Chidambaram Stadium, Chennai', '2026-04-11T14:00:00Z', 'upcoming'),
+  ('ipl-bb-r3-m7', 'ipl-bb-2026-r3', 7, 'LSG', 'GT', 'New Chandigarh', '2026-04-12T10:00:00Z', 'upcoming'),
+  ('ipl-bb-r3-m8', 'ipl-bb-2026-r3', 8, 'MI', 'RCB', 'Wankhede Stadium, Mumbai', '2026-04-12T14:00:00Z', 'upcoming'),
+  ('ipl-bb-r3-m9', 'ipl-bb-2026-r3', 9, 'SRH', 'RR', 'Rajiv Gandhi Intl Stadium, Hyderabad', '2026-04-13T14:00:00Z', 'upcoming')
 ON CONFLICT (id) DO NOTHING;
 
 -- 7. Verification
