@@ -367,8 +367,6 @@ export const SPORT_CATEGORIES = [
   },
 ] as const satisfies readonly SportCategory[];
 
-export type SportCategoryId = (typeof SPORT_CATEGORIES)[number]['id'];
-
 export interface SportsEvent {
   id: string;
   name: string;

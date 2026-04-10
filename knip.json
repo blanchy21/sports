@@ -10,10 +10,13 @@
     "jest.setup.ts",
     "playwright.config.ts",
     "postcss.config.{js,mjs,cjs,ts}",
-    "tailwind.config.{js,mjs,cjs,ts}"
+    "tailwind.config.{js,mjs,cjs,ts}",
+    "content/**/*.{ts,tsx}",
+    "e2e/**/*.{ts,tsx}"
   ],
   "project": [
     "src/**/*.{ts,tsx}",
+    "content/**/*.{ts,tsx}",
     "!src/generated/**",
     "!src/**/*.test.{ts,tsx}",
     "!src/**/*.spec.{ts,tsx}"

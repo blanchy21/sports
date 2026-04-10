@@ -13,29 +13,21 @@
  * import type { Community } from '@/types/community';
  */
 
-// Re-export shared Hive types
-import { HiveAccount, HiveAuthUser } from '../lib/shared/types';
-export type { HiveAccount, HiveAuthUser };
-
 // User types
 export type { User, FollowRelationship } from './user';
 
 // Post types
-export type { Post, Comment } from './post';
+export type { Post } from './post';
 
 // Sports types
-export type { SportCategory, SportCategoryId, SportsEvent, EventsApiResponse } from './sports';
+export type { SportCategory, SportsEvent, EventsApiResponse } from './sports';
 export { SPORT_CATEGORIES } from './sports';
 
 // Community types
 export type {
   CommunityType,
-  CommunityMemberRole,
-  CommunityMemberStatus,
-  CommunityInviteStatus,
   Community,
   CommunityMember,
-  CommunityInvite,
   CreateCommunityInput,
   UpdateCommunityInput,
   CommunityFilters,
@@ -46,10 +38,7 @@ export type {
 export type { CryptoPriceData } from './crypto';
 
 // UI types
-export type { AuthType, AuthState, ThemeState, NotificationItem, ModalState } from './ui';
-
-// API response types
-export type { ApiResponse, ApiSuccessResponse, ApiErrorResponse } from './api';
+export type { AuthType, AuthState, ThemeState } from './ui';
 
 // Media types
 export type { ESPNNewsArticle, ESPNNewsApiResponse } from './media';
