@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import {
   createPowerUpOperation,
@@ -23,6 +24,26 @@ import { createApiHandler } from '@/lib/api/response';
 export const dynamic = 'force-dynamic';
 
 const ROUTE = '/api/hive/power';
+
+const hiveAccountName = z.string().regex(/^[a-z][a-z0-9.-]{2,15}$/, 'Invalid Hive account name');
+
+const powerBodySchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('powerUp'),
+    account: hiveAccountName,
+    amount: z.number().positive().min(0.001, 'Minimum power up amount is 0.001 HIVE'),
+    to: hiveAccountName.optional(),
+  }),
+  z.object({
+    action: z.literal('powerDown'),
+    account: hiveAccountName,
+    amount: z.number().positive(),
+  }),
+  z.object({
+    action: z.literal('cancelPowerDown'),
+    account: hiveAccountName,
+  }),
+]);
 
 // Validate Hive account name
 function isValidAccountName(account: string): boolean {
@@ -193,11 +214,9 @@ export const GET = createApiHandler(ROUTE, async (request) => {
     powerDown: powerDownInfo || { isActive: false },
     // Conversion rates for UI
     conversionRate: {
-      vestsPerHive: hiveToVests(
-        1,
-        totalVestingShares.amount,
-        totalVestingFundHive.amount
-      ).toFixed(6),
+      vestsPerHive: hiveToVests(1, totalVestingShares.amount, totalVestingFundHive.amount).toFixed(
+        6
+      ),
       hivePerVest: vestsToHive(1, totalVestingShares.amount, totalVestingFundHive.amount).toFixed(
         6
       ),
@@ -223,13 +242,15 @@ export const POST = csrfProtected(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { action, account, amount, to } = body;
-
-    // Validate account
-    if (!account || !isValidAccountName(account)) {
-      return NextResponse.json({ error: 'Valid account is required' }, { status: 400 });
+    let parsed;
+    try {
+      parsed = powerBodySchema.parse(await request.json());
+    } catch (err) {
+      const message = err instanceof z.ZodError ? err.issues[0]?.message : 'Invalid request body';
+      return NextResponse.json({ error: message ?? 'Invalid request body' }, { status: 400 });
     }
+
+    const { action, account } = parsed;
 
     // Verify the authenticated user matches the account
     if (user.hiveUsername !== account && user.username !== account) {
@@ -242,20 +263,7 @@ export const POST = csrfProtected(
     // Handle different actions
     switch (action) {
       case 'powerUp': {
-        if (!amount || typeof amount !== 'number' || amount <= 0) {
-          return NextResponse.json(
-            { error: 'Valid positive amount is required for power up' },
-            { status: 400 }
-          );
-        }
-
-        if (amount < 0.001) {
-          return NextResponse.json(
-            { error: 'Minimum power up amount is 0.001 HIVE' },
-            { status: 400 }
-          );
-        }
-
+        const { amount, to } = parsed;
         const operation = createPowerUpOperation({
           from: account,
           to: to || account,
@@ -272,12 +280,7 @@ export const POST = csrfProtected(
       }
 
       case 'powerDown': {
-        if (!amount || typeof amount !== 'number' || amount <= 0) {
-          return NextResponse.json(
-            { error: 'Valid positive amount is required for power down' },
-            { status: 400 }
-          );
-        }
+        const { amount } = parsed;
 
         // Fetch global properties to convert HIVE to VESTS
         const globalProps = (await makeHiveApiCall(

@@ -24,13 +24,37 @@ import {
   buildCancelUnstakeOp,
   validateOperation,
 } from '@/lib/hive-engine/operations';
-import { formatQuantity, isValidAccountName, isValidQuantity } from '@/lib/hive-engine/client';
+import { formatQuantity, isValidAccountName } from '@/lib/hive-engine/client';
 import { MEDALS_CONFIG, CACHE_TTLS } from '@/lib/hive-engine/constants';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { createApiHandler, apiError } from '@/lib/api/response';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
+
+const hiveAccountName = z.string().regex(/^[a-z][a-z0-9.-]{2,15}$/, 'Invalid Hive account name');
+const quantityString = z
+  .string()
+  .regex(/^\d+(\.\d+)?$/, 'Quantity must be a numeric string, e.g. "100.000"');
+
+const stakeBodySchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('stake'),
+    account: hiveAccountName,
+    quantity: quantityString,
+  }),
+  z.object({
+    action: z.literal('unstake'),
+    account: hiveAccountName,
+    quantity: quantityString,
+  }),
+  z.object({
+    action: z.literal('cancelUnstake'),
+    account: hiveAccountName,
+    txId: z.string().min(1),
+  }),
+]);
 
 /**
  * GET - Get staking information
@@ -126,15 +150,16 @@ export const POST = createApiHandler('/api/hive-engine/stake', async (request, c
       });
     }
 
-    const body = await request.json();
-    const { action, quantity, account, txId } = body;
-
-    // Validate account
-    if (!account || !isValidAccountName(account)) {
-      return apiError('Valid account is required', 'VALIDATION_ERROR', 400, {
+    let parsed;
+    try {
+      parsed = stakeBodySchema.parse(await request.json());
+    } catch (err) {
+      const message = err instanceof z.ZodError ? err.issues[0]?.message : 'Invalid request body';
+      return apiError(message ?? 'Invalid request body', 'VALIDATION_ERROR', 400, {
         requestId: ctx.requestId,
       });
     }
+    const { action, account } = parsed;
 
     // Verify the authenticated user matches the account
     if (user.hiveUsername !== account && user.username !== account) {
@@ -146,12 +171,7 @@ export const POST = createApiHandler('/api/hive-engine/stake', async (request, c
     // Handle different actions
     switch (action) {
       case 'stake': {
-        if (!quantity || !isValidQuantity(quantity)) {
-          return apiError('Valid quantity is required (e.g., "100.000")', 'VALIDATION_ERROR', 400, {
-            requestId: ctx.requestId,
-          });
-        }
-
+        const { quantity } = parsed;
         const operation = buildStakeOp(account, quantity);
         const validation = validateOperation(operation);
 
@@ -170,12 +190,7 @@ export const POST = createApiHandler('/api/hive-engine/stake', async (request, c
       }
 
       case 'unstake': {
-        if (!quantity || !isValidQuantity(quantity)) {
-          return apiError('Valid quantity is required (e.g., "100.000")', 'VALIDATION_ERROR', 400, {
-            requestId: ctx.requestId,
-          });
-        }
-
+        const { quantity } = parsed;
         const operation = buildUnstakeOp(account, quantity);
         const validation = validateOperation(operation);
 
@@ -194,12 +209,7 @@ export const POST = createApiHandler('/api/hive-engine/stake', async (request, c
       }
 
       case 'cancelUnstake': {
-        if (!txId || typeof txId !== 'string') {
-          return apiError('Transaction ID (txId) is required', 'VALIDATION_ERROR', 400, {
-            requestId: ctx.requestId,
-          });
-        }
-
+        const { txId } = parsed;
         const operation = buildCancelUnstakeOp(account, txId);
         const validation = validateOperation(operation);
 

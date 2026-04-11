@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import { createDelegateVestsOperation } from '@/lib/hive-workerbee/shared';
 import { csrfProtected } from '@/lib/api/csrf';
@@ -19,10 +20,17 @@ export const dynamic = 'force-dynamic';
 
 const ROUTE = '/api/hive/delegate';
 
-function isValidAccountName(account: string): boolean {
-  if (!account || typeof account !== 'string') return false;
-  return /^[a-z][a-z0-9.-]{2,15}$/.test(account);
-}
+const hiveAccountName = z.string().regex(/^[a-z][a-z0-9.-]{2,15}$/, 'Invalid Hive account name');
+
+const delegateBodySchema = z
+  .object({
+    delegator: hiveAccountName,
+    delegatee: hiveAccountName,
+    amount: z.number().min(0, 'Amount must be non-negative (0 removes delegation)'),
+  })
+  .refine((data) => data.delegator !== data.delegatee, {
+    message: 'Cannot delegate to yourself',
+  });
 
 interface GlobalProperties {
   total_vesting_fund_hive: string;
@@ -53,32 +61,19 @@ export const POST = csrfProtected(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { delegator, delegatee, amount } = body;
-
-    if (!delegator || !isValidAccountName(delegator)) {
-      return NextResponse.json({ error: 'Valid delegator account is required' }, { status: 400 });
+    let parsed;
+    try {
+      parsed = delegateBodySchema.parse(await request.json());
+    } catch (err) {
+      const message = err instanceof z.ZodError ? err.issues[0]?.message : 'Invalid request body';
+      return NextResponse.json({ error: message ?? 'Invalid request body' }, { status: 400 });
     }
-
-    if (!delegatee || !isValidAccountName(delegatee)) {
-      return NextResponse.json({ error: 'Valid delegatee account is required' }, { status: 400 });
-    }
-
-    if (delegator === delegatee) {
-      return NextResponse.json({ error: 'Cannot delegate to yourself' }, { status: 400 });
-    }
+    const { delegator, delegatee, amount } = parsed;
 
     if (user.hiveUsername !== delegator && user.username !== delegator) {
       return NextResponse.json(
         { error: 'Cannot build delegation operations for other accounts' },
         { status: 403 }
-      );
-    }
-
-    if (typeof amount !== 'number' || amount < 0) {
-      return NextResponse.json(
-        { error: 'Amount must be a non-negative number (0 to remove delegation)' },
-        { status: 400 }
       );
     }
 
@@ -91,11 +86,7 @@ export const POST = csrfProtected(
     const totalVestingShares = parseAsset(globalProps.total_vesting_shares);
     const totalVestingFundHive = parseAsset(globalProps.total_vesting_fund_hive);
 
-    const vestsAmount = hiveToVests(
-      amount,
-      totalVestingShares.amount,
-      totalVestingFundHive.amount
-    );
+    const vestsAmount = hiveToVests(amount, totalVestingShares.amount, totalVestingFundHive.amount);
 
     const operation = createDelegateVestsOperation(
       delegator,
