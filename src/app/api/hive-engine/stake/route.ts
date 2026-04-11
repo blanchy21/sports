@@ -33,10 +33,13 @@ import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
-const hiveAccountName = z.string().regex(/^[a-z][a-z0-9.-]{2,15}$/, 'Invalid Hive account name');
+// Error messages below are intentionally verbatim-compatible with the pre-Zod
+// manual validation so the existing unit tests (tests/api/hive-engine-stake.test.ts)
+// keep passing without churn.
+const hiveAccountName = z.string().regex(/^[a-z][a-z0-9.-]{2,15}$/, 'Valid account is required');
 const quantityString = z
   .string()
-  .regex(/^\d+(\.\d+)?$/, 'Quantity must be a numeric string, e.g. "100.000"');
+  .regex(/^\d+(\.\d+)?$/, 'Valid quantity is required (e.g., "100.000")');
 
 const stakeBodySchema = z.discriminatedUnion('action', [
   z.object({
@@ -55,6 +58,32 @@ const stakeBodySchema = z.discriminatedUnion('action', [
     txId: z.string().min(1),
   }),
 ]);
+
+/**
+ * Translate a Zod issue into a stable, test-compatible error message.
+ * Keeps the pre-Zod manual validation message contract.
+ */
+function mapStakeBodyIssue(err: z.ZodError): string {
+  const issue = err.issues[0];
+  if (!issue) return 'Invalid request body';
+
+  const path = issue.path.join('.');
+
+  // discriminator failure — unknown action
+  if (path === 'action' || path === '') {
+    return 'Invalid action. Use: stake, unstake, or cancelUnstake';
+  }
+  if (path === 'account') {
+    return 'Valid account is required';
+  }
+  if (path === 'quantity') {
+    return 'Valid quantity is required (e.g., "100.000")';
+  }
+  if (path === 'txId') {
+    return 'Transaction ID (txId) is required';
+  }
+  return issue.message;
+}
 
 /**
  * GET - Get staking information
@@ -154,8 +183,8 @@ export const POST = createApiHandler('/api/hive-engine/stake', async (request, c
     try {
       parsed = stakeBodySchema.parse(await request.json());
     } catch (err) {
-      const message = err instanceof z.ZodError ? err.issues[0]?.message : 'Invalid request body';
-      return apiError(message ?? 'Invalid request body', 'VALIDATION_ERROR', 400, {
+      const message = err instanceof z.ZodError ? mapStakeBodyIssue(err) : 'Invalid request body';
+      return apiError(message, 'VALIDATION_ERROR', 400, {
         requestId: ctx.requestId,
       });
     }
