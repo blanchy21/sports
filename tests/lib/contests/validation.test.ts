@@ -8,9 +8,9 @@ const teamPotMap = new Map(WORLD_CUP_2026_TEAMS.map((t) => [t.code, t.pot]));
 // Helper: make a valid entry
 function makeValidEntry() {
   const pot1 = ['USA', 'ARG', 'FRA', 'BRA'];
-  const pot2 = ['ITA', 'CRO', 'JPN', 'MAR'];
-  const pot3 = ['ECU', 'KOR', 'TUR', 'SRB'];
-  const pot4 = ['PAN', 'CRC', 'JAM', 'HON'];
+  const pot2 = ['CRO', 'JPN', 'MAR', 'KOR'];
+  const pot3 = ['RSA', 'QAT', 'SCO', 'PAR'];
+  const pot4 = ['CZE', 'BIH', 'HAI', 'TUR'];
   const allTeams = [...pot1, ...pot2, ...pot3, ...pot4];
 
   return {
@@ -39,7 +39,11 @@ describe('validateWorldCupEntry', () => {
   });
 
   it('rejects non-array picks', () => {
-    const result = validateWorldCupEntry({ picks: 'not-array', tieBreaker: 100 }, validTeamCodes, teamPotMap);
+    const result = validateWorldCupEntry(
+      { picks: 'not-array', tieBreaker: 100 },
+      validTeamCodes,
+      teamPotMap
+    );
     expect(result.valid).toBe(false);
     expect(result.error).toMatch(/array/i);
   });
