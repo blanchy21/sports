@@ -37,6 +37,12 @@ export interface DisplayPost {
   authorDisplayName?: string;
   authorAvatar?: string;
   source: 'hive' | 'soft';
+  /**
+   * Beneficiaries for Hive-sourced DisplayPosts. Propagated from the chain
+   * through the unified API so feeds can run curation eligibility checks
+   * (e.g. showing the CurateButton) without upgrading to a full SportsblockPost.
+   */
+  beneficiaries?: Array<{ account: string; weight: number }>;
   _isSoftPost?: boolean;
   _softPostId?: string;
   _likeCount?: number;
@@ -214,6 +220,7 @@ export function getPostTags(post: AnyPost): string[] {
 export function getPostBeneficiaries(
   post: AnyPost
 ): Array<{ account: string; weight: number }> | undefined {
+  if (isDisplayPost(post)) return post.beneficiaries;
   if (isSportsblockPost(post) && 'beneficiaries' in post) {
     return post.beneficiaries as Array<{ account: string; weight: number }>;
   }
