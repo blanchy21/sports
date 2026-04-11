@@ -169,7 +169,9 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           payload: { user: basicUser, authType: 'hive', hiveUser: newHiveUser, loginAt: now },
         });
 
-        // Sync cookie immediately (not debounced) so it survives page refresh / HMR
+        // Sync cookie immediately (not debounced) so it survives page refresh / HMR.
+        // This is the ONLY POST that carries the challenge — it consumes the
+        // nonce server-side and sets the encrypted session cookie.
         await syncSessionCookie({
           userId: basicUser.id,
           username: basicUser.username,
@@ -181,13 +183,15 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           avatar: basicUser.avatar,
         });
 
-        // Debounced persist for UI hint & activity updates
+        // Debounced persist for UI hint & activity updates.
+        // Deliberately omit challengeData: the immediate syncSessionCookie
+        // above already consumed the challenge nonce. Reusing it here would
+        // trigger a replay 401 when the cookie hasn't been read back yet.
         persistAuthState({
           user: basicUser,
           authType: 'hive',
           hiveUser: newHiveUser,
           loginAt: now,
-          challengeData,
           displayName: basicUser.displayName,
           avatar: basicUser.avatar,
         });
@@ -286,7 +290,9 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           );
         }
 
-        // Sync cookie immediately (not debounced) so it survives page refresh / HMR
+        // Sync cookie immediately (not debounced) so it survives page refresh / HMR.
+        // This is the ONLY POST that carries the challenge/token — it consumes the
+        // nonce server-side and sets the encrypted session cookie.
         const cookieSynced = await syncSessionCookie({
           userId: basicUser.id,
           username: basicUser.username,
@@ -310,14 +316,17 @@ export function useAuthActions(options: UseAuthActionsOptions): UseAuthActionsRe
           throw new Error('Failed to create secure session. Please try logging in again.');
         }
 
-        // Debounced persist for UI hint & activity updates
+        // Debounced persist for UI hint & activity updates.
+        // Deliberately omit challengeData / hivesignerToken: the immediate
+        // syncSessionCookie above already consumed the challenge nonce and
+        // established the session cookie. Any subsequent POST that resent the
+        // same challenge would trigger a replay 401 ("Challenge already used")
+        // on mobile where profile-loaded dispatches fire extra persist calls.
         persistAuthState({
           user: basicUser,
           authType: 'hive',
           hiveUser: newHiveUser,
           loginAt: now,
-          challengeData,
-          hivesignerToken,
           displayName: basicUser.displayName,
           avatar: basicUser.avatar,
         });
