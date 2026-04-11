@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { fetchAllEvents } from '@/lib/sports/espn';
+import { fetchCricketEvents } from '@/lib/sports/cricket';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import {
   MATCH_THREAD_CONFIG,
@@ -16,7 +17,9 @@ interface PageProps {
 }
 
 async function getMatchThread(eventId: string) {
-  const { events, liveEventIds } = await fetchAllEvents();
+  const [espnResult, cricketResult] = await Promise.all([fetchAllEvents(), fetchCricketEvents()]);
+  const events = [...espnResult.events, ...cricketResult.events];
+  const liveEventIds = new Set([...espnResult.liveEventIds, ...cricketResult.liveEventIds]);
   const event = events.find((e) => e.id === eventId);
 
   if (!event) return null;
