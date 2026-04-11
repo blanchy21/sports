@@ -7,15 +7,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiHandler } from '@/lib/api/api-handler';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { extractPathParam } from '@/lib/api/route-params';
 import { requireAdmin } from '@/lib/admin/config';
 import { ForbiddenError, NotFoundError, ValidationError } from '@/lib/api/api-errors';
 import { prisma } from '@/lib/db/prisma';
 import { serializeMatch } from '@/lib/contests/serialize';
 
 export const GET = createApiHandler('/api/contests/[slug]/matches', async (request) => {
-  const url = new URL(request.url);
-  const slug = url.pathname.split('/api/contests/')[1]?.split('/')[0];
-  const round = url.searchParams.get('round');
+  const slug = extractPathParam(request.url, 'contests') ?? '';
+  const round = new URL(request.url).searchParams.get('round');
 
   if (!slug) throw new NotFoundError('Contest not found');
 
@@ -43,8 +43,7 @@ export const POST = createApiHandler('/api/contests/[slug]/matches', async (requ
       throw new ForbiddenError('Admin access required');
     }
 
-    const url = new URL(request.url);
-    const slug = url.pathname.split('/api/contests/')[1]?.split('/')[0];
+    const slug = extractPathParam(request.url, 'contests') ?? '';
 
     const contest = await prisma.contest.findUnique({ where: { slug } });
     if (!contest) throw new NotFoundError('Contest not found');
@@ -58,8 +57,16 @@ export const POST = createApiHandler('/api/contests/[slug]/matches', async (requ
 
     // Validate each match
     for (const match of matches) {
-      if (!match.matchNumber || !match.round || !match.homeTeamCode || !match.awayTeamCode || !match.scheduledAt) {
-        throw new ValidationError('Each match requires: matchNumber, round, homeTeamCode, awayTeamCode, scheduledAt');
+      if (
+        !match.matchNumber ||
+        !match.round ||
+        !match.homeTeamCode ||
+        !match.awayTeamCode ||
+        !match.scheduledAt
+      ) {
+        throw new ValidationError(
+          'Each match requires: matchNumber, round, homeTeamCode, awayTeamCode, scheduledAt'
+        );
       }
     }
 
@@ -78,9 +85,12 @@ export const POST = createApiHandler('/api/contests/[slug]/matches', async (requ
 
     ctx.log.info('Matches added', { contestId: contest.id, count: created.count });
 
-    return NextResponse.json({
-      success: true,
-      data: { created: created.count },
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        data: { created: created.count },
+      },
+      { status: 201 }
+    );
   });
 });

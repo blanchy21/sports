@@ -3,14 +3,12 @@ import { prisma } from '@/lib/db/prisma';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { csrfProtected } from '@/lib/api/csrf';
 import { createApiHandler } from '@/lib/api/response';
+import { extractPathParam } from '@/lib/api/route-params';
 
 const ROUTE = '/api/soft/scheduled-posts/[id]';
 
 function extractId(request: Request): string {
-  const url = new URL(request.url);
-  const segments = url.pathname.split('/');
-  // Expected: ['', 'api', 'soft', 'scheduled-posts', '{id}']
-  return segments[4];
+  return extractPathParam(request.url, 'scheduled-posts') ?? '';
 }
 
 /**

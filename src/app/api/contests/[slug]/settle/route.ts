@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiHandler } from '@/lib/api/api-handler';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { extractPathParam } from '@/lib/api/route-params';
 import { requireAdmin } from '@/lib/admin/config';
 import { ForbiddenError, NotFoundError, ValidationError } from '@/lib/api/api-errors';
 import { prisma } from '@/lib/db/prisma';
@@ -31,8 +32,7 @@ export const POST = createApiHandler('/api/contests/[slug]/settle', async (reque
       throw new ForbiddenError('Admin access required');
     }
 
-    const url = new URL(request.url);
-    const slug = url.pathname.split('/api/contests/')[1]?.split('/')[0];
+    const slug = extractPathParam(request.url, 'contests') ?? '';
 
     let contest = await prisma.contest.findUnique({
       where: { slug },

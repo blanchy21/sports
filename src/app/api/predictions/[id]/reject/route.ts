@@ -12,6 +12,7 @@ import { prisma } from '@/lib/db/prisma';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { rejectProposal } from '@/lib/predictions/settlement';
 import { notifyProposerOfRejection } from '@/lib/predictions/notifications';
+import { extractPathParam } from '@/lib/api/route-params';
 import { logger } from '@/lib/logger';
 import { NextRequest } from 'next/server';
 
@@ -24,7 +25,7 @@ export const POST = createApiHandler('/api/predictions/[id]/reject', async (requ
       throw new ForbiddenError('Only Hive-authenticated admins can reject proposals');
     }
 
-    const predictionId = new URL(request.url).pathname.split('/predictions/')[1]?.split('/')[0];
+    const predictionId = extractPathParam(request.url, 'predictions') ?? '';
 
     const prediction = await prisma.prediction.findUnique({
       where: { id: predictionId },

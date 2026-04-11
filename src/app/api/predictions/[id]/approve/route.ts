@@ -11,6 +11,7 @@ import { withCsrfProtection } from '@/lib/api/csrf';
 import { prisma } from '@/lib/db/prisma';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { executeSettlement, executeVoidRefund } from '@/lib/predictions/settlement';
+import { extractPathParam } from '@/lib/api/route-params';
 import { NextRequest } from 'next/server';
 
 export const POST = createApiHandler('/api/predictions/[id]/approve', async (request, _ctx) => {
@@ -22,7 +23,7 @@ export const POST = createApiHandler('/api/predictions/[id]/approve', async (req
       throw new ForbiddenError('Only Hive-authenticated admins can approve proposals');
     }
 
-    const predictionId = new URL(request.url).pathname.split('/predictions/')[1]?.split('/')[0];
+    const predictionId = extractPathParam(request.url, 'predictions') ?? '';
 
     const prediction = await prisma.prediction.findUnique({
       where: { id: predictionId },

@@ -12,6 +12,7 @@ import { prisma } from '@/lib/db/prisma';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { proposeVoid } from '@/lib/predictions/settlement';
 import { notifyAdminsOfProposal } from '@/lib/predictions/notifications';
+import { extractPathParam } from '@/lib/api/route-params';
 import { logger } from '@/lib/logger';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
@@ -25,7 +26,7 @@ export const POST = createApiHandler('/api/predictions/[id]/void', async (reques
     const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user) throw new AuthError();
 
-    const predictionId = new URL(request.url).pathname.split('/predictions/')[1]?.split('/')[0];
+    const predictionId = extractPathParam(request.url, 'predictions') ?? '';
     const body = voidSchema.parse(await request.json());
 
     const prediction = await prisma.prediction.findUnique({

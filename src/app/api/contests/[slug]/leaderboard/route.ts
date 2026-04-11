@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { createApiHandler } from '@/lib/api/api-handler';
+import { extractPathParam } from '@/lib/api/route-params';
 import { NotFoundError } from '@/lib/api/api-errors';
 import { prisma } from '@/lib/db/prisma';
 import { serializeLeaderboardEntry } from '@/lib/contests/serialize';
@@ -11,7 +12,7 @@ import { CONTEST_TYPES } from '@/lib/contests/constants';
 
 export const GET = createApiHandler('/api/contests/[slug]/leaderboard', async (request) => {
   const url = new URL(request.url);
-  const slug = url.pathname.split('/api/contests/')[1]?.split('/')[0];
+  const slug = extractPathParam(request.url, 'contests') ?? '';
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 100);
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 

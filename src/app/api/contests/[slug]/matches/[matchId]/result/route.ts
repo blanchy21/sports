@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiHandler } from '@/lib/api/api-handler';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { extractPathParam } from '@/lib/api/route-params';
 import { requireAdmin } from '@/lib/admin/config';
 import { ForbiddenError, NotFoundError, ValidationError } from '@/lib/api/api-errors';
 import { prisma } from '@/lib/db/prisma';
@@ -22,12 +23,7 @@ export const PATCH = createApiHandler(
         throw new ForbiddenError('Admin access required');
       }
 
-      // Parse path params
-      const url = new URL(request.url);
-      const pathParts = url.pathname.split('/');
-      const matchIdIndex = pathParts.indexOf('matches') + 1;
-      const matchId = pathParts[matchIdIndex];
-
+      const matchId = extractPathParam(request.url, 'matches');
       if (!matchId) throw new NotFoundError('Match not found');
 
       const match = await prisma.contestMatch.findUnique({
@@ -48,7 +44,12 @@ export const PATCH = createApiHandler(
       if (typeof homeScore !== 'number' || typeof awayScore !== 'number') {
         throw new ValidationError('homeScore and awayScore must be numbers');
       }
-      if (homeScore < 0 || awayScore < 0 || !Number.isInteger(homeScore) || !Number.isInteger(awayScore)) {
+      if (
+        homeScore < 0 ||
+        awayScore < 0 ||
+        !Number.isInteger(homeScore) ||
+        !Number.isInteger(awayScore)
+      ) {
         throw new ValidationError('Scores must be non-negative integers');
       }
 
