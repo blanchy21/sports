@@ -14,7 +14,7 @@ import { getCuratorAccountsAsync } from '@/lib/rewards/curator-rewards';
 import { fetchPostWithBeneficiaries } from '@/lib/curation/beneficiary-check';
 import { checkCurationEligibility } from '@/lib/curation/eligibility';
 import { CURATION_MEDALS_AMOUNT, MAX_CURATIONS_PER_DAY } from '@/lib/curation/config';
-import { transferCurationMedals } from '@/lib/curation/transfer';
+import { transferMedalsFromSportsblock } from '@/lib/hive-engine/server-transfer';
 import { prisma } from '@/lib/db/prisma';
 import { logger } from '@/lib/logger';
 
@@ -139,7 +139,7 @@ export async function GET() {
           });
 
           try {
-            const txId = await transferCurationMedals(
+            const txId = await transferMedalsFromSportsblock(
               parentAuthor,
               CURATION_MEDALS_AMOUNT,
               `!medals curation from @${curator} via SportsBlock`

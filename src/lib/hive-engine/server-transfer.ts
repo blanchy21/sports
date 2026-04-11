@@ -1,8 +1,12 @@
 /**
- * MEDALS Transfer for Curation
+ * Server-side MEDALS transfer from @sportsblock.
  *
- * Broadcasts a single MEDALS transfer from @sportsblock to a post author.
- * Uses the same Hive Engine custom_json pattern as the staking rewards cron.
+ * Broadcasts a single MEDALS transfer using the SPORTSBLOCK_ACTIVE_KEY.
+ * Used by curation rewards, contest payouts, IPL BB payouts, and any other
+ * flow that pays MEDALS out of the @sportsblock treasury.
+ *
+ * This is server-only. Client-signed transfers (Keychain/HiveSigner) use the
+ * builder functions in `@/lib/hive-engine/operations.ts` instead.
  */
 
 import { PrivateKey } from '@hiveio/dhive';
@@ -13,20 +17,21 @@ const REWARDS_ACCOUNT = 'sportsblock';
 
 /**
  * Transfer MEDALS from @sportsblock to a recipient.
- * Requires SPORTSBLOCK_ACTIVE_KEY env var.
  *
- * @returns Transaction ID on success, null if no active key configured.
- * @throws On broadcast failure.
+ * Throws on any failure — including a missing SPORTSBLOCK_ACTIVE_KEY — so
+ * callers never silently succeed with a null transaction id. A missing key
+ * is an operator error and must not be swallowed.
  */
-export async function transferCurationMedals(
+export async function transferMedalsFromSportsblock(
   recipient: string,
   amount: number,
   memo: string
-): Promise<string | null> {
+): Promise<string> {
   const activeKeyWif = process.env.SPORTSBLOCK_ACTIVE_KEY;
   if (!activeKeyWif) {
-    logger.warn('SPORTSBLOCK_ACTIVE_KEY not set — curation transfer skipped', 'curation:transfer');
-    return null;
+    throw new Error(
+      'SPORTSBLOCK_ACTIVE_KEY is not configured. Cannot broadcast MEDALS transfer from @sportsblock.'
+    );
   }
 
   const activeKey = PrivateKey.fromString(activeKeyWif);
@@ -54,8 +59,8 @@ export async function transferCurationMedals(
   ];
 
   logger.info(
-    `Broadcasting curation transfer: ${amount} MEDALS → ${recipient}`,
-    'curation:transfer'
+    `Broadcasting MEDALS transfer from @sportsblock: ${amount} MEDALS → @${recipient}`,
+    'hive-engine:server-transfer'
   );
 
   const result = await dhive.broadcast.sendOperations([op] as never[], activeKey);
