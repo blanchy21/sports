@@ -113,11 +113,15 @@ export function CurateButton({
     const curatorLabel = curatedBy.length > 0 ? `by @${curatedBy[0]}` : '';
     return (
       <span
-        className={cn('inline-flex items-center gap-1 text-xs font-medium text-sb-gold', className)}
+        className={cn(
+          'inline-flex shrink-0 items-center gap-1 text-xs font-medium text-sb-gold',
+          className
+        )}
         title={curatorLabel ? `Curated ${curatorLabel}` : 'Curated'}
+        aria-label={curatorLabel ? `Curated ${curatorLabel}` : 'Curated'}
       >
         <CheckCircle className="h-3.5 w-3.5" />
-        Curated
+        <span className="hidden sm:inline">Curated</span>
       </span>
     );
   }
@@ -126,10 +130,15 @@ export function CurateButton({
   if (remaining <= 0) {
     return (
       <span
-        className={cn('inline-flex items-center gap-1 text-xs text-sb-text-muted', className)}
+        className={cn(
+          'inline-flex shrink-0 items-center gap-1 text-xs text-sb-text-muted',
+          className
+        )}
         title="Daily curation limit reached"
+        aria-label="Daily curation limit reached"
       >
-        <Award className="h-3.5 w-3.5" />0 left
+        <Award className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">0 left</span>
       </span>
     );
   }
@@ -137,24 +146,29 @@ export function CurateButton({
   // Confirmation state
   if (confirming) {
     return (
-      <span className={cn('inline-flex flex-col gap-1', className)}>
+      <span className={cn('inline-flex shrink-0 flex-col gap-1', className)}>
         <span className="inline-flex items-center gap-1">
           <button
             onClick={handleCurate}
             disabled={submitting}
-            className="inline-flex items-center gap-1 rounded-full bg-sb-gold px-2.5 py-1 text-xs font-semibold text-black transition-colors hover:bg-sb-gold-shine disabled:opacity-50"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sb-gold px-2.5 py-1 text-xs font-semibold text-black transition-colors hover:bg-sb-gold-shine disabled:opacity-50"
+            aria-label={submitting ? 'Awarding MEDALS' : `Award ${medalsAmount} MEDALS`}
           >
             {submitting ? (
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
               <Award className="h-3 w-3" />
             )}
-            {submitting ? 'Awarding...' : `Award ${medalsAmount} MEDALS`}
+            <span className="hidden sm:inline">
+              {submitting ? 'Awarding...' : `Award ${medalsAmount} MEDALS`}
+            </span>
+            <span className="sm:hidden">{submitting ? '...' : `+${medalsAmount}`}</span>
           </button>
           <button
             onClick={handleCancel}
             disabled={submitting}
-            className="rounded-full px-2 py-1 text-xs text-sb-text-muted transition-colors hover:text-sb-text-primary"
+            className="shrink-0 rounded-full px-2 py-1 text-xs text-sb-text-muted transition-colors hover:text-sb-text-primary"
+            aria-label="Cancel curation"
           >
             Cancel
           </button>
@@ -169,15 +183,16 @@ export function CurateButton({
     <button
       onClick={handleCurate}
       className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2 py-1',
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1',
         'text-xs font-medium text-sb-gold',
         'transition-colors hover:bg-sb-gold-shadow/40',
         className
       )}
       title={`Curate — ${remaining} curations remaining today`}
+      aria-label={`Curate — ${remaining} curations remaining today`}
     >
       <Award className="h-3.5 w-3.5" />
-      Curate
+      <span className="hidden sm:inline">Curate</span>
     </button>
   );
 }
