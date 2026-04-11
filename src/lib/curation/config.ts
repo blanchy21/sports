@@ -18,8 +18,8 @@ export const MAX_CURATIONS_PER_DAY = 5;
 
 /** Beneficiary requirements for post curation eligibility */
 export const BENEFICIARY_REQUIREMENTS = {
-  /** Account that must appear in beneficiaries */
-  ACCOUNT: 'sportsblock',
+  /** Accounts that qualify — posts with ANY of these as beneficiary are eligible */
+  ACCOUNTS: ['sportsblock', 'hive-115814'] as readonly string[],
   /** Minimum weight (500 = 5% in Hive basis points where 10000 = 100%) */
   MIN_WEIGHT: 500,
 } as const;
