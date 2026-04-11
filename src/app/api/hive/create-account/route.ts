@@ -70,21 +70,30 @@ export const POST = createApiHandler('/api/hive/create-account', async (request:
       return apiError('You already have a Hive account', 'VALIDATION_ERROR', 400);
     }
 
-    // Parse body — normalise then validate with Zod
+    // Parse body — normalise then validate with Zod.
+    // Empty/whitespace/missing username all collapse to the same
+    // "username is required" contract the existing tests assert on.
     const rawBody = (await request.json()) as Record<string, unknown>;
-    const normalised = {
-      ...rawBody,
-      username:
-        typeof rawBody.username === 'string'
-          ? rawBody.username.toLowerCase().trim()
-          : rawBody.username,
-    };
+    const rawUsername =
+      typeof rawBody.username === 'string' ? rawBody.username.toLowerCase().trim() : '';
+    if (!rawUsername) {
+      return apiError('username is required', 'VALIDATION_ERROR', 400);
+    }
     let username: string;
     try {
-      username = createAccountSchema.parse(normalised).username;
+      username = createAccountSchema.parse({ username: rawUsername }).username;
     } catch (err) {
-      const message = err instanceof z.ZodError ? err.issues[0]?.message : 'Invalid request body';
-      return apiError(message ?? 'Invalid request body', 'VALIDATION_ERROR', 400);
+      if (err instanceof z.ZodError) {
+        // Regex failure carries a custom message; length / type failures fall
+        // back to the generic username hint so the tests' contract is stable.
+        const issue = err.issues[0];
+        const isCustomMessage = issue?.code === 'invalid_format' || issue?.code === 'custom';
+        const message = isCustomMessage
+          ? issue.message
+          : 'Username must start with "sb-" and contain only lowercase letters, digits, dots, and dashes';
+        return apiError(message ?? 'Invalid username', 'VALIDATION_ERROR', 400);
+      }
+      return apiError('Invalid request body', 'VALIDATION_ERROR', 400);
     }
 
     // Look up the custodial user record by ID (works for all OAuth providers)
