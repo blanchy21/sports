@@ -207,7 +207,8 @@ export default function CurationDashboard() {
               <Award className="mx-auto mb-3 h-10 w-10 text-sb-text-muted" />
               <p className="text-sb-text-muted">No eligible posts found</p>
               <p className="mt-1 text-xs text-sb-text-muted">
-                Posts must have the sportsblock 5% beneficiary to be eligible
+                Posts must have a 5% beneficiary to sportsblock or the community account to be
+                eligible
               </p>
             </div>
           ) : (

@@ -3,6 +3,7 @@ import { verifyCronRequest, createUnauthorizedResponse } from '@/lib/api/cron-au
 import { broadcastWithKey } from '@/lib/hive-workerbee/broadcast';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import { fetchAllEvents } from '@/lib/sports/espn';
+import { fetchCricketEvents } from '@/lib/sports/cricket';
 import {
   MATCH_THREAD_CONFIG,
   getMatchThreadPermlink,
@@ -39,7 +40,9 @@ export async function GET() {
   try {
     logInfo('Checking for match thread containers to create...', 'Cron');
 
-    const { events, liveEventIds } = await fetchAllEvents();
+    const [espnResult, cricketResult] = await Promise.all([fetchAllEvents(), fetchCricketEvents()]);
+    const events = [...espnResult.events, ...cricketResult.events];
+    const liveEventIds = new Set([...espnResult.liveEventIds, ...cricketResult.liveEventIds]);
     const now = Date.now();
     const preCreateWindow = MATCH_THREAD_CONFIG.PRE_CREATE_HOURS * 60 * 60 * 1000;
 
