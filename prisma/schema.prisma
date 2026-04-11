@@ -83,7 +83,11 @@ model Profile {
   bio             String?
   avatarUrl       String?   @map("avatar_url")
   isHiveUser      Boolean   @default(false) @map("is_hive_user")
-  hiveUsername     String?   @map("hive_username")
+  // Partial unique index (profiles_hive_username_key) created out-of-band via
+  // psql with `WHERE hive_username IS NOT NULL`. Prisma's @unique generates a
+  // full unique index but in PostgreSQL a nullable unique column already
+  // allows multiple NULLs, so the effective behaviour is identical.
+  hiveUsername     String?   @unique @map("hive_username")
   followerCount   Int       @default(0) @map("follower_count")
   followingCount  Int       @default(0) @map("following_count")
   createdAt       DateTime  @default(now()) @map("created_at")
@@ -466,7 +470,7 @@ model UserStats {
   medalsScore          Decimal  @default(0) @map("medals_score") @db.Decimal(10, 2)
   medalsRank           String?  @map("medals_rank")
   createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @default(now()) @map("updated_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
 
   @@index([totalPosts(sort: Desc)])
   @@index([lastActiveAt])
@@ -1001,6 +1005,8 @@ model IplBbEntry {
   submittedCount  Int              @default(0)  @map("submitted_count")
   finalRank       Int?             @map("final_rank")
   prizeAwarded    Int?             @map("prize_awarded")
+  payoutTxId      String?          @map("payout_tx_id")
+  paidAt          DateTime?        @map("paid_at")
   createdAt       DateTime         @default(now()) @map("created_at")
 
   picks           IplBbPick[]
@@ -1048,7 +1054,19 @@ model CuratorRoster {
   @@map("curator_roster")
 }
 
-// Records each curator's MEDALS curation on a post
+// Records each curator's MEDALS curation on a post.
+//
+// "First curator wins" is enforced at the DB layer by a partial unique index
+// created out-of-band via psql:
+//
+//   CREATE UNIQUE INDEX curations_author_permlink_active_unique
+//     ON curations (author, permlink)
+//     WHERE status IN ('pending', 'completed');
+//
+// Prisma's @@unique cannot express partial indexes, hence the raw SQL. The
+// partial scope lets `failed` and `superseded_historical` rows coexist with
+// an active winning row. Application code must catch P2002 on create and
+// surface it as a 409 (see curate/route.ts and medals-scan/route.ts).
 model Curation {
   id                  String   @id @default(uuid())
   curatorUsername      String   @map("curator_username")
@@ -1059,7 +1077,7 @@ model Curation {
   source              String   @default("in_app") // 'in_app' | 'hive_comment' | 'auto_engagement'
   hiveCommentPermlink String?  @map("hive_comment_permlink")
   txId                String?  @map("tx_id")
-  status              String   @default("pending") // 'pending' | 'completed' | 'failed'
+  status              String   @default("pending") // 'pending' | 'completed' | 'failed' | 'superseded_historical'
   createdAt           DateTime @default(now()) @map("created_at")
 
   @@unique([curatorUsername, author, permlink])
