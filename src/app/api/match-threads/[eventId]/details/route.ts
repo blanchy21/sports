@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { fetchAllEvents, fetchEventSummary } from '@/lib/sports/espn';
 import { isCricketEventId } from '@/lib/sports/cricket';
 import { createApiHandler } from '@/lib/api/response';
+import { extractPathParam } from '@/lib/api/route-params';
 import type { MatchDetail } from '@/types/sports';
 import type { ApiResponse } from '@/types/api';
 
@@ -24,9 +25,7 @@ const EMPTY_DETAIL: MatchDetail = {
  * Non-soccer events return empty data.
  */
 export const GET = createApiHandler(ROUTE, async (request) => {
-  const url = new URL(request.url);
-  const segments = url.pathname.split('/');
-  const eventId = segments[3]; // /api/match-threads/[eventId]/details
+  const eventId = extractPathParam(request.url, 'match-threads') ?? '';
 
   // Cricket (IPL) events have no ESPN summary data — return empty detail
   // immediately without hitting ESPN. MatchDetailTabs hides itself for

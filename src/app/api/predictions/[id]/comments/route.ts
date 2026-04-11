@@ -3,6 +3,7 @@ import { after } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { createApiHandler, validationError, unauthorizedError } from '@/lib/api/response';
+import { extractPathParam } from '@/lib/api/route-params';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
 import { csrfProtected } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
@@ -32,14 +33,7 @@ const createCommentSchema = z.object({
 
 /** Extract predictionId from the URL path: /api/predictions/{id}/comments */
 function extractPredictionId(request: Request): string | null {
-  const url = new URL(request.url);
-  const segments = url.pathname.split('/');
-  // Expected: ['', 'api', 'predictions', '{id}', 'comments']
-  const predIdx = segments.indexOf('predictions');
-  if (predIdx >= 0 && predIdx + 1 < segments.length) {
-    return segments[predIdx + 1];
-  }
-  return null;
+  return extractPathParam(request.url, 'predictions');
 }
 
 // ============================================
@@ -107,13 +101,12 @@ export const POST = csrfProtected(
   createApiHandler(ROUTE, async (request, ctx) => {
     const predictionId = extractPredictionId(request);
     if (!predictionId) {
-      return NextResponse.json(
-        { success: false, error: 'Missing prediction ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Missing prediction ID' }, { status: 400 });
     }
 
-    const user = await getAuthenticatedUserFromSession(request as NextRequest, { includeProfile: true });
+    const user = await getAuthenticatedUserFromSession(request as NextRequest, {
+      includeProfile: true,
+    });
     if (!user) {
       return unauthorizedError('Authentication required', ctx.requestId);
     }
@@ -138,8 +131,7 @@ export const POST = csrfProtected(
         {
           success: false,
           error: 'Rate limit exceeded',
-          message:
-            'You are commenting too frequently. Please wait before posting another comment.',
+          message: 'You are commenting too frequently. Please wait before posting another comment.',
           retryAfter: Math.ceil((rateLimit.reset - Date.now()) / 1000),
         },
         {

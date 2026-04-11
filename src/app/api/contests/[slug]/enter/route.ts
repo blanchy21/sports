@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiHandler } from '@/lib/api/api-handler';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { extractPathParam } from '@/lib/api/route-params';
 import { AuthError, ValidationError } from '@/lib/api/api-errors';
 import { prisma } from '@/lib/db/prisma';
 import { validateWorldCupEntry, validateGolfFantasyEntry } from '@/lib/contests/validation';
@@ -18,8 +19,7 @@ export const POST = createApiHandler('/api/contests/[slug]/enter', async (reques
     const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user) throw new AuthError('Authentication required');
 
-    const url = new URL(request.url);
-    const slug = url.pathname.split('/api/contests/')[1]?.split('/')[0];
+    const slug = extractPathParam(request.url, 'contests') ?? '';
 
     const contest = await prisma.contest.findUnique({
       where: { slug },

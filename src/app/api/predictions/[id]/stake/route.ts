@@ -12,6 +12,7 @@ import { prisma } from '@/lib/db/prisma';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
 import { buildStakeEscrowOp } from '@/lib/predictions/escrow';
 import { signStakeToken } from '@/lib/predictions/stake-token';
+import { extractPathParam } from '@/lib/api/route-params';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -28,7 +29,7 @@ export const POST = createApiHandler('/api/predictions/[id]/stake', async (reque
       throw new ForbiddenError('Only Hive wallet users can place stakes');
     }
 
-    const predictionId = new URL(request.url).pathname.split('/predictions/')[1]?.split('/')[0];
+    const predictionId = extractPathParam(request.url, 'predictions') ?? '';
     const body = stakeSchema.parse(await request.json());
 
     const prediction = await prisma.prediction.findUnique({

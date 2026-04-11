@@ -11,6 +11,7 @@ import {
 import { fetchAllEvents } from '@/lib/sports/espn';
 import { fetchCricketEvents, isCricketEventId } from '@/lib/sports/cricket';
 import { createApiHandler } from '@/lib/api/response';
+import { extractPathParam } from '@/lib/api/route-params';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { validateCsrf } from '@/lib/api/csrf';
 import { checkRateLimit, RATE_LIMITS, createRateLimitHeaders } from '@/lib/utils/rate-limit';
@@ -70,9 +71,7 @@ export const POST = createApiHandler(ROUTE, async (request) => {
     );
   }
 
-  const url = new URL(request.url);
-  const segments = url.pathname.split('/');
-  const eventId = segments[3]; // /api/match-threads/[eventId]/ensure
+  const eventId = extractPathParam(request.url, 'match-threads') ?? '';
   const permlink = getMatchThreadPermlink(eventId);
 
   // Fast path: already created in this process

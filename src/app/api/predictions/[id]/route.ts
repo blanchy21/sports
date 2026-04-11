@@ -12,11 +12,12 @@ import { prisma } from '@/lib/db/prisma';
 import { serializePrediction } from '@/lib/predictions/serialize';
 import { executeVoidRefund } from '@/lib/predictions/settlement';
 import { PREDICTION_CONFIG } from '@/lib/predictions/constants';
+import { extractPathParam } from '@/lib/api/route-params';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 function extractId(url: string): string {
-  return new URL(url).pathname.split('/predictions/')[1]?.split('/')[0] ?? '';
+  return extractPathParam(url, 'predictions') ?? '';
 }
 
 export const GET = createApiHandler('/api/predictions/[id]', async (request, _ctx) => {

@@ -3,6 +3,7 @@ import { fetchMatchThreadBites } from '@/lib/hive-workerbee/match-threads';
 import { fetchSoftMatchThreadBites } from '@/lib/hive-workerbee/match-threads-server';
 import { Sportsbite } from '@/lib/hive-workerbee/sportsbites';
 import { createApiHandler } from '@/lib/api/response';
+import { extractPathParam } from '@/lib/api/route-params';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -15,11 +16,9 @@ const ROUTE = '/api/match-threads/[eventId]/bites';
  * Fetches sportsbites for a match thread, merging Hive and soft bites.
  */
 export const GET = createApiHandler(ROUTE, async (request) => {
-  const url = new URL(request.url);
-  const segments = url.pathname.split('/');
-  const eventId = segments[3]; // /api/match-threads/[eventId]/bites
+  const eventId = extractPathParam(request.url, 'match-threads') ?? '';
 
-  const { searchParams } = url;
+  const { searchParams } = new URL(request.url);
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
   const before = searchParams.get('before') || undefined;
 

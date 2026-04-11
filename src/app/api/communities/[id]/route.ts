@@ -10,6 +10,7 @@ import {
 } from '@/lib/api/response';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { extractPathParam } from '@/lib/api/route-params';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,10 +19,7 @@ const ROUTE = '/api/communities/[id]';
 
 /** Extract community ID from URL path: /api/communities/{id} */
 function extractCommunityId(request: Request): string {
-  const url = new URL(request.url);
-  const segments = url.pathname.split('/');
-  // Expected: ['', 'api', 'communities', '{id}']
-  return segments[3];
+  return extractPathParam(request.url, 'communities') ?? '';
 }
 
 // Validation schemas

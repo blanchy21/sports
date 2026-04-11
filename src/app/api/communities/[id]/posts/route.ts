@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { createApiHandler, validationError, notFoundError } from '@/lib/api/response';
+import { extractPathParam } from '@/lib/api/route-params';
 import { logger } from '@/lib/logger';
 import { retryWithBackoff } from '@/lib/utils/api-retry';
 import { SoftPost } from '@/types/auth';
@@ -13,10 +14,7 @@ const ROUTE = '/api/communities/[id]/posts';
 
 /** Extract community ID from URL path: /api/communities/{id}/posts */
 function extractCommunityId(request: Request): string {
-  const url = new URL(request.url);
-  const segments = url.pathname.split('/');
-  // Expected: ['', 'api', 'communities', '{id}', 'posts']
-  return segments[3];
+  return extractPathParam(request.url, 'communities') ?? '';
 }
 
 // ============================================

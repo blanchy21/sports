@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db/prisma';
 import { createApiHandler, AuthError, ValidationError } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { withCsrfProtection } from '@/lib/api/csrf';
+import { extractPathParam } from '@/lib/api/route-params';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,8 +15,7 @@ export const GET = createApiHandler(ROUTE, async (request) => {
   const user = await getAuthenticatedUserFromSession(request as NextRequest);
   if (!user) throw new AuthError('Authentication required');
 
-  const url = new URL(request.url);
-  const id = url.pathname.split('/').pop();
+  const id = extractPathParam(request.url, 'drafts');
   if (!id) throw new ValidationError('Draft ID required');
 
   const draft = await prisma.draft.findUnique({ where: { id } });
@@ -45,8 +45,7 @@ export const DELETE = createApiHandler(ROUTE, async (request) => {
     const user = await getAuthenticatedUserFromSession(request as NextRequest);
     if (!user) throw new AuthError('Authentication required');
 
-    const url = new URL(request.url);
-    const id = url.pathname.split('/').pop();
+    const id = extractPathParam(request.url, 'drafts');
     if (!id) throw new ValidationError('Draft ID required');
 
     const draft = await prisma.draft.findUnique({ where: { id } });

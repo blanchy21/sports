@@ -10,6 +10,7 @@ import {
 import { MatchThread } from '@/types/sports';
 import type { ApiResponse } from '@/types/api';
 import { createApiHandler } from '@/lib/api/response';
+import { extractPathParam } from '@/lib/api/route-params';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,9 +24,7 @@ const ROUTE = '/api/match-threads/[eventId]';
  * Much cheaper than fetching all threads — only checks one Hive container.
  */
 export const GET = createApiHandler(ROUTE, async (request) => {
-  const url = new URL(request.url);
-  const segments = url.pathname.split('/');
-  const eventId = segments[3]; // /api/match-threads/[eventId]
+  const eventId = extractPathParam(request.url, 'match-threads') ?? '';
 
   // fetchAllEvents has built-in revalidation caching (300s on league fetches).
   // Cricket events come from the IplBbMatch Postgres table.

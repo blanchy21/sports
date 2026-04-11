@@ -11,6 +11,7 @@ import {
   createRateLimitHeaders,
 } from '@/lib/utils/rate-limit';
 import { createApiHandler } from '@/lib/api/response';
+import { extractPathParam } from '@/lib/api/route-params';
 import { logger } from '@/lib/logger';
 
 const ROUTE = '/api/posts/[id]';
@@ -33,10 +34,7 @@ function getViewRedis(): Redis | null {
 
 /** Extract post ID from URL path: /api/posts/{id} */
 function extractPostId(request: Request): string {
-  const url = new URL(request.url);
-  const segments = url.pathname.split('/');
-  // Expected: ['', 'api', 'posts', '{id}']
-  return segments[3];
+  return extractPathParam(request.url, 'posts') ?? '';
 }
 
 /**
@@ -57,11 +55,7 @@ export const GET = createApiHandler(ROUTE, async (request) => {
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     'unknown';
   const ua = request.headers.get('user-agent') || 'unknown';
-  const fingerprint = crypto
-    .createHash('sha256')
-    .update(`${ip}:${ua}`)
-    .digest('hex')
-    .slice(0, 16);
+  const fingerprint = crypto.createHash('sha256').update(`${ip}:${ua}`).digest('hex').slice(0, 16);
   const viewKey = `view:${id}:${fingerprint}`;
 
   const redis = getViewRedis();
@@ -135,10 +129,7 @@ export const PATCH = createApiHandler(ROUTE, async (request) => {
   // Verify user identity from session cookie
   const sessionUser = await getAuthenticatedUserFromSession(request as NextRequest);
   if (!sessionUser) {
-    return NextResponse.json(
-      { success: false, error: 'Authentication required' },
-      { status: 401 }
-    );
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
 
   // Check if post exists
@@ -160,10 +151,7 @@ export const PATCH = createApiHandler(ROUTE, async (request) => {
 
   if (body.title !== undefined) {
     if (body.title.trim().length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Title cannot be empty' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Title cannot be empty' }, { status: 400 });
     }
     updates.title = body.title.trim();
   }
@@ -180,10 +168,7 @@ export const PATCH = createApiHandler(ROUTE, async (request) => {
 
   if (body.tags !== undefined) {
     if (!Array.isArray(body.tags)) {
-      return NextResponse.json(
-        { success: false, error: 'Tags must be an array' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Tags must be an array' }, { status: 400 });
     }
     if (body.tags.length > 10) {
       return NextResponse.json(
@@ -254,10 +239,7 @@ export const DELETE = createApiHandler(ROUTE, async (request) => {
   // Verify user identity from session cookie
   const sessionUser = await getAuthenticatedUserFromSession(request as NextRequest);
   if (!sessionUser) {
-    return NextResponse.json(
-      { success: false, error: 'Authentication required' },
-      { status: 401 }
-    );
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
 
   // Check if post exists

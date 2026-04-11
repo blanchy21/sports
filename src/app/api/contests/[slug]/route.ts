@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApiHandler } from '@/lib/api/api-handler';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
+import { extractPathParam } from '@/lib/api/route-params';
 import { requireAdmin } from '@/lib/admin/config';
 import { ForbiddenError, NotFoundError, ValidationError } from '@/lib/api/api-errors';
 import { prisma } from '@/lib/db/prisma';
@@ -14,8 +15,7 @@ import { serializeContest } from '@/lib/contests/serialize';
 import type { ContestStatus } from '@/generated/prisma/client';
 
 export const GET = createApiHandler('/api/contests/[slug]', async (request, _ctx) => {
-  const url = new URL(request.url);
-  const slug = url.pathname.split('/api/contests/')[1]?.split('/')[0];
+  const slug = extractPathParam(request.url, 'contests');
 
   if (!slug) throw new NotFoundError('Contest not found');
 
@@ -68,8 +68,7 @@ export const PATCH = createApiHandler('/api/contests/[slug]', async (request, ct
       throw new ForbiddenError('Admin access required');
     }
 
-    const url = new URL(request.url);
-    const slug = url.pathname.split('/api/contests/')[1]?.split('/')[0];
+    const slug = extractPathParam(request.url, 'contests');
     if (!slug) throw new NotFoundError('Contest not found');
 
     const contest = await prisma.contest.findUnique({ where: { slug } });
@@ -90,7 +89,14 @@ export const PATCH = createApiHandler('/api/contests/[slug]', async (request, ct
     }
 
     // Updatable fields
-    const updatableFields = ['title', 'description', 'rules', 'coverImage', 'typeConfig', 'maxEntries'] as const;
+    const updatableFields = [
+      'title',
+      'description',
+      'rules',
+      'coverImage',
+      'typeConfig',
+      'maxEntries',
+    ] as const;
     for (const field of updatableFields) {
       if (body[field] !== undefined) {
         updateData[field] = body[field];
