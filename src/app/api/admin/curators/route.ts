@@ -1,21 +1,18 @@
 /**
  * Admin Curators API Route
  *
- * Manage designated curator accounts.
+ * Manage designated curator accounts via the CuratorRoster database table.
  * Requires admin account access.
- *
- * NOTE: Currently,curator management is now handled via env vars only.
- * This route provides read access to the current curator list and placeholder
- * add/remove that returns the env-based defaults.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createApiHandler, forbiddenError, validationError } from '@/lib/api/response';
+import { createApiHandler, forbiddenError } from '@/lib/api/response';
 import { requireAdmin } from '@/lib/admin/config';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { csrfProtected } from '@/lib/api/csrf';
-import { getCuratorAccounts } from '@/lib/rewards/curator-rewards';
+import { prisma } from '@/lib/db/prisma';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,7 +23,7 @@ const mutationSchema = z.object({
   curator: z
     .string()
     .min(1, 'Curator username is required')
-    .regex(/^[a-z0-9._-]+$/, 'Invalid Hive username'),
+    .regex(/^[a-z][a-z0-9.-]{2,15}$/, 'Invalid Hive username'),
 });
 
 /**
@@ -38,15 +35,23 @@ export const GET = createApiHandler(ROUTE, async (request, ctx) => {
     return forbiddenError('Admin access required', ctx.requestId);
   }
 
-  const curators = getCuratorAccounts();
-  return NextResponse.json({ success: true, curators });
+  const curators = await prisma.curatorRoster.findMany({
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return NextResponse.json({
+    success: true,
+    curators: curators.map((c) => ({
+      username: c.username,
+      addedBy: c.addedBy,
+      isActive: c.isActive,
+      createdAt: c.createdAt.toISOString(),
+    })),
+  });
 });
 
 /**
  * POST /api/admin/curators - Add a curator
- *
- * NOTE: Currently,curator list is managed via CURATOR_ACCOUNTS env var.
- * This endpoint validates the request but returns the current env-based list.
  */
 export const POST = csrfProtected(
   createApiHandler(ROUTE, async (request, ctx) => {
@@ -56,37 +61,43 @@ export const POST = csrfProtected(
     }
 
     const body = await request.json();
-    const parseResult = mutationSchema.safeParse(body);
+    const parsed = mutationSchema.parse(body);
 
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
+    // Check if already exists (might be deactivated)
+    const existing = await prisma.curatorRoster.findUnique({
+      where: { username: parsed.curator },
+    });
 
-    const { curator } = parseResult.data;
-    const curators = getCuratorAccounts();
-
-    if (curators.includes(curator)) {
+    if (existing?.isActive) {
       return NextResponse.json(
-        { success: false, error: `${curator} is already a curator` },
+        { success: false, error: `${parsed.curator} is already an active curator` },
         { status: 409 }
       );
     }
 
-    // Currently,curator changes require updating the CURATOR_ACCOUNTS env var
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          'Curator management requires updating the CURATOR_ACCOUNTS environment variable. Please update it in your deployment settings.',
-        curators,
+    // Reactivate or create
+    const curator = await prisma.curatorRoster.upsert({
+      where: { username: parsed.curator },
+      update: { isActive: true, addedBy: user.username },
+      create: { username: parsed.curator, addedBy: user.username },
+    });
+
+    logger.info(`Curator added: ${parsed.curator} by ${user.username}`, 'admin:curators');
+
+    return NextResponse.json({
+      success: true,
+      curator: {
+        username: curator.username,
+        addedBy: curator.addedBy,
+        isActive: curator.isActive,
+        createdAt: curator.createdAt.toISOString(),
       },
-      { status: 501 }
-    );
+    });
   })
 );
 
 /**
- * DELETE /api/admin/curators - Remove a curator
+ * DELETE /api/admin/curators - Deactivate a curator (soft delete)
  */
 export const DELETE = csrfProtected(
   createApiHandler(ROUTE, async (request, ctx) => {
@@ -96,31 +107,26 @@ export const DELETE = csrfProtected(
     }
 
     const body = await request.json();
-    const parseResult = mutationSchema.safeParse(body);
+    const parsed = mutationSchema.parse(body);
 
-    if (!parseResult.success) {
-      return validationError(parseResult.error, ctx.requestId);
-    }
+    const existing = await prisma.curatorRoster.findUnique({
+      where: { username: parsed.curator },
+    });
 
-    const { curator } = parseResult.data;
-    const curators = getCuratorAccounts();
-
-    if (!curators.includes(curator)) {
+    if (!existing || !existing.isActive) {
       return NextResponse.json(
-        { success: false, error: `${curator} is not a curator` },
+        { success: false, error: `${parsed.curator} is not an active curator` },
         { status: 404 }
       );
     }
 
-    // Currently,curator changes require updating the CURATOR_ACCOUNTS env var
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          'Curator management requires updating the CURATOR_ACCOUNTS environment variable. Please update it in your deployment settings.',
-        curators,
-      },
-      { status: 501 }
-    );
+    await prisma.curatorRoster.update({
+      where: { username: parsed.curator },
+      data: { isActive: false },
+    });
+
+    logger.info(`Curator deactivated: ${parsed.curator} by ${user.username}`, 'admin:curators');
+
+    return NextResponse.json({ success: true, deactivated: parsed.curator });
   })
 );

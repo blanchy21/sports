@@ -1,5 +1,21 @@
 # Lessons Learned
 
+## Never promote preview deployments — always merge to main
+
+**Date:** 2026-03-30
+**Severity:** High — caused weekly staking rewards cron to silently not fire
+
+### Problem
+Preview deployments from feature branches were promoted to production instead of merging PRs to main. Vercel cron jobs behave unreliably on promoted previews, causing the weekly MEDALS staking rewards (and potentially other crons) to silently skip.
+
+### Fix
+Merged PRs #52 and #53 to main. Manually triggered staking rewards for W14 (310.75 MEDALS to 32 stakers).
+
+### Rule
+**Always merge PRs to main — never promote preview URLs to production.** The auto-deploy on merge handles everything. Crons, rollback candidates, and branch tracking all depend on production deployments coming from the main branch.
+
+---
+
 ## Redis dedup: isAvailable() (PING) doesn't guarantee GET/SET work
 
 **Date:** 2026-03-14

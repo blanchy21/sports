@@ -27,6 +27,7 @@ interface UseAuthPageResult {
   onHiveUsernameCancel: () => void;
   onProviderSelect: (provider: string) => void;
   handleGoogleSignIn: () => void;
+  handleTwitterSignIn: () => void;
   resetConnectionState: () => void;
 }
 
@@ -159,6 +160,10 @@ export const useAuthPage = (): UseAuthPageResult => {
     signIn('google', { callbackUrl: '/auth/google-callback' });
   }, []);
 
+  const handleTwitterSignIn = useCallback(() => {
+    signIn('twitter', { callbackUrl: '/auth/google-callback' });
+  }, []);
+
   const resetConnectionState = useCallback(() => {
     setIsConnecting(false);
     setErrorMessage(null);
@@ -262,6 +267,7 @@ export const useAuthPage = (): UseAuthPageResult => {
     onHiveUsernameCancel,
     onProviderSelect,
     handleGoogleSignIn,
+    handleTwitterSignIn,
     resetConnectionState,
   };
 };

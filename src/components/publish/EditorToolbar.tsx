@@ -184,7 +184,7 @@ export function EditorToolbar({
   };
 
   return (
-    <div className="scrollbar-none sticky top-0 z-20 flex items-center gap-1 overflow-x-auto border-b bg-sb-stadium px-4 py-3">
+    <div className="scrollbar-none sticky top-14 z-40 flex items-center gap-1 overflow-x-auto border-b bg-sb-stadium px-4 py-3 sm:top-16 lg:top-[4.5rem]">
       {/* Header dropdown */}
       <DropdownPill
         label="Header"

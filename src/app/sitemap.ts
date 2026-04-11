@@ -4,8 +4,12 @@ import { getAllPosts } from '@/lib/blog';
 
 const BASE_URL = 'https://sportsblock.app';
 
+// Keep sitemap focused on high-value pages to maximize crawl budget.
+// Google deprioritizes sites that submit hundreds of thin/dynamic URLs.
+const MAX_POSTS = 50;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Static pages
+  // Static pages (removed /auth and /new — utility pages with no indexable content)
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: BASE_URL,
@@ -42,18 +46,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/new`,
-      lastModified: new Date(),
-      changeFrequency: 'hourly',
-      priority: 0.6,
-    },
-    {
-      url: `${BASE_URL}/auth`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
     },
     {
       url: `${BASE_URL}/earn-crypto-sports`,
@@ -137,46 +129,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Fetch dynamic posts from Hive (paginate to collect up to 500)
+  // Fetch recent posts (capped to focus crawl budget on best content)
   const postEntries: MetadataRoute.Sitemap = [];
-  const authors = new Set<string>();
 
   try {
-    let cursor: string | undefined;
-    const MAX_POSTS = 500;
+    const result = await fetchSportsblockPosts({
+      sort: 'created',
+      limit: MAX_POSTS,
+    });
 
-    while (postEntries.length < MAX_POSTS) {
-      const remaining = MAX_POSTS - postEntries.length;
-      const result = await fetchSportsblockPosts({
-        sort: 'created',
-        limit: Math.min(remaining, 100),
-        ...(cursor && { before: cursor }),
+    for (const post of result.posts) {
+      postEntries.push({
+        url: `${BASE_URL}/post/${post.author}/${post.permlink}`,
+        lastModified: new Date(post.created),
+        changeFrequency: 'weekly',
+        priority: 0.8,
       });
-
-      for (const post of result.posts) {
-        postEntries.push({
-          url: `${BASE_URL}/post/${post.author}/${post.permlink}`,
-          lastModified: new Date(post.created),
-          changeFrequency: 'weekly',
-          priority: 0.8,
-        });
-        authors.add(post.author);
-      }
-
-      if (!result.hasMore || !result.nextCursor) break;
-      cursor = result.nextCursor;
     }
   } catch {
     // If Hive API fails, return sitemap with static pages only
   }
-
-  // Generate user profile URLs from discovered authors
-  const userEntries: MetadataRoute.Sitemap = Array.from(authors).map((username) => ({
-    url: `${BASE_URL}/user/${username}`,
-    lastModified: new Date(),
-    changeFrequency: 'monthly' as const,
-    priority: 0.6,
-  }));
 
   // Blog posts
   const blogEntries: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
@@ -202,6 +174,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...legalPages,
     ...communityPages,
     ...postEntries,
-    ...userEntries,
   ];
 }

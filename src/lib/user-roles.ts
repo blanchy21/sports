@@ -1,4 +1,4 @@
-export type UserRole = 'founder' | 'captain' | 'azzurri-aristocrat' | 'la-liga-legend';
+export type UserRole = 'founder' | 'captain' | 'curator' | 'azzurri-aristocrat' | 'la-liga-legend';
 
 interface RoleConfig {
   label: string;
@@ -16,6 +16,11 @@ const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     className:
       'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm shadow-blue-500/25',
   },
+  curator: {
+    label: 'Curator',
+    className:
+      'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm shadow-emerald-500/25',
+  },
   'azzurri-aristocrat': {
     label: 'Azzurri Aristocrat',
     className:
@@ -23,8 +28,7 @@ const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
   },
   'la-liga-legend': {
     label: 'La Liga Legend',
-    className:
-      'bg-gradient-to-r from-red-600 to-yellow-500 text-white shadow-sm shadow-red-500/25',
+    className: 'bg-gradient-to-r from-red-600 to-yellow-500 text-white shadow-sm shadow-red-500/25',
   },
 };
 
@@ -33,6 +37,7 @@ const USER_ROLES: Record<string, UserRole> = {
   niallon11: 'founder',
   talesfrmthecrypt: 'captain',
   bozz: 'captain',
+  fullcoverbetting: 'curator',
   zottone444: 'azzurri-aristocrat',
   r1c4rd0: 'la-liga-legend',
 };

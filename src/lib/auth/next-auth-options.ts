@@ -1,5 +1,6 @@
 import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import TwitterProvider from 'next-auth/providers/twitter';
 import { prisma } from '@/lib/db/prisma';
 import { MemoryCache } from '@/lib/cache/memory-cache';
 
@@ -14,6 +15,11 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    TwitterProvider({
+      clientId: process.env.TWITTER_CLIENT_ID!,
+      clientSecret: process.env.TWITTER_CLIENT_SECRET!,
+      version: '2.0',
     }),
   ],
 
@@ -31,19 +37,41 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, account, profile }) {
       // On initial sign-in, upsert CustodialUser and embed fields into JWT
       if (account && profile) {
-        const googleId = account.providerAccountId;
-        const email = profile.email!;
-        const displayName = profile.name ?? undefined;
-        const avatarUrl = (profile as { picture?: string }).picture ?? undefined;
+        let custodialUser: Awaited<ReturnType<typeof prisma.custodialUser.upsert>>;
 
-        const custodialUser = await prisma.custodialUser.upsert({
-          where: { googleId },
-          create: { googleId, email, displayName, avatarUrl },
-          update: { email, displayName, avatarUrl },
-        });
+        if (account.provider === 'google') {
+          const googleId = account.providerAccountId;
+          const email = profile.email!;
+          const displayName = profile.name ?? undefined;
+          const avatarUrl = (profile as { picture?: string }).picture ?? undefined;
+
+          custodialUser = await prisma.custodialUser.upsert({
+            where: { googleId },
+            create: { googleId, email, displayName, avatarUrl },
+            update: { email, displayName, avatarUrl },
+          });
+        } else {
+          // Twitter (or any future OAuth provider)
+          const twitterId = account.providerAccountId;
+          const twitterHandle =
+            (profile as { data?: { username?: string } }).data?.username ??
+            (profile as { screen_name?: string }).screen_name ??
+            undefined;
+          const displayName = profile.name ?? twitterHandle ?? undefined;
+          const avatarUrl =
+            (profile as { data?: { profile_image_url?: string } }).data?.profile_image_url ??
+            (profile as { profile_image_url_https?: string }).profile_image_url_https ??
+            undefined;
+
+          custodialUser = await prisma.custodialUser.upsert({
+            where: { twitterId },
+            create: { twitterId, twitterHandle, displayName, avatarUrl },
+            update: { twitterHandle, displayName, avatarUrl },
+          });
+        }
 
         token.custodialUserId = custodialUser.id;
-        token.email = custodialUser.email;
+        token.email = custodialUser.email ?? undefined;
         token.displayName = custodialUser.displayName ?? undefined;
         token.avatarUrl = custodialUser.avatarUrl ?? undefined;
         token.hiveUsername = custodialUser.hiveUsername ?? undefined;

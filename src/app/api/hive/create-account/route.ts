@@ -37,11 +37,11 @@ export const POST = createApiHandler('/api/hive/create-account', async (request:
   }
 
   // Rate limit — prevent rapid ACT exhaustion (3 per day per user)
+  // Not strict: falls back to in-memory when Redis is unavailable/over quota
   const rateLimit = await checkRateLimit(
     user.userId,
     RATE_LIMITS.accountCreation,
-    'accountCreation',
-    { strict: true }
+    'accountCreation'
   );
   if (!rateLimit.success) {
     return apiError(
@@ -68,11 +68,9 @@ export const POST = createApiHandler('/api/hive/create-account', async (request:
     return apiError('Username must start with "sb-"', 'VALIDATION_ERROR', 400);
   }
 
-  // Look up the custodial user record
-  const custodialUser = await prisma.custodialUser.findFirst({
-    where: {
-      OR: [{ id: user.userId }, { email: user.username }],
-    },
+  // Look up the custodial user record by ID (works for all OAuth providers)
+  const custodialUser = await prisma.custodialUser.findUnique({
+    where: { id: user.userId },
   });
 
   if (!custodialUser) {
