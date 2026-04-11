@@ -46,6 +46,49 @@ const PROPOSAL_CLEAR_DATA = {
 } as const;
 
 /**
+ * Upsert a row into PredictionEscrowLedger for audit + future idempotency.
+ *
+ * Keyed on @@unique([predictionId, txId]) — retries skip cleanly. Currently
+ * additive to the existing payoutTxId/refundTxId/feeBurnTxId columns; over
+ * time the ledger should become the source of truth and those columns can
+ * be derived from it.
+ */
+async function recordLedgerEntry(entry: {
+  predictionId: string;
+  entryType: 'stake_in' | 'payout' | 'refund' | 'fee_burn';
+  username: string | null;
+  amount: number;
+  txId: string;
+}): Promise<void> {
+  try {
+    await prisma.predictionEscrowLedger.upsert({
+      where: {
+        predictionId_txId: {
+          predictionId: entry.predictionId,
+          txId: entry.txId,
+        },
+      },
+      create: {
+        predictionId: entry.predictionId,
+        entryType: entry.entryType,
+        username: entry.username,
+        amount: entry.amount,
+        txId: entry.txId,
+      },
+      update: {},
+    });
+  } catch (err) {
+    // Ledger writes should never block broadcasts that already succeeded —
+    // the column-based guards remain the primary idempotency mechanism.
+    logger.error(
+      `Failed to record escrow ledger entry for ${entry.predictionId}/${entry.txId}`,
+      'Settlement',
+      err
+    );
+  }
+}
+
+/**
  * Propose a settlement — transitions LOCKED → PENDING_APPROVAL.
  * Stores proposal fields for a second admin to approve.
  */
@@ -200,6 +243,13 @@ export async function executeSettlement(
         where: { id: stake.id },
         data: { refundTxId: txId },
       });
+      await recordLedgerEntry({
+        predictionId,
+        entryType: 'refund',
+        username: stake.username,
+        amount: stake.amount.toNumber(),
+        txId,
+      });
       logger.info(`Refund sent to ${stake.username}: ${txId}`, 'Settlement', { predictionId });
     }
 
@@ -246,6 +296,13 @@ export async function executeSettlement(
         where: { id: predictionId },
         data: { feeBurnTxId: txId },
       });
+      await recordLedgerEntry({
+        predictionId,
+        entryType: 'fee_burn',
+        username: null,
+        amount: settlement.burnAmount,
+        txId,
+      });
       logger.info(`Fee burn broadcast: ${txId}`, 'Settlement', { predictionId });
     }
 
@@ -265,6 +322,13 @@ export async function executeSettlement(
       await prisma.predictionStake.update({
         where: { id: payout.stakeId },
         data: { payoutTxId: txId },
+      });
+      await recordLedgerEntry({
+        predictionId,
+        entryType: 'payout',
+        username: payout.username,
+        amount: payout.payoutAmount,
+        txId,
       });
       logger.info(`Payout sent to ${payout.username}: ${txId}`, 'Settlement', { predictionId });
     }
@@ -379,6 +443,13 @@ export async function executeVoidRefund(
       await prisma.predictionStake.update({
         where: { id: stake.id },
         data: { refundTxId: txId },
+      });
+      await recordLedgerEntry({
+        predictionId,
+        entryType: 'refund',
+        username: stake.username,
+        amount: stake.amount.toNumber(),
+        txId,
       });
       logger.info(`Refund sent to ${stake.username}: ${txId}`, 'Settlement', { predictionId });
     }

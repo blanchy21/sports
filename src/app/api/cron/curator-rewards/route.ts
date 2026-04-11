@@ -1,12 +1,25 @@
 /**
  * Curator Rewards Cron Job
  *
- * Runs daily at midnight UTC to process curator votes and queue rewards.
+ * Runs periodically (daily) to auto-pay MEDALS to authors whose posts got
+ * upvoted by one of the designated curator accounts.
  *
- * This endpoint:
- * 1. Fetches recent votes from designated curators
- * 2. Filters for unprocessed votes on Sportsblock posts
- * 3. Calculates rewards and stores them for distribution
+ * Flow:
+ *  1. Fetch recent votes from curator Hive accounts (24h lookback).
+ *  2. Filter to unprocessed votes on Sportsblock-community posts only.
+ *  3. Calculate a fixed reward (currently 100 MEDALS) per eligible vote,
+ *     bounded by a per-curator daily cap.
+ *  4. Broadcast transferMedalsFromSportsblock() for each reward.
+ *  5. Only mark a vote as processed AFTER its broadcast succeeds — failures
+ *     retry on the next tick within the 24h lookback window.
+ *
+ * Related (but distinct) systems:
+ *  - /api/curation/curate — explicit CurateButton curation (100 MEDALS,
+ *    one curator per post).
+ *  - /api/cron/medals-scan — explicit `!medals` comment curation.
+ * This cron handles the IMPLICIT upvote-based reward path. A curator who
+ * upvotes AND explicitly curates the same post can pay MEDALS twice by
+ * design (two distinct actions).
  */
 
 import { NextResponse } from 'next/server';
@@ -18,8 +31,10 @@ import {
   getDailyKey,
   getCuratorStatsSummary,
   type CuratorVote,
+  type CuratorReward,
 } from '@/lib/rewards/curator-rewards';
 import { getCuratorRewardAmount } from '@/lib/rewards/config';
+import { transferMedalsFromSportsblock } from '@/lib/hive-engine/server-transfer';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@/generated/prisma/client';
 import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/client';
@@ -298,54 +313,108 @@ export async function GET() {
       });
     }
 
-    // Process votes and calculate rewards
+    // Calculate rewards per eligible vote
     const { rewards, updatedStats, skipped } = processCuratorVotes(
       verifiedVotes,
       curatorDailyCounts
     );
 
     logger.info(
-      `Processed: ${rewards.length} rewards, ${skipped.length} skipped`,
+      `Ready to broadcast ${rewards.length} rewards, ${skipped.length} skipped`,
       'cron:curator-rewards'
     );
 
-    // Save to database
-    if (rewards.length > 0) {
-      const newVoteIds = rewards.map((r) =>
-        getVoteUniqueId({
-          voter: r.curator,
-          author: r.author,
-          permlink: r.permlink,
-          weight: 0,
-          timestamp: r.voteTimestamp,
-          blockNum: 0,
-          transactionId: r.transactionId,
-        })
-      );
+    // Broadcast MEDALS transfers for each reward. Only mark a vote as
+    // processed after its broadcast succeeds — a failed broadcast will be
+    // retried on the next cron tick (within the 24h lookback window).
+    const broadcastedRewards: CuratorReward[] = [];
+    const broadcastedVoteIds: string[] = [];
+    const broadcastFailures: Array<{ author: string; curator: string; error: string }> = [];
 
-      await saveProcessedRewards(rewards, newVoteIds, updatedStats);
+    for (const reward of rewards) {
+      try {
+        const txId = await transferMedalsFromSportsblock(
+          reward.author,
+          reward.amount,
+          `Curator reward from @${reward.curator} for ${reward.permlink}`
+        );
+        logger.info(
+          `Curator reward paid: ${reward.amount} MEDALS → @${reward.author} (from curator @${reward.curator}) tx=${txId}`,
+          'cron:curator-rewards'
+        );
+        broadcastedRewards.push({ ...reward, transactionId: txId });
+        broadcastedVoteIds.push(
+          getVoteUniqueId({
+            voter: reward.curator,
+            author: reward.author,
+            permlink: reward.permlink,
+            weight: 0,
+            timestamp: reward.voteTimestamp,
+            blockNum: 0,
+            transactionId: reward.transactionId,
+          })
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.error(
+          `Curator reward broadcast failed for @${reward.author}: ${msg}`,
+          'cron:curator-rewards',
+          err
+        );
+        broadcastFailures.push({
+          author: reward.author,
+          curator: reward.curator,
+          error: msg,
+        });
+      }
     }
 
-    const totalRewarded = rewards.reduce((sum, r) => sum + r.amount, 0);
+    // Persist only the successfully broadcast rewards so retries pick up
+    // the failures on the next tick. Daily counts advance only for votes
+    // whose broadcast actually landed.
+    if (broadcastedRewards.length > 0) {
+      const persistedStats = new Map(curatorDailyCounts);
+      for (const r of broadcastedRewards) {
+        persistedStats.set(r.curator, (persistedStats.get(r.curator) || 0) + 1);
+      }
+      await saveProcessedRewards(broadcastedRewards, broadcastedVoteIds, persistedStats);
+    }
+
+    const totalRewarded = broadcastedRewards.reduce((sum, r) => sum + r.amount, 0);
+
+    // Silence unused-var warning for updatedStats from processCuratorVotes —
+    // we recompute persistedStats from actual broadcast outcomes above.
+    void updatedStats;
 
     return NextResponse.json({
       success: true,
-      message: `Processed ${rewards.length} curator rewards`,
+      message: `Broadcast ${broadcastedRewards.length} curator rewards (${broadcastFailures.length} failed)`,
       summary: {
         votesFound: allVotes.length,
         eligibleVotes: eligibleVotes.length,
         verifiedVotes: verifiedVotes.length,
-        rewardsProcessed: rewards.length,
+        rewardsCalculated: rewards.length,
+        rewardsBroadcast: broadcastedRewards.length,
+        broadcastFailures: broadcastFailures.length,
         skipped: skipped.length,
         totalMedalsRewarded: totalRewarded,
         rewardPerVote: getCuratorRewardAmount(),
       },
-      rewards: rewards.map((r) => ({
+      rewards: broadcastedRewards.map((r) => ({
         author: r.author,
         curator: r.curator,
         amount: r.amount,
+        txId: r.transactionId,
       })),
-      stats: getCuratorStatsSummary(updatedStats),
+      failures: broadcastFailures,
+      stats: getCuratorStatsSummary(
+        new Map(
+          broadcastedRewards.reduce((acc, r) => {
+            acc.set(r.curator, (acc.get(r.curator) || 0) + 1);
+            return acc;
+          }, new Map(curatorDailyCounts))
+        )
+      ),
       duration: Date.now() - startTime,
     });
   } catch (error) {

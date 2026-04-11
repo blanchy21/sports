@@ -1,8 +1,33 @@
 import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import TwitterProvider from 'next-auth/providers/twitter';
+import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { MemoryCache } from '@/lib/cache/memory-cache';
+import { logger } from '@/lib/logger';
+
+// OAuth provider profile schemas. We `.safeParse()` these at JWT callback
+// time so that silent upstream shape changes (Twitter v2 payload drift,
+// Google response tweaks) don't land NULLs in CustodialUser columns.
+const googleProfileSchema = z.object({
+  email: z.string().email(),
+  name: z.string().optional(),
+  picture: z.string().url().optional(),
+});
+
+// Twitter v2.0 nests everything under `data`; older v1 clients may still
+// return flat fields. Accept either shape and normalize.
+const twitterProfileSchema = z.object({
+  name: z.string().optional(),
+  data: z
+    .object({
+      username: z.string().optional(),
+      profile_image_url: z.string().url().optional(),
+    })
+    .optional(),
+  screen_name: z.string().optional(),
+  profile_image_url_https: z.string().url().optional(),
+});
 
 export const jwtFieldsCache = new MemoryCache({
   maxEntries: 500,
@@ -40,10 +65,18 @@ export const authOptions: NextAuthOptions = {
         let custodialUser: Awaited<ReturnType<typeof prisma.custodialUser.upsert>>;
 
         if (account.provider === 'google') {
+          const parsed = googleProfileSchema.safeParse(profile);
+          if (!parsed.success) {
+            logger.error(
+              'Google OAuth profile failed schema validation',
+              'auth:next-auth',
+              parsed.error
+            );
+            throw new Error('Google profile response was malformed');
+          }
+
           const googleId = account.providerAccountId;
-          const email = profile.email!;
-          const displayName = profile.name ?? undefined;
-          const avatarUrl = (profile as { picture?: string }).picture ?? undefined;
+          const { email, name: displayName, picture: avatarUrl } = parsed.data;
 
           custodialUser = await prisma.custodialUser.upsert({
             where: { googleId },
@@ -52,16 +85,21 @@ export const authOptions: NextAuthOptions = {
           });
         } else {
           // Twitter (or any future OAuth provider)
+          const parsed = twitterProfileSchema.safeParse(profile);
+          if (!parsed.success) {
+            logger.error(
+              'Twitter OAuth profile failed schema validation',
+              'auth:next-auth',
+              parsed.error
+            );
+            throw new Error('Twitter profile response was malformed');
+          }
+
           const twitterId = account.providerAccountId;
-          const twitterHandle =
-            (profile as { data?: { username?: string } }).data?.username ??
-            (profile as { screen_name?: string }).screen_name ??
-            undefined;
-          const displayName = profile.name ?? twitterHandle ?? undefined;
+          const twitterHandle = parsed.data.data?.username ?? parsed.data.screen_name;
+          const displayName = parsed.data.name ?? twitterHandle;
           const avatarUrl =
-            (profile as { data?: { profile_image_url?: string } }).data?.profile_image_url ??
-            (profile as { profile_image_url_https?: string }).profile_image_url_https ??
-            undefined;
+            parsed.data.data?.profile_image_url ?? parsed.data.profile_image_url_https;
 
           custodialUser = await prisma.custodialUser.upsert({
             where: { twitterId },
