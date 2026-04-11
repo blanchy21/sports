@@ -28,6 +28,7 @@ import {
 } from '@/lib/curation/config';
 import { transferMedalsFromSportsblock } from '@/lib/hive-engine/server-transfer';
 import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@/generated/prisma/client';
 import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
@@ -143,18 +144,34 @@ export const POST = createApiHandler(ROUTE, async (request) => {
       );
     }
 
-    // Create curation record (pending)
-    const curation = await prisma.curation.create({
-      data: {
-        curatorUsername: user.username,
-        author,
-        permlink,
-        amount: medalsAmount,
-        type,
-        source: 'in_app',
-        status: 'pending',
-      },
-    });
+    // Create curation record (pending).
+    // Partial unique index `curations_author_permlink_active_unique` enforces
+    // "first curator wins" at the DB layer — if another curator (or cron) beat
+    // us to this post between the findFirst above and now, P2002 is thrown and
+    // we surface it as a 409 instead of double-broadcasting.
+    let curation;
+    try {
+      curation = await prisma.curation.create({
+        data: {
+          curatorUsername: user.username,
+          author,
+          permlink,
+          amount: medalsAmount,
+          type,
+          source: 'in_app',
+          status: 'pending',
+        },
+      });
+    } catch (createErr) {
+      if (createErr instanceof Prisma.PrismaClientKnownRequestError && createErr.code === 'P2002') {
+        const label = type === 'sportsbite' ? 'sportsbite' : 'post';
+        return NextResponse.json(
+          { success: false, error: `Another curator just curated this ${label}` },
+          { status: 409 }
+        );
+      }
+      throw createErr;
+    }
 
     // Transfer MEDALS — throws on missing key or broadcast failure.
     // On failure we mark the curation row `failed` (never `completed` with a null txId).

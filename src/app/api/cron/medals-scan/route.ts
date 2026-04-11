@@ -16,6 +16,7 @@ import { checkCurationEligibility } from '@/lib/curation/eligibility';
 import { CURATION_MEDALS_AMOUNT, MAX_CURATIONS_PER_DAY } from '@/lib/curation/config';
 import { transferMedalsFromSportsblock } from '@/lib/hive-engine/server-transfer';
 import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@/generated/prisma/client';
 import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
@@ -68,13 +69,17 @@ export async function GET() {
 
           if (!parentAuthor || !parentPermlink) continue;
 
-          // Check daily limit for this curator
+          // Check daily limit for this curator — filtered by type to match
+          // the in-app route's per-type budget (5 posts/day, 5 sportsbites/day).
+          // The cron only ever creates `type: 'post'` rows via the default,
+          // so filter by type='post' here explicitly.
           const todayStart = new Date();
           todayStart.setUTCHours(0, 0, 0, 0);
 
           const dailyCount = await prisma.curation.count({
             where: {
               curatorUsername: curator,
+              type: 'post',
               createdAt: { gte: todayStart },
               status: { not: 'failed' },
             },
@@ -85,18 +90,22 @@ export async function GET() {
             continue;
           }
 
-          // Check if already recorded
-          const existing = await prisma.curation.findUnique({
+          // "First curator wins" — skip if ANY curator already has an active
+          // (pending or completed) curation on this post. This mirrors the
+          // in-app route's check and prevents double-curation across the
+          // in-app + !medals-scan paths. The partial unique index
+          // `curations_author_permlink_active_unique` is the hard guard; this
+          // pre-check avoids the race in the common case.
+          const existingActive = await prisma.curation.findFirst({
             where: {
-              curatorUsername_author_permlink: {
-                curatorUsername: curator,
-                author: parentAuthor,
-                permlink: parentPermlink,
-              },
+              author: parentAuthor,
+              permlink: parentPermlink,
+              status: { in: ['pending', 'completed'] },
             },
+            select: { id: true },
           });
 
-          if (existing) {
+          if (existingActive) {
             totalSkipped++;
             continue;
           }
@@ -125,18 +134,32 @@ export async function GET() {
             continue;
           }
 
-          // Create curation record and transfer MEDALS
-          const curation = await prisma.curation.create({
-            data: {
-              curatorUsername: curator,
-              author: parentAuthor,
-              permlink: parentPermlink,
-              amount: CURATION_MEDALS_AMOUNT,
-              source: 'hive_comment',
-              hiveCommentPermlink: comment.permlink,
-              status: 'pending',
-            },
-          });
+          // Create curation record and transfer MEDALS.
+          // Partial unique index may reject this if another curator raced us
+          // between the pre-check above and here — skip gracefully.
+          let curation;
+          try {
+            curation = await prisma.curation.create({
+              data: {
+                curatorUsername: curator,
+                author: parentAuthor,
+                permlink: parentPermlink,
+                amount: CURATION_MEDALS_AMOUNT,
+                source: 'hive_comment',
+                hiveCommentPermlink: comment.permlink,
+                status: 'pending',
+              },
+            });
+          } catch (createErr) {
+            if (
+              createErr instanceof Prisma.PrismaClientKnownRequestError &&
+              createErr.code === 'P2002'
+            ) {
+              totalSkipped++;
+              continue;
+            }
+            throw createErr;
+          }
 
           try {
             const txId = await transferMedalsFromSportsblock(
