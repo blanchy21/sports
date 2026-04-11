@@ -12,7 +12,7 @@ import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { extractPathParam } from '@/lib/api/route-params';
 import { isAdminAccount } from '@/lib/admin/config';
 import { prisma } from '@/lib/db/prisma';
-import { transferCurationMedals } from '@/lib/curation/transfer';
+import { transferMedalsFromSportsblock } from '@/lib/hive-engine/server-transfer';
 import { logger } from '@/lib/logger';
 
 /**
@@ -109,7 +109,7 @@ export const POST = createApiHandler(
 
       for (const prize of prizes) {
         try {
-          const txId = await transferCurationMedals(
+          const txId = await transferMedalsFromSportsblock(
             prize.username!,
             prize.amount,
             `IPL Boundary Blackjack ${competition.title} - ${ordinal(prize.place)} Place`

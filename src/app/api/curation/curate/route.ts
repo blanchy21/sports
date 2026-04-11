@@ -26,7 +26,7 @@ import {
   buildCurationComment,
   type CurationType,
 } from '@/lib/curation/config';
-import { transferCurationMedals } from '@/lib/curation/transfer';
+import { transferMedalsFromSportsblock } from '@/lib/hive-engine/server-transfer';
 import { prisma } from '@/lib/db/prisma';
 import { logger } from '@/lib/logger';
 
@@ -156,10 +156,11 @@ export const POST = createApiHandler(ROUTE, async (request) => {
       },
     });
 
-    // Transfer MEDALS
-    let txId: string | null = null;
+    // Transfer MEDALS — throws on missing key or broadcast failure.
+    // On failure we mark the curation row `failed` (never `completed` with a null txId).
+    let txId: string;
     try {
-      txId = await transferCurationMedals(
+      txId = await transferMedalsFromSportsblock(
         author,
         medalsAmount,
         `${type === 'sportsbite' ? 'Sportsbite' : 'Curation'} reward from @${user.username} for ${permlink}`
@@ -231,6 +232,11 @@ export const POST = createApiHandler(ROUTE, async (request) => {
 
 /**
  * Post a !medals comment on the Hive blockchain under the curated post.
+ *
+ * Signs with SPORTSBLOCK_POSTING_KEY only. The comment op is a posting-authority
+ * operation and must never be signed with the active key — active keys have
+ * broader authority (fund movement, account updates) and should be strictly
+ * scoped to the treasury transfer path.
  */
 async function postCurationComment(
   curator: string,
@@ -238,14 +244,20 @@ async function postCurationComment(
   permlink: string,
   amount: number
 ): Promise<void> {
-  const activeKeyWif = process.env.SPORTSBLOCK_ACTIVE_KEY;
-  if (!activeKeyWif) return;
+  const postingKeyWif = process.env.SPORTSBLOCK_POSTING_KEY;
+  if (!postingKeyWif) {
+    logger.warn(
+      'SPORTSBLOCK_POSTING_KEY not set — skipping on-chain curation comment',
+      'curation:curate'
+    );
+    return;
+  }
 
   const { PrivateKey } = await import('@hiveio/dhive');
   const { getDhiveClient } = await import('@/lib/hive/dhive-client');
 
   const dhive = getDhiveClient();
-  const postingKey = PrivateKey.fromString(process.env.SPORTSBLOCK_POSTING_KEY || activeKeyWif);
+  const postingKey = PrivateKey.fromString(postingKeyWif);
 
   const commentPermlink = `re-${permlink}-medals-${Date.now()}`.slice(0, 255);
   const commentBody = buildCurationComment(curator, amount);
