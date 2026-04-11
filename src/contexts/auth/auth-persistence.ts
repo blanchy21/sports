@@ -252,15 +252,20 @@ export const clearUIHint = (): void => {
 // Debounced Persistence (to httpOnly Cookies)
 // ============================================================================
 
-// Debounce state for persistAuthState to prevent race conditions
+// Debounce state for persistAuthState to prevent race conditions.
+//
+// NOTE: challengeData / hivesignerToken are deliberately NOT carried here.
+// The login flow always sends those via syncSessionCookie directly (immediate,
+// not debounced) so the challenge nonce is consumed exactly once. Any
+// subsequent persist hits the server-side refresh path and only needs identity
+// fields. Reintroducing wallet verification material into this debounced path
+// re-enables a replay 401 storm on mobile (see fix/mobile-signin-challenge-reuse).
 let pendingPersistState: {
   user: User | null;
   authType: AuthType;
   hiveUser: HiveAuthUser | null;
   loginAt?: number;
   lastActivityAt?: number;
-  challengeData?: ChallengeData;
-  hivesignerToken?: string;
   displayName?: string;
   avatar?: string;
 } | null = null;
@@ -281,8 +286,6 @@ const executePersist = async (): Promise<void> => {
     hiveUser: hiveUserToPersist,
     loginAt: loginAtToPersist,
     lastActivityAt: lastActivityAtToPersist,
-    challengeData: challengeDataToPersist,
-    hivesignerToken: hivesignerTokenToPersist,
     displayName: displayNameToPersist,
     avatar: avatarToPersist,
   } = pendingPersistState;
@@ -295,7 +298,10 @@ const executePersist = async (): Promise<void> => {
       username: userToPersist.username,
     });
 
-    // PRIMARY: Sync to httpOnly cookie for server-side validation
+    // PRIMARY: Sync to httpOnly cookie for server-side validation.
+    // Never carries challengeData — that path is only used by the
+    // immediate syncSessionCookie call in the login flow. Here we rely
+    // on the server-side session-refresh path (matches existing cookie).
     const synced = await syncSessionCookie({
       userId: userToPersist.id,
       username: userToPersist.username,
@@ -303,8 +309,6 @@ const executePersist = async (): Promise<void> => {
       hiveUsername: hiveUserToPersist?.username,
       loginAt: loginAtToPersist ?? Date.now(),
       lastActivityAt: lastActivityAtToPersist,
-      challengeData: challengeDataToPersist,
-      hivesignerToken: hivesignerTokenToPersist,
       displayName: displayNameToPersist,
       avatar: avatarToPersist,
     });
@@ -339,8 +343,6 @@ export const persistAuthState = ({
   hiveUser: hiveUserToPersist,
   loginAt: loginAtToPersist,
   lastActivityAt: lastActivityAtToPersist,
-  challengeData: challengeDataToPersist,
-  hivesignerToken: hivesignerTokenToPersist,
   displayName: displayNameToPersist,
   avatar: avatarToPersist,
 }: {
@@ -349,8 +351,6 @@ export const persistAuthState = ({
   hiveUser: HiveAuthUser | null;
   loginAt?: number;
   lastActivityAt?: number;
-  challengeData?: ChallengeData;
-  hivesignerToken?: string;
   displayName?: string;
   avatar?: string;
 }): void => {
@@ -359,18 +359,16 @@ export const persistAuthState = ({
     return;
   }
 
-  // Store the latest state to persist.
-  // When debounce coalesces calls, preserve existing challengeData if the
-  // new call doesn't provide it (the first call after login has it;
-  // subsequent profile/activity updates don't).
+  // Store the latest state to persist. Callers that coalesce during the
+  // debounce window will have their identity fields merged; wallet-verification
+  // material (challenge, HiveSigner token) is intentionally NOT accepted here
+  // — see comment on pendingPersistState above.
   pendingPersistState = {
     user: userToPersist,
     authType: authTypeToPersist,
     hiveUser: hiveUserToPersist,
     loginAt: loginAtToPersist,
     lastActivityAt: lastActivityAtToPersist ?? pendingPersistState?.lastActivityAt,
-    challengeData: challengeDataToPersist ?? pendingPersistState?.challengeData,
-    hivesignerToken: hivesignerTokenToPersist ?? pendingPersistState?.hivesignerToken,
     displayName: displayNameToPersist ?? pendingPersistState?.displayName,
     avatar: avatarToPersist ?? pendingPersistState?.avatar,
   };

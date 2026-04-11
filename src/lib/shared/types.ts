@@ -221,38 +221,6 @@ export interface HiveVote {
   time: string;
 }
 
-export interface HiveTransaction {
-  ref_block_num: number;
-  ref_block_prefix: number;
-  expiration: string;
-  operations: Array<[string, Record<string, unknown>]>;
-  extensions: Array<[number, Record<string, unknown>]>;
-  signatures: string[];
-}
-
-export interface HivePostMetadata {
-  app?: string;
-  format?: string;
-  tags?: string[];
-  community?: string;
-  sport_category?: string;
-  image?: string[];
-  links?: string[];
-  users?: string[];
-}
-
-export interface HiveProfileMetadata {
-  profile?: {
-    name?: string;
-    about?: string;
-    location?: string;
-    website?: string;
-    cover_image?: string;
-    profile_image?: string;
-    version?: number;
-  };
-}
-
 export interface HiveResourceCredit {
   account: string;
   rc_manabar: {
@@ -262,25 +230,6 @@ export interface HiveResourceCredit {
   max_rc: string;
   delegated_rc: string;
   received_delegated_rc: string;
-}
-
-export interface HiveKeychainRequest {
-  type: string;
-  id: string;
-  jsonrpc: string;
-  method: string;
-  params: Record<string, unknown>;
-}
-
-export interface HiveKeychainResponse {
-  id: string;
-  jsonrpc: string;
-  result?: Record<string, unknown>;
-  error?: {
-    code: number;
-    message: string;
-    data?: Record<string, unknown>;
-  };
 }
 
 // Sportsblock specific types

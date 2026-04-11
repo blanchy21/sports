@@ -36,6 +36,8 @@ import { logger } from '@/lib/logger';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { InlinePostComments } from '@/components/comments/InlinePostComments';
 import { useAuthorPosts } from '@/lib/react-query/queries/usePosts';
+import { CurateButton } from '@/components/curation/CurateButton';
+import { hasSportsblockBeneficiary } from '@/lib/curation/eligibility';
 
 interface PostDetailClientProps {
   initialPost?: SportsblockPost | null;
@@ -513,6 +515,10 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
                 <Share className="h-4 w-4" />
                 <span>Share</span>
               </Button>
+
+              {!isSoftPost && hasSportsblockBeneficiary(post.beneficiaries) && (
+                <CurateButton author={post.author} permlink={post.permlink} />
+              )}
             </div>
           </div>
         </div>

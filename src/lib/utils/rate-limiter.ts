@@ -260,12 +260,7 @@ export class RateLimiter {
       priority?: number;
     } = {}
   ): Promise<boolean> {
-    const {
-      maxRetries = 3,
-      initialDelay = 100,
-      maxDelay = 5000,
-      priority = 0,
-    } = options;
+    const { maxRetries = 3, initialDelay = 100, maxDelay = 5000, priority = 0 } = options;
 
     // Try immediate acquisition first
     if (this.bucket.tryConsume(tokens)) {
@@ -278,7 +273,7 @@ export class RateLimiter {
       const delay = Math.min(initialDelay * Math.pow(2, attempt), maxDelay);
 
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
 
       // Try to acquire
       if (this.bucket.tryConsume(tokens)) {
@@ -535,17 +530,4 @@ export function getRateLimiterRegistry(): RateLimiterRegistry {
     globalRateLimiterRegistry = new RateLimiterRegistry();
   }
   return globalRateLimiterRegistry;
-}
-
-/**
- * Convenience function to execute with a named rate limiter
- */
-export async function withRateLimit<T>(
-  name: string,
-  fn: () => Promise<T>,
-  options?: { tokens?: number; timeout?: number; priority?: number; config?: Partial<TokenBucketConfig> }
-): Promise<T> {
-  const registry = getRateLimiterRegistry();
-  const limiter = registry.getOrCreate(name, options?.config);
-  return limiter.execute(fn, options);
 }

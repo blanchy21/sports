@@ -80,40 +80,6 @@ export interface UserStakeInfo {
 }
 
 // ============================================================================
-// Input Types
-// ============================================================================
-
-/** Input for creating a new prediction */
-export interface CreatePredictionInput {
-  title: string;
-  outcomes: string[];
-  sportCategory?: string;
-  matchReference?: string;
-  locksAt: string;
-  /** Creator's initial stake */
-  creatorStake: {
-    outcomeIndex: number;
-    amount: number;
-  };
-}
-
-/** Input for placing a stake */
-export interface PlaceStakeInput {
-  outcomeId: string;
-  amount: number;
-}
-
-/** Input for settling a prediction */
-export interface SettlePredictionInput {
-  winningOutcomeId: string;
-}
-
-/** Input for voiding a prediction */
-export interface VoidPredictionInput {
-  reason: string;
-}
-
-// ============================================================================
 // Computed Types
 // ============================================================================
 
