@@ -10,17 +10,26 @@ import {
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { extractPathParam } from '@/lib/api/route-params';
-import { isAdminAccount } from '@/lib/admin/config';
+import { requireAdmin } from '@/lib/admin/config';
 import { prisma } from '@/lib/db/prisma';
 import { transferMedalsFromSportsblock } from '@/lib/hive-engine/server-transfer';
 import { logger } from '@/lib/logger';
 
 /**
  * POST /api/ipl-bb/admin/competition/[id]/payout
- * Distribute MEDALS prizes to top 3 winners. Admin only.
  *
- * Reads prize_first/prize_second/prize_third from the competition,
- * fetches the leaderboard, and broadcasts transfers from @sportsblock.
+ * Distribute MEDALS prizes to top 3 winners. Admin only. Idempotent.
+ *
+ * Idempotency model:
+ *  - First call for a competition snapshots the leaderboard into each entry's
+ *    `finalRank` + `prizeAwarded` columns inside a transaction. Subsequent
+ *    calls read this snapshot instead of recomputing from potentially-mutable
+ *    match results.
+ *  - Each per-entry broadcast writes `payoutTxId` + `paidAt` before the loop
+ *    continues. Retries skip entries that already have a `payoutTxId`.
+ *  - The `leaderboard snapshot is written before any broadcast, so a crash
+ *    between broadcast and DB write leaves a short re-broadcast window on
+ *    one entry only — not the entire prize pool.
  */
 export const POST = createApiHandler(
   '/api/ipl-bb/admin/competition/[id]/payout',
@@ -28,116 +37,160 @@ export const POST = createApiHandler(
     return withCsrfProtection(request as NextRequest, async () => {
       const user = await getAuthenticatedUserFromSession(request as NextRequest);
       if (!user) throw new AuthError();
-      if (!isAdminAccount(user.username)) throw new ForbiddenError('Admin access required');
+      if (!requireAdmin(user)) throw new ForbiddenError('Admin access required');
 
       const id = extractPathParam(request.url, 'competition');
       if (!id) throw new NotFoundError('Competition not found');
 
       const competition = await prisma.iplBbCompetition.findUnique({
         where: { id },
-        include: {
-          matches: true,
-        },
+        include: { matches: true },
       });
       if (!competition) throw new NotFoundError('Competition not found');
       if (competition.status !== 'complete') {
         throw new ValidationError('Competition must be complete before payout');
       }
 
-      // Get all entries with their picks
-      const entries = await prisma.iplBbEntry.findMany({
+      // Snapshot the leaderboard once per competition. Subsequent calls read
+      // the persisted snapshot instead of recomputing — this guards against
+      // admins editing `actualBoundaries` between retries and silently
+      // changing the winners.
+      const allEntries = await prisma.iplBbEntry.findMany({
         where: { competitionId: id },
-        include: {
-          picks: true,
-        },
+        include: { picks: true },
       });
 
-      // Build resolved match map: matchId -> actual boundaries
-      const resolvedMatches = new Map<string, number>();
-      for (const match of competition.matches) {
-        if (match.actualBoundaries !== null) {
-          resolvedMatches.set(match.id, match.actualBoundaries);
-        }
-      }
-
-      // Calculate scores per entry (same logic as leaderboard)
-      const leaderboard = entries
-        .map((entry) => {
-          let totalPoints = 0;
-          let hits = 0;
-          let busts = 0;
-
-          for (const pick of entry.picks) {
-            const actual = resolvedMatches.get(pick.matchId);
-            if (actual === undefined) continue; // match not resolved
-
-            if (pick.guess <= actual) {
-              totalPoints += pick.guess;
-              hits++;
-            } else {
-              busts++;
-            }
+      const alreadySnapshotted = allEntries.some((e) => e.finalRank !== null);
+      if (!alreadySnapshotted) {
+        const resolvedMatches = new Map<string, number>();
+        for (const match of competition.matches) {
+          if (match.actualBoundaries !== null) {
+            resolvedMatches.set(match.id, match.actualBoundaries);
           }
+        }
 
-          return {
-            username: entry.username,
-            totalPoints,
-            hits,
-            busts,
-          };
-        })
-        .sort((a, b) => b.totalPoints - a.totalPoints || a.busts - b.busts);
+        const leaderboard = allEntries
+          .map((entry) => {
+            let totalPoints = 0;
+            let hits = 0;
+            let busts = 0;
+            for (const pick of entry.picks) {
+              const actual = resolvedMatches.get(pick.matchId);
+              if (actual === undefined) continue;
+              if (pick.guess <= actual) {
+                totalPoints += pick.guess;
+                hits++;
+              } else {
+                busts++;
+              }
+            }
+            return { id: entry.id, username: entry.username, totalPoints, hits, busts };
+          })
+          .sort((a, b) => b.totalPoints - a.totalPoints || a.busts - b.busts);
 
-      if (leaderboard.length < 1) {
-        throw new ValidationError('No entries to pay out');
+        if (leaderboard.length < 1) {
+          throw new ValidationError('No entries to pay out');
+        }
+
+        const prizes = [competition.prizeFirst, competition.prizeSecond, competition.prizeThird];
+
+        await prisma.$transaction(async (tx) => {
+          for (let i = 0; i < leaderboard.length; i++) {
+            const entry = leaderboard[i];
+            const rank = i + 1;
+            const prize = rank <= 3 ? prizes[rank - 1] : null;
+            await tx.iplBbEntry.update({
+              where: { id: entry.id },
+              data: {
+                finalRank: rank,
+                prizeAwarded: prize,
+              },
+            });
+          }
+        });
+
+        logger.info(
+          `IPL BB leaderboard snapshot persisted for competition ${id}`,
+          'ipl-bb:payout',
+          { entryCount: leaderboard.length }
+        );
       }
 
-      // Prize amounts from competition config
-      const prizes = [
-        { place: 1, amount: competition.prizeFirst, username: leaderboard[0]?.username },
-        { place: 2, amount: competition.prizeSecond, username: leaderboard[1]?.username },
-        { place: 3, amount: competition.prizeThird, username: leaderboard[2]?.username },
-      ].filter((p) => p.username);
+      // Re-fetch entries after snapshot so we always read the persisted ranks.
+      const winners = await prisma.iplBbEntry.findMany({
+        where: {
+          competitionId: id,
+          finalRank: { lte: 3 },
+          prizeAwarded: { gt: 0 },
+        },
+        orderBy: { finalRank: 'asc' },
+      });
 
       const results: Array<{
         place: number;
         username: string;
         amount: number;
         txId: string | null;
+        status: 'paid' | 'already_paid' | 'failed';
         error?: string;
       }> = [];
 
-      for (const prize of prizes) {
+      for (const entry of winners) {
+        if (entry.payoutTxId) {
+          results.push({
+            place: entry.finalRank!,
+            username: entry.username,
+            amount: entry.prizeAwarded!,
+            txId: entry.payoutTxId,
+            status: 'already_paid',
+          });
+          continue;
+        }
+
         try {
           const txId = await transferMedalsFromSportsblock(
-            prize.username!,
-            prize.amount,
-            `IPL Boundary Blackjack ${competition.title} - ${ordinal(prize.place)} Place`
+            entry.username,
+            entry.prizeAwarded!,
+            `IPL Boundary Blackjack ${competition.title} - ${ordinal(entry.finalRank!)} Place`
           );
+
+          await prisma.iplBbEntry.update({
+            where: { id: entry.id },
+            data: { payoutTxId: txId, paidAt: new Date() },
+          });
+
           results.push({
-            place: prize.place,
-            username: prize.username!,
-            amount: prize.amount,
+            place: entry.finalRank!,
+            username: entry.username,
+            amount: entry.prizeAwarded!,
             txId,
+            status: 'paid',
           });
           logger.info(
-            `IPL BB payout: ${prize.amount} MEDALS → ${prize.username} (${ordinal(prize.place)}) tx=${txId}`,
+            `IPL BB payout: ${entry.prizeAwarded} MEDALS → ${entry.username} (${ordinal(entry.finalRank!)}) tx=${txId}`,
             'ipl-bb:payout'
           );
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           results.push({
-            place: prize.place,
-            username: prize.username!,
-            amount: prize.amount,
+            place: entry.finalRank!,
+            username: entry.username,
+            amount: entry.prizeAwarded!,
             txId: null,
+            status: 'failed',
             error: msg,
           });
-          logger.error(`IPL BB payout failed for ${prize.username}: ${msg}`, 'ipl-bb:payout');
+          logger.error(`IPL BB payout failed for ${entry.username}: ${msg}`, 'ipl-bb:payout');
         }
       }
 
-      return apiSuccess({ payouts: results, leaderboardTop3: leaderboard.slice(0, 3) });
+      const top3 = winners.slice(0, 3).map((e) => ({
+        rank: e.finalRank,
+        username: e.username,
+        prize: e.prizeAwarded,
+      }));
+
+      return apiSuccess({ payouts: results, leaderboardTop3: top3 });
     });
   }
 );
