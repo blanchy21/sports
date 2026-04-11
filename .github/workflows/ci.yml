@@ -56,6 +56,32 @@ jobs:
       - name: Run tests
         run: npm test
 
+  knip:
+    name: Dead Code Check (Knip)
+    runs-on: ubuntu-latest
+    # Non-blocking on first rollout. Flip to blocking in a follow-up once
+    # one or two clean runs prove the signal is good.
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run knip
+        run: npm run knip
+
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
