@@ -124,11 +124,30 @@ export function ImageDialog({ username, onInsert, onClose, onAiImageGenerated }:
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          setImageTab('upload');
+          handleFileUpload(file);
+          return;
+        }
+      }
+    }
+  };
+
   const isBusy = isUploading || isGenerating;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="mx-4 w-full max-w-md rounded-lg border bg-sb-stadium p-6 shadow-xl">
+      <div
+        className="mx-4 w-full max-w-md rounded-lg border bg-sb-stadium p-6 shadow-xl"
+        onPaste={handlePaste}
+      >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Insert Image</h3>
           <button
