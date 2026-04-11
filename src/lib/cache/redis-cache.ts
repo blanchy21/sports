@@ -281,6 +281,43 @@ export class RedisCache {
   }
 
   /**
+   * Atomically set a value only if the key does not already exist.
+   *
+   * Uses Redis `SET key value NX EX ttl`. Returns `true` if the key was
+   * newly set, `false` if it already existed (or on error). Unlike `set()`,
+   * this does not write tag indexes — the intended use case is one-shot
+   * idempotency tokens (e.g. consumed stake tokens) where tag invalidation
+   * isn't needed.
+   *
+   * Returns `false` when Redis is unavailable so callers can fall through
+   * to a database-level uniqueness guarantee.
+   */
+  async setIfAbsent(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+    if (!this.stats.connected) {
+      return false;
+    }
+
+    try {
+      const fullKey = this.config.keyPrefix + key;
+      const result = await this.executeCommand(
+        'SET',
+        fullKey,
+        value,
+        'NX',
+        'EX',
+        ttlSeconds.toString()
+      );
+      // Upstash returns 'OK' on success, null on already-exists.
+      return result === 'OK' || result === true;
+    } catch (error) {
+      this.stats.errors++;
+      this.stats.lastError = error instanceof Error ? error.message : String(error);
+      console.error('[RedisCache] SET NX error:', this.stats.lastError);
+      return false;
+    }
+  }
+
+  /**
    * Delete a key from Redis
    */
   async delete(key: string): Promise<boolean> {

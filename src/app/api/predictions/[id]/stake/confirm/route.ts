@@ -9,11 +9,7 @@ import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@/generated/prisma/client';
-import {
-  verifyStakeToken,
-  isStakeTokenConsumed,
-  consumeStakeToken,
-} from '@/lib/predictions/stake-token';
+import { verifyStakeToken, claimStakeToken } from '@/lib/predictions/stake-token';
 import { verifyStakeTransaction } from '@/lib/predictions/verify-stake';
 import { serializePrediction } from '@/lib/predictions/serialize';
 import { logger } from '@/lib/logger';
@@ -37,7 +33,9 @@ export const POST = createApiHandler(
         'stakeConfirm'
       );
       if (!rateLimitResult.success) {
-        throw new ValidationError('Too many stake confirmation attempts. Please try again shortly.');
+        throw new ValidationError(
+          'Too many stake confirmation attempts. Please try again shortly.'
+        );
       }
 
       const user = await getAuthenticatedUserFromSession(request as NextRequest);
@@ -51,19 +49,28 @@ export const POST = createApiHandler(
       const tokenData = verifyStakeToken(body.stakeToken);
       if (!tokenData) throw new ValidationError('Invalid or expired stake token');
 
-      if (await isStakeTokenConsumed(body.stakeToken)) {
-        logger.warn('Stake token replay attempt', 'predictions', {
-          username: user.username,
-          predictionId: tokenData.predictionId,
-        });
-        throw new ValidationError('Stake token already used');
-      }
-
       if (tokenData.username !== user.username) {
         throw new ForbiddenError('Stake token does not match authenticated user');
       }
 
       const predictionId = tokenData.predictionId;
+
+      // Atomically claim the stake token (Redis SET NX) BEFORE on-chain
+      // verification and the DB write. If another request already claimed it,
+      // we bail out early. If Redis is unavailable, claim returns false and we
+      // fall through to the stakeTxId @unique DB constraint as the safety net.
+      const claimed = await claimStakeToken(body.stakeToken, {
+        txId: body.txId,
+        username: user.username,
+      });
+      if (!claimed) {
+        // If Redis says unavailable we don't know whether the token was already
+        // used — proceed and rely on the DB unique constraint to catch replays.
+        logger.info('Stake token not atomically claimed, relying on DB constraint', 'predictions', {
+          predictionId,
+          username: user.username,
+        });
+      }
 
       logger.info('Confirming stake', 'predictions', {
         predictionId,
@@ -90,12 +97,6 @@ export const POST = createApiHandler(
         });
         throw new ValidationError(`Transaction verification failed: ${verification.error}`);
       }
-
-      // Consume the stake token BEFORE the DB write to prevent race conditions.
-      // If the DB transaction fails after consumption, the token is lost — but the
-      // user can request a new one. This is safer than consuming after (which could
-      // leave the token unconsumed if Redis fails post-DB-write).
-      await consumeStakeToken(body.stakeToken, { txId: body.txId, username: user.username });
 
       let prediction;
       try {
