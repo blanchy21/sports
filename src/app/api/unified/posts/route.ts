@@ -255,6 +255,12 @@ export interface UnifiedPost {
     weight: number;
     percent: number;
   }>;
+  /**
+   * Beneficiaries declared on the original Hive post. Propagated so the
+   * client can run curation eligibility checks (CurateButton gating) without
+   * refetching the post.
+   */
+  beneficiaries?: Array<{ account: string; weight: number }>;
 }
 
 /**
@@ -336,6 +342,7 @@ function hivePostToUnified(post: SportsblockPost): UnifiedPost {
       weight: v.weight,
       percent: v.percent,
     })),
+    beneficiaries: post.beneficiaries,
   };
 }
 

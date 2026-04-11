@@ -35,6 +35,7 @@ import dynamic from 'next/dynamic';
 import { logger } from '@/lib/logger';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { useTransactionConfirmation } from '@/hooks/useTransactionConfirmation';
+import { useImagePaste } from '@/hooks/useImagePaste';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
@@ -78,6 +79,18 @@ export function ComposeSportsbite({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { handlePaste: handleImagePaste } = useImagePaste({
+    username: user?.username,
+    onUploadStart: () => {
+      setIsUploadingImage(true);
+      setUploadError(null);
+    },
+    onImageUploaded: (url) => setImages((prev) => [...prev, url]),
+    onError: (msg) => setUploadError(msg),
+    onUploadEnd: () => setIsUploadingImage(false),
+    disabled: isUploadingImage,
+  });
 
   const charCount = content.length;
   const maxChars = SPORTSBITES_CONFIG.MAX_CHARS;
@@ -405,6 +418,7 @@ export function ComposeSportsbite({
                   ref={textareaRef}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
+                  onPaste={handleImagePaste}
                   placeholder="What's happening in sports?"
                   className={cn(
                     'w-full resize-none border-none bg-transparent outline-none',
@@ -413,6 +427,11 @@ export function ComposeSportsbite({
                   )}
                   disabled={isPublishing}
                 />
+                {isUploadingImage && (
+                  <p className="animate-pulse text-xs text-muted-foreground">
+                    Uploading pasted image...
+                  </p>
+                )}
 
                 {images.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">

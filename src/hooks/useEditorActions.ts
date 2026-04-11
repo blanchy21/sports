@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { FormatType } from '@/components/publish/EditorToolbar';
+import { useImagePaste } from '@/hooks/useImagePaste';
 
 interface UseEditorActionsParams {
   content: string;
@@ -9,6 +10,7 @@ interface UseEditorActionsParams {
   setShowImageDialog: (show: boolean) => void;
   setShowLinkDialog: (show: boolean) => void;
   setPublishError: (error: string | null) => void;
+  username?: string;
 }
 
 export function useEditorActions({
@@ -19,7 +21,9 @@ export function useEditorActions({
   setShowImageDialog,
   setShowLinkDialog,
   setPublishError,
+  username,
 }: UseEditorActionsParams) {
+  const [isPasteUploading, setIsPasteUploading] = useState(false);
   const insertMarkdown = useCallback(
     (before: string, after: string = '', placeholder: string = '') => {
       const textarea = textareaRef.current;
@@ -192,6 +196,34 @@ export function useEditorActions({
     document.execCommand('redo');
   }, []);
 
+  const handlePasteImageUploaded = useCallback(
+    (url: string) => {
+      const markdown = `\n![](${url})\n`;
+      const textarea = textareaRef.current;
+      const pos = textarea ? textarea.selectionStart : content.length;
+      const newContent = content.substring(0, pos) + markdown + content.substring(pos);
+      setContent(newContent);
+
+      setTimeout(() => {
+        if (textarea) {
+          textarea.focus();
+          const newPos = pos + markdown.length;
+          textarea.setSelectionRange(newPos, newPos);
+        }
+      }, 0);
+    },
+    [content, setContent, textareaRef]
+  );
+
+  const { handlePaste } = useImagePaste({
+    username,
+    onUploadStart: () => setIsPasteUploading(true),
+    onImageUploaded: handlePasteImageUploaded,
+    onError: (msg) => setPublishError(msg),
+    onUploadEnd: () => setIsPasteUploading(false),
+    disabled: isPasteUploading,
+  });
+
   return {
     handleFormat,
     handleInsertImage,
@@ -202,5 +234,7 @@ export function useEditorActions({
     handleInsertGif,
     handleUndo,
     handleRedo,
+    handlePaste,
+    isPasteUploading,
   };
 }

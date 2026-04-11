@@ -51,6 +51,7 @@ interface UnifiedPost {
     weight: number;
     percent: number;
   }>;
+  beneficiaries?: Array<{ account: string; weight: number }>;
 }
 
 // Convert unified post to DisplayPost — only the fields UI components actually use
@@ -72,6 +73,7 @@ function unifiedToDisplayPost(post: UnifiedPost): DisplayPost {
     authorDisplayName: post.authorDisplayName,
     authorAvatar: post.authorAvatar,
     source: post.source,
+    beneficiaries: post.beneficiaries,
     _isSoftPost: post.isSoftPost,
     _softPostId: post.softPostId,
     _likeCount: post.likeCount,
