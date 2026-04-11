@@ -16,23 +16,11 @@ import { logger } from '@/lib/logger';
 const REWARDS_ACCOUNT = 'sportsblock';
 
 /**
- * Thrown when the treasury active key is not configured.
- * Treat this as a hard failure — never mark a payout `completed` without a txId.
- */
-export class MissingTreasuryKeyError extends Error {
-  constructor() {
-    super(
-      'SPORTSBLOCK_ACTIVE_KEY is not configured. Cannot broadcast MEDALS transfer from @sportsblock.'
-    );
-    this.name = 'MissingTreasuryKeyError';
-  }
-}
-
-/**
  * Transfer MEDALS from @sportsblock to a recipient.
  *
- * Throws on any failure — including missing active key — so callers never
- * silently succeed with a null transaction id.
+ * Throws on any failure — including a missing SPORTSBLOCK_ACTIVE_KEY — so
+ * callers never silently succeed with a null transaction id. A missing key
+ * is an operator error and must not be swallowed.
  */
 export async function transferMedalsFromSportsblock(
   recipient: string,
@@ -41,7 +29,9 @@ export async function transferMedalsFromSportsblock(
 ): Promise<string> {
   const activeKeyWif = process.env.SPORTSBLOCK_ACTIVE_KEY;
   if (!activeKeyWif) {
-    throw new MissingTreasuryKeyError();
+    throw new Error(
+      'SPORTSBLOCK_ACTIVE_KEY is not configured. Cannot broadcast MEDALS transfer from @sportsblock.'
+    );
   }
 
   const activeKey = PrivateKey.fromString(activeKeyWif);
