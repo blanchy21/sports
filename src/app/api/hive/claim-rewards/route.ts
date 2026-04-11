@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import { createClaimRewardsOperation } from '@/lib/hive-workerbee/shared';
 import { csrfProtected } from '@/lib/api/csrf';
@@ -18,10 +19,9 @@ export const dynamic = 'force-dynamic';
 
 const ROUTE = '/api/hive/claim-rewards';
 
-function isValidAccountName(account: string): boolean {
-  if (!account || typeof account !== 'string') return false;
-  return /^[a-z][a-z0-9.-]{2,15}$/.test(account);
-}
+const claimRewardsSchema = z.object({
+  account: z.string().regex(/^[a-z][a-z0-9.-]{2,15}$/, 'Invalid Hive account name'),
+});
 
 interface HiveAccount {
   name: string;
@@ -45,12 +45,14 @@ export const POST = csrfProtected(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { account } = body;
-
-    if (!account || !isValidAccountName(account)) {
-      return NextResponse.json({ error: 'Valid account is required' }, { status: 400 });
+    let parsed;
+    try {
+      parsed = claimRewardsSchema.parse(await request.json());
+    } catch (err) {
+      const message = err instanceof z.ZodError ? err.issues[0]?.message : 'Invalid request body';
+      return NextResponse.json({ error: message ?? 'Invalid request body' }, { status: 400 });
     }
+    const { account } = parsed;
 
     if (user.hiveUsername !== account && user.username !== account) {
       return NextResponse.json(

@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
 import { createApiHandler, apiSuccess, apiError } from '@/lib/api/response';
 import { withCsrfProtection } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
@@ -6,6 +7,17 @@ import { createHiveAccountForUser, AccountCreationError } from '@/lib/hive/accou
 import { prisma } from '@/lib/db/prisma';
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/utils/rate-limit';
 import { jwtFieldsCache } from '@/lib/auth/next-auth-options';
+
+const createAccountSchema = z.object({
+  username: z
+    .string()
+    .min(4)
+    .max(16)
+    .regex(
+      /^sb-[a-z0-9][a-z0-9.-]*$/,
+      'Username must start with "sb-" and contain only lowercase letters, digits, dots, and dashes'
+    ),
+});
 
 export const POST = createApiHandler('/api/hive/create-account', async (request: Request, ctx) => {
   return withCsrfProtection(request as NextRequest, async () => {
@@ -58,16 +70,30 @@ export const POST = createApiHandler('/api/hive/create-account', async (request:
       return apiError('You already have a Hive account', 'VALIDATION_ERROR', 400);
     }
 
-    // Parse body
-    const body = await request.json();
-    const username = typeof body.username === 'string' ? body.username.toLowerCase().trim() : '';
-
-    if (!username) {
+    // Parse body — normalise then validate with Zod.
+    // Empty/whitespace/missing username all collapse to the same
+    // "username is required" contract the existing tests assert on.
+    const rawBody = (await request.json()) as Record<string, unknown>;
+    const rawUsername =
+      typeof rawBody.username === 'string' ? rawBody.username.toLowerCase().trim() : '';
+    if (!rawUsername) {
       return apiError('username is required', 'VALIDATION_ERROR', 400);
     }
-
-    if (!username.startsWith('sb-')) {
-      return apiError('Username must start with "sb-"', 'VALIDATION_ERROR', 400);
+    let username: string;
+    try {
+      username = createAccountSchema.parse({ username: rawUsername }).username;
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        // Regex failure carries a custom message; length / type failures fall
+        // back to the generic username hint so the tests' contract is stable.
+        const issue = err.issues[0];
+        const isCustomMessage = issue?.code === 'invalid_format' || issue?.code === 'custom';
+        const message = isCustomMessage
+          ? issue.message
+          : 'Username must start with "sb-" and contain only lowercase letters, digits, dots, and dashes';
+        return apiError(message ?? 'Invalid username', 'VALIDATION_ERROR', 400);
+      }
+      return apiError('Invalid request body', 'VALIDATION_ERROR', 400);
     }
 
     // Look up the custodial user record by ID (works for all OAuth providers)
