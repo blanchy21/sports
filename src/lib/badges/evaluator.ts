@@ -289,6 +289,11 @@ function resolveMetricValue(
       const diffMs = Date.now() - stats.memberSince.getTime();
       return diffMs / (30.44 * 24 * 60 * 60 * 1000); // average month
     }
+    case 'pre_launch': {
+      // OG Member: joined before end of April 2026
+      const LAUNCH_DATE = new Date('2026-04-30T23:59:59Z');
+      return stats.memberSince < LAUNCH_DATE ? 1 : 0;
+    }
     case 'predictions.total':
       return pStats?.total ?? 0;
     case 'predictions.winRate':

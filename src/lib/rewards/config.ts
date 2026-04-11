@@ -114,6 +114,13 @@ export const CONTENT_REWARDS = {
     reward: 200,
     winners: 1,
   },
+  /** Post with the most curator curations */
+  MOST_CURATED: {
+    name: 'Most Curated Post',
+    description: 'Post that received the most curator curations',
+    reward: 200,
+    winners: 1,
+  },
   /** Curator-selected post of the week */
   POST_OF_THE_WEEK: {
     name: 'Post of the Week',

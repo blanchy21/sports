@@ -88,16 +88,21 @@ export const GET = createApiHandler(ROUTE, async (request, ctx) => {
   const cacheKey = `${username}:${since || 'all'}:${limit}`;
   const cached = notificationCache.get(cacheKey);
 
+  const cacheHeaders = { 'Cache-Control': 'private, max-age=10, stale-while-revalidate=20' };
+
   // Return cached data if valid
   if (cached && now < cached.expiresAt) {
-    return NextResponse.json({
-      success: true,
-      notifications: cached.notifications,
-      count: cached.count,
-      username,
-      cached: true,
-      timestamp: cached.timestamp,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        notifications: cached.notifications,
+        count: cached.count,
+        username,
+        cached: true,
+        timestamp: cached.timestamp,
+      },
+      { headers: cacheHeaders }
+    );
   }
 
   try {
@@ -157,14 +162,17 @@ export const GET = createApiHandler(ROUTE, async (request, ctx) => {
       MAX_NOTIFICATION_CACHE_SIZE
     );
 
-    return NextResponse.json({
-      success: true,
-      notifications,
-      count: notifications.length,
-      username,
-      cached: false,
-      timestamp: now,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        notifications,
+        count: notifications.length,
+        username,
+        cached: false,
+        timestamp: now,
+      },
+      { headers: cacheHeaders }
+    );
   } catch (error) {
     ctx.log.error('Failed to fetch notifications', error, { username });
 

@@ -25,6 +25,21 @@ export function getCurrentWeekId(): string {
 }
 
 /**
+ * Get the Monday (start) of an ISO week from a weekId like "2026-W14".
+ */
+function getWeekStartDate(weekId: string): Date {
+  const match = weekId.match(/^(\d{4})-W(\d{2})$/);
+  if (!match) return new Date();
+  const year = parseInt(match[1], 10);
+  const week = parseInt(match[2], 10);
+  // Jan 4 is always in ISO week 1
+  const jan4 = new Date(year, 0, 4);
+  const jan4DayOfWeek = jan4.getDay() || 7; // Mon=1..Sun=7
+  const mondayOfWeek1 = new Date(jan4.getTime() - (jan4DayOfWeek - 1) * 86400000);
+  return new Date(mondayOfWeek1.getTime() + (week - 1) * 7 * 86400000);
+}
+
+/**
  * Generate leaderboards for a specific week
  */
 export async function generateWeeklyLeaderboards(weekId?: string): Promise<WeeklyLeaderboards> {
@@ -90,8 +105,45 @@ export async function generateWeeklyLeaderboards(weekId?: string): Promise<Weekl
       value: post.totalEngagement,
     }));
 
-  // Post of the Week - curator selected (placeholder - requires manual selection)
-  leaderboards.POST_OF_THE_WEEK = [];
+  // Most Curated — posts with the most curator curations this week
+  const weekStart = getWeekStartDate(targetWeekId);
+  const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const curationCounts = await prisma.curation.groupBy({
+    by: ['author', 'permlink'],
+    where: {
+      status: 'completed',
+      createdAt: { gte: weekStart, lt: weekEnd },
+    },
+    _count: { id: true },
+    _sum: { amount: true },
+    orderBy: { _count: { id: 'desc' } },
+    take: 50,
+  });
+
+  leaderboards.MOST_CURATED = curationCounts.map((entry, index) => ({
+    rank: index + 1,
+    account: entry.author,
+    postId: `${entry.author}/${entry.permlink}`,
+    permlink: entry.permlink,
+    value: entry._count.id,
+  }));
+
+  // Post of the Week — auto-populated from the most curated post
+  if (curationCounts.length > 0) {
+    const topCurated = curationCounts[0];
+    leaderboards.POST_OF_THE_WEEK = [
+      {
+        rank: 1,
+        account: topCurated.author,
+        postId: `${topCurated.author}/${topCurated.permlink}`,
+        permlink: topCurated.permlink,
+        value: topCurated._count.id,
+      },
+    ];
+  } else {
+    leaderboards.POST_OF_THE_WEEK = [];
+  }
 
   // Best Newcomer - only in Year 4+ (placeholder - requires account age check)
   const platformYear = getPlatformYear();
@@ -336,6 +388,18 @@ export async function getUserRankForCategory(
         where: { weekId_account: { weekId, account: username } },
       });
       userValue = metric?.commentsMade ?? 0;
+    } else if (category === 'MOST_CURATED' || category === 'POST_OF_THE_WEEK') {
+      // Curation-based: count curations on user's posts this week
+      const weekStartDate = getWeekStartDate(weekId);
+      const weekEndDate = new Date(weekStartDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const curationCount = await prisma.curation.count({
+        where: {
+          author: username,
+          status: 'completed',
+          createdAt: { gte: weekStartDate, lt: weekEndDate },
+        },
+      });
+      userValue = curationCount;
     } else {
       // Post-based: query user's PostMetric rows, take the max
       const fieldMap: Record<string, string> = {

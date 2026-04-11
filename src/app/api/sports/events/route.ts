@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { SportsEvent } from '@/types/sports';
 import { fetchAllEvents, filterEvents, filterBySport, sortEvents } from '@/lib/sports/espn';
+import { fetchCricketEvents } from '@/lib/sports/cricket';
 import { createApiHandler } from '@/lib/api/response';
 
 interface EventsCache {
@@ -53,8 +54,10 @@ export const GET = createApiHandler(ROUTE, async (request) => {
     );
   }
 
-  // Fetch fresh data from ESPN
-  const { events, liveEventIds } = await fetchAllEvents();
+  // Fetch fresh data from ESPN (+ cricket from IplBbMatch Postgres table)
+  const [espnResult, cricketResult] = await Promise.all([fetchAllEvents(), fetchCricketEvents()]);
+  const events = [...espnResult.events, ...cricketResult.events];
+  const liveEventIds = new Set([...espnResult.liveEventIds, ...cricketResult.liveEventIds]);
 
   // Update cache
   eventsCache = {

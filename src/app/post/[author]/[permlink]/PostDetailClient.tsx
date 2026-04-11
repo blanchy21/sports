@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -36,6 +36,8 @@ import { logger } from '@/lib/logger';
 import { useBroadcast } from '@/hooks/useBroadcast';
 import { InlinePostComments } from '@/components/comments/InlinePostComments';
 import { useAuthorPosts } from '@/lib/react-query/queries/usePosts';
+import { CurateButton } from '@/components/curation/CurateButton';
+import { hasSportsblockBeneficiary } from '@/lib/curation/eligibility';
 
 interface PostDetailClientProps {
   initialPost?: SportsblockPost | null;
@@ -198,6 +200,90 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
     };
   }, [author, permlink, initialPost]);
 
+  // Ref for the post content container (used by broken-image detection)
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Mark an <img> as broken so CSS shows a placeholder instead of blank space.
+   * Replaces the element with a styled div because ::after pseudo-elements
+   * don't render reliably on replaced elements like <img>.
+   */
+  const markBroken = useCallback((img: HTMLImageElement) => {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'flex items-center justify-center rounded-lg border border-dashed my-4';
+    placeholder.style.cssText =
+      'min-height:120px;background:var(--sb-turf);border-color:var(--sb-border);color:var(--sb-text-muted);font-size:0.875rem;';
+    placeholder.textContent = 'Image failed to load';
+    img.replaceWith(placeholder);
+  }, []);
+
+  /**
+   * Detect broken and truncated images inside the post content.
+   *
+   * Standard onerror handles outright failures. For truncated images
+   * (Chrome decodes the header → naturalWidth > 0, complete === true,
+   * but the pixel data is mostly missing), we draw to an offscreen canvas
+   * and check whether the top-left corner is all-transparent.
+   */
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container || !post) return;
+
+    const imgs = container.querySelectorAll<HTMLImageElement>('img');
+    if (imgs.length === 0) return;
+
+    const checkImage = (img: HTMLImageElement) => {
+      // Already handled
+      if (img.dataset.checked === '1') return;
+      img.dataset.checked = '1';
+
+      if (!img.complete) {
+        // Not loaded yet — wait for load/error
+        img.addEventListener('error', () => markBroken(img), { once: true });
+        img.addEventListener('load', () => verifyPixels(img), { once: true });
+        return;
+      }
+
+      // Already complete
+      if (img.naturalWidth === 0) {
+        markBroken(img);
+        return;
+      }
+
+      verifyPixels(img);
+    };
+
+    /**
+     * Draw a small sample of the image to a canvas and check if the pixels
+     * are all transparent — indicates a truncated/corrupt file.
+     */
+    const verifyPixels = (img: HTMLImageElement) => {
+      if (img.naturalWidth === 0) {
+        markBroken(img);
+        return;
+      }
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 4;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, size, size);
+        const { data } = ctx.getImageData(0, 0, size, size);
+        // If every pixel is fully transparent → corrupt/truncated
+        const allTransparent = data.every((_val, i) => (i % 4 === 3 ? data[i] === 0 : true));
+        if (allTransparent) {
+          markBroken(img);
+        }
+      } catch {
+        // Canvas tainted by CORS — can't verify, leave as-is
+      }
+    };
+
+    imgs.forEach(checkImage);
+  }, [post, markBroken]);
+
   const handleVoteSuccess = () => {
     trackVote(author, permlink);
   };
@@ -356,8 +442,8 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
           <h1 className="mb-6 text-3xl font-bold">{post.title}</h1>
         </div>
 
-        {/* Post Content */}
-        <div className="prose prose-lg mb-8 max-w-none dark:prose-invert">
+        {/* Post Content — ref used by broken-image detection useEffect */}
+        <div ref={contentRef} className="prose prose-lg mb-8 max-w-none dark:prose-invert">
           <div
             dangerouslySetInnerHTML={{
               __html: proxyImagesInContent(sanitizePostContent(post.body)),
@@ -429,6 +515,10 @@ export default function PostDetailClient({ initialPost }: PostDetailClientProps)
                 <Share className="h-4 w-4" />
                 <span>Share</span>
               </Button>
+
+              {!isSoftPost && hasSportsblockBeneficiary(post.beneficiaries) && (
+                <CurateButton author={post.author} permlink={post.permlink} />
+              )}
             </div>
           </div>
         </div>

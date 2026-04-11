@@ -20,6 +20,9 @@ import { usePremiumTier } from '@/lib/premium/hooks';
 import { PremiumBadge } from '@/components/medals';
 import { RoleBadge } from '@/components/user/RoleBadge';
 import { RankBadge } from '@/components/badges/RankBadge';
+import { CurateButton } from '@/components/curation/CurateButton';
+import { hasSportsblockBeneficiary } from '@/lib/curation/eligibility';
+import { getPostBeneficiaries } from '@/lib/utils/post-helpers';
 import { useUserRank } from '@/lib/react-query/queries/useUserBadges';
 // HiveUpgradePrompt no longer needed - soft users can now interact with all content
 import { IMAGE_OPTIMIZABLE_HOSTS } from '@/lib/constants/image-hosts';
@@ -403,17 +406,22 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post, className, priority 
             )}
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBookmark}
-            className={`text-muted-foreground hover:bg-primary/10 hover:text-primary ${
-              isBookmarked(post) ? 'text-primary' : ''
-            }`}
-            aria-label={isBookmarked(post) ? 'Remove bookmark' : 'Bookmark post'}
-          >
-            <Bookmark className={`h-4 w-4 ${isBookmarked(post) ? 'fill-current' : ''}`} />
-          </Button>
+          <div className="flex items-center gap-1">
+            {isActualHivePost && hasSportsblockBeneficiary(getPostBeneficiaries(post)) && (
+              <CurateButton author={authorUsername} permlink={postPermlink} />
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBookmark}
+              className={`text-muted-foreground hover:bg-primary/10 hover:text-primary ${
+                isBookmarked(post) ? 'text-primary' : ''
+              }`}
+              aria-label={isBookmarked(post) ? 'Remove bookmark' : 'Bookmark post'}
+            >
+              <Bookmark className={`h-4 w-4 ${isBookmarked(post) ? 'fill-current' : ''}`} />
+            </Button>
+          </div>
         </div>
       </div>
     </article>

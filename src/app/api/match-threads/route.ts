@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchAllEvents } from '@/lib/sports/espn';
+import { fetchCricketEvents } from '@/lib/sports/cricket';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import {
   MATCH_THREAD_CONFIG,
@@ -22,7 +23,9 @@ const ROUTE = '/api/match-threads';
  * finished (last 24h). Batch-checks which have Hive containers.
  */
 export const GET = createApiHandler(ROUTE, async () => {
-  const { events, liveEventIds } = await fetchAllEvents();
+  const [espnResult, cricketResult] = await Promise.all([fetchAllEvents(), fetchCricketEvents()]);
+  const events = [...espnResult.events, ...cricketResult.events];
+  const liveEventIds = new Set([...espnResult.liveEventIds, ...cricketResult.liveEventIds]);
   const now = Date.now();
   const in48h = now + 48 * 60 * 60 * 1000;
   const past24h = now - 24 * 60 * 60 * 1000;
@@ -55,11 +58,7 @@ export const GET = createApiHandler(ROUTE, async () => {
           'get_content',
           [MATCH_THREAD_CONFIG.PARENT_AUTHOR, permlink]
         );
-        const hasContainer = !!(
-          content &&
-          content.author &&
-          (content.body as string)?.length > 0
-        );
+        const hasContainer = !!(content && content.author && (content.body as string)?.length > 0);
         biteCount = hasContainer ? (content.children as number) || 0 : 0;
       } catch {
         // Container doesn't exist yet — this is expected for upcoming events

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchAllEvents } from '@/lib/sports/espn';
+import { fetchCricketEvents } from '@/lib/sports/cricket';
 import { makeHiveApiCall } from '@/lib/hive-workerbee/api';
 import {
   MATCH_THREAD_CONFIG,
@@ -26,8 +27,11 @@ export const GET = createApiHandler(ROUTE, async (request) => {
   const segments = url.pathname.split('/');
   const eventId = segments[3]; // /api/match-threads/[eventId]
 
-  // fetchAllEvents has built-in revalidation caching (300s on league fetches)
-  const { events, liveEventIds } = await fetchAllEvents();
+  // fetchAllEvents has built-in revalidation caching (300s on league fetches).
+  // Cricket events come from the IplBbMatch Postgres table.
+  const [espnResult, cricketResult] = await Promise.all([fetchAllEvents(), fetchCricketEvents()]);
+  const events = [...espnResult.events, ...cricketResult.events];
+  const liveEventIds = new Set([...espnResult.liveEventIds, ...cricketResult.liveEventIds]);
   const event = events.find((e) => e.id === eventId);
 
   if (!event) {
@@ -42,11 +46,10 @@ export const GET = createApiHandler(ROUTE, async (request) => {
   let biteCount = 0;
 
   try {
-    const content = await makeHiveApiCall<Record<string, unknown>>(
-      'condenser_api',
-      'get_content',
-      [MATCH_THREAD_CONFIG.PARENT_AUTHOR, permlink]
-    );
+    const content = await makeHiveApiCall<Record<string, unknown>>('condenser_api', 'get_content', [
+      MATCH_THREAD_CONFIG.PARENT_AUTHOR,
+      permlink,
+    ]);
 
     if (content && content.author && (content.body as string)?.length > 0) {
       biteCount = (content.children as number) || 0;

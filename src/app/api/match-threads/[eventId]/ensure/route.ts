@@ -9,6 +9,7 @@ import {
   isHiveDuplicateError,
 } from '@/lib/hive-workerbee/match-threads';
 import { fetchAllEvents } from '@/lib/sports/espn';
+import { fetchCricketEvents, isCricketEventId } from '@/lib/sports/cricket';
 import { createApiHandler } from '@/lib/api/response';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { validateCsrf } from '@/lib/api/csrf';
@@ -79,8 +80,11 @@ export const POST = createApiHandler(ROUTE, async (request) => {
     return NextResponse.json({ success: true, permlink, alreadyExists: true });
   }
 
-  // Fetch event data from ESPN to build the container
-  const { events } = await fetchAllEvents();
+  // Fetch event data to build the container. Cricket events come from the
+  // IplBbMatch Postgres table; only query that source for cricket-prefixed IDs.
+  const { events } = isCricketEventId(eventId)
+    ? await fetchCricketEvents()
+    : await fetchAllEvents();
   const event = events.find((e) => e.id === eventId);
 
   if (!event) {

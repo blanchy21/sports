@@ -2,16 +2,15 @@
 
 import React from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { signIn } from 'next-auth/react';
 import { ArrowRight, Compass } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/core/Button';
 import { Logo } from '@/components/ui/Logo';
-import { useModal } from '@/components/modals/ModalProvider';
 
 export default function LandingHero() {
-  const { openModal } = useModal();
+  const router = useRouter();
   const { scrollY } = useScroll();
 
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
@@ -109,7 +108,7 @@ export default function LandingHero() {
           <Button
             size="lg"
             className="group px-10 py-7 text-lg font-semibold shadow-2xl shadow-sb-teal/25 transition-all duration-300 hover:scale-105 hover:shadow-sb-teal/40"
-            onClick={() => signIn('google', { callbackUrl: '/auth/google-callback' })}
+            onClick={() => router.push('/auth')}
           >
             Sign Up Free
             <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -118,7 +117,7 @@ export default function LandingHero() {
             size="lg"
             variant="outline"
             className="border-white/30 bg-white/5 px-10 py-7 text-lg text-white backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/15"
-            onClick={() => openModal('keychainLogin')}
+            onClick={() => router.push('/auth')}
           >
             Sign In
           </Button>

@@ -1,5 +1,5 @@
 /**
- * Post and Comment type definitions
+ * Post type definitions
  */
 
 import type { User } from './user';
@@ -30,16 +30,4 @@ export interface Post {
   createdAt: Date;
   updatedAt: Date;
   publishedAt?: Date;
-}
-
-export interface Comment {
-  id: string;
-  content: string;
-  author: User;
-  postId: string;
-  parentId?: string;
-  replies: Comment[];
-  upvotes: number;
-  createdAt: Date;
-  updatedAt: Date;
 }
