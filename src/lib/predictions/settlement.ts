@@ -18,6 +18,13 @@ function getEscrowActiveKey(): PrivateKey {
   return PrivateKey.fromString(activeKey);
 }
 
+/**
+ * Broadcast a single Hive Engine custom_json op and return its tx id.
+ *
+ * The previous signature accepted an array and returned only the last tx id,
+ * silently losing earlier ones on multi-op calls. All current call sites
+ * pass exactly one op; this signature enforces that structurally.
+ */
 export async function broadcastHiveEngineOps(
   operations: Array<{
     id: string;
@@ -26,15 +33,17 @@ export async function broadcastHiveEngineOps(
     json: string;
   }>
 ): Promise<string> {
-  const key = getEscrowActiveKey();
-  let txId = '';
-
-  for (const op of operations) {
-    const result = await dhive.broadcast.sendOperations([['custom_json', op] as never], key);
-    txId = result.id;
+  if (operations.length !== 1) {
+    throw new Error(
+      `broadcastHiveEngineOps expects exactly one operation, got ${operations.length}`
+    );
   }
-
-  return txId;
+  const key = getEscrowActiveKey();
+  const result = await dhive.broadcast.sendOperations(
+    [['custom_json', operations[0]] as never],
+    key
+  );
+  return result.id;
 }
 
 const PROPOSAL_CLEAR_DATA = {

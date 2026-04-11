@@ -37,31 +37,28 @@ export async function GET() {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - NOTIFICATION_RETENTION_DAYS);
 
+    // Batch-delete old notifications. The previous implementation did a
+    // COUNT query per iteration — that's a full sequential scan of old rows
+    // on every tick and adds up to real DB load. The short-circuit on
+    // `toDelete.length < BATCH_SIZE` is enough to exit the loop; no count
+    // needed.
     let hasMore = true;
     let iterations = 0;
     const maxIterations = 10; // Safety limit
 
     while (hasMore && iterations < maxIterations) {
       iterations++;
-
-      // Count old notifications
-      const count = await prisma.notification.count({
-        where: { createdAt: { lt: cutoffDate } },
-      });
-
-      if (count === 0) {
-        hasMore = false;
-        continue;
-      }
-
-      // Delete in batches
       try {
-        // Find IDs of old notifications to delete
         const toDelete = await prisma.notification.findMany({
           where: { createdAt: { lt: cutoffDate } },
           select: { id: true },
           take: BATCH_SIZE,
         });
+
+        if (toDelete.length === 0) {
+          hasMore = false;
+          continue;
+        }
 
         const deleteResult = await prisma.notification.deleteMany({
           where: { id: { in: toDelete.map((n: { id: string }) => n.id) } },
@@ -73,7 +70,6 @@ export async function GET() {
           'cron:notification-cleanup'
         );
 
-        // Check if we've deleted all
         if (toDelete.length < BATCH_SIZE) {
           hasMore = false;
         }
@@ -83,10 +79,12 @@ export async function GET() {
       }
     }
 
-    // Also clean up any orphaned notifications (no recipientId)
+    // Also clean up any orphaned notifications (recipientId is null). The
+    // previous check used `recipientId: ''` which never matched because the
+    // schema stores nullable recipientIds as NULL, not empty string.
     try {
       const orphanResult = await prisma.notification.deleteMany({
-        where: { recipientId: '' },
+        where: { recipientId: null },
       });
       if (orphanResult.count > 0) {
         results.notificationsDeleted += orphanResult.count;
@@ -95,8 +93,10 @@ export async function GET() {
           'cron:notification-cleanup'
         );
       }
-    } catch {
-      // Ignore orphan cleanup errors
+    } catch (err) {
+      logger.warn('Orphan notification cleanup failed', 'cron:notification-cleanup', {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
 
     logger.info('Notification cleanup completed', 'cron:notification-cleanup', results);

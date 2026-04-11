@@ -52,50 +52,37 @@ function hashToken(token: string): string {
 }
 
 /**
- * Check if a stake token has already been consumed (one-time use enforcement).
- * Returns false if Redis is unavailable (falls through to DB constraints).
+ * Atomically mark a stake token as consumed. Returns `true` if this call
+ * claimed the token (first caller wins), `false` if the token was already
+ * consumed by an earlier call or if Redis is unavailable.
+ *
+ * Uses `SET key value NX EX ttl` so the check-and-set is a single operation
+ * — the previous `isStakeTokenConsumed` + `consumeStakeToken` pair had a
+ * TOCTOU window between check and set. Callers that observe `false` on
+ * Redis-unavailable still fall through to the `stakeTxId @unique` DB
+ * constraint as a safety net; the Redis path just tightens the common case.
  */
-export async function isStakeTokenConsumed(token: string): Promise<boolean> {
+export async function claimStakeToken(
+  token: string,
+  meta: { txId: string; username: string }
+): Promise<boolean> {
   try {
     const redis = await getRedisCache();
     if (!redis.isAvailable()) return false;
-    return redis.has(`stake-token:consumed:${hashToken(token)}`);
+    return await redis.setIfAbsent(
+      `stake-token:consumed:${hashToken(token)}`,
+      JSON.stringify({ ...meta, consumedAt: Date.now() }),
+      PREDICTION_CONFIG.STAKE_TOKEN_EXPIRY_SECONDS
+    );
   } catch (error) {
     logger.warn(
-      'Redis unavailable for stake token check, falling through to DB constraints',
+      'Redis unavailable for stake token claim, falling through to DB constraints',
       'predictions',
       {
         error: error instanceof Error ? error.message : String(error),
       }
     );
     return false;
-  }
-}
-
-/**
- * Mark a stake token as consumed in Redis.
- * TTL matches the token expiry — no need to track beyond that.
- */
-export async function consumeStakeToken(
-  token: string,
-  meta: { txId: string; username: string }
-): Promise<void> {
-  try {
-    const redis = await getRedisCache();
-    if (!redis.isAvailable()) return;
-    await redis.set(
-      `stake-token:consumed:${hashToken(token)}`,
-      { ...meta, consumedAt: Date.now() },
-      { ttl: PREDICTION_CONFIG.STAKE_TOKEN_EXPIRY_SECONDS }
-    );
-  } catch (error) {
-    logger.warn(
-      'Redis unavailable for stake token consumption, DB constraints remain as safety net',
-      'predictions',
-      {
-        error: error instanceof Error ? error.message : String(error),
-      }
-    );
   }
 }
 

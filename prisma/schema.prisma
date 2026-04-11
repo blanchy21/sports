@@ -620,6 +620,7 @@ model PredictionEscrowLedger {
 
   @@unique([predictionId, txId])
   @@index([predictionId])
+  @@index([predictionId, entryType])
   @@map("prediction_escrow_ledger")
 }
 
@@ -856,6 +857,7 @@ model ContestEscrowLedger {
 
   @@unique([contestId, txId])
   @@index([contestId])
+  @@index([contestId, entryType])
   @@map("contest_escrow_ledger")
 }
 
