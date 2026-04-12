@@ -49,18 +49,20 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
           <Avatar
             src={community.avatar}
             fallback={community.name}
-            alt={community.title}
+            alt={community.name}
             size="lg"
             className="h-16 w-16"
           />
           <div>
-            <h2 className="text-2xl font-bold">{community.title}</h2>
-            <p className="text-muted-foreground">@{community.name}</p>
+            <h2 className="text-2xl font-bold">{community.name}</h2>
+            <p className="text-muted-foreground">@{community.slug}</p>
           </div>
         </div>
 
         <div className="prose prose-sm max-w-none dark:prose-invert">
-          <p className="mb-6 leading-relaxed text-muted-foreground">{community.description}</p>
+          <p className="mb-6 leading-relaxed text-muted-foreground">
+            {community.description || community.about}
+          </p>
         </div>
 
         {/* Community Stats */}
@@ -70,14 +72,16 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
               <Users className="h-4 w-4" />
               <span className="text-sm">Subscribers</span>
             </div>
-            <div className="text-2xl font-bold">{community.subscribers.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {(community.memberCount ?? 0).toLocaleString()}
+            </div>
           </div>
           <div className="text-center">
             <div className="mb-1 flex items-center justify-center space-x-1 text-muted-foreground">
               <FileText className="h-4 w-4" />
               <span className="text-sm">Posts</span>
             </div>
-            <div className="text-2xl font-bold">{community.posts.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{(community.postCount ?? 0).toLocaleString()}</div>
           </div>
           <div className="text-center">
             <div className="mb-1 flex items-center justify-center space-x-1 text-muted-foreground">
@@ -85,7 +89,7 @@ export const CommunityAbout: React.FC<CommunityAboutProps> = ({ communityId, cla
               <span className="text-sm">Created</span>
             </div>
             <div className="text-sm font-medium">
-              {new Date(community.created).toLocaleDateString()}
+              {community.createdAt ? new Date(community.createdAt).toLocaleDateString() : '—'}
             </div>
           </div>
           <div className="text-center">

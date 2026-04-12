@@ -18,6 +18,7 @@ import {
   createCommunityUnsubscribeOperation,
 } from '@/lib/hive-workerbee/shared';
 import { SPORTS_ARENA_CONFIG } from '@/lib/hive-workerbee/shared';
+import { logger } from '@/lib/logger';
 
 interface JoinButtonProps {
   community: Community;
@@ -47,20 +48,33 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
   const handleJoin = async () => {
     if (!user) return;
 
-    await joinMutation.mutateAsync({
-      communityId: community.id,
-      userId: user.id,
-      username: user.username,
-      hiveUsername: hiveUser?.username,
-    });
+    try {
+      await joinMutation.mutateAsync({
+        communityId: community.id,
+        userId: user.id,
+        username: user.username,
+        hiveUsername: hiveUser?.username,
+      });
+    } catch (err) {
+      addToast(
+        toast.error('Join failed', err instanceof Error ? err.message : 'Could not join community')
+      );
+      return;
+    }
 
-    // Fire-and-forget on-chain subscribe so user appears on PeakD/Ecency
+    addToast(toast.success('Welcome!', `You've joined ${community.name}`));
+
+    // Best-effort on-chain subscribe so the user appears on PeakD/Ecency.
+    // Local DB membership already succeeded, so we don't block or surface
+    // failure to the user — but we do log it for debugging.
     const hiveUsername = hiveUser?.username || user.username;
     if (hiveUsername) {
       broadcast(
         [createCommunitySubscribeOperation(hiveUsername, SPORTS_ARENA_CONFIG.COMMUNITY_ID)],
         'posting'
-      ).catch(() => {}); // best-effort, don't block UI
+      ).catch((broadcastErr) => {
+        logger.warn('Community subscribe broadcast failed', 'JoinButton', broadcastErr);
+      });
     }
   };
 
@@ -77,18 +91,32 @@ export const JoinButton: React.FC<JoinButtonProps> = ({
     const confirmed = window.confirm(`Are you sure you want to leave ${community.name}?`);
     if (!confirmed) return;
 
-    await leaveMutation.mutateAsync({
-      communityId: community.id,
-      userId: user.id,
-    });
+    try {
+      await leaveMutation.mutateAsync({
+        communityId: community.id,
+        userId: user.id,
+      });
+    } catch (err) {
+      addToast(
+        toast.error(
+          'Leave failed',
+          err instanceof Error ? err.message : 'Could not leave community'
+        )
+      );
+      return;
+    }
 
-    // Fire-and-forget on-chain unsubscribe
+    addToast(toast.success('Left community', `You've left ${community.name}`));
+
+    // Best-effort on-chain unsubscribe.
     const hiveUsername = hiveUser?.username || user.username;
     if (hiveUsername) {
       broadcast(
         [createCommunityUnsubscribeOperation(hiveUsername, SPORTS_ARENA_CONFIG.COMMUNITY_ID)],
         'posting'
-      ).catch(() => {}); // best-effort, don't block UI
+      ).catch((broadcastErr) => {
+        logger.warn('Community unsubscribe broadcast failed', 'JoinButton', broadcastErr);
+      });
     }
   };
 

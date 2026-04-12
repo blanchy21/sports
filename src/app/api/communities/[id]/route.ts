@@ -9,6 +9,7 @@ import {
   unauthorizedError,
 } from '@/lib/api/response';
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
+import { resolveCommunity } from '../_resolve';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { extractPathParam } from '@/lib/api/route-params';
 
@@ -121,24 +122,24 @@ export const PATCH = createApiHandler(ROUTE, async (request, ctx) => {
     return forbiddenError('Cannot update community as another user', ctx.requestId);
   }
 
-  // Fetch existing community
-  const community = await prisma.community.findUnique({ where: { id } });
+  // Fetch existing community (accepts id or slug)
+  const community = await resolveCommunity(id);
   if (!community) {
     return notFoundError(`Community not found: ${id}`, ctx.requestId);
   }
 
   // Check if user is admin
   const membership = await prisma.communityMember.findUnique({
-    where: { communityId_userId: { communityId: id, userId } },
+    where: { communityId_userId: { communityId: community.id, userId } },
   });
   if (!membership || membership.role !== 'admin' || membership.status !== 'active') {
     return forbiddenError('Only admins can update this community', ctx.requestId);
   }
 
-  ctx.log.info('Updating community', { id, updates, userId });
+  ctx.log.info('Updating community', { id: community.id, updates, userId });
 
   const updatedCommunity = await prisma.community.update({
-    where: { id },
+    where: { id: community.id },
     data: updates,
   });
 
@@ -178,8 +179,8 @@ export const DELETE = createApiHandler(ROUTE, async (request, ctx) => {
     return forbiddenError('Cannot delete community as another user', ctx.requestId);
   }
 
-  // Fetch existing community
-  const community = await prisma.community.findUnique({ where: { id } });
+  // Fetch existing community (accepts id or slug)
+  const community = await resolveCommunity(id);
   if (!community) {
     return notFoundError(`Community not found: ${id}`, ctx.requestId);
   }
@@ -189,13 +190,13 @@ export const DELETE = createApiHandler(ROUTE, async (request, ctx) => {
     return forbiddenError('Only the community creator can delete this community', ctx.requestId);
   }
 
-  ctx.log.info('Deleting community', { id, userId });
+  ctx.log.info('Deleting community', { id: community.id, userId });
 
   // Delete members and community in a transaction
   await prisma.$transaction([
-    prisma.communityMember.deleteMany({ where: { communityId: id } }),
-    prisma.communityInvite.deleteMany({ where: { communityId: id } }),
-    prisma.community.delete({ where: { id } }),
+    prisma.communityMember.deleteMany({ where: { communityId: community.id } }),
+    prisma.communityInvite.deleteMany({ where: { communityId: community.id } }),
+    prisma.community.delete({ where: { id: community.id } }),
   ]);
 
   return NextResponse.json({

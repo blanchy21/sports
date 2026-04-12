@@ -29,6 +29,19 @@ export function CoverImageUpload({
         setError('Please select an image file');
         return;
       }
+      // iOS HEIC/HEIF is accepted by the `image/*` picker but rejected by the
+      // server (JPEG/PNG/GIF/WebP only) and often can't be decoded by canvas on
+      // older iOS. Reject up front with an actionable message.
+      const isHeic =
+        file.type === 'image/heic' ||
+        file.type === 'image/heif' ||
+        /\.(heic|heif)$/i.test(file.name);
+      if (isHeic) {
+        setError(
+          "HEIC images aren't supported. On iPhone, open Settings → Camera → Formats → Most Compatible, or export the photo as JPEG."
+        );
+        return;
+      }
       if (file.size > 10 * 1024 * 1024) {
         setError('Image must be less than 10MB');
         return;

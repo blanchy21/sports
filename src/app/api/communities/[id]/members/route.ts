@@ -11,6 +11,7 @@ import {
 import { validateCsrf, csrfError } from '@/lib/api/csrf';
 import { getAuthenticatedUserFromSession } from '@/lib/api/session-auth';
 import { extractPathParam } from '@/lib/api/route-params';
+import { resolveCommunity } from '../../_resolve';
 import { Prisma } from '@/generated/prisma/client';
 
 export const runtime = 'nodejs';
@@ -158,8 +159,8 @@ export const POST = createApiHandler(ROUTE, async (request, ctx) => {
 
   ctx.log.info('User joining community', { communityId, userId, username });
 
-  // Check community type to determine initial status
-  const community = await prisma.community.findUnique({ where: { id: communityId } });
+  // Check community type to determine initial status (accepts id or slug)
+  const community = await resolveCommunity(communityId);
   if (!community) {
     return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
   }
@@ -168,7 +169,7 @@ export const POST = createApiHandler(ROUTE, async (request, ctx) => {
 
   const member = await prisma.communityMember.create({
     data: {
-      communityId,
+      communityId: community.id,
       userId,
       username,
       hiveUsername: hiveUsername || null,
@@ -180,7 +181,7 @@ export const POST = createApiHandler(ROUTE, async (request, ctx) => {
   // Increment member count if immediately active
   if (initialStatus === 'active') {
     await prisma.community.update({
-      where: { id: communityId },
+      where: { id: community.id },
       data: { memberCount: { increment: 1 } },
     });
   }
@@ -230,15 +231,16 @@ export const PATCH = createApiHandler(ROUTE, async (request, ctx) => {
     return forbiddenError('Cannot perform actions as another user', ctx.requestId);
   }
 
-  // Check if community exists
-  const community = await prisma.community.findUnique({ where: { id: communityId } });
+  // Check if community exists (accepts id or slug)
+  const community = await resolveCommunity(communityId);
   if (!community) {
     return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
   }
+  const resolvedId = community.id;
 
   // Check if requesting user has permission
   const requesterMembership = await prisma.communityMember.findUnique({
-    where: { communityId_userId: { communityId, userId } },
+    where: { communityId_userId: { communityId: resolvedId, userId } },
   });
   if (!requesterMembership || requesterMembership.status !== 'active') {
     return forbiddenError('You must be an active member to perform this action', ctx.requestId);
@@ -264,19 +266,19 @@ export const PATCH = createApiHandler(ROUTE, async (request, ctx) => {
       }
       if (action === 'approve') {
         const member = await prisma.communityMember.update({
-          where: { communityId_userId: { communityId, userId: targetUserId } },
+          where: { communityId_userId: { communityId: resolvedId, userId: targetUserId } },
           data: { status: 'active' },
         });
         // Increment member count
         await prisma.community.update({
-          where: { id: communityId },
+          where: { id: resolvedId },
           data: { memberCount: { increment: 1 } },
         });
         return NextResponse.json({ success: true, member, message: 'Member approved' });
       } else {
         // For reject, remove the pending membership
         await prisma.communityMember.delete({
-          where: { communityId_userId: { communityId, userId: targetUserId } },
+          where: { communityId_userId: { communityId: resolvedId, userId: targetUserId } },
         });
         return NextResponse.json({ success: true, message: 'Join request rejected' });
       }
@@ -290,7 +292,7 @@ export const PATCH = createApiHandler(ROUTE, async (request, ctx) => {
         return validationError('Role is required for promote/demote actions', ctx.requestId);
       }
       const updatedMember = await prisma.communityMember.update({
-        where: { communityId_userId: { communityId, userId: targetUserId } },
+        where: { communityId_userId: { communityId: resolvedId, userId: targetUserId } },
         data: { role },
       });
       return NextResponse.json({
@@ -305,12 +307,12 @@ export const PATCH = createApiHandler(ROUTE, async (request, ctx) => {
         return forbiddenError('Only moderators can ban members', ctx.requestId);
       }
       await prisma.communityMember.update({
-        where: { communityId_userId: { communityId, userId: targetUserId } },
+        where: { communityId_userId: { communityId: resolvedId, userId: targetUserId } },
         data: { status: 'banned' },
       });
       // Decrement member count (clamped to 0 via gt guard)
       await prisma.community.updateMany({
-        where: { id: communityId, memberCount: { gt: 0 } },
+        where: { id: resolvedId, memberCount: { gt: 0 } },
         data: { memberCount: { decrement: 1 } },
       });
       return NextResponse.json({ success: true, message: 'Member banned' });
@@ -321,11 +323,11 @@ export const PATCH = createApiHandler(ROUTE, async (request, ctx) => {
       }
       // For unban, restore member to active status
       const targetMembership = await prisma.communityMember.findUnique({
-        where: { communityId_userId: { communityId, userId: targetUserId } },
+        where: { communityId_userId: { communityId: resolvedId, userId: targetUserId } },
       });
       if (targetMembership) {
         await prisma.communityMember.update({
-          where: { communityId_userId: { communityId, userId: targetUserId } },
+          where: { communityId_userId: { communityId: resolvedId, userId: targetUserId } },
           data: { role: 'member', status: 'active' },
         });
       }
@@ -367,15 +369,21 @@ export const DELETE = createApiHandler(ROUTE, async (request, ctx) => {
     return forbiddenError('Cannot leave community as another user', ctx.requestId);
   }
 
-  ctx.log.info('User leaving community', { communityId, userId });
+  // Resolve slug or id to canonical community id
+  const community = await resolveCommunity(communityId);
+  if (!community) {
+    return notFoundError(`Community not found: ${communityId}`, ctx.requestId);
+  }
+
+  ctx.log.info('User leaving community', { communityId: community.id, userId });
 
   await prisma.communityMember.delete({
-    where: { communityId_userId: { communityId, userId } },
+    where: { communityId_userId: { communityId: community.id, userId } },
   });
 
   // Decrement member count (clamped to 0 via gt guard)
   await prisma.community.updateMany({
-    where: { id: communityId, memberCount: { gt: 0 } },
+    where: { id: community.id, memberCount: { gt: 0 } },
     data: { memberCount: { decrement: 1 } },
   });
 
