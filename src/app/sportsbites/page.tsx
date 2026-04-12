@@ -76,11 +76,12 @@ function SportsBitesContent() {
 
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
-      // Give a brief grace period — auth state may still be propagating
-      // (e.g. after login dispatch + navigation, or HMR in dev mode)
+      // Grace period to handle Keychain mobile app page reloads where
+      // the session cookie may not be immediately available to the restoration
+      // fetch. 2s covers slow mobile networks and WebView cookie sync delays.
       const timer = setTimeout(() => {
         router.push('/');
-      }, 150);
+      }, 2000);
       return () => clearTimeout(timer);
     }
     // Redirect custodial users who haven't completed onboarding
