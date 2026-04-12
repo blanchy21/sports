@@ -15,7 +15,13 @@ export default function CommunityPageClient() {
 
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
-      router.push('/');
+      // Grace period to handle slow session cookie propagation after login
+      // (Keychain mobile WebView cookie-jar sync, slow networks, reloads).
+      // Matches the sportsbites page pattern.
+      const timer = setTimeout(() => {
+        router.push('/');
+      }, 2000);
+      return () => clearTimeout(timer);
     }
   }, [user, isAuthLoading, router]);
 
