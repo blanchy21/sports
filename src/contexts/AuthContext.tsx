@@ -97,96 +97,116 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // ============================================================================
 
   useEffect(() => {
+    const applySession = async (
+      session: NonNullable<Awaited<ReturnType<typeof fetchSessionFromCookie>>['session']>,
+      displayHint?: string
+    ): Promise<boolean> => {
+      const {
+        userId,
+        username,
+        authType: sessionAuthType,
+        hiveUsername,
+        loginAt: sessionLoginAt,
+        keysDownloaded,
+      } = session;
+
+      if (isSessionExpired(sessionLoginAt)) {
+        logger.info('Session expired due to inactivity', 'AuthContext');
+        await clearPersistedAuthState();
+        dispatch({ type: 'SESSION_EXPIRED' });
+        return false;
+      }
+
+      if (sessionAuthType === 'hive' && !hiveUsername) {
+        logger.warn('Invalid Hive session: missing hiveUsername', 'AuthContext');
+        await clearPersistedAuthState();
+        dispatch({ type: 'INVALID_SESSION' });
+        return false;
+      }
+
+      const isHiveAuth = sessionAuthType === 'hive';
+      const restoredUser: User = {
+        id: userId,
+        username: sessionAuthType === 'soft' && hiveUsername ? hiveUsername : username,
+        displayName: displayHint || username,
+        isHiveAuth,
+        hiveUsername,
+        keysDownloaded,
+        avatar: isHiveAuth && hiveUsername ? getHiveAvatarUrl(hiveUsername) : undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const restoredHiveUser: HiveAuthUser | null = hiveUsername
+        ? { username: hiveUsername, isAuthenticated: true }
+        : null;
+
+      if (isHiveAuth || (keysDownloaded && hiveUsername)) {
+        needsHiveRefresh.current = true;
+      }
+
+      const refreshedLoginAt = Date.now();
+
+      dispatch({
+        type: 'RESTORE_SESSION',
+        payload: {
+          user: restoredUser,
+          authType: sessionAuthType,
+          hiveUser: restoredHiveUser,
+          loginAt: refreshedLoginAt,
+        },
+      });
+
+      persistAuthState({
+        user: restoredUser,
+        authType: sessionAuthType,
+        hiveUser: restoredHiveUser,
+        loginAt: refreshedLoginAt,
+      });
+
+      return true;
+    };
+
     const restoreSession = async () => {
       try {
-        // Check for UI hint to show loading state appropriately
         const uiHint = loadUIHint();
 
         // Fetch session from httpOnly cookie (the ONLY source of truth)
         const sessionResponse = await fetchSessionFromCookie();
 
         if (sessionResponse.networkError) {
-          // Network error — don't clear auth state, user might just be offline
           console.warn('Network error checking session, preserving auth state');
           dispatch({ type: 'CLIENT_MOUNTED' });
           return;
         }
 
         if (sessionResponse.authenticated && sessionResponse.session) {
-          const {
-            userId,
-            username,
-            authType: sessionAuthType,
-            hiveUsername,
-            loginAt: sessionLoginAt,
-            keysDownloaded,
-          } = sessionResponse.session;
-
-          // Check if session is expired
-          if (isSessionExpired(sessionLoginAt)) {
-            logger.info('Session expired due to inactivity', 'AuthContext');
-            await clearPersistedAuthState();
-            dispatch({ type: 'SESSION_EXPIRED' });
-            return;
-          }
-
-          // Validate session integrity: Hive sessions must have a hiveUsername
-          if (sessionAuthType === 'hive' && !hiveUsername) {
-            logger.warn('Invalid Hive session: missing hiveUsername', 'AuthContext');
-            await clearPersistedAuthState();
-            dispatch({ type: 'INVALID_SESSION' });
-            return;
-          }
-
-          // Create basic user from session data
-          const isHiveAuth = sessionAuthType === 'hive';
-          const restoredUser: User = {
-            id: userId,
-            username: sessionAuthType === 'soft' && hiveUsername ? hiveUsername : username,
-            displayName: uiHint?.displayHint || username,
-            isHiveAuth: isHiveAuth,
-            hiveUsername: hiveUsername,
-            keysDownloaded: keysDownloaded,
-            // Set Hive avatar immediately so it renders before async profile refresh
-            avatar: isHiveAuth && hiveUsername ? getHiveAvatarUrl(hiveUsername) : undefined,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
-
-          const restoredHiveUser: HiveAuthUser | null = hiveUsername
-            ? { username: hiveUsername, isAuthenticated: true }
-            : null;
-
-          // Schedule profile refresh for Hive users and keysDownloaded soft users
-          // (they have a real Hive account with on-chain balances)
-          if (isHiveAuth || (keysDownloaded && hiveUsername)) {
-            needsHiveRefresh.current = true;
-          }
-
-          const refreshedLoginAt = Date.now();
-
-          dispatch({
-            type: 'RESTORE_SESSION',
-            payload: {
-              user: restoredUser,
-              authType: sessionAuthType,
-              hiveUser: restoredHiveUser,
-              loginAt: refreshedLoginAt,
-            },
-          });
-
-          // Refresh the session timestamp in cookie
-          persistAuthState({
-            user: restoredUser,
-            authType: sessionAuthType,
-            hiveUser: restoredHiveUser,
-            loginAt: refreshedLoginAt,
-          });
-        } else {
-          // No valid session - clear any legacy localStorage
-          localStorage.removeItem(AUTH_STORAGE_KEY);
-          dispatch({ type: 'CLIENT_MOUNTED' });
+          await applySession(sessionResponse.session, uiHint?.displayHint);
+          return;
         }
+
+        // If a UI hint says the user was recently logged in, retry once after
+        // a short delay. This handles Keychain mobile app WebViews where the
+        // session cookie may not be immediately available on the first fetch
+        // (e.g., cookie jar sync delay after a page reload triggered by signing).
+        if (uiHint?.wasLoggedIn) {
+          logger.info(
+            'Session cookie not found but UI hint says logged in — retrying',
+            'AuthContext'
+          );
+          await new Promise((r) => setTimeout(r, 500));
+          const retryResponse = await fetchSessionFromCookie();
+          if (retryResponse.authenticated && retryResponse.session) {
+            logger.info('Session restored on retry', 'AuthContext');
+            await applySession(retryResponse.session, uiHint?.displayHint);
+            return;
+          }
+          logger.warn('Session retry failed — logging out', 'AuthContext');
+        }
+
+        // No valid session - clear any legacy localStorage
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        dispatch({ type: 'CLIENT_MOUNTED' });
       } catch (error) {
         logger.error('Error restoring session from cookie', 'AuthContext', error);
         dispatch({ type: 'CLIENT_MOUNTED' });
