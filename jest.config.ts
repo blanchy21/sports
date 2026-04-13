@@ -11,6 +11,8 @@ const config = {
     '@hiveio/wax$': '<rootDir>/node_modules/@hiveio/wax/wasm/dist/bundle/node.js',
   },
   testPathIgnorePatterns: ['/node_modules/', '/.next/', '/e2e/', '/.claude/worktrees/'],
+  modulePathIgnorePatterns: ['/.claude/worktrees/', '/.next/'],
+  watchPathIgnorePatterns: ['/.claude/worktrees/', '/.next/', '/node_modules/'],
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   testSequencer: '<rootDir>/node_modules/@jest/test-sequencer/build/index.js',
   transform: {
