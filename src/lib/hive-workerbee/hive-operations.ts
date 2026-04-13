@@ -306,13 +306,21 @@ export function createPostOperation(postData: {
     };
   }
 
+  // Prepend the cover image to the body so other Hive frontends (peakd, ecency,
+  // hive.blog) render and expose it for editing — they expect the cover inline,
+  // not only in json_metadata.image[]. Skip if the body already references it.
+  const body =
+    postData.featuredImage && !postData.body.includes(postData.featuredImage)
+      ? `![](${postData.featuredImage})\n\n${postData.body}`
+      : postData.body;
+
   return {
     parent_author: postData.parentAuthor || '',
     parent_permlink: postData.parentPermlink || SPORTS_ARENA_CONFIG.COMMUNITY_ID,
     author: postData.author,
     permlink,
     title: postData.title,
-    body: postData.body,
+    body,
     json_metadata: JSON.stringify(metadata),
     max_accepted_payout: postData.maxAcceptedPayout || '1000000.000 HBD',
     percent_hbd: postData.percentHbd || 10000,
