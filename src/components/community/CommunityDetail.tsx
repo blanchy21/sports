@@ -14,6 +14,7 @@ import { Card } from '@/components/core/Card';
 import { Avatar } from '@/components/core/Avatar';
 import { JoinButton } from './JoinButton';
 import { CommunityFeed } from './CommunityFeed';
+import { EditCommunityModal } from './EditCommunityModal';
 import {
   Users,
   FileText,
@@ -44,6 +45,7 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
   const { data: postsData } = useCommunityPosts(communityId);
 
   const [activeTab, setActiveTab] = useState<TabType>('posts');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Check user's role in community
   const userMembership = members?.find((m) => m.userId === user?.id);
@@ -162,13 +164,21 @@ export const CommunityDetail: React.FC<CommunityDetailProps> = ({ communityId, c
             <JoinButton community={community} size="default" />
 
             {isAdmin && (
-              <Button variant="outline" size="default">
+              <Button variant="outline" size="default" onClick={() => setIsEditModalOpen(true)}>
                 <Settings className="mr-2 h-4 w-4" />
-                Manage
+                Edit
               </Button>
             )}
           </div>
         </div>
+
+        {isAdmin && (
+          <EditCommunityModal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            community={community}
+          />
+        )}
 
         {/* Community Stats */}
         <div className="mt-6 flex flex-wrap items-center gap-6 border-t pt-6">
