@@ -255,12 +255,16 @@ export function createPostOperation(postData: {
 }): WaxPostOperation {
   const permlink = postData.permlink || generatePermlink(postData.title);
 
-  const tags = [
-    ...(postData.tags || []),
-    SPORTS_ARENA_CONFIG.COMMUNITY_ID,
-    'sportsblock',
-    ...(postData.subCommunity ? [postData.subCommunity.slug] : []),
-  ];
+  // Dedupe — users often type 'sportsblock' or the community id as a tag,
+  // which would otherwise appear twice once we auto-append them.
+  const tags = Array.from(
+    new Set([
+      ...(postData.tags || []),
+      SPORTS_ARENA_CONFIG.COMMUNITY_ID,
+      'sportsblock',
+      ...(postData.subCommunity ? [postData.subCommunity.slug] : []),
+    ])
+  );
 
   // Auto-generate plain-text description for SEO / social previews
   const plainText = stripMarkdown(postData.body);
@@ -276,6 +280,19 @@ export function createPostOperation(postData: {
     /* malformed JSON — use defaults */
   }
 
+  // Collect every image URL in the body (markdown + <img> tags) so
+  // json_metadata.image[] is populated even when the user inlines their
+  // cover directly instead of using the cover uploader. peakd/ecency rely on
+  // image[0] for thumbnails in feeds and social embeds.
+  const bodyImages: string[] = [];
+  const mdMatches = postData.body.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g);
+  for (const m of mdMatches) bodyImages.push(m[1]);
+  const htmlMatches = postData.body.matchAll(/<img[^>]+src=["']([^"']+)/gi);
+  for (const m of htmlMatches) bodyImages.push(m[1]);
+  const imageList = Array.from(
+    new Set([...(postData.featuredImage ? [postData.featuredImage] : []), ...bodyImages])
+  );
+
   const metadata: Record<string, unknown> = {
     app: `${SPORTS_ARENA_CONFIG.APP_NAME}/${SPORTS_ARENA_CONFIG.APP_VERSION}`,
     format: 'markdown',
@@ -284,7 +301,7 @@ export function createPostOperation(postData: {
     description,
     users: users.length > 0 ? users : undefined,
     sport_category: postData.sportCategory,
-    image: postData.featuredImage ? [postData.featuredImage] : undefined,
+    image: imageList.length > 0 ? imageList : undefined,
     ...parsedJsonMetadata,
   };
 
