@@ -71,10 +71,13 @@ export const POST = createApiHandler('/api/contests/[slug]/settle', async (reque
     const body = await request.json().catch(() => ({}));
     const actualTotalGoals =
       typeof body.actualTotalGoals === 'number' ? body.actualTotalGoals : undefined;
+    const actualWinningScore =
+      typeof body.actualWinningScore === 'number' ? body.actualWinningScore : undefined;
 
     // Calculate settlement
     const result = await calculateSettlement(contest.id, {
       actualTotalGoals,
+      actualWinningScore,
     });
 
     // Re-fetch contest to get latest tx IDs (in case of retry)
