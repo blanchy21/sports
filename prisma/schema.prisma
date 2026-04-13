@@ -1041,6 +1041,128 @@ model IplBbPick {
 }
 
 // ============================================================================
+// Higher or Lower — Football goals over/under contest
+// Players see 5 matches' total goals (baseline) and guess whether the next
+// round's 5 matches will produce higher or lower total goals. Wrong guess
+// eliminates. Ties (actual == baseline) survive. Buy-backs paid in MEDALS.
+// Entry fees flow through the generic Contest framework (Contest +
+// ContestEntry + ContestEscrowLedger). The tables below carry round-/pick-
+// level state that is specific to this contest type.
+// ============================================================================
+
+model HolCompetition {
+  id                  String           @id @default(cuid())
+  contestSlug         String           @unique @map("contest_slug")
+  status              String           @default("upcoming") // 'upcoming' | 'active' | 'complete' | 'cancelled'
+  currentRound        Int              @default(1) @map("current_round")
+  totalRoundsPlanned  Int              @map("total_rounds_planned")
+  buyBackCostMedals   Decimal          @db.Decimal(12, 3) @map("buyback_cost_medals")
+  maxBuyBacks         Int              @default(2) @map("max_buybacks")
+  tieRule             String           @default("survive") // 'survive' — reserved for future variants
+  startsAt            DateTime         @map("starts_at")
+  endsAt              DateTime?        @map("ends_at")
+
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt     @map("updated_at")
+
+  rounds              HolRound[]
+  entries             HolEntry[]
+  picks               HolPick[]
+  buyBacks            HolBuyBack[]
+
+  @@index([status])
+  @@map("hol_competitions")
+}
+
+model HolRound {
+  id             String         @id @default(cuid())
+  competitionId  String         @map("competition_id")
+  competition    HolCompetition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+
+  roundNumber    Int            @map("round_number")
+  status         String         @default("upcoming") // 'upcoming' | 'locked' | 'resolved'
+  deadline       DateTime
+  baselineTotal  Int            @map("baseline_total")
+  actualTotal    Int?           @map("actual_total")
+  matches        Json           // [{ league, homeTeam, awayTeam, kickoff, homeGoals?, awayGoals?, postponed? }]
+
+  resolvedAt     DateTime?      @map("resolved_at")
+  resolvedBy     String?        @map("resolved_by")
+
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt     @map("updated_at")
+
+  @@unique([competitionId, roundNumber])
+  @@index([competitionId, status])
+  @@map("hol_rounds")
+}
+
+model HolEntry {
+  id              String         @id @default(cuid())
+  competitionId   String         @map("competition_id")
+  competition     HolCompetition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+
+  username        String
+
+  status          String         @default("alive") // 'alive' | 'eliminated' | 'winner'
+  buyBacksUsed    Int            @default(0) @map("buybacks_used")
+  eliminatedRound Int?           @map("eliminated_round")
+  eliminatedAt    DateTime?      @map("eliminated_at")
+
+  finalRank       Int?           @map("final_rank")
+  prizeAwarded    Decimal?       @db.Decimal(12, 3) @map("prize_awarded")
+  payoutTxId      String?        @map("payout_tx_id")
+  paidAt          DateTime?      @map("paid_at")
+
+  joinedAt        DateTime       @default(now()) @map("joined_at")
+  updatedAt       DateTime       @updatedAt     @map("updated_at")
+
+  picks           HolPick[]
+  buyBacks        HolBuyBack[]
+
+  @@unique([competitionId, username])
+  @@index([competitionId, status])
+  @@index([username])
+  @@map("hol_entries")
+}
+
+model HolPick {
+  id             String         @id @default(cuid())
+  competitionId  String         @map("competition_id")
+  competition    HolCompetition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  entryId        String         @map("entry_id")
+  entry          HolEntry       @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  roundNumber    Int            @map("round_number")
+  guess          String         // 'higher' | 'lower'
+  result         String         @default("pending") // 'pending' | 'correct' | 'incorrect' | 'tie'
+
+  submittedAt    DateTime       @default(now()) @map("submitted_at")
+  updatedAt      DateTime       @updatedAt     @map("updated_at")
+
+  @@unique([entryId, roundNumber])
+  @@index([competitionId, roundNumber])
+  @@map("hol_picks")
+}
+
+model HolBuyBack {
+  id             String         @id @default(cuid())
+  competitionId  String         @map("competition_id")
+  competition    HolCompetition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  entryId        String         @map("entry_id")
+  entry          HolEntry       @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  roundNumber    Int            @map("round_number") // round they bought back INTO
+  medalsCost     Decimal        @db.Decimal(12, 3) @map("medals_cost")
+  txId           String         @unique @map("tx_id")
+
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  @@index([entryId])
+  @@map("hol_buybacks")
+}
+
+// ============================================================================
 // Curation System — Curator roster and curation tracking
 // ============================================================================
 
